@@ -21,7 +21,7 @@ Strategy trading EMA crossovers only when Supertrend confirms the direction and 
   - `RsiOverbought` = 65m
   - `RsiOversold` = 30m
   - `SupertrendMultiplier` = 1m
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame()
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
 - **Filters**:
   - Category: Trend
   - Direction: Both

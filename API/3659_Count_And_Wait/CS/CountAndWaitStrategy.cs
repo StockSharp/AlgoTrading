@@ -51,11 +51,11 @@ public class CountAndWaitStrategy : Strategy
 	{
 		_countLimit = Param(nameof(CountLimit), 50)
 			.SetDisplay("Count Limit", "Ticks required to execute the action", "General")
-			.SetCanOptimize(true);
+			;
 
 		_waitLimit = Param(nameof(WaitLimit), 0)
 			.SetDisplay("Wait Limit", "Ticks to wait before restarting the count", "General")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -72,9 +72,9 @@ public class CountAndWaitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeTicks().Bind(ProcessTrade).Start();
 	}

@@ -66,19 +66,19 @@ public class OneTwoThreeReversalStrategy : Strategy
 	/// </summary>
 	public OneTwoThreeReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_daysToHold = Param(nameof(DaysToHold), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Days To Hold", "Number of bars to hold position", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 14, 1);
 
 		_maLength = Param(nameof(MaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average length", "Moving Average")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 50);
 	}
 
@@ -89,13 +89,13 @@ public class OneTwoThreeReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_sma = new SimpleMovingAverage { Length = MaLength };
+		_sma = new SMA { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

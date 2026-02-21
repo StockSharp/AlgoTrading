@@ -30,19 +30,19 @@ public class GuageStrategy : Strategy
 			.SetDisplay("Candle Type", "Type of candles to use", "Data");
 		_minValue = Param(nameof(MinValue), 0m)
 			.SetDisplay("Min Value", "Minimum gauge value", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-100m, 100m, 10m);
 		_maxValue = Param(nameof(MaxValue), 100m)
 			.SetDisplay("Max Value", "Maximum gauge value", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 10m);
 		_upperThreshold = Param(nameof(UpperThreshold), 0.75m)
 			.SetDisplay("Upper Threshold", "Gauge percentage to enter long", "Entry Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.6m, 0.9m, 0.05m);
 		_lowerThreshold = Param(nameof(LowerThreshold), 0.25m)
 			.SetDisplay("Lower Threshold", "Gauge percentage to enter short", "Entry Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.4m, 0.05m);
 	}
 
@@ -77,9 +77,9 @@ public class GuageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

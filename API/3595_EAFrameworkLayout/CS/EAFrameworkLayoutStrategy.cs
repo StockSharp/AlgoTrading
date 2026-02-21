@@ -60,12 +60,12 @@ public class EAFrameworkLayoutStrategy : Strategy
 
 		_tradeInitLots = Param(nameof(TradeInitLots), 0.01m)
 			.SetDisplay("Initial lot", "Base volume used when the strategy adds to an existing position", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_autoCloseAfterXH1 = Param(nameof(AutoCloseAfterXH1), 4)
 			.SetDisplay("Auto close (H1 bars)", "Number of completed H1 candles after which the position is closed", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 12, 1);
 
 		_isReverse = Param(nameof(IsReverse), false)
@@ -197,18 +197,18 @@ public class EAFrameworkLayoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeInitLots;
 
-		var ema2 = new ExponentialMovingAverage { Length = 2 };
-		var ema4 = new ExponentialMovingAverage { Length = 4 };
-		var ema6 = new ExponentialMovingAverage { Length = 6 };
-		var ema8 = new ExponentialMovingAverage { Length = 8 };
-		var ema12 = new ExponentialMovingAverage { Length = 12 };
-		var ema16 = new ExponentialMovingAverage { Length = 16 };
+		var ema2 = new EMA { Length = 2 };
+		var ema4 = new EMA { Length = 4 };
+		var ema6 = new EMA { Length = 6 };
+		var ema8 = new EMA { Length = 8 };
+		var ema12 = new EMA { Length = 12 };
+		var ema16 = new EMA { Length = 16 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

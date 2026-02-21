@@ -83,22 +83,22 @@ public class ElliottWaveOscillatorStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Length of the fast SMA", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_slowLength = Param(nameof(SlowLength), 35)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Length of the slow SMA", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPct = Param(nameof(TakeProfitPct), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Percentage take profit", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPct = Param(nameof(StopLossPct), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Percentage stop loss", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -120,9 +120,9 @@ public class ElliottWaveOscillatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastMa = new SMA { Length = FastLength };
 		var slowMa = new SMA { Length = SlowLength };

@@ -138,9 +138,9 @@ public class AdaptiveBollingerBreakoutStrategy : Strategy
 		_atrCount = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create ATR indicator for volatility measurement
 		_atr = new AverageTrueRange

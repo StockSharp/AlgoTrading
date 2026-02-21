@@ -196,19 +196,19 @@ public class MacdAndSarStrategy : Strategy
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 2);
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal smoothing length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
@@ -257,16 +257,11 @@ public class MacdAndSarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Fast = MacdFastPeriod,
-			Slow = MacdSlowPeriod,
-			Signal = MacdSignalPeriod
-		};
+		_macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = MacdFastPeriod }, LongMa = { Length = MacdSlowPeriod } }, SignalMa = { Length = MacdSignalPeriod } };
 
 		_parabolicSar = new ParabolicSar
 		{

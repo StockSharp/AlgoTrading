@@ -51,37 +51,37 @@ public class HoopMasterStrategy : Strategy
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetDisplay("Order Volume", "Volume for entry orders", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 25)
 			.SetDisplay("Stop Loss (pips)", "Initial stop loss in pips", "Protection")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 80, 5);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetDisplay("Take Profit (pips)", "Initial take profit in pips", "Protection")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 120, 5);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0)
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance in pips", "Protection")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 120, 5);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetDisplay("Trailing Step (pips)", "Minimal step to move trailing stop", "Protection")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 40, 1);
 
 		_indentPips = Param(nameof(IndentPips), 15)
 			.SetDisplay("Indent (pips)", "Distance for pending stops", "Trading")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 50, 1);
 	}
 
@@ -175,9 +175,9 @@ public class HoopMasterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("Security is not specified.");

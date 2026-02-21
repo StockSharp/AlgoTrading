@@ -53,37 +53,37 @@ public class EasiestRsiStrategy : Strategy
 		_lotSize = Param(nameof(LotSize), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Trade volume used for each market order", "Trading")
-					.SetCanOptimize(true);
+					;
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetDisplay("Stop Loss (pips)", "Initial stop-loss distance expressed in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 50m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance expressed in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stepPips = Param(nameof(StepPips), 20m)
 			.SetDisplay("Add-on Step (pips)", "Minimum favourable distance before adding to an existing position", "Strategy")
-			.SetCanOptimize(true);
+			;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Number of candles used for RSI calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
 			.SetDisplay("Oversold Level", "RSI threshold that triggers a long signal after a cross", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
 			.SetDisplay("Overbought Level", "RSI threshold that triggers a short signal after a cross", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maxEntries = Param(nameof(MaxEntries), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Maximum Entries", "Maximum number of sequential entries allowed in the same direction", "Strategy")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for signal evaluation", "General");
@@ -91,7 +91,7 @@ public class EasiestRsiStrategy : Strategy
 		_trailingBufferPoints = Param(nameof(TrailingBufferPoints), 5)
 		.SetNotNegative()
 		.SetDisplay("Trailing Buffer", "Minimum improvement in stop level before updating (price steps)", "Risk")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>
@@ -210,9 +210,9 @@ public class EasiestRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = LotSize;
 

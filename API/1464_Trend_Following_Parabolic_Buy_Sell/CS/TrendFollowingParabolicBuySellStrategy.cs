@@ -139,9 +139,9 @@ public class TrendFollowingParabolicBuySellStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var psar = new ParabolicSar
 		{
@@ -149,9 +149,9 @@ public class TrendFollowingParabolicBuySellStrategy : Strategy
 			AfStep = SarStep,
 			AfMax = SarMax
 		};
-		var trendMa = new SimpleMovingAverage { Length = TrendLength };
-		var fastMa = new ExponentialMovingAverage { Length = FastLength };
-		var slowMa = new ExponentialMovingAverage { Length = SlowLength };
+		var trendMa = new SMA { Length = TrendLength };
+		var fastMa = new EMA { Length = FastLength };
+		var slowMa = new EMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 

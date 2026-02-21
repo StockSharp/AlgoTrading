@@ -76,17 +76,17 @@ public class HullMaVolatilityContractionStrategy : Strategy
 	{
 		_hmaPeriod = Param(nameof(HmaPeriod), 9)
 		.SetDisplay("Hull MA Period", "Hull Moving Average period", "Hull MA")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 		.SetDisplay("ATR Period", "Period for ATR volatility calculation", "Volatility")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 2);
 
 		_volatilityContractionFactor = Param(nameof(VolatilityContractionFactor), 2.0m)
 		.SetDisplay("Volatility Contraction Factor", "Standard deviation multiplier for volatility contraction", "Volatility")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -113,9 +113,9 @@ public class HullMaVolatilityContractionStrategy : Strategy
 		_atr = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_hma = new HullMovingAverage

@@ -56,7 +56,7 @@ public class Acb7Strategy : Strategy
 		_runs = Param(nameof(Runs), 1000)
 			.SetGreaterThanZero()
 			.SetDisplay("Runs", "Number of matrix multiplications executed on start.", "Benchmark")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 5000, 100);
 
 		_logMatrices = Param(nameof(LogMatrices), true)
@@ -75,9 +75,9 @@ public class Acb7Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Execute the matrix processing benchmark and measure the elapsed time.
 		var stopwatch = Stopwatch.StartNew();

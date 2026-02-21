@@ -227,7 +227,7 @@ public class MacdStochasticFilterStrategy : Strategy
 			.SetDisplay("Stochastic %K", "Smoothing for %K line", "Indicators")
 			.SetGreaterThanZero();
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 			.SetDisplay("Stochastic %D", "Smoothing for %D line", "Indicators")
 			.SetGreaterThanZero();
 
@@ -273,13 +273,12 @@ public class MacdStochasticFilterStrategy : Strategy
 		};
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			KPeriod = StochasticKPeriod,
-			DPeriod = StochasticDPeriod
+			D = { Length = StochasticDPeriod }
 		};
 
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_ema = new EMA { Length = EmaPeriod };
 
 		_tickSize = Security?.PriceStep ?? 0m;
 		if (_tickSize == 0m)

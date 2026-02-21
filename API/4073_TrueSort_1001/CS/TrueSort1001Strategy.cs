@@ -133,49 +133,49 @@ public class TrueSort1001Strategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 100)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss Points", "Trailing stop distance in price steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 200, 20);
 
 		_sma10Length = Param(nameof(Sma10Length), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("SMA 10", "Fastest moving average length", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_sma20Length = Param(nameof(Sma20Length), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("SMA 20", "Second moving average length", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 2);
 
 		_sma50Length = Param(nameof(Sma50Length), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("SMA 50", "Medium moving average length", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 80, 5);
 
 		_sma100Length = Param(nameof(Sma100Length), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("SMA 100", "Long moving average length", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(80, 150, 5);
 
 		_sma200Length = Param(nameof(Sma200Length), 200)
 		.SetGreaterThanZero()
 		.SetDisplay("SMA 200", "Slow moving average length", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(150, 250, 10);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ADX Period", "ADX calculation length", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 2);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
 		.SetGreaterThanZero()
 		.SetDisplay("ADX Threshold", "Minimum ADX value for trades", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(15m, 35m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -207,15 +207,15 @@ public class TrueSort1001Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma10 = new SimpleMovingAverage { Length = Sma10Length };
-		var sma20 = new SimpleMovingAverage { Length = Sma20Length };
-		var sma50 = new SimpleMovingAverage { Length = Sma50Length };
-		var sma100 = new SimpleMovingAverage { Length = Sma100Length };
-		var sma200 = new SimpleMovingAverage { Length = Sma200Length };
+		var sma10 = new SMA { Length = Sma10Length };
+		var sma20 = new SMA { Length = Sma20Length };
+		var sma50 = new SMA { Length = Sma50Length };
+		var sma100 = new SMA { Length = Sma100Length };
+		var sma200 = new SMA { Length = Sma200Length };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -236,7 +236,7 @@ public class TrueSort1001Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(

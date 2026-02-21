@@ -203,8 +203,8 @@ public class BonkLongVolatilityStrategy : Strategy
 
 		_timeFilter = DateTimeOffset.Now - TimeSpan.FromDays(LookbackDays);
 
-		var fastMa = new SimpleMovingAverage { Length = MaFastLength };
-		var slowMa = new SimpleMovingAverage { Length = MaSlowLength };
+		var fastMa = new SMA { Length = MaFastLength };
+		var slowMa = new SMA { Length = MaSlowLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var macd = new MovingAverageConvergenceDivergenceSignal
@@ -216,7 +216,7 @@ public class BonkLongVolatilityStrategy : Strategy
 			},
 			SignalMa = { Length = MacdSignal }
 		};
-		var volumeSma = new SimpleMovingAverage { Length = VolumeSmaLength };
+		var volumeSma = new SMA { Length = VolumeSmaLength };
 
 		StartProtection(
 			new Unit(ProfitTargetPercent, UnitTypes.Percent),

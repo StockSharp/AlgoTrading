@@ -127,27 +127,27 @@ public class RsiTraderStrategy : Strategy
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI calculation length", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_shortRsiMaPeriod = Param(nameof(ShortRsiMaPeriod), 9)
 			.SetDisplay("Short RSI MA", "Short moving average on RSI", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_longRsiMaPeriod = Param(nameof(LongRsiMaPeriod), 45)
 			.SetDisplay("Long RSI MA", "Long moving average on RSI", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 5);
 
 		_shortPriceMaPeriod = Param(nameof(ShortPriceMaPeriod), 9)
 			.SetDisplay("Short Price MA", "Short simple moving average", "Price")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_longPriceMaPeriod = Param(nameof(LongPriceMaPeriod), 45)
 			.SetDisplay("Long Price MA", "Long weighted moving average", "Price")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 5);
 
 		_reverse = Param(nameof(Reverse), false)
@@ -176,9 +176,9 @@ public class RsiTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RSI { Length = RsiPeriod };
 		_rsiShortSma = new SMA { Length = ShortRsiMaPeriod };
@@ -191,7 +191,7 @@ public class RsiTraderStrategy : Strategy
 			.Bind(_priceShortSma, _priceLongWma, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal priceShort, decimal priceLong)

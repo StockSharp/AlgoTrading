@@ -149,49 +149,49 @@ public class BobnaleyStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 0.007m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit", "Target distance in price units", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.002m, 0.02m, 0.001m);
 
 		_stopLoss = Param(nameof(StopLoss), 0.0035m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Protective stop distance in price units", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.001m, 0.01m, 0.0005m);
 
 		_maPeriod = Param(nameof(MaPeriod), 76)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Length of the simple moving average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 120, 10);
 
 		_stochasticPeriod = Param(nameof(StochasticPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic Period", "Lookback period for the stochastic oscillator", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 21, 2);
 
 		_stochasticK = Param(nameof(StochasticK), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %K", "Smoothing length for the %K line", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 5, 1);
 
 		_stochasticD = Param(nameof(StochasticD), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %D", "Smoothing length for the %D line", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 5, 1);
 
 		_stochasticOversold = Param(nameof(StochasticOversold), 30m)
 		.SetNotNegative()
 		.SetDisplay("Stochastic Oversold", "Oversold threshold for the main line", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 5m);
 
 		_stochasticOverbought = Param(nameof(StochasticOverbought), 70m)
 		.SetNotNegative()
 		.SetDisplay("Stochastic Overbought", "Overbought threshold for the main line", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60m, 90m, 5m);
 
 		_minimumBalance = Param(nameof(MinimumBalance), 5000m)
@@ -227,17 +227,17 @@ public class BobnaleyStrategy : Strategy
 		}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		Volume = BaseVolume;
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(
 		takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
 		stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
 
-		var movingAverage = new SimpleMovingAverage
+		var movingAverage = new SMA
 		{
 		Length = MaPeriod
 	};

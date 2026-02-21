@@ -131,22 +131,22 @@ public class AeronJjnScalperEaStrategy : Strategy
 	public AeronJjnScalperEaStrategy()
 	{
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-		.SetDisplay("Trailing Stop (pips)");
+		.SetDisplay("Trailing Stop (pips)", "Trailing Stop (pips)", "General");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-		.SetDisplay("Trailing Step (pips)");
+		.SetDisplay("Trailing Step (pips)", "Trailing Step (pips)", "General");
 
 		_resetMinutes = Param(nameof(ResetMinutes), 10)
-		.SetDisplay("Pending Expiry (minutes)");
+		.SetDisplay("Pending Expiry (minutes)", "Pending Expiry (minutes)", "General");
 
 		_dojiDiff1Pips = Param(nameof(DojiDiff1Pips), 10m)
-		.SetDisplay("Doji Diff 1 (pips)");
+		.SetDisplay("Doji Diff 1 (pips)", "Doji Diff 1 (pips)", "General");
 
 		_dojiDiff2Pips = Param(nameof(DojiDiff2Pips), 4m)
-		.SetDisplay("Doji Diff 2 (pips)");
+		.SetDisplay("Doji Diff 2 (pips)", "Doji Diff 2 (pips)", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type");
+		.SetDisplay("Candle Type", "Candle Type", "General");
 
 		_atrLength = Param(nameof(AtrLength), 8)
 			.SetGreaterThanZero()
@@ -186,9 +186,9 @@ public class AeronJjnScalperEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializePipSettings();
 

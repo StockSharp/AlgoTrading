@@ -84,19 +84,19 @@ public class WilliamsRBreakoutStrategy : Strategy
 		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 		
 		_avgPeriod = Param(nameof(AvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Average Period", "Period for Williams %R average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 		
 		_multiplier = Param(nameof(Multiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -105,7 +105,7 @@ public class WilliamsRBreakoutStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 	}
 	
@@ -125,13 +125,13 @@ public class WilliamsRBreakoutStrategy : Strategy
 
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Create indicators
 		_williamsR = new WilliamsR { Length = WilliamsRPeriod };
-		_williamsRAverage = new SimpleMovingAverage { Length = AvgPeriod };
+		_williamsRAverage = new SMA { Length = AvgPeriod };
 		
 		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
@@ -169,7 +169,7 @@ public class WilliamsRBreakoutStrategy : Strategy
 		var currentWilliamsR = williamsRValue.ToDecimal();
 		
 		// Process Williams %R through average indicator
-		var williamsRAvgValue = _williamsRAverage.Process(currentWilliamsR, candle.ServerTime, candle.State == CandleStates.Finished);
+		var williamsRAvgValue = _williamsRAverage.Process(new DecimalIndicatorValue(_williamsRAverage, currentWilliamsR, candle.ServerTime));
 		var currentWilliamsRAvg = williamsRAvgValue.ToDecimal();
 		
 		// For first values, just save and skip

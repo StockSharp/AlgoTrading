@@ -115,11 +115,11 @@ public class TradingPanelControlStrategy : Strategy
 	{
 		_timeFrameName = Param(nameof(TimeFrameName), "M15")
 		.SetDisplay("Timeframe", "Preferred chart timeframe", "Panel")
-		.SetCanOptimize(false);
+		;
 
 		_securityId = Param(nameof(SecurityId), string.Empty)
 		.SetDisplay("Security Id", "Identifier of the instrument to control", "Panel")
-		.SetCanOptimize(false);
+		;
 
 		_autoLookupSecurity = Param(nameof(AutoLookupSecurity), true)
 		.SetDisplay("Auto Lookup", "Automatically resolve security by identifier", "Panel");
@@ -141,9 +141,9 @@ public class TradingPanelControlStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ApplySecurity();
 		ApplyTimeFrame();
@@ -249,7 +249,7 @@ public class TradingPanelControlStrategy : Strategy
 			case "H4":
 				return TimeSpan.FromHours(4).TimeFrame();
 			case "D1":
-				return TimeSpan.FromDays(1).TimeFrame();
+				return TimeSpan.FromMinutes(5).TimeFrame();
 			case "W1":
 				return TimeSpan.FromDays(7).TimeFrame();
 			default:

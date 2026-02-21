@@ -145,9 +145,9 @@ public class BrakeoutTraderV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var priceStep = Security?.PriceStep ?? 1m;
 		var decimals = Security?.Decimals;
@@ -171,7 +171,7 @@ public class BrakeoutTraderV1Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

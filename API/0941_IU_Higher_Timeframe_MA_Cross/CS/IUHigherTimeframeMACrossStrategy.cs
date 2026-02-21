@@ -38,15 +38,15 @@ public class IUHigherTimeframeMACrossStrategy : Strategy
 
 	private ICandleMessage _lastMa1Candle;
 
-	private LengthIndicator<decimal> _ma1Indicator;
-	private LengthIndicator<decimal> _ma2Indicator;
+	private DecimalLengthIndicator _ma1Indicator;
+	private DecimalLengthIndicator _ma2Indicator;
 
 	public IUHigherTimeframeMACrossStrategy()
 	{
 		_riskToReward = Param(nameof(RiskToReward), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("RTR", "Risk to reward ratio", "Protection")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 
 		_ma1CandleType = Param(nameof(Ma1CandleType), TimeSpan.FromMinutes(60).TimeFrame())
@@ -55,7 +55,7 @@ public class IUHigherTimeframeMACrossStrategy : Strategy
 		_ma1Length = Param(nameof(Ma1Length), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("MA1 Length", "Period for first MA", "Moving Averages")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 100, 5);
 
 		_ma1Type = Param(nameof(Ma1Type), MovingAverageTypes.Exponential)
@@ -67,7 +67,7 @@ public class IUHigherTimeframeMACrossStrategy : Strategy
 		_ma2Length = Param(nameof(Ma2Length), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("MA2 Length", "Period for second MA", "Moving Averages")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 5);
 
 		_ma2Type = Param(nameof(Ma2Type), MovingAverageTypes.Exponential)
@@ -85,9 +85,9 @@ public class IUHigherTimeframeMACrossStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	=> [(Security, Ma1CandleType), (Security, Ma2CandleType)];
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma1Indicator = CreateMa(Ma1Type, Ma1Length);
 		_ma2Indicator = CreateMa(Ma2Type, Ma2Length);
@@ -193,16 +193,16 @@ public class IUHigherTimeframeMACrossStrategy : Strategy
 		_takePrice = null;
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MovingAverageTypes type, int length)
+	private static DecimalLengthIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SMA { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

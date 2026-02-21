@@ -105,11 +105,11 @@ public class DoubleBollingerBandsSignalsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var bb1 = new BollingerBands
 		{
@@ -125,7 +125,7 @@ public class DoubleBollingerBandsSignalsStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bb1, bb2, ProcessCandle)
+			.BindEx(bb1, bb2, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -139,13 +139,21 @@ public class DoubleBollingerBandsSignalsStrategy : Strategy
 	}
 
 	private void ProcessCandle(ICandleMessage candle,
-		decimal middle1, decimal upper1, decimal lower1,
-		decimal middle2, decimal upper2, decimal lower2)
+		IIndicatorValue bb1Value, IIndicatorValue bb2Value)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var b1 = (BollingerBandsValue)bb1Value;
+		var b2 = (BollingerBandsValue)bb2Value;
+
+		if (b1.UpBand is not decimal upper1 || b1.LowBand is not decimal lower1)
+			return;
+
+		if (b2.UpBand is not decimal upper2 || b2.LowBand is not decimal lower2)
 			return;
 
 		var close = candle.ClosePrice;

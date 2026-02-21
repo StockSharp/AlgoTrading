@@ -66,7 +66,7 @@ public class ObjLabelExampleStrategy : Strategy
 
 		_labelText = Param(nameof(LabelText), "Simple text")
 			.SetDisplay("Label text", "Text shown on chart", "Visualization")
-			.SetCanOptimize(false);
+			;
 
 		_priceOffset = Param(nameof(PriceOffset), 0m)
 			.SetDisplay("Price offset", "Shift label vertically", "Visualization");
@@ -79,9 +79,9 @@ public class ObjLabelExampleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

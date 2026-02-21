@@ -78,7 +78,7 @@ public class HullSuite1RiskNoSlTpStrategy : Strategy
 		_hullLength = Param(nameof(HullLength), 55)
 						  .SetGreaterThanZero()
 						  .SetDisplay("Hull Length", "Period for Hull calculations", "Indicators")
-						  .SetCanOptimize(true)
+						  
 						  .SetOptimize(20, 80, 5);
 
 		_mode = Param(nameof(Mode), HullVariations.Hma)
@@ -105,9 +105,9 @@ public class HullSuite1RiskNoSlTpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		switch (Mode)
 		{
@@ -116,9 +116,9 @@ public class HullSuite1RiskNoSlTpStrategy : Strategy
 			_hullIndicator = _hma;
 			break;
 		case HullVariations.Ehma:
-			_ehmaFull = new ExponentialMovingAverage { Length = HullLength };
-			_ehmaHalf = new ExponentialMovingAverage { Length = HullLength / 2 };
-			_ehmaResult = new ExponentialMovingAverage { Length = (int)Math.Round(Math.Sqrt(HullLength)) };
+			_ehmaFull = new EMA { Length = HullLength };
+			_ehmaHalf = new EMA { Length = HullLength / 2 };
+			_ehmaResult = new EMA { Length = (int)Math.Round(Math.Sqrt(HullLength)) };
 			_hullIndicator = _ehmaResult;
 			break;
 		case HullVariations.Thma:

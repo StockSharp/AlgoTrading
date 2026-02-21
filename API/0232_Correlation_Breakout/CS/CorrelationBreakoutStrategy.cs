@@ -111,13 +111,13 @@ public class CorrelationBreakoutStrategy : Strategy
 
 		_lookbackPeriodParam = Param(nameof(LookbackPeriod), 20)
 			.SetDisplay("Lookback Period", "Period for calculating correlations", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5)
 			.SetGreaterThanZero();
 
 		_thresholdParam = Param(nameof(Threshold), 2m)
 			.SetDisplay("Threshold", "Threshold multiplier for standard deviation", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m)
 			.SetNotNegative();
 
@@ -155,9 +155,9 @@ public class CorrelationBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to candles for both assets
 		if (Asset1 != null && Asset2 != null && CandleType != null)
@@ -232,7 +232,7 @@ public class CorrelationBreakoutStrategy : Strategy
 		_lastCorrelation = CalculatePearsonCorrelation(_asset1Prices, _asset2Prices);
 
 		// Process correlation through the indicator
-		var stdDevValue = _corrStdDev.Process(_lastCorrelation, candle.ServerTime, candle.State == CandleStates.Finished);
+		var stdDevValue = _corrStdDev.Process(new DecimalIndicatorValue(_corrStdDev, _lastCorrelation, candle.ServerTime));
 
 		// Move to next bar after first LookbackPeriod bars filled
 		if (!_corrStdDev.IsFormed)

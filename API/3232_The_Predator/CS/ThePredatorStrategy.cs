@@ -46,7 +46,7 @@ public class ThePredatorStrategy : Strategy
 	private DirectionalIndex _directionalIndex = null!;
 	private AverageDirectionalIndex _adx = null!;
 	private Momentum _momentum = null!;
-	private MovingAverageConvergenceDivergence _macd = null!;
+	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 	private BollingerBands _tightBands = null!;
 	private BollingerBands _wideBands = null!;
 	private StochasticOscillator _stochastic = null!;
@@ -364,9 +364,9 @@ public class ThePredatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = new WeightedMovingAverage { Length = FastMaLength };
 		_slowMa = new WeightedMovingAverage { Length = SlowMaLength };
@@ -377,8 +377,7 @@ public class ThePredatorStrategy : Strategy
 		_tightBands = new BollingerBands { Length = BollingerPeriod, Width = TightBandWidth };
 		_wideBands = new BollingerBands { Length = BollingerPeriod, Width = WideBandWidth };
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			Smooth = StochasticSmooth,
 			K = { Length = StochasticLength },
 			D = { Length = StochasticSmooth }

@@ -107,13 +107,13 @@ public class PerceptronAcStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_aoFast = new SimpleMovingAverage { Length = 5 };
-		_aoSlow = new SimpleMovingAverage { Length = 34 };
-		_acMa = new SimpleMovingAverage { Length = 5 };
+		_aoFast = new SMA { Length = 5 };
+		_aoSlow = new SMA { Length = 34 };
+		_acMa = new SMA { Length = 5 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -134,10 +134,10 @@ public class PerceptronAcStrategy : Strategy
 			return;
 
 		var hl2 = (candle.HighPrice + candle.LowPrice) / 2m;
-		var fast = _aoFast.Process(hl2, candle.OpenTime, true).ToDecimal();
-		var slow = _aoSlow.Process(hl2, candle.OpenTime, true).ToDecimal();
+		var fast = _aoFast.Process(new DecimalIndicatorValue(_aoFast, hl2, candle.OpenTime)).ToDecimal();
+		var slow = _aoSlow.Process(new DecimalIndicatorValue(_aoSlow, hl2, candle.OpenTime)).ToDecimal();
 		var ao = fast - slow;
-		var ac = ao - _acMa.Process(ao, candle.OpenTime, true).ToDecimal();
+		var ac = ao - _acMa.Process(new DecimalIndicatorValue(_acMa, ao, candle.OpenTime)).ToDecimal();
 
 		_acValues.Insert(0, ac);
 		if (_acValues.Count > 22)

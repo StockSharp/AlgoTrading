@@ -47,37 +47,37 @@ public class EmaLwmaRsiStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 150)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips. Zero disables the stop.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 300, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Target distance in pips. Zero disables the target.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 300, 10);
 
 		_emaPeriod = Param(nameof(EmaPeriod), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA period", "Length of the exponential moving average.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 100, 1);
 
 		_lwmaPeriod = Param(nameof(LwmaPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("LWMA period", "Length of the linear weighted moving average.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 50, 1);
 
 		_maShift = Param(nameof(MaShift), 0)
 			.SetNotNegative()
 			.SetDisplay("MA shift", "Forward shift applied to both moving averages (bars).", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 5, 1);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI period", "Number of bars for the RSI smoothing window.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 1);
 
 		_maAppliedPrice = Param(nameof(MaAppliedPrice), AppliedPriceTypes.Weighted)
@@ -166,11 +166,11 @@ public class EmaLwmaRsiStrategy : Strategy
 		_orderInFlight = false;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_ema = new EMA { Length = EmaPeriod };
 		_lwma = new WeightedMovingAverage { Length = LwmaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_emaShiftIndicator = MaShift > 0 ? new Shift { Length = MaShift } : null;
@@ -238,23 +238,23 @@ public class EmaLwmaRsiStrategy : Strategy
 		var rsiPrice = GetAppliedPrice(candle, RsiAppliedPrice);
 		var time = candle.OpenTime;
 
-		var emaValue = _ema.Process(maPrice, time, true).ToDecimal();
-		var lwmaValue = _lwma.Process(maPrice, time, true).ToDecimal();
-		var rsiValue = _rsi.Process(rsiPrice, time, true).ToDecimal();
+		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, maPrice, time)).ToDecimal();
+		var lwmaValue = _lwma.Process(new DecimalIndicatorValue(_lwma, maPrice, time)).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiPrice, time)).ToDecimal();
 
 		if (!_ema.IsFormed || !_lwma.IsFormed || !_rsi.IsFormed)
 			return;
 
 		if (_emaShiftIndicator != null)
 		{
-			emaValue = _emaShiftIndicator.Process(emaValue, time, true).ToDecimal();
+			emaValue = _emaShiftIndicator.Process(new DecimalIndicatorValue(_emaShiftIndicator, emaValue, time)).ToDecimal();
 			if (!_emaShiftIndicator.IsFormed)
 				return;
 		}
 
 		if (_lwmaShiftIndicator != null)
 		{
-			lwmaValue = _lwmaShiftIndicator.Process(lwmaValue, time, true).ToDecimal();
+			lwmaValue = _lwmaShiftIndicator.Process(new DecimalIndicatorValue(_lwmaShiftIndicator, lwmaValue, time)).ToDecimal();
 			if (!_lwmaShiftIndicator.IsFormed)
 				return;
 		}

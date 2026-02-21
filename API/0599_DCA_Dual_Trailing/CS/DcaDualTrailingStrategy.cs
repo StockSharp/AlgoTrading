@@ -313,9 +313,9 @@ _cooldownCounter = 0;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _fastEma = new() { Length = FastEmaLength };
 _slowEma = new() { Length = SlowEmaLength };
@@ -326,7 +326,7 @@ subscription
 .Bind(_fastEma, _slowEma, _atr, ProcessCandle)
 .Start();
 
-StartProtection();
+StartProtection(null, null);
 }
 
 private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atr)

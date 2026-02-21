@@ -63,12 +63,12 @@ public class GoldenRatioCubesStrategy : Strategy
 		_lookback = Param(nameof(Lookback), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Lookback period for highest and lowest", "Golden Ratio")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(13, 55, 5);
 
 		_phi = Param(nameof(Phi), 1.618m)
 			.SetDisplay("Phi", "Golden ratio multiplier", "Golden Ratio")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 2m, 0.1m);
 	}
 
@@ -79,9 +79,9 @@ public class GoldenRatioCubesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = Lookback };
 		_lowest = new Lowest { Length = Lookback };
@@ -100,7 +100,7 @@ public class GoldenRatioCubesStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue highestValue, IIndicatorValue lowestValue)

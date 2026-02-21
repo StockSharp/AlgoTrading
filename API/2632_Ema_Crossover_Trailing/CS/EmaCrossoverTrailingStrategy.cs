@@ -46,25 +46,25 @@ public class EmaCrossoverTrailingStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Period of the fast exponential moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Period of the slow exponential moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 2);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 20m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Distance from price to trailing stop expressed in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 40m, 5m);
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (points)", "Minimum price advancement before the trailing stop is moved", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -148,14 +148,14 @@ public class EmaCrossoverTrailingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
-		_fastEma = new ExponentialMovingAverage { Length = FastPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
+		_fastEma = new EMA { Length = FastPeriod };
+		_slowEma = new EMA { Length = SlowPeriod };
 
 		_stopDistance = CalculateDistance(TrailingStopPoints);
 		_stepDistance = CalculateDistance(TrailingStepPoints);

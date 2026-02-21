@@ -59,27 +59,27 @@ public class BroadeningTopStrategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Length of the fast LWMA", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Length of the slow LWMA", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Momentum lookback period", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Buy Threshold", "Minimum distance from 100 for long setups", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Sell Threshold", "Minimum distance from 100 for short setups", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetGreaterThanZero()
@@ -282,21 +282,16 @@ public class BroadeningTopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
 		_fastMa = new WeightedMovingAverage { Length = FastMaLength };
 		_slowMa = new WeightedMovingAverage { Length = SlowMaLength };
 		_momentum = new Momentum { Length = MomentumPeriod };
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Fast = MacdFast,
-			Slow = MacdSlow,
-			Signal = MacdSignal
-		};
+		_macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow } }, SignalMa = { Length = MacdSignal } };
 
 		_pipSize = CalculatePipSize();
 
@@ -340,11 +335,11 @@ public class BroadeningTopStrategy : Strategy
 		if (_momentum.Length != MomentumPeriod)
 			_momentum.Length = MomentumPeriod;
 
-		if (_macd.Fast != MacdFast)
-			_macd.Fast = MacdFast;
+		if (_macd.ShortMa != MacdFast)
+			_macd.ShortMa = MacdFast;
 
-		if (_macd.Slow != MacdSlow)
-			_macd.Slow = MacdSlow;
+		if (_macd.LongMa != MacdSlow)
+			_macd.LongMa = MacdSlow;
 
 		if (_macd.Signal != MacdSignal)
 			_macd.Signal = MacdSignal;

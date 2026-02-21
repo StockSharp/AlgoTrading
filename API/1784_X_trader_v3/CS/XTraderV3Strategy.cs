@@ -97,11 +97,11 @@ public class XTraderV3Strategy : Strategy
 
 		_ma1Period = Param(nameof(Ma1Period), 16)
 			.SetDisplay("MA1 Period", "Period for first moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_ma2Period = Param(nameof(Ma2Period), 1)
 			.SetDisplay("MA2 Period", "Period for second moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_startTime = Param(nameof(StartTime), TimeSpan.Zero)
 			.SetDisplay("Start Time", "Trading window start", "Time");
@@ -120,20 +120,20 @@ public class XTraderV3Strategy : Strategy
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 150)
 			.SetDisplay("Take Profit Ticks", "Take profit in ticks", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 100)
 			.SetDisplay("Stop Loss Ticks", "Stop loss in ticks", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ma1 = new SimpleMovingAverage { Length = Ma1Period };
-		_ma2 = new SimpleMovingAverage { Length = Ma2Period };
+		_ma1 = new SMA { Length = Ma1Period };
+		_ma2 = new SMA { Length = Ma2Period };
 
 		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)

@@ -68,25 +68,25 @@ public class AdxSlopeBreakoutStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 			
 		_slopePeriod = Param(nameof(SlopePeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slope Period", "Period for slope average and standard deviation", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 			
 		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout", "Signal")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 			
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -112,9 +112,9 @@ public class AdxSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Initialize indicators
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
@@ -163,7 +163,7 @@ public class AdxSlopeBreakoutStrategy : Strategy
 			return;
 
 		// Calculate ADX slope
-		var currentSlopeTyped = (LinearRegressionValue)_adxSlope.Process(adx, candle.ServerTime, candle.State == CandleStates.Finished);
+		var currentSlopeTyped = (LinearRegressionValue)_adxSlope.Process(new DecimalIndicatorValue(_adxSlope, adx, candle.ServerTime));
 
 		if (currentSlopeTyped.LinearReg is not decimal currentSlopeValue)
 			return;

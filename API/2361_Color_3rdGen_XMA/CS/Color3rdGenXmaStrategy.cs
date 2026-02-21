@@ -124,10 +124,10 @@ public class Color3rdGenXmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		_xma.Length = Length;
 
@@ -167,7 +167,7 @@ public class Color3rdGenXmaStrategy : Strategy
 			}
 		}
 
-		var time = candle.OpenTime.LocalDateTime;
+		var time = candle.OpenTime;
 
 		if (_pendingBuy && time.Hour == StartHour && time.Minute == StartMinute && Position <= 0)
 		{
@@ -238,7 +238,7 @@ public class Color3rdGenXmaStrategy : Strategy
 		_prevXma = xmaValue;
 	}
 
-	private class ThirdGenerationXma : Indicator<decimal>
+	private class ThirdGenerationXma : BaseIndicator
 	{
 		public int Length { get; set; } = 50;
 

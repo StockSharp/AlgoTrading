@@ -132,7 +132,7 @@ public class LongOnlyOpeningRangeBreakoutWithPivotPointsStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
+		return [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
 	}
 
 	/// <inheritdoc />
@@ -149,15 +149,15 @@ public class LongOnlyOpeningRangeBreakoutWithPivotPointsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_sessionStartTime = GetNextSessionStart(time);
 		_sessionEndTime = _sessionStartTime.AddMinutes(RangeMinutes);
 
 		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
-		SubscribeCandles(TimeSpan.FromDays(1).TimeFrame()).Bind(ProcessDaily).Start();
+		SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame()).Bind(ProcessDaily).Start();
 	}
 
 	private DateTimeOffset GetNextSessionStart(DateTimeOffset time)

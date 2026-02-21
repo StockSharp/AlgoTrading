@@ -113,31 +113,31 @@ public class SupermacbotByTheGuardianForexTvStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 1);
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "MACD fast EMA period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "MACD slow EMA period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(18, 40, 1);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "MACD signal EMA period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_histogramThreshold = Param(nameof(HistogramThreshold), 0m)
@@ -146,7 +146,7 @@ public class SupermacbotByTheGuardianForexTvStrategy : Strategy
 		_trailingPeriod = Param(nameof(TrailingPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing SMA", "Trailing SMA period", "Logic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 30, 1);
 	}
 
@@ -172,14 +172,14 @@ public class SupermacbotByTheGuardianForexTvStrategy : Strategy
 
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 
-		var fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
-		var slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
-		var trailingMa = new SimpleMovingAverage { Length = TrailingPeriod };
+		var fastMa = new SMA { Length = FastMaPeriod };
+		var slowMa = new SMA { Length = SlowMaPeriod };
+		var trailingMa = new SMA { Length = TrailingPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

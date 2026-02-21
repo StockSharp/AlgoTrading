@@ -115,7 +115,7 @@ public class XrsiHistogramVolDirectStrategy : Strategy
 
 		_smoothMethod = Param(nameof(SmoothMethod), XrsiSmoothMethods.Sma)
 			.SetDisplay("Smoothing Method", "Type of moving average used for smoothing", "Indicator")
-			.SetCanOptimize(false);
+			;
 
 		_useTickVolume = Param(nameof(UseTickVolume), true)
 			.SetDisplay("Use Tick Volume", "Use tick count instead of traded volume", "Indicator");
@@ -138,9 +138,9 @@ public class XrsiHistogramVolDirectStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RSI { Length = RsiPeriod };
 		_mainSmoother = CreateSmoother();

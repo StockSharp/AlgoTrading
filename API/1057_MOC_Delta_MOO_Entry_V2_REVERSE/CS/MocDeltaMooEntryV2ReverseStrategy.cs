@@ -88,19 +88,19 @@ public class MocDeltaMooEntryV2ReverseStrategy : Strategy
 		_savedMocDeltaPct = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma15 = new SimpleMovingAverage { Length = 15 };
-		_sma30 = new SimpleMovingAverage { Length = 30 };
+		_sma15 = new SMA { Length = 15 };
+		_sma30 = new SMA { Length = 30 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

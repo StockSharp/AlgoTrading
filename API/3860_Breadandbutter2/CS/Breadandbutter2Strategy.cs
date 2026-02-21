@@ -93,19 +93,19 @@ public class Breadandbutter2Strategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 20)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Profit target in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 200, 5);
 
 		_stopLoss = Param(nameof(StopLoss), 20)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Loss limit in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 200, 5);
 
 		_interval = Param(nameof(Interval), 4)
 			.SetNotNegative()
 			.SetDisplay("Interval", "Bars between additional entries", "Trading logic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 10, 1);
 
 		_crossFilter = Param(nameof(CrossFilter), 1.1m)
@@ -134,33 +134,30 @@ public class Breadandbutter2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_wma5 = new WeightedMovingAverage
 		{
-			Length = 5,
-			CandlePrice = CandlePrice.Open,
+			Length = 5
 		};
 
 		_wma10 = new WeightedMovingAverage
 		{
-			Length = 10,
-			CandlePrice = CandlePrice.Open,
+			Length = 10
 		};
 
 		_wma15 = new WeightedMovingAverage
 		{
-			Length = 15,
-			CandlePrice = CandlePrice.Open,
+			Length = 15
 		};
 
 		SubscribeCandles(CandleType)
 			.Bind(_wma5, _wma10, _wma15, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal wma5, decimal wma10, decimal wma15)

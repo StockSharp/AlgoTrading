@@ -78,7 +78,7 @@ public class StaticArrowEaStrategy : Strategy
 		_arrowCount = Param(nameof(ArrowCount), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Arrow Count", "Number of chart arrows", "Drawing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 80, 5);
 
 		_priceOffset = Param(nameof(PriceOffset), 0m)
@@ -107,9 +107,9 @@ public class StaticArrowEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Determine the timeframe from the selected candle type.
 		if (CandleType.Arg is not TimeSpan frame)

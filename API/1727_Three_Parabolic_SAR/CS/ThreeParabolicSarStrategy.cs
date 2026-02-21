@@ -42,11 +42,11 @@ public class ThreeParabolicSarStrategy : Strategy
 	{
 		_acceleration = Param(nameof(Acceleration), 0.02m)
 			.SetDisplay("Acceleration", "Parabolic SAR acceleration", "SAR")
-			.SetCanOptimize(true);
+			;
 
 		_maxAcceleration = Param(nameof(MaxAcceleration), 0.2m)
 			.SetDisplay("Max Acceleration", "Parabolic SAR maximum acceleration", "SAR")
-			.SetCanOptimize(true);
+			;
 
 		_higherTimeframe = Param(nameof(HigherTimeframe), TimeSpan.FromHours(6).TimeFrame())
 			.SetDisplay("Higher Timeframe", "First timeframe", "General");
@@ -124,9 +124,9 @@ public class ThreeParabolicSarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_higherSar = new ParabolicSar { Acceleration = Acceleration, AccelerationMax = MaxAcceleration };
 		_middleSar = new ParabolicSar { Acceleration = Acceleration, AccelerationMax = MaxAcceleration };
@@ -141,7 +141,7 @@ public class ThreeParabolicSarStrategy : Strategy
 		var tradingSub = SubscribeCandles(TradingTimeframe);
 		tradingSub.Bind(_tradingSar, ProcessTrading).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

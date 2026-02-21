@@ -56,17 +56,17 @@ public class CleanerScreenersLibraryStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Period for RSI indicator", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_strongThreshold = Param(nameof(StrongThreshold), 70m)
 			.SetDisplay("Strong Threshold", "Upper RSI threshold for strong rating", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_weakThreshold = Param(nameof(WeakThreshold), 60m)
 			.SetDisplay("Weak Threshold", "RSI threshold for buy rating", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40m, 70m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -81,9 +81,9 @@ public class CleanerScreenersLibraryStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		foreach (var security in Symbols)
 		{

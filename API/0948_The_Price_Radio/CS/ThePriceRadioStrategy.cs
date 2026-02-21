@@ -55,7 +55,7 @@ public class ThePriceRadioStrategy : Strategy
 		_length = Param(nameof(Length), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Lookback period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -76,15 +76,15 @@ public class ThePriceRadioStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_envelope = new Highest { Length = 4 };
-		_amSma = new SimpleMovingAverage { Length = Length };
+		_amSma = new SMA { Length = Length };
 		_derivHigh = new Highest { Length = Length };
 		_derivLow = new Lowest { Length = Length };
-		_fmSma = new SimpleMovingAverage { Length = Length };
+		_fmSma = new SMA { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -113,14 +113,14 @@ public class ThePriceRadioStrategy : Strategy
 		var deriv = candle.ClosePrice - _prevClose;
 		_prevClose = candle.ClosePrice;
 
-		var envelope = _envelope.Process(Math.Abs(deriv), candle.OpenTime, true).ToDecimal();
-		var am = _amSma.Process(envelope, candle.OpenTime, true).ToDecimal();
+		var envelope = _envelope.Process(new DecimalIndicatorValue(_envelope, Math.Abs(deriv), candle.OpenTime)).ToDecimal();
+		var am = _amSma.Process(new DecimalIndicatorValue(_amSma, envelope, candle.OpenTime)).ToDecimal();
 
-		var high = _derivHigh.Process(deriv, candle.OpenTime, true).ToDecimal();
-		var low = _derivLow.Process(deriv, candle.OpenTime, true).ToDecimal();
+		var high = _derivHigh.Process(new DecimalIndicatorValue(_derivHigh, deriv, candle.OpenTime)).ToDecimal();
+		var low = _derivLow.Process(new DecimalIndicatorValue(_derivLow, deriv, candle.OpenTime)).ToDecimal();
 
 		var clamped = Math.Min(Math.Max(10m * deriv, low), high);
-		var fm = _fmSma.Process(clamped, candle.OpenTime, true).ToDecimal();
+		var fm = _fmSma.Process(new DecimalIndicatorValue(_fmSma, clamped, candle.OpenTime)).ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

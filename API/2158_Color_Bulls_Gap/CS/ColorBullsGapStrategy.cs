@@ -73,13 +73,13 @@ public class ColorBullsGapStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		_smaClose = new SimpleMovingAverage { Length = Length1 };
-		_smaOpen = new SimpleMovingAverage { Length = Length1 };
-		_smaBullsC = new SimpleMovingAverage { Length = Length2 };
-		_smaBullsO = new SimpleMovingAverage { Length = Length2 };
+		base.OnStarted2(time);
+		_smaClose = new SMA { Length = Length1 };
+		_smaOpen = new SMA { Length = Length1 };
+		_smaBullsC = new SMA { Length = Length2 };
+		_smaBullsO = new SMA { Length = Length2 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)

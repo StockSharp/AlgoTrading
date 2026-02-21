@@ -179,11 +179,11 @@ public class I4DrfV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_drf = new DrfIndicator { Length = Period };
 
@@ -299,7 +299,7 @@ public class I4DrfV2Strategy : Strategy
 		_prevColor = currentColor;
 	}
 
-	private sealed class DrfIndicator : LengthIndicator<decimal>
+	private sealed class DrfIndicator : DecimalLengthIndicator
 	{
 		private readonly Queue<int> _signs = new();
 		private decimal? _prevPrice;

@@ -169,19 +169,19 @@ public class ColorNonLagDotMacdStrategy : Strategy
 	    _fastLength = Param(nameof(FastLength), 12)
 	        .SetGreaterThanZero()
 	        .SetDisplay("Fast Length", "Fast EMA period", "MACD Settings")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(6, 18, 2);
 
 	    _slowLength = Param(nameof(SlowLength), 26)
 	        .SetGreaterThanZero()
 	        .SetDisplay("Slow Length", "Slow EMA period", "MACD Settings")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(20, 40, 2);
 
 	    _signalLength = Param(nameof(SignalLength), 9)
 	        .SetGreaterThanZero()
 	        .SetDisplay("Signal Length", "Signal line period", "MACD Settings")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(5, 15, 2);
 
 	    _mode = Param(nameof(Mode), AlgorithmModes.MacdDisposition)

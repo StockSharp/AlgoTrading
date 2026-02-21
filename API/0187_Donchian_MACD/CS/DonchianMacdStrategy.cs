@@ -97,27 +97,27 @@ public class DonchianMacdStrategy : Strategy
 	{
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 			.SetRange(5, 50)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Donchian Period", "Channel lookback period", "Indicators");
 
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetRange(8, 20)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("MACD Fast Period", "Fast EMA period for MACD", "Indicators");
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 			.SetRange(20, 40)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("MACD Slow Period", "Slow EMA period for MACD", "Indicators");
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetRange(5, 15)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("MACD Signal Period", "Signal line period for MACD", "Indicators");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(1m, 5m)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

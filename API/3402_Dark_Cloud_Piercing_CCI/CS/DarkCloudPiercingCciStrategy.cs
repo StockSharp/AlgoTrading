@@ -126,13 +126,13 @@ public class DarkCloudPiercingCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators used by the strategy.
-		_bodyAverage = new SimpleMovingAverage { Length = AverageBodyPeriod };
-		_closeAverage = new SimpleMovingAverage { Length = AverageBodyPeriod };
+		_bodyAverage = new SMA { Length = AverageBodyPeriod };
+		_closeAverage = new SMA { Length = AverageBodyPeriod };
 		_cciIndicator = new CommodityChannelIndex { Length = CciPeriod };
 
 		// Subscribe to candle data and bind indicators.
@@ -149,8 +149,8 @@ public class DarkCloudPiercingCciStrategy : Strategy
 
 		// Update moving averages based on the freshly closed candle.
 		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var bodyAverageValue = _bodyAverage.Process(body, candle.OpenTime, true);
-		var closeAverageValue = _closeAverage.Process(candle.ClosePrice, candle.OpenTime, true);
+		var bodyAverageValue = _bodyAverage.Process(new DecimalIndicatorValue(_bodyAverage, body, candle.OpenTime));
+		var closeAverageValue = _closeAverage.Process(new DecimalIndicatorValue(_closeAverage, candle.ClosePrice, candle.OpenTime));
 
 		if (_lastCandle is { } last && _previousCandle is { } previous &&
 			_lastCci is decimal lastCci && _previousCci is decimal previousCci)

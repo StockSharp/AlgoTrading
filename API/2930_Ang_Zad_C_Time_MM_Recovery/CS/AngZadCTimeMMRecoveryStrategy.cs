@@ -220,7 +220,7 @@ public class AngZadCTimeMMRecoveryStrategy : Strategy
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Bar shift applied when evaluating signals.", "Indicator")
-			.SetCanOptimize(false);
+			;
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), true)
 			.SetDisplay("Use Time Filter", "Enable session based trading filter.", "Trading Hours");
@@ -269,9 +269,9 @@ public class AngZadCTimeMMRecoveryStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

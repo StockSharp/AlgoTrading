@@ -131,12 +131,12 @@ public class ControlPanelStrategy : Strategy
 	public IReadOnlyList<decimal> VolumeOptions => _volumeOptions;
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Enable built-in protection manager so protective orders are handled correctly.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />
@@ -262,7 +262,7 @@ public class ControlPanelStrategy : Strategy
 		if (offset <= 0m)
 			return false;
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 
 		// Replace any existing stop before submitting the new break-even order.
 		CancelStopOrder();
@@ -297,7 +297,7 @@ public class ControlPanelStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 
 		var stopOffset = GetOffsetPrice(StopLossSteps);
 		if (stopOffset > 0m)

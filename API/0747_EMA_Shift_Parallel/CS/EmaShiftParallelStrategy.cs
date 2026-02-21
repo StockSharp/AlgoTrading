@@ -203,11 +203,11 @@ public class EmaShiftParallelStrategy : Strategy
 		.SetDisplay("Enable Long", "Enable long trades", "Long");
 		_emaFastLong = Param(nameof(EmaFastLong), 20)
 		.SetDisplay("Fast EMA Long", "Fast EMA length for long", "Long")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 		_emaSlowLong = Param(nameof(EmaSlowLong), 420)
 		.SetDisplay("Slow EMA Long", "Slow EMA length for long", "Long")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100, 600, 20);
 		_downShift = Param(nameof(DownShift), 0.98m)
 		.SetDisplay("Down Shift", "Multiplier for fast EMA", "Long");
@@ -228,11 +228,11 @@ public class EmaShiftParallelStrategy : Strategy
 		.SetDisplay("Enable Short", "Enable short trades", "Short");
 		_emaFastShort = Param(nameof(EmaFastShort), 30)
 		.SetDisplay("Fast EMA Short", "Fast EMA length for short", "Short")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 		_emaSlowShort = Param(nameof(EmaSlowShort), 500)
 		.SetDisplay("Slow EMA Short", "Slow EMA length for short", "Short")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100, 700, 20);
 		_upShift = Param(nameof(UpShift), 1.02m)
 		.SetDisplay("Up Shift", "Multiplier for fast EMA", "Short");
@@ -286,9 +286,9 @@ public class EmaShiftParallelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_emaFastLongInd.Length = EmaFastLong;
 		_emaSlowLongInd.Length = EmaSlowLong;

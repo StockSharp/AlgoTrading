@@ -64,13 +64,13 @@ public class DojiReversalStrategy : Strategy
 		_dojiThreshold = Param(nameof(DojiThreshold), 0.1m)
 			.SetNotNegative()
 			.SetDisplay("Doji Threshold", "Maximum body size as percentage of candle range to consider it a doji", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.2m, 0.05m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2.0m, 0.5m);
 	}
 
@@ -90,9 +90,9 @@ public class DojiReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create subscription
 		var subscription = SubscribeCandles(CandleType);

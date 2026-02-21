@@ -286,9 +286,9 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	var gap = GetGapValue();
 
@@ -488,7 +488,7 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 	}
 	}
 
-	private sealed class X2MaCandleColorIndicator : LengthIndicator<decimal>
+	private sealed class X2MaCandleColorIndicator : DecimalLengthIndicator
 	{
 	private readonly MovingAveragePipeline _open;
 	private readonly MovingAveragePipeline _high;
@@ -579,12 +579,12 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 	{
 	return method switch
 	{
-	SmoothMethods.Simple => new SimpleMovingAverage { Length = Math.Max(1, length) },
-	SmoothMethods.Exponential => new ExponentialMovingAverage { Length = Math.Max(1, length) },
+	SmoothMethods.Simple => new SMA { Length = Math.Max(1, length) },
+	SmoothMethods.Exponential => new EMA { Length = Math.Max(1, length) },
 	SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = Math.Max(1, length) },
 	SmoothMethods.Weighted => new WeightedMovingAverage { Length = Math.Max(1, length) },
 	SmoothMethods.Jurik => CreateJurik(length, phase),
-	_ => new SimpleMovingAverage { Length = Math.Max(1, length) }
+	_ => new SMA { Length = Math.Max(1, length) }
 	};
 	}
 

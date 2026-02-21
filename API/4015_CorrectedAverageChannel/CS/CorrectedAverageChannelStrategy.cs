@@ -31,7 +31,7 @@ public class CorrectedAverageChannelStrategy : Strategy
 	private readonly StrategyParam<int> _sigmaSellPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _ma;
+	private DecimalLengthIndicator _ma;
 	private StandardDeviation _std;
 
 	private decimal _priceStep;
@@ -152,32 +152,32 @@ public class CorrectedAverageChannelStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Market order size used for entries", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 60)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance from entry to the profit target in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 40)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Distance from entry to the protective stop in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingPoints = Param(nameof(TrailingPoints), 0)
 			.SetNotNegative()
 			.SetDisplay("Trailing Trigger (points)", "Profit distance required before the trailing stop activates", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 0)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (points)", "Minimum advance in price steps before the trailing stop moves", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_maPeriod = Param(nameof(MaPeriod), 35)
 			.SetRange(2, 500)
 			.SetDisplay("MA Period", "Period of the moving average and standard deviation", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_maType = Param(nameof(MaTypesOption), MaTypes.Sma)
 			.SetDisplay("MA Type", "Moving average type used inside the Corrected Average", "Indicator");
@@ -185,12 +185,12 @@ public class CorrectedAverageChannelStrategy : Strategy
 		_sigmaBuyPoints = Param(nameof(SigmaBuyPoints), 5)
 			.SetNotNegative()
 			.SetDisplay("Sigma BUY (points)", "Offset added above the corrected average before buying", "Signal")
-			.SetCanOptimize(true);
+			;
 
 		_sigmaSellPoints = Param(nameof(SigmaSellPoints), 5)
 			.SetNotNegative()
 			.SetDisplay("Sigma SELL (points)", "Offset subtracted from the corrected average before selling", "Signal")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "Data");
@@ -229,9 +229,9 @@ public class CorrectedAverageChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = CreateMa(MaTypesOption, MaPeriod);
 		_std = new StandardDeviation
@@ -506,12 +506,12 @@ public class CorrectedAverageChannelStrategy : Strategy
 		return points * _priceStep;
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MaTypes type, int length)
+	private static DecimalLengthIndicator CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaTypes.Sma => new SimpleMovingAverage { Length = length },
-			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
+			MaTypes.Sma => new SMA { Length = length },
+			MaTypes.Ema => new EMA { Length = length },
 			MaTypes.Smma => new SmoothedMovingAverage { Length = length },
 			MaTypes.Lwma => new WeightedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type))

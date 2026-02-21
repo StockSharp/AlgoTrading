@@ -101,31 +101,31 @@ public class Emagic1Strategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Length for fast EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Length for slow EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 1);
 
 		_macdFast = Param(nameof(MacdFast), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_macdSlow = Param(nameof(MacdSlow), 32)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 1);
 
 		_macdSignal = Param(nameof(MacdSignal), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
@@ -168,9 +168,9 @@ public class Emagic1Strategy : Strategy
 	{
 		base.OnStarted(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var fastEma = new EMA { Length = FastEmaLength };
 		// Original strategy used open price for slow EMA; close price is used here for simplicity.
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var slowEma = new EMA { Length = SlowEmaLength };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =

@@ -34,17 +34,17 @@ public class AutoRiskStrategy : Strategy
 	public AutoRiskStrategy()
 	{
 		_riskFactor = Param(nameof(RiskFactor), 2m)
-			.SetDisplay("Risk % on daily ATR")
-			.SetCanOptimize(true);
+			.SetDisplay("Risk % on daily ATR", "Risk % on daily ATR", "General")
+			;
 
 		_calculationMode = Param(nameof(CalculationMode), AutoRiskCalculationModes.Balance)
-			.SetDisplay("Account metric used in the lot size formula");
+			.SetDisplay("Account metric used in the lot size formula", "Account metric used in the lot size formula", "General");
 
 		_roundUp = Param(nameof(RoundUp), true)
-			.SetDisplay("Round the calculated volume to the nearest step");
+			.SetDisplay("Round the calculated volume to the nearest step", "Round the calculated volume to the nearest step", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
-			.SetDisplay("Candle type for ATR calculation");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle type for ATR calculation", "Candle type for ATR calculation", "General");
 	}
 
 	/// <summary>
@@ -89,11 +89,11 @@ public class AutoRiskStrategy : Strategy
 	public decimal RecommendedVolume => _recommendedVolume;
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var atr = new AverageTrueRange
 		{

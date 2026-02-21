@@ -190,29 +190,29 @@ public class AlligatorTrendStrategy : Strategy
 		_jawLength = Param(nameof(JawLength), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Jaw Length", "Smoothed moving average period for the jaw", "Alligator")
-			.SetCanOptimize(true);
+			;
 
 		_teethLength = Param(nameof(TeethLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Teeth Length", "Smoothed moving average period for the teeth", "Alligator")
-			.SetCanOptimize(true);
+			;
 
 		_lipsLength = Param(nameof(LipsLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Lips Length", "Smoothed moving average period for the lips", "Alligator")
-			.SetCanOptimize(true);
+			;
 
 		_jawShift = Param(nameof(JawShift), 8)
 			.SetDisplay("Jaw Shift", "Forward shift applied to the jaw line", "Alligator")
-			.SetCanOptimize(true);
+			;
 
 		_teethShift = Param(nameof(TeethShift), 5)
 			.SetDisplay("Teeth Shift", "Forward shift applied to the teeth line", "Alligator")
-			.SetCanOptimize(true);
+			;
 
 		_lipsShift = Param(nameof(LipsShift), 3)
 			.SetDisplay("Lips Shift", "Forward shift applied to the lips line", "Alligator")
-			.SetCanOptimize(true);
+			;
 
 		_enableLong = Param(nameof(EnableLong), true)
 			.SetDisplay("Enable Long", "Allow long entries", "Trading");
@@ -222,23 +222,23 @@ public class AlligatorTrendStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 45m)
 			.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 145m)
 			.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_zeroLevelPips = Param(nameof(ZeroLevelPips), 30m)
 			.SetDisplay("Zero Level", "Distance to move stop to break-even", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 50m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 10m)
 			.SetDisplay("Trailing Step", "Minimum trailing stop increment in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -248,9 +248,9 @@ public class AlligatorTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var jaw = new SmoothedMovingAverage { Length = JawLength };
 		var teeth = new SmoothedMovingAverage { Length = TeethLength };
@@ -270,7 +270,7 @@ public class AlligatorTrendStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 
 		void ProcessCandle(ICandleMessage candle)
 		{

@@ -134,53 +134,53 @@ public class VolatilityMomentumBreakoutStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR calculation period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "ATR multiplier for breakout", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_lookback = Param(nameof(Lookback), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Breakout lookback period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA period for trend filter", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_rsiLongThreshold = Param(nameof(RsiLongThreshold), 50m)
 			.SetDisplay("RSI Long Threshold", "RSI threshold for long trades", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40m, 60m, 5m);
 
 		_rsiShortThreshold = Param(nameof(RsiShortThreshold), 50m)
 			.SetDisplay("RSI Short Threshold", "RSI threshold for short trades", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40m, 60m, 5m);
 
 		_riskReward = Param(nameof(RiskReward), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Reward", "Risk-reward ratio", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_atrStopMultiplier = Param(nameof(AtrStopMultiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Stop Mult", "ATR multiplier for stop", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -204,12 +204,12 @@ public class VolatilityMomentumBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_highest = new Highest { Length = Lookback };
 		_lowest = new Lowest { Length = Lookback };

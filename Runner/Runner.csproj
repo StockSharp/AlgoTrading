@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\StockSharp (GitHub)\common_target_net_new.props" />
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>StockSharp.AlgoTrading.Runner</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="StockSharp.Samples.HistoryData" Version="$(StockSharpVer)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\StockSharp (GitHub)\Algo\Algo.csproj" />
+    <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Indicators\Algo.Indicators.csproj" />
+    <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Strategies\Algo.Strategies.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Current strategy file -->
+    <Compile Include="../API/0568_Btc_Outperform/CS/BtcOutperformStrategy.cs" Link="Strategy.cs" />
+  </ItemGroup>
+</Project>

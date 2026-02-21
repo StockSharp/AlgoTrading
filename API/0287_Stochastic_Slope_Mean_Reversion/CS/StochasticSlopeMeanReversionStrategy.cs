@@ -104,32 +104,32 @@ public class StochasticSlopeMeanReversionStrategy : Strategy
 	{
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetDisplay("Stoch Period", "Stochastic oscillator period", "Stochastic Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_stochKPeriod = Param(nameof(StochKPeriod), 3)
 			.SetDisplay("Stoch %K Period", "Stochastic %K smoothing period", "Stochastic Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
-		_stochDPeriod = Param(nameof(StochDPeriod), 3)
+		_stochD = { Length = Param }(nameof(StochDPeriod), 3)
 			.SetDisplay("Stoch %D Period", "Stochastic %D smoothing period", "Stochastic Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_slopeLookback = Param(nameof(SlopeLookback), 20)
 			.SetDisplay("Slope Lookback", "Period for slope statistics", "Slope Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_thresholdMultiplier = Param(nameof(ThresholdMultiplier), 2m)
 			.SetDisplay("Threshold Multiplier", "Standard deviation multiplier for entry threshold", "Slope Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -156,9 +156,9 @@ public class StochasticSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Reset variables
 

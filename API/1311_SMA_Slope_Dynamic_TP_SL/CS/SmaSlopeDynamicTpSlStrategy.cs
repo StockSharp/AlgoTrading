@@ -69,19 +69,19 @@ public class SmaSlopeDynamicTpSlStrategy : Strategy
 		_smaPeriod = Param(nameof(SmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Period for SMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_initialTpPercent = Param(nameof(InitialTakeProfitPercent), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial TP %", "Initial take profit percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_trailingSlPercent = Param(nameof(TrailingStopPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing SL %", "Trailing stop loss percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_slopeThresholdPercent = Param(nameof(SlopeThresholdPercent), 0.05m)
@@ -110,12 +110,12 @@ public class SmaSlopeDynamicTpSlStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_smaHigh = new SimpleMovingAverage { Length = SmaPeriod };
-		_smaLow = new SimpleMovingAverage { Length = SmaPeriod };
+		_smaHigh = new SMA { Length = SmaPeriod };
+		_smaLow = new SMA { Length = SmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -137,8 +137,8 @@ public class SmaSlopeDynamicTpSlStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var smaHighVal = _smaHigh.Process(candle.HighPrice, candle.OpenTime, true).ToNullableDecimal();
-		var smaLowVal = _smaLow.Process(candle.LowPrice, candle.OpenTime, true).ToNullableDecimal();
+		var smaHighVal = _smaHigh.Process(new DecimalIndicatorValue(_smaHigh, candle.HighPrice, candle.OpenTime)).ToNullableDecimal();
+		var smaLowVal = _smaLow.Process(new DecimalIndicatorValue(_smaLow, candle.LowPrice, candle.OpenTime)).ToNullableDecimal();
 
 		if (smaHighVal is not decimal smaHigh || smaLowVal is not decimal smaLow)
 			return;

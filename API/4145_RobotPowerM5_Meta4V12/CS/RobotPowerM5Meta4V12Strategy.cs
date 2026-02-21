@@ -49,23 +49,23 @@ public class RobotPowerM5Meta4V12Strategy : Strategy
 		_bullBearPeriod = Param(nameof(BullBearPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Bulls/Bears Period", "Number of bars used by the Bulls Power and Bears Power indicators.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 45m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Initial protective stop distance expressed in MetaTrader points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Profit target distance expressed in MetaTrader points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 15m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Trailing distance maintained once the trade moves into profit.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for signal calculations.", "Data");
@@ -132,9 +132,9 @@ public class RobotPowerM5Meta4V12Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = CalculatePointSize();
 

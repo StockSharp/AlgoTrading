@@ -74,17 +74,17 @@ public class AcceleratorTrailingTPSLStrategy : Strategy
 	{
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 		.SetDisplay("Fast MA", "Length of the fast LWMA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 12, 2);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 		.SetDisplay("Slow MA", "Length of the slow LWMA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40, 120, 5);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 		.SetDisplay("Momentum Threshold", "Minimum |Momentum - 100| on higher timeframe", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1m, 0.1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
@@ -317,9 +317,9 @@ public class AcceleratorTrailingTPSLStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa.Length = FastMaLength;
 		_slowMa.Length = SlowMaLength;

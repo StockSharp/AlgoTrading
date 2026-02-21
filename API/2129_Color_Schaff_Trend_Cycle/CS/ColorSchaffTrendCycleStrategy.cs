@@ -140,15 +140,13 @@ public class ColorSchaffTrendCycleStrategy : Strategy
 		};
 
 		_stoch1 = new StochasticOscillator
-		{
-			Length = Cycle,
+		{ K = { Length = Cycle },
 			K = { Length = 1 },
 			D = { Length = 1 }
 		};
 
 		_stoch2 = new StochasticOscillator
-		{
-			Length = Cycle,
+		{ K = { Length = Cycle },
 			K = { Length = 1 },
 			D = { Length = 1 }
 		};
@@ -171,15 +169,15 @@ public class ColorSchaffTrendCycleStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var macdVal = (MovingAverageConvergenceDivergenceValue)_macd.Process(candle.ClosePrice, candle.OpenTime, true);
+		var macdVal = (MovingAverageConvergenceDivergenceValue)_macd.Process(new DecimalIndicatorValue(_macd, candle.ClosePrice, candle.OpenTime));
 		if (macdVal.Macd is not decimal macd)
 			return;
 
-		var st1Val = (StochasticOscillatorValue)_stoch1.Process(macd, candle.OpenTime, true);
+		var st1Val = (StochasticOscillatorValue)_stoch1.Process(new DecimalIndicatorValue(_stoch1, macd, candle.OpenTime));
 		if (st1Val.K is not decimal st1)
 			return;
 
-		var st2Val = (StochasticOscillatorValue)_stoch2.Process(st1, candle.OpenTime, true);
+		var st2Val = (StochasticOscillatorValue)_stoch2.Process(new DecimalIndicatorValue(_stoch2, st1, candle.OpenTime));
 		if (st2Val.K is not decimal k)
 			return;
 

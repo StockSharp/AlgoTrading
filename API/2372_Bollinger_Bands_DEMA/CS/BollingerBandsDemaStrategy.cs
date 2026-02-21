@@ -74,19 +74,19 @@ public class BollingerBandsDemaStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Length of Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_demaPeriod = Param(nameof(DemaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("DEMA Period", "Length of double EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_deviation = Param(nameof(Deviation), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation", "Standard deviation for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -96,7 +96,7 @@ public class BollingerBandsDemaStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
+		return [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
 	}
 
 	/// <inheritdoc />
@@ -107,14 +107,14 @@ public class BollingerBandsDemaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bollinger = new BollingerBands { Length = BollingerPeriod, Width = Deviation };
 		var dema = new DEMA { Length = DemaPeriod };
 
-		var demaSub = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var demaSub = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		demaSub
 			.Bind(dema, (candle, value) =>
 			{

@@ -39,8 +39,8 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private WilliamsR _williams = null!;
-	private LengthIndicator<decimal> _valueSmoother = null!;
-	private LengthIndicator<decimal> _volumeSmoother = null!;
+	private DecimalLengthIndicator _valueSmoother = null!;
+	private DecimalLengthIndicator _volumeSmoother = null!;
 
 	private readonly int?[] _directionBuffer = new int?[10];
 	private int _directionCount;
@@ -198,7 +198,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		_williamsPeriod = Param(nameof(WilliamsPeriod), 14)
 		.SetRange(5, 200)
 		.SetDisplay("Williams %R Period", "Lookback for the Williams %R oscillator", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_highLevel2 = Param(nameof(HighLevel2), 20)
 		.SetRange(-200, 200)
@@ -222,7 +222,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		_smoothingLength = Param(nameof(SmoothingLength), 12)
 		.SetRange(2, 200)
 		.SetDisplay("Smoothing Length", "Moving average length", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_signalShift = Param(nameof(SignalShift), 1)
 		.SetRange(0, 5)
@@ -272,9 +272,9 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_williams = new WilliamsR { Length = WilliamsPeriod };
 		_valueSmoother = CreateMovingAverage(SmoothingType, SmoothingLength);
@@ -315,8 +315,8 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		decimal volume = VolumeSource == VolumeSources.Tick ? candle.TotalTicks : candle.TotalVolume;
 		var weightedValue = (williamsValue + 50m) * volume;
 
-		var valueResult = _valueSmoother.Process(weightedValue, time, true);
-		var volumeResult = _volumeSmoother.Process(volume, time, true);
+		var valueResult = _valueSmoother.Process(new DecimalIndicatorValue(_valueSmoother, weightedValue, time));
+		var volumeResult = _volumeSmoother.Process(new DecimalIndicatorValue(_volumeSmoother, volume, time));
 
 		if (!_valueSmoother.IsFormed || !_volumeSmoother.IsFormed)
 		{
@@ -479,19 +479,19 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		return "Neutral";
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKinds type, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageKinds type, int length)
 	{
 		return type switch
 		{
-			MovingAverageKinds.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageKinds.Simple => new SMA { Length = length },
+			MovingAverageKinds.Exponential => new EMA { Length = length },
 			MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageKinds.Weighted => new WeightedMovingAverage { Length = length },
 			MovingAverageKinds.Hull => new HullMovingAverage { Length = length },
 			MovingAverageKinds.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
 			MovingAverageKinds.DoubleExponential => new DoubleExponentialMovingAverage { Length = length },
 			MovingAverageKinds.TripleExponential => new TripleExponentialMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

@@ -363,9 +363,9 @@ public class Noah10Pips2006Strategy : Strategy
 	}
 
 /// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = Security?.PriceStep ?? 0.0001m;
 		if (_pipSize <= 0m)
@@ -721,7 +721,7 @@ public class Noah10Pips2006Strategy : Strategy
 
 	private DateTime GetLocalTime(DateTimeOffset time)
 	{
-		return time.UtcDateTime + TimeSpan.FromHours(TimeZoneOffset);
+		return time + TimeSpan.FromHours(TimeZoneOffset);
 	}
 
 	private static int NormalizeHour(int hour)

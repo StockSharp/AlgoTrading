@@ -114,12 +114,12 @@ public class MovingAveragesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicator and buffers.
-		_sma = new SimpleMovingAverage { Length = MovingPeriod };
+		_sma = new SMA { Length = MovingPeriod };
 		_shiftBuffer = new decimal[Math.Max(1, MovingShift + 1)];
 		_shiftIndex = 0;
 		_shiftFillCount = 0;

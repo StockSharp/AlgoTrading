@@ -65,9 +65,9 @@ public class SymrNewBarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Determine index of the base timeframe.
 		_currentIndex = Array.IndexOf(_periods, ((CandleTimeFrame)CandleType.Arg).TimeSpan);

@@ -66,12 +66,12 @@ public class DonchianZigZagLuxAlgoStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 50)
 			.SetDisplay("Donchian Length", "Lookback period for Donchian calculations", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_bounceSpeed = Param(nameof(BounceSpeed), 1m)
 			.SetDisplay("Bounce Speed", "Multiplier applied to channel width", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -99,9 +99,9 @@ public class DonchianZigZagLuxAlgoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var highest = new Highest { Length = Length };
 		var lowest = new Lowest { Length = Length };

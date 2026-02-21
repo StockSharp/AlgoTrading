@@ -118,22 +118,22 @@ public class DualLotStepHedgeStrategy : Strategy
 		_lotMultiplier = Param(nameof(LotMultiplier), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Lot Multiplier", "Maximum lot multiplier over the minimal step", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 20, 1);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 		.SetDisplay("Stop Loss (pips)", "Stop loss distance for each leg", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 200m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150m)
 		.SetDisplay("Take Profit (pips)", "Take profit distance for each leg", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 400m, 20m);
 
 		_minProfit = Param(nameof(MinProfit), 27m)
 		.SetDisplay("Basket Profit", "Target profit in account currency", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 200m, 5m);
 
 		_scalingMode = Param(nameof(ScalingMode), LotScalingModes.HighToLow)
@@ -176,9 +176,9 @@ public class DualLotStepHedgeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_volumeStep = Security.VolumeStep ?? 0m;
 			if (_volumeStep <= 0m)

@@ -161,7 +161,7 @@ public class DynamicAveragingStrategy : Strategy
 		.SetDisplay("Stochastic Length", "Lookback for the %K calculation", "Indicators")
 		.SetGreaterThanZero();
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 		.SetDisplay("Stochastic %D", "Smoothing length for the %D line", "Indicators")
 		.SetGreaterThanZero();
 
@@ -201,16 +201,15 @@ public class DynamicAveragingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_currentVolume = TradeVolume;
 		_lastRealizedPnL = PnLManager?.RealizedPnL ?? 0m;
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticKPeriod,
+		{ K = { Length = StochasticKPeriod },
 			K = { Length = StochasticSlowPeriod },
 			D = { Length = StochasticDPeriod },
 			Slowing = StochasticSlowPeriod,
@@ -221,7 +220,7 @@ public class DynamicAveragingStrategy : Strategy
 			Length = StdDevPeriod,
 		};
 
-		_stdDevAverage = new SimpleMovingAverage
+		_stdDevAverage = new SMA
 		{
 			Length = CalculateStdDevAverageLength(),
 		};
@@ -285,8 +284,8 @@ public class DynamicAveragingStrategy : Strategy
 		if (stoch.K is not decimal currentK)
 		return;
 
-		var stdDevValue = _stdDev.Process(candle.ClosePrice, candle.ServerTime, true);
-		var stdDevAverageValue = _stdDevAverage.Process(stdDevValue.ToDecimal(), candle.ServerTime, true);
+		var stdDevValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, candle.ClosePrice, candle.ServerTime));
+		var stdDevAverageValue = _stdDevAverage.Process(new DecimalIndicatorValue(_stdDevAverage, stdDevValue.ToDecimal(), candle.ServerTime));
 
 		if (!IsFormedAndOnlineAndAllowTrading() || !_stdDev.IsFormed || !_stdDevAverage.IsFormed)
 		{
@@ -333,7 +332,7 @@ public class DynamicAveragingStrategy : Strategy
 		if (Position == 0m)
 		return 0m;
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 
 		if (entryPrice == 0m)
 		return 0m;

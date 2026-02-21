@@ -100,32 +100,32 @@ public class NightScalperStrategy : Strategy
 	{
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 40)
 		.SetDisplay("BB Period", "Bollinger period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 80, 5);
 		
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 1m)
 		.SetDisplay("BB Deviation", "Bollinger deviation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3m, 0.1m);
 		
 		_rangeThreshold = Param(nameof(RangeThreshold), 450m)
 		.SetDisplay("Range Threshold", "Maximum band width", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 1000m, 50m);
 		
 		_stopLoss = Param(nameof(StopLoss), 370)
 		.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100, 1000, 50);
 		
 		_takeProfit = Param(nameof(TakeProfit), 20)
 		.SetDisplay("Take Profit", "Take profit in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 10);
 		
 		_startHour = Param(nameof(StartHour), 19)
 		.SetDisplay("Start Hour", "Hour to start trading", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 23, 1);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -146,9 +146,9 @@ public class NightScalperStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var tick = Security?.PriceStep ?? 1m;
 		_range = RangeThreshold * tick;

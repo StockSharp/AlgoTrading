@@ -69,30 +69,30 @@ public class ThreeBreakyStrategy : Strategy
 	{
 		_useSystem1 = Param(nameof(UseSystem1), true)
 			.SetDisplay("Use System 1", "Enable the ATR expansion breakout module", "General")
-			.SetCanOptimize(true);
+			;
 
 		_useSystem2 = Param(nameof(UseSystem2), true)
 			.SetDisplay("Use System 2", "Enable the Ichimoku cloud flip module", "General")
-			.SetCanOptimize(true);
+			;
 
 		_useSystem3 = Param(nameof(UseSystem3), true)
 			.SetDisplay("Use System 3", "Enable the large body exhaustion module", "General")
-			.SetCanOptimize(true);
+			;
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Default volume used for every entry", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetRange(0m, 1000m)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
 			.SetRange(0m, 2000m)
 			.SetDisplay("Take Profit (pips)", "Optional take-profit distance expressed in pips", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for signal generation", "Data");
@@ -169,9 +169,9 @@ public class ThreeBreakyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atrAverage = new AverageTrueRange { Length = 72 };
 		_parabolic = new ParabolicSar

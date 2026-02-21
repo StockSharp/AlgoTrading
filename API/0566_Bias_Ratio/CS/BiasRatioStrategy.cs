@@ -60,12 +60,12 @@ public class BiasRatioStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 50);
 
 		_biasThreshold = Param(nameof(BiasThreshold), 0.025m)
 			.SetDisplay("Bias Threshold", "Price deviation ratio from MA", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.005m);
 	}
 
@@ -76,12 +76,12 @@ public class BiasRatioStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = MaPeriod };
-		var sma = new SimpleMovingAverage { Length = MaPeriod };
+		var ema = new EMA { Length = MaPeriod };
+		var sma = new SMA { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

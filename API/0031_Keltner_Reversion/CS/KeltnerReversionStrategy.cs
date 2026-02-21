@@ -78,22 +78,22 @@ public class KeltnerReversionStrategy : Strategy
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetDisplay("EMA Period", "Period for EMA calculation (middle band)", "Technical Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "Period for ATR calculation (middle band)", "Technical Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for Keltner Channel width", "Technical Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 2.0m)
 			.SetDisplay("ATR Multiplier (Stop Loss)", "ATR multiplier for stop-loss calculation", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -107,12 +107,12 @@ public class KeltnerReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		// Create subscription and bind indicators

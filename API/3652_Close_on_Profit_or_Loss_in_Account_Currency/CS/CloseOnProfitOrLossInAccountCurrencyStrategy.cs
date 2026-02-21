@@ -79,9 +79,9 @@ public class CloseOnProfitOrLossInAccountCurrencyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Portfolio == null)
 			throw new InvalidOperationException("Portfolio cannot be null.");
@@ -90,7 +90,7 @@ public class CloseOnProfitOrLossInAccountCurrencyStrategy : Strategy
 			throw new InvalidOperationException("Security must be set to subscribe for candles.");
 
 		// Start protective stop-loss processing once at launch.
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

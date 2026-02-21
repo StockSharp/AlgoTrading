@@ -68,13 +68,13 @@ public class BearBullsPowerStrategy : Strategy
 		_firstLength = Param(nameof(FirstLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Price MA Length", "Length of the first smoothing", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_secondLength = Param(nameof(SecondLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal MA Length", "Length of the second smoothing", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 	}
 
@@ -85,12 +85,12 @@ public class BearBullsPowerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_priceMa = new SimpleMovingAverage { Length = FirstLength };
-		_signalMa = new SimpleMovingAverage { Length = SecondLength };
+		_priceMa = new SMA { Length = FirstLength };
+		_signalMa = new SMA { Length = SecondLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -110,11 +110,11 @@ public class BearBullsPowerStrategy : Strategy
 
 		var price = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var priceMa = _priceMa.Process(price, candle.OpenTime, true).ToDecimal();
+		var priceMa = _priceMa.Process(new DecimalIndicatorValue(_priceMa, price, candle.OpenTime)).ToDecimal();
 
 		var diff = (candle.HighPrice + candle.LowPrice - 2m * priceMa) / 2m;
 
-		var signal = _signalMa.Process(diff, candle.OpenTime, true).ToDecimal();
+		var signal = _signalMa.Process(new DecimalIndicatorValue(_signalMa, diff, candle.OpenTime)).ToDecimal();
 
 		int color;
 		if (_prevValue is null)

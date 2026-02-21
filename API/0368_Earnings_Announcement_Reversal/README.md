@@ -11,7 +11,7 @@ The **Earnings Announcement Reversal** strategy shorts recent winners and buys r
 - **Default Values**:
   - `LookbackDays = 5`
   - `HoldingDays = 3`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Event-driven
   - Direction: Both

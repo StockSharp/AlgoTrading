@@ -52,32 +52,32 @@ public class FarhadCrabStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume", "Order volume used for market entries", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_longTakeProfitPips = Param(nameof(LongTakeProfitPips), 10m)
 		.SetRange(0m, 500m)
 		.SetDisplay("Long TP (pips)", "Distance to long take-profit target", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_shortTakeProfitPips = Param(nameof(ShortTakeProfitPips), 10m)
 		.SetRange(0m, 500m)
 		.SetDisplay("Short TP (pips)", "Distance to short take-profit target", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_longTrailingStopPips = Param(nameof(LongTrailingStopPips), 8m)
 		.SetRange(0m, 500m)
 		.SetDisplay("Long Trail (pips)", "Trailing distance for long trades", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_shortTrailingStopPips = Param(nameof(ShortTrailingStopPips), 8m)
 		.SetRange(0m, 500m)
 		.SetDisplay("Short Trail (pips)", "Trailing distance for short trades", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_dailyMaPeriod = Param(nameof(DailyMaPeriod), 55)
 		.SetRange(2, 200)
 		.SetDisplay("Daily MA", "Length of the daily smoothed moving average", "Trend")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe used for trading", "General");
@@ -163,28 +163,25 @@ public class FarhadCrabStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
-		_emaTypical = new ExponentialMovingAverage
+		_emaTypical = new EMA
 		{
-			Length = 9,
-			CandlePrice = CandlePrice.Typical,
+			Length = 9
 		};
 
-		_smaOpen = new SimpleMovingAverage
+		_smaOpen = new SMA
 		{
-			Length = 9,
-			CandlePrice = CandlePrice.Open,
+			Length = 9
 		};
 
 		_dailySmma = new SmoothedMovingAverage
 		{
-			Length = DailyMaPeriod,
-			CandlePrice = CandlePrice.Typical,
+			Length = DailyMaPeriod
 		};
 
 		var mainSubscription = SubscribeCandles(CandleType);
@@ -192,7 +189,7 @@ public class FarhadCrabStrategy : Strategy
 			.Bind(_emaTypical, _smaOpen, ProcessMainCandle)
 			.Start();
 
-		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		dailySubscription
 			.Bind(_dailySmma, ProcessDailyCandle)
 			.Start();
@@ -208,7 +205,7 @@ public class FarhadCrabStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessDailyCandle(ICandleMessage candle, decimal dailyMaValue)

@@ -55,17 +55,17 @@ public class RobotAdxTwoMaStrategy : Strategy
 	        _fastEmaPeriod = Param(nameof(FastEmaPeriod), 5)
 	                .SetGreaterThanZero()
 	                .SetDisplay("Fast EMA", "Period of the fast exponential moving average.", "Indicator")
-	                .SetCanOptimize(true);
+	                ;
 
 	        _slowEmaPeriod = Param(nameof(SlowEmaPeriod), 12)
 	                .SetGreaterThanZero()
 	                .SetDisplay("Slow EMA", "Period of the slow exponential moving average.", "Indicator")
-	                .SetCanOptimize(true);
+	                ;
 
 	        _adxPeriod = Param(nameof(AdxPeriod), 6)
 	                .SetGreaterThanZero()
 	                .SetDisplay("ADX Period", "Number of candles used for ADX calculation.", "Indicator")
-	                .SetCanOptimize(true);
+	                ;
 
 	        _takeProfitPoints = Param(nameof(TakeProfitPoints), 4700)
 	                .SetNotNegative()
@@ -163,14 +163,14 @@ public class RobotAdxTwoMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume; // Align helper methods with the MetaTrader lot size.
 
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_fastEma = new EMA { Length = FastEmaPeriod };
+		_slowEma = new EMA { Length = SlowEmaPeriod };
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

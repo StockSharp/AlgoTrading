@@ -169,7 +169,7 @@ set => _minPips.Value = value;
 		_vectorSize = Param(nameof(VectorSize), 7)
 .SetGreaterOrEqual(7)
 .SetDisplay("Vector Size", "Number of values stored in each training vector", "Training")
-.SetCanOptimize(true);
+;
 
 		_mapBase = Param(nameof(MapBase), 10000)
 	                .SetGreaterThanZero()
@@ -182,18 +182,18 @@ set => _minPips.Value = value;
 		_historyLength = Param(nameof(HistoryLength), 7)
 .SetGreaterOrEqual(7)
 .SetDisplay("History Length", "Number of candles forming the feature vector", "Training")
-.SetCanOptimize(true);
+;
 
 		_minPips = Param(nameof(MinPips), 5)
 	                .SetGreaterThanZero()
 	                .SetDisplay("Min Pips", "Minimum pip distance for buy samples", "Training")
-	                .SetCanOptimize(true)
+	                
 	                .SetOptimize(1, 50, 1);
 
 		_maxPips = Param(nameof(MaxPips), 43)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Pips", "Maximum pip distance for buy/sell samples", "Training")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 5);
 
 		_takeProfit = Param(nameof(TakeProfit), 150)
@@ -207,7 +207,7 @@ set => _minPips.Value = value;
 		_lots = Param(nameof(Lots), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lots", "Fallback order size", "Execution")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_mapPath = Param(nameof(MapPath), "rl.bin")
@@ -235,14 +235,14 @@ set => _minPips.Value = value;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetMaps();
 		LoadKohonenMap();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

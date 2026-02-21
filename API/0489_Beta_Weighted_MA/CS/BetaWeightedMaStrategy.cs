@@ -73,17 +73,17 @@ public class BetaWeightedMaStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 50)
 			.SetDisplay("BWMA Length", "Number of periods for Beta Weighted MA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_alpha = Param(nameof(Alpha), 3m)
 			.SetDisplay("Alpha (+Lag)", "Alpha parameter for Beta weighting", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_beta = Param(nameof(Beta), 3m)
 			.SetDisplay("Beta (-Lag)", "Beta parameter for Beta weighting", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -108,9 +108,9 @@ public class BetaWeightedMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Precompute weights based on Beta distribution
 		_weights.Clear();
@@ -131,7 +131,7 @@ public class BetaWeightedMaStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

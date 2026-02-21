@@ -37,20 +37,20 @@ public class ThreeMovingAveragesStrategy : Strategy
 	{
 		_shortMa = Param(nameof(ShortMa), 20)
 		.SetDisplay("Short MA", "Short moving average length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 50, 5);
 
 		_mediumMa = Param(nameof(MediumMa), 50)
 		.SetDisplay("Medium MA", "Medium moving average length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 10);
 
 		_longMa = Param(nameof(LongMa), 200)
 		.SetDisplay("Long MA", "Long moving average length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100, 300, 20);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe of working candles", "Data");
 	}
 
@@ -63,13 +63,13 @@ public class ThreeMovingAveragesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var shortMa = new SimpleMovingAverage { Length = ShortMa };
-		var mediumMa = new SimpleMovingAverage { Length = MediumMa };
-		var longMa = new SimpleMovingAverage { Length = LongMa };
+		var shortMa = new SMA { Length = ShortMa };
+		var mediumMa = new SMA { Length = MediumMa };
+		var longMa = new SMA { Length = LongMa };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

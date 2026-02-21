@@ -200,12 +200,12 @@ public class AdxMacdDeevStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetDisplay("Stop Loss (pips)", "Initial stop loss distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 120, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 140)
 			.SetDisplay("Take Profit (pips)", "Initial take profit distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
@@ -228,7 +228,7 @@ public class AdxMacdDeevStrategy : Strategy
 		_adxMinimum = Param(nameof(AdxMinimum), 20)
 			.SetDisplay("ADX Minimum", "Minimum ADX strength", "Indicators")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 10)
@@ -250,7 +250,7 @@ public class AdxMacdDeevStrategy : Strategy
 		_macdMinimumPips = Param(nameof(MacdMinimumPips), 30)
 			.SetDisplay("MACD Minimum (pips)", "Minimum MACD magnitude in pips", "Indicators")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 80, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

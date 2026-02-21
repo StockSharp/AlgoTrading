@@ -150,33 +150,33 @@ public class AreaMacdStrategy : Strategy
 		_historyLength = Param(nameof(HistoryLength), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("History Length", "Number of candles for MACD area comparison", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA length for MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA length for MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal EMA length for MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse Signals", "Invert long and short signals", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 100)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150)
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk Management");

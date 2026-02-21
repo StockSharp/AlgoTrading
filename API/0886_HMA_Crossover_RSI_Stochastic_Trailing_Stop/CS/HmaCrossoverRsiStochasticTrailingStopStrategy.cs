@@ -141,48 +141,48 @@ public class HmaCrossoverRsiStochasticTrailingStopStrategy : Strategy
 		_fastHmaLength = Param(nameof(FastHmaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast HMA Length", "Period of the fast HMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowHmaLength = Param(nameof(SlowHmaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow HMA Length", "Period of the slow HMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 45m)
 			.SetDisplay("RSI Buy Level", "RSI level for long entries", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiSellLevel = Param(nameof(RsiSellLevel), 60m)
 			.SetDisplay("RSI Sell Level", "RSI level for short entries", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochLength = Param(nameof(StochLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Length", "Lookback period for Stochastic", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochSmooth = Param(nameof(StochSmooth), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Smooth", "%K smoothing length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochBuyLevel = Param(nameof(StochBuyLevel), 39m)
 			.SetDisplay("Stochastic Buy Level", "Stochastic level for long entries", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochSellLevel = Param(nameof(StochSellLevel), 63m)
 			.SetDisplay("Stochastic Sell Level", "Stochastic level for short entries", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_trailingPercent = Param(nameof(TrailingPercent), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing %", "Trailing stop percent", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -205,16 +205,15 @@ public class HmaCrossoverRsiStochasticTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastHma = new HullMovingAverage { Length = FastHmaLength };
 		var slowHma = new HullMovingAverage { Length = SlowHmaLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochLength,
+		{ K = { Length = StochLength },
 			K = { Length = StochSmooth },
 			D = { Length = 1 }
 		};

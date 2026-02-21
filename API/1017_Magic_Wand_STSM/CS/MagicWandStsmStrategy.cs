@@ -89,17 +89,17 @@ public class MagicWandStsmStrategy : Strategy
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
 			.SetDisplay("Supertrend Period", "ATR period for Supertrend", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m)
 			.SetDisplay("Supertrend Multiplier", "ATR multiplier for Supertrend", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_maLength = Param(nameof(MaLength), 200)
 			.SetDisplay("MA Length", "Simple moving average length", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_riskReward = Param(nameof(RiskReward), 2m)
 			.SetDisplay("Risk Reward", "Take profit multiplier", "Risk")
@@ -125,12 +125,12 @@ public class MagicWandStsmStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = SupertrendPeriod };
-		_sma = new SimpleMovingAverage { Length = MaLength };
+		_sma = new SMA { Length = MaLength };
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(_atr, _sma, ProcessCandle).Start();

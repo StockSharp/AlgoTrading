@@ -126,9 +126,9 @@ public class PivotHeikenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_step = Security?.PriceStep ?? 1m;
 		_trailingDistance = TrailingStopPips * _step;
@@ -136,10 +136,10 @@ public class PivotHeikenStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		dailySubscription.Bind(ProcessDailyCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

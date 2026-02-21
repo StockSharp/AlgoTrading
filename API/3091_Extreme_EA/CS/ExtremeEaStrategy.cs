@@ -35,8 +35,8 @@ public class ExtremeEaStrategy : Strategy
 	private readonly StrategyParam<AppliedPriceModes> _maPriceMode;
 	private readonly StrategyParam<AppliedPriceModes> _cciPriceMode;
 
-	private LengthIndicator<decimal> _fastMa;
-	private LengthIndicator<decimal> _slowMa;
+	private DecimalLengthIndicator _fastMa;
+	private DecimalLengthIndicator _slowMa;
 	private CommodityChannelIndex _cci;
 
 	private decimal? _fastMaCurrent;
@@ -269,9 +269,9 @@ public class ExtremeEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = CreateMovingAverage(MaMethod, FastMaPeriod);
 		_slowMa = CreateMovingAverage(MaMethod, SlowMaPeriod);
@@ -298,7 +298,7 @@ public class ExtremeEaStrategy : Strategy
 				.Start();
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var priceArea = CreateChartArea();
 		if (priceArea != null)
@@ -397,7 +397,7 @@ public class ExtremeEaStrategy : Strategy
 			return;
 
 		var price = GetPrice(candle, CciPriceMode);
-		var indicatorValue = _cci.Process(price, candle.OpenTime, true);
+		var indicatorValue = _cci.Process(new DecimalIndicatorValue(_cci, price, candle.OpenTime));
 
 		if (!indicatorValue.IsFinal || !_cci.IsFormed)
 			return;
@@ -405,13 +405,13 @@ public class ExtremeEaStrategy : Strategy
 		_latestCciValue = indicatorValue.ToDecimal();
 	}
 
-	private decimal? ProcessMovingAverage(LengthIndicator<decimal> indicator, ICandleMessage candle)
+	private decimal? ProcessMovingAverage(DecimalLengthIndicator indicator, ICandleMessage candle)
 	{
 		if (indicator == null)
 			return null;
 
 		var price = GetPrice(candle, MaPriceMode);
-		var value = indicator.Process(price, candle.OpenTime, true);
+		var value = indicator.Process(new DecimalIndicatorValue(indicator, price, candle.OpenTime));
 
 		if (!indicator.IsFormed)
 			return null;
@@ -497,15 +497,15 @@ public class ExtremeEaStrategy : Strategy
 		return 0m;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MaMethods method, int length)
 	{
 		return method switch
 		{
-			MaMethods.Simple => new SimpleMovingAverage { Length = length },
-			MaMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MaMethods.Simple => new SMA { Length = length },
+			MaMethods.Exponential => new EMA { Length = length },
 			MaMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length }
+			_ => new EMA { Length = length }
 		};
 	}
 

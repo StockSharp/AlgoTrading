@@ -59,15 +59,15 @@ public class PreviousDayHighLowLongStrategy : Strategy
 	{
 		_maxProfit = Param(nameof(MaxProfit), 150m)
 			.SetDisplay("Max Profit", "Maximum profit in absolute currency", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_maxStopLoss = Param(nameof(MaxStopLoss), 15m)
 			.SetDisplay("Max Stop Loss", "Maximum stop loss in absolute currency", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_adxLength = Param(nameof(AdxLength), 11)
 			.SetDisplay("ADX Length", "Period for ADX indicator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -76,7 +76,7 @@ public class PreviousDayHighLowLongStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
+		return [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
 	}
 
 	/// <inheritdoc />
@@ -93,10 +93,10 @@ public class PreviousDayHighLowLongStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var adx = new AverageDirectionalIndex { Length = AdxLength };
 
@@ -105,7 +105,7 @@ public class PreviousDayHighLowLongStrategy : Strategy
 			.BindEx(adx, ProcessCandle)
 			.Start();
 
-		var dailySub = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySub = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		dailySub
 			.Bind(ProcessDaily)
 			.Start();

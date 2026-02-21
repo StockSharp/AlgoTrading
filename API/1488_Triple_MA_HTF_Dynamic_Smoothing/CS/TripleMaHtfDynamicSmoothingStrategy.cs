@@ -114,22 +114,22 @@ public class TripleMaHtfDynamicSmoothingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ma1 = new SimpleMovingAverage { Length = Length1 };
-		_ma2 = new SimpleMovingAverage { Length = Length2 };
-		_ma3 = new SimpleMovingAverage { Length = Length3 };
+		_ma1 = new SMA { Length = Length1 };
+		_ma2 = new SMA { Length = Length2 };
+		_ma3 = new SMA { Length = Length3 };
 
 		var baseSpan = (TimeSpan)CandleType.Arg;
 		var span1 = (TimeSpan)HigherTimeFrame1.Arg;
 		var span2 = (TimeSpan)HigherTimeFrame2.Arg;
 		var span3 = (TimeSpan)HigherTimeFrame3.Arg;
 
-		_smooth1 = new SimpleMovingAverage { Length = Math.Max(1, (int)(span1.TotalMinutes / baseSpan.TotalMinutes)) };
-		_smooth2 = new SimpleMovingAverage { Length = Math.Max(1, (int)(span2.TotalMinutes / baseSpan.TotalMinutes)) };
-		_smooth3 = new SimpleMovingAverage { Length = Math.Max(1, (int)(span3.TotalMinutes / baseSpan.TotalMinutes)) };
+		_smooth1 = new SMA { Length = Math.Max(1, (int)(span1.TotalMinutes / baseSpan.TotalMinutes)) };
+		_smooth2 = new SMA { Length = Math.Max(1, (int)(span2.TotalMinutes / baseSpan.TotalMinutes)) };
+		_smooth3 = new SMA { Length = Math.Max(1, (int)(span3.TotalMinutes / baseSpan.TotalMinutes)) };
 
 		SubscribeCandles(HigherTimeFrame1)
 			.Bind(_ma1, ProcessHtf1)
@@ -158,7 +158,7 @@ public class TripleMaHtfDynamicSmoothingStrategy : Strategy
 
 	private void ProcessHtf1(ICandleMessage candle, decimal ma)
 	{
-		var value = _smooth1.Process(ma, candle.OpenTime, candle.State == CandleStates.Finished).ToDecimal();
+		var value = _smooth1.Process(new DecimalIndicatorValue(_smooth1, ma, candle.OpenTime)).ToDecimal();
 		if (_smooth1.IsFormed)
 		{
 			_ma1Prev = _ma1Value;
@@ -168,7 +168,7 @@ public class TripleMaHtfDynamicSmoothingStrategy : Strategy
 
 	private void ProcessHtf2(ICandleMessage candle, decimal ma)
 	{
-		var value = _smooth2.Process(ma, candle.OpenTime, candle.State == CandleStates.Finished).ToDecimal();
+		var value = _smooth2.Process(new DecimalIndicatorValue(_smooth2, ma, candle.OpenTime)).ToDecimal();
 		if (_smooth2.IsFormed)
 		{
 			_ma2Prev = _ma2Value;
@@ -178,7 +178,7 @@ public class TripleMaHtfDynamicSmoothingStrategy : Strategy
 
 	private void ProcessHtf3(ICandleMessage candle, decimal ma)
 	{
-		var value = _smooth3.Process(ma, candle.OpenTime, candle.State == CandleStates.Finished).ToDecimal();
+		var value = _smooth3.Process(new DecimalIndicatorValue(_smooth3, ma, candle.OpenTime)).ToDecimal();
 		if (_smooth3.IsFormed)
 		{
 			_ma3Prev = _ma3Value;

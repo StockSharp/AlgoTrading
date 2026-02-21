@@ -30,12 +30,12 @@ public class Nifty505mintStrategy : Strategy
 
 	public Nifty505mintStrategy()
 	{
-		_demaPeriod = Param(nameof(DemaPeriod), 6).SetDisplay("DEMA Period").SetCanOptimize(true);
-		_bollingerLength = Param(nameof(BollingerLength), 20).SetDisplay("Bollinger Length").SetCanOptimize(true);
-		_bollingerStdDev = Param(nameof(BollingerStdDev), 2m).SetDisplay("Bollinger StdDev").SetCanOptimize(true);
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 5).SetDisplay("Lookback Period").SetCanOptimize(true);
-		_stopLossPoints = Param(nameof(StopLossPoints), 25m).SetDisplay("Stop Loss Points").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type");
+		_demaPeriod = Param(nameof(DemaPeriod), 6).SetDisplay("DEMA Period", "DEMA Period", "General");
+		_bollingerLength = Param(nameof(BollingerLength), 20).SetDisplay("Bollinger Length", "Bollinger Length", "General");
+		_bollingerStdDev = Param(nameof(BollingerStdDev), 2m).SetDisplay("Bollinger StdDev", "Bollinger StdDev", "General");
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 5).SetDisplay("Lookback Period", "Lookback Period", "General");
+		_stopLossPoints = Param(nameof(StopLossPoints), 25m).SetDisplay("Stop Loss Points", "Stop Loss Points", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	public int DemaPeriod { get => _demaPeriod.Value; set => _demaPeriod.Value = value; }
@@ -46,9 +46,9 @@ public class Nifty505mintStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(
 			stopLoss: new Unit(StopLossPoints, UnitTypes.Absolute),

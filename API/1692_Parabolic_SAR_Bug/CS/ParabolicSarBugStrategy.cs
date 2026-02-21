@@ -109,22 +109,22 @@ public class ParabolicSarBugStrategy : Strategy
 	{
 		_step = Param(nameof(Step), 0.02m)
 			.SetDisplay("Step", "Acceleration factor for Parabolic SAR", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_maxStep = Param(nameof(MaxStep), 0.2m)
 			.SetDisplay("Max Step", "Maximum acceleration factor for Parabolic SAR", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.5m, 0.1m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop Loss %", "Percent of entry price for stop loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 1m)
 			.SetDisplay("Take Profit %", "Percent of entry price for take profit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), false)
@@ -155,9 +155,9 @@ public class ParabolicSarBugStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var sar = new ParabolicSar
 		{

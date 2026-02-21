@@ -130,23 +130,23 @@ public class SimpleMacdEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		base.Volume = Volume;
 
-		var emaFast = new ExponentialMovingAverage
+		var emaFast = new EMA
 		{
 			Length = 100
 		};
 
-		var emaSlow = new ExponentialMovingAverage
+		var emaSlow = new EMA
 		{
 			Length = MacdLevel
 		};
 
-		var emaSlowPlus = new ExponentialMovingAverage
+		var emaSlowPlus = new EMA
 		{
 			Length = MacdLevel + 1
 		};

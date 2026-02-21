@@ -65,7 +65,7 @@ public class SimplifiedGapWithSmaFilterStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "SMA period", "SMA Filter");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame", "General");
 	}
 
@@ -82,11 +82,11 @@ public class SimplifiedGapWithSmaFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var sma = new SMA { Length = SmaLength };
 

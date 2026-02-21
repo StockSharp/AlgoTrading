@@ -400,13 +400,13 @@ public class FlatTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_triggerEma = new ExponentialMovingAverage { Length = TriggerLength };
-		_filterEma1 = new ExponentialMovingAverage { Length = FilterLength1 };
-		_filterEma2 = new ExponentialMovingAverage { Length = FilterLength2 };
+		_triggerEma = new EMA { Length = TriggerLength };
+		_filterEma1 = new EMA { Length = FilterLength1 };
+		_filterEma2 = new EMA { Length = FilterLength2 };
 		_juiceStdDev = new StandardDeviation { Length = JuicePeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };

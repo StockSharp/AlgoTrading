@@ -404,8 +404,8 @@ public class Scalper555Strategy : Strategy
 
 		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
 		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
-		_emaHigh = new ExponentialMovingAverage { Length = 5 };
-		_emaLow = new ExponentialMovingAverage { Length = 5 };
+		_emaHigh = new EMA { Length = 5 };
+		_emaLow = new EMA { Length = 5 };
 		_momentum = new Momentum { Length = 14 };
 		_macd = new MovingAverageConvergenceDivergence
 		{

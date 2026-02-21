@@ -150,12 +150,12 @@ _prevSlowOsc = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _retStd = new StandardDeviation { Length = VolLookback };
-_volSmooth = new SimpleMovingAverage { Length = VolSmoothLen };
+_volSmooth = new SMA { Length = VolSmoothLen };
 _oscSlow = new LinearRegression { Length = LengthSlow };
 _oscFast = new LinearRegression { Length = LengthFast };
 
@@ -164,7 +164,7 @@ subscription
 .BindEx(_oscSlow, _oscFast, ProcessCandle)
 .Start();
 
-StartProtection();
+StartProtection(null, null);
 }
 
 private void ProcessCandle(ICandleMessage candle, IIndicatorValue slowValue, IIndicatorValue fastValue)
@@ -178,8 +178,8 @@ var fastSlope = ((LinearRegressionValue)fastValue).LinearRegSlope ?? 0m;
 if (_lastClose is decimal last)
 {
 var ret = candle.ClosePrice / last - 1m;
-var vNow = _retStd.Process(ret, candle.ServerTime, true).ToDecimal();
-var vSm = _volSmooth.Process(vNow, candle.ServerTime, true).ToDecimal();
+var vNow = _retStd.Process(new DecimalIndicatorValue(_retStd, ret, candle.ServerTime)).ToDecimal();
+var vSm = _volSmooth.Process(new DecimalIndicatorValue(_volSmooth, vNow, candle.ServerTime)).ToDecimal();
 
 _volHistory.Add(vNow);
 if (_volHistory.Count > 150)

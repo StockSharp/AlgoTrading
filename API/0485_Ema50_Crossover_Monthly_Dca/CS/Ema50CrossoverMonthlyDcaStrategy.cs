@@ -57,7 +57,7 @@ public class Ema50CrossoverMonthlyDcaStrategy : Strategy
 		_dcaAmount = Param(nameof(DcaAmount), 100000m)
 			.SetGreaterThanZero()
 			.SetDisplay("DCA Amount", "Monthly DCA investment amount", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(7).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -81,11 +81,11 @@ public class Ema50CrossoverMonthlyDcaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = 50 };
+		var ema = new EMA { Length = 50 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

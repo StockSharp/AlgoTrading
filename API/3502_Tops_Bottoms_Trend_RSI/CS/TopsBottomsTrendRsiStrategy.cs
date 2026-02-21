@@ -305,9 +305,9 @@ public class TopsBottomsTrendRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_buyRsi = new RelativeStrengthIndex { Length = BuyRsiPeriod };
 		_sellRsi = new RelativeStrengthIndex { Length = SellRsiPeriod };
@@ -500,7 +500,7 @@ public class TopsBottomsTrendRsiStrategy : Strategy
 		for (var i = 0; i < pastCandles; i++)
 		{
 			var candle = _candles[^ (i + 1)];
-			if (candle.High > current.Close)
+			if (candle.HighPrice > current.Close)
 				return false;
 		}
 
@@ -510,7 +510,7 @@ public class TopsBottomsTrendRsiStrategy : Strategy
 		for (var i = 0; i < pastCandles; i++)
 		{
 			var candle = _candles[^ (i + 1)];
-			if ((oldest.Low - candle.Low) >= allowedDiff)
+			if ((oldest.Low - candle.LowPrice) >= allowedDiff)
 				return false;
 		}
 
@@ -529,7 +529,7 @@ public class TopsBottomsTrendRsiStrategy : Strategy
 		for (var i = 0; i < pastCandles; i++)
 		{
 			var candle = _candles[^ (i + 1)];
-			if (candle.Low < current.Close)
+			if (candle.LowPrice < current.Close)
 				return false;
 		}
 
@@ -539,7 +539,7 @@ public class TopsBottomsTrendRsiStrategy : Strategy
 		for (var i = 0; i < pastCandles; i++)
 		{
 			var candle = _candles[^ (i + 1)];
-			if ((candle.High - oldest.High) >= allowedDiff)
+			if ((candle.HighPrice - oldest.High) >= allowedDiff)
 				return false;
 		}
 

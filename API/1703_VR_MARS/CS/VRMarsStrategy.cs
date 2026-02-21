@@ -41,14 +41,14 @@ public class VRMarsStrategy : Strategy
 
 	public VRMarsStrategy()
 	{
-		_lot1 = this.Param(nameof(Lot1), 0.01m).SetDisplay("Lot 1").SetCanOptimize(false);
-		_lot2 = this.Param(nameof(Lot2), 0.02m).SetDisplay("Lot 2").SetCanOptimize(false);
-		_lot3 = this.Param(nameof(Lot3), 0.03m).SetDisplay("Lot 3").SetCanOptimize(false);
-		_lot4 = this.Param(nameof(Lot4), 0.04m).SetDisplay("Lot 4").SetCanOptimize(false);
-		_lot5 = this.Param(nameof(Lot5), 0.05m).SetDisplay("Lot 5").SetCanOptimize(false);
-		_selectedLot = this.Param(nameof(SelectedLot), 1).SetDisplay("Selected Lot").SetCanOptimize(false);
-		_buy = this.Param(nameof(Buy), false).SetDisplay("Send Buy").SetCanOptimize(false);
-		_sell = this.Param(nameof(Sell), false).SetDisplay("Send Sell").SetCanOptimize(false);
+		_lot1 = this.Param(nameof(Lot1), 0.01m).SetDisplay("Lot 1", "Lot 1", "General");
+		_lot2 = this.Param(nameof(Lot2), 0.02m).SetDisplay("Lot 2", "Lot 2", "General");
+		_lot3 = this.Param(nameof(Lot3), 0.03m).SetDisplay("Lot 3", "Lot 3", "General");
+		_lot4 = this.Param(nameof(Lot4), 0.04m).SetDisplay("Lot 4", "Lot 4", "General");
+		_lot5 = this.Param(nameof(Lot5), 0.05m).SetDisplay("Lot 5", "Lot 5", "General");
+		_selectedLot = this.Param(nameof(SelectedLot), 1).SetDisplay("Selected Lot", "Selected Lot", "General");
+		_buy = this.Param(nameof(Buy), false).SetDisplay("Send Buy", "Send Buy", "General");
+		_sell = this.Param(nameof(Sell), false).SetDisplay("Send Sell", "Send Sell", "General");
 	}
 
 	public decimal Lot1 { get => _lot1.Value; set => _lot1.Value = value; }
@@ -61,12 +61,12 @@ public class VRMarsStrategy : Strategy
 	public bool Sell { get => _sell.Value; set => _sell.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Activate stop protection once at strategy start.
-		StartProtection();
+		StartProtection(null, null);
 
 		var volume = SelectedLot switch
 		{

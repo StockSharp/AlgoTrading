@@ -141,9 +141,9 @@ public class OmarMmrStrategy : Strategy
 
 		// Initialize indicators
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_emaA = new ExponentialMovingAverage { Length = EmaALength };
-		_emaB = new ExponentialMovingAverage { Length = EmaBLength };
-		_emaC = new ExponentialMovingAverage { Length = EmaCLength };
+		_emaA = new EMA { Length = EmaALength };
+		_emaB = new EMA { Length = EmaBLength };
+		_emaC = new EMA { Length = EmaCLength };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =

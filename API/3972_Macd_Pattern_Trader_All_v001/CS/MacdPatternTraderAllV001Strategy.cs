@@ -1049,9 +1049,9 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_currentVolume = InitialVolume;
 
@@ -1062,10 +1062,10 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		_macd5 = CreateMacd(Pattern5Fast, Pattern5Slow);
 		_macd6 = CreateMacd(Pattern6Fast, Pattern6Slow);
 
-		_ema1 = new ExponentialMovingAverage { Length = EmaPeriod1 };
-		_ema2 = new ExponentialMovingAverage { Length = EmaPeriod2 };
-		_sma3 = new SimpleMovingAverage { Length = SmaPeriod3 };
-		_ema4 = new ExponentialMovingAverage { Length = EmaPeriod4 };
+		_ema1 = new EMA { Length = EmaPeriod1 };
+		_ema2 = new EMA { Length = EmaPeriod2 };
+		_sma3 = new SMA { Length = SmaPeriod3 };
+		_ema4 = new EMA { Length = EmaPeriod4 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

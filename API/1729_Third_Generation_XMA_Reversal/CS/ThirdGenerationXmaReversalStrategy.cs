@@ -60,12 +60,12 @@ public class ThirdGenerationXmaReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema1 = new ExponentialMovingAverage { Length = MaLength * 2 };
-		_ema2 = new ExponentialMovingAverage { Length = MaLength };
+		_ema1 = new EMA { Length = MaLength * 2 };
+		_ema2 = new EMA { Length = MaLength };
 		_alpha = 2m * (2m * MaLength - 1m) / (2m * MaLength - 2m);
 
 		var subscription = SubscribeCandles(CandleType);

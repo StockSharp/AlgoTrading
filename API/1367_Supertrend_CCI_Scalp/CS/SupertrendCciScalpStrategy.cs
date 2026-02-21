@@ -124,9 +124,9 @@ public class SupertrendCciScalpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	var st1 = new SuperTrend { Length = AtrLength1, Multiplier = Factor1 };
 	var st2 = new SuperTrend { Length = AtrLength2, Multiplier = Factor2 };
@@ -150,7 +150,7 @@ public class SupertrendCciScalpStrategy : Strategy
 	    DrawOwnTrades(area);
 	}
 
-	StartProtection();
+	StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue st1Value, IIndicatorValue st2Value, IIndicatorValue cciValue, IIndicatorValue maValue)
@@ -201,12 +201,12 @@ public class SupertrendCciScalpStrategy : Strategy
 	{
 	return type switch
 	{
-	    MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-	    MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+	    MovingAverageTypes.Simple => new SMA { Length = length },
+	    MovingAverageTypes.Exponential => new EMA { Length = length },
 	    MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 	    MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 	    MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
-	    _ => new SimpleMovingAverage { Length = length },
+	    _ => new SMA { Length = length },
 	};
 	}
 

@@ -74,15 +74,15 @@ public class ForexHammerAndHangingManStrategy : Strategy
 
 		_bodyLengthMultiplier = Param(nameof(BodyLengthMultiplier), 5)
 			.SetDisplay("Minimum Candle Body Length (Multiplier)", "Minimum body length relative to candle height", "General")
-			.SetCanOptimize(true);
+			;
 
 		_shadowRatio = Param(nameof(ShadowRatio), 1m)
 			.SetDisplay("Lower Shadow to Candle Height Ratio", "Lower shadow to body ratio", "General")
-			.SetCanOptimize(true);
+			;
 
 		_holdPeriods = Param(nameof(HoldPeriods), 26)
 			.SetDisplay("Hold Periods (Bars)", "Holding period in bars", "General")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -100,9 +100,9 @@ public class ForexHammerAndHangingManStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 

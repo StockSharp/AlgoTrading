@@ -96,31 +96,31 @@ public class Ilan16DynamicStrategy : Strategy
 		_initialVolume = Param(nameof(InitialVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Volume of the first order", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_lotExponent = Param(nameof(LotExponent), 1.6m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Exponent", "Multiplier for subsequent order size", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.1m, 2m, 0.1m);
 
 		_pipStep = Param(nameof(PipStep), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Pip Step", "Distance in points between grid levels", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_takeProfit = Param(nameof(TakeProfit), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Profit target from average price", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 50m, 5m);
 
 		_maxTrades = Param(nameof(MaxTrades), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum number of averaging entries", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_startLong = Param(nameof(StartLong), true)
@@ -161,11 +161,11 @@ public class Ilan16DynamicStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_isLong = StartLong;
 

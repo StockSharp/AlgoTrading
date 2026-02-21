@@ -115,12 +115,12 @@ public class FlexAtrStrategy : Strategy
 
 		_atrStopMult = Param(nameof(AtrStopMult), 3m)
 			.SetDisplay("ATR Stop Mult", "ATR multiplier for stop", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_atrProfitMult = Param(nameof(AtrProfitMult), 1.5m)
 			.SetDisplay("ATR Profit Mult", "ATR multiplier for target", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_enableTrailingStop = Param(nameof(EnableTrailingStop), true)
@@ -128,7 +128,7 @@ public class FlexAtrStrategy : Strategy
 
 		_atrTrailMult = Param(nameof(AtrTrailMult), 1m)
 			.SetDisplay("ATR Trail Mult", "ATR multiplier for trailing", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 	}
 
@@ -153,9 +153,9 @@ public class FlexAtrStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var tf = (TimeSpan)CandleType.Arg;
 		var minutes = tf.TotalMinutes;
@@ -169,8 +169,8 @@ public class FlexAtrStrategy : Strategy
 		var rsiPeriod = (int)Math.Round(intraday ? rsiDays * barsPerDay : rsiDays);
 		var atrPeriod = (int)Math.Round(intraday ? atrDays * barsPerDay : atrDays);
 
-		_emaFast = new ExponentialMovingAverage { Length = fastPeriod };
-		_emaSlow = new ExponentialMovingAverage { Length = slowPeriod };
+		_emaFast = new EMA { Length = fastPeriod };
+		_emaSlow = new EMA { Length = slowPeriod };
 		_rsi = new RelativeStrengthIndex { Length = rsiPeriod };
 		_atr = new AverageTrueRange { Length = atrPeriod };
 

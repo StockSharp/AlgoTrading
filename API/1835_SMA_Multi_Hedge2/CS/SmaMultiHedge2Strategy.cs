@@ -90,13 +90,13 @@ public class SmaMultiHedge2Strategy : Strategy
 		_hedgeSecurity = Param<Security>(nameof(HedgeSecurity));
 		_smaPeriod = Param(nameof(SmaPeriod), 20)
 			.SetDisplay("SMA Period", "Period for trend SMA", "Parameters")
-			.SetCanOptimize(true);
+			;
 		_correlationPeriod = Param(nameof(CorrelationPeriod), 20)
 			.SetDisplay("Correlation Period", "Period for correlation", "Parameters")
-			.SetCanOptimize(true);
+			;
 		_expectedCorrelation = Param(nameof(ExpectedCorrelation), 0.8m)
 			.SetDisplay("Expected Correlation", "Threshold for hedge activation", "Parameters")
-			.SetCanOptimize(true);
+			;
 		_profitTarget = Param(nameof(ProfitTarget), 30m)
 			.SetDisplay("Profit Target", "Take profit value", "Parameters");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -106,13 +106,13 @@ public class SmaMultiHedge2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_directionSma = new SimpleMovingAverage { Length = SmaPeriod };
-		_corrBaseSma = new SimpleMovingAverage { Length = CorrelationPeriod };
-		_corrHedgeSma = new SimpleMovingAverage { Length = CorrelationPeriod };
+		_directionSma = new SMA { Length = SmaPeriod };
+		_corrBaseSma = new SMA { Length = CorrelationPeriod };
+		_corrHedgeSma = new SMA { Length = CorrelationPeriod };
 
 		// Subscribe to base security candles
 		var baseSub = SubscribeCandles(CandleType);

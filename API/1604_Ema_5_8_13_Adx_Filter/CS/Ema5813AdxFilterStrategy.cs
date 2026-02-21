@@ -34,17 +34,17 @@ public class Ema5813AdxFilterStrategy : Strategy
 
 	public Ema5813AdxFilterStrategy()
 	{
-		_enableLong = Param(nameof(EnableLong), true).SetDisplay("Enable Long");
-		_enableShort = Param(nameof(EnableShort), true).SetDisplay("Enable Short");
-		_useAdxFilter = Param(nameof(UseAdxFilter), false).SetDisplay("Use ADX Filter");
-		_adxThreshold = Param(nameof(AdxThreshold), 20).SetDisplay("ADX Threshold").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
+		_enableLong = Param(nameof(EnableLong), true).SetDisplay("Enable Long", "Enable Long", "General");
+		_enableShort = Param(nameof(EnableShort), true).SetDisplay("Enable Short", "Enable Short", "General");
+		_useAdxFilter = Param(nameof(UseAdxFilter), false).SetDisplay("Use ADX Filter", "Use ADX Filter", "General");
+		_adxThreshold = Param(nameof(AdxThreshold), 20).SetDisplay("ADX Threshold", "ADX Threshold", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ema5 = new EMA { Length = 5 };
 		var ema8 = new EMA { Length = 8 };

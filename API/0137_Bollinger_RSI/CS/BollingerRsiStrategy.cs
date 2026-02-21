@@ -98,31 +98,31 @@ public class BollingerRsiStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Period of the Bollinger Bands indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period of the RSI indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
 			.SetNotNegative()
 			.SetDisplay("RSI Oversold", "RSI level considered oversold", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 			.SetNotNegative()
 			.SetDisplay("RSI Overbought", "RSI level considered overbought", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -131,7 +131,7 @@ public class BollingerRsiStrategy : Strategy
 		_stopLossAtr = Param(nameof(StopLossAtr), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss ATR", "Stop loss as ATR multiplier", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 	}
 
@@ -142,9 +142,9 @@ public class BollingerRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var bollinger = new BollingerBands

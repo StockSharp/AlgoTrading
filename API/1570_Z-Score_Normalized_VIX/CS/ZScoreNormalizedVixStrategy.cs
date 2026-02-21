@@ -141,12 +141,12 @@ public class ZScoreNormalizedVixStrategy : Strategy
 	{
 		_zScoreLength = Param(nameof(ZScoreLength), 6)
 		.SetDisplay("Z-Score Length", "Lookback period for z-score", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 		
 		_threshold = Param(nameof(Threshold), 1m)
 		.SetDisplay("Z-Score Threshold", "Entry and exit threshold", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2m, 0.1m);
 		
 		_useVix = Param(nameof(UseVix), true)
@@ -167,7 +167,7 @@ public class ZScoreNormalizedVixStrategy : Strategy
 		_vvixSecurity = Param(nameof(VvixSecurity), new Security { Id = "CBOE:VVIX" })
 		.SetDisplay("VVIX Security", "Security representing VVIX", "Indices");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "Data");
 	}
 	
@@ -195,16 +195,16 @@ public class ZScoreNormalizedVixStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var mainSub = SubscribeCandles(CandleType);
 		mainSub.Bind(ProcessMainCandle).Start();
 		
 		if (UseVix)
 		{
-			var sma = new SimpleMovingAverage { Length = ZScoreLength };
+			var sma = new SMA { Length = ZScoreLength };
 			var std = new StandardDeviation { Length = ZScoreLength };
 			SubscribeCandles(CandleType, security: VixSecurity)
 			.Bind(sma, std, ProcessVixCandle)
@@ -213,7 +213,7 @@ public class ZScoreNormalizedVixStrategy : Strategy
 		
 		if (UseVix3m)
 		{
-			var sma = new SimpleMovingAverage { Length = ZScoreLength };
+			var sma = new SMA { Length = ZScoreLength };
 			var std = new StandardDeviation { Length = ZScoreLength };
 			SubscribeCandles(CandleType, security: Vix3mSecurity)
 			.Bind(sma, std, ProcessVix3mCandle)
@@ -222,7 +222,7 @@ public class ZScoreNormalizedVixStrategy : Strategy
 		
 		if (UseVix9d)
 		{
-			var sma = new SimpleMovingAverage { Length = ZScoreLength };
+			var sma = new SMA { Length = ZScoreLength };
 			var std = new StandardDeviation { Length = ZScoreLength };
 			SubscribeCandles(CandleType, security: Vix9dSecurity)
 			.Bind(sma, std, ProcessVix9dCandle)
@@ -231,7 +231,7 @@ public class ZScoreNormalizedVixStrategy : Strategy
 		
 		if (UseVvix)
 		{
-			var sma = new SimpleMovingAverage { Length = ZScoreLength };
+			var sma = new SMA { Length = ZScoreLength };
 			var std = new StandardDeviation { Length = ZScoreLength };
 			SubscribeCandles(CandleType, security: VvixSecurity)
 			.Bind(sma, std, ProcessVvixCandle)

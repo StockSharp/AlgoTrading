@@ -87,55 +87,55 @@ public class MultiIndicatorTrendFollowingStrategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Length of the fast EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Length of the slow EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 10);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Lookback period for RSI", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_volumeMaLength = Param(nameof(VolumeMaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume MA Length", "Volume SMA period", "Volume")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Multiplier", "Volume confirmation multiplier", "Volume")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 2m, 0.25m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for exits", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss ATR Multiplier", "ATR multiple for stop loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_takeProfitAtrMultiplier = Param(nameof(TakeProfitAtrMultiplier), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit ATR Multiplier", "ATR multiple for take profit", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_volumeSma = new SimpleMovingAverage { Length = VolumeMaLength };
+		_volumeSma = new SMA { Length = VolumeMaLength };
 	}
 
 	/// <inheritdoc />
@@ -149,18 +149,18 @@ public class MultiIndicatorTrendFollowingStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_volumeSma = new SimpleMovingAverage { Length = VolumeMaLength };
+		_volumeSma = new SMA { Length = VolumeMaLength };
 		_prevFast = 0;
 		_prevSlow = 0;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastMaLength };
-		var slowEma = new ExponentialMovingAverage { Length = SlowMaLength };
+		var fastEma = new EMA { Length = FastMaLength };
+		var slowEma = new EMA { Length = SlowMaLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
@@ -181,7 +181,7 @@ public class MultiIndicatorTrendFollowingStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastMa, decimal slowMa, decimal rsi, decimal atr)
 	{
-		var volumeMa = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var volumeMa = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 		if (candle.State != CandleStates.Finished)
 			return;

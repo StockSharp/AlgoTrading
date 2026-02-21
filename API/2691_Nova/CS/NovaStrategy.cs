@@ -115,37 +115,37 @@ public class NovaStrategy : Strategy
 		_secondsAgo = Param(nameof(SecondsAgo), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Seconds window", "Seconds to look back for price comparison", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 
 		_stepPips = Param(nameof(StepPips), 1)
 		.SetNotNegative()
 		.SetDisplay("Step (pips)", "Price offset in pips for breakout check", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 5, 1);
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Base volume", "Initial order volume", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 1)
 		.SetNotNegative()
 		.SetDisplay("Stop-loss (pips)", "Stop-loss distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 5, 1);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 1)
 		.SetNotNegative()
 		.SetDisplay("Take-profit (pips)", "Take-profit distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 5, 1);
 
 		_lossCoefficient = Param(nameof(LossCoefficient), 1.6m)
 		.SetGreaterThanZero()
 		.SetDisplay("Loss coefficient", "Multiplier for the next trade after a stop-loss", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 2.5m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -178,9 +178,9 @@ public class NovaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_previousPnL = PnL;
 

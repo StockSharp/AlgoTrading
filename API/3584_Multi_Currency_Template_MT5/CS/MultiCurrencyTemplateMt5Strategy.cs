@@ -97,7 +97,7 @@ public class MultiCurrencyTemplateMt5Strategy : Strategy
 			.SetDisplay("TP offset (points)", "Additional distance added above the break-even price when TP averaging is active.", "Scaling")
 			.SetNotNegative();
 
-		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Signal timeframe", "Slow timeframe used to evaluate the candlestick pattern entry filter.", "Timing");
 	}
 
@@ -231,9 +231,9 @@ public class MultiCurrencyTemplateMt5Strategy : Strategy
 		_configuredSecurities.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_contexts.Clear();
 		_configuredSecurities.Clear();
@@ -278,7 +278,7 @@ public class MultiCurrencyTemplateMt5Strategy : Strategy
 				.Start();
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	protected override void OnOwnTradeReceived(MyTrade trade)

@@ -72,19 +72,19 @@ public class DonchianWithVolatilityContractionStrategy : Strategy
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Donchian Period", "Period for Donchian Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_volatilityFactor = Param(nameof(VolatilityFactor), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volatility Factor", "Standard deviation multiplier for contraction detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -107,15 +107,15 @@ public class DonchianWithVolatilityContractionStrategy : Strategy
 		_currentDcWidth = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var donchianHigh = new Highest { Length = DonchianPeriod };
 		var donchianLow = new Lowest { Length = DonchianPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var sma = new SimpleMovingAverage { Length = DonchianPeriod };
+		var sma = new SMA { Length = DonchianPeriod };
 		var standardDeviation = new StandardDeviation { Length = DonchianPeriod };
 
 		// Subscribe to candles and bind indicators
@@ -137,8 +137,8 @@ public class DonchianWithVolatilityContractionStrategy : Strategy
 				_currentDcWidth = highPrice - lowPrice;
 
 				// Process SMA and StdDev for the channel width
-				var smaValue = sma.Process(_currentDcWidth, candle.ServerTime, candle.State == CandleStates.Finished);
-				var stdDevValue = standardDeviation.Process(_currentDcWidth, candle.ServerTime, candle.State == CandleStates.Finished);
+				var smaValue = sma.Process(new DecimalIndicatorValue(sma, _currentDcWidth, candle.ServerTime));
+				var stdDevValue = standardDeviation.Process(new DecimalIndicatorValue(standardDeviation, _currentDcWidth, candle.ServerTime));
 
 				_avgDcWidth = smaValue.ToDecimal();
 				_stdDevDcWidth = stdDevValue.ToDecimal();

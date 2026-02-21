@@ -336,13 +336,13 @@ public class BbSwingStrategy : Strategy
 		_initialVolume = Param(nameof(InitialVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Base Volume", "Starting trade volume", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1m, 0.1m);
 
 		_lotExponent = Param(nameof(LotExponent), 1.44m)
 		.SetGreaterThanZero()
 		.SetDisplay("Lot Exponent", "Multiplier for consecutive entries", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 2m, 0.1m);
 
 		_maxTrades = Param(nameof(MaxTrades), 3)
@@ -493,14 +493,12 @@ public class BbSwingStrategy : Strategy
 
 		_fastMa = new WeightedMovingAverage
 		{
-			Length = FastMaPeriod,
-			CandlePrice = CandlePrice.Typical
+			Length = FastMaPeriod
 		};
 
 		_slowMa = new WeightedMovingAverage
 		{
-			Length = SlowMaPeriod,
-			CandlePrice = CandlePrice.Typical
+			Length = SlowMaPeriod
 		};
 
 		_bollinger = new BollingerBands
@@ -686,7 +684,7 @@ public class BbSwingStrategy : Strategy
 			_highestSinceEntry = Math.Max(_highestSinceEntry, candle.HighPrice);
 			_lowestSinceEntry = Math.Min(_lowestSinceEntry, candle.LowPrice);
 
-			var exitPrice = PositionAvgPrice;
+			var exitPrice = PositionPrice;
 			if (exitPrice <= 0m)
 			exitPrice = candle.ClosePrice;
 
@@ -738,7 +736,7 @@ public class BbSwingStrategy : Strategy
 			_highestSinceEntry = Math.Max(_highestSinceEntry, candle.HighPrice);
 			_lowestSinceEntry = Math.Min(_lowestSinceEntry, candle.LowPrice);
 
-			var exitPrice = PositionAvgPrice;
+			var exitPrice = PositionPrice;
 			if (exitPrice <= 0m)
 			exitPrice = candle.ClosePrice;
 
@@ -927,7 +925,7 @@ public class BbSwingStrategy : Strategy
 		if (Position == 0)
 		return 0m;
 
-		var entry = PositionAvgPrice;
+		var entry = PositionPrice;
 		if (entry == 0m)
 		entry = candle.OpenPrice;
 

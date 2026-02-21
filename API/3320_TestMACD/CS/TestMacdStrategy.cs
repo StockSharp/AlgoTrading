@@ -102,15 +102,15 @@ public class TestMacdStrategy : Strategy
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetDisplay("MACD Fast", "Fast EMA period for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 24)
 			.SetDisplay("MACD Slow", "Slow EMA period for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetDisplay("MACD Signal", "Signal EMA period for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 90)
 			.SetDisplay("Stop Loss", "Stop-loss distance in price steps", "Risk")

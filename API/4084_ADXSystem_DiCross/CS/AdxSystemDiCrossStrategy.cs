@@ -41,27 +41,27 @@ public AdxSystemDiCrossStrategy()
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX period", "Number of candles used to build the Average Directional Index.", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade volume", "Default volume for market orders.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
 			.SetNotNegative()
 			.SetDisplay("Take profit (points)", "Target distance expressed in price points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
 			.SetNotNegative()
 			.SetDisplay("Stop loss (points)", "Protective stop distance expressed in price points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
 			.SetNotNegative()
 			.SetDisplay("Trailing stop (points)", "Trailing stop distance expressed in price points.", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	public DataType CandleType
@@ -105,9 +105,9 @@ public AdxSystemDiCrossStrategy()
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume; // Align default volume with the configured lot size
 

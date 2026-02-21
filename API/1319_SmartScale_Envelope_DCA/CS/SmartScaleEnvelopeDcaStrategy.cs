@@ -116,36 +116,36 @@ public class SmartScaleEnvelopeDcaStrategy : Strategy
 	{
 		_envelopeLength = Param(nameof(EnvelopeLength), 13)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Envelope Length", "Envelope length", "Parameters");
 
 		_percentOffset = Param(nameof(PercentOffset), 6.6m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Envelope % Offset", "Envelope percent offset", "Parameters");
 
 		_useEma = Param(nameof(UseEma), false)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Use EMA", "Use exponential MA", "Parameters");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 15m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Parameters");
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 5m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Take Profit %", "Take profit percent", "Parameters");
 
 		_cooldown = Param(nameof(Cooldown), 7)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Candles Between Buys", "Cooldown between buys", "Parameters");
 
 		_maxBuys = Param(nameof(MaxBuys), 8)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Max Buys", "Maximum buy-ins", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -169,14 +169,14 @@ public class SmartScaleEnvelopeDcaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		_startDate = CurrentTime - TimeSpan.FromDays(365);
 
-		_ma = UseEma ? new ExponentialMovingAverage { Length = EnvelopeLength } : new SimpleMovingAverage { Length = EnvelopeLength };
+		_ma = UseEma ? new EMA { Length = EnvelopeLength } : new SMA { Length = EnvelopeLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

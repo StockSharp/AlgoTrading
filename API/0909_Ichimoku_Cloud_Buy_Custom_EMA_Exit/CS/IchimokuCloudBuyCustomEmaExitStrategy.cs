@@ -158,9 +158,9 @@ public class IchimokuCloudBuyCustomEmaExitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ichimoku = new Ichimoku
 		{
@@ -169,8 +169,8 @@ public class IchimokuCloudBuyCustomEmaExitStrategy : Strategy
 			SenkouB = { Length = SenkouSpanPeriod }
 		};
 
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
-		_volumeMa = new SimpleMovingAverage { Length = VolumeAvgPeriod };
+		_ema = new EMA { Length = EmaLength };
+		_volumeMa = new SMA { Length = VolumeAvgPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -206,8 +206,8 @@ public class IchimokuCloudBuyCustomEmaExitStrategy : Strategy
 		if (ich.SenkouB is not decimal senkouB)
 			return;
 
-		var emaVal = _ema.Process(candle.ClosePrice, candle.ServerTime, true).ToDecimal();
-		var avgVol = _volumeMa.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var emaVal = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, candle.ServerTime)).ToDecimal();
+		var avgVol = _volumeMa.Process(new DecimalIndicatorValue(_volumeMa, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 		var priceAboveCloud = candle.ClosePrice > Math.Max(senkouA, senkouB);
 		var volumeAboveAvg = candle.TotalVolume > avgVol;

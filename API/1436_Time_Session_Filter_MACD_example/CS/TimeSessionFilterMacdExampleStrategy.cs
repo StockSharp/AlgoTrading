@@ -115,19 +115,19 @@ public class TimeSessionFilterMacdExampleStrategy : Strategy
 			.SetDisplay("Close At Session End", "Close positions when session ends", "Session");
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 11)
 			.SetDisplay("Fast EMA Period", "Fast length for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 15, 2);
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
 			.SetDisplay("Slow EMA Period", "Slow length for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 32, 2);
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetDisplay("Signal Period", "MACD signal length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 13, 2);
 		_trendMaLength = Param(nameof(TrendMaLength), 55)
 			.SetDisplay("Trend EMA Length", "Length of trend EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 80, 5);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -157,7 +157,7 @@ public class TimeSessionFilterMacdExampleStrategy : Strategy
 			Macd = { ShortMa = { Length = FastEmaPeriod }, LongMa = { Length = SlowEmaPeriod } },
 			SignalMa = { Length = SignalPeriod }
 		};
-		var trendMa = new ExponentialMovingAverage { Length = TrendMaLength };
+		var trendMa = new EMA { Length = TrendMaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(macd, ProcessCandle);
@@ -181,7 +181,7 @@ public class TimeSessionFilterMacdExampleStrategy : Strategy
 
 	private bool IsSessionActive(DateTimeOffset time)
 	{
-		var tod = time.LocalDateTime.TimeOfDay;
+		var tod = time.TimeOfDay;
 		return tod >= SessionStart && tod <= SessionEnd;
 	}
 

@@ -66,23 +66,23 @@ public class MesaStochasticMultiLengthStrategy : Strategy
 		_length1 = Param(nameof(Length1), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Length 1", "Lookback for first oscillator", "Indicators")
-		.SetCanOptimize(true);
+		;
 		_length2 = Param(nameof(Length2), 21)
 		.SetGreaterThanZero()
 		.SetDisplay("Length 2", "Lookback for second oscillator", "Indicators")
-		.SetCanOptimize(true);
+		;
 		_length3 = Param(nameof(Length3), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Length 3", "Lookback for third oscillator", "Indicators")
-		.SetCanOptimize(true);
+		;
 		_length4 = Param(nameof(Length4), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Length 4", "Lookback for fourth oscillator", "Indicators")
-		.SetCanOptimize(true);
+		;
 		_triggerLength = Param(nameof(TriggerLength), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Trigger Length", "Smoothing for triggers", "Indicators")
-		.SetCanOptimize(true);
+		;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe", "General");
 	}
@@ -92,9 +92,9 @@ public class MesaStochasticMultiLengthStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_state1 = CreateState(Length1);
 		_state2 = CreateState(Length2);
@@ -195,7 +195,7 @@ public class MesaStochasticMultiLengthStrategy : Strategy
 		{
 			Highest = new Highest { Length = length },
 			Lowest = new Lowest { Length = length },
-			Trigger = new SimpleMovingAverage { Length = TriggerLength }
+			Trigger = new SMA { Length = TriggerLength }
 		};
 	}
 

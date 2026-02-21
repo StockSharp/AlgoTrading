@@ -49,7 +49,7 @@ public class FractalIdentifier20Strategy : Strategy
 	{
 		_lookbackBars = Param(nameof(LookbackBars), 10)
 			.SetDisplay("Lookback bars", "Number of recently completed candles scanned for fractal highs.", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle type", "Primary candle series used to evaluate fractals.", "Data");
@@ -69,9 +69,9 @@ public class FractalIdentifier20Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to the configured candle series using the high level API.
 		var subscription = SubscribeCandles(CandleType);

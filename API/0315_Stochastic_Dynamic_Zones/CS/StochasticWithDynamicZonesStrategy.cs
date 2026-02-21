@@ -90,31 +90,31 @@ public class StochasticWithDynamicZonesStrategy : Strategy
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Period for Stochastic Oscillator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_stochKPeriod = Param(nameof(StochKPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K Period", "Smoothing period for %K line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
-		_stochDPeriod = Param(nameof(StochDPeriod), 3)
+		_stochD = { Length = Param }(nameof(StochDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D Period", "Smoothing period for %D line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for dynamic zones calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_standardDeviationFactor = Param(nameof(StandardDeviationFactor), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Standard Deviation Factor", "Factor for dynamic zones calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -136,9 +136,9 @@ public class StochasticWithDynamicZonesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var stochastic = new StochasticOscillator
@@ -147,7 +147,7 @@ public class StochasticWithDynamicZonesStrategy : Strategy
 			D = { Length = StochDPeriod },
 		};
 		
-		var stochSma = new SimpleMovingAverage { Length = LookbackPeriod };
+		var stochSma = new SMA { Length = LookbackPeriod };
 		var stochStdDev = new StandardDeviation { Length = LookbackPeriod };
 
 		// Subscribe to candles and bind indicators
@@ -163,8 +163,8 @@ public class StochasticWithDynamicZonesStrategy : Strategy
 					return;
 
 				// Calculate dynamic zones
-				var stochKAvg = stochSma.Process(stochK, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-				var stochKStdDev = stochStdDev.Process(stochK, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+				var stochKAvg = stochSma.Process(new DecimalIndicatorValue(stochSma, stochK, candle.ServerTime)).ToDecimal();
+				var stochKStdDev = stochStdDev.Process(new DecimalIndicatorValue(stochStdDev, stochK, candle.ServerTime)).ToDecimal();
 				
 				var dynamicOversold = stochKAvg - (StandardDeviationFactor * stochKStdDev);
 				var dynamicOverbought = stochKAvg + (StandardDeviationFactor * stochKStdDev);

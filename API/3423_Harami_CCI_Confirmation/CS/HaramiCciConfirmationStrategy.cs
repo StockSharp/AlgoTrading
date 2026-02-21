@@ -37,13 +37,13 @@ public class HaramiCciConfirmationStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Base volume used for entries", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_cciPeriod = Param(nameof(CciPeriod), 11)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Length of the Commodity Channel Index", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_bodyAveragePeriod = Param(nameof(BodyAveragePeriod), 5)
@@ -132,9 +132,9 @@ public class HaramiCciConfirmationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 
@@ -144,7 +144,7 @@ public class HaramiCciConfirmationStrategy : Strategy
 			.Bind(cci, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal cciValue)
@@ -262,7 +262,7 @@ public class HaramiCciConfirmationStrategy : Strategy
 		for (var i = 0; i < period; i++)
 		{
 			var candle = GetCandle(startShift + i);
-			sum += Math.Abs(candle.Close - candle.Open);
+			sum += Math.Abs(candle.ClosePrice - candle.OpenPrice);
 		}
 
 		return sum / period;
@@ -276,7 +276,7 @@ public class HaramiCciConfirmationStrategy : Strategy
 		for (var i = 0; i < period; i++)
 		{
 			var candle = GetCandle(startShift + i);
-			sum += candle.Close;
+			sum += candle.ClosePrice;
 		}
 
 		return sum / period;
@@ -284,7 +284,7 @@ public class HaramiCciConfirmationStrategy : Strategy
 
 	private static decimal MidPoint(CandleSnapshot candle)
 	{
-		return (candle.High + candle.Low) / 2m;
+		return (candle.HighPrice + candle.LowPrice) / 2m;
 	}
 
 	private readonly record struct CandleSnapshot(decimal Open, decimal High, decimal Low, decimal Close);

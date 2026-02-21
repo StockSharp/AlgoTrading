@@ -56,17 +56,17 @@ public class IuBbbBigBodyBarStrategy : Strategy
 
 		_bigBodyThreshold = Param(nameof(BigBodyThreshold), 4m)
 			.SetDisplay("Big Body Threshold", "Multiplier of average body", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 6m, 1m);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetDisplay("ATR Period", "ATR indicator period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_atrFactor = Param(nameof(AtrFactor), 2m)
 			.SetDisplay("ATR Factor", "ATR multiplier for trailing stop", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 	}
 
@@ -84,11 +84,11 @@ public class IuBbbBigBodyBarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_bodySma = new SimpleMovingAverage { Length = 20 };
+		_bodySma = new SMA { Length = 20 };
 
 		var atr = new AverageTrueRange { Length = AtrLength };
 
@@ -104,7 +104,7 @@ public class IuBbbBigBodyBarStrategy : Strategy
 			return;
 
 		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var avgBody = _bodySma.Process(body, candle.ServerTime, true).ToDecimal();
+		var avgBody = _bodySma.Process(new DecimalIndicatorValue(_bodySma, body, candle.ServerTime)).ToDecimal();
 
 		if (!_bodySma.IsFormed)
 			return;

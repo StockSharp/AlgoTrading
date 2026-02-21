@@ -88,8 +88,8 @@ public class CrossingMovingAverageStrategy : Strategy
 	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _fastMa;
-	private LengthIndicator<decimal> _slowMa;
+	private DecimalLengthIndicator _fastMa;
+	private DecimalLengthIndicator _slowMa;
 	private Momentum _momentum;
 
 	private readonly List<decimal> _fastHistory = new();
@@ -254,13 +254,13 @@ public class CrossingMovingAverageStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 		.SetRange(0m, 1000m)
 		.SetDisplay("Stop Loss (pips)", "Stop loss distance expressed in pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 150m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetRange(0m, 1000m)
 		.SetDisplay("Take Profit (pips)", "Take profit distance expressed in pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 150m, 10m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
@@ -278,7 +278,7 @@ public class CrossingMovingAverageStrategy : Strategy
 		_momentumFilter = Param(nameof(MomentumFilter), 0.1m)
 		.SetRange(0m, 10m)
 		.SetDisplay("Momentum Filter", "Minimum momentum delta required for entries", "Strategy")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 1m, 0.05m);
 
 		_fastPeriod = Param(nameof(FastPeriod), 13)
@@ -299,7 +299,7 @@ public class CrossingMovingAverageStrategy : Strategy
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageModes.Exponential)
 		.SetDisplay("MA Method", "Moving average smoothing method", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_appliedPrice = Param(nameof(AppliedPrice), CandlePrices.Close)
 		.SetDisplay("Applied Price", "Price type used for indicators", "Indicators");
@@ -343,9 +343,9 @@ public class CrossingMovingAverageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -390,9 +390,9 @@ public class CrossingMovingAverageStrategy : Strategy
 
 		var price = GetPrice(candle, AppliedPrice);
 
-		var fastValue = _fastMa.Process(price, candle.OpenTime, true);
-		var slowValue = _slowMa.Process(price, candle.OpenTime, true);
-		var momentumValue = _momentum.Process(price, candle.OpenTime, true);
+		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, price, candle.OpenTime));
+		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, price, candle.OpenTime));
+		var momentumValue = _momentum.Process(new DecimalIndicatorValue(_momentum, price, candle.OpenTime));
 
 		if (!fastValue.IsFinal || !slowValue.IsFinal || !momentumValue.IsFinal)
 			return;
@@ -654,15 +654,15 @@ public class CrossingMovingAverageStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageModes mode, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageModes mode, int length)
 	{
 		return mode switch
 		{
-			MovingAverageModes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageModes.Simple => new SMA { Length = length },
+			MovingAverageModes.Exponential => new EMA { Length = length },
 			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageModes.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 }

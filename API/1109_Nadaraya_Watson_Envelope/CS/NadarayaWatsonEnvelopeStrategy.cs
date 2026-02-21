@@ -122,10 +122,10 @@ public class NadarayaWatsonEnvelopeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		_highEnvelope.Length = LookbackWindow;
 		_highEnvelope.Alpha = RelativeWeighting;
@@ -192,7 +192,7 @@ public class NadarayaWatsonEnvelopeStrategy : Strategy
 		_prevClose = close;
 	}
 
-	private class NadarayaWatson : Indicator<decimal>
+	private class NadarayaWatson : BaseIndicator
 	{
 		public int Length { get; set; } = 8;
 		public decimal Alpha { get; set; } = 8m;

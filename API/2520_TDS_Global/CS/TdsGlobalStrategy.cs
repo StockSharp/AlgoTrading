@@ -189,7 +189,7 @@ public class TdsGlobalStrategy : Strategy
 		_useSymbolStagger = Param(nameof(UseSymbolStagger), false)
 			.SetDisplay("Use Time Windows", "Apply symbol specific minute windows", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -218,9 +218,9 @@ public class TdsGlobalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 		if (_priceStep <= 0)
@@ -228,8 +228,8 @@ public class TdsGlobalStrategy : Strategy
 
 		var macd = new MACD
 		{
-			ShortPeriod = MacdFastLength,
-			LongPeriod = MacdSlowLength,
+			ShortMa = { Length = MacdFastLength },
+			LongMa = { Length = MacdSlowLength },
 			SignalPeriod = MacdSignalLength
 		};
 
@@ -240,7 +240,7 @@ public class TdsGlobalStrategy : Strategy
 			.Bind(macd, williams, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal signalLine, decimal williams)

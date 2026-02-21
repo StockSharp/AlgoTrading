@@ -94,9 +94,9 @@ public class DebugConsoleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_console = new DebugConsole(Size, Intrabar);
 
@@ -173,7 +173,7 @@ public class DebugConsoleStrategy : Strategy
 
 		public void Update(Action<string> output)
 		{
-			output(string.Join(Environment.NewLine, _entries));
+			output(string.Join(System.Environment.NewLine, _entries));
 		}
 
 		private void Add(string message)

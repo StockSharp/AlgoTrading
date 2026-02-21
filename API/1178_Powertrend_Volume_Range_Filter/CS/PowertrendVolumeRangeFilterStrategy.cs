@@ -125,14 +125,14 @@ public class PowertrendVolumeRangeFilterStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_smoothRng = new AverageTrueRange { Length = Length };
 		_adx = new AverageDirectionalIndex { Length = LengthAdx };
-		_adxSma = new SimpleMovingAverage { Length = LengthAdx };
-		_vwma = new SimpleMovingAverage { Length = LengthVwma };
+		_adxSma = new SMA { Length = LengthAdx };
+		_vwma = new SMA { Length = LengthVwma };
 		_highBandTrend = new Highest { Length = LengthHl };
 		_lowBandTrend = new Lowest { Length = LengthHl };
 

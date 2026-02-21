@@ -70,19 +70,19 @@ public class AutoKdStrategy : Strategy
 		_kdPeriod = Param(nameof(KdPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("KD Period", "Base period for RSV", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 
 		_kPeriod = Param(nameof(KPeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("K Period", "%K smoothing", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("D Period", "%D smoothing", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -104,13 +104,12 @@ public class AutoKdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stochastic = new StochasticOscillator
-		{
-		Length = KdPeriod,
+		{ K = { Length = KdPeriod },
 		K = { Length = KPeriod },
 		D = { Length = DPeriod },
 		};
@@ -120,7 +119,7 @@ public class AutoKdStrategy : Strategy
 		.BindEx(stochastic, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

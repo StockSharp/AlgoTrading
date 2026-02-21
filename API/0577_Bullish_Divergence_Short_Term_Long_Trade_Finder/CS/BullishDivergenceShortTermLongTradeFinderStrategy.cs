@@ -165,7 +165,7 @@ public class BullishDivergenceShortTermLongTradeFinderStrategy : Strategy
 	{
 		_stopLossPercent = Param(nameof(StopLossPercent), 5m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 10m, 1m);
 
 		_sellWhenRsi = Param(nameof(SellWhenRsi), 75m)
@@ -185,7 +185,7 @@ public class BullishDivergenceShortTermLongTradeFinderStrategy : Strategy
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 1);
 
 		_pivotLeft = Param(nameof(PivotLeft), 25)
@@ -235,9 +235,9 @@ public class BullishDivergenceShortTermLongTradeFinderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var len = PivotLeft + PivotRight + 1;
 		_rsiBuffer = new decimal[len];

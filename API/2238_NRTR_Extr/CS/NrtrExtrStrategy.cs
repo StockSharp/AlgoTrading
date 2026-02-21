@@ -131,11 +131,11 @@ public class NrtrExtrStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection(); // enable built-in position protection
+		StartProtection(null, null); // enable built-in position protection
 
 		var nrtr = new NrtrExtrIndicator
 		{
@@ -206,7 +206,7 @@ public class NrtrExtrStrategy : Strategy
 /// <summary>
 /// NRTR Extr indicator producing trend lines and signals.
 /// </summary>
-public class NrtrExtrIndicator : BaseIndicator<decimal>
+public class NrtrExtrIndicator : BaseIndicator
 {
 	public int Period { get; set; } = 10;
 	public int Digits { get; set; }

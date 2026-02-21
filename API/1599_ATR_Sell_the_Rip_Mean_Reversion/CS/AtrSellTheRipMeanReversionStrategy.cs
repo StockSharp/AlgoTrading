@@ -105,19 +105,19 @@ public class AtrSellTheRipMeanReversionStrategy : Strategy {
 						 .SetGreaterThanZero()
 						 .SetDisplay("ATR Period", "ATR calculation period",
 									 "Parameters")
-						 .SetCanOptimize(true);
+						 ;
 
 		_atrMultiplier =
 			Param(nameof(AtrMultiplier), 1m)
 				.SetDisplay("ATR Multiplier", "ATR multiplier", "Parameters")
-				.SetCanOptimize(true);
+				;
 
 		_smoothPeriod =
 			Param(nameof(SmoothPeriod), 10)
 				.SetGreaterThanZero()
 				.SetDisplay("Smoothing Period", "SMA period for ATR trigger",
 							"Parameters")
-				.SetCanOptimize(true);
+				;
 
 		_useEmaFilter =
 			Param(nameof(UseEmaFilter), true)
@@ -128,7 +128,7 @@ public class AtrSellTheRipMeanReversionStrategy : Strategy {
 						 .SetGreaterThanZero()
 						 .SetDisplay("EMA Period",
 									 "EMA length for trend filter", "Filters")
-						 .SetCanOptimize(true);
+						 ;
 
 		_candleType =
 			Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -161,14 +161,14 @@ public class AtrSellTheRipMeanReversionStrategy : Strategy {
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
-		base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_smoothSma = new SimpleMovingAverage { Length = SmoothPeriod };
-		_ema200 = new ExponentialMovingAverage { Length = EmaPeriod };
+		_smoothSma = new SMA { Length = SmoothPeriod };
+		_ema200 = new EMA { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_atr, _ema200, ProcessCandle).Start();

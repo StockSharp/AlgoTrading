@@ -37,15 +37,15 @@ public class DisturbedStrategy : Strategy
 
 		_gainMultiplier = Param(nameof(GainMultiplier), 2m)
 			.SetDisplay("Gain Multiplier", "Spread multiplier for profit target", "General")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		SubscribeLevel1(Security)
 			.Bind(OnLevel1)

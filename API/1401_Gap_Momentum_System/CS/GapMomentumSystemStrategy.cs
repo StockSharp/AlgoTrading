@@ -79,7 +79,7 @@ public class GapMomentumSystemStrategy : Strategy
 		_longOnly = Param(nameof(LongOnly), true)
 			.SetDisplay("Long Only", "Only long trades", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 	}
 
@@ -98,9 +98,9 @@ public class GapMomentumSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_gapMomentum = new GapMomentum
 		{
@@ -160,7 +160,7 @@ public class GapMomentumSystemStrategy : Strategy
 		_prevSignal = signal;
 	}
 
-	private class GapMomentum : Indicator<ICandleMessage>
+	private class GapMomentum : BaseIndicator
 	{
 		public int Period { get; set; } = 40;
 		public int SignalPeriod { get; set; } = 20;

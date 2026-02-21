@@ -92,29 +92,29 @@ public class RsiTrendStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period for RSI calculation", "RSI Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 73m)
 			.SetDisplay("RSI Buy Level", "Upper RSI barrier for long entries", "RSI Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 5m);
 
 		_rsiSellLevel = Param(nameof(RsiSellLevel), 27m)
 			.SetDisplay("RSI Sell Level", "Lower RSI barrier for short entries", "RSI Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for trailing stop", "ATR Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 25);
 
 		_atrMultiple = Param(nameof(AtrMultiple), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiple", "ATR multiplier for trailing stop", "ATR Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -138,9 +138,9 @@ public class RsiTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RSI { Length = RsiPeriod };
 		var atr = new ATR { Length = AtrPeriod };

@@ -59,7 +59,7 @@ public class MaRsiWizardStrategy : Strategy
 	private readonly StrategyParam<AppliedPrices> _rsiAppliedPrice;
 	private readonly StrategyParam<decimal> _rsiWeight;
 
-	private LengthIndicator<decimal> _ma = null!;
+	private DecimalLengthIndicator _ma = null!;
 	private RelativeStrengthIndex _rsi = null!;
 	private readonly Queue<decimal> _maShiftBuffer = new();
 
@@ -78,38 +78,38 @@ public class MaRsiWizardStrategy : Strategy
 		_thresholdOpen = Param(nameof(ThresholdOpen), 55)
 			.SetRange(0, 100)
 			.SetDisplay("Open Threshold", "Weighted score required to open a position", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_thresholdClose = Param(nameof(ThresholdClose), 100)
 			.SetRange(0, 100)
 			.SetDisplay("Close Threshold", "Weighted score required to exit an existing position", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_priceLevelPoints = Param(nameof(PriceLevelPoints), 0m)
 			.SetDisplay("Price Level (points)", "Minimum distance between price and moving average", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_stopLevelPoints = Param(nameof(StopLevelPoints), 50)
 			.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeLevelPoints = Param(nameof(TakeLevelPoints), 50)
 			.SetDisplay("Take Profit (points)", "Profit target distance expressed in price points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_expirationBars = Param(nameof(ExpirationBars), 4)
 			.SetDisplay("Signal Cooldown (bars)", "Bars to wait before allowing a new trade in the same direction", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average period", "Moving Average")
-			.SetCanOptimize(true);
+			;
 
 		_maShift = Param(nameof(MaShift), 3)
 			.SetRange(0, 100)
 			.SetDisplay("MA Shift", "Lag applied to the moving average output", "Moving Average")
-			.SetCanOptimize(true);
+			;
 
 		_maMethod = Param(nameof(MaMethods), MaMethods.Simple)
 			.SetDisplay("MA Method", "Moving average calculation method", "Moving Average");
@@ -120,12 +120,12 @@ public class MaRsiWizardStrategy : Strategy
 		_maWeight = Param(nameof(MaWeight), 0.8m)
 			.SetDisplay("MA Weight", "Contribution of the moving average score", "Signals")
 			.SetRange(0m, 1m)
-			.SetCanOptimize(true);
+			;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation length", "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_rsiAppliedPrice = Param(nameof(RsiAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("RSI Source", "Price type used for RSI", "RSI");
@@ -133,7 +133,7 @@ public class MaRsiWizardStrategy : Strategy
 		_rsiWeight = Param(nameof(RsiWeight), 0.5m)
 			.SetDisplay("RSI Weight", "Contribution of the RSI score", "Signals")
 			.SetRange(0m, 1m)
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -289,9 +289,9 @@ public class MaRsiWizardStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_maShiftBuffer.Clear();
 		_barIndex = 0;
@@ -435,15 +435,15 @@ public class MaRsiWizardStrategy : Strategy
 		return _maShiftBuffer.Count == shift + 1 ? _maShiftBuffer.Peek() : (decimal?)null;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int period)
+	private static DecimalLengthIndicator CreateMovingAverage(MaMethods method, int period)
 	{
 		return method switch
 		{
-			MaMethods.Simple => new SimpleMovingAverage { Length = period },
-			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MaMethods.Simple => new SMA { Length = period },
+			MaMethods.Exponential => new EMA { Length = period },
 			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
-			_ => new SimpleMovingAverage { Length = period }
+			_ => new SMA { Length = period }
 		};
 	}
 

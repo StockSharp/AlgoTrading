@@ -64,20 +64,20 @@ public class SchnickDemoStrategy : Strategy
 		_trainingPoints = Param(nameof(TrainingPoints), 5000)
 		.SetGreaterThanZero()
 		.SetDisplay("Training Points", "Number of samples for training", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1000, 10000, 1000);
 		
 			_testPoints = Param(nameof(TestPoints), 5000)
 		.SetGreaterThanZero()
 		.SetDisplay("Test Points", "Number of samples for testing", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1000, 10000, 1000);
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var inputs = new double[TrainingPoints * InputCount];
 		var outputs = new bool[TrainingPoints];

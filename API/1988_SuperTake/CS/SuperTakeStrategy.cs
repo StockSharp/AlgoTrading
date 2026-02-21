@@ -76,19 +76,19 @@ public class SuperTakeStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Base Take Profit", "Base take profit distance in price units", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 20m, 5m);
 
 		_stopLoss = Param(nameof(StopLoss), 15m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss", "Stop loss distance in price units", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 30m, 5m);
 
 		_martinFactor = Param(nameof(MartinFactor), 1.8m)
 		.SetGreaterThanZero()
 		.SetDisplay("Martingale Factor", "Multiplier for take profit after a losing trade", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.2m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -114,16 +114,16 @@ public class SuperTakeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_lastTakeProfitDistance = TakeProfit;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 	private void ProcessCandle(ICandleMessage candle)
 	{

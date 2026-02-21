@@ -71,7 +71,7 @@ public class MeanReversionMomentumStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Volume used when sending market orders.", "General")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Primary Timeframe", "Candle series used to generate entries.", "General");
@@ -79,52 +79,52 @@ public class MeanReversionMomentumStrategy : Strategy
 		_barsToCount = Param(nameof(BarsToCount), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Bars To Count", "Number of previous closes compared when detecting exhaustion.", "Signal")
-		.SetCanOptimize(true);
+		;
 
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average.", "Signal")
-		.SetCanOptimize(true);
+		;
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average.", "Signal")
-		.SetCanOptimize(true);
+		;
 
 		_momentumLength = Param(nameof(MomentumLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Period", "Period of the momentum indicator on the higher timeframe.", "Signal")
-		.SetCanOptimize(true);
+		;
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Fast Length", "Length of the fast EMA used by the MACD filter.", "Signal")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Slow Length", "Length of the slow EMA used by the MACD filter.", "Signal")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal Length", "Signal smoothing period for the MACD filter.", "Signal")
-		.SetCanOptimize(true);
+		;
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 		.SetNotNegative()
 		.SetDisplay("Momentum Threshold", "Absolute deviation from 100 required for confirmation.", "Signal")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Target distance expressed in pips.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_useBreakEven = Param(nameof(UseBreakEven), false)
 		.SetDisplay("Use Break-Even", "Enable stop relocation to the entry price after profits.", "Risk");
@@ -132,12 +132,12 @@ public class MeanReversionMomentumStrategy : Strategy
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30m)
 		.SetNotNegative()
 		.SetDisplay("Break-Even Trigger", "Profit in pips required before moving the stop to entry.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 30m)
 		.SetNotNegative()
 		.SetDisplay("Break-Even Offset", "Additional pips added when relocating the stop.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
 		.SetDisplay("Enable Trailing", "Activate trailing stop management once in profit.", "Risk");
@@ -145,12 +145,12 @@ public class MeanReversionMomentumStrategy : Strategy
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Distance", "Minimum profit in pips required before trailing.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 40m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Offset in pips used when updating the trailing stop.", "Risk")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>
@@ -356,14 +356,12 @@ public class MeanReversionMomentumStrategy : Strategy
 
 		_fastMa = new WeightedMovingAverage
 		{
-			Length = FastMaLength,
-			CandlePrice = CandlePrice.Typical
+			Length = FastMaLength
 		};
 
 		_slowMa = new WeightedMovingAverage
 		{
-			Length = SlowMaLength,
-			CandlePrice = CandlePrice.Typical
+			Length = SlowMaLength
 		};
 
 		_momentum = new Momentum { Length = MomentumLength };

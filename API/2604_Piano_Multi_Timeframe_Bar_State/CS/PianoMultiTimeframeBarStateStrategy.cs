@@ -40,7 +40,7 @@ public class PianoMultiTimeframeBarStateStrategy : Strategy
 		new("H6", TimeSpan.FromHours(6).TimeFrame()),
 		new("H8", TimeSpan.FromHours(8).TimeFrame()),
 		new("H12", TimeSpan.FromHours(12).TimeFrame()),
-		new("D1", TimeSpan.FromDays(1).TimeFrame()),
+		new("D1", TimeSpan.FromMinutes(5).TimeFrame()),
 		new("W1", TimeSpan.FromDays(7).TimeFrame()),
 		new("MN1", TimeSpan.FromDays(30).TimeFrame())
 	];
@@ -69,7 +69,7 @@ public class PianoMultiTimeframeBarStateStrategy : Strategy
 		_barsToTrack = Param(nameof(BarsToTrack), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Bars Per Timeframe", "How many recent candles are evaluated per timeframe.", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 	}
 
@@ -109,9 +109,9 @@ public class PianoMultiTimeframeBarStateStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_buffers = new PianoBuffer[TimeFrames.Length];
 

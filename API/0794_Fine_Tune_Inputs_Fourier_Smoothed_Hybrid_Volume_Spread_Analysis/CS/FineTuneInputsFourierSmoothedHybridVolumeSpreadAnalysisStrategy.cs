@@ -72,17 +72,17 @@ public class FineTuneInputsFourierSmoothedHybridVolumeSpreadAnalysisStrategy : S
 		_volumeLength = Param(nameof(VolumeLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Length", "EMA period for volume", "Source")
-			.SetCanOptimize(true);
+			;
 
 		_priceLength = Param(nameof(PriceLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Length", "EMA period for price", "Calculations")
-			.SetCanOptimize(true);
+			;
 
 		_vdmaLength = Param(nameof(VdmaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("VDMA Length", "EMA period for vd", "Calculations")
-			.SetCanOptimize(true);
+			;
 
 		_enableCloseAll = Param(nameof(EnableCloseAll), false)
 			.SetDisplay("Enable Close All", "Close position when signal neutral", "General");
@@ -99,14 +99,14 @@ public class FineTuneInputsFourierSmoothedHybridVolumeSpreadAnalysisStrategy : S
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_closeEma = new ExponentialMovingAverage { Length = PriceLength };
-		_openEma = new ExponentialMovingAverage { Length = PriceLength };
-		_volumeEma = new ExponentialMovingAverage { Length = VolumeLength };
-		_vdma = new ExponentialMovingAverage { Length = VdmaLength };
+		_closeEma = new EMA { Length = PriceLength };
+		_openEma = new EMA { Length = PriceLength };
+		_volumeEma = new EMA { Length = VolumeLength };
+		_vdma = new EMA { Length = VdmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

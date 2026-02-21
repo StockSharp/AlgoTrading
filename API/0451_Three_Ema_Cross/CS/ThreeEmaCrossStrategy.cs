@@ -99,31 +99,31 @@ public class ThreeEmaCrossStrategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA length", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 3);
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA length", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 30, 5);
 
 		_trendEmaLength = Param(nameof(TrendEmaLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend EMA", "Trend EMA length", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 25);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 99.0m)
 			.SetRange(0.1m, 100.0m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 10.0m, 1.0m);
 
 		_crossBackBars = Param(nameof(CrossBackBars), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Cross Back Bars", "Check cross in the last X candles", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 3);
 	}
 
@@ -145,14 +145,14 @@ public class ThreeEmaCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
-		_trendEma = new ExponentialMovingAverage { Length = TrendEmaLength };
+		_fastEma = new EMA { Length = FastEmaLength };
+		_slowEma = new EMA { Length = SlowEmaLength };
+		_trendEma = new EMA { Length = TrendEmaLength };
 
 		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);

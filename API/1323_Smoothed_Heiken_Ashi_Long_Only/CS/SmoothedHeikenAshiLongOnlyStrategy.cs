@@ -69,12 +69,12 @@ public class SmoothedHeikenAshiLongOnlyStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 10)
 			.SetDisplay("EMA Length", "Length for primary EMA smoothing", "General")
 			.SetRange(5, 50)
-			.SetCanOptimize(true);
+			;
 
 		_smoothingLength = Param(nameof(SmoothingLength), 10)
 			.SetDisplay("Smoothing Length", "Length for secondary EMA smoothing", "General")
 			.SetRange(5, 50)
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -96,16 +96,16 @@ public class SmoothedHeikenAshiLongOnlyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_emaOpen = new ExponentialMovingAverage { Length = EmaLength };
-		_emaClose = new ExponentialMovingAverage { Length = EmaLength };
-		_emaHigh = new ExponentialMovingAverage { Length = EmaLength };
-		_emaLow = new ExponentialMovingAverage { Length = EmaLength };
-		_emaHaOpen = new ExponentialMovingAverage { Length = SmoothingLength };
-		_emaHaClose = new ExponentialMovingAverage { Length = SmoothingLength };
+		_emaOpen = new EMA { Length = EmaLength };
+		_emaClose = new EMA { Length = EmaLength };
+		_emaHigh = new EMA { Length = EmaLength };
+		_emaLow = new EMA { Length = EmaLength };
+		_emaHaOpen = new EMA { Length = SmoothingLength };
+		_emaHaClose = new EMA { Length = SmoothingLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(OnProcess).Start();
@@ -117,10 +117,10 @@ public class SmoothedHeikenAshiLongOnlyStrategy : Strategy
 			return;
 
 		var time = candle.OpenTime;
-		var open = _emaOpen.Process(candle.OpenPrice, time, true).ToDecimal();
-		var close = _emaClose.Process(candle.ClosePrice, time, true).ToDecimal();
-		var high = _emaHigh.Process(candle.HighPrice, time, true).ToDecimal();
-		var low = _emaLow.Process(candle.LowPrice, time, true).ToDecimal();
+		var open = _emaOpen.Process(new DecimalIndicatorValue(_emaOpen, candle.OpenPrice, time)).ToDecimal();
+		var close = _emaClose.Process(new DecimalIndicatorValue(_emaClose, candle.ClosePrice, time)).ToDecimal();
+		var high = _emaHigh.Process(new DecimalIndicatorValue(_emaHigh, candle.HighPrice, time)).ToDecimal();
+		var low = _emaLow.Process(new DecimalIndicatorValue(_emaLow, candle.LowPrice, time)).ToDecimal();
 
 		var haClose = (open + high + low + close) / 4m;
 		var haOpen = _prevHaOpen is null ? (open + close) / 2m : (_prevHaOpen.Value + _prevHaClose!.Value) / 2m;
@@ -128,8 +128,8 @@ public class SmoothedHeikenAshiLongOnlyStrategy : Strategy
 		_prevHaOpen = haOpen;
 		_prevHaClose = haClose;
 
-		var o2 = _emaHaOpen.Process(haOpen, time, true).ToDecimal();
-		var c2 = _emaHaClose.Process(haClose, time, true).ToDecimal();
+		var o2 = _emaHaOpen.Process(new DecimalIndicatorValue(_emaHaOpen, haOpen, time)).ToDecimal();
+		var c2 = _emaHaClose.Process(new DecimalIndicatorValue(_emaHaClose, haClose, time)).ToDecimal();
 
 		var isGreen = c2 >= o2;
 

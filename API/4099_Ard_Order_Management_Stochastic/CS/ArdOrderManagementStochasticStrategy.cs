@@ -136,53 +136,53 @@ public class ArdOrderManagementStochasticStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Initial profit target distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 300m, 10m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Initial protective stop distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_modifyTakeProfitPips = Param(nameof(ModifyTakeProfitPips), 100m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Take Profit (pips)", "Distance maintained when refreshing profit targets", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 300m, 10m);
 
 		_modifyStopLossPips = Param(nameof(ModifyStopLossPips), 20m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Distance maintained when refreshing stop levels", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 10m);
 
 		_stochasticPeriod = Param(nameof(StochasticPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Lookback period for %K calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 40, 1);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Period", "Smoothing period for %D", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_slowingPeriod = Param(nameof(SlowingPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Slowing", "Smoothing applied to %K", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_buyThreshold = Param(nameof(BuyThreshold), 80m)
 			.SetDisplay("Buy Threshold", "Overbought level that triggers long entries", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(55m, 95m, 5m);
 
 		_sellThreshold = Param(nameof(SellThreshold), 20m)
 			.SetDisplay("Sell Threshold", "Oversold level that triggers short entries", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 45m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -196,16 +196,15 @@ public class ArdOrderManagementStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 
 		// Configure the Stochastic oscillator exactly once when the strategy starts.
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticPeriod,
+		{ K = { Length = StochasticPeriod },
 			K = { Length = SlowingPeriod },
 			D = { Length = SignalPeriod },
 			Slowing = SlowingPeriod,

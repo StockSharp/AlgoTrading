@@ -125,35 +125,35 @@ public class GazonkosStrategy : Strategy
 	{
 		_takeProfit = Param(nameof(TakeProfit), 0.0016m)
 			.SetDisplay("Take Profit", "Take profit distance in price units", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_rollback = Param(nameof(Rollback), 0.0016m)
 			.SetDisplay("Rollback", "Required pullback before entering", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 0.004m)
 			.SetDisplay("Stop Loss", "Stop loss distance in price units", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_delta = Param(nameof(Delta), 0.004m)
 			.SetDisplay("Delta", "Minimum difference between closes", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetDisplay("Trade Volume", "Default volume for market orders", "Orders")
-			.SetCanOptimize(true);
+			;
 
 		_firstShift = Param(nameof(FirstShift), 3)
 			.SetDisplay("First Shift", "Older close shift for the comparison", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_secondShift = Param(nameof(SecondShift), 2)
 			.SetDisplay("Second Shift", "Recent close shift for the comparison", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_activeTrades = Param(nameof(ActiveTrades), 1)
 			.SetDisplay("Active Trades", "Maximum simultaneous trades", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series used for signals", "General");
@@ -182,9 +182,9 @@ public class GazonkosStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 		UpdateHistorySize();
@@ -216,7 +216,7 @@ public class GazonkosStrategy : Strategy
 		UpdateHistorySize();
 		AddClose(candle.ClosePrice);
 
-		var hour = candle.CloseTime.UtcDateTime.Hour;
+		var hour = candle.CloseTime.Hour;
 
 		if (_state == 0)
 		{

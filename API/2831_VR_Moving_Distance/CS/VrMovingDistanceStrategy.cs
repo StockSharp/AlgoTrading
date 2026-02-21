@@ -50,7 +50,7 @@ public class VrMovingDistanceStrategy : Strategy
 	private readonly StrategyParam<decimal> _volumeMultiplier;
 	private readonly StrategyParam<decimal> _baseVolume;
 
-	private LengthIndicator<decimal> _movingAverage = null!;
+	private DecimalLengthIndicator _movingAverage = null!;
 	private decimal _pipSize;
 
 	private int _longEntries;
@@ -143,7 +143,7 @@ public class VrMovingDistanceStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average period", "Moving Average")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 		_maType = Param(nameof(MaType), MovingAverageTypes.Exponential)
@@ -155,19 +155,19 @@ public class VrMovingDistanceStrategy : Strategy
 		_distancePips = Param(nameof(DistancePips), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Distance (pips)", "Offset from the moving average", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 150m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetRange(0.000001m, 0.999999m)
 			.SetDisplay("Take Profit (pips)", "Exit distance when only one position is open", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 150m, 10m);
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Multiplier", "Multiplier for additional entries", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.25m);
 
 		_baseVolume = Param(nameof(BaseVolume), 1m)
@@ -182,9 +182,9 @@ public class VrMovingDistanceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdatePipSize();
 
@@ -203,7 +203,7 @@ public class VrMovingDistanceStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
@@ -345,16 +345,16 @@ public class VrMovingDistanceStrategy : Strategy
 		return digits;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length, CandlePrices priceSource)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageTypes type, int length, CandlePrices priceSource)
 	{
-		LengthIndicator<decimal> indicator = type switch
+		DecimalLengthIndicator indicator = type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage(),
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage(),
+			MovingAverageTypes.Simple => new SMA(),
+			MovingAverageTypes.Exponential => new EMA(),
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage(),
 			MovingAverageTypes.Weighted => new WeightedMovingAverage(),
 			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage(),
-			_ => new SimpleMovingAverage(),
+			_ => new SMA(),
 		};
 
 		indicator.Length = length;

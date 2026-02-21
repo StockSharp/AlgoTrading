@@ -124,32 +124,32 @@ public class KumoTradeIchimokuStrategy : Strategy
 	{
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 		.SetDisplay("Tenkan-sen Period", "Period for Tenkan line", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 13, 2);
 		
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 		.SetDisplay("Kijun-sen Period", "Period for Kijun line", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 30, 2);
 		
 		_senkouPeriod = Param(nameof(SenkouPeriod), 52)
 		.SetDisplay("Senkou Span B Period", "Period for Senkou B", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40, 60, 4);
 		
 		_stochK = Param(nameof(StochK), 70)
 		.SetDisplay("Stochastic %K", "Period for %K line", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 90, 5);
 		
 		_stochD = Param(nameof(StochD), 15)
 		.SetDisplay("Stochastic %D", "Smoothing for %D line", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 25, 5);
 		
 		_atrPeriod = Param(nameof(AtrPeriod), 5)
 		.SetDisplay("ATR Period", "Period for ATR stop", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 10, 1);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -182,11 +182,11 @@ public class KumoTradeIchimokuStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		var ichimoku = new Ichimoku
 		{

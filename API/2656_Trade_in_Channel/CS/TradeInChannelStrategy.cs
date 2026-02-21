@@ -84,17 +84,17 @@ public class TradeInChannelStrategy : Strategy
 	{
 		_channelPeriod = Param(nameof(ChannelPeriod), 20)
 			.SetDisplay("Channel Period", "Donchian channel lookback", "Channel")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_atrPeriod = Param(nameof(AtrPeriod), 4)
 			.SetDisplay("ATR Period", "Average True Range length", "Volatility")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 30m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -124,9 +124,9 @@ public class TradeInChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ps = Security?.PriceStep;
 		_priceStep = ps is > 0m ? ps.Value : 1m;
@@ -155,7 +155,7 @@ public class TradeInChannelStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue atrValue)

@@ -47,39 +47,39 @@ public class Up3x1ShiftedSmaStrategy : Strategy
 	public Up3x1ShiftedSmaStrategy()
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 24)
-			.SetDisplay("Fast SMA period")
-			.SetCanOptimize(true);
+			.SetDisplay("Fast SMA period", "Fast SMA period", "General")
+			;
 
 		_mediumPeriod = Param(nameof(MediumPeriod), 60)
-			.SetDisplay("Medium SMA period")
-			.SetCanOptimize(true);
+			.SetDisplay("Medium SMA period", "Medium SMA period", "General")
+			;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 120)
-			.SetDisplay("Slow SMA period")
-			.SetCanOptimize(true);
+			.SetDisplay("Slow SMA period", "Slow SMA period", "General")
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150m)
-			.SetDisplay("Take profit distance in points")
-			.SetCanOptimize(true);
+			.SetDisplay("Take profit distance in points", "Take profit distance in points", "General")
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
-			.SetDisplay("Stop loss distance in points")
-			.SetCanOptimize(true);
+			.SetDisplay("Stop loss distance in points", "Stop loss distance in points", "General")
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 100m)
-			.SetDisplay("Trailing stop distance in points")
-			.SetCanOptimize(true);
+			.SetDisplay("Trailing stop distance in points", "Trailing stop distance in points", "General")
+			;
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
-			.SetDisplay("Fallback trade volume")
-			.SetCanOptimize(true);
+			.SetDisplay("Fallback trade volume", "Fallback trade volume", "General")
+			;
 
 		_riskFraction = Param(nameof(RiskFraction), 0.00002m)
-			.SetDisplay("Fraction of portfolio value used for sizing")
-			.SetCanOptimize(true);
+			.SetDisplay("Fraction of portfolio value used for sizing", "Fraction of portfolio value used for sizing", "General")
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle type for analysis");
+			.SetDisplay("Candle type for analysis", "Candle type for analysis", "General");
 	}
 
 	public int FastPeriod
@@ -137,21 +137,21 @@ public class Up3x1ShiftedSmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastSma = new SimpleMovingAverage
+		_fastSma = new SMA
 		{
 			Length = FastPeriod
 		};
 
-		_mediumSma = new SimpleMovingAverage
+		_mediumSma = new SMA
 		{
 			Length = MediumPeriod
 		};
 
-		_slowSma = new SimpleMovingAverage
+		_slowSma = new SMA
 		{
 			Length = SlowPeriod
 		};

@@ -37,7 +37,7 @@ public class Dca2Strategy : Strategy
 	/// </summary>
 	public Dca2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_startYear = Param(nameof(StartYear), 2004)
@@ -112,12 +112,12 @@ public class Dca2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_start = new DateTimeOffset(StartYear, 1, 1, 0, 0, 0, time.Offset);
-		_finish = new DateTimeOffset(EndYear, 1, 1, 0, 0, 0, time.Offset);
+		_start = new DateTimeOffset(StartYear, 1, 1, 0, 0, 0, TimeSpan.Zero);
+		_finish = new DateTimeOffset(EndYear, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
 		var isBitcoin = Security.Code.IndexOf("BTC", StringComparison.OrdinalIgnoreCase) >= 0;
 		_rsiExit = ExitRsi < 100 ? ExitRsi : isBitcoin ? 92 : 84;

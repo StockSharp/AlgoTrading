@@ -69,7 +69,7 @@ public class ThreeIndicatorsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "%K calculation length.", "Stochastic");
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 23)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 23)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "%D smoothing length.", "Stochastic");
 
@@ -216,8 +216,7 @@ public class ThreeIndicatorsStrategy : Strategy
 		};
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticKPeriod,
+		{ K = { Length = StochasticKPeriod },
 			K = { Length = StochasticSlowing },
 			D = { Length = StochasticDPeriod }
 		};
@@ -251,14 +250,14 @@ public class ThreeIndicatorsStrategy : Strategy
 		var macdInput = GetAppliedPrice(candle, MacdPriceType);
 		var rsiInput = GetAppliedPrice(candle, RsiPriceType);
 
-		var macdValue = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(macdInput, candle.CloseTime, true);
+		var macdValue = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(new DecimalIndicatorValue(_macd, macdInput, candle.CloseTime));
 		if (!macdValue.IsFinal || macdValue.Macd is not decimal macdMain)
 		{
 			UpdateCaches(candle.OpenPrice, null);
 			return;
 		}
 
-		var rsiValue = _rsi.Process(rsiInput, candle.CloseTime, true);
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiInput, candle.CloseTime));
 		if (!rsiValue.IsFinal)
 		{
 			UpdateCaches(candle.OpenPrice, macdMain);

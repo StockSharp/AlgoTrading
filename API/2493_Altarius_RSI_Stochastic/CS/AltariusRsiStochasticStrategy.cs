@@ -248,7 +248,7 @@ public class AltariusRsiStochasticStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Primary %K Smoothing", "Smoothing for primary %K", "Primary Stochastic");
 
-		_primaryStochasticDPeriod = Param(nameof(PrimaryStochasticDPeriod), 8)
+		_primaryStochasticD = { Length = Param }(nameof(PrimaryStochasticDPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Primary %D Period", "Signal period for primary Stochastic", "Primary Stochastic");
 
@@ -260,7 +260,7 @@ public class AltariusRsiStochasticStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Secondary %K Smoothing", "Smoothing for secondary %K", "Secondary Stochastic");
 
-		_secondaryStochasticDPeriod = Param(nameof(SecondaryStochasticDPeriod), 3)
+		_secondaryStochasticD = { Length = Param }(nameof(SecondaryStochasticDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Secondary %D Period", "Signal period for secondary Stochastic", "Secondary Stochastic");
 
@@ -309,22 +309,22 @@ public class AltariusRsiStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var primaryStochastic = new Stochastic
 		{
 			Length = PrimaryStochasticLength,
 			KPeriod = PrimaryStochasticKPeriod,
-			DPeriod = PrimaryStochasticDPeriod,
+			D = { Length = PrimaryStochasticDPeriod },
 		};
 
 		var secondaryStochastic = new Stochastic
 		{
 			Length = SecondaryStochasticLength,
 			KPeriod = SecondaryStochasticKPeriod,
-			DPeriod = SecondaryStochasticDPeriod,
+			D = { Length = SecondaryStochasticDPeriod },
 		};
 
 		var rsi = new RelativeStrengthIndex
@@ -337,7 +337,7 @@ public class AltariusRsiStochasticStrategy : Strategy
 			.BindEx(primaryStochastic, secondaryStochastic, rsi, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue primaryValue, IIndicatorValue secondaryValue, IIndicatorValue rsiValue)

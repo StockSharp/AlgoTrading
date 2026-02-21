@@ -120,37 +120,37 @@ public class AdaptiveOscillatorThresholdStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_buyLevel = Param(nameof(BuyLevel), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy Level", "Traditional RSI buy level", "Signal")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_adaptiveLength = Param(nameof(AdaptiveLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Adaptive Length", "Length for adaptive threshold", "Adaptive")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 2);
 
 		_adaptiveCoefficient = Param(nameof(AdaptiveCoefficient), 6m)
 			.SetGreaterThanZero()
 			.SetDisplay("Adaptive Coefficient", "Coefficient for adaptive threshold", "Adaptive")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_exitBars = Param(nameof(ExitBars), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("Fixed-Bar Exit", "Bars after entry to exit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_dollarStopLoss = Param(nameof(DollarStopLoss), 1600m)
 			.SetNotNegative()
 			.SetDisplay("Dollar Stop-Loss", "Maximum dollar loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 2000m, 100m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -158,9 +158,9 @@ public class AdaptiveOscillatorThresholdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_stdDev = new StandardDeviation { Length = AdaptiveLength };
@@ -171,7 +171,7 @@ public class AdaptiveOscillatorThresholdStrategy : Strategy
 			.BindEx([_rsi, _stdDev, _linReg], ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)

@@ -39,8 +39,8 @@ public class OpenOscillatorCloudMmrecStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private LengthIndicator<decimal> _upSmoother = null!;
-	private LengthIndicator<decimal> _downSmoother = null!;
+	private DecimalLengthIndicator _upSmoother = null!;
+	private DecimalLengthIndicator _downSmoother = null!;
 
 	private readonly List<ICandleMessage> _window = new();
 	private readonly List<decimal> _upHistory = new();
@@ -72,7 +72,7 @@ public class OpenOscillatorCloudMmrecStrategy : Strategy
 		_period = Param(nameof(Period), 20)
 		.SetDisplay("Oscillator Period", "Lookback window used to locate the highest high and lowest low", "Indicator")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 
 		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.Simple)
@@ -81,7 +81,7 @@ public class OpenOscillatorCloudMmrecStrategy : Strategy
 		_smoothingLength = Param(nameof(SmoothingLength), 10)
 		.SetDisplay("Smoothing Length", "Period for the smoothing moving average", "Indicator")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -126,9 +126,9 @@ public class OpenOscillatorCloudMmrecStrategy : Strategy
 		ResetRiskLevels();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -173,8 +173,8 @@ public class OpenOscillatorCloudMmrecStrategy : Strategy
 		var rawDown = extremes.lowestOpen - candle.OpenPrice;
 
 		// Smooth the raw gaps using the configured moving averages.
-		var upValue = _upSmoother.Process(rawUp, candle.CloseTime, true).ToDecimal();
-		var downValue = _downSmoother.Process(rawDown, candle.CloseTime, true).ToDecimal();
+		var upValue = _upSmoother.Process(new DecimalIndicatorValue(_upSmoother, rawUp, candle.CloseTime)).ToDecimal();
+		var downValue = _downSmoother.Process(new DecimalIndicatorValue(_downSmoother, rawDown, candle.CloseTime)).ToDecimal();
 
 		if (!_upSmoother.IsFormed || !_downSmoother.IsFormed)
 		return;
@@ -357,13 +357,13 @@ public class OpenOscillatorCloudMmrecStrategy : Strategy
 		_shortTarget = null;
 	}
 
-	private LengthIndicator<decimal> CreateSmoother()
+	private DecimalLengthIndicator CreateSmoother()
 	{
 		// Build the moving average instance that will smooth the oscillator values.
 		return Smoothing switch
 		{
-			SmoothingMethods.Simple => new SimpleMovingAverage { Length = SmoothingLength },
-			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = SmoothingLength },
+			SmoothingMethods.Simple => new SMA { Length = SmoothingLength },
+			SmoothingMethods.Exponential => new EMA { Length = SmoothingLength },
 			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = SmoothingLength },
 			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = SmoothingLength },
 			_ => throw new ArgumentOutOfRangeException(nameof(Smoothing), Smoothing, "Unsupported smoothing method."),

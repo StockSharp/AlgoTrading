@@ -52,11 +52,11 @@ public class PzReversalTrendFollowingStrategy : Strategy
 	{
 		_period = Param(nameof(Period), 100)
 			.SetDisplay("Period", "Lookback period for breakout calculation", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 10);
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -75,9 +75,9 @@ public class PzReversalTrendFollowingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var highest = new Highest { Length = Period };
 		var lowest = new Lowest { Length = Period };

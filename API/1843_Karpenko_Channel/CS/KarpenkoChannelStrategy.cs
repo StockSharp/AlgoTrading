@@ -92,12 +92,12 @@ public class KarpenkoChannelStrategy : Strategy
 		_basicMa = Param(nameof(BasicMa), 144)
 			.SetGreaterThanZero()
 			.SetDisplay("Base MA", "Length of base moving average", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_history = Param(nameof(History), 500)
 			.SetGreaterThanZero()
 			.SetDisplay("History", "Lookback length for range", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetGreaterThanZero()
@@ -140,9 +140,9 @@ public class KarpenkoChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_baseMaSma = new SMA { Length = BasicMa };
 		_rangeSma = new SMA { Length = History };
@@ -175,8 +175,8 @@ public class KarpenkoChannelStrategy : Strategy
 
 		var time = candle.OpenTime;
 
-		var baseValue = _baseMaSma.Process(candle.ClosePrice, time, true);
-		var rangeValue = _rangeSma.Process(candle.HighPrice - candle.LowPrice, time, true);
+		var baseValue = _baseMaSma.Process(new DecimalIndicatorValue(_baseMaSma, candle.ClosePrice, time));
+		var rangeValue = _rangeSma.Process(new DecimalIndicatorValue(_rangeSma, candle.HighPrice - candle.LowPrice, time));
 
 		if (!_baseMaSma.IsFormed || !_rangeSma.IsFormed)
 		{

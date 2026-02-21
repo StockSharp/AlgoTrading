@@ -138,7 +138,7 @@ public class LiquidexKeltnerStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetRange(1, 100)
 			.SetDisplay("RSI Period", "RSI period", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_entryHourFrom = Param(nameof(EntryHourFrom), 2)
 			.SetRange(0, 23)
@@ -170,9 +170,9 @@ public class LiquidexKeltnerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ma = new MovingAverage
 		{
@@ -218,7 +218,7 @@ public class LiquidexKeltnerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var time = candle.CloseTime.LocalDateTime;
+		var time = candle.CloseTime;
 
 		if (!IsTradingTime(time))
 		{

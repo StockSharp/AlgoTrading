@@ -149,12 +149,12 @@ public class MacdVolumeBboReversalStrategy : Strategy
 
 		_lowest = new Lowest { Length = LookbackPeriod };
 		_highest = new Highest { Length = LookbackPeriod };
-		var shortVol = new ExponentialMovingAverage { Length = VolumeShortLength };
-		var longVol = new ExponentialMovingAverage { Length = VolumeLongLength };
+		var shortVol = new EMA { Length = VolumeShortLength };
+		var longVol = new EMA { Length = VolumeLongLength };
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFastLength,
-			LongPeriod = MacdSlowLength,
+			ShortMa = { Length = MacdFastLength },
+			LongMa = { Length = MacdSlowLength },
 			SignalPeriod = MacdSignalLength
 		};
 

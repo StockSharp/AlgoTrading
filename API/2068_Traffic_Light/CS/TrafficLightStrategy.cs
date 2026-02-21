@@ -125,22 +125,22 @@ public class TrafficLightStrategy : Strategy
 		_redMaPeriod = Param(nameof(RedMaPeriod), 120)
 						   .SetGreaterThanZero()
 						   .SetDisplay("Red MA", "SMA period representing the slow trend", "Parameters")
-						   .SetCanOptimize(true);
+						   ;
 
 		_yellowMaPeriod = Param(nameof(YellowMaPeriod), 55)
 							  .SetGreaterThanZero()
 							  .SetDisplay("Yellow MA", "SMA period representing the medium trend", "Parameters")
-							  .SetCanOptimize(true);
+							  ;
 
 		_greenMaPeriod = Param(nameof(GreenMaPeriod), 5)
 							 .SetGreaterThanZero()
 							 .SetDisplay("Green MA", "EMA period representing the fast trend", "Parameters")
-							 .SetCanOptimize(true);
+							 ;
 
 		_blueMaPeriod = Param(nameof(BlueMaPeriod), 24)
 							.SetGreaterThanZero()
 							.SetDisplay("Blue MA", "EMA period for channel boundaries", "Parameters")
-							.SetCanOptimize(true);
+							;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 						  .SetDisplay("Candle Type", "Timeframe for calculations", "General");
@@ -167,15 +167,15 @@ public class TrafficLightStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_blueHigh = new ExponentialMovingAverage { Length = BlueMaPeriod };
-		_blueLow = new ExponentialMovingAverage { Length = BlueMaPeriod };
-		_redMa = new SimpleMovingAverage { Length = RedMaPeriod };
-		_yellowMa = new SimpleMovingAverage { Length = YellowMaPeriod };
-		_greenMa = new ExponentialMovingAverage { Length = GreenMaPeriod };
+		_blueHigh = new EMA { Length = BlueMaPeriod };
+		_blueLow = new EMA { Length = BlueMaPeriod };
+		_redMa = new SMA { Length = RedMaPeriod };
+		_yellowMa = new SMA { Length = YellowMaPeriod };
+		_greenMa = new EMA { Length = GreenMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

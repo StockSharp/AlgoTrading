@@ -106,7 +106,7 @@ public class ColibriGridManagerStrategy : Strategy
 		_levelsCount = Param(nameof(LevelsCount), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Levels", "Number of orders per direction", "Structure")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_buyEntryPrice = Param(nameof(BuyEntryPrice), 0m)
@@ -326,9 +326,9 @@ public class ColibriGridManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 		_bestBid = 0m;
@@ -354,7 +354,7 @@ public class ColibriGridManagerStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 		ProcessUpdate();
 	}
 

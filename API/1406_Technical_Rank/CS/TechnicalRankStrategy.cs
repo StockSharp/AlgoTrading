@@ -83,9 +83,9 @@ public class TechnicalRankStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -110,7 +110,7 @@ public class TechnicalRankStrategy : Strategy
 
 		var close = candle.ClosePrice;
 
-		var ma200 = _sma200.Process(candle).ToDecimal();
+		var ma200 = _sma200.Process(new DecimalIndicatorValue(_sma200, candle).ToDecimal();
 		var ma50 = _sma50.Process(candle).ToDecimal();
 		var roc125 = _roc125.Process(candle).ToDecimal();
 		var roc20 = _roc20.Process(candle).ToDecimal();
@@ -122,7 +122,7 @@ public class TechnicalRankStrategy : Strategy
 			return;
 
 		var ppo = ema26 == 0 ? 0m : 100m * (ema12 - ema26) / ema26;
-		var ppoSig = _ppoSignal.Process(ppo, candle.OpenTime, true).ToDecimal();
+		var ppoSig = _ppoSignal.Process(ppo, candle.OpenTime)).ToDecimal();
 		var ppoHist = ppo - ppoSig;
 
 		_ppoHist.Enqueue(ppoHist);

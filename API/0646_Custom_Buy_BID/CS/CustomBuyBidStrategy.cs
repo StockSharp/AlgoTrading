@@ -36,8 +36,8 @@ public class CustomBuyBidStrategy : Strategy
 	
 	public CustomBuyBidStrategy()
 	{
-	_supertrendPeriod = Param(nameof(SupertrendPeriod),10).SetGreaterThanZero().SetDisplay("Supertrend Period","Period for ATR calculation in Supertrend","Indicator").SetCanOptimize(true).SetOptimize(5,20,5);
-	_supertrendMultiplier = Param(nameof(SupertrendMultiplier),3m).SetGreaterThanZero().SetDisplay("Supertrend Multiplier","Multiplier for ATR in Supertrend","Indicator").SetCanOptimize(true).SetOptimize(1m,5m,0.5m);
+	_supertrendPeriod = Param(nameof(SupertrendPeriod),10).SetGreaterThanZero().SetDisplay("Supertrend Period","Period for ATR calculation in Supertrend","Indicator").SetOptimize(5,20,5);
+	_supertrendMultiplier = Param(nameof(SupertrendMultiplier),3m).SetGreaterThanZero().SetDisplay("Supertrend Multiplier","Multiplier for ATR in Supertrend","Indicator").SetOptimize(1m,5m,0.5m);
 	_takeProfitPercent = Param(nameof(TakeProfitPercent),5m).SetGreaterThanZero().SetDisplay("Take Profit (%)","Take profit percentage","Risk");
 	_stopLossPercent = Param(nameof(StopLossPercent),2m).SetGreaterThanZero().SetDisplay("Stop Loss (%)","Stop loss percentage","Risk");
 	_candleType = Param(nameof(CandleType),TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type","Type of candles to use","General");
@@ -53,7 +53,7 @@ public class CustomBuyBidStrategy : Strategy
 		_isAbove = false;
 		}
 		
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnStarted2(DateTime time)
 		{
 		_supertrend = new SuperTrend { Length = SupertrendPeriod, Multiplier = SupertrendMultiplier };
 		var sub = SubscribeCandles(CandleType);
@@ -68,7 +68,7 @@ public class CustomBuyBidStrategy : Strategy
 		}
 		
 		StartProtection(takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent), stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		}
 		
 		private void Process(ICandleMessage candle, decimal st)

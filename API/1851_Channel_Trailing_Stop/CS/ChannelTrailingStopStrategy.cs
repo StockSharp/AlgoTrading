@@ -90,7 +90,7 @@ public class ChannelTrailingStopStrategy : Strategy
 	{
 		_trailPeriod = Param(nameof(TrailPeriod), 5)
 			.SetDisplay("Channel Period", "Lookback for channel calculation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_trailStop = Param(nameof(TrailStop), 50m)
@@ -134,9 +134,9 @@ public class ChannelTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var donchian = new DonchianChannels { Length = TrailPeriod };
 

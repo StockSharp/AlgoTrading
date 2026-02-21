@@ -286,19 +286,14 @@ public class IchimokuPriceActionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Ensure that the built-in protection module is armed once per lifetime.
-		StartProtection();
+		StartProtection(null, null);
 
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Fast = MacdFast,
-			Slow = MacdSlow,
-			Signal = MacdSignal
-		};
+		_macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow } }, SignalMa = { Length = MacdSignal } };
 
 		var tradeSubscription = SubscribeCandles(CandleType);
 		tradeSubscription
@@ -318,13 +313,11 @@ public class IchimokuPriceActionStrategy : Strategy
 		{
 			_swingHigh = new Highest
 			{
-				Length = SwingBars,
-				CandlePrice = CandlePrice.High
+				Length = SwingBars
 			};
 			_swingLow = new Lowest
 			{
-				Length = SwingBars,
-				CandlePrice = CandlePrice.Low
+				Length = SwingBars
 			};
 
 			var swingSubscription = SubscribeCandles(SwingCandleType);

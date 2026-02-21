@@ -54,7 +54,7 @@ public class AnandsStrategy : Strategy
 		return
 		[
 			(Security, CandleType),
-			(Security, TimeSpan.FromDays(1).TimeFrame())
+			(Security, TimeSpan.FromMinutes(5).TimeFrame())
 		];
 	}
 
@@ -72,11 +72,11 @@ public class AnandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var daySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var daySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		daySubscription.Bind(ProcessDaily).Start();
 
 		var subscription = SubscribeCandles(CandleType);
@@ -89,7 +89,7 @@ public class AnandsStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessDaily(ICandleMessage candle)

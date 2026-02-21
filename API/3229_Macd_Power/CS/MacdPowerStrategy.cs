@@ -36,8 +36,8 @@ public class MacdPowerStrategy : Strategy
 
 	private WeightedMovingAverage _fastMa = null!;
 	private WeightedMovingAverage _slowMa = null!;
-	private MovingAverageConvergenceDivergence _macdPrimary = null!;
-	private MovingAverageConvergenceDivergence _macdSecondary = null!;
+	private MovingAverageConvergenceDivergenceSignal _macdPrimary = null!;
+	private MovingAverageConvergenceDivergenceSignal _macdSecondary = null!;
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergenceSignal _macroMacd = null!;
 
@@ -66,17 +66,17 @@ public class MacdPowerStrategy : Strategy
 
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 		.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 12, 2);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 		.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60, 120, 5);
 
 		_momentumLength = Param(nameof(MomentumLength), 14)
 		.SetDisplay("Momentum Length", "Number of periods for the momentum confirmation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 20, 1);
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
@@ -276,9 +276,9 @@ public class MacdPowerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_pointValue = Security?.PriceStep ?? 1m;
 	if (_pointValue <= 0m)
@@ -288,27 +288,25 @@ public class MacdPowerStrategy : Strategy
 
 	_fastMa = new WeightedMovingAverage
 	{
-	Length = FastMaLength,
-	CandlePrice = CandlePrice.Typical
+	Length = FastMaLength
 	};
 
 	_slowMa = new WeightedMovingAverage
 	{
-	Length = SlowMaLength,
-	CandlePrice = CandlePrice.Typical
+	Length = SlowMaLength
 	};
 
 	_macdPrimary = new MovingAverageConvergenceDivergence
 	{
-	ShortPeriod = 12,
-	LongPeriod = 26,
+	ShortMa = { Length = 12 },
+	LongMa = { Length = 26 },
 	SignalPeriod = 1
 	};
 
 	_macdSecondary = new MovingAverageConvergenceDivergence
 	{
-	ShortPeriod = 6,
-	LongPeriod = 13,
+	ShortMa = { Length = 6 },
+	LongMa = { Length = 13 },
 	SignalPeriod = 1
 	};
 

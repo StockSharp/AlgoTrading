@@ -73,7 +73,7 @@ public class MultiLayerAccelerationDecelerationStrategy : Strategy
 	{
 		_emaLength = Param(nameof(EmaLength), 100)
 			.SetDisplay("EMA Length", "EMA period", "Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 50);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -115,11 +115,11 @@ public class MultiLayerAccelerationDecelerationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var filterEma = new ExponentialMovingAverage { Length = EmaLength };
+		var filterEma = new EMA { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

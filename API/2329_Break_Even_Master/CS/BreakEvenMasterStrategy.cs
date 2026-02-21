@@ -42,7 +42,7 @@ public class BreakEvenMasterStrategy : Strategy
 	{
 		_breakEvenTicks = Param(nameof(BreakEvenTicks), 20)
 			.SetDisplay("Break Even Ticks", "Profit in ticks to move stop to break even", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_useComment = Param(nameof(UseComment), false)
@@ -62,9 +62,9 @@ public class BreakEvenMasterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tick = Security?.PriceStep ?? 1m;
 

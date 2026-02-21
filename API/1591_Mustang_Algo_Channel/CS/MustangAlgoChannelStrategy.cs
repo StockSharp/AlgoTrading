@@ -143,17 +143,17 @@ public class MustangAlgoChannelStrategy : Strategy
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "Period for RSI calculation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_smoothing = Param(nameof(Smoothing), 20)
 			.SetDisplay("WMA Smoothing", "Smoothing period for sentiment oscillator", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 100, 5);
 
 		_medianPeriod = Param(nameof(MedianPeriod), 25)
 			.SetDisplay("Moving Median", "Period for crossover reference line", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 100, 5);
 
 		_upperBound = Param(nameof(UpperBound), 55m)
@@ -164,7 +164,7 @@ public class MustangAlgoChannelStrategy : Strategy
 
 		_tradeMode = Param(nameof(TradeMode), "Long & Short")
 			.SetDisplay("Trade Mode", "Trading direction", "General")
-			.SetOptions("Long & Short", "Long Only", "Short Only");
+			.SetOptimizeValues(new[] { "Long & Short", "Long Only", "Short Only" });
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
 			.SetDisplay("Enable Stop Loss", "Use stop loss", "Risk");
@@ -178,7 +178,7 @@ public class MustangAlgoChannelStrategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 12m)
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -197,9 +197,9 @@ public class MustangAlgoChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_smooth = new WeightedMovingAverage { Length = Smoothing };

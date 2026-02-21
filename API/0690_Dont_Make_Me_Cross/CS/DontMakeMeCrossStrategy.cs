@@ -67,16 +67,16 @@ public class DontMakeMeCrossStrategy : Strategy
 		_shortEmaLength = Param(nameof(ShortEmaLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Short EMA Length", "Period for the short EMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_longEmaLength = Param(nameof(LongEmaLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Long EMA Length", "Period for the long EMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_shiftAmount = Param(nameof(ShiftAmount), -50)
 			.SetDisplay("Shift Amount", "Vertical shift applied to EMA values", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-100, 0, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -90,9 +90,9 @@ public class DontMakeMeCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var shortEma = new EMA { Length = ShortEmaLength };
 		var longEma = new EMA { Length = LongEmaLength };

@@ -109,9 +109,9 @@ public class DemoGptDayTradingScalpingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ema20 = new EMA { Length = 20 };
 		var vwap = new VWAP();
@@ -123,7 +123,7 @@ public class DemoGptDayTradingScalpingStrategy : Strategy
 			.Bind(ema20, vwap, ProcessCandle)
 			.Start();
 
-		SubscribeCandles(TimeSpan.FromDays(1).TimeFrame())
+		SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame())
 			.Bind(highest, lowest, ProcessDaily)
 			.Start();
 

@@ -142,19 +142,19 @@ public class GgRsiCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var rsi = new RelativeStrengthIndex { Length = Length };
 		var cci = new CommodityChannelIndex { Length = Length };
 
-		_rsiFast = new SimpleMovingAverage { Length = FastPeriod };
-		_rsiSlow = new SimpleMovingAverage { Length = SlowPeriod };
-		_cciFast = new SimpleMovingAverage { Length = FastPeriod };
-		_cciSlow = new SimpleMovingAverage { Length = SlowPeriod };
+		_rsiFast = new SMA { Length = FastPeriod };
+		_rsiSlow = new SMA { Length = SlowPeriod };
+		_cciFast = new SMA { Length = FastPeriod };
+		_cciSlow = new SMA { Length = SlowPeriod };
 
 		_prevSignal = -1;
 
@@ -167,10 +167,10 @@ public class GgRsiCciStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var rsiFast = _rsiFast.Process(rsiValue, candle.OpenTime, true).ToDecimal();
-		var rsiSlow = _rsiSlow.Process(rsiValue, candle.OpenTime, true).ToDecimal();
-		var cciFast = _cciFast.Process(cciValue, candle.OpenTime, true).ToDecimal();
-		var cciSlow = _cciSlow.Process(cciValue, candle.OpenTime, true).ToDecimal();
+		var rsiFast = _rsiFast.Process(new DecimalIndicatorValue(_rsiFast, rsiValue, candle.OpenTime)).ToDecimal();
+		var rsiSlow = _rsiSlow.Process(new DecimalIndicatorValue(_rsiSlow, rsiValue, candle.OpenTime)).ToDecimal();
+		var cciFast = _cciFast.Process(new DecimalIndicatorValue(_cciFast, cciValue, candle.OpenTime)).ToDecimal();
+		var cciSlow = _cciSlow.Process(new DecimalIndicatorValue(_cciSlow, cciValue, candle.OpenTime)).ToDecimal();
 
 		int signal;
 		if (rsiFast > rsiSlow && cciFast > cciSlow)

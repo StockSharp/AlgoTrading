@@ -97,31 +97,31 @@ public class UltraWprCrossStrategy : Strategy
 		_wprPeriod = Param(nameof(WprPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Period", "Williams %R period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_fastLength = Param(nameof(FastLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Fast smoothing length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_slowLength = Param(nameof(SlowLength), 53)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow smoothing length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_takeProfit = Param(nameof(TakeProfit), 0.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_stopLoss = Param(nameof(StopLoss), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 	}
 
@@ -132,9 +132,9 @@ public class UltraWprCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa.Length = FastLength;
 		_slowMa.Length = SlowLength;

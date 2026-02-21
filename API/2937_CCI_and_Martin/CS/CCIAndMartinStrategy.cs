@@ -299,9 +299,9 @@ public class CCIAndMartinStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	if (EnableMartingale && EnableStepAdjustments)
 	throw new InvalidOperationException("Martingale and step adjustments cannot be enabled simultaneously.");

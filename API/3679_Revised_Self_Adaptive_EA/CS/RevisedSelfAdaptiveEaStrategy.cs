@@ -67,31 +67,31 @@ public class RevisedSelfAdaptiveEaStrategy : Strategy
 		_averageBodyPeriod = Param(nameof(AverageBodyPeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Average body period", "Number of candles used to calculate the average body size filter.", "Pattern")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 10, 1);
 
 		_movingAveragePeriod = Param(nameof(MovingAveragePeriod), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("MA period", "Simple moving average period used as a directional filter.", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 30, 1);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI period", "Length of the RSI oscillator applied to candle closes.", "Oscillator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 30, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR period", "Average True Range period that controls stop distances.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 50, 1);
 
 		_volume = Param(nameof(TradeVolume), 0.05m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trade volume", "Base position size expressed in lots.", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 1m, 0.01m);
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 20m)
@@ -108,31 +108,31 @@ public class RevisedSelfAdaptiveEaStrategy : Strategy
 		_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 2m)
 		.SetNotNegative()
 		.SetDisplay("Stop loss ATR multiplier", "Number of ATRs used to place the protective stop.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5m, 0.5m);
 
 		_takeProfitAtrMultiplier = Param(nameof(TakeProfitAtrMultiplier), 4m)
 		.SetNotNegative()
 		.SetDisplay("Take profit ATR multiplier", "Number of ATRs used to place the profit target.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 8m, 0.5m);
 
 		_trailingStopAtrMultiplier = Param(nameof(TrailingStopAtrMultiplier), 1.5m)
 		.SetNotNegative()
 		.SetDisplay("Trailing stop ATR multiplier", "ATR distance maintained by the trailing stop logic.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5m, 0.5m);
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
 		.SetNotNegative()
 		.SetDisplay("Oversold level", "RSI threshold that confirms bullish reversals.", "Oscillator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 50m, 5m);
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
 		.SetNotNegative()
 		.SetDisplay("Overbought level", "RSI threshold that confirms bearish reversals.", "Oscillator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50m, 90m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -286,9 +286,9 @@ protected override void OnReseted()
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	Volume = TradeVolume;
 
@@ -297,7 +297,7 @@ protected override void OnStarted(DateTimeOffset time)
 		Length = RsiPeriod
 	};
 
-_movingAverage = new SimpleMovingAverage
+_movingAverage = new SMA
 {
 	Length = MovingAveragePeriod
 };
@@ -307,7 +307,7 @@ _atr = new AverageTrueRange
 	Length = AtrPeriod
 };
 
-_bodyAverage = new SimpleMovingAverage
+_bodyAverage = new SMA
 {
 	Length = AverageBodyPeriod
 };
@@ -317,7 +317,7 @@ subscription
 .Bind(_rsi, _movingAverage, _atr, ProcessCandle)
 .Start();
 
-StartProtection();
+StartProtection(null, null);
 }
 
 /// <inheritdoc />

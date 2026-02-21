@@ -116,37 +116,37 @@ public class MeanReverseStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 20)
 			.SetRange(5, 200)
 			.SetDisplay("Fast MA Period", "Length of the fast simple moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 50)
 			.SetRange(5, 300)
 			.SetDisplay("Slow MA Period", "Length of the slow simple moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetRange(5, 100)
 			.SetDisplay("ATR Period", "Number of candles used for ATR calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("ATR Multiplier", "Multiplier applied to ATR for deviation bands", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500)
 			.SetRange(10, 5000)
 			.SetDisplay("Stop Loss Points", "Stop-loss distance in security steps", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 1000)
 			.SetRange(10, 10000)
 			.SetDisplay("Take Profit Points", "Take-profit distance in security steps", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetRange(0.01m, 100m)
 			.SetDisplay("Trade Volume", "Volume opened with a new signal", "Execution")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of market data processed by the strategy", "General");
@@ -170,14 +170,14 @@ public class MeanReverseStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
-		_slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
+		_fastMa = new SMA { Length = FastMaPeriod };
+		_slowMa = new SMA { Length = SlowMaPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

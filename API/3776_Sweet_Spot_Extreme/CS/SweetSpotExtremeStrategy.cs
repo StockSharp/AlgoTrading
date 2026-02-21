@@ -194,19 +194,19 @@ public class SweetSpotExtremeStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("Trend EMA Period", "EMA period for trend slope", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40, 120, 5);
 
 		_closeMaPeriod = Param(nameof(CloseMaPeriod), 70)
 		.SetGreaterThanZero()
 		.SetDisplay("Close EMA Period", "EMA period for close smoothing", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 100, 5);
 
 		_cciPeriod = Param(nameof(CciPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI Period", "Lookback for the CCI filter", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 20, 1);
 
 		_buyCciLevel = Param(nameof(BuyCciLevel), -200m)
@@ -258,16 +258,16 @@ public class SweetSpotExtremeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 		if (_priceStep <= 0m)
 		_priceStep = 1m;
 
-		_trendMa = new ExponentialMovingAverage { Length = MaPeriod };
-		_closeMa = new ExponentialMovingAverage { Length = CloseMaPeriod };
+		_trendMa = new EMA { Length = MaPeriod };
+		_closeMa = new EMA { Length = CloseMaPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 
 		SubscribeCandles(TrendCandleType)

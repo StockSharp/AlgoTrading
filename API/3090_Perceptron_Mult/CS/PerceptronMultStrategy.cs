@@ -419,9 +419,9 @@ public class PerceptronMultStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_firstContext = CreateContext(FirstSecurity);
 		_secondContext = CreateContext(SecondSecurity);
@@ -459,10 +459,10 @@ public class PerceptronMultStrategy : Strategy
 		{
 			Ao = new AwesomeOscillator
 			{
-				ShortPeriod = 5,
-				LongPeriod = 34
+				ShortMa = { Length = 5 },
+				LongMa = { Length = 34 }
 			},
-			AoAverage = new SimpleMovingAverage
+			AoAverage = new SMA
 			{
 				Length = 5
 			},

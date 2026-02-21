@@ -23,9 +23,9 @@ public class CommonLabelLineArrayFunctionsStrategy : Strategy
 	private readonly List<(decimal X1, decimal Y1, decimal X2, decimal Y2)> _linePoints = new();
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Example initialization
 		CreateLabelArray(["Label 1", "Label 2"]);

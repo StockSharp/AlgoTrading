@@ -64,41 +64,41 @@ public class RSIMartingaleStrategy : Strategy
 	{
 		_initialVolume = Param(nameof(InitialVolume), 1m)
 			.SetDisplay("Initial Volume", "Base order volume", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "Number of periods for the RSI indicator", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_barsForCondition = Param(nameof(BarsForCondition), 20)
 			.SetDisplay("Bars For Extremes", "Number of finished candles used to detect RSI extremes", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 30m)
 			.SetDisplay("Take Profit (pips)", "Fixed profit target distance; set to 0 to disable", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 15m)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance; set to 0 to disable", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_enableMartingaleGrowth = Param(nameof(EnableMartingaleGrowth), true)
 			.SetDisplay("Enable Martingale", "Increase volume after a losing trade", "Recovery");
 
 		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 2m)
 			.SetDisplay("Martingale Multiplier", "Multiplier applied to the previous losing volume", "Recovery")
-			.SetCanOptimize(true);
+			;
 
 		_enableDailyTargets = Param(nameof(EnableDailyTargets), false)
 			.SetDisplay("Daily Targets", "Pause trading after reaching the configured daily gain or loss", "Risk");
 
 		_dailyTargetPercent = Param(nameof(DailyTargetPercent), 1m)
 			.SetDisplay("Daily Profit %", "Profit percentage that stops trading for the rest of the day", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_dailyMaxLossPercent = Param(nameof(DailyMaxLossPercent), 2m)
 			.SetDisplay("Daily Loss %", "Loss percentage that stops trading for the rest of the day", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_dailyStartHour = Param(nameof(DailyStartHour), 0)
 			.SetDisplay("Daily Control Start", "Hour when the daily profit/loss check becomes active", "Schedule");
@@ -108,11 +108,11 @@ public class RSIMartingaleStrategy : Strategy
 
 		_tradingStartHour = Param(nameof(TradingStartHour), 0)
 			.SetDisplay("Trading Start", "First hour when new positions may be opened", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_tradingEndHour = Param(nameof(TradingEndHour), 23)
 			.SetDisplay("Trading End", "Last hour when new positions may be opened", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "Data");
@@ -478,9 +478,9 @@ public class RSIMartingaleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializePipSize();
 

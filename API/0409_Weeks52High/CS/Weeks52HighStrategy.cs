@@ -102,7 +102,7 @@ public class Weeks52HighStrategy : Strategy
 		_windowDays = Param(nameof(LookbackDays), 252)
 			.SetDisplay("Lookback Days", "52‑week window (trading days)", "Data");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "Data");
 	}
 
@@ -131,12 +131,12 @@ public class Weeks52HighStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe cannot be empty — populate Universe before start.");
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		foreach (var (sec, dt) in GetWorkingSecurities())
 		{

@@ -100,14 +100,14 @@ public class IntradayBetaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_ma10 = new SimpleMovingAverage { Length = 10 };
-		_ma20 = new SimpleMovingAverage { Length = 20 };
+		_ma10 = new SMA { Length = 10 };
+		_ma20 = new SMA { Length = 20 };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_atr = new AverageTrueRange { Length = 30 };
 

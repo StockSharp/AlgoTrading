@@ -37,12 +37,12 @@ public class DailyTargetStrategy : Strategy
 		_dailyTarget = Param(nameof(DailyTarget), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Daily Target", "Net profit that stops trading for the rest of the day", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_dailyMaxLoss = Param(nameof(DailyMaxLoss), 0m)
 			.SetNotNegative()
 			.SetDisplay("Daily Max Loss", "Maximum drawdown tolerated before trading is halted", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_currentDate = DateTime.MinValue;
 		_dailyPnLBase = 0m;
@@ -90,9 +90,9 @@ public class DailyTargetStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetDailySnapshot(time);
 

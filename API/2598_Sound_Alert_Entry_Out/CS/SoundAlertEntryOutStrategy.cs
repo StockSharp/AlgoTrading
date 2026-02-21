@@ -69,17 +69,17 @@ public class SoundAlertEntryOutStrategy : Strategy
 	{
 		_sound = Param(nameof(Sound), NotificationSounds.Alert2)
 			.SetDisplay("Sound", "Sound file used for alerts.", "Notifications")
-			.SetCanOptimize(true);
+			;
 
 		_notificationEnabled = Param(nameof(NotificationEnabled), false)
 			.SetDisplay("Notification", "Enable informational notifications.", "Notifications")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_previousPosition = Position;
 		_previousPnL = PnL;

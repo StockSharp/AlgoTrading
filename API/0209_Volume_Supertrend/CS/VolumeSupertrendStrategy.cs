@@ -80,22 +80,22 @@ public class VolumeSupertrendStrategy : Strategy
 		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
 			.SetRange(10, 50)
 			.SetDisplay("Volume Avg Period", "Period for volume average calculation", "Volume")
-			.SetCanOptimize(true);
+			;
 
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
 			.SetRange(5, 30)
 			.SetDisplay("Supertrend Period", "ATR period for Supertrend", "Supertrend")
-			.SetCanOptimize(true);
+			;
 
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m)
 			.SetRange(1m, 5m)
 			.SetDisplay("Supertrend Multiplier", "Multiplier for Supertrend calculation", "Supertrend")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop-loss %", "Stop-loss as percentage of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -118,12 +118,12 @@ public class VolumeSupertrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
-		var volumeMA = new SimpleMovingAverage { Length = VolumeAvgPeriod };
+		var volumeMA = new SMA { Length = VolumeAvgPeriod };
 
 		// Create custom Supertrend indicator - StockSharp doesn't have built-in Supertrend
 		var atr = new AverageTrueRange { Length = SupertrendPeriod };
@@ -136,7 +136,7 @@ public class VolumeSupertrendStrategy : Strategy
 				.Bind(atr, (candle, atrValue) =>
 				{
 					// Calculate volume average
-					var volumeValue = volumeMA.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+					var volumeValue = volumeMA.Process(new DecimalIndicatorValue(volumeMA, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 					// Calculate Supertrend
 					if (!atr.IsFormed)

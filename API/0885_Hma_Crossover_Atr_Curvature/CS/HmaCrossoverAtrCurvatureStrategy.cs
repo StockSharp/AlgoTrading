@@ -139,9 +139,9 @@ public class HmaCrossoverAtrCurvatureStrategy : Strategy
 		_shortTrailDist = 0m;
 	}
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		var fastHma = new HullMovingAverage { Length = FastLength };
 		var slowHma = new HullMovingAverage { Length = SlowLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
@@ -157,7 +157,7 @@ public class HmaCrossoverAtrCurvatureStrategy : Strategy
 			DrawIndicator(area, slowHma);
 			DrawOwnTrades(area);
 		}
-		StartProtection();
+		StartProtection(null, null);
 	}
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atr)
 	{

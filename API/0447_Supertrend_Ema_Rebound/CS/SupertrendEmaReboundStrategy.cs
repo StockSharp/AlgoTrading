@@ -103,19 +103,19 @@ public class SupertrendEmaReboundStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for Supertrend", "Supertrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 15, 2);
 
 		_atrFactor = Param(nameof(AtrFactor), 3.0m)
 			.SetRange(0.5m, 10.0m)
 			.SetDisplay("ATR Factor", "ATR factor for Supertrend", "Supertrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_emaLength = Param(nameof(EmaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period", "Moving Average")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_showLong = Param(nameof(ShowLong), true)
@@ -127,7 +127,7 @@ public class SupertrendEmaReboundStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 1.5m.Percents())
 			.SetRange(0.1m, 10.0m)
 			.SetDisplay("TP", "Take profit", "Take Profit")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3.0m, 0.3m);
 	}
 
@@ -148,9 +148,9 @@ public class SupertrendEmaReboundStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_supertrend = new() { Length = AtrPeriod, Multiplier = AtrFactor };

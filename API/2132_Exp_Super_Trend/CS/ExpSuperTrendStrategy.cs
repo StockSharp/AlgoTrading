@@ -60,13 +60,13 @@ public class ExpSuperTrendStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetDisplay("ATR Period", "ATR period for SuperTrend", "SuperTrend")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_multiplier = Param(nameof(Multiplier), 3m)
 			.SetDisplay("Multiplier", "ATR multiplier for SuperTrend", "SuperTrend")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -74,9 +74,9 @@ public class ExpSuperTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_superTrend = new SuperTrend
 		{

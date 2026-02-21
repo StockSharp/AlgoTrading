@@ -98,12 +98,12 @@ public class Xroc2VgTmStrategy : Strategy
 		_rocPeriod1 = Param(nameof(RocPeriod1), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast ROC Period", "Lookback for the first ROC line", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_rocPeriod2 = Param(nameof(RocPeriod2), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow ROC Period", "Lookback for the second ROC line", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_smoothLength1 = Param(nameof(SmoothLength1), 5)
 			.SetGreaterThanZero()
@@ -354,9 +354,9 @@ public class Xroc2VgTmStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_smoothFast = CreateSmoothingIndicator(SmoothMethod1, SmoothLength1);
 		_smoothSlow = CreateSmoothingIndicator(SmoothMethod2, SmoothLength2);
@@ -578,10 +578,10 @@ public class Xroc2VgTmStrategy : Strategy
 	{
 		var indicator = method switch
 		{
-			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SMA { Length = length },
 			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length }
+			_ => new EMA { Length = length }
 		};
 
 		return indicator;

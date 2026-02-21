@@ -74,17 +74,17 @@ public class HammerShootingStarStrategy : Strategy
 		_wickFactor = Param(nameof(WickFactor), 0.9m)
 			.SetRange(0.5m, 2m)
 			.SetDisplay("Wick Factor", "Min wick to body ratio", "Pattern")
-			.SetCanOptimize(true);
+			;
 
 		_maxOppositeWickFactor = Param(nameof(MaxOppositeWickFactor), 0.45m)
 			.SetRange(0.1m, 1m)
 			.SetDisplay("Opposite Wick Factor", "Max opposite wick to body", "Pattern")
-			.SetCanOptimize(true);
+			;
 
 		_minBodyRangePct = Param(nameof(MinBodyRangePct), 0.2m)
 			.SetRange(0.1m, 0.5m)
 			.SetDisplay("Min Body Range %", "Min body as percent of bar range", "Pattern")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
@@ -108,9 +108,9 @@ public class HammerShootingStarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

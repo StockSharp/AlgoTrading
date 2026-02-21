@@ -87,12 +87,12 @@ public class IsStrategy : Strategy
 
 		_profitPercent = Param(nameof(ProfitPercent), 0.5m)
 			.SetRange(0m, 30m)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Profit %", "Take profit percent", "Risk");
 
 		_lossPercent = Param(nameof(LossPercent), 0.5m)
 			.SetRange(0m, 30m)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Loss %", "Stop loss percent", "Risk");
 	}
 
@@ -111,9 +111,9 @@ public class IsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

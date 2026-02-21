@@ -65,19 +65,19 @@ public class RsiBoosterStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 9m)
 		.SetDisplay("Stop Loss", "Fixed stop-loss in points", LocalizedStrings.StrGeneral)
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 5m)
 		.SetDisplay("Take Profit", "Fixed take-profit in points", LocalizedStrings.StrGeneral)
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 25m)
 		.SetDisplay("Trailing Stop", "Trailing stop distance in points", LocalizedStrings.StrGeneral)
-		.SetCanOptimize(true);
+		;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 		.SetDisplay("Trailing Step", "Minimum improvement before moving the trailing stop", LocalizedStrings.StrGeneral)
-		.SetCanOptimize(true);
+		;
 
 		_onlyOnePositionPerBar = Param(nameof(OnlyOnePositionPerBar), true)
 		.SetDisplay("One Trade Per Bar", "Allow only a single entry per bar and direction", LocalizedStrings.StrGeneral);
@@ -87,7 +87,7 @@ public class RsiBoosterStrategy : Strategy
 
 		_returnOrdersMax = Param(nameof(ReturnOrdersMax), 2)
 		.SetDisplay("Return Order Limit", "Maximum number of chained recovery orders", LocalizedStrings.StrGeneral)
-		.SetCanOptimize(true);
+		;
 
 		_firstRsiPeriod = Param(nameof(FirstRsiPeriod), 14)
 		.SetDisplay("Fast RSI Period", "Calculation period for the fast RSI", LocalizedStrings.StrIndicators);
@@ -249,9 +249,9 @@ public class RsiBoosterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_firstRsi = new RelativeStrengthIndex { Length = FirstRsiPeriod };
 		_secondRsi = new RelativeStrengthIndex { Length = SecondRsiPeriod };
@@ -279,14 +279,14 @@ public class RsiBoosterStrategy : Strategy
 		return;
 
 		var fastInput = GetPrice(candle, FirstRsiPrice);
-		var fastValue = _firstRsi.Process(fastInput, candle.OpenTime, true);
+		var fastValue = _firstRsi.Process(new DecimalIndicatorValue(_firstRsi, fastInput, candle.OpenTime));
 		if (!fastValue.IsFinal)
 		return;
 
 		var fastRsi = fastValue.ToDecimal();
 
 		var slowInput = GetPrice(candle, SecondRsiPrice);
-		var slowValue = _secondRsi.Process(slowInput, candle.OpenTime, true);
+		var slowValue = _secondRsi.Process(new DecimalIndicatorValue(_secondRsi, slowInput, candle.OpenTime));
 		if (!slowValue.IsFinal)
 		return;
 

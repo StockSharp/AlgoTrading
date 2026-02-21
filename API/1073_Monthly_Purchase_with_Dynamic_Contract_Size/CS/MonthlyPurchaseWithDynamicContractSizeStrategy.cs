@@ -67,7 +67,7 @@ public class MonthlyPurchaseWithDynamicContractSizeStrategy : Strategy
 	/// </summary>
 	public MonthlyPurchaseWithDynamicContractSizeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(2010, 1, 1, 0, 0, 0, TimeSpan.Zero))
@@ -98,9 +98,9 @@ public class MonthlyPurchaseWithDynamicContractSizeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

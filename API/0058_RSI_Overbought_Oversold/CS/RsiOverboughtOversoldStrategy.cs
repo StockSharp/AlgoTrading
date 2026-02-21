@@ -87,22 +87,22 @@ public class RsiOverboughtOversoldStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetRange(5, 30)
 			.SetDisplay("RSI Period", "Number of bars used in RSI calculation", "Indicator Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 70)
 			.SetRange(60, 80)
 			.SetDisplay("Overbought Level", "RSI level considered overbought", "Signal Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 30)
 			.SetRange(20, 40)
 			.SetDisplay("Oversold Level", "RSI level considered oversold", "Signal Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_neutralLevel = Param(nameof(NeutralLevel), 50)
 			.SetRange(45, 55)
 			.SetDisplay("Neutral Level", "RSI level for exiting positions", "Signal Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -110,7 +110,7 @@ public class RsiOverboughtOversoldStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetRange(0.5m, 5.0m)
 			.SetDisplay("Stop Loss %", "Percentage-based stop loss from entry", "Risk Management")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -126,9 +126,9 @@ public class RsiOverboughtOversoldStrategy : Strategy
 		}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 			// Create RSI indicator
 			var rsi = new RelativeStrengthIndex

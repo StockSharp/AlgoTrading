@@ -259,17 +259,17 @@ public class MacdStochasticStrategy : Strategy
 	{
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetDisplay("MACD Fast Period", "Fast EMA length for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 1);
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetDisplay("MACD Slow Period", "Slow EMA length for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 1);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetDisplay("MACD Signal Period", "Signal line length for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_useStochastic = Param(nameof(UseStochastic), false)
@@ -278,36 +278,36 @@ public class MacdStochasticStrategy : Strategy
 		_stochasticBarsToCheck = Param(nameof(StochasticBarsToCheck), 5)
 			.SetDisplay("Stochastic Bars", "History depth for stochastic confirmation", "Stochastic")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 8, 1);
 
 		_stochasticLength = Param(nameof(StochasticLength), 5)
 			.SetDisplay("Stochastic Length", "Number of bars for %K calculation", "Stochastic")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 14, 1);
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 3)
 			.SetDisplay("Stochastic %K Smoothing", "Smoothing period for %K line", "Stochastic")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 5, 1);
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 			.SetDisplay("Stochastic %D Period", "Smoothing period for %D line", "Stochastic")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 5, 1);
 
 
 		_stopLossPips = Param(nameof(StopLossPips), 100)
 			.SetDisplay("Stop Loss (pips)", "Initial stop-loss distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
 			.SetDisplay("Take Profit (pips)", "Initial take-profit distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0)
@@ -388,7 +388,7 @@ public class MacdStochasticStrategy : Strategy
 		{
 			Length = StochasticLength,
 			K = StochasticKPeriod,
-			DPeriod = StochasticDPeriod
+			D = { Length = StochasticDPeriod }
 		};
 
 		UpdatePipSize();
@@ -623,7 +623,7 @@ public class MacdStochasticStrategy : Strategy
 	private bool IsWithinTradingSession(DateTimeOffset time)
 	{
 		// Check whether local time is inside any allowed window.
-		var tod = time.LocalDateTime.TimeOfDay;
+		var tod = time.TimeOfDay;
 		return IsWithinSession(tod, Session1Start, Session1End)
 			|| IsWithinSession(tod, Session2Start, Session2End)
 			|| IsWithinSession(tod, Session3Start, Session3End);

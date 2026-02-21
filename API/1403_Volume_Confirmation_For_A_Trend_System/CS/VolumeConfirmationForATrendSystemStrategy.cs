@@ -63,11 +63,11 @@ public class VolumeConfirmationForATrendSystemStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_ttiSignal.Length = TtiSignalLength;
 		_vpciShortVolume.Length = VpciShort;
@@ -77,9 +77,9 @@ public class VolumeConfirmationForATrendSystemStrategy : Strategy
 		var fastTti = new VolumeWeightedMovingAverage { Length = TtiFast };
 		var slowTti = new VolumeWeightedMovingAverage { Length = TtiSlow };
 		var vpciLongVwma = new VolumeWeightedMovingAverage { Length = VpciLong };
-		var vpciLongSma = new SimpleMovingAverage { Length = VpciLong };
+		var vpciLongSma = new SMA { Length = VpciLong };
 		var vpciShortVwma = new VolumeWeightedMovingAverage { Length = VpciShort };
-		var vpciShortSma = new SimpleMovingAverage { Length = VpciShort };
+		var vpciShortSma = new SMA { Length = VpciShort };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -114,8 +114,8 @@ public class VolumeConfirmationForATrendSystemStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var shortVol = _vpciShortVolume.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
-		var longVol = _vpciLongVolume.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+		var shortVol = _vpciShortVolume.Process(new DecimalIndicatorValue(_vpciShortVolume, candle.TotalVolume, candle.OpenTime)).ToDecimal();
+		var longVol = _vpciLongVolume.Process(new DecimalIndicatorValue(_vpciLongVolume, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading() || !_vpciShortVolume.IsFormed || !_vpciLongVolume.IsFormed)
 			return;

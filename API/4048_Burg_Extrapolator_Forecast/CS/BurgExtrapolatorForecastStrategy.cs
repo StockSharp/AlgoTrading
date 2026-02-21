@@ -77,17 +77,17 @@ public BurgExtrapolatorForecastStrategy()
 		_takeProfit = Param(nameof(TakeProfit), 0)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Optional fixed take profit in points", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 180)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Optional fixed stop loss in points", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStop = Param(nameof(TrailingStop), 10)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing distance in points (requires stop loss)", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_pastBars = Param(nameof(PastBars), 200)
 			.SetGreaterThanZero()
@@ -237,9 +237,9 @@ public BurgExtrapolatorForecastStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.WhenCandlesFinished(ProcessCandle).Start();

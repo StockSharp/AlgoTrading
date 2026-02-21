@@ -99,21 +99,21 @@ public VegasSuperTrendEnhancedStrategy()
 	    _atrPeriod = Param(nameof(AtrPeriod), 10)
 	        .SetGreaterThanZero()
 	        .SetDisplay("ATR Period", "ATR length", "General")
-	        .SetCanOptimize(true);
+	        ;
 
 	    _vegasWindow = Param(nameof(VegasWindow), 100)
 	        .SetGreaterThanZero()
 	        .SetDisplay("Vegas Window", "Vegas moving average length", "General")
-	        .SetCanOptimize(true);
+	        ;
 
 	    _superTrendMultiplier = Param(nameof(SuperTrendMultiplier), 5m)
 	        .SetGreaterThanZero()
 	        .SetDisplay("Base Multiplier", "SuperTrend base multiplier", "General")
-	        .SetCanOptimize(true);
+	        ;
 
 	    _volatilityAdjustment = Param(nameof(VolatilityAdjustment), 5m)
 	        .SetDisplay("Volatility Adjustment", "Multiplier adjustment factor", "General")
-	        .SetCanOptimize(true);
+	        ;
 
 	    _tradeDirection = Param(nameof(TradeDirection), (Sides?)null)
 	        .SetDisplay("Direction", "Trade direction", "General");
@@ -139,11 +139,11 @@ _trend = 1;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-_vegasMa = new SimpleMovingAverage { Length = VegasWindow };
+_vegasMa = new SMA { Length = VegasWindow };
 _vegasStd = new StandardDeviation { Length = VegasWindow };
 _atr = new AverageTrueRange { Length = AtrPeriod };
 

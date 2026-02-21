@@ -95,7 +95,7 @@ public class HighLowBreakoutStatisticalAnalysisStrategy : Strategy
 
 		_holdingPeriod = Param(nameof(HoldingPeriod), 5)
 			.SetDisplay("Holding Period", "Holding period in bars", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -122,9 +122,9 @@ public class HighLowBreakoutStatisticalAnalysisStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var levelType = GetLevelDataType();
 
@@ -150,10 +150,10 @@ public class HighLowBreakoutStatisticalAnalysisStrategy : Strategy
 	{
 		return TimeframeOption switch
 		{
-			TimeframeOptions.Daily => TimeSpan.FromDays(1).TimeFrame(),
+			TimeframeOptions.Daily => TimeSpan.FromMinutes(5).TimeFrame(),
 			TimeframeOptions.Weekly => TimeSpan.FromDays(7).TimeFrame(),
 			TimeframeOptions.Monthly => TimeSpan.FromDays(30).TimeFrame(),
-			_ => TimeSpan.FromDays(1).TimeFrame(),
+			_ => TimeSpan.FromMinutes(5).TimeFrame(),
 		};
 	}
 

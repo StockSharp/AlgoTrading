@@ -141,13 +141,13 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 		_positionRisk = Param(nameof(PositionRisk), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk Value", "Risk percent or fixed volume", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3m, 0.5m);
 
 		_tradeRange = Param(nameof(TradeRange), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Range Bars", "Bars used to build the opening range", "Breakout")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 6, 1);
 
 		_minRangePoints = Param(nameof(MinRangePoints), 0m)
@@ -440,18 +440,17 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators that mirror the MQL implementation.
-		_ema = new ExponentialMovingAverage { Length = TrendPeriod };
+		_ema = new EMA { Length = TrendPeriod };
 
 		// MQL version uses smoothed %K/%D with 60% of the main length rounded to the nearest integer.
 		var smoothing = Math.Max(1, (int)Math.Round(OverPeriod * 0.6m, MidpointRounding.AwayFromZero));
 		_stochastic = new StochasticOscillator
-		{
-			Length = OverPeriod,
+		{ K = { Length = OverPeriod },
 			K = { Length = smoothing },
 			D = { Length = smoothing }
 		};
@@ -955,7 +954,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 
 	private TimeSpan GetDstShift(DateTimeOffset time)
 	{
-		var utcDate = time.UtcDateTime.Date;
+		var utcDate = time.Date;
 		var londonDst = IsLondonDst(utcDate);
 		var newYorkDst = IsNewYorkDst(utcDate);
 

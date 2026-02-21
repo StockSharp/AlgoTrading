@@ -14,7 +14,7 @@ At the start of each month, commodities are ranked by this asymmetry measure. Th
   - `WindowDays = 120`
   - `TopN = 5`
   - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Momentum
   - Direction: Both

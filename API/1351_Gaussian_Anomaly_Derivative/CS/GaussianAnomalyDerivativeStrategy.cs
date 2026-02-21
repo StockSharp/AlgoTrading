@@ -148,25 +148,25 @@ public class GaussianAnomalyDerivativeStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Base signal MA period", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_thresholdCoeff = Param(nameof(ThresholdCoeff), 1.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Threshold Coeff", "Coefficient for base signal threshold", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2.0m, 0.5m);
 
 		_derivativeMaPeriod = Param(nameof(DerivativeMaPeriod), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Derivative MA Period", "Derivative smoothing period", "Derivative")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_derivativeThresholdCoeff = Param(nameof(DerivativeThresholdCoeff), 1.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Derivative Threshold Coeff", "Coefficient for derivative threshold", "Derivative")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2.0m, 0.5m);
 
 		_tradeOnDerivative = Param(nameof(TradeOnDerivative), true)
@@ -185,7 +185,7 @@ public class GaussianAnomalyDerivativeStrategy : Strategy
 		_thresholdPeriod = Param(nameof(ThresholdPeriod), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("Threshold Period", "Period for threshold calculation", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 300, 50);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -207,9 +207,9 @@ public class GaussianAnomalyDerivativeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_trendMa = UseSma ? new SMA { Length = MaPeriod } : new EMA { Length = MaPeriod } as IIndicator;
 		_derivativeMa = new EMA { Length = DerivativeMaPeriod };

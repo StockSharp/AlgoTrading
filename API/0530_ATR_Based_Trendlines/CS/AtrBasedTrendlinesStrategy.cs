@@ -82,13 +82,13 @@ public class AtrBasedTrendlinesStrategy : Strategy
 		_lookbackLength = Param(nameof(LookbackLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Lookback length for pivots", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_atrPercent = Param(nameof(AtrPercent), 1m)
 			.SetRange(0m, 5m)
 			.SetDisplay("ATR Percent", "ATR target percentage", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_useWicks = Param(nameof(UseWicks), true)
@@ -113,9 +113,9 @@ public class AtrBasedTrendlinesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = Math.Max(1, LookbackLength / 2) };
 

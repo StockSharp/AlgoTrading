@@ -96,12 +96,12 @@ public class HpcsInter5Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Security is null)
 			throw new InvalidOperationException("Security must be assigned before starting the strategy.");
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializePipSize();
 		Volume = TradeVolume;

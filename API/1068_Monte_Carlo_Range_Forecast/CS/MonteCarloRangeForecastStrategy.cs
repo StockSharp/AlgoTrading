@@ -69,9 +69,9 @@ public class MonteCarloRangeForecastStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = 14 };
 		var subscription = SubscribeCandles(CandleType);
@@ -88,7 +88,7 @@ public class MonteCarloRangeForecastStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal atr)

@@ -63,16 +63,16 @@ public class ChampionStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (points)", "MetaTrader stop-loss distance expressed in points.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Length of the RSI oscillator.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_rsiLevel = Param(nameof(RsiLevel), 30m)
 		.SetDisplay("RSI Level", "Oversold threshold mirrored for overbought detection (100 - level).", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_balancePerLot = Param(nameof(BalancePerLot), 2000m)
 		.SetGreaterThanZero()
@@ -208,9 +208,9 @@ public class ChampionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var security = Security ?? throw new InvalidOperationException("Security is not set.");
 

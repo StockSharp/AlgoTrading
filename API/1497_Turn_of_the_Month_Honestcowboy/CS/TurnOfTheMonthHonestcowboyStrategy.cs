@@ -48,7 +48,7 @@ public class TurnOfTheMonthHonestcowboyStrategy : Strategy
 		_daysAfterStart = Param(nameof(DaysAfterStart), 3)
 			.SetDisplay("Days After Start", "Days after new month to exit", "Strategy");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Strategy");
 	}
 
@@ -59,9 +59,9 @@ public class TurnOfTheMonthHonestcowboyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

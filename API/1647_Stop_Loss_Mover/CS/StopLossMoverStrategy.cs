@@ -50,7 +50,7 @@ public class StopLossMoverStrategy : Strategy
 	{
 		_moveSlPrice = Param(nameof(MoveSlPrice), 0m)
 			.SetDisplay("Move SL Price", "Price level that triggers stop-loss move", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 100m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -72,16 +72,16 @@ public class StopLossMoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to candles and start data flow
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
 		// Start protection mechanism
-		StartProtection();
+		StartProtection(null, null);
 
 		// Open initial long position
 		BuyMarket(Volume);

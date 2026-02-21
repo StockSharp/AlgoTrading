@@ -186,7 +186,7 @@ public class FiveEmaStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Length of EMA", "EMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_filterBuy = Param(nameof(FilterBuy), true)
@@ -198,7 +198,7 @@ public class FiveEmaStrategy : Strategy
 		_targetRR = Param(nameof(TargetRR), 3.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Target R:R", "Reward to risk ratio", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_entryOnCloseOnly = Param(nameof(EntryOnCloseOnly), false)
@@ -259,11 +259,11 @@ public class FiveEmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

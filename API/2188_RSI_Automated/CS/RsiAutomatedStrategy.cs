@@ -81,7 +81,7 @@ public class RsiAutomatedStrategy : Strategy
 	_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "RSI calculation length", "RSI")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 
 	_overbought = Param(nameof(Overbought), 75m)
@@ -125,11 +125,11 @@ public class RsiAutomatedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
-	StartProtection();
+	StartProtection(null, null);
 
 	var rsi = new RelativeStrengthIndex
 	{

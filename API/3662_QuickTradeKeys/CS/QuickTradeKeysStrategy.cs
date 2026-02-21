@@ -34,15 +34,15 @@ public class QuickTradeKeysStrategy : Strategy
 
 		_buyRequest = Param(nameof(BuyRequest), false)
 			.SetDisplay("Buy Request", "Set to true to send a buy market order.", "Manual Trading")
-			.SetCanOptimize(false);
+			;
 
 		_sellRequest = Param(nameof(SellRequest), false)
 			.SetDisplay("Sell Request", "Set to true to send a sell market order.", "Manual Trading")
-			.SetCanOptimize(false);
+			;
 
 		_closeAllRequest = Param(nameof(CloseAllRequest), false)
 			.SetDisplay("Close All Request", "Set to true to close the current net position.", "Manual Trading")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <summary>
@@ -92,9 +92,9 @@ public class QuickTradeKeysStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("Security is not specified.");

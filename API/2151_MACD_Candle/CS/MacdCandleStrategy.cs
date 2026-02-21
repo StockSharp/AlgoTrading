@@ -57,19 +57,19 @@ public class MacdCandleStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 2);
 
 		_slowLength = Param(nameof(SlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_signalLength = Param(nameof(SignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal", "Signal period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

@@ -283,14 +283,14 @@ public class OpenTimeTwoStrategy : Strategy
 	{
 		_useClosingWindowOne = Param(nameof(UseClosingWindowOne), true)
 			.SetDisplay("Close Window #1", "Enable closing window for interval #1", "Closing")
-			.SetCanOptimize(true);
+			;
 
 		_closeWindowOneStart = Param(nameof(CloseWindowOneStart), new TimeSpan(19, 50, 0))
 			.SetDisplay("Close Start #1", "Start time for closing window #1", "Closing");
 
 		_useClosingWindowTwo = Param(nameof(UseClosingWindowTwo), true)
 			.SetDisplay("Close Window #2", "Enable closing window for interval #2", "Closing")
-			.SetCanOptimize(true);
+			;
 
 		_closeWindowTwoStart = Param(nameof(CloseWindowTwoStart), new TimeSpan(23, 20, 0))
 			.SetDisplay("Close Start #2", "Start time for closing window #2", "Closing");
@@ -298,32 +298,32 @@ public class OpenTimeTwoStrategy : Strategy
 		_trailingStopPips = Param(nameof(TrailingStopPips), 30m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
 			.SetRange(0m, 500m)
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 3m)
 			.SetDisplay("Trailing Step", "Trailing step distance in pips", "Risk")
 			.SetRange(0m, 200m)
-			.SetCanOptimize(true);
+			;
 
 		_tradeOnMonday = Param(nameof(TradeOnMonday), false)
 			.SetDisplay("Trade Monday", "Allow trading on Monday", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_tradeOnTuesday = Param(nameof(TradeOnTuesday), false)
 			.SetDisplay("Trade Tuesday", "Allow trading on Tuesday", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_tradeOnWednesday = Param(nameof(TradeOnWednesday), false)
 			.SetDisplay("Trade Wednesday", "Allow trading on Wednesday", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_tradeOnThursday = Param(nameof(TradeOnThursday), true)
 			.SetDisplay("Trade Thursday", "Allow trading on Thursday", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_tradeOnFriday = Param(nameof(TradeOnFriday), false)
 			.SetDisplay("Trade Friday", "Allow trading on Friday", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_intervalOneOpenStart = Param(nameof(IntervalOneOpenStart), new TimeSpan(9, 30, 0))
 			.SetDisplay("Open Start #1", "Opening window start for interval #1", "Opening");
@@ -347,36 +347,36 @@ public class OpenTimeTwoStrategy : Strategy
 
 		_intervalOneBuy = Param(nameof(IntervalOneBuy), true)
 			.SetDisplay("Direction #1", "Trade direction for interval #1 (Buy=true)", "Opening")
-			.SetCanOptimize(true);
+			;
 
 		_intervalTwoBuy = Param(nameof(IntervalTwoBuy), true)
 			.SetDisplay("Direction #2", "Trade direction for interval #2 (Buy=true)", "Opening")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetDisplay("Trade Volume", "Volume for each interval", "Risk")
 			.SetRange(0.01m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_stopLossOnePips = Param(nameof(StopLossOnePips), 30m)
 			.SetDisplay("Stop Loss #1", "Stop loss for interval #1 (pips)", "Risk")
 			.SetRange(0m, 1000m)
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitOnePips = Param(nameof(TakeProfitOnePips), 90m)
 			.SetDisplay("Take Profit #1", "Take profit for interval #1 (pips)", "Risk")
 			.SetRange(0m, 2000m)
-			.SetCanOptimize(true);
+			;
 
 		_stopLossTwoPips = Param(nameof(StopLossTwoPips), 10m)
 			.SetDisplay("Stop Loss #2", "Stop loss for interval #2 (pips)", "Risk")
 			.SetRange(0m, 1000m)
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitTwoPips = Param(nameof(TakeProfitTwoPips), 35m)
 			.SetDisplay("Take Profit #2", "Take profit for interval #2 (pips)", "Risk")
 			.SetRange(0m, 2000m)
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Base candle type driving decisions", "General");
@@ -398,9 +398,9 @@ public class OpenTimeTwoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var decimals = Security?.Decimals ?? 0;
 		var adjust = decimals is 3 or 5 ? 10m : 1m;

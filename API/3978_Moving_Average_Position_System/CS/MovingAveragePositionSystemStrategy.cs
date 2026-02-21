@@ -221,7 +221,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_currentVolume = InitialVolume;
 		Volume = _currentVolume;
@@ -248,17 +248,17 @@ public class MovingAveragePositionSystemStrategy : Strategy
 		var takeProfitUnit = TakeProfitPips > 0m ? new Unit(TakeProfitPips, UnitTypes.Step) : null;
 		StartProtection(takeProfit: takeProfitUnit);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage()
+	private DecimalLengthIndicator CreateMovingAverage()
 	{
 		return MaType switch
 		{
-			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = MaPeriod },
+			MovingAverageModes.Exponential => new EMA { Length = MaPeriod },
 			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = MaPeriod },
 			MovingAverageModes.LinearWeighted => new WeightedMovingAverage { Length = MaPeriod },
-			_ => new SimpleMovingAverage { Length = MaPeriod },
+			_ => new SMA { Length = MaPeriod },
 		};
 	}
 

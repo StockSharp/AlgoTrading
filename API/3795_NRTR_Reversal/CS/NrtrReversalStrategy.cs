@@ -42,12 +42,12 @@ public class NrtrReversalStrategy : Strategy
 	{
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 4000m)
 		.SetDisplay("Take Profit (points)", "Target distance in price steps", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(500m, 6000m, 500m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 4000m)
 		.SetDisplay("Stop Loss (points)", "Stop distance in price steps", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(500m, 6000m, 500m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
@@ -56,25 +56,25 @@ public class NrtrReversalStrategy : Strategy
 		_lotSize = Param(nameof(TradeVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trade Volume", "Base order volume that mirrors MetaTrader lots", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1m, 0.1m);
 
 		_period = Param(nameof(Period), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Period", "Number of candles used to build the NRTR pivot", "NRTR")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_reverseDistancePoints = Param(nameof(ReverseDistancePoints), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("Reverse Distance (points)", "Minimum breakout distance to confirm a reversal", "NRTR")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 500, 50);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 3m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "Multiplier that converts ATR into the NRTR offset", "NRTR")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 6m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -171,9 +171,9 @@ public class NrtrReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 		_isTrendUp = true;
@@ -197,7 +197,7 @@ public class NrtrReversalStrategy : Strategy
 		}
 		else
 		{
-			StartProtection();
+			StartProtection(null, null);
 		}
 
 		var area = CreateChartArea();

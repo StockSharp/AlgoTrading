@@ -70,19 +70,19 @@ public class SupertrendWithMomentumStrategy : Strategy
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Period", "Period of the Supertrend indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Multiplier", "Multiplier for the Supertrend indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Period of the Momentum indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -104,9 +104,9 @@ public class SupertrendWithMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var supertrend = new SuperTrend

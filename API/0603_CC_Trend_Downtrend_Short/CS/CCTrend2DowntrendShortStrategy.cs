@@ -71,14 +71,14 @@ public class CCTrend2DowntrendShortStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema9 = new ExponentialMovingAverage { Length = 9 };
-		_ema21 = new ExponentialMovingAverage { Length = 21 };
-		_ema55 = new ExponentialMovingAverage { Length = 55 };
-		_ema200 = new ExponentialMovingAverage { Length = 200 };
+		_ema9 = new EMA { Length = 9 };
+		_ema21 = new EMA { Length = 21 };
+		_ema55 = new EMA { Length = 55 };
+		_ema200 = new EMA { Length = 200 };
 
 		_highest = new Highest { Length = FibLength };
 		_lowest = new Lowest { Length = FibLength };
@@ -111,8 +111,8 @@ public class CCTrend2DowntrendShortStrategy : Strategy
 		var maxEma = Math.Max(ema55Value, ema9Value);
 		var minEma = Math.Min(ema55Value, ema9Value);
 
-		var highF = _highest.Process(maxEma, candle.OpenTime, true).ToDecimal();
-		var lowF = _lowest.Process(minEma, candle.OpenTime, true).ToDecimal();
+		var highF = _highest.Process(new DecimalIndicatorValue(_highest, maxEma, candle.OpenTime)).ToDecimal();
+		var lowF = _lowest.Process(new DecimalIndicatorValue(_lowest, minEma, candle.OpenTime)).ToDecimal();
 
 		if (!_highest.IsFormed || !_lowest.IsFormed)
 		return;

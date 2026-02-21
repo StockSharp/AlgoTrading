@@ -256,9 +256,9 @@ public class BollingerWinnerProStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var bollinger = new BollingerBands
@@ -271,8 +271,8 @@ public class BollingerWinnerProStrategy : Strategy
 		var aroon = UseAroon ? new Aroon { Length = AroonLength } : null;
 		
 		IIndicator ma = MAType == "EMA" 
-			? new ExponentialMovingAverage { Length = MALength }
-			: new SimpleMovingAverage { Length = MALength };
+			? new EMA { Length = MALength }
+			: new SMA { Length = MALength };
 
 		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);

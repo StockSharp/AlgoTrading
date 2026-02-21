@@ -62,12 +62,12 @@ public class ParabolicSarCrossoverAlertStrategy : Strategy
 	{
 		_accelerationFactor = Param(nameof(AccelerationFactor), 0.02m)
 			.SetDisplay("Acceleration Factor", "Initial step for the Parabolic SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_maxAccelerationFactor = Param(nameof(MaxAccelerationFactor), 0.2m)
 			.SetDisplay("Max Acceleration", "Upper bound for the Parabolic SAR acceleration", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.5m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -91,11 +91,11 @@ public class ParabolicSarCrossoverAlertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var parabolicSar = new ParabolicSar
 		{

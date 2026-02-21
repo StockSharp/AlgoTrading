@@ -49,7 +49,7 @@ public class SimpleTrailingStopStrategy : Strategy
 	{
 		_trailPoints = Param(nameof(TrailPoints), 25m)
 			.SetDisplay("Trail Points", "Distance for trailing stop", "Protection")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -70,9 +70,9 @@ public class SimpleTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(
 			takeProfit: null,

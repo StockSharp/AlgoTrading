@@ -50,7 +50,7 @@ public class YurazCloseprcV3Strategy : Strategy
 		_profitPercent = Param(nameof(ProfitPercent), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit %", "Profit percentage threshold", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 20m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -72,9 +72,9 @@ public class YurazCloseprcV3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_initialCapital = Portfolio.CurrentValue ?? 0m;
 

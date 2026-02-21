@@ -139,15 +139,15 @@ public class ExpQqeCloudStrategy : Strategy
 	
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiMa = new ExponentialMovingAverage { Length = RsiSmoothing };
-		_atrRsi = new ExponentialMovingAverage { Length = RsiSmoothing };
-		_maAtrRsi = new ExponentialMovingAverage { Length = RsiSmoothing };
-		_dar = new ExponentialMovingAverage { Length = RsiSmoothing };
+		_rsiMa = new EMA { Length = RsiSmoothing };
+		_atrRsi = new EMA { Length = RsiSmoothing };
+		_maAtrRsi = new EMA { Length = RsiSmoothing };
+		_dar = new EMA { Length = RsiSmoothing };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -166,7 +166,7 @@ public class ExpQqeCloudStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 		
-		var rsiValue = _rsi.Process(candle);
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle);
 		if (!_rsi.IsFormed)
 		return;
 		
@@ -178,7 +178,7 @@ public class ExpQqeCloudStrategy : Strategy
 		var prevRsiMa = _rsiMa.GetValue(1);
 		var atrRsiValue = Math.Abs(prevRsiMa - rsIndex);
 		
-		var maAtrRsiValue = _maAtrRsi.Process(atrRsiValue, candle.ServerTime, candle.State == CandleStates.Finished);
+		var maAtrRsiValue = _maAtrRsi.Process(atrRsiValue, candle.ServerTime));
 		if (!_maAtrRsi.IsFormed)
 		return;
 		
@@ -212,7 +212,7 @@ public class ExpQqeCloudStrategy : Strategy
 		else if (rsIndex < _longband && prevRsIndex >= prevLongband)
 		_trend = -1;
 		
-		var time = candle.OpenTime.LocalDateTime;
+		var time = candle.OpenTime;
 		
 		var afterStop = time.Hour > StopHour || time.Hour < StartHour || (time.Hour == StopHour && time.Minute >= StopMinute);
 		if (afterStop && Position != 0)

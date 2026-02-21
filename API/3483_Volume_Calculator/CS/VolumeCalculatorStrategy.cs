@@ -70,11 +70,11 @@ public class VolumeCalculatorStrategy : Strategy
 	{
 		_stopLossPrice = Param(nameof(StopLossPrice), 0m)
 			.SetDisplay("Stop Loss Price", "Price level of the stop loss.", "Risk")
-			.SetCanOptimize(false);
+			;
 
 		_takeProfitPrice = Param(nameof(TakeProfitPrice), 0m)
 			.SetDisplay("Take Profit Price", "Price level of the take profit.", "Risk")
-			.SetCanOptimize(false);
+			;
 
 		_maxLossPercent = Param(nameof(MaxLossPercent), 5m)
 			.SetGreaterThanZero()
@@ -82,7 +82,7 @@ public class VolumeCalculatorStrategy : Strategy
 
 		_isLongPosition = Param(nameof(IsLongPosition), true)
 			.SetDisplay("Is Long Position", "Defines whether the planned trade is long (true) or short (false).", "General")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <inheritdoc />
@@ -99,9 +99,9 @@ public class VolumeCalculatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("Security is not specified.");

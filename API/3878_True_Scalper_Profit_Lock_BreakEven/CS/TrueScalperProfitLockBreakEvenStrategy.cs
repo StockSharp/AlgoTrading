@@ -229,14 +229,14 @@ public class TrueScalperProfitLockBreakEvenStrategy : Strategy
 	=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = CalculateTradeVolume();
 
-		_fastEma = new ExponentialMovingAverage { Length = 3 };
-		_slowEma = new ExponentialMovingAverage { Length = 7 };
+		_fastEma = new EMA { Length = 3 };
+		_slowEma = new EMA { Length = 7 };
 		_rsi = new RelativeStrengthIndex { Length = 2 };
 
 		ResetRuntimeState();
@@ -278,9 +278,9 @@ public class TrueScalperProfitLockBreakEvenStrategy : Strategy
 			return;
 		}
 
-		var fastValue = _fastEma.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
-		var slowValue = _slowEma.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
-		var rsiValue = _rsi.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
+		var fastValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var slowValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.OpenTime)).ToDecimal();
 
 		if (!_fastEma.IsFormed || !_slowEma.IsFormed || !_rsi.IsFormed)
 		{

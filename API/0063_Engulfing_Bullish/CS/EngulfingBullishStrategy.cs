@@ -75,7 +75,7 @@ public class EngulfingBullishStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetRange(0.5m, 3.0m)
 			.SetDisplay("Stop Loss %", "Percentage below pattern's low for stop-loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_requireDowntrend = Param(nameof(RequireDowntrend), true)
 			.SetDisplay("Require Downtrend", "Whether to require a prior downtrend", "Pattern Parameters");
@@ -83,7 +83,7 @@ public class EngulfingBullishStrategy : Strategy
 		_downtrendBars = Param(nameof(DowntrendBars), 3)
 			.SetRange(2, 5)
 			.SetDisplay("Downtrend Bars", "Number of consecutive bearish bars for downtrend", "Pattern Parameters")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -102,9 +102,9 @@ public class EngulfingBullishStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);

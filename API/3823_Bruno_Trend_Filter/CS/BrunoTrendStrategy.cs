@@ -264,7 +264,7 @@ public class BrunoTrendStrategy : Strategy
 		.SetDisplay("Stochastic %K", "%K lookback for the stochastic", "Oscillator")
 		.SetGreaterThanZero();
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 		.SetDisplay("Stochastic %D", "%D smoothing period", "Oscillator")
 		.SetGreaterThanZero();
 
@@ -298,12 +298,12 @@ public class BrunoTrendStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 30)
 		.SetDisplay("Stop-Loss (pips)", "Stop-loss distance in MetaTrader pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 100, 5);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 		.SetDisplay("Take-Profit (pips)", "Take-profit distance in MetaTrader pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 150, 10);
 
 		Volume = _tradeVolume.Value;
@@ -342,15 +342,14 @@ public class BrunoTrendStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastSma = new SimpleMovingAverage { Length = FastMaLength };
-		_fastEma = new ExponentialMovingAverage { Length = SignalMaLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowMaLength };
+		_fastSma = new SMA { Length = FastMaLength };
+		_fastEma = new EMA { Length = SignalMaLength };
+		_slowEma = new EMA { Length = SlowMaLength };
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		_stochastic = new StochasticOscillator
-		{
-			Length = Math.Max(1, StochasticSlowing),
+		{ K = { Length = Math }.Max(1, StochasticSlowing),
 			KPeriod = StochasticKPeriod,
-			DPeriod = StochasticDPeriod
+			D = { Length = StochasticDPeriod }
 		};
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{

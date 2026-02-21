@@ -95,14 +95,14 @@ public class CatcherProfit10Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_initialBalance = Portfolio?.CurrentValue ?? 0m;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

@@ -91,23 +91,23 @@ public class EngulfingMfiConfirmationStrategy : Strategy
 		_mfiPeriod = Param(nameof(MfiPeriod), 37)
 			.SetGreaterThanZero()
 			.SetDisplay("MFI Period", "Length of the Money Flow Index", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 40m)
 			.SetDisplay("Oversold Level", "MFI level confirming bullish setups", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 60m)
 			.SetDisplay("Overbought Level", "MFI level confirming bearish setups", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_exitLongLevel = Param(nameof(ExitLongLevel), 30m)
 			.SetDisplay("Exit Long Level", "Lower MFI threshold for exits", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_exitShortLevel = Param(nameof(ExitShortLevel), 70m)
 			.SetDisplay("Exit Short Level", "Upper MFI threshold for exits", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series for analysis", "General");
@@ -130,9 +130,9 @@ public class EngulfingMfiConfirmationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize Money Flow Index indicator with configured period.
 		var mfi = new MoneyFlowIndex

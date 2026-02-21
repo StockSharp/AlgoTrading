@@ -227,9 +227,9 @@ public class OpenTimeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Convert pip-based inputs to absolute price offsets.
 		_pipSize = CalculatePipSize();
@@ -250,7 +250,7 @@ public class OpenTimeStrategy : Strategy
 		}
 
 		// Enable built-in position protection against leftover exposure.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

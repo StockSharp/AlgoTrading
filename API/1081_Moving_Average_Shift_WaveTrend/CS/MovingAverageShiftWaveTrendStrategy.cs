@@ -131,17 +131,17 @@ public class MovingAverageShiftWaveTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ma = CreateMa(MaType, MaLength);
-		ma.CandlePrice = CandlePrice.Median;
+		ma.;
 
-		var longMa = new ExponentialMovingAverage { Length = LongMaLength, CandlePrice = CandlePrice.Median };
+		var longMa = new EMA { Length = LongMaLength };
 
 		var atr = new AverageTrueRange { Length = AtrLength };
-		var atrSma = new SimpleMovingAverage { Length = AtrLength };
+		var atrSma = new SMA { Length = AtrLength };
 
 		_roc = new RateOfChange { Length = OscLength };
 		_osc = new HullMovingAverage { Length = 10 };
@@ -168,14 +168,14 @@ public class MovingAverageShiftWaveTrendStrategy : Strategy
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var rocValue = _roc.Process(median - maValue, candle.OpenTime, true);
+		var rocValue = _roc.Process(new DecimalIndicatorValue(_roc, median - maValue, candle.OpenTime));
 		if (!rocValue.IsFormed)
 		{
 			_prevLongMa = longMaValue;
 			return;
 		}
 
-		var oscValue = _osc.Process(rocValue.ToDecimal(), candle.OpenTime, true);
+		var oscValue = _osc.Process(new DecimalIndicatorValue(_osc, rocValue.ToDecimal(), candle.OpenTime));
 		if (!oscValue.IsFormed)
 		{
 			_prevOsc = oscValue.ToDecimal();
@@ -251,15 +251,15 @@ public class MovingAverageShiftWaveTrendStrategy : Strategy
 		_prevLongMa = longMaValue;
 	}
 
-	private LengthIndicator<decimal> CreateMa(string type, int length)
+	private DecimalLengthIndicator CreateMa(string type, int length)
 	{
 		return type switch
 		{
-			"EMA" => new ExponentialMovingAverage { Length = length },
+			"EMA" => new EMA { Length = length },
 			"SMMA (RMA)" => new SmoothedMovingAverage { Length = length },
 			"WMA" => new WeightedMovingAverage { Length = length },
 			"VWMA" => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 }

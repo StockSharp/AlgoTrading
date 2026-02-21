@@ -88,25 +88,25 @@ public class SupertrendAdxStrategy : Strategy
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Period", "Period for ATR calculation in Supertrend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Multiplier", "Multiplier for ATR in Supertrend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 1.0m);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Threshold", "Minimum ADX value to confirm trend strength", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 30m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -129,9 +129,9 @@ public class SupertrendAdxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var atr = new AverageTrueRange { Length = SupertrendPeriod };

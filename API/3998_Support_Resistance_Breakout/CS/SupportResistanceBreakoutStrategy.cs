@@ -79,13 +79,13 @@ public class SupportResistanceBreakoutStrategy : Strategy
 		_rangeLength = Param(nameof(RangeLength), 55)
 		.SetGreaterThanZero()
 		.SetDisplay("Range Length", "Candles used to form support/resistance", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 5);
 
 		_emaPeriod = Param(nameof(EmaPeriod), 500)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Period", "Length of the EMA trend filter", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100, 800, 50);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -114,14 +114,14 @@ public class SupportResistanceBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_point = Security?.PriceStep ?? 1m;
 
 		_donchian = new DonchianChannels { Length = RangeLength };
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_ema = new EMA { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

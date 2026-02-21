@@ -163,66 +163,66 @@ public class AlmaOptimizedStrategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA Length", "Fast EMA period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Length", "ATR period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 21, 7);
 
 		_emaLength = Param(nameof(EmaLength), 72)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Length", "Slow EMA period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 100, 10);
 
 		_adxLength = Param(nameof(AdxLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("ADX Length", "ADX period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 5);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Length", "RSI period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 21, 7);
 
 		_cooldownBars = Param(nameof(CooldownBars), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("Cooldown Bars", "Bars to wait after long entry", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 15, 2);
 
 		_bbMultiplier = Param(nameof(BbMultiplier), 3m)
 		.SetGreaterThanZero()
 		.SetDisplay("BB Multiplier", "Bollinger Bands deviation", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 1m);
 
 		_slAtrMultiplier = Param(nameof(SlAtrMultiplier), 5m)
 		.SetGreaterThanZero()
 		.SetDisplay("SL ATR Mult", "ATR multiplier for stop loss", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 8m, 1m);
 
 		_tpAtrMultiplier = Param(nameof(TpAtrMultiplier), 4m)
 		.SetGreaterThanZero()
 		.SetDisplay("TP ATR Mult", "ATR multiplier for take profit", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 8m, 1m);
 
 		_timeBasedExit = Param(nameof(TimeBasedExit), 0)
 		.SetDisplay("Time Based Exit", "Exit after N bars (0 disabled)", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 20, 5);
 
 		_minAtr = Param(nameof(MinAtr), 0.005m)
 		.SetGreaterThanZero()
 		.SetDisplay("Min ATR", "Minimum ATR value", "Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.001m, 0.01m, 0.001m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -251,14 +251,14 @@ public class AlmaOptimizedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		var slowEma = new ExponentialMovingAverage { Length = EmaLength };
+		var fastEma = new EMA { Length = FastEmaLength };
+		var slowEma = new EMA { Length = EmaLength };
 		var alma = new ALMA { Length = 15, Offset = 0.65m, Sigma = 6 };
 		var adx = new AverageDirectionalIndex { Length = AdxLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };

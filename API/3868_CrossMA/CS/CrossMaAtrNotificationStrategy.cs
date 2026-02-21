@@ -46,19 +46,19 @@ public class CrossMaAtrNotificationStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast SMA Period", "Length of the fast SMA", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 30, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow SMA Period", "Length of the slow SMA", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "Length of the ATR stop calculator", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 30, 1);
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
@@ -172,16 +172,16 @@ public class CrossMaAtrNotificationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastSma = new SimpleMovingAverage
+		var fastSma = new SMA
 		{
 			Length = FastPeriod
 		};
 
-		var slowSma = new SimpleMovingAverage
+		var slowSma = new SMA
 		{
 			Length = SlowPeriod
 		};
@@ -197,7 +197,7 @@ public class CrossMaAtrNotificationStrategy : Strategy
 		.Bind(fastSma, slowSma, atr, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <summary>

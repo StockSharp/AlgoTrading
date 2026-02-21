@@ -807,22 +807,22 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 		_macdHistoryLength = Param(nameof(MacdHistoryLength), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD History Length", "Number of MACD values retained for pattern evaluation", "General")
-		.SetCanOptimize(true);
+		;
 
 		_candleHistoryLimit = Param(nameof(CandleHistoryLimit), 1000)
 		.SetGreaterThanZero()
 		.SetDisplay("Candle History Limit", "Maximum number of candles stored for pattern detection", "General")
-		.SetCanOptimize(true);
+		;
 
 		_minPartialVolume = Param(nameof(MinPartialVolume), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Min Partial Volume", "Minimum volume traded during partial exits", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_profitThreshold = Param(nameof(ProfitThreshold), 5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Profit Threshold", "Profit threshold required before partial profit taking", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_pattern1Enabled = Param(nameof(Pattern1Enabled), true)
 			.SetDisplay("Pattern 1", "Enable first MACD pattern", "Patterns");
@@ -1056,9 +1056,9 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_currentVolume = InitialVolume;
 
@@ -1069,10 +1069,10 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 		_macd5 = CreateMacd(Pattern5Fast, Pattern5Slow);
 		_macd6 = CreateMacd(Pattern6Fast, Pattern6Slow);
 
-		_ema1 = new ExponentialMovingAverage { Length = EmaPeriod1 };
-		_ema2 = new ExponentialMovingAverage { Length = EmaPeriod2 };
-		_sma3 = new SimpleMovingAverage { Length = SmaPeriod3 };
-		_ema4 = new ExponentialMovingAverage { Length = EmaPeriod4 };
+		_ema1 = new EMA { Length = EmaPeriod1 };
+		_ema2 = new EMA { Length = EmaPeriod2 };
+		_sma3 = new SMA { Length = SmaPeriod3 };
+		_ema4 = new EMA { Length = EmaPeriod4 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

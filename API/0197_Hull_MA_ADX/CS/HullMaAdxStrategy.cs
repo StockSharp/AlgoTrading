@@ -89,12 +89,12 @@ public class HullMaAdxStrategy : Strategy
 	{
 		_hmaPeriod = Param(nameof(HmaPeriod), 9)
 			.SetDisplay("HMA Period", "Period for Hull Moving Average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 2);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "Period for Average Directional Movement Index", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
@@ -106,7 +106,7 @@ public class HullMaAdxStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2.0m, 0.5m);
 	}
 
@@ -130,9 +130,9 @@ public class HullMaAdxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_hma = new() { Length = HmaPeriod };

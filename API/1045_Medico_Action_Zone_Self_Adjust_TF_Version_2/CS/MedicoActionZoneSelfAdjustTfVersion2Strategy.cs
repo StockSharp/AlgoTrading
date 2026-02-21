@@ -36,7 +36,7 @@ public class MedicoActionZoneSelfAdjustTfVersion2Strategy : Strategy
 
 	public MedicoActionZoneSelfAdjustTfVersion2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
 		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromDays(7).TimeFrame())
@@ -69,14 +69,14 @@ public class MedicoActionZoneSelfAdjustTfVersion2Strategy : Strategy
 		_prevSlow = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastEmaCur = new ExponentialMovingAverage { Length = FastEmaLength };
-		_slowEmaCur = new ExponentialMovingAverage { Length = SlowEmaLength };
-		_fastEmaHtf = new ExponentialMovingAverage { Length = FastEmaLength };
-		_slowEmaHtf = new ExponentialMovingAverage { Length = SlowEmaLength };
+		_fastEmaCur = new EMA { Length = FastEmaLength };
+		_slowEmaCur = new EMA { Length = SlowEmaLength };
+		_fastEmaHtf = new EMA { Length = FastEmaLength };
+		_slowEmaHtf = new EMA { Length = SlowEmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

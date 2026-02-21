@@ -63,12 +63,12 @@ public class FisherCyberCycleStrategy : Strategy
 		_alpha = Param(nameof(Alpha), 0.07m)
 			.SetDisplay("Alpha", "Smoothing factor", "Indicators")
 			.SetRange(0.01m, 0.5m)
-			.SetCanOptimize(true);
+			;
 
 		_length = Param(nameof(Length), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Normalization window", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -91,11 +91,11 @@ public class FisherCyberCycleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_indicator = new FisherCyberCycleIndicator
 		{
@@ -153,7 +153,7 @@ public class FisherCyberCycleStrategy : Strategy
 /// <summary>
 /// Indicator calculating Fisher Transform of Ehlers' Cyber Cycle.
 /// </summary>
-public class FisherCyberCycleIndicator : LengthIndicator<decimal>
+public class FisherCyberCycleIndicator : DecimalLengthIndicator
 {
 	public decimal Alpha { get; set; } = 0.07m;
 

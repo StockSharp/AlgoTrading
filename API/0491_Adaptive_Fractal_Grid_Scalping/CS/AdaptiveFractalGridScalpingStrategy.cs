@@ -45,32 +45,32 @@ public class AdaptiveFractalGridScalpingStrategy : Strategy
 	{
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetDisplay("ATR Length", "ATR period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_smaLength = Param(nameof(SmaLength), 50)
 			.SetDisplay("SMA Length", "SMA period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_gridMultiplierHigh = Param(nameof(GridMultiplierHigh), 2m)
 			.SetDisplay("Grid Multiplier High", "ATR multiplier for high grid", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_gridMultiplierLow = Param(nameof(GridMultiplierLow), 0.5m)
 			.SetDisplay("Grid Multiplier Low", "ATR multiplier for low grid", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.25m, 1m, 0.25m);
 
 		_trailStopMultiplier = Param(nameof(TrailStopMultiplier), 0.5m)
 			.SetDisplay("Trail Stop Multiplier", "ATR multiplier for stop", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.25m, 1m, 0.25m);
 
 		_volatilityThreshold = Param(nameof(VolatilityThreshold), 1m)
 			.SetDisplay("Volatility Threshold", "ATR threshold", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -93,12 +93,12 @@ public class AdaptiveFractalGridScalpingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrLength };
-		var sma = new SimpleMovingAverage { Length = SmaLength };
+		var sma = new SMA { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 

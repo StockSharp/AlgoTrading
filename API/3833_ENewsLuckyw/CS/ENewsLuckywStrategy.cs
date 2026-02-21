@@ -148,16 +148,16 @@ public class ENewsLuckywStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 15m)
 		.SetDisplay("Stop Loss", "Stop loss distance in pips", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
 		.SetDisplay("Take Profit", "Take profit distance in pips", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_distancePips = Param(nameof(DistancePips), 20m)
 		.SetDisplay("Entry Distance", "Offset from market price in pips", "Trading")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_useTrailing = Param(nameof(UseTrailing), true)
 		.SetDisplay("Use Trailing", "Enable stop trailing", "Risk");
@@ -210,9 +210,9 @@ public class ENewsLuckywStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 

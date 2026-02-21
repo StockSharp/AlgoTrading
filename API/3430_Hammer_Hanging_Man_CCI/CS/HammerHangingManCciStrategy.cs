@@ -49,32 +49,32 @@ public class HammerHangingManCciStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 11)
 		.SetRange(5, 50)
 		.SetDisplay("CCI Period", "Number of bars for the CCI indicator", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_maPeriod = Param(nameof(MaPeriod), 5)
 		.SetRange(3, 30)
 		.SetDisplay("MA Period", "Number of bars for the trend filter SMA", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_longConfirmationThreshold = Param(nameof(LongConfirmationThreshold), 40m)
 		.SetRange(-100m, 100m)
 		.SetDisplay("Long CCI Threshold", "Maximum CCI value to allow hammer confirmation", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_shortConfirmationThreshold = Param(nameof(ShortConfirmationThreshold), 60m)
 		.SetRange(-100m, 100m)
 		.SetDisplay("Short CCI Threshold", "Minimum CCI value to allow hanging man confirmation", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_exitUpperThreshold = Param(nameof(ExitUpperThreshold), 70m)
 		.SetRange(-100m, 200m)
 		.SetDisplay("Upper Exit Threshold", "CCI level that forces an exit after crossing downward or upward", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_exitLowerThreshold = Param(nameof(ExitLowerThreshold), 30m)
 		.SetRange(-100m, 100m)
 		.SetDisplay("Lower Exit Threshold", "Secondary CCI level for aggressive exits", "Risk")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>
@@ -160,11 +160,11 @@ public class HammerHangingManCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_closeSma = new SimpleMovingAverage { Length = MaPeriod };
+		_closeSma = new SMA { Length = MaPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

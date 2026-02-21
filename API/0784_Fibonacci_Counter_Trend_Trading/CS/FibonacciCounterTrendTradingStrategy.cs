@@ -71,22 +71,22 @@ public class FibonacciCounterTrendTradingStrategy : Strategy
 		_length = Param(nameof(Length), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "VWMA length", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 10);
 
 		_mult = Param(nameof(Mult), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bands Mult", "Deviation multiplier", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_upperLevel = Param(nameof(UpperLevel), "1")
 			.SetDisplay("Upper Level", "Fibonacci upper level", "General")
-			.SetOptions("0.236", "0.382", "0.5", "0.618", "0.764", "1");
+			.SetOptimizeValues(new[] { "0.236", "0.382", "0.5", "0.618", "0.764", "1" });
 
 		_lowerLevel = Param(nameof(LowerLevel), "1")
 			.SetDisplay("Lower Level", "Fibonacci lower level", "General")
-			.SetOptions("0.236", "0.382", "0.5", "0.618", "0.764", "1");
+			.SetOptimizeValues(new[] { "0.236", "0.382", "0.5", "0.618", "0.764", "1" });
 
 		_exitBasis = Param(nameof(ExitBasis), false)
 			.SetDisplay("Exit at Basis", "Close when price crosses VWMA", "General");
@@ -113,9 +113,9 @@ public class FibonacciCounterTrendTradingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var vwma = new VolumeWeightedMovingAverage { Length = Length };
 		var std = new StandardDeviation { Length = Length };

@@ -39,27 +39,27 @@ private readonly StrategyParam<Sides?> _direction;
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetRange(1, 100)
 			.SetDisplay("RSI Period", "RSI calculation period", "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_buyLevel = Param(nameof(BuyLevel), 40)
 			.SetRange(0, 100)
 			.SetDisplay("Buy Level", "RSI level to buy", "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_sellLevel = Param(nameof(SellLevel), 60)
 			.SetRange(0, 100)
 			.SetDisplay("Sell Level", "RSI level to sell", "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 5m)
 			.SetRange(0.1m, 100m)
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.1m, 100m)
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk")
-			.SetCanOptimize(true);
+			;
 
 _direction = Param(nameof(Direction), (Sides?)null)
 .SetDisplay("Trade Direction", "Allowed trade direction", "General");
@@ -113,9 +113,9 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 

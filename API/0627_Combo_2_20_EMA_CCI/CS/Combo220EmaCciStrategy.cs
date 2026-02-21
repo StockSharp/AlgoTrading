@@ -108,22 +108,22 @@ public class Combo220EmaCciStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 14)
 		.SetRange(5, 50)
 		.SetDisplay("EMA Length", "EMA indicator length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_cciLength = Param(nameof(CciLength), 10)
 		.SetRange(5, 50)
 		.SetDisplay("CCI Length", "CCI indicator length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_fastMaLength = Param(nameof(FastMaLength), 10)
 		.SetRange(5, 50)
 		.SetDisplay("Fast MA Length", "Fast MA length for CCI", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_slowMaLength = Param(nameof(SlowMaLength), 20)
 		.SetRange(5, 50)
 		.SetDisplay("Slow MA Length", "Slow MA length for CCI", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_reverse = Param(nameof(Reverse), false)
 		.SetDisplay("Reverse", "Trade reverse signals", "General");
@@ -142,14 +142,14 @@ public class Combo220EmaCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		_cci = new CommodityChannelIndex { Length = CciLength };
-		_fastMa = new SimpleMovingAverage { Length = FastMaLength };
-		_slowMa = new SimpleMovingAverage { Length = SlowMaLength };
+		_fastMa = new SMA { Length = FastMaLength };
+		_slowMa = new SMA { Length = SlowMaLength };
 
 		_prevHigh = 0m;
 		_prevLow = 0m;
@@ -162,7 +162,7 @@ public class Combo220EmaCciStrategy : Strategy
 		.Bind(_ema, _cci, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

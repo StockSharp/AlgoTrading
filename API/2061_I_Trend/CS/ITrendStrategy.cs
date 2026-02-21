@@ -118,19 +118,19 @@ public class ITrendStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Moving average length", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 50, 5);
 		
 		_bbPeriod = Param(nameof(BbPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("BB Period", "Bollinger Bands period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 		
 		_bbDeviation = Param(nameof(BbDeviation), 2.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("BB Deviation", "Standard deviation for Bollinger Bands", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.0m, 3.0m, 0.5m);
 		
 		_priceType = Param(nameof(PriceType), AppliedPrices.PriceClose)
@@ -159,11 +159,11 @@ public class ITrendStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		var ma = new EMA { Length = MaPeriod };
 		var bb = new BollingerBands { Length = BbPeriod, Width = BbDeviation };

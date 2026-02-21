@@ -108,27 +108,27 @@ public class AdxMacdStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 					 .SetRange(5, 30)
 					 .SetDisplay("ADX Period", "Period for ADX calculation", "ADX Settings")
-					 .SetCanOptimize(true);
+					 ;
 					 
 		_adxThreshold = Param(nameof(AdxThreshold), 25)
 						.SetRange(15, 40)
 						.SetDisplay("ADX Threshold", "ADX threshold for trend strength", "ADX Settings")
-						.SetCanOptimize(true);
+						;
 						
 		_macdFast = Param(nameof(MacdFast), 12)
 					.SetRange(5, 30)
 					.SetDisplay("MACD Fast", "Fast period for MACD calculation", "MACD Settings")
-					.SetCanOptimize(true);
+					;
 					
 		_macdSlow = Param(nameof(MacdSlow), 26)
 					.SetRange(10, 50)
 					.SetDisplay("MACD Slow", "Slow period for MACD calculation", "MACD Settings")
-					.SetCanOptimize(true);
+					;
 					
 		_macdSignal = Param(nameof(MacdSignal), 9)
 					  .SetRange(3, 20)
 					  .SetDisplay("MACD Signal", "Signal period for MACD calculation", "MACD Settings")
-					  .SetCanOptimize(true);
+					  ;
 					  
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
 						 .SetRange(1.0m, 5.0m)
@@ -142,9 +142,9 @@ public class AdxMacdStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Initialize indicators
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };

@@ -74,9 +74,9 @@ public class TriggerLineStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_wma = new WeightedMovingAverage { Length = WmaPeriod };
 		_lsma = new LinearRegression { Length = LsmaPeriod };
@@ -102,8 +102,8 @@ public class TriggerLineStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var line = _wma.Process(candle.ClosePrice, candle.ServerTime, true).ToDecimal();
-		var signal = _lsma.Process(line, candle.ServerTime, true).ToDecimal();
+		var line = _wma.Process(new DecimalIndicatorValue(_wma, candle.ClosePrice, candle.ServerTime)).ToDecimal();
+		var signal = _lsma.Process(new DecimalIndicatorValue(_lsma, line, candle.ServerTime)).ToDecimal();
 
 		if (!_initialized)
 		{

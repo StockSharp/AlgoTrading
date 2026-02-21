@@ -17,7 +17,7 @@ This strategy goes long when price is above a trend SMA and the RSI crosses abov
   - `RsiOversold` = 40.
   - `AtrPeriod` = 14.
   - `AtrMultiplier` = 1.5.
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame().
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame().
 - **Filters**:
   - Category: Trend
   - Direction: Long

@@ -154,9 +154,9 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 	public decimal CVolume { get => _cContext.Volume; set => _cContext.Volume = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to candles for each timeframe and bind indicators.
 		_aContext.Start();
@@ -261,12 +261,12 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 			_fastLength = parent.Param($"{label}FastLength", fastLength)
 			.SetGreaterThanZero()
 			.SetDisplay($"{label} Fast Length", "Period for the first moving average", group)
-			.SetCanOptimize(true);
+			;
 
 			_slowLength = parent.Param($"{label}SlowLength", slowLength)
 			.SetGreaterThanZero()
 			.SetDisplay($"{label} Slow Length", "Period for the second moving average", group)
-			.SetCanOptimize(true);
+			;
 
 			_signalBars = parent.Param($"{label}SignalBars", signalBars)
 			.SetGreaterThanZero()
@@ -293,7 +293,7 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 			_volume = parent.Param($"{label}Volume", 1m)
 			.SetGreaterThanZero()
 			.SetDisplay($"{label} Volume", "Volume traded when this signal turns active", group)
-			.SetCanOptimize(true);
+			;
 		}
 
 		public DataType CandleType
@@ -430,7 +430,7 @@ internal enum TrendDirections
 	Down
 }
 
-internal sealed class ColorX2MaDigitIndicator : Indicator<ICandleMessage>
+internal sealed class ColorX2MaDigitIndicator : BaseIndicator
 {
 	public ColorX2MaAppliedPrices AppliedPrice { get; set; } = ColorX2MaAppliedPrices.Close;
 	public ColorX2MaSmoothMethods FastMethod { get; set; } = ColorX2MaSmoothMethods.Simple;
@@ -547,12 +547,12 @@ internal sealed class ColorX2MaDigitIndicator : Indicator<ICandleMessage>
 	{
 		return method switch
 		{
-			ColorX2MaSmoothMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			ColorX2MaSmoothMethods.Exponential => new EMA { Length = length },
 			ColorX2MaSmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			ColorX2MaSmoothMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			ColorX2MaSmoothMethods.Jurik => new JurikMovingAverage { Length = length },
 			ColorX2MaSmoothMethods.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 }

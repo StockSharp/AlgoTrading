@@ -157,22 +157,22 @@ public class FlatTrendEaStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in pips", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in pips", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetDisplay("Trailing Step (pips)", "Step required to advance trailing stop", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_useTradingHours = Param(nameof(UseTradingHours), true)
 			.SetDisplay("Use Trading Hours", "Limit trading to specific hours", "Session");
@@ -180,29 +180,29 @@ public class FlatTrendEaStrategy : Strategy
 		_startHour = Param(nameof(StartHour), 10)
 			.SetDisplay("Start Hour", "Session start hour (0-23)", "Session")
 			.SetRange(0, 23)
-			.SetCanOptimize(true);
+			;
 
 		_endHour = Param(nameof(EndHour), 19)
 			.SetDisplay("End Hour", "Session end hour (exclusive, 1-24)", "Session")
 			.SetRange(1, 24)
-			.SetCanOptimize(true);
+			;
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "Smoothing period for ADX", "Indicators")
 			.SetRange(2, 100)
-			.SetCanOptimize(true);
+			;
 
 		_sarStart = Param(nameof(SarStart), 0.02m)
 			.SetDisplay("SAR Start", "Initial acceleration factor", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_sarIncrement = Param(nameof(SarIncrement), 0.02m)
 			.SetDisplay("SAR Step", "Acceleration increment", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_sarMaximum = Param(nameof(SarMaximum), 0.2m)
 			.SetDisplay("SAR Maximum", "Maximum acceleration factor", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
@@ -222,9 +222,9 @@ public class FlatTrendEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 			throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");

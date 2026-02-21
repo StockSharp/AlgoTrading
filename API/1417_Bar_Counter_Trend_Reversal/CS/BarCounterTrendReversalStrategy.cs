@@ -112,9 +112,9 @@ public class BarCounterTrendReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_channelIndicator = Channel == ChannelTypes.Kc
 		? new KeltnerChannels { Length = ChannelLength, Multiplier = ChannelMultiplier }
@@ -125,7 +125,7 @@ public class BarCounterTrendReversalStrategy : Strategy
 		.BindEx(_channelIndicator, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue channelValue)

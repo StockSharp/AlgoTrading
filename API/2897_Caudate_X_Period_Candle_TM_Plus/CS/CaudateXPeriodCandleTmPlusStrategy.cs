@@ -240,9 +240,9 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create separate smoothing filters for each candle component.
 		_openAverage = CreateMovingAverage(SmoothingMethod, MaLength);
@@ -282,10 +282,10 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 			return;
 
 		// Update smoothed price components for the finished candle.
-		var openValue = _openAverage.Process(candle.OpenPrice, candle.CloseTime, true);
-		var highValue = _highAverage.Process(candle.HighPrice, candle.CloseTime, true);
-		var lowValue = _lowAverage.Process(candle.LowPrice, candle.CloseTime, true);
-		var closeValue = _closeAverage.Process(candle.ClosePrice, candle.CloseTime, true);
+		var openValue = _openAverage.Process(new DecimalIndicatorValue(_openAverage, candle.OpenPrice, candle.CloseTime));
+		var highValue = _highAverage.Process(new DecimalIndicatorValue(_highAverage, candle.HighPrice, candle.CloseTime));
+		var lowValue = _lowAverage.Process(new DecimalIndicatorValue(_lowAverage, candle.LowPrice, candle.CloseTime));
+		var closeValue = _closeAverage.Process(new DecimalIndicatorValue(_closeAverage, candle.ClosePrice, candle.CloseTime));
 
 		if (!_openAverage.IsFormed || !_highAverage.IsFormed || !_lowAverage.IsFormed || !_closeAverage.IsFormed)
 			return;
@@ -296,8 +296,8 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 		var smoothedClose = closeValue.ToDecimal();
 
 		// Feed the Donchian style bands with the smoothed extremes.
-		var highestValue = _highest.Process(smoothedHigh, candle.CloseTime, true);
-		var lowestValue = _lowest.Process(smoothedLow, candle.CloseTime, true);
+		var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, smoothedHigh, candle.CloseTime));
+		var lowestValue = _lowest.Process(new DecimalIndicatorValue(_lowest, smoothedLow, candle.CloseTime));
 
 		if (!_highest.IsFormed || !_lowest.IsFormed)
 			return;
@@ -415,13 +415,13 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 
 		return method switch
 		{
-			SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
-			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Sma => new SMA { Length = length },
+			SmoothingMethods.Ema => new EMA { Length = length },
 			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
 			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = length },
 			SmoothingMethods.Jjma => new JurikMovingAverage { Length = length },
 			SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 

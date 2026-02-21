@@ -81,22 +81,22 @@ public class AdxSentimentMomentumStrategy : Strategy
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 		.SetRange(5, 30)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators");
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
 		.SetRange(15m, 35m)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators");
 
 		_sentimentPeriod = Param(nameof(SentimentPeriod), 5)
 		.SetRange(3, 10)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Sentiment Period", "Period for sentiment momentum calculation", "Sentiment");
 
 		_stopLoss = Param(nameof(StopLoss), 2m)
 		.SetRange(1m, 5m)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -121,9 +121,9 @@ public class AdxSentimentMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create ADX Indicator
 		_adx = new()

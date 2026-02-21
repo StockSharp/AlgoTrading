@@ -57,7 +57,7 @@ public class PatternTemplateStrategy : Strategy
 		_lotVolume = Param(nameof(LotVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Volume", "Volume returned by the money management component", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 	}
 
@@ -76,9 +76,9 @@ public class PatternTemplateStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		LogInfo("Pattern template strategy initialized.");
 

@@ -191,12 +191,12 @@ public class KettyChannelBreakoutStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 35)
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 150, 5);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 75)
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 5);
 
 		_channelStartHour = Param(nameof(ChannelStartHour), 7)
@@ -225,12 +225,12 @@ public class KettyChannelBreakoutStrategy : Strategy
 
 		_channelBreakthroughPips = Param(nameof(ChannelBreakthroughPips), 30)
 			.SetDisplay("Breakout Distance", "Distance beyond the channel that triggers orders", "Channel")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_orderPriceShiftPips = Param(nameof(OrderPriceShiftPips), 10)
 			.SetDisplay("Order Shift", "Offset added to the channel border for the stop order", "Channel")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 50, 1);
 
 		_visualizeChannel = Param(nameof(VisualizeChannel), true)
@@ -274,9 +274,9 @@ public class KettyChannelBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = EntryVolume;
 		_pipSize = CalculatePipSize();

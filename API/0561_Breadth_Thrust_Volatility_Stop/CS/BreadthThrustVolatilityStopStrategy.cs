@@ -118,7 +118,7 @@ public class BreadthThrustVolatilityStopStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Volatility Multiplier", "ATR multiplier for stop", "Risk");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for analysis", "General");
 		
 		_advancingStocks = Param<Security>(nameof(AdvancingStocks), null)
@@ -167,9 +167,9 @@ public class BreadthThrustVolatilityStopStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_sma = new SMA { Length = Length };
 		_atr = new ATR { Length = 14 };
@@ -258,7 +258,7 @@ private void UpdateBreadth(DateTimeOffset time)
 	}
 	
 	_prevSmoothedCombined = _smoothedCombined;
-	_smoothedCombined = _sma.Process(combined, time, true).ToDecimal();
+	_smoothedCombined = _sma.Process(new DecimalIndicatorValue(_sma, combined, time.UtcDateTime)).ToDecimal();
 	_lastBreadthDate = day;
 }
 

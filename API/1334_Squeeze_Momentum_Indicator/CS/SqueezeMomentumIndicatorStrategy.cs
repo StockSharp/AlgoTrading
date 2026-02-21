@@ -109,7 +109,7 @@ public class SqueezeMomentumIndicatorStrategy : Strategy
 		_bbLength = Param(nameof(BbLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Length", "Bollinger Bands period", "Squeeze")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_bbMultiplier = Param(nameof(BbMultiplier), 2m)
@@ -118,7 +118,7 @@ public class SqueezeMomentumIndicatorStrategy : Strategy
 		_kcLength = Param(nameof(KcLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("KC Length", "Keltner Channels period", "Squeeze")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_kcMultiplier = Param(nameof(KcMultiplier), 1.5m)
@@ -127,7 +127,7 @@ public class SqueezeMomentumIndicatorStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Trend EMA period", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 25);
 	}
 
@@ -151,9 +151,9 @@ public class SqueezeMomentumIndicatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bb = new BollingerBands { Length = BbLength, Width = BbMultiplier };
 		_kc = new KeltnerChannels { Length = KcLength, Multiplier = KcMultiplier };

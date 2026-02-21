@@ -84,19 +84,19 @@ public class CciMeanReversionStrategy : Strategy
 	{
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5)
 			.SetDisplay("CCI Period", "Period for Commodity Channel Index", "Indicators");
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10)
 			.SetDisplay("Average Period", "Period for calculating CCI average and standard deviation", "Settings");
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3m, 0.5m)
 			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation", "Settings");
 
@@ -105,7 +105,7 @@ public class CciMeanReversionStrategy : Strategy
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m)
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management");
 	}
@@ -130,7 +130,7 @@ public class CciMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		// Reset variables
 
@@ -158,7 +158,7 @@ public class CciMeanReversionStrategy : Strategy
 			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
 		);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue cciValue)

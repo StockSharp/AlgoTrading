@@ -64,13 +64,13 @@ public class AverageForceStrategy : Strategy
 		_period = Param(nameof(Period), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "Lookback for highest and lowest", "Average Force")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_smooth = Param(nameof(Smooth), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth", "Smoothing period", "Average Force")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 2);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -94,13 +94,13 @@ public class AverageForceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = Period };
 		_lowest = new Lowest { Length = Period };
-		_sma = new SimpleMovingAverage { Length = Smooth };
+		_sma = new SMA { Length = Smooth };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -127,12 +127,13 @@ public class AverageForceStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var highestValue = _highest.Process(candle).ToDecimal();
-		var lowestValue = _lowest.Process(candle).ToDecimal();
+		var time = candle.ServerTime;
+		var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, time)).ToDecimal();
+		var lowestValue = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, time)).ToDecimal();
 
 		var range = highestValue - lowestValue;
 		var af = range == 0m ? 0m : (candle.ClosePrice - lowestValue) / range - 0.5m;
-		var smoothed = _sma.Process(af).ToDecimal();
+		var smoothed = _sma.Process(new DecimalIndicatorValue(_sma, af, time)).ToDecimal();
 
 		if (!_sma.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 		return;

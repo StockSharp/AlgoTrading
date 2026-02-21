@@ -84,13 +84,13 @@ public class FractalAmaMbkStrategy : Strategy
 		_framaPeriod = Param(nameof(FramaPeriod), 16)
 			.SetGreaterThanZero()
 			.SetDisplay("FRAMA Period", "Period for Fractal Adaptive Moving Average", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 32, 4);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 16)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal EMA Period", "Period for signal EMA", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 32, 4);
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
@@ -121,16 +121,16 @@ public class FractalAmaMbkStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var frama = new FractalAdaptiveMovingAverage
 		{
 			Length = FramaPeriod
 		};
 
-		var signal = new ExponentialMovingAverage
+		var signal = new EMA
 		{
 			Length = SignalPeriod
 		};

@@ -151,27 +151,27 @@ public class JBrainTrend1StopStrategy : Strategy
 
 		_atrPeriod = Param(nameof(AtrPeriod), 7)
 			.SetDisplay("ATR Period", "Length of the base Average True Range", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticPeriod = Param(nameof(StochasticPeriod), 9)
 			.SetDisplay("Stochastic Period", "Length of the Stochastic oscillator", "Indicator")
-			.SetCanOptimize(true);
+			;
 
-		_stopDPeriod = Param(nameof(StopDPeriod), 3)
+		_stopD = { Length = Param }(nameof(StopDPeriod), 3)
 			.SetDisplay("ATR Shift", "Additional bars added to the stop ATR period", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_jmaLength = Param(nameof(JmaLength), 7)
 			.SetDisplay("JMA Length", "Length of the Jurik moving averages", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_jmaPhase = Param(nameof(JmaPhase), 100)
 			.SetDisplay("JMA Phase", "Phase forwarded to the Jurik moving averages", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Delay", "Number of completed bars before acting", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_buyOpen = Param(nameof(BuyOpen), true)
 			.SetDisplay("Allow Long Entry", "Enable opening long positions", "Trading");
@@ -205,15 +205,14 @@ public class JBrainTrend1StopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 		_atrExtended = new AverageTrueRange { Length = AtrPeriod + Math.Max(0, StopDPeriod) };
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticPeriod,
+		{ K = { Length = StochasticPeriod },
 			K = { Length = 1 },
 			D = { Length = StochasticPeriod }
 		};

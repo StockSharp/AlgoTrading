@@ -80,19 +80,19 @@ public class RaymondCloudyDayStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume used for entries", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_protectiveOffsetTicks = Param(nameof(ProtectiveOffsetTicks), 500)
 			.SetGreaterThanZero()
 			.SetDisplay("Protective Offset (ticks)", "Distance in ticks for stop-loss and take-profit", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 1000, 50);
 
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Signal Candle Type", "Candle type used for trade signals", "Data");
 
-		_pivotCandleType = Param(nameof(PivotCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_pivotCandleType = Param(nameof(PivotCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Pivot Candle Type", "Higher timeframe used to compute Raymond levels", "Data");
 	}
 
@@ -122,9 +122,9 @@ public class RaymondCloudyDayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 

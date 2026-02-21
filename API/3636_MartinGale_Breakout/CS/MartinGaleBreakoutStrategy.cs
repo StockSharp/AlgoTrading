@@ -52,27 +52,27 @@ public class MartinGaleBreakoutStrategy : Strategy
 		_balancePercentageAvailable = Param(nameof(BalancePercentageAvailable), 50m)
 			.SetDisplay("Balance Allocation (%)", "Maximum share of balance available for new positions", "Risk")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitBalancePercent = Param(nameof(TakeProfitBalancePercent), 0.1m)
 			.SetDisplay("TP Balance (%)", "Target profit as a percentage of balance", "Risk")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_stopLossBalancePercent = Param(nameof(StopLossBalancePercent), 10m)
 			.SetDisplay("SL Balance (%)", "Maximum drawdown per recovery cycle", "Risk")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_startRecoveryFactor = Param(nameof(StartRecoveryFactor), 0.2m)
 			.SetDisplay("Recovery Factor", "Portion of the stop-loss used to start recovery", "Risk")
 			.SetRange(0m, 1m)
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPointsMultiplier = Param(nameof(TakeProfitPointsMultiplier), 1m)
 			.SetDisplay("Recovery TP Multiplier", "Increase in take-profit distance while recovering", "Risk")
 			.SetRange(0m, 10m)
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle series", "General");
@@ -160,9 +160,9 @@ public class MartinGaleBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_history.Clear();
 
@@ -399,7 +399,7 @@ public class MartinGaleBreakoutStrategy : Strategy
 		if (Position == 0m)
 			return 0m;
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		if (entryPrice <= 0m)
 			return 0m;
 

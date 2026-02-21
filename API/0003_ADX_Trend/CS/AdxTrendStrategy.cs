@@ -82,22 +82,22 @@ public class AdxTrendStrategy : Strategy
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "Period for calculating ADX indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_maPeriod = Param(nameof(MaPeriod), 50)
 			.SetDisplay("MA Period", "Period for calculating Moving Average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetDisplay("ATR Multiplier", "Multiplier for stop-loss based on ATR", "Risk parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 3, 0.5m);
 
 		_adxExitThreshold = Param(nameof(AdxExitThreshold), 20)
 			.SetDisplay("ADX Exit Threshold", "ADX level below which to exit position", "Exit parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 25, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -121,13 +121,13 @@ public class AdxTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-		var ma = new SimpleMovingAverage { Length = MaPeriod };
+		var ma = new SMA { Length = MaPeriod };
 		var atr = new AverageTrueRange { Length = AdxPeriod };
 
 		// Create subscription and bind indicators

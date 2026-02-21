@@ -149,7 +149,7 @@ public class SawSystem1Strategy : Strategy
 		_volatilityDays = Param(nameof(VolatilityDays), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Volatility Days", "Days for average range", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_openHour = Param(nameof(OpenHour), 7)
@@ -200,13 +200,13 @@ public class SawSystem1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new ATR { Length = VolatilityDays };
 
-		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		dailySubscription
 			.Bind(_atr, ProcessDaily)
 			.Start();

@@ -42,7 +42,7 @@ public class MovingAverageWithFramesStrategy : Strategy
 		_movingPeriod = Param(nameof(MovingPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Moving Period", "Number of bars for the simple moving average.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 1);
 
 		_movingShift = Param(nameof(MovingShift), 6)
@@ -100,11 +100,11 @@ public class MovingAverageWithFramesStrategy : Strategy
 		_finishedCandles = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_movingAverage = new SimpleMovingAverage
+		_movingAverage = new SMA
 		{
 			Length = Math.Max(1, MovingPeriod)
 		};

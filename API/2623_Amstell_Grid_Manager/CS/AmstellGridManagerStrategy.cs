@@ -102,31 +102,31 @@ public class AmstellGridManagerStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Quantity submitted with each grid order", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 150, 10);
 
 		_stopLossPips = Param(nameof(StopLossPips), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 150, 10);
 
 		_buyDistancePips = Param(nameof(BuyDistancePips), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy Distance (pips)", "Distance before adding another long", "Entries")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 5);
 
 		_sellDistanceMultiplier = Param(nameof(SellDistanceMultiplier), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Sell Distance Multiplier", "Multiplier applied to long distance when adding shorts", "Entries")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 15m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -160,9 +160,9 @@ public class AmstellGridManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (BuyDistancePips >= TakeProfitPips || BuyDistancePips >= StopLossPips)
 			throw new InvalidOperationException("Buy distance must be less than take profit and stop loss distances.");

@@ -45,12 +45,12 @@ public class AutoSetStopLossTakeProfitStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetNotNegative()
 			.SetDisplay("Stop loss (pips)", "Distance from price to the protective stop in MetaTrader pips.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 140)
 			.SetNotNegative()
 			.SetDisplay("Take profit (pips)", "Distance from price to the protective take profit in MetaTrader pips.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_tradeDirection = Param(nameof(DirectionFilter), TradeDirections.Buy)
 			.SetDisplay("Managed side", "Which position direction should receive automatic stop/take placement.", "Execution");
@@ -104,9 +104,9 @@ public class AutoSetStopLossTakeProfitStrategy : Strategy
 		_takeProfitOrder = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = CalculatePointValue();
 		_priceStep = GetPriceStep();

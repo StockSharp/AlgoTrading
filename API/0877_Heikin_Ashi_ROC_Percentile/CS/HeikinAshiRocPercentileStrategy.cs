@@ -49,13 +49,13 @@ public HeikinAshiRocPercentileStrategy()
 		_rocHighLength = Param(nameof(RocHighLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("ROC High Length", "Lookback for ROC extremes", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 5);
 
 		_percentileLength = Param(nameof(PercentileLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Percentile Length", "Bars for percentile calculation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
@@ -96,11 +96,11 @@ public HeikinAshiRocPercentileStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = RocLength };
+		_sma = new SMA { Length = RocLength };
 		_roc = new RateOfChange { Length = RocLength };
 		_highest = new Highest { Length = RocHighLength };
 		_lowest = new Lowest { Length = RocHighLength };
@@ -137,11 +137,11 @@ public HeikinAshiRocPercentileStrategy()
 		var haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
 		var haOpen = _prevHaOpen == 0m ? (candle.OpenPrice + candle.ClosePrice) / 2m : (_prevHaOpen + _prevHaClose) / 2m;
 
-		var smaValue = _sma.Process(haClose, candle.OpenTime, true).ToDecimal();
-		var rocValue = _roc.Process(smaValue, candle.OpenTime, true).ToDecimal();
+		var smaValue = _sma.Process(new DecimalIndicatorValue(_sma, haClose, candle.OpenTime)).ToDecimal();
+		var rocValue = _roc.Process(new DecimalIndicatorValue(_roc, smaValue, candle.OpenTime)).ToDecimal();
 
-		var highestValue = _highest.Process(rocValue, candle.OpenTime, true).ToDecimal();
-		var lowestValue = _lowest.Process(rocValue, candle.OpenTime, true).ToDecimal();
+		var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, rocValue, candle.OpenTime)).ToDecimal();
+		var lowestValue = _lowest.Process(new DecimalIndicatorValue(_lowest, rocValue, candle.OpenTime)).ToDecimal();
 
 		_rocHighValues.Enqueue(highestValue);
 		if (_rocHighValues.Count > PercentileLength)

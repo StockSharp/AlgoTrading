@@ -145,13 +145,13 @@ _currentPhase = WyckoffPhases.None;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Initialize indicators
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
-		_volumeAvg = new SimpleMovingAverage { Length = VolumeAvgPeriod };
+		_ma = new SMA { Length = MaPeriod };
+		_volumeAvg = new SMA { Length = VolumeAvgPeriod };
 		_highest = new Highest { Length = HighestPeriod };
 		_lowest = new Lowest { Length = HighestPeriod };
 		

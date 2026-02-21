@@ -38,7 +38,7 @@ public class BuyOn5DayLowStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lowest Period", "Period for lowest low calculation", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_startTime = Param(nameof(StartTime), new DateTimeOffset(2014, 1, 1, 0, 0, 0, TimeSpan.Zero))
@@ -62,9 +62,9 @@ public class BuyOn5DayLowStrategy : Strategy
 		_prevHigh = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_lowest = new Lowest { Length = LowestPeriod };
 

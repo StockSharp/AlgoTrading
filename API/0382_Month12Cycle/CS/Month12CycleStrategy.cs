@@ -97,7 +97,7 @@ public class Month12CycleStrategy : Strategy
 		_yearsBack = Param(nameof(YearsBack), 1)
 			.SetDisplay("Years Back", "Lag in years (12 months)", "Ranking");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -122,9 +122,9 @@ public class Month12CycleStrategy : Strategy
 		_targetWeights.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe is empty. Set Universe before starting.");

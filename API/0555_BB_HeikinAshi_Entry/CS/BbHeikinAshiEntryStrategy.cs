@@ -49,12 +49,12 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 
 _bollingerLength = Param(nameof(BollingerLength), 20)
 .SetDisplay("Bollinger Length", "Period of Bollinger Bands", "Bollinger")
-.SetCanOptimize(true)
+
 .SetOptimize(10, 40, 5);
 
 _bollingerWidth = Param(nameof(BollingerWidth), 2m)
 .SetDisplay("Bollinger Width", "Standard deviation multiplier", "Bollinger")
-.SetCanOptimize(true)
+
 .SetOptimize(1m, 3m, 0.5m);
 }
 
@@ -107,9 +107,9 @@ _trailStop = null;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _bollinger = new BollingerBands
 {
@@ -143,7 +143,7 @@ var haOpen = _haOpenPrev1 == 0
 var haHigh = Math.Max(Math.Max(candle.HighPrice, haOpen), haClose);
 var haLow = Math.Min(Math.Min(candle.LowPrice, haOpen), haClose);
 
-var bbRaw = (BollingerBandsValue)_bollinger.Process(new DecimalIndicatorValue(_bollinger, haClose));
+var bbRaw = (BollingerBandsValue)_bollinger.Process(new DecimalIndicatorValue(_bollinger, haClose, candle.ServerTime));
 decimal upper, lower;
 if (bbRaw.UpBand is decimal u && bbRaw.LowBand is decimal l)
 {

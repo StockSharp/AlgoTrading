@@ -62,13 +62,13 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 130)
 			.SetNotNegative()
 			.SetDisplay("Take-profit (pips)", "Distance in pips for the take-profit order.", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 50);
 
 		_stopLossPips = Param(nameof(StopLossPips), 1000)
 			.SetNotNegative()
 			.SetDisplay("Stop-loss (pips)", "Distance in pips for the protective stop.", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200, 1500, 100);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -82,7 +82,7 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA period", "Period of the fast moving average.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 5);
 
 		_fastMethod = Param(nameof(FastMethod), MovingAverageMethods.Smoothed)
@@ -94,7 +94,7 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 		_slowPeriod = Param(nameof(SlowPeriod), 180)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA period", "Period of the slow moving average.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60, 300, 20);
 
 		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethods.Smoothed)
@@ -106,25 +106,25 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 		_upperLevel1 = Param(nameof(UpperLevel1), 500)
 			.SetNotNegative()
 			.SetDisplay("Upper level #1", "Positive offset (in pips) added to the slow MA.", "Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 800, 100);
 
 		_upperLevel2 = Param(nameof(UpperLevel2), 250)
 			.SetNotNegative()
 			.SetDisplay("Upper level #2", "Secondary positive offset added to the slow MA.", "Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 500, 50);
 
 		_lowerLevel1 = Param(nameof(LowerLevel1), 500)
 			.SetNotNegative()
 			.SetDisplay("Lower level #1", "Negative offset (in pips) subtracted from the slow MA.", "Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 800, 100);
 
 		_lowerLevel2 = Param(nameof(LowerLevel2), 250)
 			.SetNotNegative()
 			.SetDisplay("Lower level #2", "Secondary negative offset subtracted from the slow MA.", "Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 500, 50);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -282,9 +282,9 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastHistory.Clear();
 		_slowHistory.Clear();
@@ -394,15 +394,15 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 		return prevFast >= prevSlow && currentFast < currentSlow;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period, CandlePrices price)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int period, CandlePrices price)
 	{
 		var indicator = method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage(),
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage(),
+			MovingAverageMethods.Simple => new SMA(),
+			MovingAverageMethods.Exponential => new EMA(),
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage(),
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage(),
-			_ => new SimpleMovingAverage(),
+			_ => new SMA(),
 		};
 
 		indicator.Length = Math.Max(1, period);

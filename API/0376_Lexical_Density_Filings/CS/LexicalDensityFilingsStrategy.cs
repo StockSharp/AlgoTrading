@@ -80,7 +80,7 @@ public class LexicalDensityFilingsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Min Trade USD", "Minimum order value in USD", "Parameters");
 
-		_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 
@@ -101,9 +101,9 @@ public class LexicalDensityFilingsStrategy : Strategy
 		_lastDay = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe is empty.");

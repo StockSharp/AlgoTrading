@@ -78,9 +78,9 @@ public class RideAlligatorWilliamsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var a1 = (int)Math.Round(BasePeriod * 1.61803398874989m);
 		var a2 = (int)Math.Round(a1 * 1.61803398874989m);

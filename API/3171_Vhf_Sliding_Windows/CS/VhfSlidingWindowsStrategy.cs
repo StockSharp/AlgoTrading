@@ -87,19 +87,19 @@ public class VhfSlidingWindowsStrategy : Strategy
 		_mainWindow = Param(nameof(MainWindowSize), 11)
 			.SetGreaterThanZero()
 			.SetDisplay("Main Window", "Number of VHF values used for the primary filter", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_workingWindow = Param(nameof(WorkingWindowSize), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Working Window", "Number of VHF values used for the secondary filter", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_vhfPeriod = Param(nameof(VhfPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("VHF Period", "Lookback period of the Vertical Horizontal Filter", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 
@@ -127,9 +127,9 @@ public class VhfSlidingWindowsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_vhf = new VerticalHorizontalFilter
 		{
@@ -142,7 +142,7 @@ public class VhfSlidingWindowsStrategy : Strategy
 			.Bind(_vhf, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -282,7 +282,7 @@ public class VhfSlidingWindowsStrategy : Strategy
 		}
 	}
 
-	private sealed class VerticalHorizontalFilter : LengthIndicator<decimal>
+	private sealed class VerticalHorizontalFilter : DecimalLengthIndicator
 	{
 		private readonly Queue<decimal> _highs = new();
 		private readonly Queue<decimal> _lows = new();

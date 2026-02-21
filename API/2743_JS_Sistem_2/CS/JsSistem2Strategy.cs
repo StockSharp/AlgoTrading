@@ -222,26 +222,26 @@ public class JsSistem2Strategy : Strategy
 	{
 		_minBalance = Param(nameof(MinBalance), 100m)
 			.SetDisplay("Min Balance", "Minimum balance to allow trading", "Risk")
-			.SetCanOptimize(true);
+			;
 
 
 		_stopLossPips = Param(nameof(StopLossPips), 35)
 			.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 40)
 			.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_minDifferencePips = Param(nameof(MinDifferencePips), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Spread", "Maximum fast-slow EMA spread", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_volatilityPeriod = Param(nameof(VolatilityPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Range", "Number of candles for trailing", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingEnabled = Param(nameof(TrailingEnabled), true)
 			.SetDisplay("Trailing", "Enable trailing stop", "Risk");
@@ -249,55 +249,55 @@ public class JsSistem2Strategy : Strategy
 		_trailingIndentPips = Param(nameof(TrailingIndentPips), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Offset", "Indent from candle shadows", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_maFastPeriod = Param(nameof(MaFastPeriod), 55)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maMediumPeriod = Param(nameof(MaMediumPeriod), 89)
 			.SetGreaterThanZero()
 			.SetDisplay("Medium EMA", "Medium EMA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maSlowPeriod = Param(nameof(MaSlowPeriod), 144)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_osmaFastPeriod = Param(nameof(OsmaFastPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("OsMA Fast", "Fast EMA for MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_osmaSlowPeriod = Param(nameof(OsmaSlowPeriod), 55)
 			.SetGreaterThanZero()
 			.SetDisplay("OsMA Slow", "Slow EMA for MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_osmaSignalPeriod = Param(nameof(OsmaSignalPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("OsMA Signal", "Signal period for MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rviPeriod = Param(nameof(RviPeriod), 44)
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Period", "Relative Vigor Index period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rviSignalLength = Param(nameof(RviSignalLength), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Signal", "Smoothing for RVI signal", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rviMax = Param(nameof(RviMax), 0.04m)
 			.SetDisplay("RVI Max", "Upper threshold for RVI signal", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_rviMin = Param(nameof(RviMin), -0.04m)
 			.SetDisplay("RVI Min", "Lower threshold for RVI signal", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles used for calculations", "General");
@@ -320,30 +320,30 @@ public class JsSistem2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_emaFast = new EMA { Length = MaFastPeriod };
 		_emaMedium = new EMA { Length = MaMediumPeriod };
 		_emaSlow = new EMA { Length = MaSlowPeriod };
 		_macd = new MACD
 		{
-			ShortPeriod = OsmaFastPeriod,
-			LongPeriod = OsmaSlowPeriod,
+			ShortMa = { Length = OsmaFastPeriod },
+			LongMa = { Length = OsmaSlowPeriod },
 			SignalPeriod = OsmaSignalPeriod
 		};
 		_highest = new Highest { Length = VolatilityPeriod };
 		_lowest = new Lowest { Length = VolatilityPeriod };
 		_rvi = new RelativeVigorIndex { Length = RviPeriod };
-		_rviSignal = new SimpleMovingAverage { Length = RviSignalLength };
+		_rviSignal = new SMA { Length = RviSignalLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(_emaFast, _emaMedium, _emaSlow, _macd, _highest, _lowest, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaFast, decimal emaMedium, decimal emaSlow, decimal macdLine, decimal macdSignal, decimal highestValue, decimal lowestValue)

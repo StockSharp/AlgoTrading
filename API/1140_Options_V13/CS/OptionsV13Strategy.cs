@@ -132,22 +132,22 @@ public class OptionsV13Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var emaShort = new ExponentialMovingAverage { Length = EmaShortLength };
-		var emaLong = new ExponentialMovingAverage { Length = EmaLongLength };
+		var emaShort = new EMA { Length = EmaShortLength };
+		var emaLong = new EMA { Length = EmaLongLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
-		_volumeSma = new SimpleMovingAverage { Length = VolumeMaLength };
+		_volumeSma = new SMA { Length = VolumeMaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(emaShort, emaLong, rsi, atr, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaShort, decimal emaLong, decimal rsiValue, decimal atrValue)
@@ -155,10 +155,10 @@ public class OptionsV13Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var nyTime = TimeZoneInfo.ConvertTime(candle.OpenTime.UtcDateTime, _nyTimeZone);
+		var nyTime = TimeZoneInfo.ConvertTime(candle.OpenTime, _nyTimeZone);
 		var time = nyTime.TimeOfDay;
 
-		var volumeAvg = _volumeSma.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+		var volumeAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 		if (!_volumeSma.IsFormed)
 		{
 			_prevEmaShort = emaShort;

@@ -11,7 +11,7 @@ This sample is a placeholder and currently contains no trading logic.
 - **Stops**: No.
 - **Default Values**:
   - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Fundamental
   - Direction: Both

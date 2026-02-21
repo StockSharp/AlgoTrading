@@ -70,19 +70,19 @@ _direction = Param(nameof(Direction), (Sides?)null)
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaLength };
-		_diffAvg = new SimpleMovingAverage { Length = StdLength };
+		_ma = new SMA { Length = MaLength };
+		_diffAvg = new SMA { Length = StdLength };
 		_stdDev = new StandardDeviation { Length = StdLength };
 		_superTrend = new SuperTrend { Length = StAtrPeriod, Multiplier = StMultiplier };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(_ma, _superTrend, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue stValue)

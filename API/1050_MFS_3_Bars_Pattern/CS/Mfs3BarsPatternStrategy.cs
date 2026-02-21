@@ -111,15 +111,15 @@ public class Mfs3BarsPatternStrategy : Strategy
 	{
 		_smaShortLength = Param(nameof(SmaShortLength), 20)
 			.SetDisplay("SMA Short", "Period for short moving average", "SMA")
-			.SetCanOptimize(true);
+			;
 
 		_smaMedLength = Param(nameof(SmaMedLength), 50)
 			.SetDisplay("SMA Medium", "Period for medium moving average", "SMA")
-			.SetCanOptimize(true);
+			;
 
 		_smaLongLength = Param(nameof(SmaLongLength), 200)
 			.SetDisplay("SMA Long", "Period for long moving average", "SMA")
-			.SetCanOptimize(true);
+			;
 
 		_igniteMultiplier = Param(nameof(IgniteMultiplier), 3m)
 			.SetDisplay("Ignite Multiplier", "Multiplier for average body size", "Pattern");
@@ -152,9 +152,9 @@ public class Mfs3BarsPatternStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var smaShort = new SMA { Length = SmaShortLength };
 		var smaMed = new SMA { Length = SmaMedLength };
@@ -183,7 +183,7 @@ public class Mfs3BarsPatternStrategy : Strategy
 			return;
 
 		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var avgBody = _bodySma.Process(body, candle.ServerTime, true).ToDecimal();
+		var avgBody = _bodySma.Process(new DecimalIndicatorValue(_bodySma, body, candle.ServerTime)).ToDecimal();
 		var isIgnite = _bodySma.IsFormed && body >= avgBody * IgniteMultiplier && candle.ClosePrice > candle.OpenPrice;
 
 		_lastThreeCandles.Enqueue(new CandleInfo(candle, body, avgBody, smaShortValue, smaMedValue, smaLongValue, isIgnite));

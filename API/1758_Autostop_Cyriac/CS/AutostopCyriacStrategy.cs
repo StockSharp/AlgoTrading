@@ -28,12 +28,12 @@ public class AutostopCyriacStrategy : Strategy
 	{
 		_takeProfit = Param(nameof(TakeProfit), 15m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Take Profit", "Take profit in price units", "Protection");
 
 		_stopLoss = Param(nameof(StopLoss), 20m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Protection");
 	}
 
@@ -43,9 +43,9 @@ public class AutostopCyriacStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Set up protective orders for all positions
 		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));

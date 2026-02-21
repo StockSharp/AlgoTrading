@@ -214,15 +214,15 @@ public class BitcoinFuturesSpotTriFrameStrategy : Strategy
 		_smaPeriod = Param(nameof(SmaPeriod), 100)
 		.SetRange(10, 200)
 		.SetDisplay("SMA Period", "Period for mean and deviation", "Parameters")
-		.SetCanOptimize(true);
+		;
 		_longThreshold = Param(nameof(LongThreshold), 3m)
 		.SetRange(1m, 5m)
 		.SetDisplay("Long Z-Score", "Long entry Z-score", "Parameters")
-		.SetCanOptimize(true);
+		;
 		_shortThreshold = Param(nameof(ShortThreshold), -3m)
 		.SetRange(-5m, -1m)
 		.SetDisplay("Short Z-Score", "Short entry Z-score", "Parameters")
-		.SetCanOptimize(true);
+		;
 		_enableLong = Param(nameof(EnableLong), true)
 		.SetDisplay("Enable Long", "Allow long trades", "Parameters");
 		_enableShort = Param(nameof(EnableShort), true)
@@ -232,7 +232,7 @@ public class BitcoinFuturesSpotTriFrameStrategy : Strategy
 		_holdDays = Param(nameof(HoldDays), 5)
 		.SetRange(1, 60)
 		.SetDisplay("Hold Days", "Number of days to hold position", "Risk")
-		.SetCanOptimize(true);
+		;
 		_useTakeProfit = Param(nameof(UseTakeProfit), false)
 		.SetDisplay("Use Take Profit", "Enable take profit", "Risk");
 		_useStopLoss = Param(nameof(UseStopLoss), false)
@@ -240,11 +240,11 @@ public class BitcoinFuturesSpotTriFrameStrategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 30m)
 		.SetRange(5m, 100m)
 		.SetDisplay("Take Profit (%)", "Take profit percent", "Risk")
-		.SetCanOptimize(true);
+		;
 		_stopLossPercent = Param(nameof(StopLossPercent), 20m)
 		.SetRange(5m, 100m)
 		.SetDisplay("Stop Loss (%)", "Stop loss percent", "Risk")
-		.SetCanOptimize(true);
+		;
 	}
 	
 	/// <inheritdoc />
@@ -273,16 +273,16 @@ public class BitcoinFuturesSpotTriFrameStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		if (Security == null || Spot == null)
 		throw new InvalidOperationException("Securities are not specified.");
 		
-		_sma1 = new SimpleMovingAverage { Length = SmaPeriod };
-		_sma2 = new SimpleMovingAverage { Length = SmaPeriod };
-		_sma3 = new SimpleMovingAverage { Length = SmaPeriod };
+		_sma1 = new SMA { Length = SmaPeriod };
+		_sma2 = new SMA { Length = SmaPeriod };
+		_sma3 = new SMA { Length = SmaPeriod };
 		_std1 = new StandardDeviation { Length = SmaPeriod };
 		_std2 = new StandardDeviation { Length = SmaPeriod };
 		_std3 = new StandardDeviation { Length = SmaPeriod };
@@ -360,8 +360,8 @@ public class BitcoinFuturesSpotTriFrameStrategy : Strategy
 	
 	private decimal? CalculateZScore(decimal spread, SimpleMovingAverage sma, StandardDeviation std, DateTimeOffset time)
 	{
-		var mean = sma.Process(spread, time, true).ToDecimal();
-		var deviation = std.Process(spread, time, true).ToDecimal();
+		var mean = sma.Process(new DecimalIndicatorValue(sma, spread, time.UtcDateTime)).ToDecimal();
+		var deviation = std.Process(new DecimalIndicatorValue(std, spread, time.UtcDateTime)).ToDecimal();
 		if (!sma.IsFormed || !std.IsFormed || deviation == 0)
 		return null;
 		return (spread - mean) / deviation;

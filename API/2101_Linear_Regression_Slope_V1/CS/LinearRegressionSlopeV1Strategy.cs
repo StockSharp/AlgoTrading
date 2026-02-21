@@ -51,13 +51,13 @@ public class LinearRegressionSlopeV1Strategy : Strategy
 		_length = Param(nameof(Length), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Bars for regression", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_triggerShift = Param(nameof(TriggerShift), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Trigger Shift", "Lag for trigger line", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 3, 1);
 	}
 
@@ -76,9 +76,9 @@ public class LinearRegressionSlopeV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_slopeHistory = new decimal[TriggerShift + 3];
 		_filled = 0;

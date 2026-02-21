@@ -58,63 +58,63 @@ public class RrsNonDirectionalStrategy : Strategy
 	{
 		_tradingMode = Param(nameof(TradingMode), RrsTradingModes.HedgeStyle)
 		.SetDisplay("Trading Strategy", "Entry style reproduced from the MT4 extern Trading_Strategy", "General")
-		.SetCanOptimize(true);
+		;
 
 		_allowNewTrades = Param(nameof(AllowNewTrades), true)
 		.SetDisplay("Enable Trading", "Master switch that mirrors the New_Trade extern", "General")
-		.SetCanOptimize(false);
+		;
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 		.SetDisplay("Trade Volume", "Base volume used for market orders", "General")
-		.SetCanOptimize(true);
+		;
 
 		_stopMode = Param(nameof(StopMode), RrsStopModes.Virtual)
 		.SetDisplay("Stop-Loss Type", "Chooses between virtual or classic stop-loss handling", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 200)
 		.SetDisplay("Stop-Loss (points)", "MetaTrader points converted with the instrument price step", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeMode = Param(nameof(TakeMode), RrsTakeModes.Virtual)
 		.SetDisplay("Take-Profit Type", "Chooses between virtual or classic take-profit handling", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100)
 		.SetDisplay("Take-Profit (points)", "MetaTrader points converted with the instrument price step", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingMode = Param(nameof(TrailingMode), RrsTrailingModes.Virtual)
 		.SetDisplay("Trailing Type", "Switch between virtual and classic trailing implementation", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_trailingStartPoints = Param(nameof(TrailingStartPoints), 30)
 		.SetDisplay("Trailing Start (points)", "Distance in points before the trailing stop activates", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingGapPoints = Param(nameof(TrailingGapPoints), 30)
 		.SetDisplay("Trailing Gap (points)", "Distance maintained behind the best price once trailing is active", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_riskMode = Param(nameof(RiskMode), RrsRiskModes.BalancePercentage)
 		.SetDisplay("Risk Mode", "Determines how MoneyInRisk is interpreted", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_moneyInRisk = Param(nameof(MoneyInRisk), 5m)
 		.SetDisplay("Money In Risk", "Either a percent of balance or an absolute currency amount", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 50)
 		.SetDisplay("Max Spread (points)", "Maximum allowed spread expressed in MetaTrader points", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_slippagePoints = Param(nameof(SlippagePoints), 3)
 		.SetDisplay("Slippage (points)", "Displayed for completeness, market exits ignore this value", "Filters")
-		.SetCanOptimize(false);
+		;
 
 		_tradeComment = Param(nameof(TradeComment), "RRS")
 		.SetDisplay("Trade Comment", "Tag attached to every market order", "General")
-		.SetCanOptimize(false);
+		;
 	}
 
 	/// <summary>
@@ -282,9 +282,9 @@ public class RrsNonDirectionalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -303,7 +303,7 @@ public class RrsNonDirectionalStrategy : Strategy
 		.Bind(ProcessLevel1)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void InitializeAutoSwap()

@@ -291,9 +291,9 @@ public class ExpRsiomaV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -491,8 +491,8 @@ public class ExpRsiomaV2Strategy : Strategy
 	{
 		return method switch
 		{
-			RsiomaSmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
-			RsiomaSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			RsiomaSmoothingMethods.Simple => new SMA { Length = length },
+			RsiomaSmoothingMethods.Exponential => new EMA { Length = length },
 			RsiomaSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			RsiomaSmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => throw new NotSupportedException($"Smoothing method '{method}' is not supported."),

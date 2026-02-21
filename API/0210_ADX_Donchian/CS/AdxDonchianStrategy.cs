@@ -87,17 +87,17 @@ public class AdxDonchianStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetRange(7, 28)
 			.SetDisplay("ADX Period", "Period for ADX indicator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_donchianPeriod = Param(nameof(DonchianPeriod), 5)
 			.SetRange(5, 50)
 			.SetDisplay("Donchian Period", "Period for Donchian Channel", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -105,12 +105,12 @@ public class AdxDonchianStrategy : Strategy
 		_adxThreshold = Param(nameof(AdxThreshold), 10)
 			.SetRange(5, 40)
 			.SetDisplay("ADX Threshold", "ADX value for strong trend detection", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_multiplier = Param(nameof(Multiplier), 0.1m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Multiplier %", "Sensitivity to Donchian Channel border (percent)", "Indicators")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -126,9 +126,9 @@ public class AdxDonchianStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnStarted2(DateTime time)
 		{
-				base.OnStarted(time);
+				base.OnStarted2(time);
 
 		// Initialize indicators
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };

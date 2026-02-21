@@ -169,7 +169,7 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 	{
 		_initialBalance = Param(nameof(InitialBalance), 10000m)
 							  .SetDisplay("Initial Balance", "Starting capital", "Risk Management")
-							  .SetCanOptimize(true)
+							  
 							  .SetOptimize(1000m, 20000m, 1000m);
 
 		_leverageEquity = Param(nameof(LeverageEquity), true)
@@ -177,12 +177,12 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 
 		_marginFactor = Param(nameof(MarginFactor), -0.5m)
 							.SetDisplay("Margin Factor", "Extra equity percentage for size", "Risk Management")
-							.SetCanOptimize(true)
+							
 							.SetOptimize(-0.5m, 1m, 0.5m);
 
 		_quantity = Param(nameof(Quantity), 3.5m)
 						.SetDisplay("Quantity Contracts", "Fixed contracts quantity", "Risk Management")
-						.SetCanOptimize(true)
+						
 						.SetOptimize(1m, 5m, 1m);
 
 		_macdMaType = Param(nameof(MacdMaType), MovingAverageTypes.EMA)
@@ -190,17 +190,17 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 
 		_fastMaLength = Param(nameof(FastMaLength), 11)
 							.SetDisplay("Fast MA Length", "Fast moving average length", "MACD Settings")
-							.SetCanOptimize(true)
+							
 							.SetOptimize(5, 15, 1);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 26)
 							.SetDisplay("Slow MA Length", "Slow moving average length", "MACD Settings")
-							.SetCanOptimize(true)
+							
 							.SetOptimize(20, 30, 2);
 
 		_signalMaLength = Param(nameof(SignalMaLength), 9)
 							  .SetDisplay("Signal MA Length", "Signal moving average length", "MACD Settings")
-							  .SetCanOptimize(true)
+							  
 							  .SetOptimize(5, 15, 1);
 
 		_macdTimeFrame = Param(nameof(MacdTimeFrame), TimeSpan.FromMinutes(30))
@@ -211,7 +211,7 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 
 		_trendMaLength = Param(nameof(TrendMaLength), 55)
 							 .SetDisplay("Trend MA Length", "Trend moving average length", "Trend Settings")
-							 .SetCanOptimize(true)
+							 
 							 .SetOptimize(30, 80, 5);
 
 		_trendTimeFrame = Param(nameof(TrendTimeFrame), TimeSpan.FromDays(1))
@@ -252,9 +252,9 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 		var macdSmoothLength = Math.Max(1, (int)(MacdTimeFrame.TotalMinutes / baseTf.TotalMinutes));
 		var trendSmoothLength = Math.Max(1, (int)(TrendTimeFrame.TotalMinutes / baseTf.TotalMinutes));
 
-		_macdSmooth = new SimpleMovingAverage { Length = macdSmoothLength };
-		_signalSmooth = new SimpleMovingAverage { Length = macdSmoothLength };
-		_trendSmooth = new SimpleMovingAverage { Length = trendSmoothLength };
+		_macdSmooth = new SMA { Length = macdSmoothLength };
+		_signalSmooth = new SMA { Length = macdSmoothLength };
+		_trendSmooth = new SMA { Length = trendSmoothLength };
 
 		var macd = new MovingAverageConvergenceDivergence { ShortMa = CreateMa(MacdMaType, FastMaLength),
 															LongMa = CreateMa(MacdMaType, SlowMaLength),
@@ -347,10 +347,10 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 		return equity * (1 + MarginFactor) / price;
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MovingAverageTypes type, int length)
+	private static DecimalLengthIndicator CreateMa(MovingAverageTypes type, int length)
 	{
-		return type switch { MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
-							 MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
+		return type switch { MovingAverageTypes.SMA => new SMA { Length = length },
+							 MovingAverageTypes.EMA => new EMA { Length = length },
 							 MovingAverageTypes.DEMA => new DoubleExponentialMovingAverage { Length = length },
 							 MovingAverageTypes.TEMA => new TripleExponentialMovingAverage { Length = length },
 							 MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },

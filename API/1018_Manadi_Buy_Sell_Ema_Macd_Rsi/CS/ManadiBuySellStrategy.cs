@@ -114,62 +114,62 @@ namespace StockSharp.Samples.Strategies;
 	{
 	_fastEmaLength = Param(nameof(FastEmaLength), 9)
 	.SetDisplay("Fast EMA Length", "Length for fast EMA", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(5, 15, 1);
 	
 	_slowEmaLength = Param(nameof(SlowEmaLength), 21)
 	.SetDisplay("Slow EMA Length", "Length for slow EMA", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(10, 30, 1);
 	
 	_rsiLength = Param(nameof(RsiLength), 14)
 	.SetDisplay("RSI Length", "Length for RSI", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(10, 20, 1);
 	
 	_rsiUpperLong = Param(nameof(RsiUpperLong), 70)
 	.SetDisplay("RSI Upper Long", "Upper bound for long", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(60, 80, 5);
 	
 	_rsiLowerLong = Param(nameof(RsiLowerLong), 40)
 	.SetDisplay("RSI Lower Long", "Lower bound for long", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(30, 50, 5);
 	
 	_rsiUpperShort = Param(nameof(RsiUpperShort), 60)
 	.SetDisplay("RSI Upper Short", "Upper bound for short", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(50, 70, 5);
 	
 	_rsiLowerShort = Param(nameof(RsiLowerShort), 30)
 	.SetDisplay("RSI Lower Short", "Lower bound for short", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(20, 40, 5);
 	
 	_macdFast = Param(nameof(MacdFast), 12)
 	.SetDisplay("MACD Fast", "Fast period", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(8, 16, 1);
 	
 	_macdSlow = Param(nameof(MacdSlow), 26)
 	.SetDisplay("MACD Slow", "Slow period", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(20, 30, 1);
 	
 	_macdSignal = Param(nameof(MacdSignal), 9)
 	.SetDisplay("MACD Signal", "Signal period", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(5, 15, 1);
 	
 	_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.03m)
 	.SetDisplay("Take Profit %", "Take profit percent", "Risk")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(0.01m, 0.05m, 0.01m);
 	
 	_stopLossPercent = Param(nameof(StopLossPercent), 0.015m)
 	.SetDisplay("Stop Loss %", "Stop loss percent", "Risk")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(0.01m, 0.03m, 0.005m);
 	
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -201,8 +201,8 @@ namespace StockSharp.Samples.Strategies;
 	{
 	base.OnStarted(time);
 	
-	_emaFast = new ExponentialMovingAverage { Length = FastEmaLength };
-	_emaSlow = new ExponentialMovingAverage { Length = SlowEmaLength };
+	_emaFast = new EMA { Length = FastEmaLength };
+	_emaSlow = new EMA { Length = SlowEmaLength };
 	_macd = new MovingAverageConvergenceDivergence
 	{
 	Fast = MacdFast,

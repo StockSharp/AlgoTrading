@@ -147,40 +147,40 @@ public class Hans123TraderRangeBreakoutStrategy : Strategy
 		_rangeLength = Param(nameof(RangeLength), 80)
 			.SetDisplay("Range Length", "Number of candles used to compute the breakout range", "Breakout")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_breakoutOffsetPoints = Param(nameof(BreakoutOffsetPoints), 5m)
 			.SetDisplay("Breakout Offset", "Distance in points added above/below the range for stop orders", "Breakout")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_beginSession1 = Param(nameof(BeginSession1), 6)
 			.SetDisplay("Begin Session 1", "First monitoring window start hour", "Time")
-			.SetCanOptimize(true);
+			;
 
 		_endSession1 = Param(nameof(EndSession1), 10)
 			.SetDisplay("End Session 1", "Hour when first breakout orders are armed", "Time")
-			.SetCanOptimize(true);
+			;
 
 		_beginSession2 = Param(nameof(BeginSession2), 10)
 			.SetDisplay("Begin Session 2", "Second monitoring window start hour", "Time")
-			.SetCanOptimize(true);
+			;
 
 		_endSession2 = Param(nameof(EndSession2), 14)
 			.SetDisplay("End Session 2", "Hour when second breakout orders are armed", "Time")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStop), 0m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfit), 0m)
 			.SetDisplay("Take Profit", "Take-profit distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_initialStopLossPoints = Param(nameof(InitialStopLoss), 40m)
 			.SetDisplay("Initial Stop Loss", "Initial stop-loss distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series for range detection", "Data");
@@ -220,9 +220,9 @@ public class Hans123TraderRangeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Indicators track the highest high and lowest low over the recent range.
 		_highest = new Highest { Length = RangeLength };

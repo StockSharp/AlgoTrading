@@ -91,24 +91,24 @@ public class UmnickTraderStrategy : Strategy
 		_bufferLength = Param(nameof(BufferLength), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Buffer Length", "Number of trade results stored for adaptive calculations.", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 32, 1);
 
 		ResizeBuffers();
 
 		_stopBase = Param(nameof(StopBase), 0.017m)
 			.SetDisplay("Base Stop Distance", "Minimum average price move required to trigger evaluation.", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.005m, 0.05m, 0.005m);
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetDisplay("Trade Volume", "Order volume for each position.", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 1m, 0.05m);
 
 		_spread = Param(nameof(Spread), 0.0005m)
 			.SetDisplay("Spread Padding", "Spread compensation used when updating adaptive buffers.", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0001m, 0.002m, 0.0001m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -153,9 +153,9 @@ public class UmnickTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		ResizeBuffers();
 
 		var subscription = SubscribeCandles(CandleType);

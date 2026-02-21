@@ -54,12 +54,12 @@ public class RviDiffReversalStrategy : Strategy
 		_rviLength = Param(nameof(RviLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Length", "Length of RVI", "General")
-			.SetCanOptimize(true);
+			;
 
 		_smoothingLength = Param(nameof(SmoothingLength), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Length", "Length of EMA smoothing", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -84,18 +84,18 @@ public class RviDiffReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rvi = new RelativeVigorIndex { Length = RviLength };
-		_signal = new SimpleMovingAverage { Length = RviLength };
-		_smoother = new ExponentialMovingAverage { Length = SmoothingLength };
+		_signal = new SMA { Length = RviLength };
+		_smoother = new EMA { Length = SmoothingLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

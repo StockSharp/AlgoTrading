@@ -115,7 +115,7 @@ public class MomentumSyncPsarRsiAdxFiltered3TierExitStrategy : Strategy
 		.SetDisplay("SAR Start",
 				"Initial acceleration factor for Parabolic SAR",
 				"Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 0.05m, 0.01m);
 
 	_sarIncrement =
@@ -123,7 +123,7 @@ public class MomentumSyncPsarRsiAdxFiltered3TierExitStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("SAR Increment", "Increment for Parabolic SAR",
 				"Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 0.05m, 0.01m);
 
 	_sarMax =
@@ -132,35 +132,35 @@ public class MomentumSyncPsarRsiAdxFiltered3TierExitStrategy : Strategy
 		.SetDisplay("SAR Max",
 				"Maximum acceleration factor for Parabolic SAR",
 				"Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 0.3m, 0.1m);
 
 	_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			 .SetGreaterThanZero()
 			 .SetDisplay("RSI Period", "Period for RSI indicator",
 					 "Indicators")
-			 .SetCanOptimize(true)
+			 
 			 .SetOptimize(7, 21, 7);
 
 	_adxPeriod = Param(nameof(AdxPeriod), 14)
 			 .SetGreaterThanZero()
 			 .SetDisplay("ADX Period", "Period for ADX indicator",
 					 "Indicators")
-			 .SetCanOptimize(true)
+			 
 			 .SetOptimize(7, 21, 7);
 
 	_rsiThreshold =
 		Param(nameof(RsiThreshold), 40m)
 		.SetNotNegative()
 		.SetDisplay("RSI Threshold", "Minimum RSI for entry", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30m, 50m, 5m);
 
 	_adxThreshold =
 		Param(nameof(AdxThreshold), 18m)
 		.SetNotNegative()
 		.SetDisplay("ADX Threshold", "Minimum ADX for entry", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(15m, 30m, 5m);
 
 	_candleType =
@@ -176,9 +176,9 @@ public class MomentumSyncPsarRsiAdxFiltered3TierExitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	var psar = new ParabolicSar { Acceleration = SarStart,
 					  AccelerationStep = SarIncrement,

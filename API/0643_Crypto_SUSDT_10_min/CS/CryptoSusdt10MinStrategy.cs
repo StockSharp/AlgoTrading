@@ -82,17 +82,17 @@ public class CryptoSusdt10MinStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
 			.SetRange(0.1m, 20m)
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.1m, 20m)
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_orderPercent = Param(nameof(OrderPercent), 30m)
 			.SetRange(1m, 100m)
@@ -114,11 +114,11 @@ public class CryptoSusdt10MinStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -108,33 +108,33 @@ public WeightedIchimokuStrategy()
 _tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 .SetGreaterThanZero()
 .SetDisplay("Tenkan Period", "Tenkan length", "Ichimoku")
-.SetCanOptimize(true);
+;
 
 _kijunPeriod = Param(nameof(KijunPeriod), 26)
 .SetGreaterThanZero()
 .SetDisplay("Kijun Period", "Kijun length", "Ichimoku")
-.SetCanOptimize(true);
+;
 
 _senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 .SetGreaterThanZero()
 .SetDisplay("Senkou Span B Period", "Span B length", "Ichimoku")
-.SetCanOptimize(true);
+;
 
 _offset = Param(nameof(Offset), 26)
 .SetGreaterThanZero()
 .SetDisplay("Offset", "Leading span offset", "Ichimoku")
-.SetCanOptimize(true);
+;
 
 _buyThreshold = Param(nameof(BuyThreshold), 60m)
 .SetDisplay("Buy Threshold", "Score to enter long", "General")
-.SetCanOptimize(true);
+;
 
 _useSellThreshold = Param(nameof(UseSellThreshold), true)
 .SetDisplay("Use Sell Threshold", "Enable sell threshold", "General");
 
 _sellThreshold = Param(nameof(SellThreshold), -49m)
 .SetDisplay("Sell Threshold", "Score to exit", "General")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
@@ -147,9 +147,9 @@ return [(Security, CandleType)];
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var ichimoku = new Ichimoku
 {
@@ -169,7 +169,7 @@ DrawIndicator(area, ichimoku);
 DrawOwnTrades(area);
 }
 
-StartProtection();
+StartProtection(null, null);
 }
 
 private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)

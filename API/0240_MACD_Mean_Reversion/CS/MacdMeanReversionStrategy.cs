@@ -104,31 +104,31 @@ public class MacdMeanReversionStrategy : Strategy
 	{
 		_fastMacdPeriod = Param(nameof(FastMacdPeriod), 12)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 4)
 			.SetDisplay("Fast EMA Period", "Fast EMA period for MACD", "Indicators");
 
 		_slowMacdPeriod = Param(nameof(SlowMacdPeriod), 26)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 30, 5)
 			.SetDisplay("Slow EMA Period", "Slow EMA period for MACD", "Indicators");
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 13, 4)
 			.SetDisplay("Signal Period", "Signal line period for MACD", "Indicators");
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10)
 			.SetDisplay("Average Period", "Period for calculating MACD Histogram average", "Settings");
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3m, 0.5m)
 			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation", "Settings");
 
@@ -137,7 +137,7 @@ public class MacdMeanReversionStrategy : Strategy
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m)
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management");
 	}
@@ -162,7 +162,7 @@ public class MacdMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		// Reset variables
 
@@ -201,7 +201,7 @@ public class MacdMeanReversionStrategy : Strategy
 			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
 		);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)

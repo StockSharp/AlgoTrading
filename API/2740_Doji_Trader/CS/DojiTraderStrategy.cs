@@ -134,9 +134,9 @@ public class DojiTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 
@@ -150,7 +150,7 @@ public class DojiTraderStrategy : Strategy
 		}
 		else
 		{
-			StartProtection();
+			StartProtection(null, null);
 		}
 
 		var subscription = SubscribeCandles(CandleType);

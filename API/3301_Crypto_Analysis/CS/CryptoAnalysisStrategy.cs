@@ -484,14 +484,12 @@ public class CryptoAnalysisStrategy : Strategy
 
 		_fastMa = new WeightedMovingAverage
 		{
-			Length = FastMaPeriod,
-			CandlePrice = CandlePrice.Typical
+			Length = FastMaPeriod
 		};
 
 		_slowMa = new WeightedMovingAverage
 		{
-			Length = SlowMaPeriod,
-			CandlePrice = CandlePrice.Typical
+			Length = SlowMaPeriod
 		};
 
 		_rsi = new RelativeStrengthIndex
@@ -941,7 +939,7 @@ public class CryptoAnalysisStrategy : Strategy
 		if (Position == 0m)
 			return 0m;
 
-		var entry = PositionAvgPrice;
+		var entry = PositionPrice;
 		if (entry == 0m)
 			return 0m;
 

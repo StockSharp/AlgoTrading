@@ -115,9 +115,9 @@ public class LiveAlligatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var phi = 1.61803398874989m;
 		var a1 = (int)Math.Round(AlligatorPeriod * phi);
@@ -128,11 +128,11 @@ public class LiveAlligatorStrategy : Strategy
 		var teeth = new SmoothedMovingAverage { Length = a2 };
 		var lips = new SmoothedMovingAverage { Length = a1 };
 
-		var emaClose = new ExponentialMovingAverage { Length = LivePeriod };
-		var emaWeighted = new ExponentialMovingAverage { Length = LivePeriod };
-		var emaTypical = new ExponentialMovingAverage { Length = LivePeriod };
-		var emaMedian = new ExponentialMovingAverage { Length = LivePeriod };
-		var emaOpen = new ExponentialMovingAverage { Length = LivePeriod };
+		var emaClose = new EMA { Length = LivePeriod };
+		var emaWeighted = new EMA { Length = LivePeriod };
+		var emaTypical = new EMA { Length = LivePeriod };
+		var emaMedian = new EMA { Length = LivePeriod };
+		var emaOpen = new EMA { Length = LivePeriod };
 
 		var trail = new SmoothedMovingAverage { Length = TrailPeriod };
 

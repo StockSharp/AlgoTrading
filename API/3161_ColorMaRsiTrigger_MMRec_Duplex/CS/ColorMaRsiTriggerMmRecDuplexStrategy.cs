@@ -105,7 +105,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Long RSI Fast", "Fast RSI length for the long block", "Long Block");
 
-		_longRsiLongPeriod = Param(nameof(LongRsiLongPeriod), 13)
+		_longRsiLongMa = { Length = Param }(nameof(LongRsiLongPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Long RSI Slow", "Slow RSI length for the long block", "Long Block");
 
@@ -113,7 +113,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Long MA Fast", "Fast moving average length for the long block", "Long Block");
 
-		_longMaLongPeriod = Param(nameof(LongMaLongPeriod), 10)
+		_longMaLongMa = { Length = Param }(nameof(LongMaLongPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Long MA Slow", "Slow moving average length for the long block", "Long Block");
 
@@ -176,7 +176,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Short RSI Fast", "Fast RSI length for the short block", "Short Block");
 
-		_shortRsiLongPeriod = Param(nameof(ShortRsiLongPeriod), 13)
+		_shortRsiLongMa = { Length = Param }(nameof(ShortRsiLongPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Short RSI Slow", "Slow RSI length for the short block", "Short Block");
 
@@ -184,7 +184,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Short MA Fast", "Fast moving average length for the short block", "Short Block");
 
-		_shortMaLongPeriod = Param(nameof(ShortMaLongPeriod), 10)
+		_shortMaLongMa = { Length = Param }(nameof(ShortMaLongPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Short MA Slow", "Slow moving average length for the short block", "Short Block");
 
@@ -608,9 +608,9 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_longCalculator = new ColorMaRsiTriggerCalculator(
 			CreateMovingAverage(LongMaType, LongMaPeriod),
@@ -910,16 +910,16 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 			history.RemoveAt(history.Count - 1);
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		var maLength = Math.Max(1, length);
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = maLength },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = maLength },
+			MovingAverageMethods.Simple => new SMA { Length = maLength },
+			MovingAverageMethods.Exponential => new EMA { Length = maLength },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = maLength },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = maLength },
-			_ => new SimpleMovingAverage { Length = maLength },
+			_ => new SMA { Length = maLength },
 		};
 	}
 
@@ -976,8 +976,8 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 
 	private sealed class ColorMaRsiTriggerCalculator
 	{
-		private readonly LengthIndicator<decimal> _fastMa;
-		private readonly LengthIndicator<decimal> _slowMa;
+		private readonly DecimalLengthIndicator _fastMa;
+		private readonly DecimalLengthIndicator _slowMa;
 		private readonly RelativeStrengthIndex _fastRsi;
 		private readonly RelativeStrengthIndex _slowRsi;
 		private readonly AppliedPriceTypes _fastMaPrice;
@@ -986,8 +986,8 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 		private readonly AppliedPriceTypes _slowRsiPrice;
 
 		public ColorMaRsiTriggerCalculator(
-			LengthIndicator<decimal> fastMa,
-			LengthIndicator<decimal> slowMa,
+			DecimalLengthIndicator fastMa,
+			DecimalLengthIndicator slowMa,
 			RelativeStrengthIndex fastRsi,
 			RelativeStrengthIndex slowRsi,
 			AppliedPriceTypes fastMaPrice,

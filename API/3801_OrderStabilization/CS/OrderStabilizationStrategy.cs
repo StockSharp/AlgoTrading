@@ -116,11 +116,11 @@ _orderDistancePoints = Param(nameof(OrderDistancePoints), 20m)
 
 _profitThreshold = Param(nameof(ProfitThreshold), -2m)
 .SetDisplay("Profit threshold", "Minimum profit before stabilization exits", "Risk")
-.SetCanOptimize(true);
+;
 
 _absoluteFixation = Param(nameof(AbsoluteFixation), 30m)
 .SetDisplay("Absolute fixation", "Profit level that always closes the trade", "Risk")
-.SetCanOptimize(true);
+;
 
 _stabilizationPoints = Param(nameof(StabilizationPoints), 25m)
 .SetGreaterThanZero()
@@ -128,17 +128,17 @@ _stabilizationPoints = Param(nameof(StabilizationPoints), 25m)
 
 _expirationMinutes = Param(nameof(ExpirationMinutes), 20)
 .SetDisplay("Expiration", "Lifetime of pending orders in minutes", "Trading")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle type", "Timeframe used to evaluate stabilization", "Data")
-.SetCanOptimize(true);
+;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 Volume = OrderVolume;
 
@@ -228,7 +228,7 @@ CancelStrategyOrder(ref _sellStopOrder, ref _sellExpiry);
 private void ManageOpenPosition(ICandleMessage candle)
 {
 var currentVolume = Math.Abs(Position);
-var entryPrice = PositionAvgPrice;
+var entryPrice = PositionPrice;
 
 if (currentVolume <= 0 || entryPrice == 0)
 return;

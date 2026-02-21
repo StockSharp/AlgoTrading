@@ -95,17 +95,17 @@ public class HeatmapMacd2Strategy : Strategy
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 20)
 		.SetDisplay("Fast Period", "Fast EMA period for MACD", "MACD")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 2);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 50)
 		.SetDisplay("Slow Period", "Slow EMA period for MACD", "MACD")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40, 80, 2);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 50)
 		.SetDisplay("Signal Period", "Signal line period for MACD", "MACD")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40, 80, 2);
 
 		_candleType1 = Param(nameof(CandleType1), TimeSpan.FromMinutes(60).TimeFrame())
@@ -121,12 +121,12 @@ public class HeatmapMacd2Strategy : Strategy
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 		.SetDisplay("Take Profit %", "Take profit percentage", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 		.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 	}
 

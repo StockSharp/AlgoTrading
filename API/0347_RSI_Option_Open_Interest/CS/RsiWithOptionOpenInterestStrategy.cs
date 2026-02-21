@@ -89,7 +89,7 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetRange(5, 30)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -97,17 +97,17 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 
 		_oiPeriod = Param(nameof(OiPeriod), 20)
 		.SetRange(10, 50)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("OI Period", "Period for Open Interest averaging", "Options");
 
 		_oiDeviationFactor = Param(nameof(OiDeviationFactor), 2m)
 		.SetRange(1m, 3m)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("OI StdDev Factor", "Standard deviation multiplier for OI threshold", "Options");
 
 		_stopLoss = Param(nameof(StopLoss), 2m)
 		.SetRange(1m, 5m)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management");
 	}
 
@@ -142,9 +142,9 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_rsi = new RelativeStrengthIndex
@@ -153,7 +153,7 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 		};
 
 		// Indicators for Call options open interest
-		_callOiSma = new SimpleMovingAverage
+		_callOiSma = new SMA
 		{
 			Length = OiPeriod
 		};
@@ -164,7 +164,7 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 		};
 
 		// Indicators for Put options open interest
-		_putOiSma = new SimpleMovingAverage
+		_putOiSma = new SMA
 		{
 			Length = OiPeriod
 		};
@@ -212,11 +212,11 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 		SimulateOptionOI(candle);
 
 		// Process option OI with indicators
-		var callOiValueSma = _callOiSma.Process(_currentCallOi, candle.ServerTime, candle.State == CandleStates.Finished);
-		var putOiValueSma = _putOiSma.Process(_currentPutOi, candle.ServerTime, candle.State == CandleStates.Finished);
+		var callOiValueSma = _callOiSma.Process(new DecimalIndicatorValue(_callOiSma, _currentCallOi, candle.ServerTime));
+		var putOiValueSma = _putOiSma.Process(new DecimalIndicatorValue(_putOiSma, _currentPutOi, candle.ServerTime));
 
-		var callOiValueStdDev = _callOiStdDev.Process(_currentCallOi, candle.ServerTime, candle.State == CandleStates.Finished);
-		var putOiValueStdDev = _putOiStdDev.Process(_currentPutOi, candle.ServerTime, candle.State == CandleStates.Finished);
+		var callOiValueStdDev = _callOiStdDev.Process(new DecimalIndicatorValue(_callOiStdDev, _currentCallOi, candle.ServerTime));
+		var putOiValueStdDev = _putOiStdDev.Process(new DecimalIndicatorValue(_putOiStdDev, _currentPutOi, candle.ServerTime));
 
 		// Update state variables
 		_avgCallOi = callOiValueSma.ToDecimal();

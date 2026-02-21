@@ -73,15 +73,15 @@ public class VladoStrategy : Strategy
 		_williamsPeriod = Param(nameof(WilliamsPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Number of candles used in %R calculation", "Williams %R")
-			.SetCanOptimize(true);
+			;
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), -25m)
 			.SetDisplay("Overbought Level", "Threshold to consider %R overbought", "Williams %R")
-			.SetCanOptimize(true);
+			;
 
 		_oversoldLevel = Param(nameof(OversoldLevel), -75m)
 			.SetDisplay("Oversold Level", "Threshold to consider %R oversold", "Williams %R")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for calculations", "General");
@@ -94,9 +94,9 @@ public class VladoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_williams = new WilliamsR
 		{

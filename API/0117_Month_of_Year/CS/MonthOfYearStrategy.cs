@@ -63,7 +63,7 @@ public class MonthOfYearStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
 	}
 
@@ -74,12 +74,12 @@ public class MonthOfYearStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Create a simple moving average indicator
-		var sma = new SimpleMovingAverage { Length = MaPeriod };
+		var sma = new SMA { Length = MaPeriod };
 		
 		// Create subscription and bind indicator
 		var subscription = SubscribeCandles(CandleType);

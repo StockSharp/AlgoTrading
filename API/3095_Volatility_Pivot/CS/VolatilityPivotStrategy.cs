@@ -215,22 +215,22 @@ public class VolatilityPivotStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 100)
 			.SetRange(10, 400)
 			.SetDisplay("ATR Period", "ATR length used in the pivot distance", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_smoothingPeriod = Param(nameof(SmoothingPeriod), 10)
 			.SetRange(1, 100)
 			.SetDisplay("ATR Smoothing", "EMA length applied to ATR values", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 3m)
 			.SetRange(0.5m, 6m)
 			.SetDisplay("ATR Multiplier", "Multiplier applied to the smoothed ATR", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_deltaPrice = Param(nameof(DeltaPrice), 0.002m)
 			.SetRange(0.0001m, 1m)
 			.SetDisplay("Price Deviation", "Fixed distance used in price mode", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetRange(0, 5)
@@ -284,12 +284,12 @@ public class VolatilityPivotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_atrSmoother = new ExponentialMovingAverage { Length = SmoothingPeriod };
+		_atrSmoother = new EMA { Length = SmoothingPeriod };
 
 		_previousStop = null;
 		_previousClose = null;

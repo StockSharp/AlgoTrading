@@ -114,9 +114,9 @@ public class ElliottWaveSupertrendExitStrategy : Strategy
 		_prevSupertrendDir = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = WaveLength };
 		_lowest = new Lowest { Length = WaveLength };

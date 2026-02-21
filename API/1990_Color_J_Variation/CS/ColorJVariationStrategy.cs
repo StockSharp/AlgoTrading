@@ -78,7 +78,7 @@ public class ColorJVariationStrategy : Strategy
 		_jmaPeriod = Param(nameof(JmaPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("JMA Period", "JMA averaging period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_jmaPhase = Param(nameof(JmaPhase), 100)
@@ -90,20 +90,20 @@ public class ColorJVariationStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Absolute stop loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 2000m, 100m);
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Absolute take profit", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200m, 4000m, 100m);
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var jma = new JurikMovingAverage
 		{

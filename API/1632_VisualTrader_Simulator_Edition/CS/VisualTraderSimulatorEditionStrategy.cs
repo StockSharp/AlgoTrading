@@ -36,11 +36,11 @@ public class VisualTraderSimulatorEditionStrategy : Strategy
 
 		_takeProfit = Param(nameof(TakeProfit), 0m)
 			.SetDisplay("Take Profit", "Take profit in absolute price", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
 			.SetDisplay("Stop Loss", "Stop loss in absolute price", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		Volume = 1;
 	}
@@ -73,9 +73,9 @@ public class VisualTraderSimulatorEditionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(
 			takeProfit: TakeProfit > 0 ? new Unit(TakeProfit, UnitTypes.Absolute) : default,

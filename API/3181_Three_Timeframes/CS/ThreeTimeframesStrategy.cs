@@ -279,17 +279,17 @@ public class ThreeTimeframesStrategy : Strategy
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Fast", "Fast EMA length for MACD", "MACD")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Slow", "Slow EMA length for MACD", "MACD")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal", "Signal smoothing length", "MACD")
-		.SetCanOptimize(true);
+		;
 
 		_jawPeriod = Param(nameof(JawPeriod), 13)
 		.SetGreaterThanZero()
@@ -381,8 +381,8 @@ public class ThreeTimeframesStrategy : Strategy
 
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 
@@ -522,9 +522,9 @@ public class ThreeTimeframesStrategy : Strategy
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var jawValue = _jaw.Process(median, candle.OpenTime, true);
-		var teethValue = _teeth.Process(median, candle.OpenTime, true);
-		var lipsValue = _lips.Process(median, candle.OpenTime, true);
+		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.OpenTime));
+		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.OpenTime));
+		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.OpenTime));
 
 		if (!jawValue.IsFinal || !teethValue.IsFinal || !lipsValue.IsFinal)
 		return;

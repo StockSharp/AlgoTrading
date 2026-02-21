@@ -58,9 +58,9 @@ public class ClosePositionsByTimeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -68,7 +68,7 @@ public class ClosePositionsByTimeStrategy : Strategy
 			.Start();
 
 		// Enable position protection so the base strategy observes unexpected fills.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

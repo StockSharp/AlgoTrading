@@ -93,7 +93,7 @@ public class FxChaosScalpStrategy : Strategy
 		_tradingCandleType = Param(nameof(TradingCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Trading Candle", "Primary trading timeframe", "General");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Daily Candle", "Higher timeframe for ZigZag filter", "General");
 
 		_zigZagWindowSize = Param(nameof(ZigZagWindowSize), 5)
@@ -130,16 +130,16 @@ public class FxChaosScalpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
 		_awesomeOscillator = new AwesomeOscillator
 		{
-			ShortPeriod = 5,
-			LongPeriod = 34
+			ShortMa = { Length = 5 },
+			LongMa = { Length = 34 }
 		};
 
 		var dailySubscription = SubscribeCandles(DailyCandleType);
@@ -393,18 +393,18 @@ public class FxChaosScalpStrategy : Strategy
 
 				if (i < centerIndex)
 				{
-					if (center.High <= candle.High)
+					if (center.High <= candle.HighPrice)
 						isUp = false;
 
-					if (center.Low >= candle.Low)
+					if (center.Low >= candle.LowPrice)
 						isDown = false;
 				}
 				else
 				{
-					if (center.High < candle.High)
+					if (center.High < candle.HighPrice)
 						isUp = false;
 
-					if (center.Low > candle.Low)
+					if (center.Low > candle.LowPrice)
 						isDown = false;
 				}
 

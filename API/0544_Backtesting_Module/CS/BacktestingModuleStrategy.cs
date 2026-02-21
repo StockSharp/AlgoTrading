@@ -101,13 +101,13 @@ public class BacktestingModuleStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Period for fast SMA", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_slowLength = Param(nameof(SlowLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Period for slow SMA", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 400, 20);
 
 		_allowLong = Param(nameof(AllowLong), true)
@@ -142,9 +142,9 @@ public class BacktestingModuleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastSma = new SMA { Length = FastLength };
 		var slowSma = new SMA { Length = SlowLength };

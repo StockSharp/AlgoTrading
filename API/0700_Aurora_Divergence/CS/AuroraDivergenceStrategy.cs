@@ -130,19 +130,19 @@ public class AuroraDivergenceStrategy : Strategy
 		_lookback = Param(nameof(Lookback), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Lookback", "Period for slope calculation", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		
 		_zLength = Param(nameof(ZLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Z-Length", "Z-score lookback", "Z-Score Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 10);
 		
 		_zThreshold = Param(nameof(ZThreshold), 1.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Z Threshold", "Maximum absolute z-score", "Z-Score Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 		
 		_useZFilter = Param(nameof(UseZFilter), true)
@@ -157,43 +157,43 @@ public class AuroraDivergenceStrategy : Strategy
 		_htfMaLength = Param(nameof(HtfMaLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("HTF MA Length", "Moving average length on higher timeframe", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 10);
 		
 		_atrLength = Param(nameof(AtrLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Length", "ATR period", "Volatility")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 100, 10);
 		
 		_atrThreshold = Param(nameof(AtrThreshold), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Threshold", "Minimum ATR to trade", "Volatility")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5m, 0.5m);
 		
 		_stopAtrMult = Param(nameof(StopAtrMultiplier), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop ATR Mult", "ATR multiplier for stop", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3m, 0.5m);
 		
 		_profitAtrMult = Param(nameof(ProfitAtrMultiplier), 1.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Profit ATR Mult", "ATR multiplier for target", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 		
 		_maxBarsInTrade = Param(nameof(MaxBarsInTrade), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Bars In Trade", "Maximum bars to hold position", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 		
 		_cooldownBars = Param(nameof(CooldownBars), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Cooldown Bars", "Bars to wait after trade", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 5, 1);
 	}
 	
@@ -215,16 +215,16 @@ public class AuroraDivergenceStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_obv = new OnBalanceVolume();
 		_priceSlope = new LinearRegression { Length = Lookback };
 		_obvSlope = new LinearRegression { Length = Lookback };
-		_zMean = new SimpleMovingAverage { Length = ZLength };
+		_zMean = new SMA { Length = ZLength };
 		_zStd = new StandardDeviation { Length = ZLength };
-		_htfMa = new SimpleMovingAverage { Length = HtfMaLength };
+		_htfMa = new SMA { Length = HtfMaLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
 		
 		var subscription = SubscribeCandles(CandleType);
@@ -237,7 +237,7 @@ public class AuroraDivergenceStrategy : Strategy
 		.Bind(_htfMa, ProcessHtfCandle)
 		.Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessHtfCandle(ICandleMessage candle, decimal maValue)
@@ -256,11 +256,11 @@ public class AuroraDivergenceStrategy : Strategy
 		if (_cooldownCounter > 0)
 		_cooldownCounter--;
 		
-		var priceSlopeTyped = (LinearRegressionValue)_priceSlope.Process(candle.ClosePrice, candle.ServerTime, true);
+		var priceSlopeTyped = (LinearRegressionValue)_priceSlope.Process(new DecimalIndicatorValue(_priceSlope, candle.ClosePrice, candle.ServerTime));
 		if (!priceSlopeTyped.IsFinal || priceSlopeTyped.LinearReg is not decimal priceSlope)
 		return;
 		
-		var obvSlopeTyped = (LinearRegressionValue)_obvSlope.Process(obvValue, candle.ServerTime, true);
+		var obvSlopeTyped = (LinearRegressionValue)_obvSlope.Process(new DecimalIndicatorValue(_obvSlope, obvValue, candle.ServerTime));
 		if (!obvSlopeTyped.IsFinal || obvSlopeTyped.LinearReg is not decimal obvSlope)
 		return;
 		

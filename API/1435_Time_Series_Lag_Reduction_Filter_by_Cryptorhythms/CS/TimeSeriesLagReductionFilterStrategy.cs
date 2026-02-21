@@ -60,12 +60,12 @@ public class TimeSeriesLagReductionFilterStrategy : Strategy
 	{
 		_lagReduction = Param(nameof(LagReduction), 20m)
 			.SetDisplay("Lag Reduction", "Smoothing factor", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 30m, 5m);
 
 		_emaLength = Param(nameof(EmaLength), 100)
 			.SetDisplay("EMA Length", "Period for EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -87,11 +87,11 @@ public class TimeSeriesLagReductionFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage
+		var ema = new EMA
 		{
 			Length = EmaLength
 		};

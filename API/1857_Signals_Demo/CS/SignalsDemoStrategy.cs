@@ -60,11 +60,11 @@ public class SignalsDemoStrategy : Strategy
 
 		_equityLimit = Param(nameof(EquityLimit), 0m)
 		.SetDisplay("Equity Limit", "Max equity for signal copy", "General")
-		.SetCanOptimize(true);
+		;
 
 		_depositPercent = Param(nameof(DepositPercent), 100m)
 		.SetDisplay("Deposit Percent", "Percent of deposit to use", "General")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <inheritdoc />
@@ -74,14 +74,14 @@ public class SignalsDemoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		// Log configured signal parameters.
 		LogInfo($"Equity limit: {EquityLimit}, Slippage: {Slippage}, Deposit percent: {DepositPercent}");

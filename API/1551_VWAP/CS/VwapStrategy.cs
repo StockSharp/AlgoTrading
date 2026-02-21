@@ -164,14 +164,14 @@ public class VwapStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -179,7 +179,7 @@ public class VwapStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var date = candle.OpenTime.UtcDateTime.Date;
+		var date = candle.OpenTime.Date;
 		var vol = candle.TotalVolume ?? 0m;
 		var src = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
 

@@ -93,17 +93,17 @@ _direction = Param(nameof(Direction), (Sides?)null)
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetRange(5, 50)
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_riskReward = Param(nameof(RiskReward), 2m)
 			.SetRange(1m, 5m)
 			.SetDisplay("Risk/Reward", "Take profit as multiple of stop loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -124,9 +124,9 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 

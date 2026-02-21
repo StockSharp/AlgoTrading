@@ -43,19 +43,19 @@ public class Ema612Strategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Base order size in lots.", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 10m, 0.1m);
 
 		_shortEmaLength = Param(nameof(ShortEmaLength), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Short EMA", "Length of the fast exponential moving average.", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 40, 1);
 
 		_longEmaLength = Param(nameof(LongEmaLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Long EMA", "Length of the slow exponential moving average.", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 120, 2);
 
 		_useCloseSignals = Param(nameof(UseCloseSignals), true)
@@ -64,13 +64,13 @@ public class Ema612Strategy : Strategy
 		_trailingStopSteps = Param(nameof(TrailingStopSteps), 40m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (steps)", "Trailing stop distance expressed in price steps.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 10m);
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 1000m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (steps)", "Take profit distance expressed in price steps.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 2000m, 50m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -163,9 +163,9 @@ public class Ema612Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 		if (_priceStep <= 0m)

@@ -91,29 +91,29 @@ public class Ais1EurUsdBreakoutStrategy : Strategy
 	{
 		_accountReserve = Param(nameof(AccountReserve), 0.2m)
 			.SetDisplay("Account Reserve", "Equity share kept outside of trading", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_orderReserve = Param(nameof(OrderReserve), 0.04m)
 			.SetDisplay("Order Reserve", "Equity share risked per trade", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_takeFactor = Param(nameof(TakeFactor), 0.8m)
 			.SetDisplay("Take Factor", "Daily range multiplier for take profit", "Targets")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_stopFactor = Param(nameof(StopFactor), 1m)
 			.SetDisplay("Stop Factor", "Daily range multiplier for stop loss", "Targets")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_trailFactor = Param(nameof(TrailFactor), 5m)
 			.SetDisplay("Trail Factor", "Intraday range multiplier for trailing", "Targets")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
-		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Entry Candle", "Primary timeframe for breakout levels", "Data");
 
 		_trailCandleType = Param(nameof(TrailCandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -146,9 +146,9 @@ public class Ais1EurUsdBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetPositionState();
 		_maxEquity = GetEquity();

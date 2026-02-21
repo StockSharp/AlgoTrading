@@ -76,19 +76,19 @@ public class AdxCciMaStrategy : Strategy
 
 		_cciPeriod = Param(nameof(CciPeriod), 15)
 			.SetDisplay("CCI Period", "Period for Commodity Channel Index", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_adxLength = Param(nameof(AdxLength), 10)
 			.SetDisplay("ADX Length", "Length for Average Directional Index", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_adxThreshold = Param(nameof(AdxThreshold), 20m)
 			.SetDisplay("ADX Threshold", "ADX level to confirm trend", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_useMaTrend = Param(nameof(UseMaTrend), true)
 			.SetDisplay("Use MA Trend", "Enable moving average trend filter", "MA Trend");
 		_maLength = Param(nameof(MaLength), 200)
 			.SetDisplay("MA Length", "Length of moving average", "MA Trend")
-			.SetCanOptimize(true);
+			;
 		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
 			.SetDisplay("MA Type", "Type of moving average", "MA Trend");
 		_useMaRisk = Param(nameof(UseMaRiskManagement), false)
@@ -118,20 +118,20 @@ public class AdxCciMaStrategy : Strategy
 		_shortAgainstCount = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cci = new() { Length = CciPeriod };
 		_adx = new() { Length = AdxLength };
 		_ma = MaType switch
 		{
 			MovingAverageTypes.Hull => new HullMovingAverage(),
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage(),
+			MovingAverageTypes.Exponential => new EMA(),
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage(),
 			MovingAverageTypes.Weighted => new WeightedMovingAverage(),
 			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage(),
-			_ => new SimpleMovingAverage()
+			_ => new SMA()
 		};
 		_ma.Length = MaLength;
 

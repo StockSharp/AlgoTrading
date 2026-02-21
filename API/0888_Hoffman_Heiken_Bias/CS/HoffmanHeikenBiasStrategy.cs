@@ -109,55 +109,55 @@ public class HoffmanHeikenBiasStrategy : Strategy
 		_fastSmaLength = Param(nameof(FastSmaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA Length", "Fast SMA lookback", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_fastEmaLength = Param(nameof(FastEmaLength), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Fast EMA lookback", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_ema20Length = Param(nameof(Ema20Length), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA20 Length", "EMA 20 period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_sma50Length = Param(nameof(Sma50Length), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA50 Length", "SMA 50 period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 80, 5);
 
 		_sma89Length = Param(nameof(Sma89Length), 89)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA89 Length", "SMA 89 period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 120, 5);
 
 		_ema144Length = Param(nameof(Ema144Length), 144)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA144 Length", "EMA 144 period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 200, 10);
 
 		_ema35Length = Param(nameof(Ema35Length), 35)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA35 Length", "EMA 35 period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 5);
 
 		_atrLength = Param(nameof(AtrLength), 35)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR lookback", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_netVolumeLength = Param(nameof(NetVolumeLength), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Net Volume Length", "Linear regression length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -169,17 +169,17 @@ public class HoffmanHeikenBiasStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastSma = new SimpleMovingAverage { Length = FastSmaLength };
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		_ema20 = new ExponentialMovingAverage { Length = Ema20Length };
-		_sma50 = new SimpleMovingAverage { Length = Sma50Length };
-		_sma89 = new SimpleMovingAverage { Length = Sma89Length };
-		_ema144 = new ExponentialMovingAverage { Length = Ema144Length };
-		_ema35 = new ExponentialMovingAverage { Length = Ema35Length };
+		_fastSma = new SMA { Length = FastSmaLength };
+		_fastEma = new EMA { Length = FastEmaLength };
+		_ema20 = new EMA { Length = Ema20Length };
+		_sma50 = new SMA { Length = Sma50Length };
+		_sma89 = new SMA { Length = Sma89Length };
+		_ema144 = new EMA { Length = Ema144Length };
+		_ema35 = new EMA { Length = Ema35Length };
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_netVolumeReg = new LinearRegression { Length = NetVolumeLength };
 

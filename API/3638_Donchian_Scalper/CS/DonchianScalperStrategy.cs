@@ -187,27 +187,27 @@ public class DonchianScalperStrategy : Strategy
 	{
 		_volume = Param(nameof(VolumeParam), 0.01m)
 		.SetDisplay("Volume", "Order volume used for stop entries", "Orders")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 0.5m, 0.01m);
 
 		_channelPeriod = Param(nameof(ChannelPeriod), 20)
 		.SetDisplay("Channel Period", "Lookback length for the Donchian channel and EMA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 
 		_crossAnchorPoints = Param(nameof(CrossAnchorPoints), 0m)
 		.SetDisplay("Cross Anchor", "Additional pullback depth required before a breakout order is armed", "Logic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 100m, 5m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 80m)
 		.SetDisplay("Stop Loss (points)", "Distance added to the opposite Donchian band for the initial protective stop", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 200m, 10m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 380m)
 		.SetDisplay("Take Profit (points)", "Fixed profit distance used by the close-at-profit mode", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 600m, 20m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -221,23 +221,23 @@ public class DonchianScalperStrategy : Strategy
 
 		_cooldownBars = Param(nameof(CooldownBars), 3)
 		.SetDisplay("Cooldown Bars", "Bars that must elapse after exiting before arming new orders", "Logic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 6, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 		.SetDisplay("ATR Period", "ATR lookback for volatility trailing", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.0m)
 		.SetDisplay("ATR Multiplier", "Multiplier applied to the ATR based trailing stop", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5m, 0.5m);
 
 		_priceToleranceMultiplier = Param(nameof(PriceToleranceMultiplier), 0.5m)
 			.SetDisplay("Price Tolerance Multiplier", "Multiplier applied to point size when reconciling order prices", "Orders")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 2m, 0.1m);
 	}
 
@@ -266,9 +266,9 @@ public class DonchianScalperStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = Security.Step ?? 0.0001m;
 		Volume = VolumeParam;
@@ -278,7 +278,7 @@ public class DonchianScalperStrategy : Strategy
 			Length = ChannelPeriod,
 		};
 
-		_ema = new ExponentialMovingAverage
+		_ema = new EMA
 		{
 			Length = ChannelPeriod,
 		};
@@ -293,7 +293,7 @@ public class DonchianScalperStrategy : Strategy
 		.BindEx(_donchian, _ema, _atr, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue emaValue, IIndicatorValue atrValue)

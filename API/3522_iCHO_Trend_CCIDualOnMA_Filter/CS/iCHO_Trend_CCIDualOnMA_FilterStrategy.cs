@@ -310,9 +310,9 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_adLine = new AccumulationDistributionLine();
 		_fastChaikin = CreateMovingAverage(ChaikinMethod, FastChaikinLength);
@@ -339,7 +339,7 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 		if (UseClosedBar && candle.State != CandleStates.Finished)
 		return;
 
-		var barTime = candle.CloseTime != default ? candle.CloseTime : candle.Time;
+		var barTime = candle.CloseTime != default ? candle.CloseTime : candle.ServerTime;
 		if (_lastProcessedBar == barTime)
 		return;
 
@@ -575,11 +575,11 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 	{
 		IIndicator indicator = method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 
 		return indicator;

@@ -195,9 +195,9 @@ public class PendingOrderGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Cache trading steps to round prices and volumes.
 		_tickSize = Security?.PriceStep ?? 0m;
@@ -291,7 +291,7 @@ public class PendingOrderGridStrategy : Strategy
 
 		if (Position > 0m && _bestBid > 0m)
 		{
-			var entryPrice = PositionAvgPrice;
+			var entryPrice = PositionPrice;
 			if (entryPrice <= 0m)
 				return;
 
@@ -308,7 +308,7 @@ public class PendingOrderGridStrategy : Strategy
 		}
 		else if (Position < 0m && _bestAsk > 0m)
 		{
-			var entryPrice = PositionAvgPrice;
+			var entryPrice = PositionPrice;
 			if (entryPrice <= 0m)
 				return;
 
@@ -353,7 +353,7 @@ public class PendingOrderGridStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -379,7 +379,7 @@ public class PendingOrderGridStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		if (entryPrice <= 0m)
 			return;
 

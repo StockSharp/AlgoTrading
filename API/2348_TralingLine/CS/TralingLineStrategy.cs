@@ -50,7 +50,7 @@ public class TralingLineStrategy : Strategy
 	{
 		_stopLevel = Param(nameof(StopLevel), 70m)
 			.SetDisplay("Stop Level", "Offset in price steps from high/low", "Protection")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 200m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -73,9 +73,9 @@ public class TralingLineStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

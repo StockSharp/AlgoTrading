@@ -65,12 +65,12 @@ public class GapReversionStrategy : Strategy
 		_minGapSize = Param(nameof(MinGapSize), 1)
 			.SetRange(0, 20)
 			.SetDisplay("Min Gap Size", "Minimum gap size measured in price steps", "Trading Rules")
-			.SetCanOptimize(true);
+			;
 
 		_gapVolume = Param(nameof(GapVolume), 0.1m)
 			.SetNotNegative()
 			.SetDisplay("Gap Volume", "Order volume for gap entries", "Trading Rules")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle source for the strategy", "Data");
@@ -94,9 +94,9 @@ public class GapReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

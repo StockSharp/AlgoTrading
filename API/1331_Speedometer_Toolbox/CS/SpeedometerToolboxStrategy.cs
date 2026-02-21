@@ -64,7 +64,7 @@ public class SpeedometerToolboxStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Period of RSI", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_radius = Param(nameof(Radius), 20)
@@ -82,9 +82,9 @@ public class SpeedometerToolboxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 

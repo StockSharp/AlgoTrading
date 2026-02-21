@@ -82,13 +82,13 @@ public class KeltnerChannelReversalStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period for the EMA in Keltner Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
 			.SetNotNegative()
 			.SetDisplay("ATR Multiplier", "Multiplier for the ATR in Keltner Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
@@ -101,7 +101,7 @@ public class KeltnerChannelReversalStrategy : Strategy
 		_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 2.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss ATR Multiplier", "ATR multiplier for stop-loss calculation", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 	}
 
@@ -121,9 +121,9 @@ public class KeltnerChannelReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_keltnerChannel = new KeltnerChannels

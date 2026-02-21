@@ -79,21 +79,21 @@ public class ExpMultitrendSignalKvnStrategy : Strategy
 	{
 		_k = Param(nameof(K), 48m)
 			.SetDisplay("K", "Percent of swing used for channel width", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_kStop = Param(nameof(KStop), 0.5m)
 			.SetDisplay("K Stop", "Multiplier for range added to breakout price", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_kPeriod = Param(nameof(KPeriod), 150)
 			.SetDisplay("K Period", "Base period for swing calculation", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "Period of ADX indicator", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculation", "General");
@@ -112,11 +112,11 @@ public class ExpMultitrendSignalKvnStrategy : Strategy
 		_trend = 0;
 	}
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		var maxHigh = new Max { Length = KPeriod };

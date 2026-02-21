@@ -141,7 +141,7 @@ public class DcaSimulationForCryptoCommunityStrategy : Strategy
 	/// </summary>
 	public DcaSimulationForCryptoCommunityStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type for calculations.", "General");
 
 		_baseOrder = Param(nameof(BaseOrder), 100m)
@@ -214,9 +214,9 @@ public class DcaSimulationForCryptoCommunityStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_currentSo = 0;
 		_lastHigh = 0m;
@@ -229,7 +229,7 @@ public class DcaSimulationForCryptoCommunityStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -315,7 +315,7 @@ public class DcaSimulationForCryptoCommunityStrategy : Strategy
 		if (!TakeProfitEnable)
 			return;
 
-		var baseLevel = PositionAvgPrice * (1m + TakeProfitPercent / 100m);
+		var baseLevel = PositionPrice * (1m + TakeProfitPercent / 100m);
 		var takeProfitLevel = baseLevel + baseLevel * _currentSo * (TakeProfitGrowPercent / 100m);
 
 		if (price >= takeProfitLevel || _previousHighValue.HasValue)

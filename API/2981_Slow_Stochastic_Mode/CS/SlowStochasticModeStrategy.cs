@@ -69,19 +69,19 @@ public class SlowStochasticModeStrategy : Strategy
 		_kPeriod = Param(nameof(KPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("%K Period", "Lookback period of the %K line", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("%D Period", "Smoothing period of the %D line", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 15, 1);
 
 		_slowing = Param(nameof(Slowing), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Slowing", "Additional smoothing applied to %K", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -236,14 +236,14 @@ public class SlowStochasticModeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_stochastic = new StochasticOscillator
 		{
 			KPeriod = KPeriod,
-			DPeriod = DPeriod,
+			D = {  K = { Length = DPeriod } },
 			Slowing = Slowing
 		};
 

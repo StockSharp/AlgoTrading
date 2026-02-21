@@ -124,7 +124,7 @@ public class MacdStochasticConfirmationReversalStrategy : Strategy
 		};
 
 		_atr = new AverageTrueRange { Length = 14 };
-		_ema = new ExponentialMovingAverage { Length = TrailingEmaLength };
+		_ema = new EMA { Length = TrailingEmaLength };
 		_dailyStoch = new StochasticOscillator();
 
 		var subscription = SubscribeCandles(CandleType);

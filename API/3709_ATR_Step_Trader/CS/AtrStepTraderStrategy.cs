@@ -138,55 +138,55 @@ public class AtrStepTraderStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 70)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Period", "Length of the fast moving average", "Trend Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 100, 10);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 180)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Period", "Length of the slow moving average", "Trend Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(120, 240, 20);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR window used for distance calculations", "Volatility")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 10);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Bars", "Number of consecutive bars required for trend confirmation", "Trend Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 80, 5);
 
 		_pyramidLimit = Param(nameof(PyramidLimit), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Pyramid Limit", "Maximum number of entries per direction", "Position Sizing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 4, 1);
 
 		_stepMultiplier = Param(nameof(StepMultiplier), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("Step Multiplier", "ATR multiple for breakout validation", "Entry Logic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 6m, 1m);
 
 		_stepsMultiplier = Param(nameof(StepsMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Steps Multiplier", "ATR multiple for add-on spacing", "Entry Logic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_stopMultiplier = Param(nameof(StopMultiplier), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Multiplier", "Extra multiplier applied on top of the step distance", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 4m, 0.5m);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Base order size for market entries", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -210,17 +210,17 @@ public class AtrStepTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
 		var fastMa = new SMA { Length = FastPeriod };
 		var slowMa = new SMA { Length = SlowPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var highest = new Highest { Length = MomentumPeriod, CandlePrice = CandlePrice.High };
-		var lowest = new Lowest { Length = MomentumPeriod, CandlePrice = CandlePrice.Low };
+		var highest = new Highest { Length = MomentumPeriod };
+		var lowest = new Lowest { Length = MomentumPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

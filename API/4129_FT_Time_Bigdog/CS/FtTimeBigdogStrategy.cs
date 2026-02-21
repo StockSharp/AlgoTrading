@@ -52,27 +52,27 @@ public class FtTimeBigdogStrategy : Strategy
 		_startHour = Param(nameof(StartHour), 14)
 			.SetDisplay("Start hour", "Hour when the accumulation window begins", "Timing")
 			.SetRange(0, 23)
-			.SetCanOptimize(true);
+			;
 
 		_stopHour = Param(nameof(StopHour), 16)
 			.SetDisplay("Stop hour", "Hour when pending orders become eligible", "Timing")
 			.SetRange(0, 23)
-			.SetCanOptimize(true);
+			;
 
 		_rangeLimitPoints = Param(nameof(RangeLimitPoints), 50m)
 			.SetDisplay("Max range (points)", "Maximum allowed distance between high and low of the session", "Filters")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 			.SetDisplay("Take profit (points)", "Take profit distance measured in broker points", "Risk management")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_orderBufferPoints = Param(nameof(OrderBufferPoints), 20m)
 			.SetDisplay("Buffer (points)", "Minimum distance between the current price and the pending order", "Entries")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_pointMultiplier = Param(nameof(PointMultiplier), 1m)
 			.SetDisplay("Point multiplier", "Multiplier applied to the instrument point size", "General")
@@ -178,9 +178,9 @@ public class FtTimeBigdogStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 
@@ -262,7 +262,7 @@ public class FtTimeBigdogStrategy : Strategy
 			return;
 		}
 
-		var candleTime = candle.OpenTime.UtcDateTime;
+		var candleTime = candle.OpenTime;
 
 		if (_currentDate == null || _currentDate.Value.Date != candleTime.Date)
 		{
@@ -311,7 +311,7 @@ public class FtTimeBigdogStrategy : Strategy
 
 	private void UpdateRange(ICandleMessage candle)
 	{
-		var candleTime = candle.OpenTime.UtcDateTime;
+		var candleTime = candle.OpenTime;
 		var hour = candleTime.Hour;
 
 		if (hour < StartHour)

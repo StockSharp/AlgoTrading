@@ -56,17 +56,17 @@ public class MajorsVolumeSumStrategy : Strategy
 
 		_threshold = Param(nameof(Threshold), 0.75m)
 			.SetDisplay("Threshold", "Fraction of max volume sum", "Signals")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma10 = new SimpleMovingAverage { Length = 10 };
-		_sma100 = new SimpleMovingAverage { Length = 100 };
-		_sma200 = new SimpleMovingAverage { Length = 200 };
+		_sma10 = new SMA { Length = 10 };
+		_sma100 = new SMA { Length = 100 };
+		_sma200 = new SMA { Length = 200 };
 
 		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)

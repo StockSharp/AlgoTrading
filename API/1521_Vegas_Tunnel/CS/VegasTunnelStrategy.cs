@@ -89,7 +89,7 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 _riskRewardRatio = Param(nameof(RiskRewardRatio), 2m)
 .SetGreaterThanZero()
 .SetDisplay("Risk/Reward", "Risk to reward ratio", "General")
-.SetCanOptimize(true);
+;
 
 _useAtr = Param(nameof(UseAtr), true)
 .SetDisplay("Use ATR", "Use ATR for stop", "General");
@@ -97,12 +97,12 @@ _useAtr = Param(nameof(UseAtr), true)
 _atrLength = Param(nameof(AtrLength), 14)
 .SetGreaterThanZero()
 .SetDisplay("ATR Length", "ATR period", "General")
-.SetCanOptimize(true);
+;
 
 _atrMult = Param(nameof(AtrMult), 1.5m)
 .SetGreaterThanZero()
 .SetDisplay("ATR Mult", "ATR multiplier", "General")
-.SetCanOptimize(true);
+;
 }
 
 /// <inheritdoc />
@@ -126,14 +126,14 @@ _takePrice = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-_emaFast = new ExponentialMovingAverage { Length = 12 };
-_emaMedium = new ExponentialMovingAverage { Length = 25 };
-_emaSlow = new ExponentialMovingAverage { Length = 144 };
-_emaTunnel = new ExponentialMovingAverage { Length = 169 };
+_emaFast = new EMA { Length = 12 };
+_emaMedium = new EMA { Length = 25 };
+_emaSlow = new EMA { Length = 144 };
+_emaTunnel = new EMA { Length = 169 };
 _atr = new AverageTrueRange { Length = AtrLength };
 
 var subscription = SubscribeCandles(CandleType);

@@ -197,32 +197,28 @@ public class DayTradingTrendPullbackStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema20 = new ExponentialMovingAverage
+		var ema20 = new EMA
 		{
-			Length = 20,
-			CandlePrice = CandlePrice.Close
+			Length = 20
 		};
 
-		var ema60 = new ExponentialMovingAverage
+		var ema60 = new EMA
 		{
-			Length = 60,
-			CandlePrice = CandlePrice.Close
+			Length = 60
 		};
 
-		var ema100 = new ExponentialMovingAverage
+		var ema100 = new EMA
 		{
-			Length = 100,
-			CandlePrice = CandlePrice.Median
+			Length = 100
 		};
 
 		var momentum = new Momentum
 		{
-			Length = MomentumPeriod,
-			CandlePrice = CandlePrice.Close
+			Length = MomentumPeriod
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -245,7 +241,7 @@ public class DayTradingTrendPullbackStrategy : Strategy
 			.BindEx(macd, ProcessMacdCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessMainCandle(ICandleMessage candle, decimal ema20, decimal ema60, decimal ema100, decimal momentumValue)

@@ -50,10 +50,10 @@ public class MultiTimeFrameCandlesStrategy : Strategy
 	_numberOfCandles = Param(nameof(NumberOfCandles), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Number of Candles", "How many candles from the higher timeframe to show", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
-	_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Higher timeframe for candles", "General");
 	}
 
@@ -71,9 +71,9 @@ public class MultiTimeFrameCandlesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	var subscription = SubscribeCandles(CandleType);
 

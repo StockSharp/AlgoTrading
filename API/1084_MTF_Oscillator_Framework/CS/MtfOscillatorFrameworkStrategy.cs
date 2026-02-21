@@ -40,13 +40,13 @@ public class MtfOscillatorFrameworkStrategy : Strategy
 			.SetDisplay("Higher Candle Type", "Type of higher timeframe candles", "General");
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetDisplay("RSI Length", "RSI calculation length", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_overbought = Param(nameof(Overbought), 70m)
 			.SetDisplay("Overbought", "Overbought threshold", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_oversold = Param(nameof(Oversold), 30m)
 			.SetDisplay("Oversold", "Oversold threshold", "Indicators")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -95,9 +95,9 @@ public class MtfOscillatorFrameworkStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var baseRsi = new RelativeStrengthIndex { Length = RsiLength };
 		var higherRsi = new RelativeStrengthIndex { Length = RsiLength };
@@ -108,7 +108,7 @@ public class MtfOscillatorFrameworkStrategy : Strategy
 		var higherSub = SubscribeCandles(HigherCandleType);
 		higherSub.Bind(higherRsi, OnHigherRsi).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void OnBaseRsi(ICandleMessage candle, decimal rsi)

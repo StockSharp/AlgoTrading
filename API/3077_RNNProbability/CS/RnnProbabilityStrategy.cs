@@ -176,12 +176,12 @@ public class RnnProbabilityStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetDisplay("Trade Volume", "Lot size used for each market entry.", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 9)
 			.SetDisplay("RSI Period", "Length of the RSI indicator feeding the neural network.", "Indicator")
 			.SetRange(2, 200)
-			.SetCanOptimize(true);
+			;
 
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Open)
 			.SetDisplay("Applied Price", "Price type forwarded to the RSI indicator.", "Indicator");
@@ -189,47 +189,47 @@ public class RnnProbabilityStrategy : Strategy
 		_stopLossTakeProfitPips = Param(nameof(StopLossTakeProfitPips), 100m)
 			.SetDisplay("Stop Loss & Take Profit (pips)", "Distance used for both stop-loss and take-profit levels.", "Risk")
 			.SetRange(0m, 1000m)
-			.SetCanOptimize(true);
+			;
 
 		_weight0 = Param(nameof(Weight0), 6m)
 			.SetDisplay("Weight 0", "Probability weight applied when all RSI inputs are low.", "Model")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_weight1 = Param(nameof(Weight1), 96m)
 			.SetDisplay("Weight 1", "Probability weight for the (low, low, high) branch.", "Model")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_weight2 = Param(nameof(Weight2), 90m)
 			.SetDisplay("Weight 2", "Probability weight for the (low, high, low) branch.", "Model")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_weight3 = Param(nameof(Weight3), 35m)
 			.SetDisplay("Weight 3", "Probability weight for the (low, high, high) branch.", "Model")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_weight4 = Param(nameof(Weight4), 64m)
 			.SetDisplay("Weight 4", "Probability weight for the (high, low, low) branch.", "Model")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_weight5 = Param(nameof(Weight5), 83m)
 			.SetDisplay("Weight 5", "Probability weight for the (high, low, high) branch.", "Model")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_weight6 = Param(nameof(Weight6), 66m)
 			.SetDisplay("Weight 6", "Probability weight for the (high, high, low) branch.", "Model")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_weight7 = Param(nameof(Weight7), 50m)
 			.SetDisplay("Weight 7", "Probability weight for the (high, high, high) branch.", "Model")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for signal generation.", "General");
@@ -251,9 +251,9 @@ public class RnnProbabilityStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -307,7 +307,7 @@ public class RnnProbabilityStrategy : Strategy
 			return;
 
 		var price = GetPrice(candle, AppliedPrice);
-		var rsiValue = _rsi.Process(price, candle.OpenTime, true).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, price, candle.OpenTime)).ToDecimal();
 
 		if (!_rsi.IsFormed)
 			return;

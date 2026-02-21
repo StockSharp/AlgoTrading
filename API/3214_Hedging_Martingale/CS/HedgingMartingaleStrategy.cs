@@ -60,50 +60,50 @@ public class HedgingMartingaleStrategy : Strategy
 
 		_takeProfitInMoney = Param(nameof(TakeProfitInMoney), 40m)
 		.SetDisplay("Money Take Profit", "Floating profit target in account currency", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_useTakeProfitInPercent = Param(nameof(UseTakeProfitInPercent), false)
 		.SetDisplay("Use Percent TP", "Close all trades when floating profit reaches the percent target", "Risk");
 
 		_takeProfitInPercent = Param(nameof(TakeProfitInPercent), 10m)
 		.SetDisplay("Percent Take Profit", "Floating profit target expressed as percent of starting equity", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
 		.SetDisplay("Enable Trailing", "Enable money based trailing stop for the trade basket", "Risk");
 
 		_trailingTakeProfitMoney = Param(nameof(TrailingTakeProfitMoney), 40m)
 		.SetDisplay("Trailing Start", "Floating profit that activates the trailing stop", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopLossMoney = Param(nameof(TrailingStopLossMoney), 10m)
 		.SetDisplay("Trailing Step", "Allowed profit retracement before closing the basket", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 30m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit (pips)", "Take profit distance for each trade", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_pipStepPips = Param(nameof(PipStepPips), 30m)
 		.SetGreaterThanZero()
 		.SetDisplay("Pip Step", "Adverse movement required before adding a martingale order", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Base Volume", "Initial volume for both hedge legs", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume Multiplier", "Multiplier applied when adding martingale orders", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_maxTrades = Param(nameof(MaxTrades), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Trades", "Maximum number of simultaneous open trades", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_closeMaxOrders = Param(nameof(CloseMaxOrders), true)
 		.SetDisplay("Close On Max", "Close all positions when the maximum trade count is exceeded", "Risk");
@@ -254,9 +254,9 @@ public class HedgingMartingaleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_longPositions.Clear();
 		_shortPositions.Clear();

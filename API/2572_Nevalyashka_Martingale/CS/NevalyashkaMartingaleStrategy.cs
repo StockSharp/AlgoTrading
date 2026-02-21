@@ -44,32 +44,32 @@ public class NevalyashkaMartingaleStrategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
 			.SetDisplay("Base Volume", "Initial trade volume", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.1m)
 			.SetDisplay("Volume Multiplier", "Multiplier applied after losses", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 94m)
 			.SetDisplay("Take Profit Points", "Profit target in points", "Orders")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_moveProfitPoints = Param(nameof(MoveProfitPoints), 25m)
 			.SetDisplay("Move Profit Points", "Profit buffer before trailing activates", "Orders")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_moveStepPoints = Param(nameof(MoveStepPoints), 11m)
 			.SetDisplay("Move Step Points", "Extra buffer for trailing stop updates", "Orders")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 70m)
 			.SetDisplay("Stop Loss Points", "Initial protective distance", "Orders")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for trade management", "General");
@@ -159,9 +159,9 @@ public class NevalyashkaMartingaleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_equityPeak = Portfolio?.CurrentValue ?? 0m;
 		_plannedVolume = AdjustVolume(BaseVolume);

@@ -140,17 +140,17 @@ public class ObvTrafficLightsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastEma = new ExponentialMovingAverage { Length = FastLength };
-		_mediumEma = new ExponentialMovingAverage { Length = MediumLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		_fastEma = new EMA { Length = FastLength };
+		_mediumEma = new EMA { Length = MediumLength };
+		_slowEma = new EMA { Length = SlowLength };
 		_highest = new Highest { Length = DonchianLength };
 		_lowest = new Lowest { Length = DonchianLength };
-		_haOpenEma = new ExponentialMovingAverage { Length = Smoothing };
-		_haCloseEma = new ExponentialMovingAverage { Length = Smoothing };
+		_haOpenEma = new EMA { Length = Smoothing };
+		_haCloseEma = new EMA { Length = Smoothing };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

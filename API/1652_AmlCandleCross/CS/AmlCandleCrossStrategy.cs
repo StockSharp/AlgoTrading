@@ -53,17 +53,17 @@ public class AmlCandleCrossStrategy : Strategy
 
 	public AmlCandleCrossStrategy()
 	{
-		_fractal = Param(nameof(Fractal), 70).SetDisplay("Fractal").SetCanOptimize(true);
-		_lag = Param(nameof(Lag), 18).SetDisplay("Lag").SetCanOptimize(true);
-		_shift = Param(nameof(Shift), 0).SetDisplay("Shift").SetCanOptimize(true);
-		_useOpposite = Param(nameof(UseOpposite), true).SetDisplay("Use Opposite").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
+		_fractal = Param(nameof(Fractal), 70).SetDisplay("Fractal", "Fractal", "General");
+		_lag = Param(nameof(Lag), 18).SetDisplay("Lag", "Lag", "General");
+		_shift = Param(nameof(Shift), 0).SetDisplay("Shift", "Shift", "General");
+		_useOpposite = Param(nameof(UseOpposite), true).SetDisplay("Use Opposite", "Use Opposite", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var aml = new AdaptiveMarketLevel
 		{

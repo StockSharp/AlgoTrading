@@ -84,7 +84,7 @@ public class ForexFrausPortfolioStrategy : Strategy {
 	_wprPeriod = Param(nameof(WprPeriod), 360)
 					 .SetDisplay("WPR Period", "Williams %R calculation period",
 								 "Parameters")
-					 .SetCanOptimize(true)
+					 
 					 .SetOptimize(50, 500, 50);
 
 	_buyThreshold =
@@ -146,10 +146,10 @@ public class ForexFrausPortfolioStrategy : Strategy {
   }
 
   /// <inheritdoc />
-  protected override void OnStarted(DateTimeOffset time) {
-	base.OnStarted(time);
+  protected override void OnStarted2(DateTime time) {
+	base.OnStarted2(time);
 
-	StartProtection();
+	StartProtection(null, null);
 
 	var wpr = new WilliamsPercentRange { Length = WprPeriod };
 

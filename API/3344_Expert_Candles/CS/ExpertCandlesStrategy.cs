@@ -190,9 +190,9 @@ public class ExpertCandlesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = GetPipSize();
 		if (_pipSize <= 0m)
@@ -299,7 +299,7 @@ public class ExpertCandlesStrategy : Strategy
 			return;
 		}
 
-		var entryPrice = candle.Close - LimitFactor * rangeSize;
+		var entryPrice = candle.ClosePrice - LimitFactor * rangeSize;
 		var stopLoss = StopLossFactor > 0m ? entryPrice - StopLossFactor * rangeSize : (decimal?)null;
 		var takeProfit = TakeProfitFactor > 0m ? entryPrice + TakeProfitFactor * rangeSize : (decimal?)null;
 
@@ -343,7 +343,7 @@ public class ExpertCandlesStrategy : Strategy
 			return;
 		}
 
-		var entryPrice = candle.Close + LimitFactor * rangeSize;
+		var entryPrice = candle.ClosePrice + LimitFactor * rangeSize;
 		var stopLoss = StopLossFactor > 0m ? entryPrice + StopLossFactor * rangeSize : (decimal?)null;
 		var takeProfit = TakeProfitFactor > 0m ? entryPrice - TakeProfitFactor * rangeSize : (decimal?)null;
 
@@ -372,14 +372,14 @@ public class ExpertCandlesStrategy : Strategy
 
 		if (position > 0m)
 		{
-			if (_stopLossPrice is decimal sl && candle.Low <= sl)
+			if (_stopLossPrice is decimal sl && candle.LowPrice <= sl)
 			{
 				SellMarket(position);
 				ResetProtection();
 				return;
 			}
 
-			if (_takeProfitPrice is decimal tp && candle.High >= tp)
+			if (_takeProfitPrice is decimal tp && candle.HighPrice >= tp)
 			{
 				SellMarket(position);
 				ResetProtection();
@@ -387,14 +387,14 @@ public class ExpertCandlesStrategy : Strategy
 		}
 		else
 		{
-			if (_stopLossPrice is decimal sl && candle.High >= sl)
+			if (_stopLossPrice is decimal sl && candle.HighPrice >= sl)
 			{
 				BuyMarket(-position);
 				ResetProtection();
 				return;
 			}
 
-			if (_takeProfitPrice is decimal tp && candle.Low <= tp)
+			if (_takeProfitPrice is decimal tp && candle.LowPrice <= tp)
 			{
 				BuyMarket(-position);
 				ResetProtection();
@@ -430,10 +430,10 @@ public class ExpertCandlesStrategy : Strategy
 		}
 
 		var candle = _candles[index];
-		var open = candle.Open;
-		var high = candle.High;
-		var low = candle.Low;
-		var close = candle.Close;
+		var open = candle.OpenPrice;
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
+		var close = candle.ClosePrice;
 		var height = high - low;
 		if (height < threshold)
 		{

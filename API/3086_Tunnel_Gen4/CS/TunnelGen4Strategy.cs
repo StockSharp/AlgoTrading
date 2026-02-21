@@ -89,13 +89,13 @@ public class TunnelGen4Strategy : Strategy
 		_startVolume = Param(nameof(StartVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Start Volume", "Initial hedge volume", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 1m, 0.01m);
 
 		_stepPips = Param(nameof(StepPips), 50m)
 		.SetGreaterThanZero()
 		.SetDisplay("Step (pips)", "Distance between tunnel anchors", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 200m, 10m);
 	}
 
@@ -128,9 +128,9 @@ public class TunnelGen4Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipValue = CalculatePipValue();
 		_stepOffset = StepPips * _pipValue;

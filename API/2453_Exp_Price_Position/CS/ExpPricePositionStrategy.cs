@@ -140,9 +140,9 @@ public class ExpPricePositionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (UseTrailingStop)
 		{
@@ -154,7 +154,7 @@ public class ExpPricePositionStrategy : Strategy
 		var fast = new SmoothedMovingAverage { Length = FastPeriod };
 		var slow = new SmoothedMovingAverage { Length = SlowPeriod };
 		var medianFast = new SmoothedMovingAverage { Length = MedianFastPeriod };
-		var medianSlow = new SimpleMovingAverage { Length = MedianSlowPeriod };
+		var medianSlow = new SMA { Length = MedianSlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

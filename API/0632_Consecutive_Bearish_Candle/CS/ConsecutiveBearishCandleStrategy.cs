@@ -71,10 +71,10 @@ public class ConsecutiveBearishCandleStrategy : Strategy
 		_lookback = Param(nameof(Lookback), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Number of consecutive bearish candles to trigger entry", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_startTime = Param(nameof(StartTime), new DateTimeOffset(2014, 1, 1, 0, 0, 0, TimeSpan.Zero))
@@ -100,9 +100,9 @@ public class ConsecutiveBearishCandleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

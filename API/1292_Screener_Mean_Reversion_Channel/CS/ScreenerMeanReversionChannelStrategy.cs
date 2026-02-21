@@ -60,13 +60,13 @@ public class ScreenerMeanReversionChannelStrategy : Strategy
 		_length = Param(nameof(Length), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for mean and ATR", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 50);
 
 		_multiplier = Param(nameof(Multiplier), 2.415m)
 			.SetGreaterThanZero()
 			.SetDisplay("Channel Multiplier", "ATR multiplier for channel", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -80,11 +80,11 @@ public class ScreenerMeanReversionChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var mean = new SMA { Length = Length };
 		var atr = new AverageTrueRange { Length = Length };

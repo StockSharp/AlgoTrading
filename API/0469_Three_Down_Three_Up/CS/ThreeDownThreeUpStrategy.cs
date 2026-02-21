@@ -113,11 +113,11 @@ public class ThreeDownThreeUpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
-	_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+	_ema = new EMA { Length = EmaPeriod };
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription

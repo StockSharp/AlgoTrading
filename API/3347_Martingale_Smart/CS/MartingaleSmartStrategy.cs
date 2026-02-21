@@ -79,97 +79,97 @@ public class MartingaleSmartStrategy : Strategy
 
 		_moneyTakeProfit = Param(nameof(MoneyTakeProfit), 40m)
 		.SetDisplay("Money TP", "Floating profit threshold that triggers position closing.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_usePercentTakeProfit = Param(nameof(UsePercentTakeProfit), false)
 		.SetDisplay("Use Percent TP", "Close the position once the floating profit reaches the percentage of equity.", "Risk");
 
 		_percentTakeProfit = Param(nameof(PercentTakeProfit), 10m)
 		.SetDisplay("Percent TP", "Floating profit target expressed as percentage of the portfolio value.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_enableMoneyTrailing = Param(nameof(EnableMoneyTrailing), true)
 		.SetDisplay("Enable Money Trailing", "Activate money based trailing stop logic.", "Risk");
 
 		_moneyTrailingTarget = Param(nameof(MoneyTrailingTarget), 40m)
 		.SetDisplay("Money Trailing Target", "Floating profit required before trailing starts.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_moneyTrailingDrawdown = Param(nameof(MoneyTrailingDrawdown), 10m)
 		.SetDisplay("Money Trailing Drawdown", "Maximum profit give back allowed once trailing is active.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
 		.SetDisplay("Use Break-Even", "Move the stop loss to break-even after the configured distance.", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 10m)
 		.SetDisplay("Break-Even Trigger (pips)", "Profit in pips required before moving the stop.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 5m)
 		.SetDisplay("Break-Even Offset (pips)", "Extra distance in pips applied when moving the stop to break-even.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 2m)
 		.SetDisplay("Martingale Multiplier", "Multiplier applied to the next trade volume after a loss.", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_initialVolume = Param(nameof(InitialVolume), 0.01m)
 		.SetDisplay("Initial Volume", "Base trade volume for the first entry of a cycle.", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_useDoubleVolume = Param(nameof(UseDoubleVolume), false)
 		.SetDisplay("Use Double Volume", "If true the next order volume is multiplied, otherwise an increment is added.", "Money Management");
 
 		_lotIncrement = Param(nameof(LotIncrement), 0.01m)
 		.SetDisplay("Lot Increment", "Fixed lot increment applied after a loss when doubling is disabled.", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 30m)
 		.SetDisplay("Trailing Stop (pips)", "Pip distance used by the classic price trailing stop.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 5m)
 		.SetDisplay("Stop Loss (pips)", "Initial protective stop distance in pips.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 5m)
 		.SetDisplay("Take Profit (pips)", "Initial take profit distance in pips.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA Period", "Length of the fast moving average used in the primary filter.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA Period", "Length of the slow moving average used in the primary filter.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_envelopePeriod = Param(nameof(EnvelopePeriod), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("Envelope Period", "Moving average length for the envelope based secondary filter.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_envelopeDeviation = Param(nameof(EnvelopeDeviation), 0.2m)
 		.SetDisplay("Envelope Deviation", "Envelope width in percent above and below the moving average.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Fast", "Fast EMA length inside the MACD indicator.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Slow", "Slow EMA length inside the MACD indicator.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal", "Signal EMA length inside the MACD indicator.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Signal Candles", "Timeframe that drives the strategy decisions.", "General");
@@ -441,9 +441,9 @@ public class MartingaleSmartStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var security = Security;
 		var step = security?.PriceStep ?? security?.Step ?? 0m;

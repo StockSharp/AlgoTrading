@@ -184,18 +184,18 @@ public class ExpXFisherOrgV1Strategy : Strategy
 		_length = Param(nameof(Length), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Fisher Length", "Period used to search highs and lows", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 25, 2);
 
 		_smoothingLength = Param(nameof(SmoothingLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Length", "Period of the smoothing average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_phase = Param(nameof(Phase), 15)
 			.SetDisplay("Phase", "Phase argument for Jurik smoothing", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-50, 50, 5);
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), XfisherSmoothingMethods.Jjma)
@@ -226,9 +226,9 @@ public class ExpXFisherOrgV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Apply the configured order volume to StockSharp base class.
 		Volume = OrderVolume;
@@ -357,7 +357,7 @@ public class ExpXFisherOrgV1Strategy : Strategy
 /// Fisher transform with configurable smoothing and price source.
 /// Returns both the smoothed value and its one-bar delayed signal line.
 /// </summary>
-public sealed class XFisherOrgIndicator : Indicator<ICandleMessage>
+public sealed class XFisherOrgIndicator : BaseIndicator
 {
 	private readonly Highest _highest = new();
 	private readonly Lowest _lowest = new();
@@ -475,14 +475,14 @@ public sealed class XFisherOrgIndicator : Indicator<ICandleMessage>
 		// Map the original smoothing options to StockSharp equivalents.
 		return SmoothingMethod switch
 		{
-			XfisherSmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
-			XfisherSmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+			XfisherSmoothingMethods.Sma => new SMA { Length = length },
+			XfisherSmoothingMethods.Ema => new EMA { Length = length },
 			XfisherSmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
 			XfisherSmoothingMethods.Lwma => new WeightedMovingAverage { Length = length },
 			XfisherSmoothingMethods.Jjma or XfisherSmoothingMethods.Jurx or XfisherSmoothingMethods.T3 => CreateJurik(length),
 			XfisherSmoothingMethods.Vidya or XfisherSmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
-			XfisherSmoothingMethods.Parabolic => new ExponentialMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			XfisherSmoothingMethods.Parabolic => new EMA { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

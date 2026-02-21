@@ -79,22 +79,22 @@ public class DirectionalIndexKxDMIStrategy : Strategy
 	{
 		_diLength = Param(nameof(DiLength), 7)
 						.SetDisplay("DI Length", "Directional index calculation length", "Directional Index")
-						.SetCanOptimize(true)
+						
 						.SetOptimize(5, 20, 1);
 
 		_smoothLength = Param(nameof(SmoothLength), 3)
 							.SetDisplay("ADX Smoothing", "ADX smoothing length", "Directional Index")
-							.SetCanOptimize(true)
+							
 							.SetOptimize(1, 8, 1);
 
 		_step = Param(nameof(Step), 2)
 					.SetDisplay("Step", "Rounding step for directional index", "Directional Index")
-					.SetCanOptimize(true)
+					
 					.SetOptimize(1, 10, 1);
 
 		_keyLevel = Param(nameof(KeyLevel), 25)
 						.SetDisplay("Key Level", "Directional index threshold", "Directional Index")
-						.SetCanOptimize(true)
+						
 						.SetOptimize(10, 50, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -114,11 +114,11 @@ public class DirectionalIndexKxDMIStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_adx = new AverageDirectionalIndex { Length = DiLength, Smooth = SmoothLength };
+		_adx = new AverageDirectionalIndex { Length = DiLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(_adx, ProcessCandle).Start();
@@ -131,7 +131,7 @@ public class DirectionalIndexKxDMIStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)

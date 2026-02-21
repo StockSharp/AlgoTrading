@@ -88,11 +88,11 @@ public class TrendFollowingMovingAveragesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ma = new SimpleMovingAverage { Length = MaLength };
+		var ma = new SMA { Length = MaLength };
 		var highestMa = new Highest { Length = TrendPeriod };
 		var lowestMa = new Lowest { Length = TrendPeriod };
 		var highestClose = new Highest { Length = 280 };

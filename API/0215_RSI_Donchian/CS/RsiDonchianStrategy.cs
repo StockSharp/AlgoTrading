@@ -80,19 +80,19 @@ public class RsiDonchianStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 			
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Donchian Period", "Period for Donchian Channel calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 			
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop-loss %", "Stop-loss as percentage of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -121,9 +121,9 @@ public class RsiDonchianStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 // Initialize indicators
 		_rsi = new RelativeStrengthIndex

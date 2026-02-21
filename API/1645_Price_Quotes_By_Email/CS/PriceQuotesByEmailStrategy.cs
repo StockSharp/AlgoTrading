@@ -48,27 +48,27 @@ public class PriceQuotesByEmailStrategy : Strategy
 
 	    _emailFrom = Param(nameof(EmailFrom), "")
 	        .SetDisplay("Email From", "Sender address", "Email")
-	        .SetCanOptimize(false);
+	        ;
 
 	    _emailTo = Param(nameof(EmailTo), "")
 	        .SetDisplay("Email To", "Recipient address", "Email")
-	        .SetCanOptimize(false);
+	        ;
 
 	    _smtpHost = Param(nameof(SmtpHost), "")
 	        .SetDisplay("SMTP Host", "SMTP server", "Email")
-	        .SetCanOptimize(false);
+	        ;
 
 	    _smtpPort = Param(nameof(SmtpPort), 25)
 	        .SetDisplay("SMTP Port", "SMTP server port", "Email")
-	        .SetCanOptimize(false);
+	        ;
 
 	    _smtpUser = Param(nameof(SmtpUser), "")
 	        .SetDisplay("SMTP User", "SMTP login", "Email")
-	        .SetCanOptimize(false);
+	        ;
 
 	    _smtpPassword = Param(nameof(SmtpPassword), "")
 	        .SetDisplay("SMTP Password", "SMTP password", "Email")
-	        .SetCanOptimize(false);
+	        ;
 	}
 
 	/// <summary>
@@ -154,9 +154,9 @@ public class PriceQuotesByEmailStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 
 	    foreach (var (security, _) in GetWorkingSecurities())
 	    {

@@ -140,9 +140,9 @@ public class FortsCurrencyPowerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (MixSecurity == null || RtsSecurity == null || SiSecurity == null || EuSecurity == null)
 			throw new InvalidOperationException("All basket securities must be specified.");

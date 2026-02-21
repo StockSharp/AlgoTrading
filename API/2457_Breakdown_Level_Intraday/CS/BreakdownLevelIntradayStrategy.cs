@@ -93,7 +93,7 @@ public class BreakdownLevelIntradayStrategy : Strategy
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> new[] { (Security, DataType.Ticks), (Security, TimeSpan.FromDays(1).TimeFrame()) };
+		=> new[] { (Security, DataType.Ticks), (Security, TimeSpan.FromMinutes(5).TimeFrame()) };
 
 	/// <inheritdoc />
 	protected override void OnReseted()
@@ -107,12 +107,12 @@ public class BreakdownLevelIntradayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeTicks().Bind(ProcessTrade).Start();
-		SubscribeCandles(TimeSpan.FromDays(1).TimeFrame()).Bind(ProcessDaily).Start();
+		SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame()).Bind(ProcessDaily).Start();
 	}
 
 	private void ProcessDaily(ICandleMessage candle)

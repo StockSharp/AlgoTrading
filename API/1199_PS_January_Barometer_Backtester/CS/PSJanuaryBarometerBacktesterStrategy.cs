@@ -63,17 +63,17 @@ public class PSJanuaryBarometerBacktesterStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		yield return (Security, CandleType);
-		yield return (Security, TimeSpan.FromDays(1).TimeFrame());
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var monthly = SubscribeCandles(CandleType);
 		monthly.Bind(ProcessMonthly).Start();
 
-		var daily = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var daily = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		daily.Bind(ProcessDaily).Start();
 
 		var area = CreateChartArea();

@@ -187,7 +187,7 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
 		.SetDisplay("Enable Trailing", "Turn the trailing stop automation on or off.", "Trailing")
-		.SetCanOptimize(false);
+		;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 50m)
 		.SetNotNegative()
@@ -199,7 +199,7 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 
 		_enableMartingale = Param(nameof(EnableMartingale), true)
 		.SetDisplay("Enable Martingale", "Allow averaging orders using martingale sizing.", "Martingale")
-		.SetCanOptimize(false);
+		;
 
 		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 1.2m)
 		.SetGreaterThanZero()
@@ -215,15 +215,15 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 
 		_buyRequest = Param(nameof(BuyRequest), false)
 		.SetDisplay("Buy", "Set to true to send a market buy order.", "Manual Controls")
-		.SetCanOptimize(false);
+		;
 
 		_sellRequest = Param(nameof(SellRequest), false)
 		.SetDisplay("Sell", "Set to true to send a market sell order.", "Manual Controls")
-		.SetCanOptimize(false);
+		;
 
 		_martingaleRequest = Param(nameof(MartingaleRequest), false)
 		.SetDisplay("Martingale", "Set to true to evaluate and place an averaging order.", "Manual Controls")
-		.SetCanOptimize(false);
+		;
 	}
 
 	/// <inheritdoc />
@@ -254,9 +254,9 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 		throw new InvalidOperationException("Security is not specified.");

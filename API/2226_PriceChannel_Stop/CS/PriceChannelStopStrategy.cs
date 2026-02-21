@@ -102,12 +102,12 @@ public class PriceChannelStopStrategy : Strategy
 	{
 		_channelPeriod = Param(nameof(ChannelPeriod), 5)
 			.SetDisplay("Channel Period", "Period for Price Channel calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_risk = Param(nameof(Risk), 0.10m)
 			.SetDisplay("Risk", "Risk factor for stop levels", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.3m, 0.05m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -143,9 +143,9 @@ public class PriceChannelStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var donchian = new DonchianChannels { Length = ChannelPeriod };
 

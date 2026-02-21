@@ -63,12 +63,12 @@ public class XdpoCandleStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Length of the first EMA", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_slowLength = Param(nameof(SlowLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Length of the second EMA", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -90,16 +90,16 @@ public class XdpoCandleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

@@ -111,9 +111,9 @@ public class MoveStopLossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_point = Security?.PriceStep ?? 1m;
 
@@ -125,7 +125,7 @@ public class MoveStopLossStrategy : Strategy
 			.BindEx(_atr, _atrHighest, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue, IIndicatorValue atrHighestValue)

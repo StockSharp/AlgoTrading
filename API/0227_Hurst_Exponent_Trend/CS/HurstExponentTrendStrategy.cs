@@ -71,19 +71,19 @@ public class HurstExponentTrendStrategy : Strategy
 		_hurstPeriodParam = Param(nameof(HurstPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Hurst Period", "Period for Hurst exponent calculation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 25);
 
 		_maPeriodParam = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_hurstThresholdParam = Param(nameof(HurstThreshold), 0.55m)
 			.SetRange(0.1m, 0.9m)
 			.SetDisplay("Hurst Threshold", "Threshold value for trend identification", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 0.6m, 0.05m);
 
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -106,13 +106,13 @@ public class HurstExponentTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_hurst = new HurstExponent { Length = HurstPeriod };
-		_sma = new SimpleMovingAverage { Length = MaPeriod };
+		_sma = new SMA { Length = MaPeriod };
 
 		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);

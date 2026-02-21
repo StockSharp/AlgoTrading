@@ -77,7 +77,7 @@ public class ThreeBarReversalDownStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetRange(0.5m, 3.0m)
 			.SetDisplay("Stop Loss %", "Percentage above pattern's high for stop-loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_requireUptrend = Param(nameof(RequireUptrend), true)
 			.SetDisplay("Require Uptrend", "Whether to require a prior uptrend", "Pattern Parameters");
@@ -85,7 +85,7 @@ public class ThreeBarReversalDownStrategy : Strategy
 		_uptrendLength = Param(nameof(UptrendLength), 5)
 			.SetRange(3, 10)
 			.SetDisplay("Uptrend Length", "Number of bars to check for uptrend", "Pattern Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_lastThreeCandles = new Queue<ICandleMessage>(3);
 	}
@@ -106,9 +106,9 @@ public class ThreeBarReversalDownStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 // Create highest indicator for uptrend identification
 _highestIndicator = new Highest { Length = UptrendLength };

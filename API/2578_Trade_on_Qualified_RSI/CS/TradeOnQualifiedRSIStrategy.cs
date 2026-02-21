@@ -103,29 +103,29 @@ public class TradeOnQualifiedRSIStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Lookback period for RSI calculation.", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 2);
 
 		_upperThreshold = Param(nameof(UpperThreshold), 55m)
 			.SetDisplay("Upper Threshold", "RSI level used to qualify short signals.", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 70m, 1m);
 
 		_lowerThreshold = Param(nameof(LowerThreshold), 45m)
 			.SetDisplay("Lower Threshold", "RSI level used to qualify long signals.", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30m, 50m, 1m);
 
 		_countBars = Param(nameof(CountBars), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Qualification Bars", "How many previous RSI bars must stay beyond the threshold.", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss Points", "Stop loss distance expressed in price steps.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -155,9 +155,9 @@ public class TradeOnQualifiedRSIStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 

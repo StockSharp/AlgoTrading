@@ -239,31 +239,31 @@ public class AtRandomFullStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Base market order volume in lots", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 1m, 0.01m);
 
 		_maxPositions = Param(nameof(MaxPositions), 5)
 			.SetNotNegative()
 			.SetDisplay("Max Positions", "Maximum number of averaged entries per direction (0 = unlimited)", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetRange(0, 10);
 
 		_minStepPoints = Param(nameof(MinStepPoints), 150)
 			.SetNotNegative()
 			.SetDisplay("Min Step (pts)", "Minimal spacing between consecutive entries", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 300, 10);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pts)", "Protective stop distance in points", "Protection")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 600, 10);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 460)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pts)", "Profit target distance in points", "Protection")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 800, 10);
 
 		_trailingActivatePoints = Param(nameof(TrailingActivatePoints), 70)
@@ -332,9 +332,9 @@ public class AtRandomFullStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var seed = RandomSeed;
 		_random = seed == 0 ? new Random(Environment.TickCount) : new Random(seed);

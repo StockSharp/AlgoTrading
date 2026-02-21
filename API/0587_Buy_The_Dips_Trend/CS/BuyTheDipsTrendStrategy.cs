@@ -81,22 +81,22 @@ public class BuyTheDipsTrendStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 50)
 		.SetRange(10, 100)
 		.SetDisplay("Fast EMA", "Length of fast EMA", "Indicators")
-		.SetCanOptimize(true);
+		;
 		
 		_slowLength = Param(nameof(SlowLength), 200)
 		.SetRange(50, 400)
 		.SetDisplay("Slow EMA", "Length of slow EMA", "Indicators")
-		.SetCanOptimize(true);
+		;
 		
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.7m)
 		.SetRange(0.1m, 5m)
 		.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-		.SetCanOptimize(true);
+		;
 		
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 		.SetRange(0.5m, 10m)
 		.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-		.SetCanOptimize(true);
+		;
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -119,12 +119,12 @@ public class BuyTheDipsTrendStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		var fastEma = new ExponentialMovingAverage { Length = FastLength };
-		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		var fastEma = new EMA { Length = FastLength };
+		var slowEma = new EMA { Length = SlowLength };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription

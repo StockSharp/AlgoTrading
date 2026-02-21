@@ -204,12 +204,12 @@ public class SimpleTradingSystemStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average period", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_maShift = Param(nameof(MaShift), 4)
 			.SetNotNegative()
 			.SetDisplay("MA Shift", "Shift for comparisons", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_priceType = Param(nameof(PriceType), PriceTypes.Close)
 			.SetDisplay("Price Type", "Source price for MA", "Parameters");
@@ -255,9 +255,9 @@ public class SimpleTradingSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = CreateMa(MaType, MaPeriod);
 
@@ -286,7 +286,7 @@ public class SimpleTradingSystemStrategy : Strategy
 			return;
 
 		var price = GetPrice(candle);
-		var maValue = _ma!.Process(price, candle.OpenTime, true).ToDecimal();
+		var maValue = _ma!.Process(new DecimalIndicatorValue(_ma, price, candle.OpenTime)).ToDecimal();
 
 		Shift(_maBuffer, maValue);
 		Shift(_closeBuffer, candle.ClosePrice);
@@ -348,13 +348,13 @@ public class SimpleTradingSystemStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
-			MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.SMA => new SMA { Length = length },
+			MovingAverageTypes.EMA => new EMA { Length = length },
 			MovingAverageTypes.DEMA => new DoubleExponentialMovingAverage { Length = length },
 			MovingAverageTypes.TEMA => new TripleExponentialMovingAverage { Length = length },
 			MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
 			MovingAverageTypes.VWMA => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 }

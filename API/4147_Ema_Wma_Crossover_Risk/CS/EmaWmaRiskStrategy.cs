@@ -42,31 +42,31 @@ public EmaWmaRiskStrategy()
 		_emaPeriod = Param(nameof(EmaPeriod), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period for the exponential moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 2);
 
 		_wmaPeriod = Param(nameof(WmaPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("WMA Period", "Period for the weighted moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 150m, 10m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Profit target distance expressed in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 150m, 10m);
 
 		_riskPercent = Param(nameof(RiskPercent), 10m)
 			.SetNotNegative()
 			.SetDisplay("Risk %", "Capital percentage risked per trade", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 20m, 1m);
 
 		_orderVolume = Param(nameof(OrderVolume), 0m)
@@ -156,11 +156,11 @@ public EmaWmaRiskStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_ema = new EMA { Length = EmaPeriod };
 		_wma = new WeightedMovingAverage { Length = WmaPeriod };
 
 		var stopLossUnit = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Step) : null;

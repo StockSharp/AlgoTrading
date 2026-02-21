@@ -105,32 +105,32 @@ public class FearzonePanelStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 22)
 		.SetGreaterThanZero()
 		.SetDisplay("Lookback Period", "Lookback for FZ calculations", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 200)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Period", "Bollinger period for FZ bands", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_impulsePeriod = Param(nameof(ImpulsePeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Impulse Period", "Lookback for impulse drop", "Strategy")
-		.SetCanOptimize(true);
+		;
 
 		_impulsePercent = Param(nameof(ImpulsePercent), 0.1m)
 		.SetDisplay("Impulse Percent", "Required drop ratio", "Strategy")
-		.SetCanOptimize(true);
+		;
 
 		_maPeriod = Param(nameof(MaPeriod), 200)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Filter MA length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochThreshold = Param(nameof(StochThreshold), 30m)
 		.SetDisplay("Stochastic Threshold", "Oversold level", "Strategy")
-		.SetCanOptimize(true);
+		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -154,15 +154,15 @@ public class FearzonePanelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = LookbackPeriod };
-		_lookbackSma = new SimpleMovingAverage { Length = LookbackPeriod };
+		_lookbackSma = new SMA { Length = LookbackPeriod };
 		_fz1Bands = new BollingerBands { Length = BollingerPeriod, Width = 1m };
 		_fz2Bands = new BollingerBands { Length = BollingerPeriod, Width = 1m };
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
+		_ma = new SMA { Length = MaPeriod };
 		_roc = new RateOfChange { Length = ImpulsePeriod };
 		_stochastic = new StochasticOscillator
 		{

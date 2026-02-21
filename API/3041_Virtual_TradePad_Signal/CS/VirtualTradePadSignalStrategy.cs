@@ -261,12 +261,12 @@ public class VirtualTradePadSignalStrategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA", "Length of the fast moving average", "Trend")
-		.SetCanOptimize(true);
+		;
 
 		_slowMaLength = Param(nameof(SlowMaLength), 16)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA", "Length of the slow moving average", "Trend")
-		.SetCanOptimize(true);
+		;
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 		.SetGreaterThanZero()
@@ -356,11 +356,11 @@ public class VirtualTradePadSignalStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Senkou B", "Ichimoku Senkou span B length", "Ichimoku");
 
-		_aoShortPeriod = Param(nameof(AoShortPeriod), 5)
+		_aoShortMa = { Length = Param }(nameof(AoShortPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("AO Short", "Awesome oscillator short period", "Momentum");
 
-		_aoLongPeriod = Param(nameof(AoLongPeriod), 34)
+		_aoLongMa = { Length = Param }(nameof(AoLongPeriod), 34)
 		.SetGreaterThanZero()
 		.SetDisplay("AO Long", "Awesome oscillator long period", "Momentum");
 
@@ -396,8 +396,8 @@ public class VirtualTradePadSignalStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = new SimpleMovingAverage { Length = FastMaLength };
-		_slowMa = new SimpleMovingAverage { Length = SlowMaLength };
+		_fastMa = new SMA { Length = FastMaLength };
+		_slowMa = new SMA { Length = SlowMaLength };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
@@ -409,8 +409,7 @@ public class VirtualTradePadSignalStrategy : Strategy
 		};
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			K = { Length = StochasticSlowing },
 			D = { Length = StochasticDLength }
 		};
@@ -419,12 +418,12 @@ public class VirtualTradePadSignalStrategy : Strategy
 		_cci = new CommodityChannelIndex { Length = CciLength };
 		_williams = new WilliamsR { Length = WilliamsLength };
 		_bollinger = new BollingerBands { Length = BollingerLength, Width = BollingerDeviation };
-		_envelopeMa = new SimpleMovingAverage { Length = EnvelopeLength };
+		_envelopeMa = new SMA { Length = EnvelopeLength };
 		_alligatorJaw = new SmoothedMovingAverage { Length = AlligatorJawLength };
 		_alligatorTeeth = new SmoothedMovingAverage { Length = AlligatorTeethLength };
 		_alligatorLips = new SmoothedMovingAverage { Length = AlligatorLipsLength };
 		_ama = new KaufmanAdaptiveMovingAverage { Length = AmaLength, FastSCPeriod = AmaFastPeriod, SlowSCPeriod = AmaSlowPeriod };
-		_awesome = new AwesomeOscillator { ShortPeriod = AoShortPeriod, LongPeriod = AoLongPeriod };
+		_awesome = new AwesomeOscillator { ShortMa = { Length = AoShortPeriod }, LongMa = { Length = AoLongPeriod } };
 		_ichimoku = new Ichimoku
 		{
 			Tenkan = { Length = IchimokuTenkanLength },

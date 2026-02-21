@@ -45,19 +45,19 @@ public class DreamBotStrategy : Strategy
 		_forcePeriod = Param(nameof(ForcePeriod), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("Force Period", "Smoothing length for the Force Index indicator.", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 460)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit (points)", "Take profit distance expressed in MetaTrader points.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(200, 700, 20);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 520)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (points)", "Stop loss distance expressed in MetaTrader points.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(200, 700, 20);
 
 		_bullsThreshold = Param(nameof(BullsThreshold), 1.056m)
@@ -72,13 +72,13 @@ public class DreamBotStrategy : Strategy
 		_trailingStartPoints = Param(nameof(TrailingStartPoints), 290)
 		.SetNotNegative()
 		.SetDisplay("Trailing Distance (points)", "Distance maintained between price and trailing stop.", "Trailing")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100, 400, 10);
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 120)
 		.SetNotNegative()
 		.SetDisplay("Trailing Trigger (points)", "Minimum profit before the trailing stop activates.", "Trailing")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60, 300, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -186,9 +186,9 @@ public class DreamBotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStepPoints > TrailingStartPoints)
 		{
@@ -214,7 +214,7 @@ public class DreamBotStrategy : Strategy
 		}
 		else
 		{
-			StartProtection();
+			StartProtection(null, null);
 		}
 
 		var area = CreateChartArea();

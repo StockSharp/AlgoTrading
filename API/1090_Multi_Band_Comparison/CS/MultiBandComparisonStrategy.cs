@@ -94,11 +94,11 @@ public class MultiBandComparisonStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = Length };
+		var sma = new SMA { Length = Length };
 		var std = new StandardDeviation { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -115,7 +115,7 @@ public class MultiBandComparisonStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal stdValue)

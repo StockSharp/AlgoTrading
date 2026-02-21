@@ -91,9 +91,9 @@ public class ICaiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_icai = new ICaiIndicator { Length = Length };
 
@@ -154,7 +154,7 @@ public class ICaiStrategy : Strategy
 		}
 	}
 
-	private class ICaiIndicator : Indicator<ICandleMessage>
+	private class ICaiIndicator : BaseIndicator
 	{
 		public int Length { get; set; } = 12;
 
@@ -167,7 +167,7 @@ public class ICaiStrategy : Strategy
 			var candle = input.GetValue<ICandleMessage>();
 			var price = candle.ClosePrice;
 
-			_ma ??= new SimpleMovingAverage { Length = Length };
+			_ma ??= new SMA { Length = Length };
 			_std ??= new StandardDeviation { Length = Length };
 
 			var time = input.Time;

@@ -175,9 +175,9 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 		_alignedBaseVolume = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = CreateMovingAverage(MaMethod, MaPeriod);
 
@@ -224,7 +224,7 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 
 		var isFinal = candle.State == CandleStates.Finished;
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
-		var maValue = _ma.Process(medianPrice, candle.OpenTime, isFinal);
+		var maValue = _ma.Process(new DecimalIndicatorValue(_ma, medianPrice, candle.OpenTime));
 
 		if (!isFinal || !maValue.IsFinal)
 		{
@@ -488,11 +488,11 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageKinds.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageKinds.Simple => new SMA { Length = length },
+			MovingAverageKinds.Exponential => new EMA { Length = length },
 			MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageKinds.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 }

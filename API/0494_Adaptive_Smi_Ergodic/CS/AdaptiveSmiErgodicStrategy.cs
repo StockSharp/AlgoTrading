@@ -92,19 +92,19 @@ public class AdaptiveSmiErgodicStrategy : Strategy
 		_longLength = Param(nameof(LongLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Length", "Long smoothing length", "TSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_shortLength = Param(nameof(ShortLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Length", "Short smoothing length", "TSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 15, 1);
 
 		_signalLength = Param(nameof(SignalLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "Signal EMA length", "TSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 15, 1);
 
 		_oversoldThreshold = Param(nameof(OversoldThreshold), -0.4m)
@@ -128,9 +128,9 @@ public class AdaptiveSmiErgodicStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tsi = new TrueStrengthIndex
 		{
@@ -138,7 +138,7 @@ public class AdaptiveSmiErgodicStrategy : Strategy
 			LongLength = LongLength
 		};
 
-		_signal = new ExponentialMovingAverage { Length = SignalLength };
+		_signal = new EMA { Length = SignalLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

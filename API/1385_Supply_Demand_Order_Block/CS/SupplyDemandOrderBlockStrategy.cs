@@ -70,17 +70,17 @@ public class SupplyDemandOrderBlockStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 20)
 			.SetDisplay("Length", "Lookback period for zones", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
 			.SetDisplay("SL Ticks", "Stop loss in ticks", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500, 2000, 500);
 
 		_trailingStartTicks = Param(nameof(TrailingStartTicks), 2000)
 			.SetDisplay("Trail Start", "Trailing start in ticks", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1000, 4000, 500);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -103,13 +103,13 @@ public class SupplyDemandOrderBlockStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var donchian = new DonchianChannel { Length = Length };
-		var ema = new ExponentialMovingAverage { Length = 50 };
-		var volumeSma = new SimpleMovingAverage { Length = 20 };
+		var ema = new EMA { Length = 50 };
+		var volumeSma = new SMA { Length = 20 };
 
 		var subscription = SubscribeCandles(CandleType);
 

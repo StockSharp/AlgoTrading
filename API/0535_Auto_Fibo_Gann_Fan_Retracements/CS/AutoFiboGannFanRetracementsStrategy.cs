@@ -37,7 +37,7 @@ public class AutoFiboGannFanRetracementsStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Bars for swing detection", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 	}
 
@@ -60,9 +60,9 @@ public class AutoFiboGannFanRetracementsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var highest = new Highest { Length = LookbackPeriod };
 		var lowest = new Lowest { Length = LookbackPeriod };

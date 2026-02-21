@@ -71,14 +71,14 @@ public class SymbolSwapPanelStrategy : Strategy
 	{
 		_targetSecurityId = Param(nameof(TargetSecurityId), string.Empty)
 			.SetDisplay("Target Security", "Security ID that will be monitored after the swap", "Panel")
-			.SetCanOptimize(false);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle aggregation used to refresh panel metrics", "Panel");
 
 		_swapRequested = Param(nameof(SwapRequested), false)
 			.SetDisplay("Swap Request", "Set to true to apply the target security", "Panel")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <inheritdoc />
@@ -108,9 +108,9 @@ public class SymbolSwapPanelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_activeSecurity = Security ?? ResolveTargetSecurity(TargetSecurityId);
 

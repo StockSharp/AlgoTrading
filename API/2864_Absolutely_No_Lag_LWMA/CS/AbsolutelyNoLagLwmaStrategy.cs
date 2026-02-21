@@ -133,7 +133,7 @@ public class AbsolutelyNoLagLwmaStrategy : Strategy
 		_length = Param(nameof(Length), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("LWMA Length", "Period of the double LWMA", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_priceType = Param(nameof(PriceType), AppliedPriceTypes.Close)
@@ -142,7 +142,7 @@ public class AbsolutelyNoLagLwmaStrategy : Strategy
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Bar", "Number of finished candles back for signals", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 3, 1);
 
 		_enableBuyEntries = Param(nameof(EnableBuyEntries), true)
@@ -178,9 +178,9 @@ public class AbsolutelyNoLagLwmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_primaryWma = new WeightedMovingAverage { Length = Length };
 	_secondaryWma = new WeightedMovingAverage { Length = Length };
@@ -199,7 +199,7 @@ public class AbsolutelyNoLagLwmaStrategy : Strategy
 	DrawOwnTrades(area);
 	}
 
-	StartProtection();
+	StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -209,8 +209,8 @@ public class AbsolutelyNoLagLwmaStrategy : Strategy
 
 	var price = GetPrice(candle);
 
-	var primaryValue = _primaryWma.Process(price, candle.OpenTime, true);
-	var secondaryValue = _secondaryWma.Process(primaryValue.ToDecimal(), candle.OpenTime, true);
+	var primaryValue = _primaryWma.Process(new DecimalIndicatorValue(_primaryWma, price, candle.OpenTime));
+	var secondaryValue = _secondaryWma.Process(new DecimalIndicatorValue(_secondaryWma, primaryValue.ToDecimal(), candle.OpenTime));
 
 	if (!_secondaryWma.IsFormed)
 	return;

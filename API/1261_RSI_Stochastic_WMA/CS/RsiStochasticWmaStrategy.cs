@@ -80,22 +80,22 @@ public class RsiStochasticWmaStrategy : Strategy
 	{
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetDisplay("RSI Length", "RSI calculation length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 		
 		_stochK = Param(nameof(StochK), 14)
 		.SetDisplay("Stochastic %K", "Stochastic %K period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 		
 		_stochD = Param(nameof(StochD), 3)
 		.SetDisplay("Stochastic %D", "Stochastic %D period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 		
 		_wmaLength = Param(nameof(WmaLength), 21)
 		.SetDisplay("WMA Length", "Weighted moving average length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 50, 5);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -116,9 +116,9 @@ public class RsiStochasticWmaStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var wma = new WeightedMovingAverage { Length = WmaLength };
@@ -139,7 +139,7 @@ public class RsiStochasticWmaStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue wmaValue, IIndicatorValue stochValue)

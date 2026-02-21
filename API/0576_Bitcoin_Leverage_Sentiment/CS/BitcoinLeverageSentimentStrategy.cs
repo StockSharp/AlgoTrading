@@ -71,7 +71,7 @@ public class BitcoinLeverageSentimentStrategy : Strategy
 		_thresholdShortExit = Param(nameof(ShortExitThreshold), 1m)
 		.SetDisplay("Short Exit", "Z-Score threshold for short exit", "Thresholds");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for longs/shorts data", "Data");
 	}
 	
@@ -91,14 +91,14 @@ public class BitcoinLeverageSentimentStrategy : Strategy
 		_prevZ = 0m;
 	}
 	
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (LongsSecurity == null || ShortsSecurity == null)
 		throw new InvalidOperationException("Both longs and shorts securities must be set.");
 		
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_sma = new SimpleMovingAverage { Length = ZScoreLength };
+		_sma = new SMA { Length = ZScoreLength };
 		_stdDev = new StandardDeviation { Length = ZScoreLength };
 		
 		SubscribeCandles(CandleType, true, LongsSecurity)
@@ -145,8 +145,8 @@ public class BitcoinLeverageSentimentStrategy : Strategy
 		
 		var ratio = _lastLong / (_lastLong + _lastShort);
 		
-		var mean = _sma.Process(ratio, candle.ServerTime, true).ToDecimal();
-		var std = _stdDev.Process(ratio, candle.ServerTime, true).ToDecimal();
+		var mean = _sma.Process(new DecimalIndicatorValue(_sma, ratio, candle.ServerTime)).ToDecimal();
+		var std = _stdDev.Process(new DecimalIndicatorValue(_stdDev, ratio, candle.ServerTime)).ToDecimal();
 		
 		if (!_sma.IsFormed || !_stdDev.IsFormed || std == 0m)
 		return;

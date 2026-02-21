@@ -144,22 +144,22 @@ public class MultiTimeframeMacdStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12)
 						  .SetGreaterThanZero()
 						  .SetDisplay("Fast Length", "Fast length for MACD", "MACD")
-						  .SetCanOptimize(true);
+						  ;
 
 		_slowLength = Param(nameof(SlowLength), 26)
 						  .SetGreaterThanZero()
 						  .SetDisplay("Slow Length", "Slow length for MACD", "MACD")
-						  .SetCanOptimize(true);
+						  ;
 
 		_signalLength = Param(nameof(SignalLength), 9)
 							.SetGreaterThanZero()
 							.SetDisplay("Signal Length", "Signal length for MACD", "MACD")
-							.SetCanOptimize(true);
+							;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 						  .SetDisplay("Candle Type", "Working timeframe", "General");
 
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 								.SetDisplay("Higher TF", "Higher timeframe", "General");
 
 		_showCurrentTf = Param(nameof(ShowCurrentTimeframe), true)
@@ -197,11 +197,11 @@ public class MultiTimeframeMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_currentMacd = CreateMacd();
 		_higherMacd = CreateMacd();
@@ -222,8 +222,8 @@ public class MultiTimeframeMacdStrategy : Strategy
 
 	private MovingAverageConvergenceDivergence CreateMacd() => new()
 	{
-		ShortPeriod = FastLength,
-		LongPeriod = SlowLength,
+		ShortMa = { Length = FastLength },
+		LongMa = { Length = SlowLength },
 		SignalPeriod = SignalLength
 	};
 

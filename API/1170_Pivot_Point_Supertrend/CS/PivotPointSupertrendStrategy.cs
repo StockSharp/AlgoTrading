@@ -85,17 +85,17 @@ public PivotPointSupertrendStrategy()
 {
 _pivotPeriod = Param(nameof(PivotPeriod), 2)
 .SetDisplay("Pivot Period", "Pivot point period", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(1, 5, 1);
 
 _atrFactor = Param(nameof(AtrFactor), 3m)
 .SetDisplay("ATR Factor", "Multiplier for ATR bands", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(1m, 5m, 0.5m);
 
 _atrPeriod = Param(nameof(AtrPeriod), 10)
 .SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 20, 1);
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -129,9 +129,9 @@ _lastClose = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _bufLen = PivotPeriod * 2 + 1;
 _highBuffer = new decimal[_bufLen];

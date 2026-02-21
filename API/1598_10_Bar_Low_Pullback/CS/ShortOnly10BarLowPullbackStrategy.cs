@@ -105,18 +105,18 @@ public class ShortOnly10BarLowPullbackStrategy : Strategy
 
 		_lowestPeriod = Param(nameof(LowestPeriod), 10)
 			.SetDisplay("Lowest Low Period", "Lookback for lowest low", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_ibsThreshold = Param(nameof(IbsThreshold), 0.85m)
 			.SetDisplay("IBS Threshold", "Internal bar strength threshold", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_useEmaFilter = Param(nameof(UseEmaFilter), true)
 			.SetDisplay("Use EMA Filter", "Enable trend filter", "Trend Filter");
 
 		_emaPeriod = Param(nameof(EmaPeriod), 200)
 			.SetDisplay("EMA Period", "EMA period for filter", "Trend Filter")
-			.SetCanOptimize(true);
+			;
 
 		_startTime = Param(nameof(StartTime), new DateTimeOffset(new DateTime(2014,1,1), TimeSpan.Zero))
 			.SetDisplay("Start Time", "Start of trading window", "Time");
@@ -125,13 +125,13 @@ public class ShortOnly10BarLowPullbackStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_lowest = new Lowest { Length = LowestPeriod };
 		if (UseEmaFilter)
-			_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+			_ema = new EMA { Length = EmaPeriod };
 
 		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)
@@ -147,7 +147,7 @@ public class ShortOnly10BarLowPullbackStrategy : Strategy
 			return;
 
 		var prevLowest = _prevLowest;
-		var lowest = _lowest.Process(candle.LowPrice).ToDecimal();
+		var lowest = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice).ToDecimal();
 		_prevLowest = lowest;
 
 		var prevLow = _prevLow;
@@ -163,7 +163,7 @@ public class ShortOnly10BarLowPullbackStrategy : Strategy
 
 		if (UseEmaFilter)
 		{
-			var ma = _ema.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
+			var ma = _ema.Process(candle.ClosePrice, candle.OpenTime)).ToDecimal();
 			shortCondition &= candle.ClosePrice < ma;
 		}
 

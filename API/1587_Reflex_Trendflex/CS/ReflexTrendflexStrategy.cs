@@ -54,9 +54,9 @@ _prevTrend = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var reflex = new EMA { Length = ReflexLength };
 var trend = new EMA { Length = TrendflexLength };

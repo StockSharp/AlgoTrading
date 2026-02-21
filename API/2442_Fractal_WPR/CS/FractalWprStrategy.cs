@@ -96,7 +96,7 @@ public class FractalWprStrategy : Strategy
 		_wprPeriod = Param(nameof(WprPeriod), 30)
 			.SetDisplay("WPR Period", "Williams %R calculation period", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_highLevel = Param(nameof(HighLevel), -30m)
 			.SetDisplay("High Level", "Overbought threshold", "Levels");
@@ -138,9 +138,9 @@ public class FractalWprStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_wpr = new WilliamsR { Length = WprPeriod };
 

@@ -87,7 +87,7 @@ public class OutOfTheNoiseIntradayWithVwapStrategy : Strategy
 	_period = Param(nameof(Period), 14)
 	.SetGreaterThanZero()
 	.SetDisplay("Period", "Number of days for average move", "General")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(10, 30, 1);
 	
 	_exitAtEod = Param(nameof(ExitAtEndOfSession), true)
@@ -116,7 +116,7 @@ public class OutOfTheNoiseIntradayWithVwapStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 	yield return (Security, CandleType);
-	yield return (Security, TimeSpan.FromDays(1).TimeFrame());
+	yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 	
 	/// <inheritdoc />
@@ -139,9 +139,9 @@ public class OutOfTheNoiseIntradayWithVwapStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 	
 	_vwap = new VWAP();
 	_dailyStd = new StandardDeviation { Length = Period };
@@ -149,7 +149,7 @@ public class OutOfTheNoiseIntradayWithVwapStrategy : Strategy
 	var candleSub = SubscribeCandles(CandleType);
 	candleSub.Bind(_vwap, ProcessCandle).Start();
 	
-	var dailySub = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+	var dailySub = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 	dailySub.Bind(ProcessDailyCandle).Start();
 	
 	var area = CreateChartArea();

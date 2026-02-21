@@ -109,7 +109,7 @@ public class PreviousPeriodLevelsXAlertsStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 3)
 		.SetDisplay("SMA Length", "Length of SMA for cross alerts", "Indicator")
 		.SetRange(1, 100)
-		.SetCanOptimize(true);
+		;
 		
 		_useOpen = Param(nameof(UseOpen), true)
 		.SetDisplay("Use Open", "Track crosses of previous open level", "Levels");
@@ -140,11 +140,11 @@ public class PreviousPeriodLevelsXAlertsStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		var sma = new SimpleMovingAverage { Length = SmaLength };
+		var sma = new SMA { Length = SmaLength };
 		
 		var baseSub = SubscribeCandles(CandleType);
 		baseSub
@@ -156,7 +156,7 @@ public class PreviousPeriodLevelsXAlertsStrategy : Strategy
 		.Bind(ProcessReferenceCandle)
 		.Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessReferenceCandle(ICandleMessage candle)

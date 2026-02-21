@@ -49,7 +49,7 @@ public class SecwentaMultiBarSignalsStrategy : Strategy
 		_bullishBarCount = Param(nameof(BullishBarCount), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Bull Bars", "Number of bullish bars required", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_useSellSignals = Param(nameof(UseSellSignals), false)
@@ -58,7 +58,7 @@ public class SecwentaMultiBarSignalsStrategy : Strategy
 		_bearishBarCount = Param(nameof(BearishBarCount), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Bear Bars", "Number of bearish bars required", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -116,9 +116,9 @@ public class SecwentaMultiBarSignalsStrategy : Strategy
 		_maxBufferSize = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_directions.Clear();
 		_bullCounter = 0;
@@ -128,7 +128,7 @@ public class SecwentaMultiBarSignalsStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

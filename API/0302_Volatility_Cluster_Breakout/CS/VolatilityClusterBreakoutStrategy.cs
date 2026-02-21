@@ -78,25 +78,25 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 		_priceAvgPeriod = Param(nameof(PriceAvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Average Period", "Period for calculating price average and standard deviation", "Strategy Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for calculating Average True Range", "Strategy Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("StdDev Multiplier", "Multiplier for standard deviation to determine breakout levels", "Strategy Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_stopMultiplier = Param(nameof(StopMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop ATR Multiplier", "ATR multiplier for stop-loss", "Strategy Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -116,14 +116,14 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_atrAvg = new SimpleMovingAverage { Length = AtrPeriod };
+		_atrAvg = new SMA { Length = AtrPeriod };
 
 		// Create indicators
-		var sma = new SimpleMovingAverage { Length = PriceAvgPeriod };
+		var sma = new SMA { Length = PriceAvgPeriod };
 		var stdDev = new StandardDeviation { Length = PriceAvgPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
@@ -159,7 +159,7 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var atrAvgVal = _atrAvg.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished);
+		var atrAvgVal = _atrAvg.Process(new DecimalIndicatorValue(_atrAvg, atrValue, candle.ServerTime));
 
 		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())

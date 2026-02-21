@@ -211,12 +211,12 @@ public class AdvancedSupertrendStrategy : Strategy
 	{
 		_atrLength = Param(nameof(AtrLength), 6)
 			.SetDisplay("ATR Length", "ATR period", "Supertrend Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_multiplier = Param(nameof(Multiplier), 3m)
 			.SetDisplay("Multiplier", "Supertrend multiplier", "Supertrend Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_useRsiFilter = Param(nameof(UseRsiFilter), false)
@@ -224,7 +224,7 @@ public class AdvancedSupertrendStrategy : Strategy
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetDisplay("RSI Length", "RSI period", "RSI Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 1);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
@@ -238,7 +238,7 @@ public class AdvancedSupertrendStrategy : Strategy
 
 		_maLength = Param(nameof(MaLength), 50)
 			.SetDisplay("MA Length", "MA period", "MA Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_maType = Param(nameof(MaType), MaTypes.Weighted)
@@ -258,7 +258,7 @@ public class AdvancedSupertrendStrategy : Strategy
 
 		_useTrendStrength = Param(nameof(UseTrendStrength), false)
 			.SetDisplay("Use Trend Strength", "Enable trend strength filter", "Advanced")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(false, true, true);
 
 		_minTrendBars = Param(nameof(MinTrendBars), 2)
@@ -292,18 +292,18 @@ public class AdvancedSupertrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		_ma = MaType switch
 		{
-			MaTypes.Exponential => new ExponentialMovingAverage { Length = MaLength },
+			MaTypes.Exponential => new EMA { Length = MaLength },
 			MaTypes.Weighted => new WeightedMovingAverage { Length = MaLength },
-			_ => new SimpleMovingAverage { Length = MaLength }
+			_ => new SMA { Length = MaLength }
 		};
 
 		var subscription = SubscribeCandles(CandleType);

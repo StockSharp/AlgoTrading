@@ -164,7 +164,7 @@ public class EaVishalEurgbpH4Strategy : Strategy
 			.SetDisplay("Stochastic %K", "%K lookback period", "Indicators")
 			.SetGreaterThanZero();
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 			.SetDisplay("Stochastic %D", "%D smoothing period", "Indicators")
 			.SetGreaterThanZero();
 
@@ -215,20 +215,20 @@ public class EaVishalEurgbpH4Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = GetPipSize();
 
 		var stochastic = new StochasticOscillator
 		{
 			KPeriod = StochasticKPeriod,
-			DPeriod = StochasticDPeriod,
+			D = {  K = { Length = StochasticDPeriod } },
 			Smooth = StochasticSlowing
 		};
 
-		var basis = new SimpleMovingAverage
+		var basis = new SMA
 		{
 			Length = EnvelopePeriod
 		};

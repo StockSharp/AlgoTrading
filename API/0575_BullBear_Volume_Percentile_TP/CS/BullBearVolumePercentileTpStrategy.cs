@@ -193,14 +193,14 @@ public class BullBearVolumePercentileTpStrategy : Strategy
 		_prevZScore = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_volSma = new SimpleMovingAverage { Length = VolPeriod };
-		_bbpMean = new SimpleMovingAverage { Length = ZLength };
+		_volSma = new SMA { Length = VolPeriod };
+		_bbpMean = new SMA { Length = ZLength };
 		_bbpStd = new StandardDeviation { Length = ZLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -224,13 +224,13 @@ public class BullBearVolumePercentileTpStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		var emaValue = _ema.Process(candle.ClosePrice, candle.ServerTime, true).ToDecimal();
+		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, candle.ServerTime)).ToDecimal();
 		var bullPower = candle.HighPrice - emaValue;
 		var bearPower = candle.LowPrice - emaValue;
 		var bbp = bullPower + bearPower;
 
-		var bbpMean = _bbpMean.Process(bbp, candle.ServerTime, true).ToDecimal();
-		var bbpStd = _bbpStd.Process(bbp, candle.ServerTime, true).ToDecimal();
+		var bbpMean = _bbpMean.Process(new DecimalIndicatorValue(_bbpMean, bbp, candle.ServerTime)).ToDecimal();
+		var bbpStd = _bbpStd.Process(new DecimalIndicatorValue(_bbpStd, bbp, candle.ServerTime)).ToDecimal();
 		if (!_bbpStd.IsFormed || bbpStd == 0)
 		{
 			_prevZScore = 0m;
@@ -240,7 +240,7 @@ public class BullBearVolumePercentileTpStrategy : Strategy
 		var zscore = (bbp - bbpMean) / bbpStd;
 
 		var volume = candle.TotalVolume ?? 0m;
-		var volMa = _volSma.Process(volume, candle.ServerTime, true).ToDecimal();
+		var volMa = _volSma.Process(new DecimalIndicatorValue(_volSma, volume, candle.ServerTime)).ToDecimal();
 		var volMult = volMa == 0 ? 0 : volume / volMa;
 
 		_priceValues.Enqueue(candle.ClosePrice);

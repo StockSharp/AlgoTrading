@@ -99,28 +99,28 @@ public class XmaIchimokuChannelStrategy : Strategy
 			Param(nameof(UpPeriod), 3)
 				.SetGreaterThanZero()
 				.SetDisplay("Up Period", "Lookback for high prices", "Channel")
-				.SetCanOptimize(true);
+				;
 
 		_downPeriod =
 			Param(nameof(DownPeriod), 3)
 				.SetGreaterThanZero()
 				.SetDisplay("Down Period", "Lookback for low prices", "Channel")
-				.SetCanOptimize(true);
+				;
 
 		_maLength = Param(nameof(MaLength), 100)
 						.SetGreaterThanZero()
 						.SetDisplay("MA Length", "Smoothing length", "Channel")
-						.SetCanOptimize(true);
+						;
 
 		_upPercent =
 			Param(nameof(UpPercent), 1m)
 				.SetDisplay("Up Percent", "Upper band offset in %", "Channel")
-				.SetCanOptimize(true);
+				;
 
 		_downPercent =
 			Param(nameof(DownPercent), 1m)
 				.SetDisplay("Down Percent", "Lower band offset in %", "Channel")
-				.SetCanOptimize(true);
+				;
 
 		_candleType =
 			Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -135,13 +135,13 @@ public class XmaIchimokuChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = UpPeriod };
 		_lowest = new Lowest { Length = DownPeriod };
-		_sma = new SimpleMovingAverage { Length = MaLength };
+		_sma = new SMA { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_highest, _lowest, ProcessCandle).Start();

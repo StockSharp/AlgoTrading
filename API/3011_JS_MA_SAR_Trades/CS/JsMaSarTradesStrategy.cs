@@ -39,8 +39,8 @@ public class JsMaSarTradesStrategy : Strategy
 	private readonly StrategyParam<int> _zigZagBackstep;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _fastMa;
-	private LengthIndicator<decimal> _slowMa;
+	private DecimalLengthIndicator _fastMa;
+	private DecimalLengthIndicator _slowMa;
 	private ParabolicSar _sar;
 	private Highest _highest;
 	private Lowest _lowest;
@@ -250,11 +250,11 @@ public class JsMaSarTradesStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 		.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 		.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk");
@@ -334,9 +334,9 @@ public class JsMaSarTradesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 		throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");
@@ -438,10 +438,10 @@ public class JsMaSarTradesStrategy : Strategy
 		}
 	}
 
-	private decimal? ProcessMovingAverage(LengthIndicator<decimal> indicator, decimal input, DateTimeOffset time, List<decimal> history, int shift)
+	private decimal? ProcessMovingAverage(DecimalLengthIndicator indicator, decimal input, DateTimeOffset time, List<decimal> history, int shift)
 	{
 		// Feed the moving average with the chosen price and accumulate history for shifts.
-		var value = indicator.Process(input, time, true);
+		var value = indicator.Process(new DecimalIndicatorValue(indicator, input, time.UtcDateTime));
 		if (!value.IsFinal)
 			return null;
 
@@ -660,12 +660,12 @@ public class JsMaSarTradesStrategy : Strategy
 		_entryPrice = null;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SMA { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SmoothedMovingAverage { Length = length },
 		};

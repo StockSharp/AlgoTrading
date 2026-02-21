@@ -114,32 +114,32 @@ public class MacdRsiStrategy : Strategy
 		_macdFast = Param(nameof(MacdFast), 12)
 					.SetRange(5, 30)
 					.SetDisplay("MACD Fast", "Fast period for MACD calculation", "MACD Settings")
-					.SetCanOptimize(true);
+					;
 					
 		_macdSlow = Param(nameof(MacdSlow), 26)
 					.SetRange(10, 50)
 					.SetDisplay("MACD Slow", "Slow period for MACD calculation", "MACD Settings")
-					.SetCanOptimize(true);
+					;
 					
 		_macdSignal = Param(nameof(MacdSignal), 9)
 					  .SetRange(3, 20)
 					  .SetDisplay("MACD Signal", "Signal period for MACD calculation", "MACD Settings")
-					  .SetCanOptimize(true);
+					  ;
 					  
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 					 .SetRange(5, 30)
 					 .SetDisplay("RSI Period", "Period for RSI calculation", "RSI Settings")
-					 .SetCanOptimize(true);
+					 ;
 					 
 		_rsiOversold = Param(nameof(RsiOversold), 30)
 					   .SetRange(10, 40)
 					   .SetDisplay("RSI Oversold", "RSI oversold level", "RSI Settings")
-					   .SetCanOptimize(true);
+					   ;
 					   
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
 						 .SetRange(60, 90)
 						 .SetDisplay("RSI Overbought", "RSI overbought level", "RSI Settings")
-						 .SetCanOptimize(true);
+						 ;
 						 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 						   .SetRange(0.5m, 5m)

@@ -216,19 +216,19 @@ public class ChoSmoothedEaStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast period for Chaikin oscillator", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow period for Chaikin oscillator", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_maPeriod = Param(nameof(MaPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal MA Period", "Period of smoothing moving average", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
@@ -294,14 +294,14 @@ public class ChoSmoothedEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var cho = new ChaikinOscillator
 		{
-			ShortPeriod = FastPeriod,
-			LongPeriod = SlowPeriod
+			ShortMa = { Length = FastPeriod },
+			LongMa = { Length = SlowPeriod }
 		};
 
 		var signalMa = new MovingAverage
@@ -335,7 +335,7 @@ public class ChoSmoothedEaStrategy : Strategy
 			return;
 		}
 
-		if (UseTimeControl && !IsWithinTradingWindow(candle.Time))
+		if (UseTimeControl && !IsWithinTradingWindow(candle.ServerTime))
 		{
 			_previousCho = choValue;
 			_previousSignal = signalValue;

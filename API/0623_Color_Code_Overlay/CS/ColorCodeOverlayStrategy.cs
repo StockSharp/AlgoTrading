@@ -117,9 +117,9 @@ public class ColorCodeOverlayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var pip = Security?.PriceStep ?? 1m;
 		StartProtection(
@@ -127,7 +127,7 @@ public class ColorCodeOverlayStrategy : Strategy
 			stopLoss: new Unit(StopLossPips * pip, UnitTypes.Absolute));
 
 		var sub = SubscribeCandles(CandleType);
-		sub.ForEach(Process).Start();
+		sub.Bind(Process).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

@@ -118,8 +118,8 @@ public class InwCoinMartingaleStrategy : Strategy {
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
-	  base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+	  base.OnStarted2(time);
 
 	  var macd = new MovingAverageConvergenceDivergenceSignal {
 	    Macd =
@@ -131,10 +131,10 @@ public class InwCoinMartingaleStrategy : Strategy {
 	  };
 
 	  var rsi = new RelativeStrengthIndex { Length = 14 };
-	  var stoch = new StochasticOscillator { Length = 14, K = { Length = 3 },
+	  var stoch = new StochasticOscillator { K = { Length = 14 }, K = { Length = 3 },
 					   D = { Length = 3 } };
 
-	  var ema = new ExponentialMovingAverage { Length = 10 };
+	  var ema = new EMA { Length = 10 };
 	  var atr = new AverageTrueRange { Length = 14 };
 
 	  var subscription = SubscribeCandles(CandleType);

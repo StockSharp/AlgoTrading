@@ -74,31 +74,31 @@ public class GraalEmaMomentumStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Period", "Length of the fast EMA calculated on close prices", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Period", "Length of the slow EMA calculated on open prices", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 1);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Length of the momentum oscillator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_momentumFilter = Param(nameof(MomentumFilter), 0.1m)
 			.SetRange(0m, 5m)
 			.SetDisplay("Momentum Filter", "Minimum momentum deviation from neutral level", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 200m)
 			.SetRange(0m, 5000m)
 			.SetDisplay("Take Profit (points)", "Distance to the take-profit level expressed in price points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 500m, 50m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -117,12 +117,12 @@ public class GraalEmaMomentumStrategy : Strategy
 		_takeProfitTarget = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastCloseEma = new ExponentialMovingAverage { Length = FastPeriod };
-		_slowOpenEma = new ExponentialMovingAverage { Length = SlowPeriod };
+		_fastCloseEma = new EMA { Length = FastPeriod };
+		_slowOpenEma = new EMA { Length = SlowPeriod };
 		_momentum = new Momentum { Length = MomentumPeriod };
 
 		// Subscribe to the configured candle stream and bind indicators.
@@ -131,7 +131,7 @@ public class GraalEmaMomentumStrategy : Strategy
 			.Bind(_fastCloseEma, _momentum, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastCloseEma, decimal momentumValue)

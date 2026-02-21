@@ -271,9 +271,9 @@ public class TunnelMethodStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips == 0)
 		{
@@ -291,9 +291,9 @@ public class TunnelMethodStrategy : Strategy
 		_secondBuffer = new decimal?[Math.Max(SecondMaShift, 0) + 2];
 		_thirdBuffer = new decimal?[Math.Max(ThirdMaShift, 0) + 2];
 
-		_firstMa = new SimpleMovingAverage { Length = FirstMaPeriod };
-		_secondMa = new SimpleMovingAverage { Length = SecondMaPeriod };
-		_thirdMa = new SimpleMovingAverage { Length = ThirdMaPeriod };
+		_firstMa = new SMA { Length = FirstMaPeriod };
+		_secondMa = new SMA { Length = SecondMaPeriod };
+		_thirdMa = new SMA { Length = ThirdMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

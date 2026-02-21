@@ -84,22 +84,22 @@ public class CaiStandardDeviationStrategy : Strategy
 	{
 		_maLength = Param(nameof(MaLength), 12)
 		.SetDisplay("MA Length", "Moving average length", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 50, 5);
 
 		_stdDevPeriod = Param(nameof(StdDevPeriod), 9)
 		.SetDisplay("StdDev Period", "Standard deviation period", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 50, 5);
 
 		_openMultiplier = Param(nameof(OpenMultiplier), 2.5m)
 		.SetDisplay("Open Multiplier", "StdDev multiplier for entries", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 
 		_closeMultiplier = Param(nameof(CloseMultiplier), 1.5m)
 		.SetDisplay("Close Multiplier", "StdDev multiplier for exits", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -107,12 +107,12 @@ public class CaiStandardDeviationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = MaLength };
+		var sma = new SMA { Length = MaLength };
 		var stdDev = new StandardDeviation { Length = StdDevPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

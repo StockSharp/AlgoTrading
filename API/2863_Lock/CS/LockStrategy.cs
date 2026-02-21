@@ -101,26 +101,26 @@ public class LockStrategy : Strategy
 		_lotSize = Param(nameof(LotSize), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Size", "Base order size for each hedged leg", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
 			.SetDisplay("Take Profit (pips)", "Profit target distance for every position in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_lotExponential = Param(nameof(LotExponential), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Multiplier", "Scaling factor applied after both legs open successfully", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_excessBalanceOverEquity = Param(nameof(ExcessBalanceOverEquity), 3000m)
 			.SetNotNegative()
 			.SetDisplay("Balance - Equity Threshold", "Maximum allowed floating loss before locking profit", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_minProfit = Param(nameof(MinProfit), 500m)
 			.SetNotNegative()
 			.SetDisplay("Minimum Profit", "Required equity gain before harvesting profits", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to drive the strategy logic", "General");
@@ -133,9 +133,9 @@ public class LockStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_legs.Clear();
 		_currentVolume = LotSize;

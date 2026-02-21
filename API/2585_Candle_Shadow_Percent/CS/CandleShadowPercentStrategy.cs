@@ -145,22 +145,22 @@ public class CandleShadowPercentStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 		
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 		
 		_riskPercent = Param(nameof(RiskPercent), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk %", "Risk percentage per trade", "Risk")
-			.SetCanOptimize(true);
+			;
 		
 		_minBodyPips = Param(nameof(MinBodyPips), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Body", "Minimum candle body size in pips", "Pattern")
-			.SetCanOptimize(true);
+			;
 		
 		_enableTopShadow = Param(nameof(EnableTopShadow), true)
 			.SetDisplay("Use Top Shadow", "Enable sell signals from upper wicks", "Pattern");
@@ -168,7 +168,7 @@ public class CandleShadowPercentStrategy : Strategy
 		_topShadowPercent = Param(nameof(TopShadowPercent), 30m)
 			.SetNotNegative()
 			.SetDisplay("Top Shadow %", "Upper wick percentage threshold", "Pattern")
-			.SetCanOptimize(true);
+			;
 		
 		_topShadowIsMinimum = Param(nameof(TopShadowIsMinimum), true)
 			.SetDisplay("Top Shadow Uses Min", "If true the threshold is treated as a minimum", "Pattern");
@@ -179,7 +179,7 @@ public class CandleShadowPercentStrategy : Strategy
 		_lowerShadowPercent = Param(nameof(LowerShadowPercent), 80m)
 			.SetNotNegative()
 			.SetDisplay("Lower Shadow %", "Lower wick percentage threshold", "Pattern")
-			.SetCanOptimize(true);
+			;
 		
 		_lowerShadowIsMinimum = Param(nameof(LowerShadowIsMinimum), true)
 			.SetDisplay("Lower Shadow Uses Min", "If true the threshold is treated as a minimum", "Pattern");
@@ -207,9 +207,9 @@ public class CandleShadowPercentStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription

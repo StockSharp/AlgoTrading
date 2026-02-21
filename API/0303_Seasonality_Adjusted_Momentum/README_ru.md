@@ -18,7 +18,7 @@
   - `MomentumPeriod = 14`
   - `SeasonalityThreshold = 0.5m`
   - `StopLossPercent = 2.0m`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Фильтры**:
   - Категория: Следование за трендом
   - Направление: Оба

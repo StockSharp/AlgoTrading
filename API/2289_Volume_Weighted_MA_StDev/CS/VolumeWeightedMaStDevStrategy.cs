@@ -44,11 +44,11 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 
 		_k1 = Param(nameof(K1), 1.5m)
 			.SetDisplay("K1", "First deviation multiplier", "Signal")
-			.SetCanOptimize(true);
+			;
 
 		_k2 = Param(nameof(K2), 2.5m)
 			.SetDisplay("K2", "Second deviation multiplier", "Signal")
-			.SetCanOptimize(true);
+			;
 	}
 
 	public DataType CandleType
@@ -92,9 +92,9 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_vwma = new VolumeWeightedMovingAverage { Length = VwmaLength };
 		_stdDev = new StandardDeviation { Length = StdPeriod };
@@ -104,7 +104,7 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 			.Bind(_vwma, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -133,7 +133,7 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 		}
 
 		var diff = vwmaValue - _prevVwma.Value;
-		var stdValue = _stdDev.Process(diff, candle.ServerTime, true).ToNullableDecimal();
+		var stdValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, diff, candle.ServerTime)).ToNullableDecimal();
 
 		if (stdValue is null || !_stdDev.IsFormed)
 		{

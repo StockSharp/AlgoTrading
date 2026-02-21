@@ -201,12 +201,12 @@ public class BoilerplateConfigurableStrategy : Strategy
 		_drawdownBreached = false;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_maFast = new SimpleMovingAverage { Length = Length };
-		_maSlow = new SimpleMovingAverage { Length = Length };
+		_maFast = new SMA { Length = Length };
+		_maSlow = new SMA { Length = Length };
 		_bbWide = new BollingerBands { Length = Length, Width = WideMultiplier };
 		_bbNarrow = new BollingerBands { Length = Length, Width = NarrowMultiplier };
 		_atr = new AverageTrueRange { Length = AtrLength };
@@ -257,10 +257,10 @@ public class BoilerplateConfigurableStrategy : Strategy
 			return;
 
 		var hlc3 = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
-		var bbWideVal = (BollingerBandsValue)_bbWide.Process(hlc3, candle.OpenTime, true);
-		var bbNarrowVal = (BollingerBandsValue)_bbNarrow.Process(hlc3, candle.OpenTime, true);
-		var fastVal = _maFast.Process(candle.ClosePrice, candle.OpenTime, true).GetValue<decimal>();
-		var slowVal = _maSlow.Process(candle.ClosePrice, candle.OpenTime, true).GetValue<decimal>();
+		var bbWideVal = (BollingerBandsValue)_bbWide.Process(new DecimalIndicatorValue(_bbWide, hlc3, candle.OpenTime));
+		var bbNarrowVal = (BollingerBandsValue)_bbNarrow.Process(new DecimalIndicatorValue(_bbNarrow, hlc3, candle.OpenTime));
+		var fastVal = _maFast.Process(new DecimalIndicatorValue(_maFast, candle.ClosePrice, candle.OpenTime)).GetValue<decimal>();
+		var slowVal = _maSlow.Process(new DecimalIndicatorValue(_maSlow, candle.ClosePrice, candle.OpenTime)).GetValue<decimal>();
 		var atrVal = _atr.Process(candle);
 
 		if (!_bbWide.IsFormed || !_bbNarrow.IsFormed || !_maFast.IsFormed || !_maSlow.IsFormed || !_atr.IsFormed)

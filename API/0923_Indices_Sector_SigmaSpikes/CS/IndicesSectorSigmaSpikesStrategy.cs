@@ -190,7 +190,7 @@ public class IndicesSectorSigmaSpikesStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Lookback Period", "Number of returns used for sigma calculation", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 10);
 
 		_returnPeriod = Param(nameof(ReturnPeriod), 20)
@@ -201,7 +201,7 @@ public class IndicesSectorSigmaSpikesStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Sigma Threshold", "Threshold for significant moves", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_index2 = Param<Security>(nameof(Index2), null).SetDisplay("Index 02", "Second sector index", "Universe");
@@ -240,9 +240,9 @@ public class IndicesSectorSigmaSpikesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		AddSecurity(Security);
 		AddSecurity(Index2);

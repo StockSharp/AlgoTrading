@@ -72,19 +72,19 @@ public class VolumeSpikeStrategy : Strategy
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_volAvgPeriod = Param(nameof(VolAvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Average Period", "Period for Average Volume calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_volumeSpikeMultiplier = Param(nameof(VolumeSpikeMultiplier), 2.0m)
 			.SetRange(1.0m, decimal.MaxValue)
 			.SetDisplay("Volume Spike Multiplier", "Minimum volume increase multiplier to generate signal", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -106,13 +106,13 @@ public class VolumeSpikeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		var ma = new SimpleMovingAverage { Length = MAPeriod };
-		var volumeMA = new SimpleMovingAverage { Length = VolAvgPeriod };
+		var ma = new SMA { Length = MAPeriod };
+		var volumeMA = new SMA { Length = VolAvgPeriod };
 
 		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);

@@ -138,29 +138,29 @@ public class SessionBreakoutStrategy : Strategy
 
 		_europeSessionStartHour = Param(nameof(EuropeSessionStartHour), 6)
 		.SetDisplay("EU start hour", "Hour when the European session begins", "Sessions")
-		.SetCanOptimize(true);
+		;
 
 		_europeSessionEndHour = Param(nameof(EuropeSessionEndHour), 12)
 		.SetDisplay("EU end hour", "Hour when the European session ends", "Sessions")
-		.SetCanOptimize(true);
+		;
 
 		_usSessionStartHour = Param(nameof(UsSessionStartHour), 12)
 		.SetDisplay("US start hour", "Hour when the U.S. session begins", "Sessions")
-		.SetCanOptimize(true);
+		;
 
 		_usSessionEndHour = Param(nameof(UsSessionEndHour), 16)
 		.SetDisplay("US end hour", "Hour when the U.S. session ends", "Sessions")
-		.SetCanOptimize(true);
+		;
 
 		_smallSessionThresholdPips = Param(nameof(SmallSessionThresholdPips), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Small session (pips)", "Maximum European range to allow trades", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_breakoutBufferPips = Param(nameof(BreakoutBufferPips), 3)
 		.SetNotNegative()
 		.SetDisplay("Breakout buffer (pips)", "Additional buffer above or below the range", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_tradeOnMonday = Param(nameof(TradeOnMonday), false)
 		.SetDisplay("Trade on Monday", "Allow entries on Mondays", "Filters");
@@ -168,12 +168,12 @@ public class SessionBreakoutStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 15)
 		.SetGreaterThanZero()
 		.SetDisplay("Take profit (pips)", "Take-profit distance", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop loss (pips)", "Stop-loss distance", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle type", "Timeframe used for the session analysis", "General");
@@ -201,9 +201,9 @@ public class SessionBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = Security?.PriceStep ?? 0.0001m;
 

@@ -91,13 +91,13 @@ public class HeikinAshiV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
-		_fastEma = new ExponentialMovingAverage { Length = EmaPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_fastEma = new EMA { Length = EmaPeriod };
+		_slowEma = new EMA { Length = SlowEmaPeriod };
 
 		if (UseMacdFilter)
 		{

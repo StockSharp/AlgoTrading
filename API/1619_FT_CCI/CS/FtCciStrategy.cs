@@ -102,32 +102,32 @@ public class FtCciStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetDisplay("Trade Volume", "Lot size used for entries", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetDisplay("CCI Period", "Averaging period for the CCI indicator", "Indicator")
 			.SetRange(5, 100)
-			.SetCanOptimize(true);
+			;
 
 		_upperThreshold = Param(nameof(UpperThreshold), 210m)
 			.SetDisplay("CCI Upper Threshold", "CCI level that triggers short entries", "Indicator")
 			.SetRange(100m, 350m)
-			.SetCanOptimize(true);
+			;
 
 		_lowerThreshold = Param(nameof(LowerThreshold), -210m)
 			.SetDisplay("CCI Lower Threshold", "CCI level that triggers long entries", "Indicator")
 			.SetRange(-350m, -100m)
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in pips", "Risk")
 			.SetRange(0m, 500m)
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in pips", "Risk")
 			.SetRange(0m, 500m)
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
@@ -148,9 +148,9 @@ public class FtCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Synchronize the Strategy volume with the configured parameter.
 		Volume = TradeVolume;

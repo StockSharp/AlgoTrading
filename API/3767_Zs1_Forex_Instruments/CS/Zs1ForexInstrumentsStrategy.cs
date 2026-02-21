@@ -113,7 +113,7 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		_ordersSpacePips = Param(nameof(OrdersSpacePips), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Orders Space (pips)", "Distance between successive grid levels.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 150m, 10m);
 
 		_pkPips = Param(nameof(PkPips), 10)
@@ -123,7 +123,7 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		_initialVolume = Param(nameof(InitialVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Base volume for the hedge orders.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 1m, 0.01m);
 		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
 			.SetDisplay("Volume tolerance", "Allowed difference when comparing cumulative volumes.", "Trading")
@@ -160,13 +160,13 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipValue = CalculatePipValue();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		SubscribeLevel1()
 			.Bind(ProcessLevel1)

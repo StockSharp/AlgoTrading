@@ -52,7 +52,7 @@ public class EquityPercentLockStrategy : Strategy
 		_equityPercentFromBalance = Param(nameof(EquityPercentFromBalance), 1.2m)
 			.SetRange(1m, 3m)
 			.SetDisplay("Equity Multiple", "Equity multiple required before closing all positions", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used to trigger equity checks", "General");
@@ -68,9 +68,9 @@ public class EquityPercentLockStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Portfolio == null)
 			throw new InvalidOperationException("Portfolio cannot be null.");

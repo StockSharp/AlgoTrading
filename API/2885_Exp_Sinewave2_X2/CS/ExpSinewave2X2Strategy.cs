@@ -58,12 +58,12 @@ private readonly StrategyParam<int> _cycleMinFormed;
 		_alphaHigh = Param(nameof(AlphaHigh), 0.07m)
 		.SetGreaterThanZero()
 		.SetDisplay("Higher Alpha", "Alpha for higher timeframe Sinewave2", "Higher TF")
-		.SetCanOptimize(true);
+		;
 
 		_alphaLow = Param(nameof(AlphaLow), 0.07m)
 		.SetGreaterThanZero()
 		.SetDisplay("Lower Alpha", "Alpha for lower timeframe Sinewave2", "Lower TF")
-		.SetCanOptimize(true);
+		;
 
 		_signalBarHigh = Param(nameof(SignalBarHigh), 1)
 		.SetNotNegative()
@@ -310,9 +310,9 @@ private readonly StrategyParam<int> _cycleMinFormed;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_trendDirection = 0;
 		_higherValues.Clear();
@@ -530,7 +530,7 @@ private readonly StrategyParam<int> _cycleMinFormed;
 /// <summary>
 /// Indicator producing Sinewave2 sine and lead-sine values.
 /// </summary>
-public sealed class Sinewave2Indicator : BaseIndicator<decimal>
+public sealed class Sinewave2Indicator : BaseIndicator
 {
 	private int _bufferLength = 100;
 	private int _minFormed = 7;
@@ -754,7 +754,7 @@ public sealed class Sinewave2Value : ComplexIndicatorValue
 /// <summary>
 /// Adaptive cycle period indicator used inside the Sinewave2 calculation.
 /// </summary>
-public sealed class CyclePeriodIndicator : BaseIndicator<decimal>
+public sealed class CyclePeriodIndicator : BaseIndicator
 {
 	private int _bufferLength = 7;
 	private int _medianLength = 5;

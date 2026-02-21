@@ -76,15 +76,15 @@ public class DaydreamStrategy : Strategy
 	{
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetDisplay("Order Volume", "Volume for new market entries", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_channelPeriod = Param(nameof(ChannelPeriod), 25)
 			.SetDisplay("Channel Period", "Donchian channel lookback", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 15m)
 			.SetDisplay("Take Profit (pips)", "Virtual take profit distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for Donchian channel", "Data");
@@ -93,9 +93,9 @@ public class DaydreamStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 

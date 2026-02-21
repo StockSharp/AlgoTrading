@@ -186,7 +186,7 @@ public class CandleStopSystemTmPlusStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Size of each executed order", "General")
-		.SetCanOptimize(true);
+		;
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)
 		.SetDisplay("Enable Long", "Allow long entries", "Signals");
@@ -206,32 +206,32 @@ public class CandleStopSystemTmPlusStrategy : Strategy
 		_maxPositionMinutes = Param(nameof(MaxPositionMinutes), 1920)
 		.SetNotNegative()
 		.SetDisplay("Max Position Minutes", "Maximum holding time in minutes", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_upTrailPeriods = Param(nameof(UpTrailPeriods), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Upper Lookback", "Bars for upper CandleStop channel", "Channels")
-		.SetCanOptimize(true);
+		;
 
 		_upTrailShift = Param(nameof(UpTrailShift), 5)
 		.SetNotNegative()
 		.SetDisplay("Upper Shift", "Offset for upper channel evaluation", "Channels")
-		.SetCanOptimize(true);
+		;
 
 		_downTrailPeriods = Param(nameof(DownTrailPeriods), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Lower Lookback", "Bars for lower CandleStop channel", "Channels")
-		.SetCanOptimize(true);
+		;
 
 		_downTrailShift = Param(nameof(DownTrailShift), 5)
 		.SetNotNegative()
 		.SetDisplay("Lower Shift", "Offset for lower channel evaluation", "Channels")
-		.SetCanOptimize(true);
+		;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Index of the bar used for entries", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 		.SetNotNegative()
@@ -265,9 +265,9 @@ public class CandleStopSystemTmPlusStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_upHighest = new Highest { Length = UpTrailPeriods };
 		_downLowest = new Lowest { Length = DownTrailPeriods };
@@ -295,7 +295,7 @@ public class CandleStopSystemTmPlusStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var upperRaw = _upHighest.Process(candle).ToDecimal();
+		var upperRaw = _upHighest.Process(new DecimalIndicatorValue(_upHighest, candle).ToDecimal();
 		var lowerRaw = _downLowest.Process(candle).ToDecimal();
 
 		if (!_upHighest.IsFormed || !_downLowest.IsFormed)
@@ -303,7 +303,7 @@ public class CandleStopSystemTmPlusStrategy : Strategy
 
 		if (_upShiftIndicator != null)
 		{
-			var shifted = _upShiftIndicator.Process(upperRaw, candle.OpenTime, true);
+			var shifted = _upShiftIndicator.Process(upperRaw, candle.OpenTime));
 			if (!_upShiftIndicator.IsFormed)
 				return;
 
@@ -312,7 +312,7 @@ public class CandleStopSystemTmPlusStrategy : Strategy
 
 		if (_downShiftIndicator != null)
 		{
-			var shifted = _downShiftIndicator.Process(lowerRaw, candle.OpenTime, true);
+			var shifted = _downShiftIndicator.Process(new DecimalIndicatorValue(_downShiftIndicator, lowerRaw, candle.OpenTime));
 			if (!_downShiftIndicator.IsFormed)
 				return;
 

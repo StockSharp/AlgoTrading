@@ -46,19 +46,19 @@ public class ExpMaRoundingChannelStrategy : Strategy
 
 		_maLength = Param(nameof(MaLength), 12)
 			.SetDisplay("MA Period", "Length of moving average", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 12)
 			.SetDisplay("ATR Period", "ATR period for channel width", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_atrFactor = Param(nameof(AtrFactor), 1m)
 			.SetDisplay("ATR Factor", "Multiplier for ATR channel", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_maRoundTicks = Param(nameof(MaRoundTicks), 500)
 			.SetDisplay("MA Rounding (ticks)", "Rounding step in ticks", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_allowBuy = Param(nameof(AllowBuy), true)
 			.SetDisplay("Allow Buy", "Permission to open long positions", "Trading");
@@ -74,11 +74,11 @@ public class ExpMaRoundingChannelStrategy : Strategy
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
 			.SetDisplay("Stop Loss (ticks)", "Stop loss distance in ticks", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 2000)
 			.SetDisplay("Take Profit (ticks)", "Take profit distance in ticks", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -187,11 +187,11 @@ public class ExpMaRoundingChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = MaLength };
+		var ema = new EMA { Length = MaLength };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

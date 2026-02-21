@@ -37,12 +37,12 @@ public class CloseBasketPairsStrategy : Strategy
 
 		_profitThreshold = Param(nameof(ProfitThreshold), 0m)
 			.SetDisplay("Profit Threshold", "Close matching positions when their floating profit is above this value", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 500m, 10m);
 
 		_lossThreshold = Param(nameof(LossThreshold), 0m)
 			.SetDisplay("Loss Threshold", "Close matching positions when their floating loss is below this (negative) value", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-500m, -10m, 10m);
 	}
 
@@ -93,9 +93,9 @@ public class CloseBasketPairsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_basketPairs.Clear();
 

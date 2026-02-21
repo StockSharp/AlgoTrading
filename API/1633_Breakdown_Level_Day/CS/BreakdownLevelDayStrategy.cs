@@ -155,9 +155,9 @@ public class BreakdownLevelDayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tickSize = Security?.PriceStep ?? 1m;
 
@@ -172,7 +172,7 @@ public class BreakdownLevelDayStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var date = candle.OpenTime.UtcDateTime.Date;
+		var date = candle.OpenTime.Date;
 
 		if (date != _currentDay)
 		{
@@ -194,7 +194,7 @@ public class BreakdownLevelDayStrategy : Strategy
 
 	private void ResetDay(ICandleMessage candle)
 	{
-		_currentDay = candle.OpenTime.UtcDateTime.Date;
+		_currentDay = candle.OpenTime.Date;
 		_dayHigh = candle.HighPrice;
 		_dayLow = candle.LowPrice;
 		_ordersPlaced = false;

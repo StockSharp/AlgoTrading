@@ -1,6 +1,8 @@
 	using System;
 	using System.Collections.Generic;
-	
+
+	using Ecng.Common;
+
 	using StockSharp.Algo.Indicators;
 	using StockSharp.Algo.Strategies;
 	using StockSharp.BusinessEntities;
@@ -20,7 +22,7 @@ public class BtcDcaAhr999Strategy : Strategy
 	private readonly StrategyParam<DateTimeOffset> _startDate;
 	private readonly StrategyParam<DateTimeOffset> _endDate;
 
-	private readonly SMA _logSma = new();
+	private readonly SimpleMovingAverage _logSma = new();
 	private long _barIndex;
 	private decimal _totalInvested;
 	private decimal _totalQuantity;
@@ -85,7 +87,7 @@ public class BtcDcaAhr999Strategy : Strategy
 	/// </summary>
 	public BtcDcaAhr999Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_usdInvest1 = Param(nameof(UsdInvest1), 100m)
@@ -114,9 +116,9 @@ public class BtcDcaAhr999Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_logSma.Length = Length;
 		_barIndex = 0;
@@ -127,7 +129,7 @@ public class BtcDcaAhr999Strategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -146,7 +148,7 @@ public class BtcDcaAhr999Strategy : Strategy
 
 		var scaleClose = candle.ClosePrice / 10000m;
 		var logClose = (decimal)Math.Log((double)scaleClose);
-		var logAvg = _logSma.Process(logClose);
+		var logAvg = _logSma.Process(new DecimalIndicatorValue(_logSma, logClose, candle.ServerTime)).ToDecimal();
 		if (!_logSma.IsFormed)
 		{
 			_lastPrice = candle.ClosePrice;

@@ -95,17 +95,17 @@ public class AdamAndEveStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma5 = new SimpleMovingAverage { Length = 5 };
-		var sma7 = new SimpleMovingAverage { Length = 7 };
-		var sma9 = new SimpleMovingAverage { Length = 9 };
-		var sma10 = new SimpleMovingAverage { Length = 10 };
-		var sma12 = new SimpleMovingAverage { Length = 12 };
-		var sma14 = new SimpleMovingAverage { Length = 14 };
-		var sma20 = new SimpleMovingAverage { Length = 20 };
+		var sma5 = new SMA { Length = 5 };
+		var sma7 = new SMA { Length = 7 };
+		var sma9 = new SMA { Length = 9 };
+		var sma10 = new SMA { Length = 10 };
+		var sma12 = new SMA { Length = 12 };
+		var sma14 = new SMA { Length = 14 };
+		var sma20 = new SMA { Length = 20 };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

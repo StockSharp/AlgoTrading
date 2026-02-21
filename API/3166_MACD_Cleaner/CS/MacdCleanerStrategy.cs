@@ -195,8 +195,8 @@ public class MacdCleanerStrategy : Strategy
 
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 

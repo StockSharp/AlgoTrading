@@ -35,7 +35,7 @@ public class CrossoverMaStrategy : Strategy
 		_movingAverageLength = Param(nameof(MovingAverageLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Number of completed candles used by the moving average.", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 5);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -75,13 +75,13 @@ public class CrossoverMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
-		_movingAverage = new SimpleMovingAverage { Length = MovingAverageLength };
+		_movingAverage = new SMA { Length = MovingAverageLength };
 		_previousAverageValue = null;
 
 		var subscription = SubscribeCandles(CandleType);

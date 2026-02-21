@@ -67,12 +67,12 @@ public class NasdaqDayAndNightBreakdownStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (IndexSecurity == null)
 			throw new InvalidOperationException("IndexSecurity must be set.");
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeCandles(CandleType)
 			.Bind(ProcessFutureCandle)

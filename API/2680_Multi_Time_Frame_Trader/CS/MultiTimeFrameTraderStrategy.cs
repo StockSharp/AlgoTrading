@@ -87,17 +87,17 @@ public class MultiTimeFrameTraderStrategy : Strategy
 		_degree = Param(nameof(Degree), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Polynomial Degree", "Degree for regression channel", "Regression")
-			.SetCanOptimize(true);
+			;
 
 		_stdMultiplier = Param(nameof(StdMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Std Multiplier", "Standard deviation multiplier", "Regression")
-			.SetCanOptimize(true);
+			;
 
 		_bars = Param(nameof(Bars), 250)
 			.SetGreaterThanZero()
 			.SetDisplay("Regression Bars", "Bars for regression and slope", "Regression")
-			.SetCanOptimize(true);
+			;
 
 		_shift = Param(nameof(Shift), 0)
 			.SetNotNegative()
@@ -130,9 +130,9 @@ public class MultiTimeFrameTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var degree = Math.Max(1, Math.Min(3, Degree));
 		var bars = Math.Max(1, Bars);

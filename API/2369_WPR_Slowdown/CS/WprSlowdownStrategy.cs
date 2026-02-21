@@ -121,7 +121,7 @@ public class WprSlowdownStrategy : Strategy
 		_wprPeriod = Param(nameof(WprPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Period", "Williams %R indicator period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 24, 1);
 
 		_levelMax = Param(nameof(LevelMax), -20m)
@@ -163,9 +163,9 @@ public class WprSlowdownStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_wpr = new WilliamsR { Length = WprPeriod };
 

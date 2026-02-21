@@ -105,32 +105,32 @@ public ArtificialIntelligenceRightStrategy()
 {
 _x1 = Param(nameof(X1), 135)
 .SetDisplay("X1", "Perceptron weight 1", "Perceptron")
-.SetCanOptimize(true)
+
 .SetOptimize(0, 200, 5);
 
 _x2 = Param(nameof(X2), 127)
 .SetDisplay("X2", "Perceptron weight 2", "Perceptron")
-.SetCanOptimize(true)
+
 .SetOptimize(0, 200, 5);
 
 _x3 = Param(nameof(X3), 16)
 .SetDisplay("X3", "Perceptron weight 3", "Perceptron")
-.SetCanOptimize(true)
+
 .SetOptimize(0, 200, 5);
 
 _x4 = Param(nameof(X4), 93)
 .SetDisplay("X4", "Perceptron weight 4", "Perceptron")
-.SetCanOptimize(true)
+
 .SetOptimize(0, 200, 5);
 
 _stopLossPoints = Param(nameof(StopLossPoints), 85m)
 .SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(10m, 200m, 5m);
 
 _spreadPoints = Param(nameof(SpreadPoints), 3m)
 .SetDisplay("Spread", "Spread buffer in points", "Risk")
-.SetCanOptimize(false);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
@@ -156,9 +156,9 @@ _stopPrice = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var subscription = SubscribeCandles(CandleType);
 subscription.Bind(ProcessCandle).Start();

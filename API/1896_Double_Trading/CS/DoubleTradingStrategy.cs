@@ -59,11 +59,11 @@ public class DoubleTradingStrategy : Strategy
 		return [(Security, CandleType), (SecondSecurity, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		SubscribeCandles(CandleType).Bind(ProcessFirst).Start();
 		SubscribeCandles(CandleType, security: SecondSecurity).Bind(ProcessSecond).Start();

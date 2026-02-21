@@ -182,31 +182,31 @@ public TheMasterMindReversalStrategy()
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Base order size", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_stochasticPeriod = Param(nameof(StochasticPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Length", "Total lookback for stochastic", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 10);
 
 		_kPeriod = Param(nameof(KPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("%K Smoothing", "Stochastic %K smoothing length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("%D Signal", "Stochastic %D signal length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_williamsPeriod = Param(nameof(WilliamsPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Length", "Lookback period for Williams %R", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 10);
 
 		_stochasticBuyThreshold = Param(nameof(StochasticBuyThreshold), 3m)
@@ -247,15 +247,14 @@ public TheMasterMindReversalStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticPeriod,
+		{ K = { Length = StochasticPeriod },
 			K = { Length = KPeriod },
 			D = { Length = DPeriod }
 		};

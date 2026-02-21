@@ -91,9 +91,9 @@ public class MultiComboStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitOffset;
 	private readonly StrategyParam<bool> _useTrailingStop;
 
-	private LengthIndicator<decimal> _fastMa;
-	private LengthIndicator<decimal> _midMa;
-	private LengthIndicator<decimal> _slowMa;
+	private DecimalLengthIndicator _fastMa;
+	private DecimalLengthIndicator _midMa;
+	private DecimalLengthIndicator _slowMa;
 	private RelativeStrengthIndex _rsi;
 	private MovingAverageConvergenceDivergence _macd;
 	private StochasticOscillator _stochastic;
@@ -449,8 +449,7 @@ public class MultiComboStrategy : Strategy
 		if (UseStochastic)
 		{
 			_stochastic = new StochasticOscillator
-			{
-				Length = StochasticLength,
+			{ K = { Length = StochasticLength },
 				K = { Length = StochasticKLength },
 				D = { Length = StochasticDLength },
 				Smooth = { Length = StochasticSlowing }
@@ -1252,7 +1251,7 @@ public class MultiComboStrategy : Strategy
 		return result;
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int length)
+	private DecimalLengthIndicator CreateMovingAverage(MaMethods method, int length)
 	{
 		// Map the original MA method integers to StockSharp indicators.
 		return method switch

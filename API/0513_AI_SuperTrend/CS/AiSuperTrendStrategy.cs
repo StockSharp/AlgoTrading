@@ -107,25 +107,25 @@ public class AiSuperTrendStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for SuperTrend", "SuperTrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 15, 2);
 
 		_atrFactor = Param(nameof(AtrFactor), 3m)
 			.SetRange(0.5m, 10m)
 			.SetDisplay("ATR Factor", "ATR factor for SuperTrend", "SuperTrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_priceWmaLength = Param(nameof(PriceWmaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Price WMA Length", "WMA length for price", "AI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_superWmaLength = Param(nameof(SuperWmaLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("SuperTrend WMA Length", "WMA length for SuperTrend", "AI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 10);
 
 		_enableLong = Param(nameof(EnableLong), true)
@@ -136,9 +136,9 @@ public class AiSuperTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_superTrend = new() { Length = AtrPeriod, Multiplier = AtrFactor };
 		_atr = new() { Length = AtrPeriod };
@@ -166,8 +166,8 @@ public class AiSuperTrendStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var priceWma = _priceWma.Process(candle.ClosePrice, candle.ServerTime, true).ToDecimal();
-		var superWma = _superWma.Process(superTrendValue, candle.ServerTime, true).ToDecimal();
+		var priceWma = _priceWma.Process(new DecimalIndicatorValue(_priceWma, candle.ClosePrice, candle.ServerTime)).ToDecimal();
+		var superWma = _superWma.Process(new DecimalIndicatorValue(_superWma, superTrendValue, candle.ServerTime)).ToDecimal();
 
 		var isBull = priceWma > superWma;
 		var direction = candle.ClosePrice > superTrendValue ? -1 : 1;

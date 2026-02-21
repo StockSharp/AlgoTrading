@@ -42,22 +42,22 @@ public class LimitsMartinStrategy : Strategy
 		// Parameter initialization
 		_step = Param(nameof(Step), 200)
 			.SetDisplay("Step", "Distance to place limit orders in pips", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 30)
 			.SetDisplay("Stop Loss", "Stop loss size in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 60)
 			.SetDisplay("Take Profit", "Take profit size in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useMartingale = Param(nameof(UseMartingale), true)
 			.SetDisplay("Use Martingale", "Increase volume after loss", "Parameters");
 
 		_lossLimit = Param(nameof(LossLimit), 10)
 			.SetDisplay("Loss Limit", "Maximum consecutive losses for martingale", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 
 		_useMegaLot = Param(nameof(UseMegaLot), true)
@@ -80,11 +80,11 @@ public class LimitsMartinStrategy : Strategy
 		_entryPrice = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection(); // enable position protection
+		StartProtection(null, null); // enable position protection
 		_currentVolume = Volume;
 
 		var subscription = SubscribeCandles(CandleType);

@@ -71,19 +71,19 @@ public class HurstExponentStrategy : Strategy
 		_hurstPeriod = Param(nameof(HurstPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Hurst Period", "Lookback period for Hurst exponent", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 25);
 
 		_smoothLength = Param(nameof(SmoothLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth Length", "EMA period for smoothing Hurst", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_threshold = Param(nameof(Threshold), 0.5m)
 			.SetRange(0.1m, 0.9m)
 			.SetDisplay("Threshold", "Hurst threshold", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.45m, 0.65m, 0.05m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -100,12 +100,12 @@ public class HurstExponentStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_hurst = new HurstExponent { Length = HurstPeriod };
-		_smoother = new ExponentialMovingAverage { Length = SmoothLength };
+		_smoother = new EMA { Length = SmoothLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -130,7 +130,7 @@ public class HurstExponentStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var smoothed = _smoother.Process(hurstValue, candle.ServerTime, true).ToDecimal();
+		var smoothed = _smoother.Process(new DecimalIndicatorValue(_smoother, hurstValue, candle.ServerTime)).ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

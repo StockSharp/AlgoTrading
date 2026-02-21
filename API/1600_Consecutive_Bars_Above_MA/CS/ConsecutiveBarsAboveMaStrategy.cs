@@ -28,7 +28,7 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy
 	private readonly StrategyParam<DateTimeOffset> _startTime;
 	private readonly StrategyParam<DateTimeOffset> _endTime;
 
-	private LengthIndicator<decimal> _signalMa;
+	private DecimalLengthIndicator _signalMa;
 	private ExponentialMovingAverage _ema200;
 	private int _bullCount;
 	private decimal? _prevHigh;
@@ -116,7 +116,7 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy
 						 .SetGreaterThanZero()
 						 .SetDisplay("Signal Threshold",
 									 "Number of bars above MA", "Parameters")
-						 .SetCanOptimize(true);
+						 ;
 
 		_maType =
 			Param(nameof(MaType), "SMA")
@@ -126,7 +126,7 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy
 			Param(nameof(MaLength), 5)
 				.SetGreaterThanZero()
 				.SetDisplay("MA Length", "Moving average length", "Parameters")
-				.SetCanOptimize(true);
+				;
 
 		_useEmaFilter =
 			Param(nameof(UseEmaFilter), true)
@@ -137,7 +137,7 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy
 						 .SetGreaterThanZero()
 						 .SetDisplay("EMA Period",
 									 "EMA length for trend filter", "Filters")
-						 .SetCanOptimize(true);
+						 ;
 
 		_candleType =
 			Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -173,14 +173,14 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_signalMa = CreateMa(MaType, MaLength);
-		_ema200 = new ExponentialMovingAverage { Length = EmaPeriod };
+		_ema200 = new EMA { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_signalMa, _ema200, ProcessCandle).Start();
@@ -234,9 +234,9 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy
 		_prevLow = candle.LowPrice;
 	}
 
-	private LengthIndicator<decimal> CreateMa(string type, int length)
+	private DecimalLengthIndicator CreateMa(string type, int length)
 	{
-		return type == "SMA" ? new SimpleMovingAverage { Length = length }
-							 : new ExponentialMovingAverage { Length = length };
+		return type == "SMA" ? new SMA { Length = length }
+							 : new EMA { Length = length };
 	}
 }

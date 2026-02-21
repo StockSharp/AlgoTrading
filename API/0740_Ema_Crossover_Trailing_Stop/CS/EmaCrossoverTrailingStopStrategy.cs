@@ -75,19 +75,19 @@ public class EmaCrossoverTrailingStopStrategy : Strategy
 		_shortLength = Param(nameof(ShortLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Short EMA Length", "Period of the short EMA", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_longLength = Param(nameof(LongLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Long EMA Length", "Period of the long EMA", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 50, 5);
 
 		_trailStopPercent = Param(nameof(TrailStopPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop %", "Percent for trailing stop", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -112,9 +112,9 @@ public class EmaCrossoverTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastEma = new EMA { Length = ShortLength };
 		_slowEma = new EMA { Length = LongLength };

@@ -93,91 +93,91 @@ _stopShift = Param(nameof(StopShift), 4)
 
 _orderVolume = Param(nameof(OrderVolume), 0.01m)
 .SetDisplay("Order Volume", "Volume for each market order", "Trading")
-.SetCanOptimize(true);
+;
 
 		_useMoneyManagement = Param(nameof(UseMoneyManagement), true)
 		.SetDisplay("Money Management", "Recalculate volume from portfolio balance", "Trading")
-		.SetCanOptimize(false);
+		;
 
 		_riskPercent = Param(nameof(RiskPercent), 2.5m)
 		.SetDisplay("Risk %", "Portfolio percentage risked per trade", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_triggerPips = Param(nameof(TriggerPips), 38)
 		.SetDisplay("Trigger (pips)", "Distance above the crossover used to trigger entries", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 90)
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance applied to both positions", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitFirstPips = Param(nameof(TakeProfitFirstPips), 210)
 		.SetDisplay("Take Profit #1 (pips)", "First partial take profit distance", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitSecondPips = Param(nameof(TakeProfitSecondPips), 280)
 		.SetDisplay("Take Profit #2 (pips)", "Second partial take profit distance", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_fastPeriod = Param(nameof(FastPeriod), 1)
 		.SetDisplay("Fast EMA", "Fast EMA length used as trigger line", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 72)
 		.SetDisplay("Slow SMA", "Slow SMA length used as baseline", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 10)
 		.SetDisplay("RSI Period", "Length of the H1 RSI filter", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_rsiUpper = Param(nameof(RsiUpper), 55m)
 		.SetDisplay("RSI Upper", "Upper threshold that enables long trades", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_rsiLower = Param(nameof(RsiLower), 45m)
 		.SetDisplay("RSI Lower", "Lower threshold that enables short trades", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_lookbackMinutes = Param(nameof(LookbackMinutes), 120)
 		.SetDisplay("High/Low Lookback (min)", "Minutes used to build the recent high/low filter", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_blackoutHours = Param(nameof(BlackoutHours), 144)
 		.SetDisplay("Blackout (hours)", "Hours to block new setups after an execution", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_dailyEnvelopePeriod = Param(nameof(DailyEnvelopePeriod), 24)
 		.SetDisplay("Daily Envelope SMA", "Period of the daily envelope baseline", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_dailyEnvelopeDeviation = Param(nameof(DailyEnvelopeDeviation), 0.99m)
 		.SetDisplay("Daily Envelope %", "Percentage width of the daily envelope", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_h4EnvelopePeriod = Param(nameof(H4EnvelopePeriod), 96)
 		.SetDisplay("H4 Envelope SMA", "Period of the H4 envelope baseline", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_h4EnvelopeDeviation = Param(nameof(H4EnvelopeDeviation), 0.10m)
 		.SetDisplay("H4 Envelope %", "Percentage width of the H4 envelope", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Main Timeframe", "Primary candle series used for execution", "Data")
-		.SetCanOptimize(false);
+		;
 
 		_rsiTimeFrame = Param(nameof(RsiTimeFrame), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("RSI Timeframe", "Candle series used for the RSI filter", "Data")
-		.SetCanOptimize(false);
+		;
 
-		_dailyTimeFrame = Param(nameof(DailyTimeFrame), TimeSpan.FromDays(1).TimeFrame())
+		_dailyTimeFrame = Param(nameof(DailyTimeFrame), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Daily Timeframe", "Candle series used for the daily envelope", "Data")
-		.SetCanOptimize(false);
+		;
 
 		_h4TimeFrame = Param(nameof(H4TimeFrame), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("H4 Timeframe", "Candle series used for the H4 envelope", "Data")
-		.SetCanOptimize(false);
+		;
 	}
 
 	/// <summary>
@@ -418,17 +418,17 @@ _orderVolume = Param(nameof(OrderVolume), 0.01m)
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_fastMa = new ExponentialMovingAverage { Length = FastPeriod };
-		_slowMa = new SimpleMovingAverage { Length = SlowPeriod };
+		_fastMa = new EMA { Length = FastPeriod };
+		_slowMa = new SMA { Length = SlowPeriod };
 		_rsiIndicator = new RelativeStrengthIndex { Length = RsiPeriod };
-		_dailyEnvelopeMa = new SimpleMovingAverage { Length = DailyEnvelopePeriod };
-		_h4EnvelopeMa = new SimpleMovingAverage { Length = H4EnvelopePeriod };
+		_dailyEnvelopeMa = new SMA { Length = DailyEnvelopePeriod };
+		_h4EnvelopeMa = new SMA { Length = H4EnvelopePeriod };
 
 		_pipSize = GetPipSize();
 		_timeFrame = GetTimeFrame(CandleType);
@@ -469,8 +469,8 @@ _orderVolume = Param(nameof(OrderVolume), 0.01m)
 		_fastMa.Length = FastPeriod;
 		_slowMa.Length = SlowPeriod;
 
-		var fastValue = _fastMa.Process(candle.ClosePrice, candle.CloseTime, true);
-		var slowValue = _slowMa.Process(candle.OpenPrice, candle.CloseTime, true);
+		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, candle.ClosePrice, candle.CloseTime));
+		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, candle.OpenPrice, candle.CloseTime));
 
 		if (!fastValue.IsFinal || !slowValue.IsFinal)
 		return;
@@ -526,7 +526,7 @@ _orderVolume = Param(nameof(OrderVolume), 0.01m)
 
 		_rsiIndicator.Length = RsiPeriod;
 		var typicalPrice = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
-		var value = _rsiIndicator.Process(typicalPrice, candle.CloseTime, true);
+		var value = _rsiIndicator.Process(new DecimalIndicatorValue(_rsiIndicator, typicalPrice, candle.CloseTime));
 		if (!value.IsFinal)
 		return;
 
@@ -539,7 +539,7 @@ _orderVolume = Param(nameof(OrderVolume), 0.01m)
 		return;
 
 		_dailyEnvelopeMa.Length = DailyEnvelopePeriod;
-		var value = _dailyEnvelopeMa.Process(candle.ClosePrice, candle.CloseTime, true);
+		var value = _dailyEnvelopeMa.Process(new DecimalIndicatorValue(_dailyEnvelopeMa, candle.ClosePrice, candle.CloseTime));
 		if (!value.IsFinal)
 		return;
 
@@ -555,7 +555,7 @@ _orderVolume = Param(nameof(OrderVolume), 0.01m)
 		return;
 
 		_h4EnvelopeMa.Length = H4EnvelopePeriod;
-		var value = _h4EnvelopeMa.Process(candle.ClosePrice, candle.CloseTime, true);
+		var value = _h4EnvelopeMa.Process(new DecimalIndicatorValue(_h4EnvelopeMa, candle.ClosePrice, candle.CloseTime));
 		if (!value.IsFinal)
 		return;
 
@@ -809,10 +809,10 @@ _orderVolume = Param(nameof(OrderVolume), 0.01m)
 		for (var i = 1; i <= count; i++)
 		{
 			var candle = GetCandle(i);
-			if (candle.High > high)
-			high = candle.High;
-			if (candle.Low < low)
-			low = candle.Low;
+			if (candle.HighPrice > high)
+			high = candle.HighPrice;
+			if (candle.LowPrice < low)
+			low = candle.LowPrice;
 		}
 
 		return (high, low);
@@ -824,7 +824,7 @@ _orderVolume = Param(nameof(OrderVolume), 0.01m)
 		return null;
 
 		var candle = GetCandle(StopShift);
-		return isLong ? candle.Low : candle.High;
+		return isLong ? candle.LowPrice : candle.HighPrice;
 	}
 
 	private CandleInfo GetCandle(int shift)

@@ -129,9 +129,9 @@ _isLongPosition = false;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _highest.Length = UpperLiquidityLookback;
 _lowest.Length = LowerLiquidityLookback;
@@ -139,7 +139,7 @@ _lowest.Length = LowerLiquidityLookback;
 var subscription = SubscribeCandles(CandleType);
 subscription.Bind(ProcessCandle).Start();
 
-StartProtection();
+StartProtection(null, null);
 
 var area = CreateChartArea();
 if (area != null)
@@ -154,8 +154,8 @@ private void ProcessCandle(ICandleMessage candle)
 if (candle.State != CandleStates.Finished)
 return;
 
-var recentHigh = _highest.Process(candle.HighPrice, candle.OpenTime, true).ToDecimal();
-var recentLow = _lowest.Process(candle.LowPrice, candle.OpenTime, true).ToDecimal();
+var recentHigh = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime)).ToDecimal();
+var recentLow = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime)).ToDecimal();
 
 if (candle.LowPrice <= recentLow)
 _touchedLowerLiquidityLine = true;

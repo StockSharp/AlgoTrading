@@ -68,13 +68,13 @@ public DataType CandleType { get => _candleType.Value; set => _candleType.Value 
 public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 => [(Security, CandleType)];
 
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _rsi = new RelativeStrengthIndex { Length = RsiLength };
-_fastMa = new ExponentialMovingAverage { Length = FastLength };
-_slowMa = new ExponentialMovingAverage { Length = SlowLength };
+_fastMa = new EMA { Length = FastLength };
+_slowMa = new EMA { Length = SlowLength };
 _bb = new BollingerBands { Length = BbLength, Width = BbMult };
 
 var subscription = SubscribeCandles(CandleType);

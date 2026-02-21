@@ -55,7 +55,7 @@ public class ZahorchakMeasureStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Smoothing length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_weight1 = Param(nameof(Weight1), 1m);
 		_weight2 = Param(nameof(Weight2), 1m);
@@ -75,9 +75,9 @@ public class ZahorchakMeasureStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ema.Length = EmaLength;
 

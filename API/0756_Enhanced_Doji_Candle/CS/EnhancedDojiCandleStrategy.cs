@@ -90,16 +90,16 @@ public class EnhancedDojiCandleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var step = Security?.PriceStep ?? 1m;
 		var stopDiff = StopLossPips * step;
 		var takeDiff = stopDiff * RiskRewardRatio;
 		StartProtection(new Unit(takeDiff, UnitTypes.Absolute), new Unit(stopDiff, UnitTypes.Absolute));
 
-		var sma = new SimpleMovingAverage { Length = SmaPeriod };
+		var sma = new SMA { Length = SmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

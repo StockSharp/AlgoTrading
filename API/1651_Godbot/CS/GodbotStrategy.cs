@@ -99,7 +99,7 @@ public class GodbotStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 23)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Bollinger Bands period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
@@ -117,7 +117,7 @@ public class GodbotStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Main candle timeframe", "General");
 
-		_demaCandleType = Param(nameof(DemaCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_demaCandleType = Param(nameof(DemaCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("DEMA Candle Type", "Candle timeframe for DEMA", "General");
 	}
 
@@ -141,9 +141,9 @@ public class GodbotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bollinger = new BollingerBands
 		{
@@ -151,7 +151,7 @@ public class GodbotStrategy : Strategy
 			Width = BollingerDeviation
 		};
 
-		var ema = new ExponentialMovingAverage
+		var ema = new EMA
 		{
 			Length = MaPeriod
 		};

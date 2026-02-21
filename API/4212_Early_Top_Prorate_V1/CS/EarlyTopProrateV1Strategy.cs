@@ -276,7 +276,7 @@ public class EarlyTopProrateV1Strategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 0.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Base Volume", "Default trade volume in lots", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_maxPositions = Param(nameof(MaxPositions), 1)
 		.SetRange(1, 5)
@@ -349,11 +349,11 @@ public class EarlyTopProrateV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

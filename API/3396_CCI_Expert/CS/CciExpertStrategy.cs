@@ -101,37 +101,37 @@ public class CciExpertStrategy : Strategy
 		_fixedVolume = Param(nameof(FixedVolume), 0.1m)
 		.SetNotNegative()
 		.SetDisplay("Fixed volume", "Lot size used for trading when greater than zero", "Risk management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 1m, 0.05m);
 
 		_riskPercent = Param(nameof(RiskPercent), 0m)
 		.SetNotNegative()
 		.SetDisplay("Risk percent", "Risk based sizing when fixed volume is zero", "Risk management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 10m, 1m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150m)
 		.SetNotNegative()
 		.SetDisplay("Take profit (points)", "Take-profit distance in price points", "Risk management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50m, 300m, 25m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 600m)
 		.SetNotNegative()
 		.SetDisplay("Stop loss (points)", "Stop-loss distance in price points", "Risk management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 800m, 50m);
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 30m)
 		.SetNotNegative()
 		.SetDisplay("Max spread (points)", "Maximum allowed bid-ask spread in points", "Trading filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 60m, 5m);
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI period", "Lookback period for the Commodity Channel Index", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -156,9 +156,9 @@ public class CciExpertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cci = new CommodityChannelIndex
 		{

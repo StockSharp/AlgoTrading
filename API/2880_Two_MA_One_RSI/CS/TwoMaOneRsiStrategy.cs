@@ -52,8 +52,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	private readonly StrategyParam<bool> _closeOppositePositions;
 	private readonly StrategyParam<decimal> _tradeVolume;
 
-	private LengthIndicator<decimal> _fastMa = null!;
-	private LengthIndicator<decimal> _slowMa = null!;
+	private DecimalLengthIndicator _fastMa = null!;
+	private DecimalLengthIndicator _slowMa = null!;
 	private RelativeStrengthIndex _rsi = null!;
 
 	private readonly List<decimal> _fastHistory = new();
@@ -395,9 +395,9 @@ public class TwoMaOneRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips == 0)
 			throw new InvalidOperationException("Trailing step must be greater than zero when trailing stop is enabled.");
@@ -798,16 +798,16 @@ public class TwoMaOneRsiStrategy : Strategy
 		return (int)Math.Round(Math.Max(-Position, 0m) / TradeVolume, MidpointRounding.AwayFromZero);
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SMA { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 }

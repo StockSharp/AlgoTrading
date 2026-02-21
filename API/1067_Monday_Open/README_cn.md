@@ -14,7 +14,7 @@
 - **默认值**：
   - `StartYear` = 2023。
   - `EndYear` = 2025。
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame()。
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()。
 - **筛选**：
   - 类型: 季节性
   - 方向: 多头

@@ -102,31 +102,31 @@ public class KdjExpertAdvisorStrategy : Strategy
 		_kdjPeriod = Param(nameof(KdjPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("KDJ Length", "Lookback period for KDJ RSV calculation", "KDJ")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_smoothK = Param(nameof(SmoothK), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth %K", "Smoothing length for %K", "KDJ")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_smoothD = Param(nameof(SmoothD), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth %D", "Smoothing length for %D", "KDJ")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 15, 1);
 
 		_stopLossPips = Param(nameof(StopLossPips), 25)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 100, 5);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 45)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 150, 5);
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
@@ -153,9 +153,9 @@ public class KdjExpertAdvisorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 
@@ -171,7 +171,7 @@ public class KdjExpertAdvisorStrategy : Strategy
 		{
 			Length = KdjPeriod,
 			KPeriod = SmoothK,
-			DPeriod = SmoothD
+			D = { Length = SmoothD }
 		};
 
 		var subscription = SubscribeCandles(CandleType);

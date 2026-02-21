@@ -64,18 +64,18 @@ public class HaMaZiStrategy : Strategy
 	{
 		_maPeriod = Param(nameof(MaPeriod), 40)
 		.SetDisplay("MA Period", "EMA period", "General")
-		.SetCanOptimize(true);
+		;
 		_zigzagLength = Param(nameof(ZigzagLength), 13)
 		.SetDisplay("ZigZag Length", "Lookback for pivot search", "ZigZag")
-		.SetCanOptimize(true);
+		;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 		_stopLoss = Param(nameof(StopLoss), 70m)
 		.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
-		.SetCanOptimize(true);
+		;
 		_takeProfit = Param(nameof(TakeProfit), 200m)
 		.SetDisplay("Take Profit", "Take profit in price units", "Risk")
-		.SetCanOptimize(true);
+		;
 	}
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -94,11 +94,11 @@ public class HaMaZiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = MaPeriod };
+		var ema = new EMA { Length = MaPeriod };
 		var highest = new Highest { Length = ZigzagLength };
 		var lowest = new Lowest { Length = ZigzagLength };
 
@@ -107,7 +107,7 @@ public class HaMaZiStrategy : Strategy
 		.Bind(ema, highest, lowest, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

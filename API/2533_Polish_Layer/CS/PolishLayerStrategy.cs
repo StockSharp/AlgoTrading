@@ -163,52 +163,52 @@ public class PolishLayerStrategy : Strategy
 		_shortEmaPeriod = Param(nameof(ShortEmaPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Short EMA", "Fast EMA period", "Trend")
-			.SetCanOptimize(true);
+			;
 
 		_longEmaPeriod = Param(nameof(LongEmaPeriod), 45)
 			.SetGreaterThanZero()
 			.SetDisplay("Long EMA", "Slow EMA period", "Trend")
-			.SetCanOptimize(true);
+			;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation length", "Oscillators")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "Main stochastic period", "Oscillators")
-			.SetCanOptimize(true);
+			;
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Signal line period", "Oscillators")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticSlowing = Param(nameof(StochasticSlowing), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Slowing", "Final smoothing", "Oscillators")
-			.SetCanOptimize(true);
+			;
 
 		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R", "Williams %R lookback", "Oscillators")
-			.SetCanOptimize(true);
+			;
 
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("DeMarker", "DeMarker lookback", "Oscillators")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 17)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Target distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 77)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Protective distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
@@ -255,13 +255,13 @@ public class PolishLayerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize primary trend and oscillator indicators.
-		_shortEma = new ExponentialMovingAverage { Length = ShortEmaPeriod };
-		_longEma = new ExponentialMovingAverage { Length = LongEmaPeriod };
+		_shortEma = new EMA { Length = ShortEmaPeriod };
+		_longEma = new EMA { Length = LongEmaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_stochastic = new StochasticOscillator
 		{

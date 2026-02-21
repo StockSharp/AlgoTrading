@@ -88,15 +88,15 @@ public class VwapMacdStrategy : Strategy
 	{
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetDisplay("MACD Fast Period", "Fast EMA period for MACD calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetDisplay("MACD Slow Period", "Slow EMA period for MACD calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetDisplay("MACD Signal Period", "Signal line period for MACD calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop Loss (%)", "Stop loss percentage from entry price", "Risk Management");
@@ -124,9 +124,9 @@ public class VwapMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create MACD indicator
 

@@ -95,18 +95,18 @@ public class OpeningRangeBreakoutStrategy : Strategy
 		_rangeMinutes = Param(nameof(RangeMinutes), 15)
 		.SetGreaterThanZero()
 		.SetDisplay("Range Minutes", "Opening range duration", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 
 		_rewardRisk = Param(nameof(RewardRisk), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Reward/Risk", "Reward to risk ratio", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 
 		_entryBuffer = Param(nameof(EntryBuffer), 0.0001m)
 		.SetDisplay("Entry Buffer", "Entry buffer", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 0.001m, 0.0001m);
 
 		_sessionStart = Param(nameof(SessionStart), TimeSpan.FromHours(8))
@@ -120,9 +120,9 @@ public class OpeningRangeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_sessionStartTime = GetNextSessionStart(time);
 		_sessionEndTime = _sessionStartTime.AddMinutes(RangeMinutes);

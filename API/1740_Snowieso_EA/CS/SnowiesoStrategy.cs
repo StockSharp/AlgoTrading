@@ -80,49 +80,49 @@ public class SnowiesoStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast LWMA", "Fast LWMA period", "LWMAs")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_slowLength = Param(nameof(SlowLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow LWMA", "Slow LWMA period", "LWMAs")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 2);
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 4);
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal EMA for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 2);
 
 		_kamaLength = Param(nameof(KamaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("KAMA Length", "Lookback period for KAMA", "KAMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 100m, 20m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 200m, 50m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -154,8 +154,8 @@ public class SnowiesoStrategy : Strategy
 		var slowLwma = new WeightedMovingAverage { Length = SlowLength };
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFast,
-			LongPeriod = MacdSlow,
+			ShortMa = { Length = MacdFast },
+			LongMa = { Length = MacdSlow },
 			SignalPeriod = MacdSignal
 		};
 		var kama = new KaufmanAdaptiveMovingAverage { Length = KamaLength };

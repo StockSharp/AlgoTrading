@@ -103,9 +103,9 @@ public class TrendlessAgHistStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = new TrendlessAgHist
 		{
@@ -187,7 +187,7 @@ public class TrendlessAgHistStrategy : Strategy
 		}
 	}
 
-	private class TrendlessAgHist : Indicator<ICandleMessage>
+	private class TrendlessAgHist : BaseIndicator
 	{
 		public int FastLength { get; set; } = 7;
 		public int SlowLength { get; set; } = 5;

@@ -108,25 +108,25 @@ public class Breadandbutter2AdxAmaStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Averaging period for ADX", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_amaPeriod = Param(nameof(AmaPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("AMA Period", "Base smoothing length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_amaFastPeriod = Param(nameof(AmaFastPeriod), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("AMA Fast Period", "Fast EMA length for AMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_amaSlowPeriod = Param(nameof(AmaSlowPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("AMA Slow Period", "Slow EMA length for AMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
@@ -156,9 +156,9 @@ public class Breadandbutter2AdxAmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Pre-compute pip size according to the active security.
 		_pipSize = CalculatePipSize();

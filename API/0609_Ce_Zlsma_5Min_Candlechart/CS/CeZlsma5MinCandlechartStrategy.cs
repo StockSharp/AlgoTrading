@@ -91,9 +91,9 @@ public class CeZlsma5MinCandlechartStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_lsma1 = new LinearRegression { Length = ZlsmaLength };
 		_lsma2 = new LinearRegression { Length = ZlsmaLength };
@@ -139,13 +139,13 @@ public class CeZlsma5MinCandlechartStrategy : Strategy
 			haLow = Math.Min(Math.Min(candle.LowPrice, haOpen), haClose);
 		}
 
-		var lsmaValue = _lsma1.Process(haClose, candle.ServerTime, true).ToDecimal();
-		var lsma2Value = _lsma2.Process(lsmaValue, candle.ServerTime, true).ToDecimal();
+		var lsmaValue = _lsma1.Process(new DecimalIndicatorValue(_lsma1, haClose, candle.ServerTime)).ToDecimal();
+		var lsma2Value = _lsma2.Process(new DecimalIndicatorValue(_lsma2, lsmaValue, candle.ServerTime)).ToDecimal();
 		var zlsma = lsmaValue + (lsmaValue - lsma2Value);
 
-		var atrValue = _atr.Process(haHigh, haLow, haClose, candle.ServerTime, true).ToDecimal();
-		var highestClose = _highestClose.Process(haClose, candle.ServerTime, true).ToDecimal();
-		var lowestClose = _lowestClose.Process(haClose, candle.ServerTime, true).ToDecimal();
+		var atrValue = _atr.Process(new DecimalIndicatorValue(_atr, haHigh - haLow, candle.ServerTime)).ToDecimal();
+		var highestClose = _highestClose.Process(new DecimalIndicatorValue(_highestClose, haClose, candle.ServerTime)).ToDecimal();
+		var lowestClose = _lowestClose.Process(new DecimalIndicatorValue(_lowestClose, haClose, candle.ServerTime)).ToDecimal();
 
 		var longStop = highestClose - atrValue * AtrMultiplier;
 		if (_longStopPrev != 0m)

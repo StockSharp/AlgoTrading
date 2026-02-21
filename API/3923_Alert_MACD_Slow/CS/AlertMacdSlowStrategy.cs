@@ -47,32 +47,32 @@ public class AlertMacdSlowStrategy : Strategy
 	{
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 3)
 			.SetDisplay("MACD Fast Period", "Fast EMA length used inside the MACD calculation.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 12, 1);
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 20)
 			.SetDisplay("MACD Slow Period", "Slow EMA length used inside the MACD calculation.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetDisplay("MACD Signal Period", "Signal smoothing period for the MACD indicator.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_quickEmaPeriod = Param(nameof(QuickEmaPeriod), 20)
 			.SetDisplay("Quick EMA Period", "Length of the fast EMA trend filter (Ma_Quick in MQL).", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 65)
 			.SetDisplay("Slow EMA Period", "Length of the slow EMA trend filter (Ma_Slow in MQL).", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 100, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for indicator calculations.", "Data")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <summary>
@@ -144,13 +144,13 @@ public class AlertMacdSlowStrategy : Strategy
 
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod,
 		};
 
-		_quickEma = new ExponentialMovingAverage { Length = QuickEmaPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_quickEma = new EMA { Length = QuickEmaPeriod };
+		_slowEma = new EMA { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -90,22 +90,22 @@ public class DualMaTrendConfirmationStrategy : Strategy
 		_slowMaLength = Param(nameof(SlowMaLength), 57)
 			.SetDisplay("Slow EMA Length", "Period for the slow EMA trend filter", "Moving Averages")
 			.SetRange(10, 200)
-			.SetCanOptimize(true);
+			;
 
 		_fastMaLength = Param(nameof(FastMaLength), 3)
 			.SetDisplay("Fast LWMA Length", "Period for the fast LWMA confirmation filter", "Moving Averages")
 			.SetRange(1, 50)
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
 			.SetDisplay("Stop Loss (points)", "Stop-loss distance measured in instrument points", "Risk Management")
 			.SetRange(10m, 500m)
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
 			.SetDisplay("Take Profit (points)", "Take-profit distance measured in instrument points", "Risk Management")
 			.SetRange(10m, 500m)
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for moving average calculations", "General");
@@ -132,11 +132,11 @@ public class DualMaTrendConfirmationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var slowEma = new ExponentialMovingAverage
+		var slowEma = new EMA
 		{
 			Length = SlowMaLength
 		};

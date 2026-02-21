@@ -136,42 +136,42 @@ public class MacdSampleClassicStrategy : Strategy
 
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 12)
 		.SetDisplay("Fast EMA", "Fast EMA period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(6, 18, 2);
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
 		.SetDisplay("Slow EMA", "Slow EMA period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 32, 2);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 		.SetDisplay("Signal EMA", "Signal EMA period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 13, 2);
 
 		_trendMaPeriod = Param(nameof(TrendMaPeriod), 26)
 		.SetDisplay("Trend EMA", "EMA period used for directional filter", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 2);
 
 		_macdOpenLevel = Param(nameof(MacdOpenLevel), 3m)
 		.SetDisplay("MACD Open", "Entry threshold in MACD points", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 1m);
 
 		_macdCloseLevel = Param(nameof(MacdCloseLevel), 2m)
 		.SetDisplay("MACD Close", "Exit threshold in MACD points", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 4m, 1m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 		.SetDisplay("Take Profit", "Take profit distance in price points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 100m, 10m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 30m)
 		.SetDisplay("Trailing Stop", "Trailing stop distance in price points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 60m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -218,7 +218,7 @@ public class MacdSampleClassicStrategy : Strategy
 			SignalMa = { Length = SignalPeriod }
 		};
 
-		var trendMa = new ExponentialMovingAverage { Length = TrendMaPeriod };
+		var trendMa = new EMA { Length = TrendMaPeriod };
 
 		// Subscribe to candles and bind indicators for automatic updates.
 		var subscription = SubscribeCandles(CandleType);

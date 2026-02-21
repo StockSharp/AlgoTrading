@@ -73,7 +73,7 @@ public class ShootingStarStrategy : Strategy
 		_shadowToBodyRatio = Param(nameof(ShadowToBodyRatio), 2.0m)
 			.SetRange(1.5m, 5.0m)
 			.SetDisplay("Shadow/Body Ratio", "Minimum ratio of upper shadow to body length", "Pattern Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -81,7 +81,7 @@ public class ShootingStarStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetRange(0.5m, 3.0m)
 			.SetDisplay("Stop Loss %", "Percentage above shooting star's high for stop-loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_confirmationRequired = Param(nameof(ConfirmationRequired), true)
 			.SetDisplay("Confirmation Required", "Whether to wait for a bearish confirmation candle", "Pattern Parameters");
@@ -104,9 +104,9 @@ public class ShootingStarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create highest indicator for trend identification
 		var highest = new Highest { Length = 10 };

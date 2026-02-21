@@ -52,27 +52,27 @@ public EscapeMeanReversionStrategy()
 		_longTakeProfitPoints = Param(nameof(LongTakeProfitPoints), 10m)
 			.SetDisplay("Long Take Profit (points)", "Take-profit distance for long positions expressed in MetaTrader points.", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_shortTakeProfitPoints = Param(nameof(ShortTakeProfitPoints), 10m)
 			.SetDisplay("Short Take Profit (points)", "Take-profit distance for short positions expressed in MetaTrader points.", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_longStopLossPoints = Param(nameof(LongStopLossPoints), 1000m)
 			.SetDisplay("Long Stop Loss (points)", "Stop-loss distance for long positions expressed in MetaTrader points.", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_shortStopLossPoints = Param(nameof(ShortStopLossPoints), 1000m)
 			.SetDisplay("Short Stop Loss (points)", "Stop-loss distance for short positions expressed in MetaTrader points.", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.2m)
 			.SetDisplay("Trade Volume", "Lot size used for market orders.", "Trading")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_minimumMarginPerLot = Param(nameof(MinimumMarginPerLot), 500m)
 			.SetDisplay("Minimum Margin Per Lot", "Approximate capital requirement per lot before opening a trade.", "Risk Management")
@@ -169,14 +169,14 @@ public EscapeMeanReversionStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = CalculatePointSize();
 
-		_longAverage = new SimpleMovingAverage { Length = 5 };
-		_shortAverage = new SimpleMovingAverage { Length = 4 };
+		_longAverage = new SMA { Length = 5 };
+		_shortAverage = new SMA { Length = 4 };
 
 		Volume = TradeVolume;
 
@@ -236,11 +236,11 @@ public EscapeMeanReversionStrategy()
 			}
 		}
 
-		var longValue = longAverage.Process(candle.OpenPrice, candle.OpenTime, true).ToDecimal();
+		var longValue = longAverage.Process(new DecimalIndicatorValue(longAverage, candle.OpenPrice, candle.OpenTime)).ToDecimal();
 		if (longAverage.IsFormed)
 			_previousLongAverage = longValue;
 
-		var shortValue = shortAverage.Process(candle.OpenPrice, candle.OpenTime, true).ToDecimal();
+		var shortValue = shortAverage.Process(new DecimalIndicatorValue(shortAverage, candle.OpenPrice, candle.OpenTime)).ToDecimal();
 		if (shortAverage.IsFormed)
 			_previousShortAverage = shortValue;
 	}

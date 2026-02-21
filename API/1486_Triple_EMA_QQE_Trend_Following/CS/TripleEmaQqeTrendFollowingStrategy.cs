@@ -136,9 +136,9 @@ public class TripleEmaQqeTrendFollowingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ema1Tema1 = new() { Length = Tema1Length };
 		_ema2Tema1 = new() { Length = Tema1Length };
@@ -149,11 +149,11 @@ public class TripleEmaQqeTrendFollowingStrategy : Strategy
 		_ema3Tema2 = new() { Length = Tema2Length };
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiMa = new ExponentialMovingAverage { Length = RsiSmoothing };
+		_rsiMa = new EMA { Length = RsiSmoothing };
 
 		var wilders = RsiPeriod * 2 - 1;
-		_maAtrRsi = new ExponentialMovingAverage { Length = wilders };
-		_dar = new ExponentialMovingAverage { Length = wilders };
+		_maAtrRsi = new EMA { Length = wilders };
+		_dar = new EMA { Length = wilders };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -179,7 +179,7 @@ public class TripleEmaQqeTrendFollowingStrategy : Strategy
 		var tema1 = CalcTema(_ema1Tema1, _ema2Tema1, _ema3Tema1, price, time);
 		var tema2 = CalcTema(_ema1Tema2, _ema2Tema2, _ema3Tema2, price, time);
 
-		var rsi = _rsi.Process(candle).ToDecimal();
+		var rsi = _rsi.Process(new DecimalIndicatorValue(_rsi, candle).ToDecimal();
 		if (!_rsi.IsFormed)
 		{
 			_tema2Prev = tema2;
@@ -187,7 +187,7 @@ public class TripleEmaQqeTrendFollowingStrategy : Strategy
 			return;
 		}
 
-		var rsiMa = _rsiMa.Process(rsi, time, true).ToDecimal();
+		var rsiMa = _rsiMa.Process(rsi, time.UtcDateTime)).ToDecimal();
 		if (!_rsiMa.IsFormed)
 		{
 			_tema2Prev = tema2;
@@ -196,7 +196,7 @@ public class TripleEmaQqeTrendFollowingStrategy : Strategy
 		}
 
 		var atrRsi = Math.Abs(_prevRsiMa - rsiMa);
-		var maAtrRsi = _maAtrRsi.Process(atrRsi, time, true).ToDecimal();
+		var maAtrRsi = _maAtrRsi.Process(new DecimalIndicatorValue(_maAtrRsi, atrRsi, time.UtcDateTime)).ToDecimal();
 		if (!_maAtrRsi.IsFormed)
 		{
 			_tema2Prev = tema2;
@@ -204,7 +204,7 @@ public class TripleEmaQqeTrendFollowingStrategy : Strategy
 			return;
 		}
 
-		var dar = _dar.Process(maAtrRsi, time, true).ToDecimal();
+		var dar = _dar.Process(new DecimalIndicatorValue(_dar, maAtrRsi, time.UtcDateTime)).ToDecimal();
 		if (!_dar.IsFormed)
 		{
 			_tema2Prev = tema2;
@@ -280,9 +280,9 @@ public class TripleEmaQqeTrendFollowingStrategy : Strategy
 
 	private static decimal CalcTema(ExponentialMovingAverage ema1, ExponentialMovingAverage ema2, ExponentialMovingAverage ema3, decimal price, DateTimeOffset time)
 	{
-		var e1 = ema1.Process(price, time, true).ToDecimal();
-		var e2 = ema2.Process(e1, time, true).ToDecimal();
-		var e3 = ema3.Process(e2, time, true).ToDecimal();
+		var e1 = ema1.Process(new DecimalIndicatorValue(ema1, price, time.UtcDateTime)).ToDecimal();
+		var e2 = ema2.Process(new DecimalIndicatorValue(ema2, e1, time.UtcDateTime)).ToDecimal();
+		var e3 = ema3.Process(new DecimalIndicatorValue(ema3, e2, time.UtcDateTime)).ToDecimal();
 		return 3m * (e1 - e2) + e3;
 	}
 }

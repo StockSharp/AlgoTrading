@@ -50,7 +50,7 @@ public class QuadraticRegressionStrategy : Strategy
 		_length = Param(nameof(Length), 54)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Number of bars for regression", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -72,9 +72,9 @@ public class QuadraticRegressionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 

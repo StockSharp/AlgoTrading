@@ -47,12 +47,12 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 
-	private LengthIndicator<decimal> _longFastMa = null!;
-	private LengthIndicator<decimal> _longMediumMa = null!;
-	private LengthIndicator<decimal> _longSlowMa = null!;
-	private LengthIndicator<decimal> _shortFastMa = null!;
-	private LengthIndicator<decimal> _shortMediumMa = null!;
-	private LengthIndicator<decimal> _shortSlowMa = null!;
+	private DecimalLengthIndicator _longFastMa = null!;
+	private DecimalLengthIndicator _longMediumMa = null!;
+	private DecimalLengthIndicator _longSlowMa = null!;
+	private DecimalLengthIndicator _shortFastMa = null!;
+	private DecimalLengthIndicator _shortMediumMa = null!;
+	private DecimalLengthIndicator _shortSlowMa = null!;
 
 	private decimal?[] _longFastHistory = Array.Empty<decimal?>();
 	private decimal?[] _longSlowHistory = Array.Empty<decimal?>();
@@ -412,9 +412,9 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_longFastMa = CreateMovingAverage(LongFastMethod, LongFastLength);
 		_longMediumMa = CreateMovingAverage(LongMediumMethod, LongMediumLength);
@@ -685,17 +685,17 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 		return ((adjusted - candle.LowPrice) + (adjusted - candle.HighPrice)) / 2m;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(SmoothingMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(SmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
-			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Sma => new SMA { Length = length },
+			SmoothingMethods.Ema => new EMA { Length = length },
 			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
 			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = length },
 			SmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = length },
 			SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length }
+			_ => new EMA { Length = length }
 		};
 	}
 

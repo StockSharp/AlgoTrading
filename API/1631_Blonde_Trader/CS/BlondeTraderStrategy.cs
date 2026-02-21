@@ -100,9 +100,9 @@ public class BlondeTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = PeriodX };
 		_lowest = new Lowest { Length = PeriodX };
@@ -112,7 +112,7 @@ public class BlondeTraderStrategy : Strategy
 			.Bind(_highest, _lowest, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal highValue, decimal lowValue)

@@ -130,9 +130,9 @@ public class FiboAvg001aStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_priceStep = Security.PriceStep ?? 1m;
 		
@@ -144,7 +144,7 @@ public class FiboAvg001aStrategy : Strategy
 		.Bind(_fastMa, _slowMa, ProcessCandle)
 		.Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)

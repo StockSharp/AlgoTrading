@@ -51,7 +51,7 @@ public class ExpTrendMagicStrategy : Strategy
 	{
 		_moneyManagement = Param(nameof(MoneyManagement), 0.1m)
 		.SetDisplay("Money Management", "Share of capital used per trade", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_marginMode = Param(nameof(MarginMode), MarginModeOptions.Lot)
@@ -59,12 +59,12 @@ public class ExpTrendMagicStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 		.SetDisplay("Stop Loss", "Protective stop in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 2000m, 100m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 		.SetDisplay("Take Profit", "Profit target in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(200m, 4000m, 200m);
 
 		_deviationPoints = Param(nameof(DeviationPoints), 10m)
@@ -249,9 +249,9 @@ public class ExpTrendMagicStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_candleTimeFrame = CandleType.Arg is TimeSpan span ? span : TimeSpan.Zero;
 
@@ -294,7 +294,7 @@ public class ExpTrendMagicStrategy : Strategy
 			return;
 
 		var price = GetAppliedPrice(candle, CciPrice);
-		var cciIndicatorValue = cci.Process(price, candle.OpenTime, true);
+		var cciIndicatorValue = cci.Process(new DecimalIndicatorValue(cci, price, candle.OpenTime));
 
 		if (!cci.IsFormed || !atr.IsFormed)
 			return;

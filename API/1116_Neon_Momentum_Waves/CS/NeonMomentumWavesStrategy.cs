@@ -98,15 +98,15 @@ public class NeonMomentumWavesStrategy : Strategy
 	{
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetDisplay("Fast Length", "MACD fast EMA length", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_slowLength = Param(nameof(SlowLength), 26)
 			.SetDisplay("Slow Length", "MACD slow EMA length", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_signalLength = Param(nameof(SignalLength), 20)
 			.SetDisplay("Signal Length", "MACD signal smoothing", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_entryLevel = Param(nameof(EntryLevel), 0m)
 			.SetDisplay("Entry Level", "Histogram entry threshold", "Parameters");

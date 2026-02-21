@@ -82,37 +82,37 @@ public class MacdSlopeBreakoutStrategy : Strategy
 		_fastEma = Param(nameof(FastEma), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 2);
 			
 		_slowEma = Param(nameof(SlowEma), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 30, 2);
 			
 		_signalMa = Param(nameof(SignalMa), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal MA", "Signal MA period", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 12, 1);
 		
 		_slopePeriod = Param(nameof(SlopePeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slope Period", "Period for slope average and standard deviation", "Signal")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 			
 		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout", "Signal")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 			
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -194,7 +194,7 @@ public class MacdSlopeBreakoutStrategy : Strategy
 		decimal macdHist = macd - signal;
 		
 		// Calculate MACD histogram slope
-		var currentSlopeTyped = (LinearRegressionValue)_macdHistSlope.Process(macdHist, candle.ServerTime, candle.State == CandleStates.Finished);
+		var currentSlopeTyped = (LinearRegressionValue)_macdHistSlope.Process(new DecimalIndicatorValue(_macdHistSlope, macdHist, candle.ServerTime));
 
 		if (currentSlopeTyped.LinearReg is not decimal currentSlopeValue)
 			return;

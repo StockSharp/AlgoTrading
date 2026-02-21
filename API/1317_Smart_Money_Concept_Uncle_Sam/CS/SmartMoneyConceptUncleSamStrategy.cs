@@ -112,7 +112,7 @@ public class SmartMoneyConceptUncleSamStrategy : Strategy
 		_pivotLength = Param(nameof(PivotLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Pivot Length", "Bars on each side for pivot detection", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_useMaFilter = Param(nameof(UseMaFilter), false)
@@ -148,9 +148,9 @@ public class SmartMoneyConceptUncleSamStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highBuffer = new decimal[PivotLength * 2 + 1];
 		_lowBuffer = new decimal[PivotLength * 2 + 1];
@@ -182,7 +182,7 @@ public class SmartMoneyConceptUncleSamStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal ma)

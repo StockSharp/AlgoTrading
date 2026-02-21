@@ -93,19 +93,19 @@ public class Woc012Strategy : Strategy
 		_stopLossTicks = Param(nameof(StopLossTicks), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss Ticks", "Stop loss distance expressed in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 12, 1);
 
 		_trailingStopTicks = Param(nameof(TrailingStopTicks), 6)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop Ticks", "Trailing distance expressed in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 12, 1);
 
 		_sequenceLength = Param(nameof(SequenceLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Sequence Length", "Consecutive ask changes required before entry", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_sequenceTimeoutSeconds = Param(nameof(SequenceTimeoutSeconds), 3m)
@@ -149,9 +149,9 @@ public class Woc012Strategy : Strategy
 		_previousPosition = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdateRiskDistances();
 

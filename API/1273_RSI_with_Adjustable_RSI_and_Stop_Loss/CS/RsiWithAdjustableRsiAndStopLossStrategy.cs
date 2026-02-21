@@ -78,7 +78,7 @@ public class RsiWithAdjustableRsiAndStopLossStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 5m)
 			.SetRange(0.1m, 100m)
 			.SetDisplay("Stop Loss %", "Percentage based stop loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -98,9 +98,9 @@ public class RsiWithAdjustableRsiAndStopLossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex
 		{

@@ -216,12 +216,12 @@ public class EngulfingMomentumStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Length of the fast weighted MA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Length of the slow weighted MA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
@@ -230,12 +230,12 @@ public class EngulfingMomentumStrategy : Strategy
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 			.SetNotNegative()
 			.SetDisplay("Buy Momentum", "Minimum deviation from 100 for bullish signals", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
 			.SetNotNegative()
 			.SetDisplay("Sell Momentum", "Minimum deviation from 100 for bearish signals", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 			.SetGreaterThanZero()
@@ -252,12 +252,12 @@ public class EngulfingMomentumStrategy : Strategy
 		_stopLossSteps = Param(nameof(StopLossSteps), 20m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop distance in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopSteps = Param(nameof(TrailingStopSteps), 40m)
 			.SetNotNegative()

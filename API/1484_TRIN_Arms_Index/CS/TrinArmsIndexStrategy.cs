@@ -56,7 +56,7 @@ public class TrinArmsIndexStrategy : Strategy
 		_trinSecurity = Param(nameof(TrinSecurity), new Security { Id = "INDEX:TRIN" })
 			.SetDisplay("TRIN Security", "Security for TRIN index", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -128,11 +128,11 @@ public class TrinArmsIndexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var trinMa = new SimpleMovingAverage { Length = LookbackPeriod };
+		var trinMa = new SMA { Length = LookbackPeriod };
 		var trinStd = new StandardDeviation { Length = LookbackPeriod };
 		var priceStd = new StandardDeviation { Length = VolatilityLookback };
 
@@ -152,7 +152,7 @@ public class TrinArmsIndexStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessTrin(ICandleMessage candle, decimal ma, decimal std)

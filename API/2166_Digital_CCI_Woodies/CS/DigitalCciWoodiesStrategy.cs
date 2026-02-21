@@ -104,13 +104,13 @@ public class DigitalCciWoodiesStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast CCI Length", "Length of the fast CCI", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 		
 		_slowLength = Param(nameof(SlowLength), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow CCI Length", "Length of the slow CCI", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 		
 		_buyOpen = Param(nameof(BuyOpen), true)
@@ -142,9 +142,9 @@ public class DigitalCciWoodiesStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var fastCci = new CommodityChannelIndex { Length = FastLength };
 		var slowCci = new CommodityChannelIndex { Length = SlowLength };
@@ -168,7 +168,7 @@ public class DigitalCciWoodiesStrategy : Strategy
 			DrawIndicator(indicatorArea, slowCci);
 		}
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)

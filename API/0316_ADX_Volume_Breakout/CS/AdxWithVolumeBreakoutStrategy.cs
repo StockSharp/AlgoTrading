@@ -80,25 +80,25 @@ public class AdxWithVolumeBreakoutStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 35, 5);
 
 		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Avg Period", "Period for volume moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_volumeThresholdFactor = Param(nameof(VolumeThresholdFactor), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Threshold Factor", "Factor for volume breakout detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -122,13 +122,13 @@ public class AdxWithVolumeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
-		_volumeSma = new SimpleMovingAverage { Length = VolumeAvgPeriod };
+		_volumeSma = new SMA { Length = VolumeAvgPeriod };
 		_volumeStdDev = new StandardDeviation { Length = VolumeAvgPeriod };
 
 		// Subscribe to candles and bind indicators
@@ -148,8 +148,8 @@ public class AdxWithVolumeBreakoutStrategy : Strategy
 					return;
 
 				// Process volume indicators
-				var smaVal = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-				var stdDevVal = _volumeStdDev.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+				var smaVal = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
+				var stdDevVal = _volumeStdDev.Process(new DecimalIndicatorValue(_volumeStdDev, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 				
 				// Process the strategy logic
 				ProcessStrategy(

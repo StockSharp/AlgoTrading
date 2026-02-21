@@ -73,12 +73,12 @@ public class T3MaAlarmStrategy : Strategy
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
 			.SetDisplay("Stop Loss", "Stop-loss distance in price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 1000m, 100m);
 
 		_takeProfit = Param(nameof(TakeProfit), 300m)
 			.SetDisplay("Take Profit", "Take-profit distance in price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 1000m, 100m);
 
 		_reverseOnSignal = Param(nameof(ReverseOnSignal), true)
@@ -105,9 +105,9 @@ public class T3MaAlarmStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ema = new EMA { Length = MaPeriod };
 

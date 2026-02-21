@@ -44,15 +44,15 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 => [(Security, CandleType)];
 
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var openCh = new DonchianChannels { Length = OpenPeriod };
 var closeCh = new DonchianChannels { Length = ClosePeriod };
 
 var sub = SubscribeCandles(CandleType);
-sub.Bind(openCh, closeCh, Process).Start();
+sub.BindEx(openCh, closeCh, Process).Start();
 
 var area = CreateChartArea();
 if (area != null)
@@ -65,10 +65,18 @@ DrawOwnTrades(area);
 }
 
 private void Process(ICandleMessage candle,
-decimal openMid, decimal openHigh, decimal openLow,
-decimal closeMid, decimal closeHigh, decimal closeLow)
+IIndicatorValue openValue, IIndicatorValue closeValue)
 {
 if (candle.State != CandleStates.Finished || !IsFormedAndOnlineAndAllowTrading())
+return;
+
+if (openValue is not DonchianChannelsValue openDc || closeValue is not DonchianChannelsValue closeDc)
+return;
+
+if (openDc.UpperBand is not decimal openHigh || openDc.LowerBand is not decimal openLow)
+return;
+
+if (closeDc.UpperBand is not decimal closeHigh || closeDc.LowerBand is not decimal closeLow)
 return;
 
 var price = candle.ClosePrice;

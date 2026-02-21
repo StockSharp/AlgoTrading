@@ -234,9 +234,9 @@ public class ExpSpearmanRankCorrelationHistogramStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var effectiveLength = Math.Max(1, Math.Min(RangeLength, MaxRange > 0 ? MaxRange : 10));
 

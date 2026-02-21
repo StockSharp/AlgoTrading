@@ -78,13 +78,13 @@ public class HiddenStopLossTakeProfitStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Hidden Stop-loss Points", "Distance of the hidden stop-loss in points", "Hidden Protection")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Hidden Take-profit Points", "Distance of the hidden take-profit in points", "Hidden Protection")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 		_referencePrice = Param(nameof(ReferencePrice), ReferencePriceOptions.OpenPrice)
@@ -109,9 +109,9 @@ public class HiddenStopLossTakeProfitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to order book updates to receive best bid/ask prices.
 		SubscribeOrderBook()

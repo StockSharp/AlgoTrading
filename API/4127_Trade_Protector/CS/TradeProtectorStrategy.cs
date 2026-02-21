@@ -45,17 +45,17 @@ public class TradeProtectorStrategy : Strategy
 		_trailingStopPips = Param(nameof(TrailingStopPips), 35m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Initial trailing distance expressed in pips", "Trailing")
-			.SetCanOptimize(true);
+			;
 
 		_proportionalThresholdPips = Param(nameof(ProportionalThresholdPips), 12m)
 			.SetNotNegative()
 			.SetDisplay("Proportional Threshold (pips)", "Profit in pips before proportional trailing activates", "Trailing")
-			.SetCanOptimize(true);
+			;
 
 		_proportionalRatio = Param(nameof(ProportionalRatio), 0.35m)
 			.SetNotNegative()
 			.SetDisplay("Proportional Ratio", "Multiplier applied to floating profit for proportional stops", "Trailing")
-			.SetCanOptimize(true);
+			;
 
 		_useEscape = Param(nameof(UseEscape), false)
 			.SetDisplay("Use Escape", "Enable automatic escape take-profit placement", "Escape");
@@ -63,11 +63,11 @@ public class TradeProtectorStrategy : Strategy
 		_escapeLevelPips = Param(nameof(EscapeLevelPips), 0m)
 			.SetNotNegative()
 			.SetDisplay("Escape Level (pips)", "Losing distance that arms the escape take-profit", "Escape")
-			.SetCanOptimize(true);
+			;
 
 		_escapeTakeProfitPips = Param(nameof(EscapeTakeProfitPips), 35m)
 			.SetDisplay("Escape Take Profit (pips)", "Target distance used after the escape condition triggers", "Escape")
-			.SetCanOptimize(true);
+			;
 
 		_enableDetailedLogging = Param(nameof(EnableDetailedLogging), false)
 			.SetDisplay("Enable Detailed Logging", "Write informative log entries whenever orders are adjusted", "Diagnostics");
@@ -159,9 +159,9 @@ public class TradeProtectorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculateAdjustedPoint();
 		_pointSize = Security?.PriceStep ?? 0m;

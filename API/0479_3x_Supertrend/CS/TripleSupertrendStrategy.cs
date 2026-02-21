@@ -54,12 +54,12 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 
 protected override void OnReseted(){base.OnReseted();_prev=false;}
 
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
-var ma1=new ExponentialMovingAverage{Length=AtrPeriod1};
-var ma2=new ExponentialMovingAverage{Length=AtrPeriod2};
-var ma3=new ExponentialMovingAverage{Length=AtrPeriod3};
+base.OnStarted2(time);
+var ma1=new EMA{Length=AtrPeriod1};
+var ma2=new EMA{Length=AtrPeriod2};
+var ma3=new EMA{Length=AtrPeriod3};
 var atr1=new AverageTrueRange{Length=AtrPeriod1};
 var atr2=new AverageTrueRange{Length=AtrPeriod2};
 var atr3=new AverageTrueRange{Length=AtrPeriod3};

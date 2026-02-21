@@ -75,7 +75,7 @@ public class GoldFridayAnomalyStrategy : Strategy
 
 		_holdBars = Param(nameof(HoldBars), 4)
 			.SetDisplay("Hold Bars", "Number of bars to hold position", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -89,16 +89,16 @@ public class GoldFridayAnomalyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

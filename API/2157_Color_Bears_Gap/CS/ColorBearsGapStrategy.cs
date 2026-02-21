@@ -74,12 +74,12 @@ public class ColorBearsGapStrategy : Strategy
 		_length1 = Param(nameof(Length1), 12)
 			.SetDisplay("Length 1", "First smoothing length", "Parameters")
 			.SetRange(5, 50)
-			.SetCanOptimize(true);
+			;
 
 		_length2 = Param(nameof(Length2), 5)
 			.SetDisplay("Length 2", "Second smoothing length", "Parameters")
 			.SetRange(2, 20)
-			.SetCanOptimize(true);
+			;
 
 		_buyOpen = Param(nameof(BuyOpen), true)
 			.SetDisplay("Buy Open", "Allow opening long positions", "Parameters");
@@ -98,9 +98,9 @@ public class ColorBearsGapStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = new ColorBearsGapIndicator
 		{
@@ -157,7 +157,7 @@ public class ColorBearsGapStrategy : Strategy
 		_prevValue = value;
 	}
 
-	private class ColorBearsGapIndicator : Indicator<ICandleMessage>
+	private class ColorBearsGapIndicator : BaseIndicator
 	{
 		public int Length1 { get; set; }
 		public int Length2 { get; set; }

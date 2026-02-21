@@ -53,46 +53,46 @@ public class MurreyBBandStochasticStrategy : Strategy
 		_frame = Param(nameof(Frame), 64)
 		.SetGreaterThanZero()
 		.SetDisplay("Frame", "Murrey frame size", "General")
-		.SetCanOptimize(true);
+		;
 
 		_entryMargin = Param(nameof(EntryMargin), 0.00025m)
 		.SetDisplay("Entry Margin", "Distance from line for entry", "General")
-		.SetCanOptimize(true);
+		;
 
 		_bbPeriod = Param(nameof(BbPeriod), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Period", "Bollinger Bands period", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_bbDeviation = Param(nameof(BbDeviation), 4m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Deviation", "Bollinger Bands deviation", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_bbWidthThreshold = Param(nameof(BbWidthThreshold), 0.00080m)
 		.SetNotNegative()
 		.SetDisplay("Band Width", "Minimum band width", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_stochK = Param(nameof(StochK), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %K", "%K length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochD = Param(nameof(StochD), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %D", "%D length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochOversold = Param(nameof(StochOversold), 21m)
 		.SetNotNegative()
 		.SetDisplay("Stochastic Oversold", "Level for long setups", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochOverbought = Param(nameof(StochOverbought), 79m)
 		.SetNotNegative()
 		.SetDisplay("Stochastic Overbought", "Level for short setups", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -168,9 +168,9 @@ public class MurreyBBandStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = Frame };
 		_lowest = new Lowest { Length = Frame };
@@ -195,7 +195,7 @@ public class MurreyBBandStochasticStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue highValue, IIndicatorValue lowValue, IIndicatorValue bbValue, IIndicatorValue stochValue)

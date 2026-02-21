@@ -112,9 +112,9 @@ TimeSpan.FromDays(30)
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		foreach (var tf in _timeFrames)
 		{

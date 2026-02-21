@@ -87,25 +87,25 @@ public class YtgAdxLevelCrossStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for the Average Directional Index", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_levelPlus = Param(nameof(LevelPlus), 5)
 			.SetNotNegative()
 			.SetDisplay("+DI Level", "Threshold that the +DI line must break", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 5);
 
 		_levelMinus = Param(nameof(LevelMinus), 5)
 			.SetNotNegative()
 			.SetDisplay("-DI Level", "Threshold that the -DI line must break", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 5);
 
 		_shift = Param(nameof(Shift), 1)
 			.SetNotNegative()
 			.SetDisplay("Signal Shift", "Number of closed candles to look back", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 3, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
@@ -137,9 +137,9 @@ public class YtgAdxLevelCrossStrategy : Strategy
 		_minusDiHistory.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 

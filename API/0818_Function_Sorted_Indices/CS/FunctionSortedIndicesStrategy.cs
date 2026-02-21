@@ -16,9 +16,9 @@ namespace StockSharp.Samples.Strategies;
 public class FunctionSortedIndicesStrategy : Strategy
 {
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var values = new decimal[] { 55m, 66m, 44m, 77m, 80m, -90m, 1m };
 		var (indices, ordered) = SortIndices(values, true);

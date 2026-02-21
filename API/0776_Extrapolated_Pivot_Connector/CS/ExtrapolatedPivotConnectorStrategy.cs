@@ -106,9 +106,9 @@ public class ExtrapolatedPivotConnectorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeCandles(CandleType)
 		.Bind(ProcessCandle)
@@ -143,10 +143,10 @@ public class ExtrapolatedPivotConnectorStrategy : Strategy
 
 		var c = _candles[i];
 
-		if (c.High >= pivotCandle.High)
+		if (c.HighPrice >= pivotCandle.High)
 		isHigh = false;
 
-		if (c.Low <= pivotCandle.Low)
+		if (c.LowPrice <= pivotCandle.Low)
 		isLow = false;
 		}
 

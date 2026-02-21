@@ -94,32 +94,32 @@ public class RelativeStrengthStrategy : Strategy
 		_emaFastLength = Param(nameof(EmaFastLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Fast", "Fast EMA length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_emaSlowLength = Param(nameof(EmaSlowLength), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Slow", "Slow EMA length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_smaLength1 = Param(nameof(SmaLength1), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA 1", "First SMA length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_smaLength2 = Param(nameof(SmaLength2), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA 2", "Second SMA length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_smaLength3 = Param(nameof(SmaLength3), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA 3", "Third SMA length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_deviation = Param(nameof(Deviation), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation", "Bollinger Bands deviation", "Bollinger")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -143,10 +143,10 @@ public class RelativeStrengthStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		_emaFast = new EMA { Length = EmaFastLength };
 		_emaSlow = new EMA { Length = EmaSlowLength };

@@ -48,25 +48,25 @@ private readonly StrategyParam<Sides?> _direction;
 		_longEntryLength = Param(nameof(LongEntryLength), 190)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Entry MA Length", "OBV MA length for long entries", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 10);
 
 		_longExitLength = Param(nameof(LongExitLength), 202)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Exit MA Length", "OBV MA length for long exits", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 10);
 
 		_shortEntryLength = Param(nameof(ShortEntryLength), 395)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Entry MA Length", "OBV MA length for short entries", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 500, 10);
 
 		_shortExitLength = Param(nameof(ShortExitLength), 300)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Exit MA Length", "OBV MA length for short exits", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 500, 10);
 
 _direction = Param(nameof(Direction), Sides.Buy)
@@ -149,15 +149,15 @@ set => _direction.Value = value;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_obv = new OnBalanceVolume();
-		_obvMaLongEntry = new SimpleMovingAverage { Length = LongEntryLength };
-		_obvMaLongExit = new SimpleMovingAverage { Length = LongExitLength };
-		_obvMaShortEntry = new SimpleMovingAverage { Length = ShortEntryLength };
-		_obvMaShortExit = new SimpleMovingAverage { Length = ShortExitLength };
+		_obvMaLongEntry = new SMA { Length = LongEntryLength };
+		_obvMaLongExit = new SMA { Length = LongExitLength };
+		_obvMaShortEntry = new SMA { Length = ShortEntryLength };
+		_obvMaShortExit = new SMA { Length = ShortExitLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -95,19 +95,19 @@ public class MaParabolicSarStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 			
 		_sarStep = Param(nameof(SarStep), 0.02m)
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Step", "Acceleration factor for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 			
 		_sarMaxStep = Param(nameof(SarMaxStep), 0.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Max Step", "Maximum acceleration factor for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.3m, 0.05m);
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -137,9 +137,9 @@ public class MaParabolicSarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_ma = new() { Length = MaPeriod };

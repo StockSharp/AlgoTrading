@@ -235,9 +235,9 @@ public class UltraMfiMmRecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_mfi = new MoneyFlowIndex { Length = MfiPeriod };
 
@@ -476,8 +476,8 @@ public class UltraMfiMmRecStrategy : Strategy
 	{
 		return method switch
 		{
-			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SMA { Length = length },
+			SmoothingMethods.Exponential => new EMA { Length = length },
 			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			SmoothingMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new JurikMovingAverage { Length = length }

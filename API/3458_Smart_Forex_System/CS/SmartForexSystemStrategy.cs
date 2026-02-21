@@ -44,60 +44,60 @@ public class SmartForexSystemStrategy : Strategy
 	{
 		_mode = Param(nameof(Mode), StartModes.LongAndShort)
 			.SetDisplay("Trading Mode", "Directional filter for opening baskets", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_percentThreshold = Param(nameof(PercentThreshold), 1m)
 			.SetNotNegative()
 			.SetDisplay("Momentum Threshold", "Minimum relative price change (in pips) required for the signal", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_startVolume = Param(nameof(StartVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Start Volume", "Initial order volume for a new basket", "Money management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 1m, 0.01m);
 
 		_maxVolume = Param(nameof(MaxVolume), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Volume", "Absolute cap for a single order volume", "Money management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_lotExponent = Param(nameof(LotExponent), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Multiplier", "Multiplier applied to each additional grid order", "Money management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.1m, 3m, 0.1m);
 
 		_gridStepPips = Param(nameof(GridStepPips), 26m)
 			.SetGreaterThanZero()
 			.SetDisplay("Grid Step", "Minimum distance in pips before adding to the basket", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 5m);
 
 		_maxTrades = Param(nameof(MaxTrades), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum number of positions allowed per direction", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_firstTakeProfitPips = Param(nameof(FirstTakeProfitPips), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("First Take Profit", "Take-profit distance in pips for the very first order", "Exits")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 5m);
 
 		_gridTakeProfitPips = Param(nameof(GridTakeProfitPips), 7m)
 			.SetGreaterThanZero()
 			.SetDisplay("Grid Take Profit", "Take-profit distance in pips when the basket already contains several orders", "Exits")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3m, 30m, 1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 400m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Hard stop distance in pips from the latest order price", "Exits")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 600m, 25m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -204,9 +204,9 @@ public class SmartForexSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

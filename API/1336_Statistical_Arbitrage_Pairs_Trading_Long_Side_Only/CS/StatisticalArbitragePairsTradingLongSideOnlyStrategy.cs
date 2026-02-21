@@ -72,12 +72,12 @@ public class StatisticalArbitragePairsTradingLongSideOnlyStrategy : Strategy
 		_zScoreLength = Param(nameof(ZScoreLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Z-Score Length", "Period for z-score calculation", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_extremeLevel = Param(nameof(ExtremeLevel), -1m)
 			.SetDisplay("Long Entry Threshold", "Entry threshold for spread z-score", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-2m, -0.5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -107,13 +107,13 @@ public class StatisticalArbitragePairsTradingLongSideOnlyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var mainSma = new SimpleMovingAverage { Length = ZScoreLength };
+		var mainSma = new SMA { Length = ZScoreLength };
 		var mainStd = new StandardDeviation { Length = ZScoreLength };
-		var pairSma = new SimpleMovingAverage { Length = ZScoreLength };
+		var pairSma = new SMA { Length = ZScoreLength };
 		var pairStd = new StandardDeviation { Length = ZScoreLength };
 
 		var mainSubscription = SubscribeCandles(CandleType);

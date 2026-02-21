@@ -50,13 +50,13 @@ public class LinearRegressionChannelStrategy : Strategy
 		_length = Param(nameof(Length), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Bars for regression", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 50);
 
 		_deviation = Param(nameof(Deviation), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation", "Channel width multiplier", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 	}
 
@@ -74,9 +74,9 @@ public class LinearRegressionChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

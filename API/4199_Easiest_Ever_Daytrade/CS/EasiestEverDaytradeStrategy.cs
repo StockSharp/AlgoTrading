@@ -82,22 +82,22 @@ public class EasiestEverDaytradeStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume used for market entries", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_entryHourLimit = Param(nameof(EntryHourLimit), 1)
 			.SetRange(0, 23)
 			.SetDisplay("Entry Hour Limit", "Latest hour (exclusive) when new trades can be opened", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_marketCloseHour = Param(nameof(MarketCloseHour), 20)
 			.SetRange(0, 23)
 			.SetDisplay("Market Close Hour", "Hour when open positions are closed", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_intradayCandleType = Param(nameof(IntradayCandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Intraday Candles", "Timeframe that drives entries and exits", "Timeframes");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Daily Candles", "Timeframe used to detect previous day direction", "Timeframes");
 	}
 
@@ -121,11 +121,11 @@ public class EasiestEverDaytradeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var intradaySubscription = SubscribeCandles(IntradayCandleType);
 		intradaySubscription.Bind(ProcessIntradayCandle);

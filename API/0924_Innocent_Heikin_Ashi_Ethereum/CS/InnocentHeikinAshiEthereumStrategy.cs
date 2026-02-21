@@ -50,7 +50,7 @@ public class InnocentHeikinAshiEthereumStrategy : Strategy {
 	    Param(nameof(RiskReward), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk/Reward", "Take profit to stop ratio", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3m, 0.5m);
 
 	_confirmationLevel =
@@ -163,12 +163,12 @@ public class InnocentHeikinAshiEthereumStrategy : Strategy {
     }
 
     /// <inheritdoc />
-    protected override void OnStarted(DateTimeOffset time) {
-	base.OnStarted(time);
-	StartProtection();
+    protected override void OnStarted2(DateTime time) {
+	base.OnStarted2(time);
+	StartProtection(null, null);
 
-	_ema50 = new ExponentialMovingAverage { Length = 50 };
-	_ema200 = new ExponentialMovingAverage { Length = 200 };
+	_ema50 = new EMA { Length = 50 };
+	_ema200 = new EMA { Length = 200 };
 	_lowest = new Lowest { Length = 28 };
 
 	var subscription = SubscribeCandles(CandleType);

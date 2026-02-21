@@ -74,7 +74,7 @@ public class TrendContinuationStrategy : Strategy
 		_length = Param(nameof(Length), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Period for the fast EMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -102,14 +102,14 @@ public class TrendContinuationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(StopLoss, TakeProfit);
 
-		_fast = new ExponentialMovingAverage { Length = Length };
-		_slow = new ExponentialMovingAverage { Length = Length * 2 };
+		_fast = new EMA { Length = Length };
+		_slow = new EMA { Length = Length * 2 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

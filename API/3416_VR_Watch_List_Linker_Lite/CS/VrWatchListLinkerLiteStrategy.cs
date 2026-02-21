@@ -133,9 +133,9 @@ public class VrWatchListLinkerLiteStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var candleType = CandleType ?? throw new InvalidOperationException("Candle type is not configured.");
 

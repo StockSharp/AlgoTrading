@@ -184,9 +184,9 @@ public class AdaptiveCgOscillatorX2Strategy : Strategy
     }
 
     /// <inheritdoc />
-    protected override void OnStarted(DateTimeOffset time)
+    protected override void OnStarted2(DateTime time)
     {
-        base.OnStarted(time);
+        base.OnStarted2(time);
 
         _trendOsc = new AdaptiveCgOscillator { Alpha = TrendAlpha };
         _signalOsc = new AdaptiveCgOscillator { Alpha = SignalAlpha };
@@ -316,7 +316,7 @@ public class AdaptiveCgOscillatorX2Strategy : Strategy
         }
     }
 
-    private class CyclePeriod : Indicator<decimal>
+    private class CyclePeriod : BaseIndicator
     {
         public decimal Alpha { get; set; } = 0.07m;
         private decimal _value = 10m;

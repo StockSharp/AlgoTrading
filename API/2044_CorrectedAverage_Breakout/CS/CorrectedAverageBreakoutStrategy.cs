@@ -131,9 +131,9 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_level = LevelPoints * Security.PriceStep;
 		_stopLoss = StopLossPoints * Security.PriceStep;
@@ -197,12 +197,12 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 		_prevClose = candle.ClosePrice;
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MaTypes type, int length)
+	private static DecimalLengthIndicator CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaTypes.Sma => new SimpleMovingAverage { Length = length },
-			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
+			MaTypes.Sma => new SMA { Length = length },
+			MaTypes.Ema => new EMA { Length = length },
 			MaTypes.Smma => new SmoothedMovingAverage { Length = length },
 			MaTypes.Lwma => new WeightedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type))

@@ -85,13 +85,13 @@ public SyncChartsConfirmationStrategy()
 		_smaLength = Param(nameof(SmaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Period of simple moving averages", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 10);
 
 		_syncTolerance = Param(nameof(SyncTolerance), TimeSpan.FromSeconds(15))
 			.SetGreaterThan(TimeSpan.Zero)
 			.SetDisplay("Sync Tolerance", "Maximum difference between master and follower candles", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(5));
 	}
 
@@ -121,9 +121,9 @@ public SyncChartsConfirmationStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var masterSma = new SMA { Length = SmaLength };
 		var followerSma = new SMA { Length = SmaLength };

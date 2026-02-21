@@ -79,17 +79,17 @@ public class LinearRegressionChannelFibStrategy : Strategy
 
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 		.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 12, 2);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 		.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60, 120, 5);
 
 		_momentumLength = Param(nameof(MomentumLength), 14)
 		.SetDisplay("Momentum Length", "Lookback for the momentum confirmation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 20, 1);
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
@@ -428,9 +428,9 @@ public class LinearRegressionChannelFibStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = Security?.PriceStep ?? 1m;
 		if (_pointValue <= 0m)
@@ -446,14 +446,12 @@ public class LinearRegressionChannelFibStrategy : Strategy
 
 		_fastMa = new WeightedMovingAverage
 		{
-			Length = FastMaLength,
-			CandlePrice = CandlePrice.Typical
+			Length = FastMaLength
 		};
 
 		_slowMa = new WeightedMovingAverage
 		{
-			Length = SlowMaLength,
-			CandlePrice = CandlePrice.Typical
+			Length = SlowMaLength
 		};
 
 		_momentum = new Momentum

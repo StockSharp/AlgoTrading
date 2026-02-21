@@ -83,25 +83,25 @@ public class CarbophosGridStrategy : Strategy
 		_profitTarget = Param(nameof(ProfitTarget), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Target", "Floating profit target in money", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1000m, 50m);
 
 		_maxLoss = Param(nameof(MaxLoss), 150m)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Loss", "Maximum floating loss before closing", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 500m, 25m);
 
 		_stepPips = Param(nameof(StepPips), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Step (pips)", "Distance between grid levels in pips", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 150, 10);
 
 		_ordersPerSide = Param(nameof(OrdersPerSide), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Orders Per Side", "Number of pending orders on each side", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
@@ -127,9 +127,9 @@ public class CarbophosGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to Level1 data to track best bid and ask updates.
 		SubscribeLevel1()
@@ -137,7 +137,7 @@ public class CarbophosGridStrategy : Strategy
 			.Start();
 
 		// Enable the built-in protection subsystem once.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessLevel1(Level1ChangeMessage level1)

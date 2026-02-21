@@ -99,32 +99,32 @@ public class ChartOscillatorStrategy : Strategy
 		_length = Param(nameof(Length), 14)
 			.SetRange(1, 100)
 			.SetDisplay("RSI/MFI Length", "Period for RSI or MFI", "Indicator Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_kPeriod = Param(nameof(KPeriod), 14)
 			.SetRange(1, 100)
 			.SetDisplay("Stochastic Length", "Base period for Stochastic", "Indicator Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetRange(1, 50)
 			.SetDisplay("D Period", "Smoothing period for %D", "Indicator Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_smoothK = Param(nameof(SmoothK), 3)
 			.SetRange(1, 50)
 			.SetDisplay("Smooth K", "Smoothing period for %K", "Indicator Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_overbought = Param(nameof(Overbought), 80m)
 			.SetRange(50m, 100m)
 			.SetDisplay("Overbought", "Level considered overbought", "Signal Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_oversold = Param(nameof(Oversold), 20m)
 			.SetRange(0m, 50m)
 			.SetDisplay("Oversold", "Level considered oversold", "Signal Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -132,7 +132,7 @@ public class ChartOscillatorStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop Loss %", "Percentage-based stop loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -142,16 +142,15 @@ public class ChartOscillatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Choice == OscillatorChoices.Stochastic)
 		{
 			_stochastic = new StochasticOscillator
 			{
-				Length = KPeriod,
-				K = { Length = SmoothK },
+				K = { Length = KPeriod },
 				D = { Length = DPeriod }
 			};
 		}

@@ -79,58 +79,58 @@ public class TdsGlobalPendingStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetDisplay("Order Volume", "Fixed trade volume used when risk sizing is disabled", "Trading")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_useRiskSizing = Param(nameof(UseRiskSizing), true)
 			.SetDisplay("Use Risk Sizing", "Switch between fixed lot and risk-based position sizing", "Trading");
 
 		_riskPercent = Param(nameof(RiskPercent), 3m)
 			.SetDisplay("Risk Percent", "Risk percentage applied when calculating dynamic volume", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetDisplay("MACD Fast EMA", "Fast EMA length for the MACD line", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetDisplay("MACD Slow EMA", "Slow EMA length for the MACD line", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetDisplay("MACD Signal EMA", "Signal EMA length for the histogram", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_forceLength = Param(nameof(ForceLength), 24)
 			.SetDisplay("Force Index Length", "EMA length for the Force Index indicator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance expressed in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetDisplay("Take Profit (pips)", "Take profit distance expressed in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance expressed in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetDisplay("Trailing Step (pips)", "Minimum step for trailing stop updates in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_entryOffsetPips = Param(nameof(EntryOffsetPips), 16m)
 			.SetDisplay("Entry Offset (pips)", "Buffer added to previous highs/lows when placing limit orders", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_minDistancePips = Param(nameof(MinDistancePips), 3m)
 			.SetDisplay("Minimum Distance (pips)", "Minimum allowed distance between price and protective orders", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_pipSize = Param(nameof(PipSize), 0.0001m)
 			.SetDisplay("Pip Size", "Size of one pip used for price conversions", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for indicator calculations", "General");

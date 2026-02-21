@@ -72,12 +72,12 @@ public class AndrewsPitchforkStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 		.SetRange(1, 100)
 		.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 		.SetRange(2, 200)
 		.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 		.SetRange(5, 60)
@@ -280,20 +280,18 @@ public class AndrewsPitchforkStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = new WeightedMovingAverage
 		{
-			Length = FastMaPeriod,
-			CandlePrice = CandlePrice.Typical
+			Length = FastMaPeriod
 		};
 
 		_slowMa = new WeightedMovingAverage
 		{
-			Length = SlowMaPeriod,
-			CandlePrice = CandlePrice.Typical
+			Length = SlowMaPeriod
 		};
 
 		_momentum = new Momentum

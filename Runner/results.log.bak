@@ -1,0 +1,167 @@
+0004_Parabolic_SAR_Trend|ParabolicSarTrendStrategy|OK|orders=4086|trades=896|pnl=375888.36490
+0005_Donchian_Channel|DonchianChannelStrategy|OK|orders=4336|trades=877|pnl=-4461368.81205
+0006_Tripple_MA|TripleMAStrategy|OK|orders=140|trades=139|pnl=59296.01135
+0007_Keltner_Channel_Breakout|KeltnerChannelBreakoutStrategy|OK|orders=4154|trades=970|pnl=2985986.42140
+0008_Hull_MA_Trend|HullMaTrendStrategy|OK|orders=732|trades=892|pnl=-2478452.05575
+0009_MACD_Trend|MacdTrendStrategy|OK|orders=467|trades=266|pnl=1394055.96650
+0010_Super_Trend|SupertrendStrategy|OK|orders=395|trades=247|pnl=864695.62535
+0011_Ichimoku_Kumo_Breakout|IchimokuKumoBreakoutStrategy|OK|orders=1243|trades=541|pnl=2317335.95260
+0012_Heikin_Ashi_Consecutive|HeikinAshiConsecutiveStrategy|OK|orders=4845|trades=1094|pnl=9321683.80495
+0013_DMI_Power_Move|DmiPowerMoveStrategy|OK|orders=1362|trades=326|pnl=1523019.07015
+0014_TradingView_Supertrend_Flip|TradingViewSupertrendFlipStrategy|OK|orders=359|trades=232|pnl=-989027.00060
+0015_Gann_Swing_Breakout|GannSwingBreakoutStrategy|OK|orders=19|trades=32|pnl=-154241.26905
+0016_RSI_Divergence|RsiDivergenceStrategy|FAIL|orders=0|trades=0|pnl=0
+0017_Williams_R|WilliamsPercentRStrategy|OK|orders=6468|trades=996|pnl=246102.89285
+0018_ROC_Impulce|RocImpulseStrategy|OK|orders=6953|trades=1129|pnl=-1711723.88975
+0019_CCI_Breakout|CciBreakoutStrategy|OK|orders=1125|trades=1088|pnl=-8396960.82495
+0020_Momentum_Percentage|MomentumPercentageStrategy|OK|orders=4642|trades=318|pnl=-124691.40220
+0021_Bollinger_Squeeze|BollingerSqueezeStrategy|FAIL|orders=3|trades=0|pnl=0
+0022_ADX_DI|AdxDiStrategy|OK|orders=2644|trades=976|pnl=208957.52415
+0023_Elder_Impulse|ElderImpulseStrategy|OK|orders=8559|trades=1193|pnl=-10224203.77480
+0024_RSI_Laguerre|LaguerreRsiStrategy|OK|orders=40|trades=24|pnl=-72424.92705
+0025_Stochastic_RSI_Cross|StochasticRsiCrossStrategy|OK|orders=616|trades=675|pnl=-3361464.15500
+0026_RSI_Reversion|RsiReversionStrategy|OK|orders=4422|trades=736|pnl=738232.67780
+0027_Bollinger_Reversion|BollingerReversionStrategy|OK|orders=4611|trades=1170|pnl=7934320.32020
+0028_ZScore|ZScoreStrategy|OK|orders=1875|trades=202|pnl=1056785.19435
+0029_MA_Deviation|MADeviationStrategy|OK|orders=2220|trades=380|pnl=270469.82865
+0030_VWAP_Reversion|VwapReversionStrategy|OK|orders=6255|trades=766|pnl=-4793911.36735
+0031_Keltner_Reversion|KeltnerReversionStrategy|OK|orders=1807|trades=1008|pnl=6316791.68190
+0032_ATR_Reversion|AtrReversionStrategy|OK|orders=904|trades=1045|pnl=3014841.76085
+0033_MACD_Zero|MacdZeroStrategy|OK|orders=4547|trades=1168|pnl=13044221.26180
+0034_Low_Vol_Reversion|LowVolReversionStrategy|OK|orders=9|trades=15|pnl=-33581.98580
+0035_Bollinger_B_Reversion|BollingerPercentBStrategy|OK|orders=1473|trades=1333|pnl=8580579.34645
+0036_ATR_Expansion|AtrExpansionStrategy|OK|orders=5565|trades=892|pnl=-6927206.12555
+0037_VIX_Trigger|VixTriggerStrategy|OK|orders=4704|trades=1188|pnl=1495576.00445
+0038_BB_Width|BollingerBandWidthStrategy|OK|orders=4524|trades=1125|pnl=-8117735.09625
+0039_HV_Breakout|HvBreakoutStrategy|OK|orders=5397|trades=451|pnl=-342081.04220
+0040_ATR_Trailing|AtrTrailingStrategy|OK|orders=7020|trades=1345|pnl=-12288198.77765
+0041_Vol_Adjusted_MA|VolAdjustedMaStrategy|BUILD_FAIL|D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'VolAdjustedMaStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'VolAdjustedMaStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+0042_IV_Spike|IvSpikeStrategy|BUILD_FAIL|D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'IvSpikeStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'IvSpikeStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+0043_VCP|VcpStrategy|BUILD_FAIL|D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'VcpStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'VcpStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+0044_ATR_Range|AtrRangeStrategy|BUILD_FAIL|D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'AtrRangeStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'AtrRangeStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+0045_Choppiness_Index_Breakout|ChoppinessIndexBreakoutStrategy|OK|orders=15|trades=11|pnl=-12669.38450
+0046_Volume_Spike|VolumeSpikeStrategy|OK|orders=2699|trades=1349|pnl=14413454.06900
+0047_OBV_Breakout|ObvBreakoutStrategy|BUILD_FAIL|D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'ObvBreakoutStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'ObvBreakoutStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+0048_VWAP_Breakout|VWAPBreakoutStrategy|OK|orders=2179|trades=678|pnl=-7086489.62640
+0049_VWMA|VWMAStrategy|OK|orders=15|trades=12|pnl=72976.88980
+0050_AD|ADStrategy|OK|orders=5936|trades=1228|pnl=5256867.16205
+0051_Volume_Weighted_Price_Breakout|VolumeWeightedPriceBreakoutStrategy|OK|orders=5296|trades=1014|pnl=-853507.90735
+0052_Volume_Divergence|VolumeDivergenceStrategy|OK|orders=6763|trades=1097|pnl=5053545.73580
+0053_Volume_MA_Cross|VolumeMAXrossStrategy|OK|orders=796|trades=410|pnl=2014362.89720
+0054_Cumulative_Delta_Breakout|CumulativeDeltaBreakoutStrategy|FAIL|orders=0|trades=0|pnl=0
+0055_Volume_Surge|VolumeSurgeStrategy|OK|orders=6755|trades=980|pnl=4258546.84775
+0056_Double_Bottom|DoubleBottomStrategy|OK|orders=6|trades=5|pnl=20304.31895
+0057_Double_Top|DoubleTopStrategy|OK|orders=72|trades=56|pnl=-48336.16645
+0058_RSI_Overbought_Oversold|RsiOverboughtOversoldStrategy|OK|orders=4410|trades=830|pnl=-4147060.17395
+0059_Hammer_Candle|HammerCandleStrategy|OK|orders=3|trades=2|pnl=7501.10240
+0060_Shooting_Star|ShootingStarStrategy|OK|orders=18|trades=9|pnl=3307.24525
+0061_MACD_Divergence|MacdDivergenceStrategy|OK|orders=1743|trades=526|pnl=3049036.61530
+0062_Stochastic_Overbought_Oversold|StochasticOverboughtOversoldStrategy|OK|orders=4983|trades=1053|pnl=-7195648.69070
+0063_Engulfing_Bullish|EngulfingBullishStrategy|FAIL|orders=0|trades=0|pnl=0
+0064_Engulfing_Bearish|EngulfingBearishStrategy|FAIL|orders=0|trades=0|pnl=0
+0065_Pinbar_Reversal|PinbarReversalStrategy|OK|orders=240|trades=114|pnl=169111.98725
+0066_Three_Bar_Reversal_Up|ThreeBarReversalUpStrategy|OK|orders=6|trades=4|pnl=3895.50
+0067_Three_Bar_Reversal_Down|ThreeBarReversalDownStrategy|OK|orders=19|trades=23|pnl=34548.12230
+0068_CCI_Divergence|CciDivergenceStrategy|OK|orders=13|trades=5|pnl=-17713.53600
+0069_Bollinger_Band_Reversal|BollingerBandReversalStrategy|OK|orders=4616|trades=890|pnl=4389835.48700
+0070_Morning_Star|MorningStarStrategy|OK|orders=152|trades=73|pnl=343830.31590
+0071_Evening_Star|EveningStarStrategy|OK|orders=175|trades=115|pnl=-142494.28515
+0072_Doji_Reversal|DojiReversalStrategy|OK|orders=4753|trades=994|pnl=-1706733.99260
+0073_Keltner_Channel_Reversal|KeltnerChannelReversalStrategy|OK|orders=4309|trades=887|pnl=4058348.55960
+0074_Williams_R_Divergence|WilliamsPercentRDivergenceStrategy|OK|orders=922|trades=596|pnl=2331682.22070
+0075_OBV_Divergence|OBVDivergenceStrategy|FAIL|orders=1|trades=0|pnl=0
+0076_Fibonacci_Retracement_Reversal|FibonacciRetracementReversalStrategy|OK|orders=1152|trades=517|pnl=1482008.53835
+0077_Inside_Bar_Breakout|InsideBarBreakoutStrategy|OK|orders=811|trades=392|pnl=-1804299.32260
+0078_Outside_Bar_Reversal|OutsideBarReversalStrategy|OK|orders=4444|trades=1189|pnl=4575876.74685
+0079_Trendline_Bounce|TrendlineBounceStrategy|OK|orders=75|trades=62|pnl=-227102.24440
+0080_Pivot_Point_Reversal|PivotPointReversalStrategy|TIMEOUT|orders=|trades=|pnl=
+0081_VWAP_Bounce|VwapBounceStrategy|OK|orders=144|trades=73|pnl=-341711.50615
+0082_Volume_Exhaustion|VolumeExhaustionStrategy|FAIL|orders=0|trades=0|pnl=0
+0083_ADX_Weakening|AdxWeakeningStrategy|OK|orders=489|trades=471|pnl=-2653555.13365
+0084_ATR_Exhaustion|AtrExhaustionStrategy|OK|orders=406|trades=213|pnl=-1166664.56495
+0085_Ichimoku_Tenkan|IchimokuTenkanKijunStrategy|OK|orders=17|trades=16|pnl=13206.65880
+0086_Heikin_Ashi_Reversal|HeikinAshiReversalStrategy|OK|orders=137|trades=101|pnl=245756.82620
+0087_Parabolic_SAR_Reversal|ParabolicSarReversalStrategy|OK|orders=86|trades=70|pnl=380515.29560
+0088_Supertrend_Reversal|SupertrendReversalStrategy|OK|orders=45|trades=35|pnl=10657.86225
+0089_Hull_MA_Reversal|HullMaReversalStrategy|OK|orders=335|trades=201|pnl=638364.14480
+0090_Donchian_Reversal|DonchianReversalStrategy|FAIL|orders=0|trades=0|pnl=0
+0091_MACD_Histogram_Reversal|MacdHistogramReversalStrategy|OK|orders=70|trades=46|pnl=146060.22560
+0092_RSI_Hook_Reversal|RsiHookReversalStrategy|OK|orders=1301|trades=421|pnl=-779825.70685
+0093_Stochastic_Hook_Reversal|StochasticHookReversalStrategy|OK|orders=2107|trades=631|pnl=1766002.70740
+0094_CCI_Hook_Reversal|CciHookReversalStrategy|OK|orders=917|trades=581|pnl=1133244.70660
+0095_Williams_R_Hook_Reversal|WilliamsRHookReversalStrategy|OK|orders=1849|trades=625|pnl=4407115.80360
+0096_Three_White_Soldiers|ThreeWhiteSoldiersStrategy|OK|orders=1985|trades=1306|pnl=-7794112.28585
+0097_Three_Black_Crows|ThreeBlackCrowsStrategy|OK|orders=33|trades=41|pnl=62297.43735
+0098_Gap_Fill_Reversal|GapFillReversalStrategy|OK|orders=100|trades=101|pnl=1568313.27630
+0099_Tweezer_Bottom|TweezerBottomStrategy|OK|orders=2397|trades=1252|pnl=-9427840.56000
+0100_Tweezer_Top|TweezerTopStrategy|OK|orders=592|trades=625|pnl=756987.91160
+0101_Harami_Bullish|HaramiBullishStrategy|OK|orders=594|trades=303|pnl=201470.47035
+0102_Harami_Bearish|HaramiBearishStrategy|OK|orders=386|trades=257|pnl=-286701.25365
+0103_Dark_Pool_Prints|DarkPoolPrintsStrategy|FAIL|orders=0|trades=0|pnl=0
+0104_Rejection_Candle|RejectionCandleStrategy|OK|orders=1499|trades=646|pnl=439865.36480
+0105_False_Breakout_Trap|FalseBreakoutTrapStrategy|OK|orders=3179|trades=865|pnl=-1416087.75095
+0106_Spring_Reversal|SpringReversalStrategy|FAIL|orders=0|trades=0|pnl=0
+0107_Upthrust_Reversal|UpthrustReversalStrategy|FAIL|orders=0|trades=0|pnl=0
+0108_Wyckoff_Accumulation|WyckoffAccumulationStrategy|FAIL|orders=0|trades=0|pnl=0
+0109_Wyckoff_Distribution|WyckoffDistributionStrategy|FAIL|orders=0|trades=0|pnl=0
+0110_RSI_Failure_Swing|RsiFailureSwingStrategy|OK|orders=122|trades=92|pnl=16121.46370
+0111_Stochastic_Failure_Swing|StochasticFailureSwingStrategy|OK|orders=1001|trades=471|pnl=142693.63205
+0112_CCI_Failure_Swing|CciFailureSwingStrategy|OK|orders=281|trades=317|pnl=-73829.79025
+0113_Bullish_Abandoned_Baby|BullishAbandonedBabyStrategy|OK|orders=365|trades=319|pnl=-1284699.74875
+0114_Bearish_Abandoned_Baby|BearishAbandonedBabyStrategy|OK|orders=115|trades=133|pnl=746951.31195
+0115_Volume_Climax_Reversal|VolumeClimaxReversalStrategy|OK|orders=330|trades=396|pnl=-3386430.43255
+0116_Day_of_Week|DayOfWeekStrategy|OK|orders=452|trades=294|pnl=1962573.27490
+0117_Month_of_Year|MonthOfYearStrategy|FAIL|orders=0|trades=0|pnl=0
+0118_Turnaround_Tuesday|TurnaroundTuesdayStrategy|OK|orders=967|trades=158|pnl=-545559.96520
+0119_End_of_Month_Strength|EndOfMonthStrengthStrategy|FAIL|orders=0|trades=0|pnl=0
+0120_First_Day_of_Month|FirstDayOfMonthStrategy|FAIL|orders=0|trades=0|pnl=0
+0121_Santa_Claus_Rally|SantaClausRallyStrategy|FAIL|orders=0|trades=0|pnl=0
+0122_January_Effect|JanuaryEffectStrategy|FAIL|orders=0|trades=0|pnl=0
+0123_Monday_Weakness|MondayWeaknessStrategy|OK|orders=1407|trades=656|pnl=-884268.20070
+0124_Pre-Holiday_Strength|PreHolidayStrengthStrategy|FAIL|orders=0|trades=0|pnl=0
+0125_Post-Holiday_Weakness|PostHolidayWeaknessStrategy|FAIL|orders=0|trades=0|pnl=0
+0126_Quarterly_Expiry|QuarterlyExpiryStrategy|OK|orders=684|trades=238|pnl=-96320.67660
+0127_Open_Drive|OpenDriveStrategy|OK|orders=1293|trades=452|pnl=236566.94635
+0128_Midday_Reversal|MiddayReversalStrategy|OK|orders=102|trades=58|pnl=-309127.32745
+0129_Overnight_Gap|OvernightGapStrategy|OK|orders=10017|trades=1566|pnl=9756928.97295
+0130_Lunch_Break_Fade|LunchBreakFadeStrategy|BUILD_FAIL|D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'OvernightGapStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'OvernightGapStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+0129_Overnight_Gap|OvernightGapStrategy|BUILD_FAIL|CSC : error CS2012: Cannot open 'D:\stocksharp\StockSharp (GitHub)\Algo\obj\Debug\net10.0\StockSharp.Algo.dll' for writing -- The process cannot access the file 'D:\stocksharp\StockSharp (GitHub)\Algo\obj\Debug\net10.0\StockSharp.Algo.dll' because it is being used by another process.; file may be locked by 'VBCSCompiler' (52572) [D:\stocksharp\StockSharp (GitHub)\Algo\Algo.csproj::TargetFramework=net10.0]
+CSC : error CS2012: Cannot open 'D:\stocksharp\StockSharp (GitHub)\Algo\obj\Debug\net10.0\StockSharp.Algo.dll' for writing -- The process cannot access the file 'D:\stocksharp\StockSharp (GitHub)\Algo\obj\Debug\net10.0\StockSharp.Algo.dll' because it is being used by another process.; file may be locked by 'VBCSCompiler' (52572) [D:\stocksharp\StockSharp (GitHub)\Algo\Algo.csproj::TargetFramework=net10.0]
+0131_MACD_RSI|MacdRsiStrategy|BUILD_FAIL|D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'LunchBreakFadeStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'LunchBreakFadeStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+0130_Lunch_Break_Fade|LunchBreakFadeStrategy|BUILD_FAIL|CSC : error CS2012: Cannot open 'D:\stocksharp\StockSharp (GitHub)\Messages\obj\Debug\net10.0\StockSharp.Messages.dll' for writing -- The process cannot access the file 'D:\stocksharp\StockSharp (GitHub)\Messages\obj\Debug\net10.0\StockSharp.Messages.dll' because it is being used by another process.; file may be locked by 'VBCSCompiler' (49012) [D:\stocksharp\StockSharp (GitHub)\Messages\Messages.csproj::TargetFramework=net10.0]
+CSC : error CS2012: Cannot open 'D:\stocksharp\StockSharp (GitHub)\Messages\obj\Debug\net10.0\StockSharp.Messages.dll' for writing -- The process cannot access the file 'D:\stocksharp\StockSharp (GitHub)\Messages\obj\Debug\net10.0\StockSharp.Messages.dll' because it is being used by another process.; file may be locked by 'VBCSCompiler' (49012) [D:\stocksharp\StockSharp (GitHub)\Messages\Messages.csproj::TargetFramework=net10.0]
+0132_Bollinger_Stochastic|BollingerStochasticStrategy|BUILD_FAIL|D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'MacdRsiStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'MacdRsiStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+0131_MACD_RSI|MacdRsiStrategy|BUILD_FAIL|D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'MaVolumeStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'MaVolumeStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+0133_MA_Volume|MaVolumeStrategy|BUILD_FAIL|D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'BollingerStochasticStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'BollingerStochasticStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+0132_Bollinger_Stochastic|BollingerStochasticStrategy|BUILD_FAIL|D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'AdxMacdStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'AdxMacdStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+0134_ADX_MACD|AdxMacdStrategy|BUILD_FAIL|D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'MaVolumeStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'MaVolumeStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+0133_MA_Volume|MaVolumeStrategy|BUILD_FAIL|D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'IchimokuRsiStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'IchimokuRsiStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+0135_Ichimoku_RSI|IchimokuRsiStrategy|BUILD_FAIL|CSC : error CS2012: Cannot open 'D:\stocksharp\StockSharp (GitHub)\Alerts.Interfaces\obj\Debug\net10.0\StockSharp.Alerts.Interfaces.dll' for writing -- The process cannot access the file 'D:\stocksharp\StockSharp (GitHub)\Alerts.Interfaces\obj\Debug\net10.0\StockSharp.Alerts.Interfaces.dll' because it is being used by another process. [D:\stocksharp\StockSharp (GitHub)\Alerts.Interfaces\Alerts.Interfaces.csproj::TargetFramework=net10.0]
+CSC : error CS2012: Cannot open 'D:\stocksharp\StockSharp (GitHub)\Algo\obj\Debug\net10.0\StockSharp.Algo.dll' for writing -- The process cannot access the file 'D:\stocksharp\StockSharp (GitHub)\Algo\obj\Debug\net10.0\StockSharp.Algo.dll' because it is being used by another process.; file may be locked by 'VBCSCompiler' (53664) [D:\stocksharp\StockSharp (GitHub)\Algo\Algo.csproj::TargetFramework=net10.0]
+CSC : error CS2012: Cannot open 'D:\stocksharp\StockSharp (GitHub)\Alerts.Interfaces\obj\Debug\net10.0\StockSharp.Alerts.Interfaces.dll' for writing -- The process cannot access the file 'D:\stocksharp\StockSharp (GitHub)\Alerts.Interfaces\obj\Debug\net10.0\StockSharp.Alerts.Interfaces.dll' because it is being used by another process. [D:\stocksharp\StockSharp (GitHub)\Alerts.Interfaces\Alerts.Interfaces.csproj::TargetFramework=net10.0]
+0136_Supertrend_Volume|SupertrendVolumeStrategy|BUILD_FAIL|CSC : error CS2012: Cannot open 'D:\stocksharp\StockSharp (GitHub)\Localization.Generator\obj\Debug\netstandard2.0\StockSharp.Localization.Generator.dll' for writing -- The process cannot access the file 'D:\stocksharp\StockSharp (GitHub)\Localization.Generator\obj\Debug\netstandard2.0\StockSharp.Localization.Generator.dll' because it is being used by another process. [D:\stocksharp\StockSharp (GitHub)\Localization.Generator\Localization.Generator.csproj::TargetFramework=netstandard2.0]
+CSC : error CS2012: Cannot open 'D:\stocksharp\StockSharp (GitHub)\Localization.Generator\obj\Debug\netstandard2.0\StockSharp.Localization.Generator.dll' for writing -- The process cannot access the file 'D:\stocksharp\StockSharp (GitHub)\Localization.Generator\obj\Debug\netstandard2.0\StockSharp.Localization.Generator.dll' because it is being used by another process. [D:\stocksharp\StockSharp (GitHub)\Localization.Generator\Localization.Generator.csproj::TargetFramework=netstandard2.0]
+0137_Bollinger_RSI|BollingerRsiStrategy|BUILD_FAIL|CSC : error CS2012: Cannot open 'D:\stocksharp\StockSharp (GitHub)\Messages\obj\Debug\net10.0\StockSharp.Messages.dll' for writing -- The process cannot access the file 'D:\stocksharp\StockSharp (GitHub)\Messages\obj\Debug\net10.0\StockSharp.Messages.dll' because it is being used by another process.; file may be locked by 'VBCSCompiler' (50172) [D:\stocksharp\StockSharp (GitHub)\Messages\Messages.csproj::TargetFramework=net10.0]
+CSC : error CS2012: Cannot open 'D:\stocksharp\StockSharp (GitHub)\Messages\obj\Debug\net10.0\StockSharp.Messages.dll' for writing -- The process cannot access the file 'D:\stocksharp\StockSharp (GitHub)\Messages\obj\Debug\net10.0\StockSharp.Messages.dll' because it is being used by another process.; file may be locked by 'VBCSCompiler' (50172) [D:\stocksharp\StockSharp (GitHub)\Messages\Messages.csproj::TargetFramework=net10.0]
+0134_ADX_MACD|AdxMacdStrategy|BUILD_FAIL|D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'MaStochasticStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+D:\stocksharp\AlgoTrading\Runner\Program.cs(16,20): error CS0246: The type or namespace name 'MaStochasticStrategy' could not be found (are you missing a using directive or an assembly reference?) [D:\stocksharp\AlgoTrading\Runner\Runner.csproj::TargetFramework=net10.0]
+0138_MA_Stochastic|MaStochasticStrategy|OK|orders=8696|trades=2176|pnl=-23881467.70100
+0135_Ichimoku_RSI|IchimokuRsiStrategy|OK|orders=10331|trades=1579|pnl=-1045440.91505
+0139_ATR_MACD|AtrMacdStrategy|OK|orders=10510|trades=1449|pnl=11310863.80350
+0136_Supertrend_Volume|SupertrendVolumeStrategy|OK|orders=10241|trades=1544|pnl=-3901234.51160
+0140_VWAP_RSI|VwapRsiStrategy|OK|orders=10370|trades=1411|pnl=15440488.66575
+0137_Bollinger_RSI|BollingerRsiStrategy|OK|orders=10402|trades=1593|pnl=3810244.15030
+0141_Donchian_Volume|DonchianVolumeStrategy|TIMEOUT|orders=|trades=|pnl=

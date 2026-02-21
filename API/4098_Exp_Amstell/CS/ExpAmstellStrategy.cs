@@ -114,15 +114,15 @@ public class ExpAmstellStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Calculate the MetaTrader-like point size once trading begins.
 		_pointSize = CalculatePointSize();
 
 		// Enable default protection to close remaining positions on stop.
-		StartProtection();
+		StartProtection(null, null);
 
 		// React to best bid/ask updates exactly like the MQL tick handler.
 		SubscribeLevel1()

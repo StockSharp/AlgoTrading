@@ -84,12 +84,12 @@ public class AdxVolumeMultiplierStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-		_volumeSma = new SimpleMovingAverage { Length = VolumePeriod };
+		_volumeSma = new SMA { Length = VolumePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -113,7 +113,7 @@ public class AdxVolumeMultiplierStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var volumeValue = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true);
+		var volumeValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime));
 		if (!volumeValue.IsFinal)
 			return;
 		var avgVolume = volumeValue.ToDecimal();

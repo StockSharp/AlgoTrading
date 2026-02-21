@@ -88,31 +88,31 @@ public class BollingerBreakout2Strategy : Strategy
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Length", "Bollinger Bands period", "Bollinger Bands")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 1.8m)
 			.SetGreaterThanZero()
 			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier", "Bollinger Bands")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.2m);
 
 		_volumeLength = Param(nameof(VolumeLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume MA Length", "Length for volume moving average", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_trendLength = Param(nameof(TrendLength), 80)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend MA Length", "Length for trend moving average", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 120, 10);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation length", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 2);
 
 		_useLongSignals = Param(nameof(UseLongSignals), true)
@@ -140,13 +140,13 @@ public class BollingerBreakout2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bollinger = new BollingerBands { Length = BollingerLength, Width = BollingerMultiplier };
-		_volumeSma = new SimpleMovingAverage { Length = VolumeLength };
-		_trendSma = new SimpleMovingAverage { Length = TrendLength };
+		_volumeSma = new SMA { Length = VolumeLength };
+		_trendSma = new SMA { Length = TrendLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);

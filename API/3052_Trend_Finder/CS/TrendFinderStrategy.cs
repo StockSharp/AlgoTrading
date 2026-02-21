@@ -214,67 +214,67 @@ public class TrendFinderStrategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast LWMA Length", "Length of the fast weighted moving average", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow LWMA Length", "Length of the slow weighted moving average", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Number of bars used for momentum", "Confirmation")
-			.SetCanOptimize(true);
+			;
 
 		_momentumThresholdBuy = Param(nameof(MomentumThresholdBuy), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Threshold Buy", "Minimum deviation from 100 for longs", "Confirmation")
-			.SetCanOptimize(true);
+			;
 
 		_momentumThresholdSell = Param(nameof(MomentumThresholdSell), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Threshold Sell", "Minimum deviation from 100 for shorts", "Confirmation")
-			.SetCanOptimize(true);
+			;
 
 		_macdShortLength = Param(nameof(MacdShortLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast Length", "Short EMA length inside MACD", "Confirmation")
-			.SetCanOptimize(true);
+			;
 
 		_macdLongLength = Param(nameof(MacdLongLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow Length", "Long EMA length inside MACD", "Confirmation")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal Length", "Signal EMA length inside MACD", "Confirmation")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 0.0020m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Absolute loss distance in price", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 0.0050m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Absolute profit target in price", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStop = Param(nameof(TrailingStop), 0.0040m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop", "Distance used to trail profitable trades", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_breakEvenTrigger = Param(nameof(BreakEvenTrigger), 0.0030m)
 			.SetGreaterThanZero()
 			.SetDisplay("Break Even Trigger", "Profit needed to move stop to break even", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_breakEvenOffset = Param(nameof(BreakEvenOffset), 0.0010m)
 			.SetGreaterThanZero()
 			.SetDisplay("Break Even Offset", "Extra offset applied when break even activates", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -301,9 +301,9 @@ public class TrendFinderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = new WeightedMovingAverage { Length = FastMaLength };
 		_slowMa = new WeightedMovingAverage { Length = SlowMaLength };
@@ -378,7 +378,7 @@ public class TrendFinderStrategy : Strategy
 			return;
 
 		// MACD is calculated on the selected higher timeframe.
-		var macdValue = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(candle.ClosePrice, candle.CloseTime, true);
+		var macdValue = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(new DecimalIndicatorValue(_macd, candle.ClosePrice, candle.CloseTime));
 		if (macdValue.Macd is not decimal macd || macdValue.Signal is not decimal signal)
 			return;
 
@@ -393,8 +393,8 @@ public class TrendFinderStrategy : Strategy
 			return;
 
 		var typicalPrice = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
-		var fastValue = _fastMa.Process(typicalPrice, candle.CloseTime, true);
-		var slowValue = _slowMa.Process(typicalPrice, candle.CloseTime, true);
+		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, typicalPrice, candle.CloseTime));
+		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, typicalPrice, candle.CloseTime));
 		if (!_fastMa.IsFormed || !_slowMa.IsFormed)
 		{
 			TrackBaseCandle(candle);

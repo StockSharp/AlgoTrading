@@ -81,7 +81,7 @@ public class RciStrategy : Strategy
 		_rciLength = Param(nameof(RciLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("RCI Length", "Rank Correlation Index period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_maType = Param(nameof(MaType), "SMA")
@@ -90,7 +90,7 @@ public class RciStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_direction = Param(nameof(Direction), "Long & Short")
@@ -116,9 +116,9 @@ public class RciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rci = new RankCorrelationIndex { Length = RciLength };
 

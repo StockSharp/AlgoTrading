@@ -239,13 +239,13 @@ public class Exp3StoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_stoch1 = new StochasticOscillator { KPeriod = KPeriod, DPeriod = DPeriod, Smooth = Slowing };
-		_stoch2 = new StochasticOscillator { KPeriod = KPeriod, DPeriod = DPeriod, Smooth = Slowing };
-		_stoch3 = new StochasticOscillator { KPeriod = KPeriod, DPeriod = DPeriod, Smooth = Slowing };
+		_stoch1 = new StochasticOscillator { KPeriod = KPeriod, D = {  K = { Length = DPeriod } }, Smooth = Slowing };
+		_stoch2 = new StochasticOscillator { KPeriod = KPeriod, D = {  K = { Length = DPeriod } }, Smooth = Slowing };
+		_stoch3 = new StochasticOscillator { KPeriod = KPeriod, D = {  K = { Length = DPeriod } }, Smooth = Slowing };
 
 		var sub1 = SubscribeCandles(CandleType1);
 		sub1.BindEx(_stoch1, ProcessTf1).Start();

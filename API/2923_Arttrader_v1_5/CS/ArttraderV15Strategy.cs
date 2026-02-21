@@ -215,50 +215,50 @@ public class ArttraderV15Strategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 11)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA length calculated on the trend timeframe", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bigJump = Param(nameof(BigJump), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Single Candle Jump", "Maximum single-candle open gap", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_doubleJump = Param(nameof(DoubleJump), 55m)
 			.SetGreaterThanZero()
 			.SetDisplay("Double Candle Jump", "Maximum two-candle open gap", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Smart Stop Loss", "Loss that activates the time-based exit", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_emergencyLoss = Param(nameof(EmergencyLoss), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Emergency Stop", "Hard stop distance from fill price", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 25m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit distance from fill price", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_slopeSmall = Param(nameof(SlopeSmall), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Slope", "Minimum EMA slope for entries", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_slopeLarge = Param(nameof(SlopeLarge), 8m)
 			.SetGreaterThanZero()
 			.SetDisplay("Maximum Slope", "Maximum EMA slope for entries", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_minutesBegin = Param(nameof(MinutesBegin), 25)
 			.SetDisplay("Entry Delay (min)", "Minutes after the hour required before entries", "Timing")
-			.SetCanOptimize(true);
+			;
 
 		_minutesEnd = Param(nameof(MinutesEnd), 25)
 			.SetDisplay("Exit Delay (min)", "Minutes after the hour required before timed exits", "Timing")
-			.SetCanOptimize(true);
+			;
 
 		_slipBegin = Param(nameof(SlipBegin), 0m)
 			.SetDisplay("Entry Slip", "Maximum distance between close and extreme for entries", "Filters");
@@ -320,9 +320,9 @@ public class ArttraderV15Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var priceStep = Security?.PriceStep ?? 1m;
 		var decimals = Security?.Decimals;
@@ -343,11 +343,10 @@ public class ArttraderV15Strategy : Strategy
 		_slipEndAbs = SlipEnd * _pointFactor;
 		_adjustAbs = Adjust * _pointFactor;
 
-		var ema = new ExponentialMovingAverage
+		var ema = new EMA
 		{
 			// Use the hourly EMA of candle opens to define the dominant trend direction.
-			Length = EmaPeriod,
-			CandlePrice = CandlePrice.Open,
+			Length = EmaPeriod
 		};
 
 		var tradeSubscription = SubscribeCandles(CandleType);
@@ -379,7 +378,7 @@ public class ArttraderV15Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessTrendCandle(ICandleMessage candle, decimal emaValue)

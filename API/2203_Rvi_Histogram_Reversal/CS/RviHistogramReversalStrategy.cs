@@ -95,15 +95,15 @@ public class RviHistogramReversalStrategy : Strategy
 		_rviPeriod = Param(nameof(RviPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RVI Period", "Period of RVI indicator", "General")
-		.SetCanOptimize(true);
+		;
 
 		_highLevel = Param(nameof(HighLevel), 0.3m)
 		.SetDisplay("High Level", "Upper RVI threshold", "General")
-		.SetCanOptimize(true);
+		;
 
 		_lowLevel = Param(nameof(LowLevel), -0.3m)
 		.SetDisplay("Low Level", "Lower RVI threshold", "General")
-		.SetCanOptimize(true);
+		;
 
 		_mode = Param(nameof(Mode), TrendModes.Cross)
 		.SetDisplay("Mode", "Signal generation mode", "General");
@@ -142,17 +142,17 @@ public class RviHistogramReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rvi = new RelativeVigorIndex { Length = RviPeriod };
-		_signal = new SimpleMovingAverage { Length = RviPeriod };
+		_signal = new SMA { Length = RviPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

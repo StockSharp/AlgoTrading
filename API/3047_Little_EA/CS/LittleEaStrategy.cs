@@ -45,7 +45,7 @@ public class LittleEaStrategy : Strategy
 	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 	private readonly StrategyParam<decimal> _tradeVolume;
 
-	private LengthIndicator<decimal> _movingAverage;
+	private DecimalLengthIndicator _movingAverage;
 	private readonly List<decimal> _maHistory = new(); // Stores MA values to support the shift parameter
 	private readonly List<ICandleMessage> _candleHistory = new(); // Keeps finished candles for OHLC indexing
 
@@ -134,9 +134,9 @@ public class LittleEaStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume; // Align default volume with the configured trade size
 
@@ -164,7 +164,7 @@ public class LittleEaStrategy : Strategy
 			return;
 
 		var price = GetPrice(candle, AppliedPrice);
-		var maValue = _movingAverage.Process(price, candle.OpenTime, true).ToDecimal();
+		var maValue = _movingAverage.Process(new DecimalIndicatorValue(_movingAverage, price, candle.OpenTime)).ToDecimal();
 
 		_candleHistory.Add(candle);
 		TrimHistory(_candleHistory, GetHistoryLimit());
@@ -246,15 +246,15 @@ public class LittleEaStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SMA { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

@@ -55,19 +55,19 @@ public class SoxlTrendSurgeProfitOnlyRunnerStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 50);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_atrMultTarget = Param(nameof(AtrMultTarget), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Target", "ATR multiple for partial exit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_cooldownBars = Param(nameof(CooldownBars), 15)
@@ -77,13 +77,13 @@ public class SoxlTrendSurgeProfitOnlyRunnerStrategy : Strategy
 		_supertrendFactor = Param(nameof(SupertrendFactor), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Factor", "Multiplier for Supertrend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 4m, 0.5m);
 
 		_supertrendAtrPeriod = Param(nameof(SupertrendAtrPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend ATR Period", "ATR period for Supertrend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_minBarsHeld = Param(nameof(MinBarsHeld), 2)
@@ -93,7 +93,7 @@ public class SoxlTrendSurgeProfitOnlyRunnerStrategy : Strategy
 		_volFilterLen = Param(nameof(VolFilterLen), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume MA Length", "Length for volume filter", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_emaBuffer = Param(nameof(EmaBuffer), 0.005m)
@@ -126,15 +126,15 @@ public class SoxlTrendSurgeProfitOnlyRunnerStrategy : Strategy
 		_lastExitBar = -CooldownBars - 1;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_supertrend = new SuperTrend { Length = SupertrendAtrPeriod, Multiplier = SupertrendFactor };
-		_atrSma = new SimpleMovingAverage { Length = 20 };
-		_volSma = new SimpleMovingAverage { Length = VolFilterLen };
+		_atrSma = new SMA { Length = 20 };
+		_volSma = new SMA { Length = VolFilterLen };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -160,8 +160,8 @@ public class SoxlTrendSurgeProfitOnlyRunnerStrategy : Strategy
 
 		var emaValue = emaVal.GetValue<decimal>();
 		var atrValue = atrVal.GetValue<decimal>();
-		var atrSmaValue = _atrSma.Process(atrValue, candle.ServerTime, true).ToDecimal();
-		var volSmaValue = _volSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var atrSmaValue = _atrSma.Process(new DecimalIndicatorValue(_atrSma, atrValue, candle.ServerTime)).ToDecimal();
+		var volSmaValue = _volSma.Process(new DecimalIndicatorValue(_volSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 		var st = (SuperTrendIndicatorValue)stVal;
 		var isUpTrend = st.IsUpTrend;
 

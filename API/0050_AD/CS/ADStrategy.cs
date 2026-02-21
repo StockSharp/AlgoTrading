@@ -53,7 +53,7 @@ public class ADStrategy : Strategy
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -76,12 +76,12 @@ public class ADStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		var ma = new SimpleMovingAverage { Length = MAPeriod };
+		var ma = new SMA { Length = MAPeriod };
 		var ad = new AccumulationDistributionLine();
 
 		// Create subscription and bind indicators

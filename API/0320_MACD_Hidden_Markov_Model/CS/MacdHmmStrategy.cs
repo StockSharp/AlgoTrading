@@ -93,17 +93,17 @@ public class MacdHmmStrategy : Strategy
 	{
 		_macdFast = Param(nameof(MacdFast), 12)
 		.SetDisplay("MACD Fast Period", "Fast EMA period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 20, 2);
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 		.SetDisplay("MACD Slow Period", "Slow EMA period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 2);
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 		.SetDisplay("MACD Signal Period", "Signal EMA period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 15, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -111,7 +111,7 @@ public class MacdHmmStrategy : Strategy
 
 		_hmmHistoryLength = Param(nameof(HmmHistoryLength), 100)
 		.SetDisplay("HMM History Length", "Length of history for Hidden Markov Model", "HMM Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 200, 10);
 	}
 

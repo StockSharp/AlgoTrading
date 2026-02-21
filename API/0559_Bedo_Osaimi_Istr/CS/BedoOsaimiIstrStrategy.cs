@@ -56,7 +56,7 @@ public class BedoOsaimiIstrStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 	}
 
@@ -67,11 +67,11 @@ public class BedoOsaimiIstrStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_closeMa = new SMA { Length = MaLength };
 		_openMa = new SMA { Length = MaLength };

@@ -57,37 +57,37 @@ public class Rpm5BullsBearsEyesStrategy : Strategy
 		_period = Param(nameof(Period), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("Bulls/Bears Period", "Averaging period applied to Bulls Power and Bears Power.", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_gamma = Param(nameof(Gamma), 0.5m)
 		.SetRange(0m, 1m)
 		.SetDisplay("Gamma", "Smoothing ratio used by the four-stage IIR filter.", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_threshold = Param(nameof(Threshold), 0.5m)
 		.SetRange(0m, 1m)
 		.SetDisplay("Threshold", "Level separating bullish (above) and bearish (below) zones.", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "Lookback used to rebuild the ATR trailing distance.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "Multiplier applied to ATR when computing trailing distance.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 25m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective distance measured in pips.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Profit target distance measured in pips.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 		.SetGreaterThanZero()
@@ -206,9 +206,9 @@ public class Rpm5BullsBearsEyesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Gamma < 0m || Gamma > 1m)
 		throw new InvalidOperationException("Gamma must remain between 0 and 1.");

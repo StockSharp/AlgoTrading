@@ -70,17 +70,17 @@ public class BollingerBandWidthStrategy : Strategy
 	{
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Bollinger Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetDisplay("Bollinger Deviation", "Deviation for Bollinger Bands calculation", "Bollinger Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 2.5m, 0.25m);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop-loss calculation", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -103,9 +103,9 @@ public class BollingerBandWidthStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var bollinger = new BollingerBands

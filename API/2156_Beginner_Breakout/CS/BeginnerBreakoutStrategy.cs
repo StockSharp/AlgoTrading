@@ -84,12 +84,12 @@ public class BeginnerBreakoutStrategy : Strategy
 		_period = Param(nameof(Period), 9)
 		.SetDisplay("Period", "Lookback period for highs/lows", "General")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_shiftPercent = Param(nameof(ShiftPercent), 30m)
 		.SetDisplay("Shift %", "Percentage shift from channel", "General")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for strategy", "General");
@@ -118,9 +118,9 @@ public class BeginnerBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = Period };
 		_lowest = new Lowest { Length = Period };

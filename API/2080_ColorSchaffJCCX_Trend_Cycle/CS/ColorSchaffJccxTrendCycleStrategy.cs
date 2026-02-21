@@ -50,25 +50,25 @@ public class ColorSchaffJccxTrendCycleStrategy : Strategy
 	{
 		_fastLength = Param(nameof(FastLength), 23)
 			.SetDisplay("Fast JCCX", "Fast JCCX length", "Indicator")
-			.SetCanOptimize(true);
+			;
 		_slowLength = Param(nameof(SlowLength), 50)
 			.SetDisplay("Slow JCCX", "Slow JCCX length", "Indicator")
-			.SetCanOptimize(true);
+			;
 		_smooth = Param(nameof(Smooth), 8)
 			.SetDisplay("Smoothing", "JJMA smoothing factor", "Indicator")
-			.SetCanOptimize(true);
+			;
 		_phase = Param(nameof(Phase), 100)
 			.SetDisplay("Phase", "JJMA phase value", "Indicator")
-			.SetCanOptimize(true);
+			;
 		_cycle = Param(nameof(Cycle), 10)
 			.SetDisplay("Cycle", "Cycle length", "Indicator")
-			.SetCanOptimize(true);
+			;
 		_highLevel = Param(nameof(HighLevel), 60)
 			.SetDisplay("High Level", "Upper trigger level", "Signal")
-			.SetCanOptimize(true);
+			;
 		_lowLevel = Param(nameof(LowLevel), -60)
 			.SetDisplay("Low Level", "Lower trigger level", "Signal")
-			.SetCanOptimize(true);
+			;
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
 			.SetDisplay("Open Long", "Allow opening long positions", "Trading");
 		_sellPosOpen = Param(nameof(SellPosOpen), true)
@@ -80,9 +80,9 @@ public class ColorSchaffJccxTrendCycleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_stc = new SchaffTrendCycle
 		{

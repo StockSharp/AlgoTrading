@@ -37,7 +37,7 @@
 | `RsiOverbought` | `decimal` | `70` | Порог RSI для разрешения коротких позиций. |
 | `CorrelationLookback` | `int` | `60` | Количество дневных отклонений, участвующих в расчёте корреляции. |
 | `CandleType` | `DataType` | `TimeSpan.FromHours(1).TimeFrame()` | Внутридневные свечи для EMA и RSI. |
-| `DailyCandleType` | `DataType` | `TimeSpan.FromDays(1).TimeFrame()` | Дневные свечи для статистики корреляции. |
+| `DailyCandleType` | `DataType` | `TimeSpan.FromMinutes(5).TimeFrame()` | Дневные свечи для статистики корреляции. |
 | `HedgeSecurity` | `Security` | `null` | Хеджирующий инструмент. Нужно задать перед запуском. |
 
 > **Объём сделок:** размер ордеров определяется свойством `Volume` стратегии. Значение нормализуется по `VolumeStep`, `VolumeMin` и `VolumeMax` каждого инструмента и автоматически принимает `0.1`, если `Volume` не задан.

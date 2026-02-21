@@ -52,7 +52,7 @@ public class KlossStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Length of weighted MA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 50, 1);
 
 		_maShift = Param(nameof(MaShift), 5)
@@ -66,7 +66,7 @@ public class KlossStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Length of CCI", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_cciShift = Param(nameof(CciShift), 0)
@@ -76,25 +76,25 @@ public class KlossStrategy : Strategy
 		_cciDiffer = Param(nameof(CciDiffer), 120m)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Level", "Distance from zero to trigger signal", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 200m, 10m);
 
 		_stochKPeriod = Param(nameof(StochKPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "Period of %K line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
-		_stochDPeriod = Param(nameof(StochDPeriod), 3)
+		_stochD = { Length = Param }(nameof(StochDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Period of %D line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_stochSmooth = Param(nameof(StochSmooth), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Smooth", "Smoothing for %K", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_stochShift = Param(nameof(StochShift), 0)
@@ -104,7 +104,7 @@ public class KlossStrategy : Strategy
 		_stochDiffer = Param(nameof(StochDiffer), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Level", "Distance from 50 to trigger", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 40m, 5m);
 
 		_commonShift = Param(nameof(CommonShift), 1)
@@ -166,13 +166,13 @@ public class KlossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = new WeightedMovingAverage { Length = MaPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
-		_stoch = new StochasticOscillator { KPeriod = StochKPeriod, DPeriod = StochDPeriod, Smooth = StochSmooth };
+		_stoch = new StochasticOscillator { KPeriod = StochKPeriod, D = {  K = { Length = StochDPeriod } }, Smooth = StochSmooth };
 
 		var shiftAdd = CommonShift;
 		_maShifter = new Shift { Length = MaShift + shiftAdd };
@@ -211,17 +211,17 @@ public class KlossStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var maValue = _ma.Process(candle).ToDecimal();
-		var maShifted = _maShifter.Process(maValue, candle.OpenTime, true).ToDecimal();
+		var maValue = _ma.Process(new DecimalIndicatorValue(_ma, candle).ToDecimal();
+		var maShifted = _maShifter.Process(maValue, candle.OpenTime)).ToDecimal();
 
-		var priceShifted = _priceShifter.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
+		var priceShifted = _priceShifter.Process(new DecimalIndicatorValue(_priceShifter, candle.ClosePrice, candle.OpenTime)).ToDecimal();
 
-		var cciValue = _cci.Process(candle).ToDecimal();
-		var cciShifted = _cciShifter.Process(cciValue, candle.OpenTime, true).ToDecimal();
+		var cciValue = _cci.Process(new DecimalIndicatorValue(_cci, candle).ToDecimal();
+		var cciShifted = _cciShifter.Process(cciValue, candle.OpenTime)).ToDecimal();
 
-		var stochVal = (StochasticOscillatorValue)_stoch.Process(candle);
+		var stochVal = (StochasticOscillatorValue)_stoch.Process(new DecimalIndicatorValue(_stoch, candle);
 		var stochK = stochVal.K;
-		var stochShifted = _stochShifter.Process(stochK, candle.OpenTime, true).ToDecimal();
+		var stochShifted = _stochShifter.Process(stochK, candle.OpenTime)).ToDecimal();
 
 		var buySignal = cciShifted < -CciDiffer &&
 			stochShifted < 50m - StochDiffer &&

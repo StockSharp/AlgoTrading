@@ -138,7 +138,7 @@ public class WprLevelCrossStrategy : Strategy
 	{
 		_wprPeriod = Param(nameof(WprPeriod), 14)
 			.SetDisplay("WPR Period", "Lookback period for Williams %R", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_highLevel = Param(nameof(HighLevel), -40m)
@@ -186,9 +186,9 @@ public class WprLevelCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var wpr = new WilliamsR { Length = WprPeriod };
 		var subscription = SubscribeCandles(CandleType);

@@ -280,7 +280,7 @@ public class TestinatorStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trade Volume", "Volume used for each market order", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 5m, 0.1m);
 
 		_buySequence = Param(nameof(BuySequence), 256)
@@ -292,7 +292,7 @@ public class TestinatorStrategy : Strategy
 		_maxBuys = Param(nameof(MaxBuys), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Buys", "Maximum number of concurrent buy trades", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 6, 1);
 
 		_stepPips = Param(nameof(StepPips), 15)
@@ -301,13 +301,13 @@ public class TestinatorStrategy : Strategy
 
 		_tradeStartHour = Param(nameof(TradeStartHour), 16)
 		.SetDisplay("Trading start hour", "Session opening hour in EET", "Session")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 23, 1);
 
 		_tradeDurationHours = Param(nameof(TradeDurationHours), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Trading duration", "Session duration in hours", "Session")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 12, 1);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), -1m)
@@ -336,7 +336,7 @@ public class TestinatorStrategy : Strategy
 
 		_rsiEntryLevel = Param(nameof(RsiEntryLevel), 70m)
 		.SetDisplay("RSI entry level", "Threshold for entry test 256", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(55m, 80m, 5m);
 
 		_rsiEntryPeriod = Param(nameof(RsiEntryPeriod), 14)
@@ -345,7 +345,7 @@ public class TestinatorStrategy : Strategy
 
 		_rsiCloseLevel = Param(nameof(RsiCloseLevel), 40m)
 		.SetDisplay("RSI close level", "Threshold for exit test 256", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 60m, 5m);
 
 		_rsiClosePeriod = Param(nameof(RsiClosePeriod), 10)
@@ -402,13 +402,13 @@ public class TestinatorStrategy : Strategy
 		_currentVolume = 0m;
 		Volume = TradeVolume;
 
-		_sma = new SimpleMovingAverage { Length = 14 };
-		_emaShort = new ExponentialMovingAverage { Length = 12 };
-		_emaLong = new ExponentialMovingAverage { Length = 50 };
+		_sma = new SMA { Length = 14 };
+		_emaShort = new EMA { Length = 12 };
+		_emaLong = new EMA { Length = 50 };
 		_entryBands = new BollingerBands { Length = 20, Width = 2m };
 		_closeBands = new BollingerBands { Length = BollingerCloseLength, Width = BollingerCloseDeviation };
 		_adx = new AverageDirectionalIndex { Length = 14 };
-		_stochastic = new StochasticOscillator { KPeriod = 16, DPeriod = 4, Smooth = 8 };
+		_stochastic = new StochasticOscillator {, D = { Length = 4 }, Smooth = 8 };
 		_williams = new WilliamsR { Length = 14 };
 		_macd = new MovingAverageConvergenceDivergence
 		{

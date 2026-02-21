@@ -76,17 +76,17 @@ public class TradeChannelAtrStrategy : Strategy
 
 		_channelPeriod = Param(nameof(ChannelPeriod), 20)
 			.SetDisplay("Channel Period", "Lookback for highest/lowest channel levels", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 4)
 			.SetDisplay("ATR Period", "Average True Range period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_trailingDistance = Param(nameof(TrailingDistance), 30m)
 			.SetDisplay("Trailing Distance", "Trailing stop distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 100m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -111,9 +111,9 @@ public class TradeChannelAtrStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_point = Security?.PriceStep ?? 1m;
 

@@ -83,11 +83,11 @@ public class TugaSupertrendStrategy : Strategy
 
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetDisplay("ATR Length", "ATR length for SuperTrend", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_factor = Param(nameof(Factor), 3m)
 			.SetDisplay("Factor", "Multiplier for SuperTrend", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -105,9 +105,9 @@ public class TugaSupertrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var supertrend = new SuperTrend
 		{

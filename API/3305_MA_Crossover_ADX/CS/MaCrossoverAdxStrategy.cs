@@ -110,27 +110,27 @@ public class MaCrossoverAdxStrategy : Strategy
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 33)
 			.SetDisplay("ADX Period", "Number of bars used for ADX smoothing.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_adxThreshold = Param(nameof(AdxThreshold), 22m)
 			.SetDisplay("ADX Threshold", "Minimum ADX main line confirming trend strength.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_emaPeriod = Param(nameof(EmaPeriod), 39)
 			.SetDisplay("EMA Period", "Length of the confirming exponential moving average.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 400m)
 			.SetDisplay("Stop Loss (points)", "Protective stop loss distance expressed in instrument points.", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 900m)
 			.SetDisplay("Take Profit (points)", "Target profit distance expressed in instrument points.", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetDisplay("Trade Volume", "Order volume submitted on a fresh entry.", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe powering the EMA and ADX filters.", "Data");
@@ -162,9 +162,9 @@ public class MaCrossoverAdxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Resolve the minimum price increment for converting point based risk parameters.
 		_pipSize = Security?.PriceStep ?? 0m;
@@ -173,7 +173,7 @@ public class MaCrossoverAdxStrategy : Strategy
 			_pipSize = 1m;
 		}
 
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

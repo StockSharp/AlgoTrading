@@ -46,7 +46,7 @@ public class SpeedMAStrategy : Strategy
 		_movingAveragePeriod = Param(nameof(MovingAveragePeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("MA period", "Length of the simple moving average.", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_shift = Param(nameof(Shift), 1)
 			.SetNotNegative()
@@ -55,7 +55,7 @@ public class SpeedMAStrategy : Strategy
 		_slopeThresholdPoints = Param(nameof(SlopeThresholdPoints), 10m)
 			.SetNotNegative()
 			.SetDisplay("Slope threshold (points)", "Minimum difference between shifted MA values required to trigger a signal.", "Logic")
-			.SetCanOptimize(true);
+			;
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse signals", "Invert generated buy and sell directions.", "Logic");
@@ -63,12 +63,12 @@ public class SpeedMAStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
 			.SetNotNegative()
 			.SetDisplay("Take profit (points)", "Distance to the profit target expressed in points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 490m)
 			.SetNotNegative()
 			.SetDisplay("Stop loss (points)", "Distance to the protective stop expressed in points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle type", "Primary timeframe used for signal generation.", "General");
@@ -161,9 +161,9 @@ public class SpeedMAStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (MovingAveragePeriod <= 0)
 			throw new InvalidOperationException("MovingAveragePeriod must be greater than zero.");
@@ -172,7 +172,7 @@ public class SpeedMAStrategy : Strategy
 		Volume = OrderVolume;
 
 		// Create the moving average that replicates the MetaTrader indicator.
-		_movingAverage = new SimpleMovingAverage
+		_movingAverage = new SMA
 		{
 			Length = MovingAveragePeriod
 		};

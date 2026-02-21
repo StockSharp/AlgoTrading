@@ -149,17 +149,17 @@ public class TrendRdsReversalStrategy : Strategy
 	{
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetDisplay("Trade Volume", "Market order volume", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 2m, 0.1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 30m)
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 10m);
 
 		_startTime = Param(nameof(StartTime), new TimeSpan(8, 0, 0))
@@ -173,17 +173,17 @@ public class TrendRdsReversalStrategy : Strategy
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 100m, 5m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 1m)
 			.SetDisplay("Trailing Step (pips)", "Extra pips before trailing adjusts again", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 20m, 1m);
 
 		_breakEvenPips = Param(nameof(BreakEvenPips), 0m)
 			.SetDisplay("Break-Even (pips)", "Profit in pips that moves the stop to break-even", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 50m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -214,9 +214,9 @@ public class TrendRdsReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("Security must be assigned before starting the strategy.");
@@ -232,7 +232,7 @@ public class TrendRdsReversalStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

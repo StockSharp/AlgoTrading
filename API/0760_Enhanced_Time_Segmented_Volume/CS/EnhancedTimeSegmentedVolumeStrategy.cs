@@ -66,13 +66,13 @@ public class EnhancedTimeSegmentedVolumeStrategy : Strategy
 		_tsvLength = Param(nameof(TsvLength), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("TSV Length", "Length for Time Segmented Volume calculation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_maLength = Param(nameof(MaLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average length for TSV", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 	}
 
@@ -90,12 +90,12 @@ public class EnhancedTimeSegmentedVolumeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_tsvAverage = new SimpleMovingAverage { Length = TsvLength };
-		_ma = new SimpleMovingAverage { Length = MaLength };
+		_tsvAverage = new SMA { Length = TsvLength };
+		_ma = new SMA { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -132,9 +132,9 @@ public class EnhancedTimeSegmentedVolumeStrategy : Strategy
 		var priceChange = candle.ClosePrice - _previousClose;
 		var tsvValue = candle.TotalVolume * priceChange;
 
-		var tsvAvg = _tsvAverage.Process(tsvValue, candle.ServerTime, true).GetValue<decimal>();
+		var tsvAvg = _tsvAverage.Process(new DecimalIndicatorValue(_tsvAverage, tsvValue, candle.ServerTime)).GetValue<decimal>();
 		var t = tsvAvg * TsvLength;
-		var m = _ma.Process(t, candle.ServerTime, true).GetValue<decimal>();
+		var m = _ma.Process(new DecimalIndicatorValue(_ma, t, candle.ServerTime)).GetValue<decimal>();
 
 		var isLong = t > m && t > 0;
 		var isShort = t < m && t < 0;

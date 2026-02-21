@@ -147,49 +147,49 @@ public class MovingAveragesCrossoverStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Period", "Period for the fast moving average", "MA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Period", "Period for the slow moving average", "MA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 5);
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Volume used for market orders", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500)
 			.SetDisplay("Stop Loss (points)", "Stop loss distance expressed in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 1000, 50);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 1000)
 			.SetDisplay("Take Profit (points)", "Take profit distance expressed in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200, 2000, 100);
 
 		_breakEvenLevelPoints = Param(nameof(BreakEvenLevelPoints), 300)
 			.SetDisplay("Break-even Trigger", "Profit required before moving the stop to break-even", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 800, 50);
 
 		_breakEvenProfitPoints = Param(nameof(BreakEvenProfitPoints), 10)
 			.SetDisplay("Break-even Offset", "Additional points kept as profit after break-even", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 50, 5);
 
 		_trailingStartPoints = Param(nameof(TrailingStartPoints), 500)
 			.SetDisplay("Trailing Start", "Profit distance before activating the trailing stop", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200, 1000, 50);
 
 		_trailingDistancePoints = Param(nameof(TrailingDistancePoints), 100)
 			.SetDisplay("Trailing Distance", "Distance maintained by the trailing stop", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 25);
 
 		_closeOnOppositeSignal = Param(nameof(CloseOnOppositeSignal), true)
@@ -213,9 +213,9 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 

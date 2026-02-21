@@ -90,19 +90,19 @@ public class MA2CCIStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast moving average period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow moving average period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_cciPeriod = Param(nameof(CciPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Commodity Channel Index period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 20, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 4)
@@ -128,12 +128,12 @@ public class MA2CCIStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
-		_slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
+		_fastMa = new SMA { Length = FastMaPeriod };
+		_slowMa = new SMA { Length = SlowMaPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 

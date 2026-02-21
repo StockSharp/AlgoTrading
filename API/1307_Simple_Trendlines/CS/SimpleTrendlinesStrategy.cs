@@ -82,18 +82,18 @@ public class SimpleTrendlinesStrategy : Strategy
 		_xAxis = Param(nameof(XAxis), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("X Axis", "Distance between points", "General")
-			.SetCanOptimize(true);
+			;
 
 		_offset = Param(nameof(Offset), 0)
 			.SetDisplay("Offset", "Bars offset from current index", "General")
-			.SetCanOptimize(true);
+			;
 
 		_strictMode = Param(nameof(StrictMode), false)
 			.SetDisplay("Strict Mode", "Enable strict validation", "General");
 
 		_strictType = Param(nameof(StrictType), 0)
 			.SetDisplay("Strict Type", "0 - price above, 1 - price below", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -115,14 +115,14 @@ public class SimpleTrendlinesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_trendline = new Trendline(XAxis, Offset, StrictMode, StrictType);
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

@@ -126,7 +126,7 @@ public class IbsInternalBarStrengthStrategy : Strategy
 		_entryType = Param(nameof(EntryType), TradeTypes.Long)
 			.SetDisplay("Entry Type", "Allowed trade directions", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -145,15 +145,15 @@ public class IbsInternalBarStrengthStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 
 		if (EmaPeriod > 0)
 		{
-			var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+			var ema = new EMA { Length = EmaPeriod };
 
 			subscription
 				.Bind(ema, ProcessCandle)
@@ -183,7 +183,7 @@ public class IbsInternalBarStrengthStrategy : Strategy
 			}
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal ema)

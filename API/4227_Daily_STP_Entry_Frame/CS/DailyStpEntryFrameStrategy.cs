@@ -232,7 +232,7 @@ Long = 1,
 	/// </summary>
 	public DailyStpEntryFrameStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time-frame used to monitor the previous session range", "General");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 8m)
@@ -338,9 +338,9 @@ _sideFilter = Param(nameof(SideFilter), (int)EntrySides.Short)
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("Security must be assigned before starting the strategy.");

@@ -44,42 +44,42 @@ public class ESmartTrallingStrategy : Strategy
 	{
 		_useCloseOneThird = Param(nameof(UseCloseOneThird), true)
 		.SetDisplay("Close One Third", "Close one third of the position after the first profit level", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_levelProfit1 = Param(nameof(LevelProfit1), 20m)
 		.SetGreaterThanZero()
 		.SetDisplay("Profit Level 1 (points)", "Profit in points required before activating the first trailing level", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_levelProfit2 = Param(nameof(LevelProfit2), 35m)
 		.SetGreaterThanZero()
 		.SetDisplay("Profit Level 2 (points)", "Profit in points required before activating the second trailing level", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_levelProfit3 = Param(nameof(LevelProfit3), 55m)
 		.SetGreaterThanZero()
 		.SetDisplay("Profit Level 3 (points)", "Profit in points required before activating the third trailing level", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_levelMoving1 = Param(nameof(LevelMoving1), 1m)
 		.SetDisplay("Stop Offset 1 (points)", "Stop-loss distance applied after reaching the first profit level", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_levelMoving2 = Param(nameof(LevelMoving2), 10m)
 		.SetDisplay("Stop Offset 2 (points)", "Stop-loss distance applied after reaching the second profit level", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_levelMoving3 = Param(nameof(LevelMoving3), 30m)
 		.SetDisplay("Stop Offset 3 (points)", "Stop-loss distance applied after reaching the third profit level", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStop = Param(nameof(TrailingStop), 30m)
 		.SetDisplay("Trailing Stop (points)", "Distance in points kept between price and the trailing stop", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStep = Param(nameof(TrailingStep), 5m)
 		.SetDisplay("Trailing Step (points)", "Additional favorable movement required before moving the trailing stop again", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_defaultPartialStep = Param(nameof(DefaultPartialStep), 0.1m)
 		.SetGreaterThanZero()
@@ -204,9 +204,9 @@ public class ESmartTrallingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? Security?.Step ?? 0m;
 

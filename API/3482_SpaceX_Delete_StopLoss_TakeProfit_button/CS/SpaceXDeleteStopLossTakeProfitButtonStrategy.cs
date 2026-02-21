@@ -68,15 +68,15 @@ public class SpaceXDeleteStopLossTakeProfitButtonStrategy : Strategy
 	{
 		_applyOnStart = Param(nameof(ApplyOnStart), true)
 			.SetDisplay("Run On Start", "Automatically remove protective orders when the strategy starts.", "General")
-			.SetCanOptimize(false);
+			;
 
 		_affectAllSecurities = Param(nameof(AffectAllSecurities), true)
 			.SetDisplay("All Securities", "Include every open portfolio position instead of only the attached security.", "Scope")
-			.SetCanOptimize(false);
+			;
 
 		_deleteRequest = Param(nameof(DeleteRequest), false)
 			.SetDisplay("Delete Request", "Flip to true to emulate the DELETE SL_TP button.", "Manual Controls")
-			.SetCanOptimize(false);
+			;
 
 		_pollingIntervalSeconds = Param(nameof(PollingIntervalSeconds), 1)
 			.SetDisplay("Polling Interval (s)", "Timer interval that checks the manual request flag.", "General")
@@ -98,9 +98,9 @@ public class SpaceXDeleteStopLossTakeProfitButtonStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (PollingIntervalSeconds <= 0)
 			throw new InvalidOperationException("Polling interval must be positive.");

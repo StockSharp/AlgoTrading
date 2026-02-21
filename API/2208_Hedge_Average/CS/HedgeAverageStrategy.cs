@@ -118,13 +118,13 @@ public class HedgeAverageStrategy : Strategy
 		_period1 = Param(nameof(Period1), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Period 1", "Period for first MA pair", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_period2 = Param(nameof(Period2), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Period 2", "Period for second MA pair", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_startHour = Param(nameof(StartHour), 6)
@@ -138,12 +138,12 @@ public class HedgeAverageStrategy : Strategy
 
 		_takeProfit = Param(nameof(TakeProfit), 100m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 200m, 20m);
 
 		_stopLoss = Param(nameof(StopLoss), 100m)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 200m, 20m);
 
 		_useTrailing = Param(nameof(UseTrailing), true)
@@ -165,14 +165,14 @@ public class HedgeAverageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_maOpen1 = new SimpleMovingAverage { Length = Period1 };
-		_maClose1 = new SimpleMovingAverage { Length = Period1 };
-		_maOpen2 = new SimpleMovingAverage { Length = Period2 };
-		_maClose2 = new SimpleMovingAverage { Length = Period2 };
+		_maOpen1 = new SMA { Length = Period1 };
+		_maClose1 = new SMA { Length = Period1 };
+		_maOpen2 = new SMA { Length = Period2 };
+		_maClose2 = new SMA { Length = Period2 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -193,10 +193,10 @@ public class HedgeAverageStrategy : Strategy
 			return;
 
 		// Update indicators with current open and close prices
-		var ma1o = _maOpen1.Process(candle.OpenPrice, candle.OpenTime, true).GetValue<decimal>();
-		var ma1c = _maClose1.Process(candle.ClosePrice, candle.OpenTime, true).GetValue<decimal>();
-		var ma2o = _maOpen2.Process(candle.OpenPrice, candle.OpenTime, true).GetValue<decimal>();
-		var ma2c = _maClose2.Process(candle.ClosePrice, candle.OpenTime, true).GetValue<decimal>();
+		var ma1o = _maOpen1.Process(new DecimalIndicatorValue(_maOpen1, candle.OpenPrice, candle.OpenTime)).GetValue<decimal>();
+		var ma1c = _maClose1.Process(new DecimalIndicatorValue(_maClose1, candle.ClosePrice, candle.OpenTime)).GetValue<decimal>();
+		var ma2o = _maOpen2.Process(new DecimalIndicatorValue(_maOpen2, candle.OpenPrice, candle.OpenTime)).GetValue<decimal>();
+		var ma2c = _maClose2.Process(new DecimalIndicatorValue(_maClose2, candle.ClosePrice, candle.OpenTime)).GetValue<decimal>();
 
 		// Initialize previous values
 		if (!_isInitialized)
@@ -209,7 +209,7 @@ public class HedgeAverageStrategy : Strategy
 			return;
 		}
 
-		if (!IsTradingHour(candle.OpenTime.UtcDateTime))
+		if (!IsTradingHour(candle.OpenTime))
 		{
 			_prevMaOpen1 = ma1o;
 			_prevMaClose1 = ma1c;

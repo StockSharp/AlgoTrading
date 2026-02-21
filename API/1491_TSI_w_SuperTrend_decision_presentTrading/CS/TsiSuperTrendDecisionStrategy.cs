@@ -94,9 +94,9 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		switch (Tpsl)
 		{
@@ -110,7 +110,7 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 				StartProtection(new Unit(TakeProfit, UnitTypes.Percent), new Unit(StopLoss, UnitTypes.Percent));
 				break;
 			default:
-				StartProtection();
+				StartProtection(null, null);
 				break;
 		}
 

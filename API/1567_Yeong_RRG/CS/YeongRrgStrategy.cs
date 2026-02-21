@@ -70,7 +70,7 @@ public class YeongRrgStrategy : Strategy
 		_length = Param(nameof(Length), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Period for SMA and ROC calculations", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -107,18 +107,18 @@ public class YeongRrgStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (IndexSecurity == null)
 			throw new InvalidOperationException("Index security is not specified.");
 
-		_rsSma = new SimpleMovingAverage { Length = Length };
+		_rsSma = new SMA { Length = Length };
 		_rsRoc = new RateOfChange { Length = Length };
-		_rsRatioMean = new SimpleMovingAverage { Length = Length };
+		_rsRatioMean = new SMA { Length = Length };
 		_rsRatioStd = new StandardDeviation { Length = Length };
-		_rmRatioMean = new SimpleMovingAverage { Length = Length };
+		_rmRatioMean = new SMA { Length = Length };
 		_rmRatioStd = new StandardDeviation { Length = Length };
 
 		var mainSubscription = SubscribeCandles(CandleType);
@@ -162,20 +162,20 @@ public class YeongRrgStrategy : Strategy
 		var stockClose = candle.ClosePrice;
 		var rs = (stockClose / _lastIndexClose) * 100m;
 
-		var rsRatioValue = _rsSma.Process(rs, candle.ServerTime, true);
+		var rsRatioValue = _rsSma.Process(new DecimalIndicatorValue(_rsSma, rs, candle.ServerTime));
 		if (!_rsSma.IsFormed)
 			return;
 		var rsRatio = rsRatioValue.ToDecimal();
 
-		var rmRatioValue = _rsRoc.Process(rsRatio, candle.ServerTime, true);
+		var rmRatioValue = _rsRoc.Process(new DecimalIndicatorValue(_rsRoc, rsRatio, candle.ServerTime));
 		if (!_rsRoc.IsFormed)
 			return;
 		var rmRatio = rmRatioValue.ToDecimal();
 
-		var meanRsRatioValue = _rsRatioMean.Process(rsRatio, candle.ServerTime, true);
-		var stdRsRatioValue = _rsRatioStd.Process(rsRatio, candle.ServerTime, true);
-		var meanRmRatioValue = _rmRatioMean.Process(rmRatio, candle.ServerTime, true);
-		var stdRmRatioValue = _rmRatioStd.Process(rmRatio, candle.ServerTime, true);
+		var meanRsRatioValue = _rsRatioMean.Process(new DecimalIndicatorValue(_rsRatioMean, rsRatio, candle.ServerTime));
+		var stdRsRatioValue = _rsRatioStd.Process(new DecimalIndicatorValue(_rsRatioStd, rsRatio, candle.ServerTime));
+		var meanRmRatioValue = _rmRatioMean.Process(new DecimalIndicatorValue(_rmRatioMean, rmRatio, candle.ServerTime));
+		var stdRmRatioValue = _rmRatioStd.Process(new DecimalIndicatorValue(_rmRatioStd, rmRatio, candle.ServerTime));
 
 		if (!_rsRatioMean.IsFormed || !_rsRatioStd.IsFormed || !_rmRatioMean.IsFormed || !_rmRatioStd.IsFormed)
 			return;

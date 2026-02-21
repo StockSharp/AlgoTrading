@@ -91,22 +91,22 @@ public class BuySellStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average period", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 1000)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 2000)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_allowLongEntry = Param(nameof(AllowLongEntry), true)
 			.SetDisplay("Allow Long Entry", "Permission to open long positions", "Permissions");
@@ -138,9 +138,9 @@ public class BuySellStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ma = new SMA { Length = MaPeriod };
 		var atr = new ATR { Length = AtrPeriod };

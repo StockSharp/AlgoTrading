@@ -99,37 +99,37 @@ public class MacdAdaptiveHistogramStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast EMA period for MACD", "MACD Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 2);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow EMA period for MACD", "MACD Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 32, 3);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Period", "Signal line period for MACD", "MACD Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 12, 1);
 
 		_histogramAvgPeriod = Param(nameof(HistogramAvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Histogram Avg Period", "Period for histogram average calculation", "Strategy Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier for histogram threshold", "Strategy Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Strategy Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -154,7 +154,7 @@ public class MacdAdaptiveHistogramStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_histAvg = new SimpleMovingAverage { Length = HistogramAvgPeriod };
+		_histAvg = new SMA { Length = HistogramAvgPeriod };
 		_histStdDev = new StandardDeviation { Length = HistogramAvgPeriod };
 
 		// Create MACD indicator with custom settings
@@ -211,8 +211,8 @@ public class MacdAdaptiveHistogramStrategy : Strategy
 		var histogram = macd - signal; // Not using Item3 as it might not be available depending on MACD implementation
 
 		// Process the histogram through the statistics indicators
-		var histAvgValue = _histAvg.Process(histogram, macdValue.Time, macdValue.IsFinal).ToDecimal();
-		var histStdDevValue = _histStdDev.Process(histogram, macdValue.Time, macdValue.IsFinal).ToDecimal();
+		var histAvgValue = _histAvg.Process(new DecimalIndicatorValue(_histAvg, histogram, macdValue.Time)).ToDecimal();
+		var histStdDevValue = _histStdDev.Process(new DecimalIndicatorValue(_histStdDev, histogram, macdValue.Time)).ToDecimal();
 
 		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())

@@ -184,7 +184,7 @@ public class CorrelationArraysStrategy : Strategy
 			.SetDisplay("Candle Type", "Type of candles", "General");
 		_lookbackParam = Param(nameof(LookbackPeriod), 100)
 			.SetDisplay("Lookback Period", "Number of bars back", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 25)
 			.SetGreaterThanZero();
 
@@ -204,9 +204,9 @@ public class CorrelationArraysStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_securities = new[] { Security1, Security2, Security3, Security4, Security5, Security6 };
 

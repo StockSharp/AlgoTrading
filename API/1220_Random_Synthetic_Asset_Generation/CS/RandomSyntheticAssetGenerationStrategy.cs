@@ -47,10 +47,10 @@ public class RandomSyntheticAssetGenerationStrategy : Strategy
 	/// </summary>
 	public RandomSyntheticAssetGenerationStrategy()
 	{
-		_seed = Param(nameof(Seed), 123456).SetCanOptimize(true);
-		_intrabarVolatility = Param(nameof(IntrabarVolatility), 0.66m).SetDisplay("Intrabar Volatility").SetCanOptimize(true);
-		_priceMultiplier = Param(nameof(PriceMultiplier), 30m).SetDisplay("Price Multiplier").SetCanOptimize(true);
-		_method = Param(nameof(Method), RandomMethods.Rs).SetDisplay("Method").SetCanOptimize(true);
+		_seed = Param(nameof(Seed), 123456);
+		_intrabarVolatility = Param(nameof(IntrabarVolatility), 0.66m).SetDisplay("Intrabar Volatility", "Intrabar Volatility", "General");
+		_priceMultiplier = Param(nameof(PriceMultiplier), 30m).SetDisplay("Price Multiplier", "Price Multiplier", "General");
+		_method = Param(nameof(Method), RandomMethods.Rs).SetDisplay("Method", "Method", "General");
 	}
 
 	/// <summary>Seed [>= 0].</summary>
@@ -82,11 +82,11 @@ public class RandomSyntheticAssetGenerationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_randomClose = 100m * PriceMultiplier;
 		Timer.Start(TimeSpan.FromSeconds(1), GenerateCandle);

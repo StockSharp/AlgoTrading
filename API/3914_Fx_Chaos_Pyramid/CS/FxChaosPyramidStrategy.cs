@@ -57,14 +57,14 @@ public FxChaosPyramidStrategy()
 _primaryCandleType = Param(nameof(PrimaryCandleType), TimeSpan.FromHours(4).TimeFrame())
 .SetDisplay("Primary Candle", "Trading timeframe used for entries", "General");
 
-_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Daily Candle", "Higher timeframe used for breakout levels", "General");
 
-_awesomeShortPeriod = Param(nameof(AwesomeShortPeriod), 5)
+_awesomeShortMa = { Length = Param }(nameof(AwesomeShortPeriod), 5)
 .SetDisplay("AO Fast", "Fast period of the Awesome Oscillator", "Awesome Oscillator")
 .SetGreaterThanZero();
 
-_awesomeLongPeriod = Param(nameof(AwesomeLongPeriod), 34)
+_awesomeLongMa = { Length = Param }(nameof(AwesomeLongPeriod), 34)
 .SetDisplay("AO Slow", "Slow period of the Awesome Oscillator", "Awesome Oscillator")
 .SetGreaterThanZero();
 
@@ -247,14 +247,14 @@ _shortStages = 0;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _awesomeOscillator = new AwesomeOscillator
 {
-ShortPeriod = AwesomeShortPeriod,
-LongPeriod = AwesomeLongPeriod
+ShortMa = { Length = AwesomeShortPeriod },
+LongMa = { Length = AwesomeLongPeriod }
 };
 
 var dailySubscription = SubscribeCandles(DailyCandleType);

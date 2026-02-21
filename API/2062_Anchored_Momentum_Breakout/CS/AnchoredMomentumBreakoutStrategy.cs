@@ -36,11 +36,11 @@ public class AnchoredMomentumBreakoutStrategy : Strategy
 
         public AnchoredMomentumBreakoutStrategy()
 	{
-		_smaPeriod = Param(nameof(SmaPeriod), 34).SetRange(10,100).SetDisplay("SMA Period","Period for simple moving average","Indicators").SetCanOptimize(true);
-		_emaPeriod = Param(nameof(EmaPeriod), 20).SetRange(5,50).SetDisplay("EMA Period","Period for exponential moving average","Indicators").SetCanOptimize(true);
+		_smaPeriod = Param(nameof(SmaPeriod), 34).SetRange(10,100).SetDisplay("SMA Period","Period for simple moving average","Indicators");
+		_emaPeriod = Param(nameof(EmaPeriod), 20).SetRange(5,50).SetDisplay("EMA Period","Period for exponential moving average","Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame()).SetDisplay("Candle Type","Type of candles to use","General");
-		_stopLossPercent = Param(nameof(StopLossPercent),2m).SetRange(0.5m,10m).SetDisplay("Stop Loss %","Stop loss percentage","Risk Management").SetCanOptimize(true);
-		_takeProfitPercent = Param(nameof(TakeProfitPercent),4m).SetRange(1m,20m).SetDisplay("Take Profit %","Take profit percentage","Risk Management").SetCanOptimize(true);
+		_stopLossPercent = Param(nameof(StopLossPercent),2m).SetRange(0.5m,10m).SetDisplay("Stop Loss %","Stop loss percentage","Risk Management");
+		_takeProfitPercent = Param(nameof(TakeProfitPercent),4m).SetRange(1m,20m).SetDisplay("Take Profit %","Take profit percentage","Risk Management");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
@@ -53,11 +53,11 @@ public class AnchoredMomentumBreakoutStrategy : Strategy
 		_initialized = false;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		var sma = new SimpleMovingAverage { Length = SmaPeriod };
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		base.OnStarted2(time);
+		var sma = new SMA { Length = SmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(sma, ema, ProcessCandle).Start();
 

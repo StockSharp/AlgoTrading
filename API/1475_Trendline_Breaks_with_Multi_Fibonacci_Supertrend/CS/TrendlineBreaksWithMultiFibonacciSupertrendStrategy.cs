@@ -193,9 +193,9 @@ public class TrendlineBreaksWithMultiFibonacciSupertrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		_highBuffer = new decimal[SwingLength * 2 + 1];
 		_lowBuffer = new decimal[SwingLength * 2 + 1];
 		_bufferCount = 0;

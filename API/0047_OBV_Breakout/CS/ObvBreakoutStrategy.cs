@@ -64,13 +64,13 @@ public class OBVBreakoutStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for calculating OBV highest/lowest levels", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_obvMAPeriod = Param(nameof(OBVMAPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("OBV MA Period", "Period for OBV Moving Average calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -94,15 +94,15 @@ public class OBVBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var obv = new OnBalanceVolume();
 		
 		// Create a custom moving average for OBV
-		var obvMA = new SimpleMovingAverage { Length = OBVMAPeriod };
+		var obvMA = new SMA { Length = OBVMAPeriod };
 		
 		// Create highest and lowest indicators for OBV values
 		var highest = new Highest { Length = LookbackPeriod };

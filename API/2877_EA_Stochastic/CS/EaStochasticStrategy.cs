@@ -168,32 +168,32 @@ public class EaStochasticStrategy : Strategy
 		_kPeriod = Param(nameof(KPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("K Period", "%K calculation period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("D Period", "%D smoothing period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowing = Param(nameof(Slowing), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Slowing", "Final smoothing period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_upperLevel = Param(nameof(UpperLevel), 80m)
 			.SetDisplay("Upper Level", "Upper stochastic threshold", "Signals")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_lowerLevel = Param(nameof(LowerLevel), 20m)
 			.SetDisplay("Lower Level", "Lower stochastic threshold", "Signals")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_comparedBar = Param(nameof(ComparedBar), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Compared Bar", "Bars back to compare", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type to subscribe", "General");
@@ -224,9 +224,9 @@ public class EaStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
 			throw new InvalidOperationException("Trailing step must be greater than zero when trailing stop is enabled.");
@@ -318,15 +318,15 @@ public class EaStochasticStrategy : Strategy
 		EnsureBuffer();
 
 		_stochasticBuffer[_bufferIndex] = kValue;
-		_bufferIndex = (_bufferIndex + 1) % _stochasticBuffer.Length;
-		if (_valuesStored < _stochasticBuffer.Length)
+		_bufferIndex = (_bufferIndex + 1) % _stochasticBuffer.K.Length;
+		if (_valuesStored < _stochasticBuffer.K.Length)
 			_valuesStored++;
 
-		if (_valuesStored < _stochasticBuffer.Length)
+		if (_valuesStored < _stochasticBuffer.K.Length)
 			return;
 
-		var currentIndex = (_bufferIndex - 1 + _stochasticBuffer.Length) % _stochasticBuffer.Length;
-		var compareIndex = (currentIndex - (ComparedBar - 1) + _stochasticBuffer.Length) % _stochasticBuffer.Length;
+		var currentIndex = (_bufferIndex - 1 + _stochasticBuffer.K.Length) % _stochasticBuffer.K.Length;
+		var compareIndex = (currentIndex - (ComparedBar - 1) + _stochasticBuffer.K.Length) % _stochasticBuffer.K.Length;
 
 		var comparedValue = _stochasticBuffer[compareIndex];
 		if (comparedValue is not decimal previousValue)
@@ -436,7 +436,7 @@ public class EaStochasticStrategy : Strategy
 
 	private void EnsureBuffer()
 	{
-		if (_stochasticBuffer != null && _stochasticBuffer.Length == ComparedBar)
+		if (_stochasticBuffer != null && _stochasticBuffer.K.Length == ComparedBar)
 			return;
 
 		_stochasticBuffer = new decimal?[ComparedBar];

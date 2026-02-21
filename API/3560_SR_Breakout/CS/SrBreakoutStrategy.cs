@@ -64,7 +64,7 @@ public class SrBreakoutStrategy : Strategy
 		_lookbackLength = Param(nameof(LookbackLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Length", "Number of candles for support/resistance detection", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_hour1CandleType = Param(nameof(Hour1CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -91,9 +91,9 @@ public class SrBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_hour1Donchian = new DonchianChannels { Length = LookbackLength };
 		_hour4Donchian = new DonchianChannels { Length = LookbackLength };

@@ -57,19 +57,19 @@ public class GlamTraderSimpleStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order size used for entries", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_emaPeriod = Param(nameof(EmaPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Length of the EMA used on the primary timeframe", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_laguerreGamma = Param(nameof(LaguerreGamma), 0.7m)
 			.SetRange(0.1m, 0.9m)
 			.SetDisplay("Laguerre Gamma", "Smoothing factor applied inside the Laguerre filter", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.4m, 0.9m, 0.05m);
 
 		_longStopLossPoints = Param(nameof(LongStopLossPoints), 20m)
@@ -233,11 +233,11 @@ public class GlamTraderSimpleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 		var laguerre = new AdaptiveLaguerreFilter { Gamma = LaguerreGamma };
 		var awesome = new AwesomeOscillator();
 

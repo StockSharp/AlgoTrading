@@ -151,20 +151,20 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 		Param(nameof(FastTrixLength), 23)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast TRIX", "Fast TRIX length", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 
 	_slowTrixLength =
 		Param(nameof(SlowTrixLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow TRIX", "Slow TRIX length", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40, 100, 5);
 
 	_cycle = Param(nameof(Cycle), 10)
 			 .SetGreaterThanZero()
 			 .SetDisplay("Cycle", "Cycle length", "Indicator")
-			 .SetCanOptimize(true)
+			 
 			 .SetOptimize(5, 20, 1);
 
 	_highLevel =
@@ -204,8 +204,8 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
-	base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+	base.OnStarted2(time);
 
 	_stc = new SchaffTrixTrendCycle { FastLength = FastTrixLength,
 					  SlowLength = SlowTrixLength,

@@ -253,9 +253,9 @@ public class RiskRewardRatioStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = _tradeVolume.Value;
 		_pointValue = GetPointValue();
@@ -264,15 +264,13 @@ public class RiskRewardRatioStrategy : Strategy
 		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 
 		_fastStochastic = new StochasticOscillator
-		{
-			Length = 5,
+		{ K = { Length = 5 },
 			K = { Length = 2 },
 			D = { Length = 2 }
 		};
 
 		_slowStochastic = new StochasticOscillator
-		{
-			Length = 21,
+		{ K = { Length = 21 },
 			K = { Length = 10 },
 			D = { Length = 4 }
 		};

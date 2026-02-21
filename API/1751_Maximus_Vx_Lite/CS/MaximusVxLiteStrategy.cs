@@ -72,9 +72,9 @@ public class MaximusVxLiteStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var highest = new Highest { Length = 40 };
 		var lowest = new Lowest { Length = 40 };
@@ -83,7 +83,7 @@ public class MaximusVxLiteStrategy : Strategy
 		subscription.Bind(highest, lowest, ProcessCandle).Start();
 
 		_lastTradeTime = time;
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)

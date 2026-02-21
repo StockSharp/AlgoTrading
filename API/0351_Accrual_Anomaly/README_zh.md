@@ -14,7 +14,7 @@
 - **止损**：无明确止损逻辑。
 - **默认值**:
   - `Deciles = 10`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **过滤器**:
   - 分类: 基本面
   - 方向: 双向

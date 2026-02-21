@@ -179,13 +179,13 @@ public class TripleSmaSpreadStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
-		_middleMa = new SimpleMovingAverage { Length = MiddleMaPeriod };
-		_slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
+		_fastMa = new SMA { Length = FastMaPeriod };
+		_middleMa = new SMA { Length = MiddleMaPeriod };
+		_slowMa = new SMA { Length = SlowMaPeriod };
 
 		_fastHistory = new decimal?[Math.Max(1, FastMaShift + 1)];
 		_middleHistory = new decimal?[Math.Max(1, MiddleMaShift + 1)];

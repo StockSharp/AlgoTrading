@@ -270,9 +270,9 @@ public class DlmvFxFishGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -287,17 +287,15 @@ public class DlmvFxFishGridStrategy : Strategy
 
 		_highest = new Highest
 		{
-			Length = CalculatePeriod,
-			CandlePrice = CandlePrice.High
+			Length = CalculatePeriod
 		};
 
 		_lowest = new Lowest
 		{
-			Length = CalculatePeriod,
-			CandlePrice = CandlePrice.Low
+			Length = CalculatePeriod
 		};
 
-		_fishAverage = new SimpleMovingAverage
+		_fishAverage = new SMA
 		{
 			Length = MaPeriod
 		};

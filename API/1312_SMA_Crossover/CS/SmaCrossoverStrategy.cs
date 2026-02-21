@@ -64,13 +64,13 @@ public class SmaCrossoverStrategy : Strategy
 		_shortLength = Param(nameof(ShortLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Short SMA Length", "Period of the short SMA", "SMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_longLength = Param(nameof(LongLength), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("Long SMA Length", "Period of the long SMA", "SMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -84,9 +84,9 @@ public class SmaCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_shortSma = new SMA { Length = ShortLength };
 		_longSma = new SMA { Length = LongLength };

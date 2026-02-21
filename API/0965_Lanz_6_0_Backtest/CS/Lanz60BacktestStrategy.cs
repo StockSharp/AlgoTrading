@@ -119,18 +119,18 @@ public class Lanz60BacktestStrategy : Strategy
 	{
 		_slPercent = Param(nameof(SlPercent), 0.05m)
 			.SetDisplay("SL %", "Stop loss percent of candle range", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_riskReward = Param(nameof(RiskReward), 5m)
 			.SetDisplay("Risk Reward", "Risk reward ratio", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_accountSizeUsd = Param(nameof(AccountSizeUsd), 10000m)
 			.SetDisplay("Account Size USD", "Account capital", "Money");
 
 		_riskPercent = Param(nameof(RiskPercent), 1m)
 			.SetDisplay("Risk %", "Risk percent per trade", "Money")
-			.SetCanOptimize(true);
+			;
 
 		_useManualPipValue = Param(nameof(UseManualPipValue), true)
 			.SetDisplay("Manual Pip Value", "Use manual pip value", "Money");
@@ -155,9 +155,9 @@ public class Lanz60BacktestStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

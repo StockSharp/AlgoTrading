@@ -146,13 +146,13 @@ public class CciEmaAtrTpSlStrategy : Strategy
 		_longTp = _longSl = _shortTp = _shortSl = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var cci = new CommodityChannelIndex { Length = CciLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new EMA { Length = EmaLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);

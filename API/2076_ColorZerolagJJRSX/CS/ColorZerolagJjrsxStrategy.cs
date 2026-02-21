@@ -43,12 +43,12 @@ public class ColorZerolagJjrsxStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast JJRSX period", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow JJRSX period", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_buyOpen = Param(nameof(BuyOpen), true)
 			.SetDisplay("Allow Long Entry", "Enable opening long positions", "Trading");
@@ -65,12 +65,12 @@ public class ColorZerolagJjrsxStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for indicator", "General");
@@ -158,9 +158,9 @@ public class ColorZerolagJjrsxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastRsi = new RelativeStrengthIndex { Length = FastPeriod };
 		_slowRsi = new RelativeStrengthIndex { Length = SlowPeriod };

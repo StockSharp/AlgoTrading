@@ -128,37 +128,37 @@ public class BollingerStochasticStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 						   .SetRange(10, 50)
 						   .SetDisplay("BB Period", "Period for Bollinger Bands calculation", "Bollinger Settings")
-						   .SetCanOptimize(true);
+						   ;
 						   
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 							  .SetRange(1.0m, 3.0m)
 							  .SetDisplay("BB Deviation", "Standard deviation multiplier for Bollinger Bands", "Bollinger Settings")
-							  .SetCanOptimize(true);
+							  ;
 							  
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 					   .SetRange(5, 30)
 					   .SetDisplay("Stoch Period", "Period for Stochastic oscillator calculation", "Stochastic Settings")
-					   .SetCanOptimize(true);
+					   ;
 					   
 		_stochK = Param(nameof(StochK), 3)
 				  .SetRange(1, 10)
 				  .SetDisplay("Stoch %K", "K period for Stochastic oscillator", "Stochastic Settings")
-				  .SetCanOptimize(true);
+				  ;
 				  
 		_stochD = Param(nameof(StochD), 3)
 				  .SetRange(1, 10)
 				  .SetDisplay("Stoch %D", "D period for Stochastic oscillator", "Stochastic Settings")
-				  .SetCanOptimize(true);
+				  ;
 				  
 		_stochOversold = Param(nameof(StochOversold), 20)
 						 .SetRange(5, 30)
 						 .SetDisplay("Oversold Level", "Stochastic oversold level", "Stochastic Settings")
-						 .SetCanOptimize(true);
+						 ;
 						 
 		_stochOverbought = Param(nameof(StochOverbought), 80)
 						   .SetRange(70, 95)
 						   .SetDisplay("Overbought Level", "Stochastic overbought level", "Stochastic Settings")
-						   .SetCanOptimize(true);
+						   ;
 						   
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
 						.SetRange(1.0m, 5.0m)
@@ -172,9 +172,9 @@ public class BollingerStochasticStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Initialize indicators
 		_bollinger = new()

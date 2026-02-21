@@ -352,9 +352,9 @@ public class NeuroNirvamanStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Synchronize default trade volume with the base strategy property.
 		Volume = TradeVolume;
@@ -425,8 +425,8 @@ public class NeuroNirvamanStrategy : Strategy
 		_silverTrend1State.Risk = Risk1;
 		_silverTrend2State.Risk = Risk2;
 
-		var silver1 = _silverTrend1State.Process(candle.HighPrice, candle.LowPrice, candle.ClosePrice);
-		var silver2 = _silverTrend2State.Process(candle.HighPrice, candle.LowPrice, candle.ClosePrice);
+		var silver1 = _silverTrend1State.Process(new DecimalIndicatorValue(_silverTrend1State, candle.HighPrice, candle.LowPrice));
+		var silver2 = _silverTrend2State.Process(new DecimalIndicatorValue(_silverTrend2State, candle.HighPrice, candle.LowPrice));
 
 		if (!laguerre1Value.IsFinal || !laguerre2Value.IsFinal || !laguerre3Value.IsFinal || !laguerre4Value.IsFinal)
 		{

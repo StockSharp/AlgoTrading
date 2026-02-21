@@ -379,19 +379,19 @@ public class BinaryWaveStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ma = new ExponentialMovingAverage { Length = MaPeriod };
+		_ma = new EMA { Length = MaPeriod };
 		_macd = new()
 		{
 			Macd =
 			{
-				ShortMa = new ExponentialMovingAverage { Length = FastMacd },
-				LongMa = new ExponentialMovingAverage { Length = SlowMacd },
+				ShortMa = new EMA { Length = FastMacd },
+				LongMa = new EMA { Length = SlowMacd },
 			},
-			SignalMa = new ExponentialMovingAverage { Length = SignalMacd }
+			SignalMa = new EMA { Length = SignalMacd }
 		};
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_momentum = new Momentum { Length = MomentumPeriod };

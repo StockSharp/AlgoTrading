@@ -107,17 +107,17 @@ public class PsiProcEmaMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema200 = new ExponentialMovingAverage { Length = 200 };
-		_ema50 = new ExponentialMovingAverage { Length = 50 };
-		_ema10 = new ExponentialMovingAverage { Length = 10 };
+		_ema200 = new EMA { Length = 200 };
+		_ema50 = new EMA { Length = 50 };
+		_ema10 = new EMA { Length = 10 };
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = 12,
-			LongPeriod = 26,
+			ShortMa = { Length = 12 },
+			LongMa = { Length = 26 },
 			SignalPeriod = 9
 		};
 

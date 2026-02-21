@@ -110,7 +110,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _bandsDeviation;
 	private readonly StrategyParam<AppliedPrices> _bandsPriceType;
 
-	private IIndicator _maIndicator = new SimpleMovingAverage();
+	private IIndicator _maIndicator = new SMA();
 	private BollingerBands _bollinger = new();
 
 	private readonly Queue<decimal> _maBuffer = new();
@@ -409,9 +409,9 @@ public class BandsPendingBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (HourEnd <= HourStart)
 			throw new InvalidOperationException("HourEnd must be greater than HourStart.");
@@ -811,11 +811,11 @@ public class BandsPendingBreakoutStrategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

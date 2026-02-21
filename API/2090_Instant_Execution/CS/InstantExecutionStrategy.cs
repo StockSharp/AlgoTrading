@@ -90,22 +90,22 @@ public class InstantExecutionStrategy : Strategy
 	{
 		_takeProfit = Param(nameof(TakeProfit), 70m)
 			.SetDisplay("Take Profit", "Target profit in price units", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 200m, 10m);
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_trailingStart = Param(nameof(TrailingStart), 5m)
 			.SetDisplay("Trailing Start", "Minimum profit before trailing", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 20m, 1m);
 
 		_trailingSize = Param(nameof(TrailingSize), 5m)
 			.SetDisplay("Trailing Size", "Distance for trailing stop", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 20m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -130,9 +130,9 @@ public class InstantExecutionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

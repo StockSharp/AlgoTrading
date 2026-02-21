@@ -140,10 +140,10 @@ public class AgMacdDualStrategy : Strategy
 		{
 			Macd =
 			{
-				ShortMa = new ExponentialMovingAverage { Length = FastEmaLength },
-				LongMa = new ExponentialMovingAverage { Length = SlowEmaLength }
+				ShortMa = new EMA { Length = FastEmaLength },
+				LongMa = new EMA { Length = SlowEmaLength }
 			},
-			SignalMa = new ExponentialMovingAverage { Length = SignalSmaLength }
+			SignalMa = new EMA { Length = SignalSmaLength }
 		};
 
 		var secondaryFast = Math.Max(1, SlowEmaLength * 2);
@@ -154,10 +154,10 @@ public class AgMacdDualStrategy : Strategy
 		{
 			Macd =
 			{
-				ShortMa = new ExponentialMovingAverage { Length = secondaryFast },
-				LongMa = new ExponentialMovingAverage { Length = secondarySlow }
+				ShortMa = new EMA { Length = secondaryFast },
+				LongMa = new EMA { Length = secondarySlow }
 			},
-			SignalMa = new ExponentialMovingAverage { Length = secondarySignal }
+			SignalMa = new EMA { Length = secondarySignal }
 		};
 
 		var subscription = SubscribeCandles(CandleType);

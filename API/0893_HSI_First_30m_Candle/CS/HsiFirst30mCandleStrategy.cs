@@ -56,7 +56,7 @@ public class HsiFirst30mCandleStrategy : Strategy
 		_riskReward = Param(nameof(RiskReward), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk/Reward", "Take profit to stop ratio", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -83,10 +83,10 @@ public class HsiFirst30mCandleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -99,7 +99,7 @@ public class HsiFirst30mCandleStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var hkTime = TimeZoneInfo.ConvertTime(candle.OpenTime.UtcDateTime, _hkTimeZone);
+		var hkTime = TimeZoneInfo.ConvertTime(candle.OpenTime, _hkTimeZone);
 
 		if (_currentDay != hkTime.Date)
 		{

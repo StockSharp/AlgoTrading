@@ -49,10 +49,10 @@ public class PriceRollbackStrategy : Strategy
 		_opens.Clear(); _prevClose=_entry=_stop=0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 		SubscribeCandles(CandleType).Bind(Process).Start();
 	}
 

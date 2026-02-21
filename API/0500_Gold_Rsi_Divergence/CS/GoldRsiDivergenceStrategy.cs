@@ -135,37 +135,37 @@ public class GoldRsiDivergenceStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation length", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 100, 5);
 
 		_stopLossPips = Param(nameof(StopLossPips), 11m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Stop loss in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 20m, 1m);
 
 		_lookbackLeft = Param(nameof(LookbackLeft), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Left", "Bars to the left of pivot", "Divergence")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_lookbackRight = Param(nameof(LookbackRight), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Right", "Bars to the right of pivot", "Divergence")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_rangeLower = Param(nameof(RangeLower), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Lower", "Minimum bars between pivots", "Divergence")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_rangeUpper = Param(nameof(RangeUpper), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Upper", "Maximum bars between pivots", "Divergence")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 120, 5);
 
 		_pipValue = Param(nameof(PipValue), 0.1m)
@@ -198,9 +198,9 @@ public class GoldRsiDivergenceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializeBuffers();
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };

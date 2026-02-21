@@ -102,13 +102,13 @@ public class BollingerBandTouchSmiMacdAngleStrategy : Strategy
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Length", "Bollinger Bands period", "Bollinger Bands")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Multiplier", "Standard deviation multiplier", "Bollinger Bands")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_smiLength = Param(nameof(SmiLength), 14)
@@ -155,7 +155,7 @@ public class BollingerBandTouchSmiMacdAngleStrategy : Strategy
 			D = { Length = 1 }
 		};
 
-		_smiSma = new SimpleMovingAverage { Length = SmiSignalLength };
+		_smiSma = new SMA { Length = SmiSignalLength };
 
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{

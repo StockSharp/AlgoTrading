@@ -88,31 +88,31 @@ public class ParabolicSarRsiStrategy : Strategy
 		_sarAf = Param(nameof(SarAf), 0.02m)
 			.SetRange(0.01m, 0.1m)
 			.SetDisplay("SAR Acceleration Factor", "Initial acceleration factor for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_sarMaxAf = Param(nameof(SarMaxAf), 0.2m)
 			.SetRange(0.1m, 0.5m)
 			.SetDisplay("SAR Max Acceleration", "Maximum acceleration factor for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.3m, 0.1m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period of the RSI indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
 			.SetNotNegative()
 			.SetDisplay("RSI Oversold", "RSI level considered oversold", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 			.SetNotNegative()
 			.SetDisplay("RSI Overbought", "RSI level considered overbought", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -126,9 +126,9 @@ public class ParabolicSarRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var parabolicSar = new ParabolicSar

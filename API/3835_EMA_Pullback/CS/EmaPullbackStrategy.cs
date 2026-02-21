@@ -127,31 +127,31 @@ public class EmaPullbackStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA", "Length of the fast EMA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 15, 1);
 
 		_slowLength = Param(nameof(SlowLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA", "Length of the slow EMA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 25, 1);
 
 		_moveBackPoints = Param(nameof(MoveBackPoints), 3m)
 		.SetNotNegative()
 		.SetDisplay("Pullback Distance", "Retracement distance in points from the prior candle", "Trading Rules")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 10m, 1m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 5m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take-profit distance in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 20m, 1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 40m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -182,9 +182,9 @@ public class EmaPullbackStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Align the strategy volume with the parameter value.
 		Volume = TradeVolume;
@@ -193,8 +193,8 @@ public class EmaPullbackStrategy : Strategy
 		if (_pointValue <= 0m)
 			_pointValue = 1m;
 
-		_fastEma = new ExponentialMovingAverage { Length = FastLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		_fastEma = new EMA { Length = FastLength };
+		_slowEma = new EMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -217,8 +217,8 @@ public class EmaPullbackStrategy : Strategy
 		// Median price matches PRICE_MEDIAN used in the MQL version.
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var fastValue = _fastEma.Process(medianPrice, candle.OpenTime, true).ToDecimal();
-		var slowValue = _slowEma.Process(medianPrice, candle.OpenTime, true).ToDecimal();
+		var fastValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, medianPrice, candle.OpenTime)).ToDecimal();
+		var slowValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, medianPrice, candle.OpenTime)).ToDecimal();
 
 		if (!_fastEma.IsFormed || !_slowEma.IsFormed)
 		{

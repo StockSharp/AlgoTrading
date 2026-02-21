@@ -140,17 +140,17 @@ public class TrendDeviationBtcStrategy : Strategy
 	{
 		_dmiPeriod = Param(nameof(DmiPeriod), 15)
 			.SetDisplay("DI Length", "Directional Index length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_bbLength = Param(nameof(BbLength), 13)
 			.SetDisplay("BB Length", "Bollinger period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_bbMultiplier = Param(nameof(BbMultiplier), 2.3m)
 			.SetDisplay("BB Multiplier", "Bollinger width", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.1m);
 
 		_momentumLength = Param(nameof(MomentumLength), 10)

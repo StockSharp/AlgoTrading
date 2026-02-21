@@ -133,7 +133,7 @@ public class RsiAdaptiveT3SqueezeMomentumStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period for adaptive T3", "T3")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_minT3Length = Param(nameof(MinT3Length), 5)
@@ -186,9 +186,9 @@ public class RsiAdaptiveT3SqueezeMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_linReg = new LinearRegression { Length = KeltnerPeriod };
 
@@ -212,7 +212,7 @@ public class RsiAdaptiveT3SqueezeMomentumStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue keltnerValue, IIndicatorValue donchianValue, IIndicatorValue smaValue, IIndicatorValue rsiValue)
@@ -237,7 +237,7 @@ public class RsiAdaptiveT3SqueezeMomentumStrategy : Strategy
 		var rsi = rsiValue.GetValue<decimal>();
 
 		var diff = candle.ClosePrice - (mid + avgClose) / 2m;
-		var lrValue = (LinearRegressionValue)_linReg.Process(diff, candle.OpenTime, true);
+		var lrValue = (LinearRegressionValue)_linReg.Process(new DecimalIndicatorValue(_linReg, diff, candle.OpenTime));
 		if (lrValue.LinearReg is not decimal val)
 			return;
 

@@ -35,7 +35,7 @@ private readonly StrategyParam<DataType> _candleType;
 private HullMovingAverage _hmaFast;
 private HullMovingAverage _hmaSlow;
 private RelativeStrengthIndex _rsi;
-private MovingAverageConvergenceDivergence _macd;
+private MovingAverageConvergenceDivergenceSignal _macd;
 private SimpleMovingAverage _volumeMa;
 private SimpleMovingAverage _cvdMa;
 private Highest _priceHighest;
@@ -141,23 +141,22 @@ base.OnStarted(time);
 _hmaFast = new HullMovingAverage { Length = HmaFastLength };
 _hmaSlow = new HullMovingAverage { Length = HmaSlowLength };
 _rsi = new RelativeStrengthIndex { Length = RsiLength };
-_macd = new MovingAverageConvergenceDivergence
+_macd = new MovingAverageConvergenceDivergenceSignal
 {
-ShortPeriod = MacdFast,
-LongPeriod = MacdSlow,
-SignalPeriod = MacdSignal
+Macd = { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow } },
+SignalMa = { Length = MacdSignal }
 };
-_volumeMa = new SimpleMovingAverage { Length = VolumeMaLength };
-_cvdMa = new SimpleMovingAverage { Length = CvdLength };
+_volumeMa = new SMA { Length = VolumeMaLength };
+_cvdMa = new SMA { Length = CvdLength };
 _priceHighest = new Highest { Length = DivergenceLookback };
 _priceLowest = new Lowest { Length = DivergenceLookback };
 
 var subscription = SubscribeCandles(CandleType);
 subscription
-.Bind(_hmaFast, _hmaSlow, _rsi, _macd, ProcessCandle)
+.BindEx(_hmaFast, _hmaSlow, _rsi, _macd, ProcessCandle)
 .Start();
 
-StartProtection();
+StartProtection(null, null);
 
 var area = CreateChartArea();
 if (area != null)
@@ -171,13 +170,22 @@ DrawOwnTrades(area);
 }
 }
 
-private void ProcessCandle(ICandleMessage candle, decimal hmaFast, decimal hmaSlow, decimal rsi, decimal macdLine, decimal macdSignal, decimal macdHist)
+private void ProcessCandle(ICandleMessage candle, IIndicatorValue hmaFastValue, IIndicatorValue hmaSlowValue, IIndicatorValue rsiValue, IIndicatorValue macdValue)
 {
 if (candle.State != CandleStates.Finished)
 return;
 
 if (!IsFormedAndOnlineAndAllowTrading())
 return;
+
+var hmaFast = hmaFastValue.ToDecimal();
+var hmaSlow = hmaSlowValue.ToDecimal();
+var rsi = rsiValue.ToDecimal();
+
+var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal macdSignal)
+return;
+var macdHist = macdLine - macdSignal;
 
 var volMaValue = _volumeMa.Process(candle.TotalVolume);
 if (!volMaValue.IsFinal)

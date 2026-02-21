@@ -76,17 +76,17 @@ public class CrossStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Period of the moving average used for cross detection", "Trend Filter")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 200m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (steps)", "Take profit distance expressed in price steps", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (steps)", "Stop loss distance expressed in price steps", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used by the strategy", "General");
@@ -112,11 +112,11 @@ public class CrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var ema = new EMA { Length = EmaLength };
 		var subscription = SubscribeCandles(CandleType);

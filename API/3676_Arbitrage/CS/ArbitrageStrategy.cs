@@ -110,7 +110,7 @@ public class ArbitrageStrategy : Strategy
 		_lotSizePerThousandParam = Param(nameof(LotSizePerThousand), 0.01m)
 		.SetDisplay("Lots per $1k", "Position size multiplier per thousand units of account balance", "Risk Management")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_commissionPerLotParam = Param(nameof(CommissionPerLot), 7m)
 		.SetDisplay("Commission per Lot", "Total commission charged for all three legs", "Costs")
@@ -146,9 +146,9 @@ public class ArbitrageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (FirstLeg == null)
 		throw new InvalidOperationException("First leg security is not specified.");

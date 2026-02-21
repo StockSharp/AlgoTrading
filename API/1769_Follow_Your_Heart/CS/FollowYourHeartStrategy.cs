@@ -105,14 +105,14 @@ public class FollowYourHeartStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_openSma = new SimpleMovingAverage { Length = Bars };
-		_closeSma = new SimpleMovingAverage { Length = Bars };
-		_highSma = new SimpleMovingAverage { Length = Bars };
-		_lowSma = new SimpleMovingAverage { Length = Bars };
+		_openSma = new SMA { Length = Bars };
+		_closeSma = new SMA { Length = Bars };
+		_highSma = new SMA { Length = Bars };
+		_lowSma = new SMA { Length = Bars };
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(ProcessCandle).Start();

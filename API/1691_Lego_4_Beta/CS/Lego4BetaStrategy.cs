@@ -56,8 +56,8 @@ public class Lego4BetaStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiLow;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _fastMa;
-	private LengthIndicator<decimal> _slowMa;
+	private DecimalLengthIndicator _fastMa;
+	private DecimalLengthIndicator _slowMa;
 	private StochasticOscillator _stochastic;
 	private RelativeStrengthIndex _rsi;
 
@@ -210,12 +210,12 @@ public class Lego4BetaStrategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA Length", "Length of fast MA", "Moving Average")
-		.SetCanOptimize(true);
+		;
 
 		_slowMaLength = Param(nameof(SlowMaLength), 67)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA Length", "Length of slow MA", "Moving Average")
-		.SetCanOptimize(true);
+		;
 
 		_maType = Param(nameof(MaType), MaTypes.EMA)
 		.SetDisplay("MA Type", "Moving average type", "Moving Average");
@@ -226,25 +226,25 @@ public class Lego4BetaStrategy : Strategy
 		_stochLength = Param(nameof(StochLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Stoch Length", "Main period for Stochastic", "Stochastic")
-		.SetCanOptimize(true);
+		;
 
 		_stochKPeriod = Param(nameof(StochKPeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("%K Period", "Smoothing for %K line", "Stochastic")
-		.SetCanOptimize(true);
+		;
 
-		_stochDPeriod = Param(nameof(StochDPeriod), 3)
+		_stochD = { Length = Param }(nameof(StochDPeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("%D Period", "Smoothing for %D line", "Stochastic")
-		.SetCanOptimize(true);
+		;
 
 		_stochBuyLevel = Param(nameof(StochBuyLevel), 20m)
 		.SetDisplay("Stoch Buy", "Oversold level", "Stochastic")
-		.SetCanOptimize(true);
+		;
 
 		_stochSellLevel = Param(nameof(StochSellLevel), 80m)
 		.SetDisplay("Stoch Sell", "Overbought level", "Stochastic")
-		.SetCanOptimize(true);
+		;
 
 		_useRsiClose = Param(nameof(UseRsiClose), false)
 		.SetDisplay("Use RSI", "Enable RSI exit", "Exit");
@@ -252,15 +252,15 @@ public class Lego4BetaStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Length of RSI", "Exit")
-		.SetCanOptimize(true);
+		;
 
 		_rsiHigh = Param(nameof(RsiHigh), 70m)
 		.SetDisplay("RSI High", "Overbought level", "Exit")
-		.SetCanOptimize(true);
+		;
 
 		_rsiLow = Param(nameof(RsiLow), 30m)
 		.SetDisplay("RSI Low", "Oversold level", "Exit")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -282,17 +282,16 @@ public class Lego4BetaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_fastMa = CreateMa(MaTypes, FastMaLength);
 		_slowMa = CreateMa(MaTypes, SlowMaLength);
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochLength,
+		{ K = { Length = StochLength },
 			K = { Length = StochKPeriod },
 			D = { Length = StochDPeriod },
 		};
@@ -359,13 +358,13 @@ public class Lego4BetaStrategy : Strategy
 		_prevSlow = slow;
 	}
 
-	private LengthIndicator<decimal> CreateMa(MaTypes type, int length)
+	private DecimalLengthIndicator CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaTypes.SMA => new SimpleMovingAverage { Length = length },
+			MaTypes.SMA => new SMA { Length = length },
 			MaTypes.WMA => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 }

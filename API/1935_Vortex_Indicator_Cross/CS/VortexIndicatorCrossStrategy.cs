@@ -68,7 +68,7 @@ public class VortexIndicatorCrossStrategy : Strategy
 		_length = Param(nameof(Length), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Vortex Length", "Period for Vortex indicator", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -88,9 +88,9 @@ public class VortexIndicatorCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(
 			stopLoss: new Unit(StopLoss, UnitTypes.Step),

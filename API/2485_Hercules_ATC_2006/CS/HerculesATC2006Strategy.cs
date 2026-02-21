@@ -276,25 +276,25 @@ public class HerculesATC2006Strategy : Strategy
 		_triggerPips = Param(nameof(TriggerPips), 38)
 			.SetGreaterThanZero()
 			.SetDisplay("Trigger Pips", "Distance above/below crossover required to trigger", "Entries")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 80, 5);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 90)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 150, 10);
 
 		_takeProfit1Pips = Param(nameof(TakeProfit1Pips), 210)
 			.SetNotNegative()
 			.SetDisplay("Take Profit 1 (pips)", "First take-profit distance", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 260, 10);
 
 		_takeProfit2Pips = Param(nameof(TakeProfit2Pips), 280)
 			.SetNotNegative()
 			.SetDisplay("Take Profit 2 (pips)", "Second take-profit distance", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(150, 360, 10);
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 1)
@@ -304,7 +304,7 @@ public class HerculesATC2006Strategy : Strategy
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 72)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Length of the slow SMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 120, 4);
 
 		_stopLossLookback = Param(nameof(StopLossLookback), 4)
@@ -351,7 +351,7 @@ public class HerculesATC2006Strategy : Strategy
 		_rsiTimeFrame = Param(nameof(RsiTimeFrame), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("RSI Candle", "Timeframe used for RSI filter", "Filters");
 
-		_dailyEnvelopeTimeFrame = Param(nameof(DailyEnvelopeTimeFrame), TimeSpan.FromDays(1).TimeFrame())
+		_dailyEnvelopeTimeFrame = Param(nameof(DailyEnvelopeTimeFrame), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Daily Envelope TF", "Timeframe for the daily envelope", "Filters");
 
 		_h4EnvelopeTimeFrame = Param(nameof(H4EnvelopeTimeFrame), TimeSpan.FromHours(4).TimeFrame())
@@ -416,11 +416,11 @@ public class HerculesATC2006Strategy : Strategy
 		_crossPrice = 0m;
 	}
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 		var decimals = Security?.Decimals ?? 0;
@@ -430,8 +430,8 @@ public class HerculesATC2006Strategy : Strategy
 		_primaryTimeFrame = CandleType.Arg is TimeSpan span && span > TimeSpan.Zero ? span : TimeSpan.FromMinutes(1);
 		_highLowLength = Math.Max(1, (int)Math.Round(HighLowHours * 60m / (decimal)_primaryTimeFrame.TotalMinutes, MidpointRounding.AwayFromZero));
 
-		var fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
-		var slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
+		var fastMa = new EMA { Length = FastMaPeriod };
+		var slowMa = new SMA { Length = SlowMaPeriod };
 
 		var mainSubscription = SubscribeCandles(CandleType);
 

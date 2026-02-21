@@ -114,7 +114,7 @@ public class SmartFactorsMomentumMarketStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_smartRet = new RollingWindow<decimal>(_maM.Value);
@@ -143,9 +143,9 @@ public class SmartFactorsMomentumMarketStrategy : Strategy
 		_lastRebalanceDate = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("MarketETF not set");

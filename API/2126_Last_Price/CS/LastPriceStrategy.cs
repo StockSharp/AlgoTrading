@@ -46,20 +46,20 @@ public class LastPriceStrategy : Strategy
 		_interval = Param(nameof(Interval), 400m)
 			.SetGreaterThanZero()
 			.SetDisplay("Interval", "Distance from bid/ask to trigger order in points", "General")
-			.SetCanOptimize(true);
+			;
 
 		_minVolume = Param(nameof(MinVolume), 1m)
 			.SetDisplay("Min Volume", "Minimum trade volume", "General")
-			.SetCanOptimize(true);
+			;
 
 		_maxVolume = Param(nameof(MaxVolume), 900000m)
 			.SetDisplay("Max Volume", "Maximum trade volume", "General")
-			.SetCanOptimize(true);
+			;
 
 		_spread = Param(nameof(Spread), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("Spread", "Maximum allowed spread", "General")
-			.SetCanOptimize(true);
+			;
 
 
 		_stopLossPips = Param(nameof(StopLossPips), 400m)
@@ -82,9 +82,9 @@ public class LastPriceStrategy : Strategy
 		_bestAsk = _bestBid = _lastPrice = _lastVolume = _tradePrice = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var step = Security.PriceStep ?? 1m;
 		_intervalPrice = Interval * step;

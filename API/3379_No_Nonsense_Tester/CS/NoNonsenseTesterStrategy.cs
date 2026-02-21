@@ -196,35 +196,35 @@ public class NoNonsenseTesterStrategy : Strategy
 		_baselineLength = Param(nameof(BaselineLength), 34)
 		.SetGreaterThanZero()
 		.SetDisplay("Baseline Length", "Period for the EMA baseline", "Baseline")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 2);
 
 		_confirmationRsiLength = Param(nameof(ConfirmationRsiLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Confirmation RSI Length", "Period for the RSI confirmation", "Confirmations")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 28, 2);
 
 		_confirmationRsiThreshold = Param(nameof(ConfirmationRsiThreshold), 50m)
 		.SetDisplay("RSI Threshold", "RSI value that separates bullish and bearish signals", "Confirmations")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(45m, 55m, 1m);
 
 		_confirmationCciLength = Param(nameof(ConfirmationCciLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Confirmation CCI Length", "Period for the CCI confirmation", "Confirmations")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 
 		_confirmationCciThreshold = Param(nameof(ConfirmationCciThreshold), 0m)
 		.SetDisplay("CCI Threshold", "Absolute CCI value that must be exceeded", "Confirmations")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 50m, 5m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "ATR period for volatility checks", "Volatility")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 28, 1);
 
 		_atrEntryMultiplier = Param(nameof(AtrEntryMultiplier), 1m)
@@ -250,7 +250,7 @@ public class NoNonsenseTesterStrategy : Strategy
 		_exitRsiLength = Param(nameof(ExitRsiLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Exit RSI Length", "Period for the exit RSI", "Exit")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_exitRsiUpperLevel = Param(nameof(ExitRsiUpperLevel), 60m)
@@ -288,9 +288,9 @@ public class NoNonsenseTesterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_baseline = new EMA { Length = BaselineLength };
 		_confirmationRsi = new RelativeStrengthIndex { Length = ConfirmationRsiLength };

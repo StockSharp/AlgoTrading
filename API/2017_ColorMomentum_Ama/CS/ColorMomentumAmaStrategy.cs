@@ -91,31 +91,31 @@ public class ColorMomentumAmaStrategy : Strategy
 		_momentumPeriod = Param(nameof(MomentumPeriod), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum period", "Lookback period for momentum", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_amaPeriod = Param(nameof(AmaPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("AMA period", "Smoothing length for AMA", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 
 		_fastPeriod = Param(nameof(FastPeriod), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast period", "Fast period of AMA", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 10, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow period", "Slow period of AMA", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 60, 5);
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetRange(1, 5)
 		.SetDisplay("Signal bar", "Bar index used for signals", "Strategy")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle type", "Type of candles", "General");
@@ -136,9 +136,9 @@ public class ColorMomentumAmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_ama = new KaufmanAdaptiveMovingAverage
@@ -169,7 +169,7 @@ public class ColorMomentumAmaStrategy : Strategy
 		return;
 
 		// Update AMA with the momentum value
-		var amaValue = _ama.Process(momentumValue, candle.OpenTime, true).ToDecimal();
+		var amaValue = _ama.Process(new DecimalIndicatorValue(_ama, momentumValue, candle.OpenTime)).ToDecimal();
 		if (!_ama.IsFormed)
 		return;
 

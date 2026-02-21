@@ -240,17 +240,17 @@ public class RsiEaV2Strategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetRange(2, 200)
 			.SetDisplay("RSI Period", "Lookback period for RSI", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 30m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Buy Level", "Oversold threshold", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_rsiSellLevel = Param(nameof(RsiSellLevel), 70m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Sell Level", "Overbought threshold", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_useRiskSizing = Param(nameof(UseRiskSizing), false)
 			.SetDisplay("Use Risk Sizing", "Calculate volume from risk percent", "Money Management");
@@ -305,9 +305,9 @@ public class RsiEaV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 			throw new InvalidOperationException("Trailing stop requires a positive trailing step.");

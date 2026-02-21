@@ -163,7 +163,7 @@ public class MaRsiEaStrategy : Strategy
 		_maPeriod = Param(nameof(FastMaPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Length of the moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_maShift = Param(nameof(FastMaShift), 0)
@@ -178,7 +178,7 @@ public class MaRsiEaStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_rsiPrice = Param(nameof(RsiPrice), CandlePriceSources.Open)
@@ -207,9 +207,9 @@ public class MaRsiEaStrategy : Strategy
 		ResetShiftBuffer();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_maIndicator = CreateMovingAverage(FastMaMethod, FastMaPeriod);
 		_rsiIndicator = new RelativeStrengthIndex { Length = RsiPeriod };
@@ -228,7 +228,7 @@ public class MaRsiEaStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -242,8 +242,8 @@ public class MaRsiEaStrategy : Strategy
 		var maPrice = GetPrice(candle, FastMaPrice);
 		var rsiPrice = GetPrice(candle, RsiPrice);
 
-		var maValue = _maIndicator.Process(maPrice, candle.OpenTime, true).ToDecimal();
-		var rsiValue = _rsiIndicator.Process(rsiPrice, candle.OpenTime, true).ToDecimal();
+		var maValue = _maIndicator.Process(new DecimalIndicatorValue(_maIndicator, maPrice, candle.OpenTime)).ToDecimal();
+		var rsiValue = _rsiIndicator.Process(new DecimalIndicatorValue(_rsiIndicator, rsiPrice, candle.OpenTime)).ToDecimal();
 
 		if (!_maIndicator.IsFormed || !_rsiIndicator.IsFormed)
 			return;
@@ -390,11 +390,11 @@ public class MaRsiEaStrategy : Strategy
 	{
 		return method switch
 		{
-			MaMethods.Simple => new SimpleMovingAverage { Length = length },
-			MaMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MaMethods.Simple => new SMA { Length = length },
+			MaMethods.Exponential => new EMA { Length = length },
 			MaMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

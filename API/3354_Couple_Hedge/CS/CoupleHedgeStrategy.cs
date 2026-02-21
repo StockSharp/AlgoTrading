@@ -136,31 +136,31 @@ public class CoupleHedgeStrategy : Strategy
 	{
 		_typeOperation = Param(nameof(TypeOperation), Operations.NormalOperation)
 		.SetDisplay("Operation Mode", "Overall operating mode for the hedging engine", "Operation")
-		.SetCanOptimize(true);
+		;
 
 		_openOrdersInLoss = Param(nameof(OpenOrdersInLoss), StepModes.OpenWithAutoStep)
 		.SetDisplay("Open Orders In Loss", "How additional orders are triggered during drawdown", "Grid")
-		.SetCanOptimize(true);
+		;
 
 		_typeCloseInProfit = Param(nameof(TypeCloseInProfit), CloseProfitModes.BasketOrders)
 		.SetDisplay("Profit Close Mode", "How profits trigger position exits", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_typeCloseInLoss = Param(nameof(TypeCloseInLoss), CloseLossModes.NotCloseInLoss)
 		.SetDisplay("Loss Close Mode", "How losses are handled", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_stepOrdersProgress = Param(nameof(StepOrdersProgress), StepProgressions.GeometricalStep)
 		.SetDisplay("Step Progression", "Progression for distance between entries", "Grid")
-		.SetCanOptimize(true);
+		;
 
 		_lotOrdersProgress = Param(nameof(LotOrdersProgress), LotProgressions.StaticalLot)
 		.SetDisplay("Lot Progression", "How order sizes scale when adding layers", "Grid")
-		.SetCanOptimize(true);
+		;
 
 		_sideToOpenOrders = Param(nameof(SideToOpenOrders), SideModes.TradePlusAndMinus)
 		.SetDisplay("Sides", "Allowed trading direction", "Operation")
-		.SetCanOptimize(true);
+		;
 
 		_currencyTrade = Param(nameof(CurrencyTrade), "EUR/GBP/USD")
 		.SetDisplay("Currencies", "Ordered list of currencies to generate FX pairs", "General");
@@ -168,12 +168,12 @@ public class CoupleHedgeStrategy : Strategy
 		_stepOpenNextOrders = Param(nameof(StepOpenNextOrders), 50m)
 		.SetGreaterThanZero()
 		.SetDisplay("Step ($/lot)", "Loss per lot required to add the next order", "Grid")
-		.SetCanOptimize(true);
+		;
 
 		_targetCloseProfit = Param(nameof(TargetCloseProfit), 50m)
 		.SetNotNegative()
 		.SetDisplay("Target Profit", "Profit per lot required to close", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_delayCloseProfit = Param(nameof(DelayCloseProfit), 3)
 		.SetNotNegative()
@@ -182,7 +182,7 @@ public class CoupleHedgeStrategy : Strategy
 		_targetCloseLoss = Param(nameof(TargetCloseLoss), 1000m)
 		.SetNotNegative()
 		.SetDisplay("Target Loss", "Loss per lot that triggers protective exit", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_delayCloseLoss = Param(nameof(DelayCloseLoss), 3)
 		.SetNotNegative()
@@ -214,7 +214,7 @@ public class CoupleHedgeStrategy : Strategy
 		_signalThreshold = Param(nameof(SignalThreshold), 0.3m)
 		.SetNotNegative()
 		.SetDisplay("Signal Threshold", "Minimum ATR-normalized deviation required for entry", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for analysis", "General");
@@ -426,9 +426,9 @@ public class CoupleHedgeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TypeOperation == Operations.CloseImmediatelyAllOrders)
 		{

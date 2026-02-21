@@ -80,7 +80,7 @@ public class RgtRsiBollingerStrategy : Strategy
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 8)
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_rsiHigh = Param(nameof(RsiHigh), 90)
@@ -121,9 +121,9 @@ public class RgtRsiBollingerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var bb = new BollingerBands { Length = 20, Width = 2m };

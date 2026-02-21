@@ -118,47 +118,47 @@ public class OpenTwoPendingOrdersStrategy : Strategy
 	{
 		_useMoneyManagement = Param(nameof(UseMoneyManagement), true)
 		.SetDisplay("Money Management", "Use risk based position sizing", "Position")
-		.SetCanOptimize(false);
+		;
 
 		_riskPercent = Param(nameof(RiskPercent), 2m)
 		.SetDisplay("Risk Percent", "Portfolio percent risk per trade", "Position")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5m, 0.5m);
 
 		_fixedVolume = Param(nameof(FixedVolume), 1m)
 		.SetDisplay("Fixed Volume", "Lot size used without money management", "Position")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 5m, 0.1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
 		.SetDisplay("Stop Loss (steps)", "Stop loss distance in price steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 300m, 20m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 300m)
 		.SetDisplay("Take Profit (steps)", "Take profit distance in price steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50m, 600m, 50m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 50m)
 		.SetDisplay("Trailing Stop (steps)", "Trailing stop distance in price steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 200m, 10m);
 
 		_entryOffsetPoints = Param(nameof(EntryOffsetPoints), 50m)
 		.SetDisplay("Entry Offset (steps)", "Offset from the spread for stop entries", "Execution")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 150m, 10m);
 
 		_slippagePoints = Param(nameof(SlippagePoints), 5m)
 		.SetDisplay("Slippage Reserve", "Additional distance reserved for fills", "Execution")
-		.SetCanOptimize(false);
+		;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeOrderBook()
 		.Bind(OnOrderBookReceived)

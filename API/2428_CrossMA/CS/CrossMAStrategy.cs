@@ -104,16 +104,16 @@ public class CrossMAStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastSma = new SimpleMovingAverage
+		var fastSma = new SMA
 		{
 			Length = FastPeriod
 		};
 
-		var slowSma = new SimpleMovingAverage
+		var slowSma = new SMA
 		{
 			Length = SlowPeriod
 		};
@@ -129,7 +129,7 @@ public class CrossMAStrategy : Strategy
 		.Bind(fastSma, slowSma, atr, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <summary>

@@ -47,45 +47,45 @@ public class AscPlusPlusStrategy : Strategy
 
 		_fastLength = Param(nameof(FastLength), 9)
 			.SetDisplay("Fast WPR Length", "Williams %R length for the fast oscillator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowLength = Param(nameof(SlowLength), 54)
 			.SetDisplay("Slow WPR Length", "Williams %R length for the slow oscillator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rangeLength = Param(nameof(RangeLength), 10)
 			.SetDisplay("Range Length", "Averaging window for the true range filter", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_entryStopLevel = Param(nameof(EntryStopLevel), 10)
 			.SetDisplay("Entry Offset (points)", "Offset in price steps for breakout entries", "Orders")
-			.SetCanOptimize(true);
+			;
 
 		_entryRange = Param(nameof(EntryRange), 27)
 			.SetDisplay("Max Range (points)", "Maximum average range allowed before placing pending orders", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_riskLevel = Param(nameof(RiskLevel), 3)
 			.SetDisplay("Risk Level", "Adjusts WPR confirmation thresholds", "Signals")
 			.SetRange(1, 20)
-			.SetCanOptimize(true);
+			;
 
 		_signalConfirmation = Param(nameof(SignalConfirmation), 5)
 			.SetDisplay("Signal Confirmations", "Number of consecutive candles required to confirm a signal", "Signals")
 			.SetRange(1, 10)
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100)
 			.SetDisplay("Take Profit (points)", "Protective take profit distance in price steps", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 40)
 			.SetDisplay("Stop Loss (points)", "Protective stop loss distance in price steps", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 20)
 			.SetDisplay("Trailing Stop (points)", "Enables trailing for the protective stop", "Risk Management")
-			.SetCanOptimize(true);
+			;
 	}
 
 	public DataType CandleType
@@ -160,9 +160,9 @@ public class AscPlusPlusStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 

@@ -156,7 +156,7 @@ public class MissionImpossiblePowerTwoOpenStrategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 0.01m)
 		.SetNotNegative()
 		.SetDisplay("Base Volume", "Initial market order size", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_maxVolumeParam = Param(nameof(MaxVolume), 2m)
 		.SetNotNegative()
@@ -165,32 +165,32 @@ public class MissionImpossiblePowerTwoOpenStrategy : Strategy
 		_power = Param(nameof(Power), 13m)
 		.SetNotNegative()
 		.SetDisplay("Power", "Multiplier applied to unrealized loss when scaling volume", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 400)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop distance in price steps", "Protection")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitFirstPips = Param(nameof(TakeProfitFirstPips), 15)
 		.SetNotNegative()
 		.SetDisplay("First Take Profit", "Take-profit for the first grid entry", "Protection")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitNextPips = Param(nameof(TakeProfitNextPips), 7)
 		.SetNotNegative()
 		.SetDisplay("Grid Take Profit", "Take-profit applied to the averaged basket", "Protection")
-		.SetCanOptimize(true);
+		;
 
 		_gridStepPips = Param(nameof(GridStepPips), 21)
 		.SetNotNegative()
 		.SetDisplay("Grid Step", "Minimum adverse move before adding a new entry", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_maxTrades = Param(nameof(MaxTrades), 16)
 		.SetNotNegative()
 		.SetDisplay("Max Trades", "Maximum number of averaging entries", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe used for signals", "General");
@@ -232,9 +232,9 @@ public class MissionImpossiblePowerTwoOpenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Cache trading instrument parameters once trading starts.
 		_priceStep = Security?.PriceStep ?? 0.0001m;

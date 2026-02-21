@@ -47,37 +47,37 @@ public class ExpBrainTrend2AbsolutelyNoLagLwmaX2MACandleMmrecStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Average True Range lookback", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_lwmaLength = Param(nameof(LwmaLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("LWMA Length", "Linear weighted moving average length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 25, 1);
 
 		_fastMaLength = Param(nameof(FastMaLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA length used by the candle filter", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA length used by the candle filter", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 2);
 
 		_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (ATR)", "Multiplier applied to ATR for protective stop", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_takeProfitAtrMultiplier = Param(nameof(TakeProfitAtrMultiplier), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (ATR)", "Multiplier applied to ATR for profit target", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 6m, 0.5m);
 	}
 
@@ -162,9 +162,9 @@ public class ExpBrainTrend2AbsolutelyNoLagLwmaX2MACandleMmrecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange
 		{
@@ -176,12 +176,12 @@ public class ExpBrainTrend2AbsolutelyNoLagLwmaX2MACandleMmrecStrategy : Strategy
 			Length = LwmaLength
 		};
 
-		_fastEma = new ExponentialMovingAverage
+		_fastEma = new EMA
 		{
 			Length = FastMaLength
 		};
 
-		_slowEma = new ExponentialMovingAverage
+		_slowEma = new EMA
 		{
 			Length = SlowMaLength
 		};

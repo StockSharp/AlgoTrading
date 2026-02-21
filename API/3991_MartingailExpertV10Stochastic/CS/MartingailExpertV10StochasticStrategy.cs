@@ -230,15 +230,14 @@ public class MartingailExpertV10StochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_pointSize = CalculatePointSize();
 
 	_stochastic = new StochasticOscillator
-	{
-	Length = KPeriod,
+	{ K = { Length = KPeriod },
 	K = { Length = Slowing },
 	D = { Length = DPeriod }
 	};
@@ -256,7 +255,7 @@ public class MartingailExpertV10StochasticStrategy : Strategy
 	DrawOwnTrades(area);
 	}
 
-	StartProtection();
+	StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochasticValue)

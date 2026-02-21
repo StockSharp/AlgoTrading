@@ -304,12 +304,12 @@ public class MomoTradesV3Strategy : Strategy
 
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = FastPeriod,
-			LongPeriod = SlowPeriod,
+			ShortMa = { Length = FastPeriod },
+			LongMa = { Length = SlowPeriod },
 			SignalPeriod = SignalPeriod
 		};
 
-		var ema = new ExponentialMovingAverage
+		var ema = new EMA
 		{
 			Length = MaPeriod
 		};

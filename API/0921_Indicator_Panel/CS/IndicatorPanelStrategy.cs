@@ -53,47 +53,47 @@ public class IndicatorPanelStrategy : Strategy
 		
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetDisplay("RSI Length", "Period for RSI", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 		
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 		.SetDisplay("MACD Fast", "Fast EMA length for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 		.SetDisplay("MACD Slow", "Slow EMA length for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 1);
 		
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 		.SetDisplay("MACD Signal", "Signal EMA length for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 15, 1);
 		
 		_diLength = Param(nameof(DiLength), 14)
 		.SetDisplay("DI Length", "Directional Index period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 		
 		_adxLength = Param(nameof(AdxLength), 14)
 		.SetDisplay("ADX Length", "ADX smoothing period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 		
 		_cciLength = Param(nameof(CciLength), 20)
 		.SetDisplay("CCI Length", "Period for Commodity Channel Index", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 5);
 		
 		_mfiLength = Param(nameof(MfiLength), 20)
 		.SetDisplay("MFI Length", "Period for Money Flow Index", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 5);
 		
 		_momentumLength = Param(nameof(MomentumLength), 10)
 		.SetDisplay("Momentum Length", "Period for Momentum", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 		
 		_ma1IsEma = Param(nameof(Ma1IsEma), false)
@@ -101,7 +101,7 @@ public class IndicatorPanelStrategy : Strategy
 		
 		_ma1Length = Param(nameof(Ma1Length), 50)
 		.SetDisplay("MA1 Length", "Period for first moving average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 100, 10);
 		
 		_ma2IsEma = Param(nameof(Ma2IsEma), false)
@@ -109,7 +109,7 @@ public class IndicatorPanelStrategy : Strategy
 		
 		_ma2Length = Param(nameof(Ma2Length), 200)
 		.SetDisplay("MA2 Length", "Period for second moving average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 300, 10);
 	}
 	
@@ -281,8 +281,8 @@ public class IndicatorPanelStrategy : Strategy
 		_cci = new CommodityChannelIndex { Length = CciLength };
 		_mfi = new MoneyFlowIndex { Length = MfiLength };
 		_momentum = new Momentum { Length = MomentumLength };
-		_ma1 = Ma1IsEma ? new ExponentialMovingAverage { Length = Ma1Length } : new SimpleMovingAverage { Length = Ma1Length };
-		_ma2 = Ma2IsEma ? new ExponentialMovingAverage { Length = Ma2Length } : new SimpleMovingAverage { Length = Ma2Length };
+		_ma1 = Ma1IsEma ? new EMA { Length = Ma1Length } : new SMA { Length = Ma1Length };
+		_ma2 = Ma2IsEma ? new EMA { Length = Ma2Length } : new SMA { Length = Ma2Length };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription

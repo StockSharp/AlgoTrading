@@ -240,17 +240,17 @@ public class ExpCandlesticksBwTimeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_awesomeOscillator = new AwesomeOscillator
 		{
-			ShortPeriod = 5,
-			LongPeriod = 34
+			ShortMa = { Length = 5 },
+			LongMa = { Length = 34 }
 		};
 
-		_aoAverage = new SimpleMovingAverage { Length = 5 };
+		_aoAverage = new SMA { Length = 5 };
 
 		_timeFrame = CandleType.Arg is TimeSpan frame ? frame : TimeSpan.Zero;
 

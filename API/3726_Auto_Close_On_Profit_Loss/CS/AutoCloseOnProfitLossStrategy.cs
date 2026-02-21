@@ -90,12 +90,12 @@ public class AutoCloseOnProfitLossStrategy : Strategy
 	{
 		_targetProfit = Param(nameof(TargetProfit), 100m)
 			.SetDisplay("Target Profit", "Floating profit (in portfolio currency) that triggers the exit", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 500m, 50m);
 
 		_maxLoss = Param(nameof(MaxLoss), -50m)
 			.SetDisplay("Max Loss", "Floating loss (negative value) that triggers the exit", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-300m, -50m, 50m);
 
 		_enableProfitClose = Param(nameof(EnableProfitClose), true)
@@ -127,9 +127,9 @@ public class AutoCloseOnProfitLossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (EnableProfitClose && TargetProfit <= 0m)
 			throw new InvalidOperationException("TargetProfit must be greater than zero when profit closing is enabled.");

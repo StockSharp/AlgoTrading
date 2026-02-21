@@ -338,9 +338,9 @@ public class OrderGuardianStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// The original expert enforces a minimum shift of one bar for Parabolic SAR to avoid repainting.
 		if (StopLossMethod == StopLossMethodOptions.ParabolicSar && StopLossShift < 1)
@@ -451,7 +451,7 @@ public class OrderGuardianStrategy : Strategy
 					return (null, null);
 
 				var price = GetAppliedPrice(candle, TakeProfitPriceType);
-				var value = _takeProfitMaIndicator.Process(price, candle.OpenTime, true);
+				var value = _takeProfitMaIndicator.Process(new DecimalIndicatorValue(_takeProfitMaIndicator, price, candle.OpenTime));
 				if (!_takeProfitMaIndicator.IsFormed)
 					return (null, null);
 
@@ -484,7 +484,7 @@ public class OrderGuardianStrategy : Strategy
 					return (null, null);
 
 				var price = GetAppliedPrice(candle, StopLossPriceType);
-				var value = _stopLossMaIndicator.Process(price, candle.OpenTime, true);
+				var value = _stopLossMaIndicator.Process(new DecimalIndicatorValue(_stopLossMaIndicator, price, candle.OpenTime));
 				if (!_stopLossMaIndicator.IsFormed)
 					return (null, null);
 
@@ -610,11 +610,11 @@ public class OrderGuardianStrategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethodOptions.Simple => new SimpleMovingAverage { Length = period },
-			MovingAverageMethodOptions.Exponential => new ExponentialMovingAverage { Length = period },
+			MovingAverageMethodOptions.Simple => new SMA { Length = period },
+			MovingAverageMethodOptions.Exponential => new EMA { Length = period },
 			MovingAverageMethodOptions.Smoothed => new SmoothedMovingAverage { Length = period },
 			MovingAverageMethodOptions.LinearWeighted => new WeightedMovingAverage { Length = period },
-			_ => new ExponentialMovingAverage { Length = period }
+			_ => new EMA { Length = period }
 		};
 	}
 

@@ -52,7 +52,7 @@ public class DonchianChannelStrategy : Strategy
 	{
 		_channelPeriod = Param(nameof(ChannelPeriod), 20)
 			.SetDisplay("Channel Period", "Period for Donchian Channel calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -76,9 +76,9 @@ public class DonchianChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var donchian = new DonchianChannels { Length = ChannelPeriod };

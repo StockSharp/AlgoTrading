@@ -52,37 +52,37 @@ public class UsdChfNewStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 73)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Commodity Channel Index averaging period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_cciChannel = Param(nameof(CciChannel), 120m)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Channel", "Absolute threshold triggering breakout signals", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_entryIndentPips = Param(nameof(EntryIndentPips), 30m)
 			.SetNotNegative()
 			.SetDisplay("Entry Indent (pips)", "Distance between market price and pending stop", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 95m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Initial stop loss distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_cancelDistancePips = Param(nameof(CancelDistancePips), 30m)
 			.SetNotNegative()
 			.SetDisplay("Cancel Distance (pips)", "Maximum gap before pending stop is cancelled", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 110m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance maintained after activation", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_breakEvenPips = Param(nameof(BreakEvenPips), 60m)
 			.SetNotNegative()
 			.SetDisplay("Break Even (pips)", "Profit needed before stop is moved to entry", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -179,9 +179,9 @@ public class UsdChfNewStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 

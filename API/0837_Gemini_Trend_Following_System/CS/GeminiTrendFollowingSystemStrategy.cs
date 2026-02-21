@@ -97,27 +97,27 @@ public class GeminiTrendFollowingSystemStrategy : Strategy
 		_sma50Length = Param(nameof(Sma50Length), 50)
 			.SetRange(10, 200)
 			.SetDisplay("50 SMA Length", "Length for 50-period SMA", "Moving Averages")
-			.SetCanOptimize(true);
+			;
 
 		_sma200Length = Param(nameof(Sma200Length), 200)
 			.SetRange(100, 400)
 			.SetDisplay("200 SMA Length", "Length for 200-period SMA", "Moving Averages")
-			.SetCanOptimize(true);
+			;
 
 		_rocPeriod = Param(nameof(RocPeriod), 252)
 			.SetRange(50, 300)
 			.SetDisplay("ROC Period", "Period for Rate of Change calculation", "Performance")
-			.SetCanOptimize(true);
+			;
 
 		_rocMinPercent = Param(nameof(RocMinPercent), 15m)
 			.SetRange(5m, 50m)
 			.SetDisplay("Minimum Annual ROC %", "Minimum annual rate of change percent", "Performance")
-			.SetCanOptimize(true);
+			;
 
 		_useCatastrophicStop = Param(nameof(UseCatastrophicStop), true)
 			.SetDisplay("Use Catastrophic Stop", "Enable catastrophic stop below 200 SMA", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -143,12 +143,12 @@ public class GeminiTrendFollowingSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma50 = new SimpleMovingAverage { Length = Sma50Length };
-		var sma200 = new SimpleMovingAverage { Length = Sma200Length };
+		var sma50 = new SMA { Length = Sma50Length };
+		var sma200 = new SMA { Length = Sma200Length };
 		var roc = new RateOfChange { Length = RocPeriod };
 		var lowest20 = new Lowest { Length = 20 };
 

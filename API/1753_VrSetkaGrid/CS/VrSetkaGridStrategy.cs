@@ -104,22 +104,22 @@ public class VrSetkaGridStrategy : Strategy
 	{
 		_distance = Param(nameof(Distance), 300m)
 			.SetDisplay("Distance", "Grid step in points", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 500m, 100m);
 
 		_takeProfit = Param(nameof(TakeProfit), 300m)
 			.SetDisplay("Take Profit", "Target in points for initial order", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 500m, 100m);
 
 		_correction = Param(nameof(Correction), 50m)
 			.SetDisplay("Correction", "Additional profit in points", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_signalPercent = Param(nameof(SignalPercent), 1.3m)
 			.SetDisplay("Signal %", "Percent deviation from daily range", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_useMartingale = Param(nameof(UseMartingale), true)
@@ -147,9 +147,9 @@ public class VrSetkaGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

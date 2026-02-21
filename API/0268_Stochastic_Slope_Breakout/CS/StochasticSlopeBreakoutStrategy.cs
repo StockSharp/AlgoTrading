@@ -108,31 +108,31 @@ public class StochasticSlopeBreakoutStrategy : Strategy
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Period for Stochastic Oscillator", "Indicator Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_kPeriod = Param(nameof(KPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("K Period", "Smoothing period for %K line", "Indicator Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("D Period", "Period for %D line", "Indicator Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for slope statistics calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 			
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
@@ -163,7 +163,7 @@ public class StochasticSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_stochastic = new StochasticOscillator
 		{
@@ -193,7 +193,7 @@ public class StochasticSlopeBreakoutStrategy : Strategy
 			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
 		);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)

@@ -87,7 +87,7 @@ public class SimpleDcaStrategy : Strategy
 
 	public SimpleDcaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetCanOptimize(false);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
 		_baseOrderSize = Param(nameof(BaseOrderSize), 50m);
 		_priceDeviation = Param(nameof(PriceDeviation), 1m);
 		_maxSafetyOrders = Param(nameof(MaxSafetyOrders), 10);
@@ -96,16 +96,16 @@ public class SimpleDcaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

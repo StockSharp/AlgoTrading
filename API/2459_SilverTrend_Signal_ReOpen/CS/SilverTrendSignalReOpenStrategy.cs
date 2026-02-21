@@ -132,11 +132,11 @@ public class SilverTrendSignalReOpenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var indicator = new SilverTrendSignalIndicator
 		{
@@ -221,7 +221,7 @@ public class SilverTrendSignalReOpenStrategy : Strategy
 /// <summary>
 /// SilverTrend indicator returning buy and sell signals.
 /// </summary>
-public class SilverTrendSignalIndicator : BaseIndicator<decimal>
+public class SilverTrendSignalIndicator : BaseIndicator
 {
 	public int Ssp { get; set; } = 9;
 	public int Risk { get; set; } = 3;

@@ -99,13 +99,13 @@ public class HybridScalpingBotStrategy : Strategy
 	    _takeProfitPercent = Param(nameof(TakeProfitPercent), 0.8m)
 	        .SetGreaterThanZero()
 	        .SetDisplay("Take Profit %", "Take profit percentage", "Risk")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(0.5m, 3m, 0.5m);
 
 	    _stopLossPercent = Param(nameof(StopLossPercent), 0.6m)
 	        .SetGreaterThanZero()
 	        .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(0.5m, 2m, 0.5m);
 
 	    _useQuickExit = Param(nameof(UseQuickExit), true)
@@ -117,7 +117,7 @@ public class HybridScalpingBotStrategy : Strategy
 	    _trailingStopPercent = Param(nameof(TrailingStopPercent), 0.4m)
 	        .SetGreaterThanZero()
 	        .SetDisplay("Trailing Stop %", "Trailing stop percent", "Risk")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(0.2m, 1m, 0.2m);
 
 	    _signalSensitivity = Param(nameof(SignalSensitivity), "Easy")
@@ -140,9 +140,9 @@ public class HybridScalpingBotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 
 	    var rsi = new RSI { Length = 14 };
 	    var ema9 = new EMA { Length = 9 };

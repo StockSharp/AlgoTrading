@@ -111,7 +111,7 @@ public class AcceleratorBotUsdJpyH4Strategy : Strategy
 		return
 		[
 		(Security, CandleType),
-		(Security, TimeSpan.FromDays(1).TimeFrame()),
+		(Security, TimeSpan.FromMinutes(5).TimeFrame()),
 		(Security, TimeSpan.FromDays(7).TimeFrame())
 		];
 	}
@@ -127,9 +127,9 @@ public class AcceleratorBotUsdJpyH4Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		var stochastic = new StochasticOscillator
@@ -143,7 +143,7 @@ public class AcceleratorBotUsdJpyH4Strategy : Strategy
 		.BindEx(adx, stochastic, ProcessCandle)
 		.Start();
 
-		var daySub = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var daySub = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		daySub.Bind(ProcessDay).Start();
 
 		var weekSub = SubscribeCandles(TimeSpan.FromDays(7).TimeFrame());
@@ -158,7 +158,7 @@ public class AcceleratorBotUsdJpyH4Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessDay(ICandleMessage candle)

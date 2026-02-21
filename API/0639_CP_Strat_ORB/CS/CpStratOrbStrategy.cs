@@ -87,25 +87,25 @@ public class CpStratOrbStrategy : Strategy
 		_minRangePoints = Param(nameof(MinRangePoints), 60m)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Range", "Minimum NY range in points", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_stopPoints = Param(nameof(StopPoints), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_takePoints = Param(nameof(TakePoints), 60m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 120m, 10m);
 
 		_maxTradesPerSession = Param(nameof(MaxTradesPerSession), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Max trades per NY session", "General")
-			.SetCanOptimize(false);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -132,10 +132,10 @@ public class CpStratOrbStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -156,7 +156,7 @@ public class CpStratOrbStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var nyTime = TimeZoneInfo.ConvertTime(candle.OpenTime.UtcDateTime, _nyTimeZone);
+		var nyTime = TimeZoneInfo.ConvertTime(candle.OpenTime, _nyTimeZone);
 
 		if (_currentDay != nyTime.Date)
 		{

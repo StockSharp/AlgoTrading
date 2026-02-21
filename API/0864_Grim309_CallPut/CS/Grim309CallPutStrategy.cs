@@ -142,11 +142,11 @@ public class Grim309CallPutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_ema5 = new EMA { Length = Ema5Length };
 		_ema10 = new EMA { Length = Ema10Length };

@@ -147,8 +147,7 @@ public class UltimateTradingBotStrategy : Strategy
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var ma = new SMA { Length = MaLength };
 		var stoch = new StochasticOscillator
-		{
-			Length = StochLength,
+		{ K = { Length = StochLength },
 			K = { Length = 3 },
 			D = { Length = 3 }
 		};

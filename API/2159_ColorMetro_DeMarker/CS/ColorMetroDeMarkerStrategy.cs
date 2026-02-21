@@ -119,17 +119,17 @@ public class ColorMetroDeMarkerStrategy : Strategy
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("DeMarker Period", "Period of the DeMarker indicator", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_stepSizeFast = Param(nameof(StepSizeFast), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Step", "Fast step size for MPlus line", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_stepSizeSlow = Param(nameof(StepSizeSlow), 15m)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Step", "Slow step size for MMinus line", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
@@ -169,11 +169,11 @@ public class ColorMetroDeMarkerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var deMarker = new DeMarker { Length = DeMarkerPeriod };
 		var subscription = SubscribeCandles(CandleType);

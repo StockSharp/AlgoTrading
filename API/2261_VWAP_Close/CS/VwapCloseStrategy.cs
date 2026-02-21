@@ -92,7 +92,7 @@ public class VwapCloseStrategy : Strategy
 		_period = Param(nameof(Period), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "VWMA calculation period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 5, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
@@ -118,7 +118,7 @@ public class VwapCloseStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_vwma = new VolumeWeightedMovingAverage { Length = Period };
 
@@ -133,9 +133,9 @@ public class VwapCloseStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal vwmaValue)

@@ -141,9 +141,9 @@ public class MovingAverageMoneyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 		_signedPosition = Position;
@@ -157,7 +157,7 @@ public class MovingAverageMoneyStrategy : Strategy
 		if (_stepPrice <= 0m)
 			_stepPrice = _priceStep;
 
-		_movingAverage = new SimpleMovingAverage
+		_movingAverage = new SMA
 		{
 			Length = MovingPeriod
 		};

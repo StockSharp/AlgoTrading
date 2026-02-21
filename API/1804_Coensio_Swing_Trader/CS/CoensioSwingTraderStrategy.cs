@@ -196,9 +196,9 @@ public class CoensioSwingTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tick = Security?.PriceStep ?? 1m;
 

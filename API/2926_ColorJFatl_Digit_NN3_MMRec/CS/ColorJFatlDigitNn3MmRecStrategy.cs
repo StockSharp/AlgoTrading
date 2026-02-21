@@ -62,7 +62,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 	/// </summary>
 	public ColorJFatlDigitNn3MmRecStrategy()
 	{
-		_candleTypeA = Param(nameof(CandleTypeA), TimeSpan.FromDays(1).TimeFrame())
+		_candleTypeA = Param(nameof(CandleTypeA), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("A Candle Type", "Timeframe for module A", "Module A");
 		_jmaLengthA = Param(nameof(JmaLengthA), 5)
 		.SetGreaterThanZero()
@@ -439,16 +439,16 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_moduleA.Start();
 		_moduleB.Start();
 		_moduleC.Start();
 
 		// Enable default risk protections.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private static decimal SelectPrice(ICandleMessage candle, AppliedPrices mode)
@@ -566,7 +566,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 			return;
 
 			var price = SelectPrice(candle, _appliedPrice.Value);
-			var jmaValue = _jma.Process(price, candle.OpenTime, true).GetValue<decimal>();
+			var jmaValue = _jma.Process(new DecimalIndicatorValue(_jma, price, candle.OpenTime)).GetValue<decimal>();
 
 			if (!_jma.IsFormed)
 			{

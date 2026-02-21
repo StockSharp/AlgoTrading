@@ -148,7 +148,7 @@ public class FxfFastInFastOutStrategy : Strategy
 		_enterOffsetPoints = Param(nameof(EnterOffsetPoints), 22)
 		.SetNotNegative()
 		.SetDisplay("Entry Offset (points)", "Distance between quote and pending stop order.", "Orders")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 15)
@@ -166,7 +166,7 @@ public class FxfFastInFastOutStrategy : Strategy
 		_volatilitySizePoints = Param(nameof(VolatilitySizePoints), 220)
 		.SetNotNegative()
 		.SetDisplay("Volatility Threshold", "Minimum candle size required to trade (price steps).", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(150, 400, 50);
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
@@ -182,7 +182,7 @@ public class FxfFastInFastOutStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk %", "Risk percentage per trade.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 10m, 1m);
 
 		_maxOrdersPerBar = Param(nameof(MaxOrdersPerBar), 1)
@@ -220,9 +220,9 @@ public class FxfFastInFastOutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var candleSubscription = SubscribeCandles(CandleType);
 		candleSubscription
@@ -240,7 +240,7 @@ public class FxfFastInFastOutStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

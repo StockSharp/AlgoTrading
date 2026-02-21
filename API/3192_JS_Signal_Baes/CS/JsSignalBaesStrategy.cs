@@ -214,17 +214,17 @@ public JsSignalBaesStrategy()
 	_cciPeriod = Param(nameof(CciPeriod), 13)
 	.SetGreaterThanZero()
 	.SetDisplay("CCI Period", "Length for Commodity Channel Index", "Indicators")
-	.SetCanOptimize(true);
+	;
 
 	_fastMaPeriod = Param(nameof(FastMaPeriod), 5)
 	.SetGreaterThanZero()
 	.SetDisplay("Fast MA", "Fast moving average length", "Moving Averages")
-	.SetCanOptimize(true);
+	;
 
 	_slowMaPeriod = Param(nameof(SlowMaPeriod), 9)
 	.SetGreaterThanZero()
 	.SetDisplay("Slow MA", "Slow moving average length", "Moving Averages")
-	.SetCanOptimize(true);
+	;
 
 	_maMethod = Param(nameof(MaMethod), MovingAverageKinds.LinearWeighted)
 	.SetDisplay("MA Method", "Smoothing method for the two averages", "Moving Averages");
@@ -232,37 +232,37 @@ public JsSignalBaesStrategy()
 	_macdFastPeriod = Param(nameof(MacdFastPeriod), 8)
 	.SetGreaterThanZero()
 	.SetDisplay("MACD Fast", "Fast EMA length", "MACD")
-	.SetCanOptimize(true);
+	;
 
 	_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 17)
 	.SetGreaterThanZero()
 	.SetDisplay("MACD Slow", "Slow EMA length", "MACD")
-	.SetCanOptimize(true);
+	;
 
 	_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 	.SetGreaterThanZero()
 	.SetDisplay("MACD Signal", "Signal moving average length", "MACD")
-	.SetCanOptimize(true);
+	;
 
 	_stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
 	.SetGreaterThanZero()
 	.SetDisplay("Stochastic K", "Main period for the stochastic", "Oscillators")
-	.SetCanOptimize(true);
+	;
 
-	_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+	_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 	.SetGreaterThanZero()
 	.SetDisplay("Stochastic D", "Signal period for the stochastic", "Oscillators")
-	.SetCanOptimize(true);
+	;
 
 	_stochasticSmoothing = Param(nameof(StochasticSmoothing), 3)
 	.SetGreaterThanZero()
 	.SetDisplay("Stochastic Smoothing", "Smoothing factor for the stochastic", "Oscillators")
-	.SetCanOptimize(true);
+	;
 
 	_rsiPeriod = Param(nameof(RsiPeriod), 9)
 	.SetGreaterThanZero()
 	.SetDisplay("RSI Period", "Length for RSI", "Indicators")
-	.SetCanOptimize(true);
+	;
 
 	_reverseSignals = Param(nameof(ReverseSignals), false)
 	.SetDisplay("Reverse", "Invert the long and short signals", "General");
@@ -370,22 +370,22 @@ var cci = new CommodityChannelIndex { Length = CciPeriod };
 var stochastic = new StochasticOscillator
 {
 	KPeriod = StochasticKPeriod,
-	DPeriod = StochasticDPeriod,
+	D = { Length = StochasticDPeriod },
 	Smooth = StochasticSmoothing
 };
 
 return new TimeframeState(dataType, fastMa, slowMa, macd, rsi, cci, stochastic);
 }
 
-private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKinds type, int length)
+private static DecimalLengthIndicator CreateMovingAverage(MovingAverageKinds type, int length)
 {
 	return type switch
 	{
-		MovingAverageKinds.Simple => new SimpleMovingAverage { Length = length },
-		MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length },
+		MovingAverageKinds.Simple => new SMA { Length = length },
+		MovingAverageKinds.Exponential => new EMA { Length = length },
 		MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
 		MovingAverageKinds.LinearWeighted => new WeightedMovingAverage { Length = length },
-		_ => new SimpleMovingAverage { Length = length }
+		_ => new SMA { Length = length }
 	};
 }
 
@@ -458,7 +458,7 @@ public enum MovingAverageKinds
 
 private sealed class TimeframeState
 {
-	public TimeframeState(DataType timeFrame, LengthIndicator<decimal> fastMa, LengthIndicator<decimal> slowMa,
+	public TimeframeState(DataType timeFrame, DecimalLengthIndicator fastMa, DecimalLengthIndicator slowMa,
 	MovingAverageConvergenceDivergenceSignal macd, RelativeStrengthIndex rsi, CommodityChannelIndex cci,
 	StochasticOscillator stochastic)
 	{
@@ -472,8 +472,8 @@ private sealed class TimeframeState
 	}
 
 public DataType TimeFrame { get; }
-public LengthIndicator<decimal> FastMa { get; }
-public LengthIndicator<decimal> SlowMa { get; }
+public DecimalLengthIndicator FastMa { get; }
+public DecimalLengthIndicator SlowMa { get; }
 public MovingAverageConvergenceDivergenceSignal Macd { get; }
 public RelativeStrengthIndex Rsi { get; }
 public CommodityChannelIndex Cci { get; }

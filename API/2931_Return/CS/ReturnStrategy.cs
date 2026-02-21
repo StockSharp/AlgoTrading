@@ -219,9 +219,9 @@ public class ReturnStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (StartHour < 0 || StartHour > 23)
 			throw new InvalidOperationException("Start hour must be between 0 and 23.");

@@ -62,13 +62,13 @@ public class AnchoredMomentumCandleStrategy : Strategy
 		_momPeriod = Param(nameof(MomPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "SMA length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_smoothPeriod = Param(nameof(SmoothPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth Period", "EMA length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -90,9 +90,9 @@ public class AnchoredMomentumCandleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = new AnchoredMomentumCandle
 		{
@@ -145,7 +145,7 @@ public class AnchoredMomentumCandleStrategy : Strategy
 		_prevColor = color;
 	}
 
-	private class AnchoredMomentumCandle : Indicator<ICandleMessage>
+	private class AnchoredMomentumCandle : BaseIndicator
 	{
 		public int MomPeriod { get; set; } = 8;
 		public int SmoothPeriod { get; set; } = 6;

@@ -182,66 +182,66 @@ public OzFxSimpleStrategy()
 _layersCount = Param(nameof(LayersCount), 5)
 .SetGreaterThanZero()
 .SetDisplay("Layers", "Number of layered market orders opened per signal.", "Execution")
-.SetCanOptimize(true)
+
 .SetOptimize(3, 7, 1);
 
-_awesomeShortPeriod = Param(nameof(AwesomeShortPeriod), 5)
+_awesomeShortMa = { Length = Param }(nameof(AwesomeShortPeriod), 5)
 .SetGreaterThanZero()
 .SetDisplay("AO Fast", "Short period of the Awesome Oscillator.", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(3, 10, 1);
 
-_awesomeLongPeriod = Param(nameof(AwesomeLongPeriod), 34)
+_awesomeLongMa = { Length = Param }(nameof(AwesomeLongPeriod), 34)
 .SetGreaterThanZero()
 .SetDisplay("AO Slow", "Long period of the Awesome Oscillator.", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(20, 60, 2);
 
 _acceleratorAveragePeriod = Param(nameof(AcceleratorAveragePeriod), 5)
 .SetGreaterThanZero()
 .SetDisplay("Accelerator MA", "Length of the moving average smoothing the accelerator oscillator.", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(3, 10, 1);
 
 _stochasticKSmooth = Param(nameof(StochasticKSmooth), 3)
 .SetGreaterThanZero()
 .SetDisplay("Stochastic %K Smooth", "Smoothing period applied to %K.", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(1, 5, 1);
 
 _stochasticDSmooth = Param(nameof(StochasticDSmooth), 3)
 .SetGreaterThanZero()
 .SetDisplay("Stochastic %D Smooth", "Smoothing period applied to %D.", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(1, 5, 1);
 
 _orderVolume = Param(nameof(OrderVolume), 0.1m)
 .SetGreaterThanZero()
 .SetDisplay("Order Volume", "Lot size per each market order layer.", "Trading")
-.SetCanOptimize(true)
+
 .SetOptimize(0.05m, 0.5m, 0.05m);
 
 _stopLossPips = Param(nameof(StopLossPips), 100m)
 .SetGreaterThanZero()
 .SetDisplay("Stop Loss (pips)", "Protective stop distance applied to every order.", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(50m, 200m, 25m);
 
 _takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 .SetGreaterThanZero()
 .SetDisplay("Take Profit Step (pips)", "Distance between consecutive take-profit layers.", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(25m, 150m, 25m);
 
 _stochasticLevel = Param(nameof(StochasticLevel), 50m)
 .SetDisplay("Stochastic Level", "%K threshold that splits bullish and bearish regimes.", "Signals")
-.SetCanOptimize(true)
+
 .SetOptimize(40m, 60m, 5m);
 
 _stochasticLength = Param(nameof(StochasticLength), 5)
 .SetGreaterThanZero()
 .SetDisplay("Stochastic Length", "Lookback period of the stochastic %K.", "Signals")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 14, 1);
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -274,24 +274,23 @@ _shortCampaignId = 0;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _awesomeOscillator = new AwesomeOscillator
 {
-ShortPeriod = AwesomeShortPeriod,
-LongPeriod = AwesomeLongPeriod,
+ShortMa = { Length = AwesomeShortPeriod },
+LongMa = { Length = AwesomeLongPeriod },
 };
 
-_acceleratorAverage = new SimpleMovingAverage
+_acceleratorAverage = new SMA
 {
 Length = AcceleratorAveragePeriod,
 };
 
 _stochastic = new StochasticOscillator
-{
-Length = StochasticLength,
+{ K = { Length = StochasticLength },
 K = { Length = StochasticKSmooth },
 D = { Length = StochasticDSmooth },
 };

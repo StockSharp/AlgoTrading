@@ -94,7 +94,7 @@ _macdSignalLength = Param(nameof(MacdSignalLength), 9)
 _fractalWing = Param(nameof(FractalWing), 2)
 .SetGreaterOrEqual(1)
 .SetDisplay("Fractal Wing", "Number of candles on each side for fractal confirmation", "Signals")
-.SetCanOptimize(true);
+;
 }
 
 	/// <summary>
@@ -227,9 +227,9 @@ set => _fractalWing.Value = value;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -361,7 +361,7 @@ var maxSize = Math.Max(BarWatch * 2 + Shift + 6, Shift + 6 + FractalWing);
 
 	private bool TryGetFractalHigh(int index, out decimal price)
 	{
-		var candidate = _candles[index].High;
+		var candidate = _candles[index].HighPrice;
 
 for (var offset = -FractalWing; offset <= FractalWing; offset++)
 		{
@@ -381,7 +381,7 @@ for (var offset = -FractalWing; offset <= FractalWing; offset++)
 
 	private bool TryGetFractalLow(int index, out decimal price)
 	{
-		var candidate = _candles[index].Low;
+		var candidate = _candles[index].LowPrice;
 
 for (var offset = -FractalWing; offset <= FractalWing; offset++)
 		{
@@ -401,7 +401,7 @@ for (var offset = -FractalWing; offset <= FractalWing; offset++)
 
 	private bool IsZigZagHigh(int index)
 	{
-		var target = _candles[index].High;
+		var target = _candles[index].HighPrice;
 		var start = Math.Max(0, index - BarWatch);
 		var end = Math.Min(_candles.Count - 1, index + BarWatch);
 
@@ -410,7 +410,7 @@ for (var offset = -FractalWing; offset <= FractalWing; offset++)
 			if (i == index)
 				continue;
 
-			if (_candles[i].High > target)
+			if (_candles[i].HighPrice > target)
 				return false;
 		}
 
@@ -419,7 +419,7 @@ for (var offset = -FractalWing; offset <= FractalWing; offset++)
 
 	private bool IsZigZagLow(int index)
 	{
-		var target = _candles[index].Low;
+		var target = _candles[index].LowPrice;
 		var start = Math.Max(0, index - BarWatch);
 		var end = Math.Min(_candles.Count - 1, index + BarWatch);
 
@@ -428,7 +428,7 @@ for (var offset = -FractalWing; offset <= FractalWing; offset++)
 			if (i == index)
 				continue;
 
-			if (_candles[i].Low < target)
+			if (_candles[i].LowPrice < target)
 				return false;
 		}
 

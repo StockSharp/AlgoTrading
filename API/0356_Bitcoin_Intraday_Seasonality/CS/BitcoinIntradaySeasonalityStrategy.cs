@@ -116,7 +116,7 @@ public class BitcoinIntradaySeasonalityStrategy : Strategy
 
 	private void OnHourClose(ICandleMessage c)
 	{
-		var hour = c.OpenTime.UtcDateTime.Hour; // assume server UTC
+		var hour = c.OpenTime.Hour; // assume server UTC
 		var inSeason = HoursLong.Contains(hour);
 
 		var portfolioValue = Portfolio.CurrentValue ?? 0m;

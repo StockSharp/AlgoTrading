@@ -58,12 +58,12 @@ public class TrailingStopLossAllOrdersStrategy : Strategy
 		_trailStartPips = Param(nameof(TrailStartPips), 20m)
 			.SetNotNegative()
 			.SetDisplay("Trail Start (pips)", "Profit required before trailing activates.", "Risk management")
-			.SetCanOptimize(true);
+			;
 
 		_trailDistancePips = Param(nameof(TrailDistancePips), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trail Distance (pips)", "Gap between price and trailing stop.", "Risk management")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -78,9 +78,9 @@ public class TrailingStopLossAllOrdersStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = Security?.PriceStep ?? 1m;
 		if (_pipSize <= 0m)

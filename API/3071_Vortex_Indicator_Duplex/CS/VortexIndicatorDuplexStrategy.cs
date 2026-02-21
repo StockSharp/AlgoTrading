@@ -70,13 +70,13 @@ public class VortexIndicatorDuplexStrategy : Strategy
 		_longLength = Param(nameof(LongLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Vortex Length", "VI period applied to the long signal stream.", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 42, 7);
 
 		_shortLength = Param(nameof(ShortLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Vortex Length", "VI period applied to the short signal stream.", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 42, 7);
 
 		_longSignalBar = Param(nameof(LongSignalBar), 1)
@@ -289,7 +289,7 @@ public class VortexIndicatorDuplexStrategy : Strategy
 		_shortVortex = null!;
 	}
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_priceStep = Security.PriceStep ?? 0m;
 		if (_priceStep <= 0m)
@@ -311,9 +311,9 @@ public class VortexIndicatorDuplexStrategy : Strategy
 			.Bind(_shortVortex, ProcessShortCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 	private void ProcessLongCandle(ICandleMessage candle, decimal viPlus, decimal viMinus)
 	{

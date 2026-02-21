@@ -81,12 +81,12 @@ public class RsiCciFusionStrategy : Strategy
 		_length = Param(nameof(Length), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Period for RSI and CCI", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_rsiWeight = Param(nameof(RsiWeight), 0.5m)
 			.SetDisplay("RSI Weight", "Weight of RSI in fusion", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 1m, 0.1m);
 
 		_enableShort = Param(nameof(EnableShort), false)
@@ -121,22 +121,22 @@ public class RsiCciFusionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var rsi = new RelativeStrengthIndex { Length = Length };
 		var cci = new CommodityChannelIndex { Length = Length };
 
-		_rsiSma = new SimpleMovingAverage { Length = Length };
+		_rsiSma = new SMA { Length = Length };
 		_rsiStd = new StandardDeviation { Length = Length };
-		_cciSma = new SimpleMovingAverage { Length = Length };
+		_cciSma = new SMA { Length = Length };
 		_cciStd = new StandardDeviation { Length = Length };
-		_combinedSma = new SimpleMovingAverage { Length = Length };
+		_combinedSma = new SMA { Length = Length };
 		_combinedStd = new StandardDeviation { Length = Length };
-		_rescaledSma = new SimpleMovingAverage { Length = Length };
+		_rescaledSma = new SMA { Length = Length };
 		_rescaledStd = new StandardDeviation { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -151,23 +151,23 @@ public class RsiCciFusionStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var rsiMean = _rsiSma!.Process(rsiValue, candle.OpenTime, true).ToDecimal();
-		var rsiStd = _rsiStd!.Process(rsiValue, candle.OpenTime, true).ToDecimal();
+		var rsiMean = _rsiSma!.Process(new DecimalIndicatorValue(_rsiSma, rsiValue, candle.OpenTime)).ToDecimal();
+		var rsiStd = _rsiStd!.Process(new DecimalIndicatorValue(_rsiStd, rsiValue, candle.OpenTime)).ToDecimal();
 		var rsiZ = rsiStd != 0m ? (rsiValue - rsiMean) / rsiStd : 0m;
 
-		var cciMean = _cciSma!.Process(cciValue, candle.OpenTime, true).ToDecimal();
-		var cciStd = _cciStd!.Process(cciValue, candle.OpenTime, true).ToDecimal();
+		var cciMean = _cciSma!.Process(new DecimalIndicatorValue(_cciSma, cciValue, candle.OpenTime)).ToDecimal();
+		var cciStd = _cciStd!.Process(new DecimalIndicatorValue(_cciStd, cciValue, candle.OpenTime)).ToDecimal();
 		var cciZ = cciStd != 0m ? (cciValue - cciMean) / cciStd : 0m;
 
 		var cciWeight = 1m - RsiWeight;
 		var combined = RsiWeight * rsiZ + cciWeight * cciZ;
 
-		var combinedMean = _combinedSma!.Process(combined, candle.OpenTime, true).ToDecimal();
-		var combinedStd = _combinedStd!.Process(combined, candle.OpenTime, true).ToDecimal();
+		var combinedMean = _combinedSma!.Process(new DecimalIndicatorValue(_combinedSma, combined, candle.OpenTime)).ToDecimal();
+		var combinedStd = _combinedStd!.Process(new DecimalIndicatorValue(_combinedStd, combined, candle.OpenTime)).ToDecimal();
 		var rescaled = combined * combinedStd + combinedMean;
 
-		var rescaledMean = _rescaledSma!.Process(rescaled, candle.OpenTime, true).ToDecimal();
-		var rescaledStd = _rescaledStd!.Process(rescaled, candle.OpenTime, true).ToDecimal();
+		var rescaledMean = _rescaledSma!.Process(new DecimalIndicatorValue(_rescaledSma, rescaled, candle.OpenTime)).ToDecimal();
+		var rescaledStd = _rescaledStd!.Process(new DecimalIndicatorValue(_rescaledStd, rescaled, candle.OpenTime)).ToDecimal();
 		var upperBand = rescaledMean + rescaledStd;
 		var lowerBand = rescaledMean - rescaledStd;
 

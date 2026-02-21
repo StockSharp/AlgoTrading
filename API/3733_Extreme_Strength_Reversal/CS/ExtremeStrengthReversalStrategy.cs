@@ -126,47 +126,47 @@ public class ExtremeStrengthReversalStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Percent", "Risk per trade as percentage of equity.", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 150)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips.", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 250, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 300)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips.", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 400, 20);
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Number of candles used for Bollinger Bands.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.25m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Number of candles used for RSI.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 1);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 80m)
 			.SetDisplay("RSI Overbought", "RSI level that marks extreme overbought conditions.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 5m);
 
 		_rsiOversold = Param(nameof(RsiOversold), 20m)
 			.SetDisplay("RSI Oversold", "RSI level that marks extreme oversold conditions.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -187,11 +187,11 @@ public class ExtremeStrengthReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_bollinger = new BollingerBands
 		{

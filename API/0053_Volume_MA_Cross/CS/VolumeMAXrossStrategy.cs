@@ -66,13 +66,13 @@ public class VolumeMAXrossStrategy : Strategy
 		_fastVolumeMALength = Param(nameof(FastVolumeMALength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Volume MA Length", "Period for Fast Volume Moving Average", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_slowVolumeMALength = Param(nameof(SlowVolumeMALength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Volume MA Length", "Period for Slow Volume Moving Average", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 100, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -98,14 +98,14 @@ public class VolumeMAXrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		_fastVolumeMA = new SimpleMovingAverage { Length = FastVolumeMALength };
-		_slowVolumeMA = new SimpleMovingAverage { Length = SlowVolumeMALength };
-		var priceMA = new SimpleMovingAverage { Length = FastVolumeMALength }; // Use same period as fast Volume MA
+		_fastVolumeMA = new SMA { Length = FastVolumeMALength };
+		_slowVolumeMA = new SMA { Length = SlowVolumeMALength };
+		var priceMA = new SMA { Length = FastVolumeMALength }; // Use same period as fast Volume MA
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
@@ -137,8 +137,8 @@ public class VolumeMAXrossStrategy : Strategy
 			return;
 
 		// Process volume through MAs
-		var fastMAValue = _fastVolumeMA.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
-		var slowMAValue = _slowVolumeMA.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var fastMAValue = _fastVolumeMA.Process(new DecimalIndicatorValue(_fastVolumeMA, candle.TotalVolume, candle.ServerTime)).ToDecimal();
+		var slowMAValue = _slowVolumeMA.Process(new DecimalIndicatorValue(_slowVolumeMA, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 		// Process the volume MAs
 

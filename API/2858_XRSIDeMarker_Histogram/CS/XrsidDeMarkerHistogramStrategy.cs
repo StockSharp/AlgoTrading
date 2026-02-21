@@ -37,7 +37,7 @@ public class XrsidDeMarkerHistogramStrategy : Strategy
 	private RelativeStrengthIndex _rsi = null!;
 	private SimpleMovingAverage _deMaxAverage = null!;
 	private SimpleMovingAverage _deMinAverage = null!;
-	private LengthIndicator<decimal> _smoother = null!;
+	private DecimalLengthIndicator _smoother = null!;
 
 	private readonly List<decimal> _indicatorValues = new();
 	private decimal? _previousHigh;
@@ -278,15 +278,15 @@ public class XrsidDeMarkerHistogramStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
 		_rsi = new RelativeStrengthIndex { Length = IndicatorPeriod };
-		_deMaxAverage = new SimpleMovingAverage { Length = IndicatorPeriod };
-		_deMinAverage = new SimpleMovingAverage { Length = IndicatorPeriod };
+		_deMaxAverage = new SMA { Length = IndicatorPeriod };
+		_deMinAverage = new SMA { Length = IndicatorPeriod };
 		_smoother = CreateSmoother(SmoothingMethodSelection, SmoothingLength, SmoothingPhase);
 
 		var subscription = SubscribeCandles(CandleType);
@@ -491,18 +491,18 @@ public class XrsidDeMarkerHistogramStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethods method, int length, int phase)
+	private static DecimalLengthIndicator CreateSmoother(SmoothingMethods method, int length, int phase)
 	{
 		length = Math.Max(1, length);
 
 		return method switch
 		{
-			SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
-			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Sma => new SMA { Length = length },
+			SmoothingMethods.Ema => new EMA { Length = length },
 			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
 			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = length },
 			SmoothingMethods.Jurik => new JurikMovingAverage { Length = length, Phase = phase },
-			_ => new ExponentialMovingAverage { Length = length }
+			_ => new EMA { Length = length }
 	};
 }
 }

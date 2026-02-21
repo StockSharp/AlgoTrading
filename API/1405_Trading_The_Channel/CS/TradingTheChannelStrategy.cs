@@ -90,7 +90,7 @@ public class TradingTheChannelStrategy : Strategy
 		_period = Param(nameof(Period), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "Bars for regression", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 20);
 
 		_rule = Param(nameof(Rule), TradeRules.TradeTrend)
@@ -101,7 +101,7 @@ public class TradingTheChannelStrategy : Strategy
 
 		_zonePercent = Param(nameof(ZonePercent), 0.2m)
 			.SetDisplay("Zone Percent", "Zone width for rule 3", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.5m, 0.1m);
 
 		_longOnly = Param(nameof(LongOnly), false)
@@ -128,9 +128,9 @@ public class TradingTheChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -96,19 +96,19 @@ public class AoDivergenceStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Fast MA length", "Awesome Oscillator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_slowLength = Param(nameof(SlowLength), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow MA length", "Awesome Oscillator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 50, 2);
 
 		_lookback = Param(nameof(Lookback), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Pivot lookback bars", "Divergence")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_useEma = Param(nameof(UseEma), false)
@@ -136,15 +136,15 @@ public class AoDivergenceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_medianPrice = new MedianPrice();
-		_fastSma = new SimpleMovingAverage { Length = FastLength };
-		_slowSma = new SimpleMovingAverage { Length = SlowLength };
-		_fastEma = new ExponentialMovingAverage { Length = FastLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		_fastSma = new SMA { Length = FastLength };
+		_slowSma = new SMA { Length = SlowLength };
+		_fastEma = new EMA { Length = FastLength };
+		_slowEma = new EMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -167,12 +167,12 @@ public class AoDivergenceStrategy : Strategy
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 
 		var fast = UseEma
-			? _fastEma.Process(median, candle.OpenTime, true).ToDecimal()
-			: _fastSma.Process(median, candle.OpenTime, true).ToDecimal();
+			? _fastEma.Process(new DecimalIndicatorValue(_fastEma, median, candle.OpenTime)).ToDecimal()
+			: _fastSma.Process(new DecimalIndicatorValue(_fastSma, median, candle.OpenTime)).ToDecimal();
 
 		var slow = UseEma
-			? _slowEma.Process(median, candle.OpenTime, true).ToDecimal()
-			: _slowSma.Process(median, candle.OpenTime, true).ToDecimal();
+			? _slowEma.Process(new DecimalIndicatorValue(_slowEma, median, candle.OpenTime)).ToDecimal()
+			: _slowSma.Process(new DecimalIndicatorValue(_slowSma, median, candle.OpenTime)).ToDecimal();
 
 		var ao = fast - slow;
 

@@ -73,13 +73,13 @@ public class ZigDanZagUltimateInvestmentLongTermStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var highest = new Highest { Length = ZigzagDepth };
 		var lowest = new Lowest { Length = ZigzagDepth };
-		var sma = new SimpleMovingAverage { Length = SmaLength };
+		var sma = new SMA { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

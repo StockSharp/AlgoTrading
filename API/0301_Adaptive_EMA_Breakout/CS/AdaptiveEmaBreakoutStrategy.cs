@@ -80,25 +80,25 @@ public class AdaptiveEmaBreakoutStrategy : Strategy
 		_fast = Param(nameof(Fast), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast period", "Fast (EMA) period for calculating KAMA", "KAMA Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 10, 1);
 
 		_slow = Param(nameof(Slow), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow period", "Slow (EMA) period for calculating KAMA", "KAMA Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 5);
 
 		_lookback = Param(nameof(Lookback), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Lookback", "Main period for calculating KAMA", "KAMA Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 5);
 
 		_stopMultiplier = Param(nameof(StopMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop ATR multiplier", "ATR multiplier for stop-loss", "Strategy Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -121,9 +121,9 @@ public class AdaptiveEmaBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var adaptiveEma = new KaufmanAdaptiveMovingAverage { Length = Lookback, FastSCPeriod = Fast, SlowSCPeriod = Slow };

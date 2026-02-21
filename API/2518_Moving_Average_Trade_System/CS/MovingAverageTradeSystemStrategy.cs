@@ -137,49 +137,49 @@ public class MovingAverageTradeSystemStrategy : Strategy
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (steps)", "Distance to take profit in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (steps)", "Distance to stop loss in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_trailingStopSteps = Param(nameof(TrailingStopSteps), 11m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (steps)", "Trailing stop offset in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 100m, 5m);
 
 		_slopeThresholdSteps = Param(nameof(SlopeThresholdSteps), 1m)
 			.SetNotNegative()
 			.SetDisplay("Slope Threshold", "Minimum SMA40 vs SMA60 distance in steps", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 10m, 1m);
 
 		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Fast SMA length", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_mediumPeriod = Param(nameof(MediumPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Medium SMA", "Medium SMA length", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 1);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal SMA", "Crossing SMA length", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Slow SMA length", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 120, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -204,15 +204,15 @@ public class MovingAverageTradeSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create the moving averages on median price to match the original indicator setup.
-		_smaFast = new SimpleMovingAverage { Length = FastPeriod, CandlePrice = CandlePrice.Median };
-		_smaMedium = new SimpleMovingAverage { Length = MediumPeriod, CandlePrice = CandlePrice.Median };
-		_smaSignal = new SimpleMovingAverage { Length = SignalPeriod, CandlePrice = CandlePrice.Median };
-		_smaSlow = new SimpleMovingAverage { Length = SlowPeriod, CandlePrice = CandlePrice.Median };
+		_smaFast = new SMA { Length = FastPeriod };
+		_smaMedium = new SMA { Length = MediumPeriod };
+		_smaSignal = new SMA { Length = SignalPeriod };
+		_smaSlow = new SMA { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 

@@ -55,7 +55,7 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 
 		_lotControl = Param(nameof(LotControl), false)
 			.SetDisplay("Lot Control", "Enable independent buy/sell volumes.", "Volume")
-			.SetCanOptimize(false);
+			;
 
 		_lotVolumeStep = Param(nameof(LotVolumeStep), 0.1m)
 			.SetGreaterThanZero()
@@ -87,12 +87,12 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 		_sellVolume = Param(nameof(SellVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Sell Volume", "Volume used for sell orders when Lot Control is enabled.", "Sell")
-			.SetCanOptimize(false);
+			;
 
 		_buyVolume = Param(nameof(BuyVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy Volume", "Volume used for buy orders when Lot Control is enabled.", "Buy")
-			.SetCanOptimize(false);
+			;
 
 		_sellOrderType = Param(nameof(SellOrderType), ManualTradingOrderTypes.MarketExecution)
 			.SetDisplay("Sell Order Type", "Order type used when submitting sell orders.", "Sell");
@@ -102,27 +102,27 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 
 		_sellPriceMode = Param(nameof(SellPriceMode), ManualPriceModes.Market)
 			.SetDisplay("Sell Price Mode", "Select automatic or manual price handling for sell orders.", "Sell")
-			.SetCanOptimize(false);
+			;
 
 		_buyPriceMode = Param(nameof(BuyPriceMode), ManualPriceModes.Market)
 			.SetDisplay("Buy Price Mode", "Select automatic or manual price handling for buy orders.", "Buy")
-			.SetCanOptimize(false);
+			;
 
 		_sellManualPrice = Param(nameof(SellManualPrice), 0m)
 			.SetDisplay("Sell Manual Price", "Manual trigger price for sell pending orders.", "Sell")
-			.SetCanOptimize(false);
+			;
 
 		_buyManualPrice = Param(nameof(BuyManualPrice), 0m)
 			.SetDisplay("Buy Manual Price", "Manual trigger price for buy pending orders.", "Buy")
-			.SetCanOptimize(false);
+			;
 
 		_sendSellOrder = Param(nameof(SendSellOrder), false)
 			.SetDisplay("Send Sell Order", "Set to true to submit a sell order.", "Sell")
-			.SetCanOptimize(false);
+			;
 
 		_sendBuyOrder = Param(nameof(SendBuyOrder), false)
 			.SetDisplay("Send Buy Order", "Set to true to submit a buy order.", "Buy")
-			.SetCanOptimize(false);
+			;
 	}
 
 	public decimal LotSize
@@ -256,9 +256,9 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("Security is not specified.");

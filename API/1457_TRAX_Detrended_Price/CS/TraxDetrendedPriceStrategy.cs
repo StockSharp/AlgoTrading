@@ -94,9 +94,9 @@ public class TraxDetrendedPriceStrategy : Strategy
 		_isInitialized = false;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_sma1.Length = TraxLength;
 		_sma2.Length = TraxLength;

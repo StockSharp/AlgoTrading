@@ -75,17 +75,17 @@ public class BollingerBandsStrategy : Strategy
 	{
 		_bbLength = Param(nameof(BbLength), 120)
 			.SetDisplay("BB Length", "Bollinger Bands length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 20);
 
 		_bbDeviation = Param(nameof(BbDeviation), 2m)
 			.SetDisplay("Standard Deviation", "Bollinger Bands deviation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_smaLength = Param(nameof(SmaLength), 110)
 			.SetDisplay("SMA Length", "SMA exit length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 20);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 6m)
@@ -117,9 +117,9 @@ public class BollingerBandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bb = new BollingerBands
 		{
@@ -127,7 +127,7 @@ public class BollingerBandsStrategy : Strategy
 			Width = BbDeviation
 		};
 
-		var sma = new SimpleMovingAverage
+		var sma = new SMA
 		{
 			Length = SmaLength
 		};

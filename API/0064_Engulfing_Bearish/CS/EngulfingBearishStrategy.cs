@@ -75,7 +75,7 @@ public class EngulfingBearishStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetRange(0.5m, 3.0m)
 			.SetDisplay("Stop Loss %", "Percentage above pattern's high for stop-loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_requireUptrend = Param(nameof(RequireUptrend), true)
 			.SetDisplay("Require Uptrend", "Whether to require a prior uptrend", "Pattern Parameters");
@@ -83,7 +83,7 @@ public class EngulfingBearishStrategy : Strategy
 		_uptrendBars = Param(nameof(UptrendBars), 3)
 			.SetRange(2, 5)
 			.SetDisplay("Uptrend Bars", "Number of consecutive bullish bars for uptrend", "Pattern Parameters")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -102,9 +102,9 @@ public class EngulfingBearishStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);

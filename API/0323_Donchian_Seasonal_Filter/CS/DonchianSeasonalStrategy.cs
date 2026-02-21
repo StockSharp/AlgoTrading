@@ -81,18 +81,18 @@ public class DonchianSeasonalStrategy : Strategy
 	{
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 			.SetDisplay("Donchian Period", "Donchian Channel period", "Donchian")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 			
 		_seasonalThreshold = Param(nameof(SeasonalThreshold), 0.5m)
 			.SetDisplay("Seasonal Threshold", "Seasonal strength threshold for entry", "Seasonal")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.2m, 1.0m, 0.1m);
 
 		_seasonalDataCount = Param(nameof(SeasonalDataCount), 5)
 			.SetDisplay("Seasonal Years", "Years of seasonal data", "Seasonal")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -140,9 +140,9 @@ _monthlyReturns[Months.December] = 0.7m;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Donchian Channel indicator
 		_donchian = new DonchianChannels

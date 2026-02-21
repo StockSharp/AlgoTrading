@@ -49,12 +49,12 @@ public ViciousMortgageRatesV1Strategy()
 _fastLength = Param(nameof(FastLength), 8)
 .SetGreaterThanZero()
 .SetDisplay("Fast EMA", "Fast EMA length", "General")
-.SetCanOptimize(true);
+;
 
 _slowLength = Param(nameof(SlowLength), 21)
 .SetGreaterThanZero()
 .SetDisplay("Slow EMA", "Slow EMA length", "General")
-.SetCanOptimize(true);
+;
 
 _security2 = Param(nameof(Security2), new Security())
 .SetDisplay("Symbol 2", "Second volatility index", "Securities");
@@ -63,20 +63,20 @@ _security3 = Param(nameof(Security3), new Security())
 _security4 = Param(nameof(Security4), new Security())
 .SetDisplay("Symbol 4", "Fourth volatility index", "Securities");
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Timeframe for all securities", "General");
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-_fastEma = new ExponentialMovingAverage { Length = FastLength };
-_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+_fastEma = new EMA { Length = FastLength };
+_slowEma = new EMA { Length = SlowLength };
 
 var mainSub = SubscribeCandles(CandleType);
-mainSub.WhenNew(ProcessMain).Start();
+mainSub.Bind(ProcessMain).Start();
 
 SubscribeComponent(Security2, v => { _close2 = v; _ready2 = true; });
 SubscribeComponent(Security3, v => { _close3 = v; _ready3 = true; });
@@ -96,7 +96,7 @@ if (security == null)
 return;
 
 var sub = SubscribeCandles(CandleType, false, security);
-sub.WhenNew(candle =>
+sub.Bind(candle =>
 {
 if (candle.State != CandleStates.Finished)
 return;

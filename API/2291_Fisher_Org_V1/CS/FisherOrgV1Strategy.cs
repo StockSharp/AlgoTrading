@@ -54,7 +54,7 @@ public class FisherOrgV1Strategy : Strategy
 		_length = Param(nameof(Length), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Fisher Length", "Period for Fisher Transform", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -77,11 +77,11 @@ public class FisherOrgV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_fisher = new EhlersFisherTransform
 		{

@@ -81,25 +81,25 @@ public class KeltnerWithRsiDivergenceStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period for EMA calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR to set channel width", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -122,12 +122,12 @@ public class KeltnerWithRsiDivergenceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 

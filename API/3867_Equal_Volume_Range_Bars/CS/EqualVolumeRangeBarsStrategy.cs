@@ -84,7 +84,7 @@ public class EqualVolumeRangeBarsStrategy : Strategy
 
 		_ticksInBar = Param(nameof(TicksInBar), 100)
 			.SetDisplay("Ticks In Bar", "Tick count or point range per synthetic candle", "General")
-			.SetCanOptimize(true);
+			;
 
 		_fromMinuteHistory = Param(nameof(FromMinuteHistory), true)
 			.SetDisplay("Use Minute History", "Seed the builder with historical M1 candles", "General");
@@ -123,9 +123,9 @@ public class EqualVolumeRangeBarsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tickSize = Security?.PriceStep ?? Security?.MinPriceStep ?? 0m;
 		if (_tickSize <= 0m)

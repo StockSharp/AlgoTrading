@@ -170,25 +170,25 @@ public class ExpBlauCsiStrategy : Strategy
 		_momentumLength = Param(nameof(MomentumLength), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Length", "Number of bars for momentum calculation", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_firstSmoothLength = Param(nameof(FirstSmoothingLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("First Smoothing", "Depth of first smoothing stage", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 5);
 
 		_secondSmoothLength = Param(nameof(SecondSmoothingLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Second Smoothing", "Depth of second smoothing stage", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 30, 1);
 
 		_thirdSmoothLength = Param(nameof(ThirdSmoothingLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Third Smoothing", "Depth of third smoothing stage", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_smoothingPhase = Param(nameof(SmoothingPhase), 15)
@@ -426,9 +426,9 @@ public class ExpBlauCsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_blauCsi = new BlauCsiIndicator
 		{
@@ -445,7 +445,7 @@ public class ExpBlauCsiStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_blauCsi, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -663,7 +663,7 @@ public class ExpBlauCsiStrategy : Strategy
 /// <summary>
 /// Blau Candle Stochastic Index implementation.
 /// </summary>
-public class BlauCsiIndicator : BaseIndicator<decimal>
+public class BlauCsiIndicator : BaseIndicator
 {
 	private readonly Queue<ICandleMessage> _window = new();
 	private IIndicator _momentumStage1;
@@ -752,14 +752,14 @@ public class BlauCsiIndicator : BaseIndicator<decimal>
 		var momentum = currentPrice - pastPrice;
 
 		var time = input.Time;
-		var m1 = _momentumStage1!.Process(momentum, time, true).ToDecimal();
-		var r1 = _rangeStage1!.Process(range, time, true).ToDecimal();
+		var m1 = _momentumStage1!.Process(new DecimalIndicatorValue(_momentumStage1, momentum, time)).ToDecimal();
+		var r1 = _rangeStage1!.Process(new DecimalIndicatorValue(_rangeStage1, range, time)).ToDecimal();
 
-		var m2 = _momentumStage2!.Process(m1, time, true).ToDecimal();
-		var r2 = _rangeStage2!.Process(r1, time, true).ToDecimal();
+		var m2 = _momentumStage2!.Process(new DecimalIndicatorValue(_momentumStage2, m1, time)).ToDecimal();
+		var r2 = _rangeStage2!.Process(new DecimalIndicatorValue(_rangeStage2, r1, time)).ToDecimal();
 
-		var m3 = _momentumStage3!.Process(m2, time, true).ToDecimal();
-		var r3 = _rangeStage3!.Process(r2, time, true).ToDecimal();
+		var m3 = _momentumStage3!.Process(new DecimalIndicatorValue(_momentumStage3, m2, time)).ToDecimal();
+		var r3 = _rangeStage3!.Process(new DecimalIndicatorValue(_rangeStage3, r2, time)).ToDecimal();
 
 		decimal value;
 		if (r3 != 0m)
@@ -786,11 +786,11 @@ public class BlauCsiIndicator : BaseIndicator<decimal>
 	{
 		return SmoothMethod switch
 		{
-			BlauCsiSmoothMethods.Simple => new SimpleMovingAverage { Length = length },
+			BlauCsiSmoothMethods.Simple => new SMA { Length = length },
 			BlauCsiSmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			BlauCsiSmoothMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			BlauCsiSmoothMethods.Jurik => new JurikMovingAverage { Length = length, Phase = Phase },
-			_ => new ExponentialMovingAverage { Length = length }
+			_ => new EMA { Length = length }
 		};
 	}
 

@@ -110,17 +110,17 @@ public class CronexCciStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 25)
 			.SetRange(5, 100)
 			.SetDisplay("CCI Period", "CCI calculation length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetRange(2, 50)
 			.SetDisplay("Fast Period", "Fast smoothing period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 25)
 			.SetRange(2, 100)
 			.SetDisplay("Slow Period", "Slow smoothing period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -154,14 +154,14 @@ public class CronexCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
-		var fastMa = new ExponentialMovingAverage { Length = FastPeriod };
-		var slowMa = new ExponentialMovingAverage { Length = SlowPeriod };
+		var fastMa = new EMA { Length = FastPeriod };
+		var slowMa = new EMA { Length = SlowPeriod };
 
 		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);

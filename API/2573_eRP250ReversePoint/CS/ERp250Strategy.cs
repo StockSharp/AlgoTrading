@@ -70,20 +70,20 @@ public class ERp250Strategy : Strategy
 	{
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 15m)
 			.SetDisplay("Take Profit Points", "Take profit distance in price points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 999m)
 			.SetDisplay("Stop Loss Points", "Stop loss distance in price points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
 			.SetDisplay("Trailing Stop Points", "Trailing stop distance in price points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_reversePoint = Param(nameof(ReversePoint), 250)
 			.SetDisplay("Reverse Point Length", "Candles used to confirm reversal points", "Signals")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to analyse", "General");
@@ -113,9 +113,9 @@ public class ERp250Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = ReversePoint };
 		_lowest = new Lowest { Length = ReversePoint };
@@ -150,8 +150,8 @@ public class ERp250Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var highValue = _highest.Process(candle.HighPrice, candle.OpenTime, true).ToNullableDecimal();
-		var lowValue = _lowest.Process(candle.LowPrice, candle.OpenTime, true).ToNullableDecimal();
+		var highValue = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime)).ToNullableDecimal();
+		var lowValue = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime)).ToNullableDecimal();
 
 		if (highValue is null || lowValue is null)
 			return;

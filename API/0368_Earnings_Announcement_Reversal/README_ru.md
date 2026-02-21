@@ -11,7 +11,7 @@
 - **Значения по умолчанию**:
   - `LookbackDays = 5`
   - `HoldingDays = 3`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Фильтры**:
   - Категория: событийная
   - Направление: обе

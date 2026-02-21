@@ -124,7 +124,7 @@ public class PriceExtremeStrategy : Strategy
 		_levelLength = Param(nameof(LevelLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Level Length", "Number of candles for price extremes", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 30, 1);
 
 		_signalShift = Param(nameof(SignalShift), 1)
@@ -168,9 +168,9 @@ public class PriceExtremeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_upperBand = new Highest { Length = LevelLength };
 		_lowerBand = new Lowest { Length = LevelLength };
@@ -189,7 +189,7 @@ public class PriceExtremeStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private bool CanOpenLong => EnableLong && OrderVolume > 0m;

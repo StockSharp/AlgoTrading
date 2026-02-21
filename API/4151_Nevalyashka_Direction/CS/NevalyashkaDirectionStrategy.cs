@@ -37,12 +37,12 @@ public NevalyashkaDirectionStrategy()
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips applied to every trade.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance in pips applied to every trade.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 
 		_initialDirection = Param(nameof(InitialDirection), Sides.Sell)
@@ -94,9 +94,9 @@ public NevalyashkaDirectionStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 

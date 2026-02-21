@@ -78,7 +78,7 @@ public class ExpGStopStrategy : Strategy
 	{
 		_mode = Param(nameof(Mode), StopModes.Percent)
 			.SetDisplay("Mode", "Stop mode", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 20m)
 			.SetGreaterThanZero()
@@ -99,9 +99,9 @@ public class ExpGStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_startValue = Portfolio.CurrentValue ?? 0m;
 

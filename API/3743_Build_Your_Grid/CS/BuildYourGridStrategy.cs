@@ -436,16 +436,16 @@ public class BuildYourGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = CalculatePointSize();
 		_priceStep = Security?.PriceStep ?? 0m;
 		_stepPrice = Security?.StepPrice ?? 0m;
 		_barReady = !UseCompletedBar;
 
-		StartProtection();
+		StartProtection(null, null);
 
 		if (UseCompletedBar)
 		{

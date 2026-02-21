@@ -75,19 +75,19 @@ public class BollingerBandSqueezeStrategy : Strategy
 		_bollingerPeriodParam = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_bollingerMultiplierParam = Param(nameof(BollingerMultiplier), 2.0m)
 			.SetRange(0.1m, decimal.MaxValue)
 			.SetDisplay("Bollinger Multiplier", "Standard deviation multiplier for Bollinger Bands", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_lookbackPeriodParam = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for averaging Bollinger width", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -112,9 +112,9 @@ public class BollingerBandSqueezeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicator
 		_bollinger = new BollingerBands

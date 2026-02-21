@@ -101,22 +101,22 @@ public class CciThresholdStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 12)
 			.SetDisplay("CCI Lookback Period", "Lookback period for CCI calculation", "General")
 			.SetRange(5, 30)
-			.SetCanOptimize(true);
+			;
 		
 		_buyThreshold = Param(nameof(BuyThreshold), -90)
 			.SetDisplay("CCI Buy Threshold", "CCI threshold to enter long", "General")
 			.SetRange(-150, -50)
-			.SetCanOptimize(true);
+			;
 		
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk Management")
 			.SetRange(50m, 200m)
-			.SetCanOptimize(true);
+			;
 		
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150m)
 			.SetDisplay("Take Profit", "Take profit in points", "Risk Management")
 			.SetRange(50m, 300m)
-			.SetCanOptimize(true);
+			;
 		
 		_useStopLoss = Param(nameof(UseStopLoss), false)
 			.SetDisplay("Enable Stop Loss", "Use stop loss", "Risk Management");
@@ -143,9 +143,9 @@ public class CciThresholdStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		StartProtection(
 			takeProfit: UseTakeProfit ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null,

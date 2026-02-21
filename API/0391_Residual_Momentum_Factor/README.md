@@ -12,7 +12,7 @@ Each month on the first trading day it goes long the top decile and short the bo
 - **Default Values**:
   - `Decile = 10`
   - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Fundamental
   - Direction: Both

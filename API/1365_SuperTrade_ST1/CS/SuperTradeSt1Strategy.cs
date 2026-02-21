@@ -92,31 +92,31 @@ namespace StockSharp.Samples.Strategies;
 	_atrPeriod = Param(nameof(AtrPeriod), 10)
 	.SetGreaterThanZero()
 	.SetDisplay("ATR Period", "ATR calculation period", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(5, 20, 1);
 	
 	_factor = Param(nameof(Factor), 3m)
 	.SetGreaterThanZero()
 	.SetDisplay("Supertrend Factor", "ATR multiplier for Supertrend", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(1m, 5m, 0.5m);
 	
 	_emaPeriod = Param(nameof(EmaPeriod), 200)
 	.SetGreaterThanZero()
 	.SetDisplay("EMA Period", "EMA filter period", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(50, 300, 50);
 	
 	_stopAtrMultiplier = Param(nameof(StopAtrMultiplier), 1m)
 	.SetGreaterThanZero()
 	.SetDisplay("Stop ATR Mult", "ATR multiplier for stop-loss", "Risk")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(1m, 3m, 0.5m);
 	
 	_takeAtrMultiplier = Param(nameof(TakeAtrMultiplier), 4m)
 	.SetGreaterThanZero()
 	.SetDisplay("Take ATR Mult", "ATR multiplier for take-profit", "Risk")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(2m, 6m, 1m);
 	
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -141,13 +141,13 @@ namespace StockSharp.Samples.Strategies;
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 	
 	var supertrend = new SuperTrend { Length = AtrPeriod, Multiplier = Factor };
 	var atr = new AverageTrueRange { Length = AtrPeriod };
-	var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+	var ema = new EMA { Length = EmaPeriod };
 	
 	var subscription = SubscribeCandles(CandleType);
 	

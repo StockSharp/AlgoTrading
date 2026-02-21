@@ -62,25 +62,25 @@ public class PercentStopTakeProfitStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Period of the fast moving average", "MA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_slowLength = Param(nameof(SlowLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Period of the slow moving average", "MA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_stopPercent = Param(nameof(StopPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take-profit percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -101,9 +101,9 @@ public class PercentStopTakeProfitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastMa = new SMA { Length = FastLength };
 		var slowMa = new SMA { Length = SlowLength };

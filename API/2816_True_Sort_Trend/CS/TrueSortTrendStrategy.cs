@@ -169,67 +169,67 @@ public class TrueSortTrendStrategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Period of the fastest EMA", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_secondEmaLength = Param(nameof(SecondEmaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Second EMA Length", "Period of the second EMA", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_thirdEmaLength = Param(nameof(ThirdEmaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Third EMA Length", "Period of the third EMA", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 80, 5);
 
 		_fourthEmaLength = Param(nameof(FourthEmaLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Fourth EMA Length", "Period of the fourth EMA", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60, 140, 5);
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length", "Period of the slowest EMA", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(150, 250, 5);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Averaging period for the ADX indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(14, 40, 2);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Threshold", "Minimum ADX value to confirm trend strength", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15m, 35m, 5m);
 
 		_stopLossDistance = Param(nameof(StopLossDistance), 0.005m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Stop Loss Distance", "Absolute distance for stop loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.01m, 0.001m);
 
 		_takeProfitDistance = Param(nameof(TakeProfitDistance), 0.015m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Take Profit Distance", "Absolute distance for take profit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.002m, 0.03m, 0.002m);
 
 		_trailingStopDistance = Param(nameof(TrailingStopDistance), 0.0005m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Trailing Stop Distance", "Trailing stop distance in price units", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0002m, 0.002m, 0.0002m);
 
 		_trailingStepDistance = Param(nameof(TrailingStepDistance), 0.0001m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Trailing Step Distance", "Additional advance before trailing stop adjustment", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 0.001m, 0.0001m);
 	}
 
@@ -254,9 +254,9 @@ public class TrueSortTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastEma = new EMA { Length = FastEmaLength };
 		_secondEma = new EMA { Length = SecondEmaLength };

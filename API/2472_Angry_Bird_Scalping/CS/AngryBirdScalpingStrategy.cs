@@ -97,19 +97,19 @@ public class AngryBirdScalpingStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 500)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 1000, 100);
 
 		_takeProfit = Param(nameof(TakeProfit), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_defaultPips = Param(nameof(DefaultPips), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Default Pips", "Minimal grid step in pips", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_depth = Param(nameof(Depth), 24)
@@ -146,9 +146,9 @@ public class AngryBirdScalpingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var cci = new CommodityChannelIndex { Length = 55 };
 		var rsi = new RelativeStrengthIndex { Length = 14 };
@@ -161,7 +161,7 @@ public class AngryBirdScalpingStrategy : Strategy
 		var rsiSub = SubscribeCandles(TimeSpan.FromHours(1).TimeFrame());
 		rsiSub.Bind(rsi, ProcessRsi).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessRsi(ICandleMessage candle, decimal rsi)

@@ -110,37 +110,37 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 		_momLength = Param(nameof(MomLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Lookback", "Momentum lookback length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_keltnerLength = Param(nameof(KeltnerLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Keltner EMA Length", "EMA length for Keltner basis", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_keltnerMultiplier = Param(nameof(KeltnerMultiplier), 0.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Keltner Mult", "Keltner multiplier", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.1m);
 
 		_threshold = Param(nameof(Threshold), 99m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Stochastic Threshold", "Threshold for Keltner stochastic", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 100m, 5m);
 
 		_atrLength = Param(nameof(AtrLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR length for Keltner", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 1);
 
 		_slPoints = Param(nameof(SlPoints), 1185m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss Points", "Stop loss in price points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 2000m, 100m);
 
 		_enableScaling = Param(nameof(EnableScaling), true)
@@ -171,11 +171,11 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = KeltnerLength };
+		var ema = new EMA { Length = KeltnerLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var momentum = new Momentum { Length = MomLength };
 

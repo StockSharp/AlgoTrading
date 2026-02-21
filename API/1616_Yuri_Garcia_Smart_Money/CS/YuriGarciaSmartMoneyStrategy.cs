@@ -79,9 +79,9 @@ private readonly StrategyParam<Sides?> _tradeDirection;
 	    return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 
 	    _atr = new ATR { Length = AtrLength };
 	    _highest = new Highest { Length = ZoneLookback };

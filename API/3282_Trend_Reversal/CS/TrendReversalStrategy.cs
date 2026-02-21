@@ -57,52 +57,52 @@ public class TrendReversalStrategy : Strategy
 
 		_fastLength = Param(nameof(FastLength), 6)
 			.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 12, 1);
 
 		_slowLength = Param(nameof(SlowLength), 85)
 			.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 120, 5);
 
 		_momentumLength = Param(nameof(MomentumLength), 14)
 			.SetDisplay("Momentum Length", "Period of the momentum oscillator", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 1);
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 			.SetDisplay("Buy Momentum Threshold", "Minimum deviation of momentum from 100 for long setups", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
 			.SetDisplay("Sell Momentum Threshold", "Minimum deviation of momentum from 100 for short setups", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 			.SetDisplay("MACD Fast", "Fast EMA period for the MACD filter", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 1);
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 			.SetDisplay("MACD Slow", "Slow EMA period for the MACD filter", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 32, 1);
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 			.SetDisplay("MACD Signal", "Signal EMA period for the MACD filter", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 12, 1);
 
 		_takeProfit = Param(nameof(TakeProfit), 50m)
 			.SetDisplay("Take Profit", "Distance of the take profit in price units", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 120m, 10m);
 
 		_stopLoss = Param(nameof(StopLoss), 20m)
 			.SetDisplay("Stop Loss", "Distance of the stop loss in price units", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 80m, 5m);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -110,7 +110,7 @@ public class TrendReversalStrategy : Strategy
 
 		_maxPositions = Param(nameof(MaxPositions), 1)
 			.SetDisplay("Max Positions", "Maximum number of net position units to hold", "Execution")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -259,30 +259,27 @@ public class TrendReversalStrategy : Strategy
 
 		_fastMa = new WeightedMovingAverage
 		{
-			Length = FastLength,
-			CandlePrice = CandlePrice.Typical
+			Length = FastLength
 		};
 
 		_slowMa = new WeightedMovingAverage
 		{
-			Length = SlowLength,
-			CandlePrice = CandlePrice.Typical
+			Length = SlowLength
 		};
 
 		_momentum = new Momentum
 		{
-			Length = MomentumLength,
-			CandlePrice = CandlePrice.Typical
+			Length = MomentumLength
 		};
 
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
 			{
-				ShortMa = { Length = MacdFastLength, CandlePrice = CandlePrice.Typical },
-				LongMa = { Length = MacdSlowLength, CandlePrice = CandlePrice.Typical }
+				ShortMa = { Length = MacdFastLength },
+				LongMa = { Length = MacdSlowLength }
 			},
-			SignalMa = { Length = MacdSignalLength, CandlePrice = CandlePrice.Typical }
+			SignalMa = { Length = MacdSignalLength }
 		};
 
 		var subscription = SubscribeCandles(CandleType);

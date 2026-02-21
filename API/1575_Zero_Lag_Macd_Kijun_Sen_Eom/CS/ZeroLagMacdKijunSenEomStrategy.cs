@@ -152,14 +152,14 @@ public class ZeroLagMacdKijunSenEomStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 	    _fastZlema = new ZeroLagExponentialMovingAverage { Length = FastLength };
 	    _slowZlema = new ZeroLagExponentialMovingAverage { Length = SlowLength };
-	    _signalEma1 = new ExponentialMovingAverage { Length = SignalLength };
-	    _signalEma2 = new ExponentialMovingAverage { Length = SignalLength };
+	    _signalEma1 = new EMA { Length = SignalLength };
+	    _signalEma2 = new EMA { Length = SignalLength };
 	    _donchian = new DonchianChannels { Length = KijunPeriod };
-	    _eomSma = new SimpleMovingAverage { Length = EomLength };
+	    _eomSma = new SMA { Length = EomLength };
 	    _atr = new AverageTrueRange { Length = AtrPeriod };
 
 	    var subscription = SubscribeCandles(CandleType);
@@ -167,7 +167,7 @@ public class ZeroLagMacdKijunSenEomStrategy : Strategy
 	        .Bind(_fastZlema, _slowZlema, _atr, _donchian, ProcessCandle)
 	        .Start();
 
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atrValue, IIndicatorValue donchianValue)
@@ -179,8 +179,8 @@ public class ZeroLagMacdKijunSenEomStrategy : Strategy
 	        return;
 
 	    var macd = fast - slow;
-	    var ema1 = _signalEma1.Process(macd, candle.CloseTime, true).ToDecimal();
-	    var ema2 = _signalEma2.Process(ema1, candle.CloseTime, true).ToDecimal();
+	    var ema1 = _signalEma1.Process(new DecimalIndicatorValue(_signalEma1, macd, candle.CloseTime)).ToDecimal();
+	    var ema2 = _signalEma2.Process(new DecimalIndicatorValue(_signalEma2, ema1, candle.CloseTime)).ToDecimal();
 	    var signal = 2m * ema1 - ema2;
 
 	    var dc = (DonchianChannelsValue)donchianValue;
@@ -191,7 +191,7 @@ public class ZeroLagMacdKijunSenEomStrategy : Strategy
 	    var mid = (candle.HighPrice + candle.LowPrice) / 2m;
 	    var eomRaw = candle.Volume == 0 ? 0 : (mid - _prevMid) * (candle.HighPrice - candle.LowPrice) / candle.Volume;
 	    _prevMid = mid;
-	    var eom = _eomSma.Process(eomRaw, candle.CloseTime, true).ToDecimal();
+	    var eom = _eomSma.Process(new DecimalIndicatorValue(_eomSma, eomRaw, candle.CloseTime)).ToDecimal();
 
 	    var macdCrossUp = _prevMacd <= _prevSignal && macd > signal;
 	    var macdCrossDown = _prevMacd >= _prevSignal && macd < signal;

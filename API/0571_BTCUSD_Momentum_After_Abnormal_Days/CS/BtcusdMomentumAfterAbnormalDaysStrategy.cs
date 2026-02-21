@@ -71,22 +71,22 @@ public class BtcusdMomentumAfterAbnormalDaysStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Lookback period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_kFactor = Param(nameof(KFactor), 1.6m)
 			.SetGreaterThanZero()
 			.SetDisplay("K", "Standard deviation multiplier", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.1m);
 
 		_capitalPerTrade = Param(nameof(CapitalPerTrade), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Capital", "Capital per trade", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 5000m, 500m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "General");
 	}
 
@@ -97,11 +97,11 @@ public class BtcusdMomentumAfterAbnormalDaysStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = LookbackPeriod };
+		_sma = new SMA { Length = LookbackPeriod };
 		_stdDev = new StandardDeviation { Length = LookbackPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

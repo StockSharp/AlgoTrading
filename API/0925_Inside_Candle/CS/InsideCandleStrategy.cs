@@ -52,12 +52,12 @@ public class InsideCandleStrategy : Strategy
 	/// </summary>
 	public InsideCandleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_riskReward = Param(nameof(RiskReward), 2m)
 			.SetDisplay("RR Ratio", "Risk/reward ratio for exits", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 	}
 
@@ -79,11 +79,11 @@ public class InsideCandleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -52,7 +52,7 @@ public class VirtualProfitCloseStrategy : Strategy
 	{
 		_profitPips = Param(nameof(ProfitPips), 30m)
 			.SetDisplay("Profit (pips)", "Virtual take-profit expressed in MetaTrader pips", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 100m, 5m);
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
@@ -60,12 +60,12 @@ public class VirtualProfitCloseStrategy : Strategy
 
 		_trailingOffsetPips = Param(nameof(TrailingOffsetPips), 5m)
 			.SetDisplay("Trailing Offset", "Distance between price and trailing stop in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 15m, 1m);
 
 		_trailingActivationPips = Param(nameof(TrailingActivationPips), 2m)
 			.SetDisplay("Trailing Activation", "Minimum profit in pips before trailing starts", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_enableDemoMode = Param(nameof(EnableDemoMode), false)
@@ -180,9 +180,9 @@ public class VirtualProfitCloseStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 		_profitDistance = ProfitPips > 0m ? ProfitPips * _pipSize : 0m;

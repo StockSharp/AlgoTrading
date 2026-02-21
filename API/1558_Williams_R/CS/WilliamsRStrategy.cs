@@ -50,7 +50,7 @@ public WilliamsRStrategy()
 _lookbackPeriod = Param(nameof(LookbackPeriod), 2)
 .SetGreaterThanZero()
 .SetDisplay("Lookback Period", "Williams %R length", "General")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
@@ -71,9 +71,9 @@ _prevHigh = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _wpr = new WilliamsR { Length = LookbackPeriod };
 var subscription = SubscribeCandles(CandleType);
@@ -87,7 +87,7 @@ DrawIndicator(area, _wpr);
 DrawOwnTrades(area);
 }
 
-StartProtection();
+StartProtection(null, null);
 }
 
 private void ProcessCandle(ICandleMessage candle, decimal wr)

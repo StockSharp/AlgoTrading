@@ -46,11 +46,11 @@ public class VininITrendLrmaStrategy : Strategy
 	/// </summary>
 	public VininITrendLrmaStrategy()
 	{
-		_period = Param(nameof(Period), 13).SetDisplay("LRMA period").SetCanOptimize(true);
-		_upLevel = Param(nameof(UpLevel), 10).SetDisplay("Upper level").SetCanOptimize(true);
-		_dnLevel = Param(nameof(DnLevel), -10).SetDisplay("Lower level").SetCanOptimize(true);
-		_mode = Param(nameof(Mode), EntryModes.Breakdown).SetDisplay("Entry mode");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type");
+		_period = Param(nameof(Period), 13).SetDisplay("LRMA period", "LRMA period", "General");
+		_upLevel = Param(nameof(UpLevel), 10).SetDisplay("Upper level", "Upper level", "General");
+		_dnLevel = Param(nameof(DnLevel), -10).SetDisplay("Lower level", "Lower level", "General");
+		_mode = Param(nameof(Mode), EntryModes.Breakdown).SetDisplay("Entry mode", "Entry mode", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <summary>LRMA period.</summary>
@@ -69,9 +69,9 @@ public class VininITrendLrmaStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_lrma = new LinearRegression { Length = Period };
 
@@ -80,7 +80,7 @@ public class VininITrendLrmaStrategy : Strategy
 			.Bind(_lrma, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal lrma)

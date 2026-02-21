@@ -45,7 +45,7 @@ public class BuySellRenkoBasedStrategy : Strategy
 		_renkoAtrLength = Param(nameof(RenkoAtrLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period for renko brick size", "Renko")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 	}
 
@@ -62,9 +62,9 @@ public class BuySellRenkoBasedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(_renkoType);
 		subscription
@@ -78,7 +78,7 @@ public class BuySellRenkoBasedStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

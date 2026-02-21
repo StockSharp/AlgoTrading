@@ -67,19 +67,19 @@ public class StochasticOverboughtOversoldStrategy : Strategy
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 					  .SetGreaterThanZero()
 					  .SetDisplay("Stochastic Period", "Period for Stochastic oscillator calculation", "Indicators")
-					  .SetCanOptimize(true)
+					  
 					  .SetOptimize(5, 30, 5);
 
 		_kPeriod = Param(nameof(KPeriod), 3)
 				  .SetGreaterThanZero()
 				  .SetDisplay("K Period", "Smoothing period for Stochastic %K line", "Indicators")
-				  .SetCanOptimize(true)
+				  
 				  .SetOptimize(1, 10, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 				  .SetGreaterThanZero()
 				  .SetDisplay("D Period", "Smoothing period for Stochastic %D line", "Indicators")
-				  .SetCanOptimize(true)
+				  
 				  .SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -93,9 +93,9 @@ public class StochasticOverboughtOversoldStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Stochastic oscillator
 		var stochastic = new StochasticOscillator

@@ -121,22 +121,22 @@ public FourWmaTpSlStrategy()
 _longMa1Length = Param(nameof(LongMa1Length), 10)
 .SetGreaterThanZero()
 .SetDisplay("Long MA1", "Length for first long MA", "Indicators")
-.SetCanOptimize(true);
+;
 
 _longMa2Length = Param(nameof(LongMa2Length), 20)
 .SetGreaterThanZero()
 .SetDisplay("Long MA2", "Length for second long MA", "Indicators")
-.SetCanOptimize(true);
+;
 
 _shortMa1Length = Param(nameof(ShortMa1Length), 30)
 .SetGreaterThanZero()
 .SetDisplay("Short MA1", "Length for first short MA", "Indicators")
-.SetCanOptimize(true);
+;
 
 _shortMa2Length = Param(nameof(ShortMa2Length), 40)
 .SetGreaterThanZero()
 .SetDisplay("Short MA2", "Length for second short MA", "Indicators")
-.SetCanOptimize(true);
+;
 
 _maType = Param(nameof(MaType), MaModes.Wma)
 .SetDisplay("MA Type", "Type of moving average", "Indicators");
@@ -179,9 +179,9 @@ _prevLongMa1 = _prevLongMa2 = _prevShortMa1 = _prevShortMa2 = null;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var longMa1 = CreateMa(MaType, LongMa1Length);
 var longMa2 = CreateMa(MaType, LongMa2Length);
@@ -212,12 +212,12 @@ stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
 }
 }
 
-private static LengthIndicator<decimal> CreateMa(MaModes type, int length)
+private static DecimalLengthIndicator CreateMa(MaModes type, int length)
 {
 return type switch
 {
-MaModes.Sma => new SimpleMovingAverage { Length = length },
-MaModes.Ema => new ExponentialMovingAverage { Length = length },
+MaModes.Sma => new SMA { Length = length },
+MaModes.Ema => new EMA { Length = length },
 MaModes.Wma => new WeightedMovingAverage { Length = length },
 MaModes.Vwma => new VolumeWeightedMovingAverage { Length = length },
 MaModes.Rma => new SmoothedMovingAverage { Length = length },

@@ -140,9 +140,9 @@ public class SymbolSwapStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var security = ResolveTrackedSecurity();
 		ApplyTrackedSecurity(security);

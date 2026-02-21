@@ -25,7 +25,7 @@ public class VortexCrossMaConfirmationStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _sma = null!;
-	private LengthIndicator<decimal> _smoothMa = null!;
+	private DecimalLengthIndicator _smoothMa = null!;
 	private SimpleMovingAverage _vmpAvg = null!;
 	private SimpleMovingAverage _vmmAvg = null!;
 	private SimpleMovingAverage _trAvg = null!;
@@ -103,21 +103,21 @@ public class VortexCrossMaConfirmationStrategy : Strategy
 		_vortexLength = Param(nameof(VortexLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Vortex Length", "Period for Vortex indicator", "General")
-			.SetCanOptimize(true);
+			;
 
 		_smaLength = Param(nameof(SmaLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Base SMA length", "General")
-			.SetCanOptimize(true);
+			;
 
 		_smoothingLength = Param(nameof(SmoothingLength), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Length", "Length for additional smoothing", "General")
-			.SetCanOptimize(true);
+			;
 
 		_maType = Param(nameof(MaType), MaTypes.SMA)
 			.SetDisplay("MA Type", "Smoothing method", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -128,29 +128,29 @@ public class VortexCrossMaConfirmationStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = SmaLength };
+		_sma = new SMA { Length = SmaLength };
 		_smoothMa = MaType switch
 		{
-			MaTypes.EMA => new ExponentialMovingAverage { Length = SmoothingLength },
+			MaTypes.EMA => new EMA { Length = SmoothingLength },
 			MaTypes.RMA => new SmoothedMovingAverage { Length = SmoothingLength },
 			MaTypes.WMA => new WeightedMovingAverage { Length = SmoothingLength },
 			MaTypes.VWMA => new VolumeWeightedMovingAverage { Length = SmoothingLength },
 			MaTypes.ALMA => new ArnaudLegouxMovingAverage { Length = SmoothingLength },
 			MaTypes.HMA => new HullMovingAverage { Length = SmoothingLength },
-			_ => new SimpleMovingAverage { Length = SmoothingLength }
+			_ => new SMA { Length = SmoothingLength }
 		};
 
-		_vmpAvg = new SimpleMovingAverage { Length = VortexLength };
-		_vmmAvg = new SimpleMovingAverage { Length = VortexLength };
-		_trAvg = new SimpleMovingAverage { Length = VortexLength };
+		_vmpAvg = new SMA { Length = VortexLength };
+		_vmmAvg = new SMA { Length = VortexLength };
+		_trAvg = new SMA { Length = VortexLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.WhenNew(ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();

@@ -167,13 +167,13 @@ public class IiOutbreakStrategy : Strategy
 		_spreadThreshold = Param(nameof(SpreadThreshold), 6m)
 			.SetNotNegative()
 			.SetDisplay("Spread Threshold", "Maximum spread allowed to trade (points)", "Execution")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 15m, 1m);
 
 		_trailStopPoints = Param(nameof(TrailStopPoints), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trail Stop Points", "Trailing stop distance in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_totalEquityRisk = Param(nameof(TotalEquityRisk), 0.5m)
@@ -183,7 +183,7 @@ public class IiOutbreakStrategy : Strategy
 		_maximumRisk = Param(nameof(MaximumRisk), 0.1m)
 			.SetNotNegative()
 			.SetDisplay("Risk Fraction", "Fraction of balance allocated per order", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.2m, 0.01m);
 
 		_stdDevLimit = Param(nameof(StdDevLimit), 0.002m)
@@ -193,7 +193,7 @@ public class IiOutbreakStrategy : Strategy
 		_volatilityThreshold = Param(nameof(VolatilityThreshold), 800m)
 			.SetNotNegative()
 			.SetDisplay("Volatility Threshold", "Minimum volatility score required for entries", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(400m, 1600m, 100m);
 
 		_accountLeverage = Param(nameof(AccountLeverage), 100m)
@@ -248,9 +248,9 @@ public class IiOutbreakStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_point = Security.PriceStep ?? 0.0001m;
 		_trailStopDistance = TrailStopPoints * _point;
@@ -280,7 +280,7 @@ public class IiOutbreakStrategy : Strategy
 			return;
 
 		UpdateTiming(candle);
-		var stdValue = _stdDev.Process(candle.ClosePrice, candle.ServerTime, true).ToDecimal();
+		var stdValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, candle.ClosePrice, candle.ServerTime)).ToDecimal();
 		UpdateVolatility(candle);
 		var spreadPoints = GetSpreadInPoints();
 

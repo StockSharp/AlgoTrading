@@ -64,13 +64,13 @@ public class GroverLlorensActivatorStrategy : Strategy
 		_length = Param(nameof(Length), 480)
 		.SetGreaterThanZero()
 		.SetDisplay("Length", "ATR period length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100, 1000, 10);
 
 		_multiplier = Param(nameof(Multiplier), 14m)
 		.SetGreaterThanZero()
 		.SetDisplay("Multiplier", "ATR multiplier", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 20m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -96,11 +96,11 @@ public class GroverLlorensActivatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var atr = new AverageTrueRange { Length = Length };
 

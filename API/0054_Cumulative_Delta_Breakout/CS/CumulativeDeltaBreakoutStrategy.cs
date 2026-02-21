@@ -56,7 +56,7 @@ public class CumulativeDeltaBreakoutStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for calculating highest/lowest delta", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -82,9 +82,9 @@ public class CumulativeDeltaBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create subscription for both candles and ticks
 		var candleSubscription = SubscribeCandles(CandleType);

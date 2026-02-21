@@ -313,31 +313,31 @@ public class RenkoFractalsGridStrategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast WMA", "Length of the fast weighted moving average", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 12, 2);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow WMA", "Length of the slow weighted moving average", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 120, 5);
 
 		_momentumLength = Param(nameof(MomentumLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Length", "Rate of change lookback used for momentum", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 20, 2);
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 		.SetNotNegative()
 		.SetDisplay("Momentum Buy Threshold", "Minimum deviation from 100 for long entries", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1.0m, 0.1m);
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
 		.SetNotNegative()
 		.SetDisplay("Momentum Sell Threshold", "Minimum deviation from 100 for short entries", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1.0m, 0.1m);
 
 		_useAtrFilter = Param(nameof(UseAtrFilter), false)
@@ -346,13 +346,13 @@ public class RenkoFractalsGridStrategy : Strategy
 		_boxSizePips = Param(nameof(BoxSizePips), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Box Size (pips)", "Fixed Renko box size in pips when ATR is disabled", "Renko")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 1m);
 
 		_candlesToRetrace = Param(nameof(CandlesToRetrace), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Retrace Candles", "Number of candles inspected by the Renko filter", "Renko")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_baseVolume = Param(nameof(BaseVolume), 1m)
@@ -370,13 +370,13 @@ public class RenkoFractalsGridStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 5m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30m, 80m, 5m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
@@ -451,9 +451,9 @@ public class RenkoFractalsGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = new WeightedMovingAverage { Length = FastMaLength };
 		_slowMa = new WeightedMovingAverage { Length = SlowMaLength };
@@ -708,7 +708,7 @@ public class RenkoFractalsGridStrategy : Strategy
 		if (Position <= 0)
 		return;
 
-		var entry = PositionAvgPrice;
+		var entry = PositionPrice;
 		var stopDistance = ToPrice(StopLossPips);
 		var takeDistance = ToPrice(TakeProfitPips);
 
@@ -761,7 +761,7 @@ public class RenkoFractalsGridStrategy : Strategy
 		if (Position >= 0)
 		return;
 
-		var entry = PositionAvgPrice;
+		var entry = PositionPrice;
 		var stopDistance = ToPrice(StopLossPips);
 		var takeDistance = ToPrice(TakeProfitPips);
 
@@ -917,7 +917,7 @@ public class RenkoFractalsGridStrategy : Strategy
 		if (Position == 0)
 		return 0m;
 
-		var priceDiff = candle.ClosePrice - PositionAvgPrice;
+		var priceDiff = candle.ClosePrice - PositionPrice;
 		return priceDiff * Position;
 	}
 

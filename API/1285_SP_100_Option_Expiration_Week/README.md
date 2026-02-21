@@ -12,7 +12,7 @@ This strategy buys at the beginning of the option expiration week (the week cont
   - close the long position on the third Friday of the month.
 - **Stops**: No.
 - **Default Values**:
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame().
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame().
 - **Filters**:
   - Category: Seasonality
   - Direction: Long

@@ -91,31 +91,31 @@ public class HullMaVolumeStrategy : Strategy
 		_hullPeriod = Param(nameof(HullPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Hull MA Period", "Period of the Hull Moving Average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 2);
 
 		_volumePeriod = Param(nameof(VolumePeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Period", "Period for volume averaging", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Multiplier", "Multiplier for average volume to confirm entry", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 2.0m, 0.5m);
 
 		_stopLossAtr = Param(nameof(StopLossAtr), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss ATR", "Stop loss as ATR multiplier", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period of the ATR for stop loss calculation", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -139,9 +139,9 @@ public class HullMaVolumeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var hullMa = new HullMovingAverage
@@ -149,7 +149,7 @@ public class HullMaVolumeStrategy : Strategy
 			Length = HullPeriod
 		};
 
-		var volumeAvg = new SimpleMovingAverage
+		var volumeAvg = new SMA
 		{
 			Length = VolumePeriod
 		};

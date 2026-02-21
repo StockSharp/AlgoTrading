@@ -137,9 +137,9 @@ _slShort = null;
 _tgShort = null;
 }
 
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var subscription = SubscribeCandles(CandleType);
 subscription.Bind(ProcessCandle).Start();
@@ -168,16 +168,16 @@ var haHigh = Math.Max(candle.HighPrice, Math.Max(_haOpen, haClose));
 var haLow = Math.Min(candle.LowPrice, Math.Min(_haOpen, haClose));
 _prevHaClose = haClose;
 
-var emaVal = _ema34.Process(haClose, candle.OpenTime, true).ToDecimal();
-var wmaVal = _wma34.Process(haClose, candle.OpenTime, true).ToDecimal();
-var smaVal = _sma34.Process(haClose, candle.OpenTime, true).ToDecimal();
-var rsiVal = _rsi.Process(haClose, candle.OpenTime, true).ToDecimal();
-var rsiEma3Val = _rsiEma3.Process(rsiVal, candle.OpenTime, true).ToDecimal();
-var rsiEma10Val = _rsiEma10.Process(rsiVal, candle.OpenTime, true).ToDecimal();
-var volSmaVal = _volumeSma.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+var emaVal = _ema34.Process(new DecimalIndicatorValue(_ema34, haClose, candle.OpenTime)).ToDecimal();
+var wmaVal = _wma34.Process(new DecimalIndicatorValue(_wma34, haClose, candle.OpenTime)).ToDecimal();
+var smaVal = _sma34.Process(new DecimalIndicatorValue(_sma34, haClose, candle.OpenTime)).ToDecimal();
+var rsiVal = _rsi.Process(new DecimalIndicatorValue(_rsi, haClose, candle.OpenTime)).ToDecimal();
+var rsiEma3Val = _rsiEma3.Process(new DecimalIndicatorValue(_rsiEma3, rsiVal, candle.OpenTime)).ToDecimal();
+var rsiEma10Val = _rsiEma10.Process(new DecimalIndicatorValue(_rsiEma10, rsiVal, candle.OpenTime)).ToDecimal();
+var volSmaVal = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 
-var swingLowVal = _swingLow.Process(haLow, candle.OpenTime, true).ToDecimal();
-var swingHighVal = _swingHigh.Process(haHigh, candle.OpenTime, true).ToDecimal();
+var swingLowVal = _swingLow.Process(new DecimalIndicatorValue(_swingLow, haLow, candle.OpenTime)).ToDecimal();
+var swingHighVal = _swingHigh.Process(new DecimalIndicatorValue(_swingHigh, haHigh, candle.OpenTime)).ToDecimal();
 decimal? swingLow = _swingLow.IsFormed ? swingLowVal : null;
 decimal? swingHigh = _swingHigh.IsFormed ? swingHighVal : null;
 

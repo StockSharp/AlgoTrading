@@ -122,12 +122,12 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Period used for Bollinger Bands.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maxPositions = Param(nameof(MaxPositions), 2)
 			.SetGreaterThanZero()
@@ -136,22 +136,22 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 30m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 60m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance in pips.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop offset in pips.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 1m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Extra profit in pips before trailing stop is adjusted.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for Bollinger analysis.", "General");
@@ -172,9 +172,9 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 			throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");

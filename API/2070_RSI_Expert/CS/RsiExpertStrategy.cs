@@ -102,32 +102,32 @@ public class RsiExpertStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Length of the RSI indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_levelUp = Param(nameof(LevelUp), 70m)
 			.SetDisplay("RSI Overbought", "Upper RSI level triggering a short", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_levelDown = Param(nameof(LevelDown), 30m)
 			.SetDisplay("RSI Oversold", "Lower RSI level triggering a long", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0m)
 			.SetDisplay("Take Profit %", "Take profit percentage, 0 disables", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 5m, 1m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 0m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage, 0 disables", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 5m, 1m);
 
 		_trailingStopPercent = Param(nameof(TrailingStopPercent), 0m)
 			.SetDisplay("Trailing Stop %", "Trailing stop percentage, 0 disables", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -148,9 +148,9 @@ public class RsiExpertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 

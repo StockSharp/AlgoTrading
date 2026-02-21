@@ -51,18 +51,18 @@ public class RsiMaStrategy : Strategy
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetDisplay("RSI Period", string.Empty, "Oscillator")
-		.SetCanOptimize(true);
+		;
 		
 		_oversoldActivationLevel = Param(nameof(OversoldActivationLevel), 20m)
 		.SetDisplay("Oversold Activation", string.Empty, "Oscillator")
-		.SetCanOptimize(true);
+		;
 		
 		_oversoldExtremeLevel = Param(nameof(OversoldExtremeLevel), 5m)
 		.SetDisplay("Oversold Extreme", string.Empty, "Oscillator");
 		
 		_overboughtActivationLevel = Param(nameof(OverboughtActivationLevel), 80m)
 		.SetDisplay("Overbought Activation", string.Empty, "Oscillator")
-		.SetCanOptimize(true);
+		;
 		
 		_overboughtExtremeLevel = Param(nameof(OverboughtExtremeLevel), 95m)
 		.SetDisplay("Overbought Extreme", string.Empty, "Oscillator");
@@ -94,7 +94,7 @@ public class RsiMaStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 		.SetDisplay("Fixed Volume", string.Empty, "Position");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle TimeFrame", string.Empty, "General");
 	}
 	
@@ -240,16 +240,16 @@ public class RsiMaStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_rsi = new RelativeStrengthIndex
 		{
 			Length = RsiPeriod
 		};
 		
-		_ema = new ExponentialMovingAverage
+		_ema = new EMA
 		{
 			Length = RsiPeriod
 		};
@@ -259,7 +259,7 @@ public class RsiMaStrategy : Strategy
 			.Bind(_rsi, ProcessCandle)
 			.Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
@@ -268,7 +268,7 @@ public class RsiMaStrategy : Strategy
 			return;
 		
 		var weightedPrice = (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m;
-		var emaValue = _ema.Process(weightedPrice, candle.OpenTime, true).ToDecimal();
+		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, weightedPrice, candle.OpenTime)).ToDecimal();
 		
 		if (!_ema.IsFormed)
 		{

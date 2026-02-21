@@ -202,17 +202,17 @@ public class DynamicBreakoutMasterStrategy : Strategy
 	{
 		_donchianPeriod = Param(nameof(DonchianPeriod), 50)
 		.SetDisplay("Donchian Period", "Channel lookback period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 200, 10);
 		
 		_ma1Length = Param(nameof(Ma1Length), 50)
 		.SetDisplay("MA1 Length", "Length for first moving average", "Trend Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 100, 10);
 		
 		_ma2Length = Param(nameof(Ma2Length), 200)
 		.SetDisplay("MA2 Length", "Length for second moving average", "Trend Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 300, 10);
 		
 		_ma1IsEma = Param(nameof(Ma1IsEma), true)
@@ -223,37 +223,37 @@ public class DynamicBreakoutMasterStrategy : Strategy
 		
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetDisplay("RSI Length", "Relative Strength Index period", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 30, 1);
 		
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
 		.SetDisplay("RSI Overbought", "RSI overbought level", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60, 90, 5);
 		
 		_rsiOversold = Param(nameof(RsiOversold), 30)
 		.SetDisplay("RSI Oversold", "RSI oversold level", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 		
 		_atrLength = Param(nameof(AtrLength), 14)
 		.SetDisplay("ATR Length", "ATR period", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 30, 1);
 		
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.2m)
 		.SetDisplay("ATR Multiplier", "ATR threshold multiplier", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3m, 0.1m);
 		
 		_riskPerTrade = Param(nameof(RiskPerTrade), 1m)
 		.SetDisplay("Risk %", "Risk per trade percentage", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5m, 0.5m);
 		
 		_rewardRatio = Param(nameof(RewardRatio), 2m)
 		.SetDisplay("Reward Ratio", "Take profit multiplier", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 		
 		_accountSize = Param(nameof(AccountSize), 10000m)
@@ -261,12 +261,12 @@ public class DynamicBreakoutMasterStrategy : Strategy
 		
 		_tradingStartHour = Param(nameof(TradingStartHour), 9)
 		.SetDisplay("Start Hour", "Trading session start hour", "Time Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 12, 1);
 		
 		_tradingEndHour = Param(nameof(TradingEndHour), 17)
 		.SetDisplay("End Hour", "Trading session end hour", "Time Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(12, 23, 1);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -301,16 +301,16 @@ public class DynamicBreakoutMasterStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_ma1 = Ma1IsEma ? new ExponentialMovingAverage { Length = Ma1Length } : new SimpleMovingAverage { Length = Ma1Length };
-		_ma2 = Ma2IsEma ? new ExponentialMovingAverage { Length = Ma2Length } : new SimpleMovingAverage { Length = Ma2Length };
+		_ma1 = Ma1IsEma ? new EMA { Length = Ma1Length } : new SMA { Length = Ma1Length };
+		_ma2 = Ma2IsEma ? new EMA { Length = Ma2Length } : new SMA { Length = Ma2Length };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_donchian = new DonchianChannels { Length = DonchianPeriod };
-		_volumeSma = new SimpleMovingAverage { Length = 20 };
+		_volumeSma = new SMA { Length = 20 };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -346,7 +346,7 @@ public class DynamicBreakoutMasterStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		var volAvg = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var volAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 		
 		if (!donchianValue.IsFinal || !ma1Value.IsFinal || !ma2Value.IsFinal || !rsiValue.IsFinal || !atrValue.IsFinal || !_volumeSma.IsFormed)
 		{

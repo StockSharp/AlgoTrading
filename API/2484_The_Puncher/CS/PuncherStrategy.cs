@@ -155,65 +155,65 @@ public class PuncherStrategy : Strategy
 		_stochasticPeriod = Param(nameof(StochasticPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Base period for the Stochastic oscillator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 10);
 
 		_stochasticSignalPeriod = Param(nameof(StochasticSignalPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Signal", "Smoothing period for the %K line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_stochasticSmoothingPeriod = Param(nameof(StochasticSmoothingPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Smoothing", "Smoothing period for the %D line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 1);
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
 			.SetDisplay("Oversold Level", "Threshold for oversold detection", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
 			.SetDisplay("Overbought Level", "Threshold for overbought detection", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 5m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 20)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance of the protective stop-loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 60, 5);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance of the profit target", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 120, 10);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 40, 5);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimum improvement before trailing stop updates", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 20, 2);
 
 		_breakEvenPips = Param(nameof(BreakEvenPips), 21)
 			.SetNotNegative()
 			.SetDisplay("Break-Even (pips)", "Profit needed to move the stop to entry", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 40, 2);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -239,13 +239,12 @@ public class PuncherStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochasticPeriod,
+		{ K = { Length = StochasticPeriod },
 		};
 		stochastic.K.Length = StochasticSignalPeriod;
 		stochastic.D.Length = StochasticSmoothingPeriod;

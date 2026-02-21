@@ -60,7 +60,7 @@ public class TriangularHullMovingAverageStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 40)
 			.SetDisplay("Length", "Period for Hull Moving Average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -84,9 +84,9 @@ public class TriangularHullMovingAverageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var hma = new HullMovingAverage { Length = Length };
 

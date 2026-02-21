@@ -63,7 +63,7 @@ _tickSize = Param(nameof(TickSize), 5m)
 _volLength = Param(nameof(VolLength), 20)
 .SetGreaterThanZero()
 .SetDisplay("Volume SMA Length", "Length of volume average", "General")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
@@ -83,11 +83,11 @@ _volSma = null;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-_volSma = new SimpleMovingAverage { Length = VolLength };
+_volSma = new SMA { Length = VolLength };
 
 var subscription = SubscribeCandles(CandleType);
 subscription.Bind(ProcessCandle).Start();

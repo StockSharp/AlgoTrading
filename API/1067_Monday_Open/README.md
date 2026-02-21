@@ -14,7 +14,7 @@ This strategy buys at the beginning of the week and closes the position on Tuesd
 - **Default Values**:
   - `StartYear` = 2023.
   - `EndYear` = 2025.
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame().
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame().
 - **Filters**:
   - Category: Seasonality
   - Direction: Long

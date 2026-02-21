@@ -96,22 +96,22 @@ public class NevalyashkaStopupStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 150)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in points", "General")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in points", "General")
-			.SetCanOptimize(true);
+			;
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume of each order", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_martingaleCoeff = Param(nameof(MartingaleCoeff), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Martingale Coeff", "Multiplier applied after loss", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopAfterProfit = Param(nameof(StopAfterProfit), false)
 			.SetDisplay("Stop After Profit", "Stop strategy after profit", "Risk");
@@ -127,9 +127,9 @@ public class NevalyashkaStopupStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var step = Security.Step ?? 1m;
 		_baseStopLoss = StopLossPoints * step;

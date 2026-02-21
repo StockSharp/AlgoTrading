@@ -58,10 +58,10 @@ public class LongExplosiveV1Strategy : Strategy
 			.SetDisplay("Candle Type", "Type of candles", "General");
 		_priceIncreasePercent = Param(nameof(PriceIncreasePercent), 1m)
 			.SetDisplay("Price increase (%)", "Percentage increase to enter long", "General")
-			.SetCanOptimize(true);
+			;
 		_priceDecreasePercent = Param(nameof(PriceDecreasePercent), 1m)
 			.SetDisplay("Price decrease (%)", "Percentage decrease to exit", "General")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -71,9 +71,9 @@ public class LongExplosiveV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

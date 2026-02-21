@@ -97,9 +97,9 @@ public class GenieStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		var sar = new ParabolicSar { AccelerationStep = SarStep, AccelerationMax = 0.2m };

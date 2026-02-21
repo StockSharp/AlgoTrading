@@ -47,7 +47,7 @@ public class CenterOfGravityMeanReversionStrategy : Strategy
 		_barsBack = Param(nameof(BarsBack), 125)
 			.SetGreaterThanZero()
 			.SetDisplay("Bars Back", "Number of historical bars used for regression", "Channel")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 25);
 
 		_polynomialDegree = Param(nameof(PolynomialDegree), 2)
@@ -155,11 +155,11 @@ public class CenterOfGravityMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

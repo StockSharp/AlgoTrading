@@ -48,32 +48,32 @@ public class Vietnamese3xSupertrendStrategy : Strategy
 	{
 		_fastAtrLength = Param(nameof(FastAtrLength), 10)
 		.SetDisplay("Fast ATR Length", "ATR length for fast SuperTrend", "SuperTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		
 		_fastMultiplier = Param(nameof(FastMultiplier), 1m)
 		.SetDisplay("Fast Multiplier", "ATR multiplier for fast SuperTrend", "SuperTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3m, 0.5m);
 		
 		_mediumAtrLength = Param(nameof(MediumAtrLength), 11)
 		.SetDisplay("Medium ATR Length", "ATR length for medium SuperTrend", "SuperTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		
 		_mediumMultiplier = Param(nameof(MediumMultiplier), 2m)
 		.SetDisplay("Medium Multiplier", "ATR multiplier for medium SuperTrend", "SuperTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 4m, 0.5m);
 		
 		_slowAtrLength = Param(nameof(SlowAtrLength), 12)
 		.SetDisplay("Slow ATR Length", "ATR length for slow SuperTrend", "SuperTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 		
 		_slowMultiplier = Param(nameof(SlowMultiplier), 3m)
 		.SetDisplay("Slow Multiplier", "ATR multiplier for slow SuperTrend", "SuperTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 		
 		_useHighestOfTwoRedCandles = Param(nameof(UseHighestOfTwoRedCandles), false)
@@ -107,9 +107,9 @@ public class Vietnamese3xSupertrendStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var fast = new SuperTrend { Length = FastAtrLength, Multiplier = FastMultiplier };
 		var medium = new SuperTrend { Length = MediumAtrLength, Multiplier = MediumMultiplier };

@@ -128,32 +128,32 @@ public TickerPulseMeterFearEkgStrategy()
 _lookbackShort = Param(nameof(LookbackShort), 50)
 .SetGreaterThanZero()
 .SetDisplay("Short Lookback", "Short lookback period", "General")
-.SetCanOptimize(true);
+;
 
 _lookbackLong = Param(nameof(LookbackLong), 200)
 .SetGreaterThanZero()
 .SetDisplay("Long Lookback", "Long lookback period", "General")
-.SetCanOptimize(true);
+;
 
 _profitTake = Param(nameof(ProfitTake), 95)
 .SetGreaterThanZero()
 .SetDisplay("Profit Take", "Exit level", "General")
-.SetCanOptimize(true);
+;
 
 _entryThresholdHigh = Param(nameof(EntryThresholdHigh), 20)
 .SetGreaterThanZero()
 .SetDisplay("Entry Threshold High", "Upper trigger", "General")
-.SetCanOptimize(true);
+;
 
 _entryThresholdLow = Param(nameof(EntryThresholdLow), 40)
 .SetGreaterThanZero()
 .SetDisplay("Entry Threshold Low", "Lower trigger", "General")
-.SetCanOptimize(true);
+;
 
 _orangeEntryThreshold = Param(nameof(OrangeEntryThreshold), 95)
 .SetGreaterThanZero()
 .SetDisplay("Orange Entry Threshold", "Irrational selling trigger", "General")
-.SetCanOptimize(true);
+;
 
 _enableYellowSignals = Param(nameof(EnableYellowSignals), true)
 .SetDisplay("Enable Yellow", "Include orange signals", "General");
@@ -185,9 +185,9 @@ _prevPctBelowLongBelowShort = default;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _shortHigh = new Highest { Length = LookbackShort };
 _shortLow = new Lowest { Length = LookbackShort };
@@ -195,7 +195,7 @@ _longHigh = new Highest { Length = LookbackLong };
 _longLow = new Lowest { Length = LookbackLong };
 
 var subscription = SubscribeCandles(CandleType);
-subscription.WhenNew(ProcessCandle).Start();
+subscription.Bind(ProcessCandle).Start();
 }
 
 private void ProcessCandle(ICandleMessage candle)

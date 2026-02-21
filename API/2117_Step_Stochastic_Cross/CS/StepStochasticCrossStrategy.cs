@@ -90,9 +90,9 @@ public class StepStochasticCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stepSto = new StepStochasticIndicator
 		{
@@ -167,7 +167,7 @@ public class StepStochasticCrossStrategy : Strategy
 /// <summary>
 /// Step Stochastic indicator producing fast and slow lines.
 /// </summary>
-public class StepStochasticIndicator : BaseIndicator<decimal>
+public class StepStochasticIndicator : BaseIndicator
 {
 	public decimal KFast { get; set; } = 1m;
 	public decimal KSlow { get; set; } = 1m;

@@ -70,7 +70,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 	private readonly StrategyParam<decimal> _stepExponent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _ma;
+	private DecimalLengthIndicator _ma;
 	private readonly Queue<decimal> _maHistory = new();
 	private readonly List<PositionEntry> _entries = new();
 	private bool? _isLong;
@@ -185,19 +185,19 @@ public class FirebirdChannelAveragingStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 150, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 10);
 
 		_maPeriod = Param(nameof(MaPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average length", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_maShift = Param(nameof(MaShift), 0)
@@ -213,7 +213,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 		_pricePercent = Param(nameof(PricePercent), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Channel %", "Channel width percentage", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_tradeOnFriday = Param(nameof(TradeOnFriday), true)
@@ -222,13 +222,13 @@ public class FirebirdChannelAveragingStrategy : Strategy
 		_stepPips = Param(nameof(StepPips), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Step (pips)", "Distance between averaged entries", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_stepExponent = Param(nameof(StepExponent), 0m)
 			.SetNotNegative()
 			.SetDisplay("Step Exponent", "Power growth for step size", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 2m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -253,9 +253,9 @@ public class FirebirdChannelAveragingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = CreateMovingAverage(MaType);
 		_ma.Length = MaPeriod;
@@ -274,7 +274,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
@@ -534,14 +534,14 @@ public class FirebirdChannelAveragingStrategy : Strategy
 		return _maHistory.Peek();
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type)
+	private DecimalLengthIndicator CreateMovingAverage(MovingAverageTypes type)
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage(),
+			MovingAverageTypes.Simple => new SMA(),
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage(),
 			MovingAverageTypes.Weighted => new WeightedMovingAverage(),
-			_ => new ExponentialMovingAverage()
+			_ => new EMA()
 		};
 	}
 

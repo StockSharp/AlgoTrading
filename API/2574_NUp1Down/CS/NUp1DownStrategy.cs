@@ -108,37 +108,37 @@ public class NUp1DownStrategy : Strategy
 		_barsCount = Param(nameof(BarsCount), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Bullish Bars", "Number of bullish bars before the down bar", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 6, 1);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 120m, 10m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 120m, 10m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 30m, 5m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Step (pips)", "Trailing step before adjusting stop", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 20m, 1m);
 
 		_riskPercent = Param(nameof(RiskPercent), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk %", "Portfolio risk percentage per trade", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -161,9 +161,9 @@ public class NUp1DownStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 
@@ -210,7 +210,7 @@ public class NUp1DownStrategy : Strategy
 			var index = candles.Length - 1 - i;
 			var bar = candles[index];
 
-			if (bar.Close <= bar.Open)
+			if (bar.ClosePrice <= bar.OpenPrice)
 			{
 				isPattern = false;
 				break;
@@ -219,7 +219,7 @@ public class NUp1DownStrategy : Strategy
 			if (i < BarsCount)
 			{
 				var prev = candles[index - 1];
-				if (bar.Close <= prev.Close)
+				if (bar.ClosePrice <= prev.Close)
 				{
 					isPattern = false;
 					break;

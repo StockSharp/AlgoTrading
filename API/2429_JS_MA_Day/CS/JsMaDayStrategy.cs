@@ -58,13 +58,13 @@ public class JsMaDayStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "SMA period on daily candles", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_reverse = Param(nameof(Reverse), false)
 			.SetDisplay("Reverse Signals", "Reverse entry direction", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for moving average", "General");
 	}
 
@@ -75,14 +75,13 @@ public class JsMaDayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage
+		var sma = new SMA
 		{
-			Length = MaPeriod,
-			CandlePrice = CandlePrice.Median,
+			Length = MaPeriod
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -143,6 +142,6 @@ public class JsMaDayStrategy : Strategy
 			})
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 }

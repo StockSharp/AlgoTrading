@@ -200,9 +200,9 @@ public class ExpXrsiHistogramVolStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex
 		{
@@ -402,12 +402,12 @@ public class ExpXrsiHistogramVolStrategy : Strategy
 		var effectiveLength = Math.Max(1, length);
 		return method switch
 		{
-			XrsiSmoothingMethods.Sma => new SimpleMovingAverage { Length = effectiveLength },
-			XrsiSmoothingMethods.Ema => new ExponentialMovingAverage { Length = effectiveLength },
+			XrsiSmoothingMethods.Sma => new SMA { Length = effectiveLength },
+			XrsiSmoothingMethods.Ema => new EMA { Length = effectiveLength },
 			XrsiSmoothingMethods.Smma => new SmoothedMovingAverage { Length = effectiveLength },
 			XrsiSmoothingMethods.Lwma => new WeightedMovingAverage { Length = effectiveLength },
 			XrsiSmoothingMethods.Jurik => new JurikMovingAverage { Length = effectiveLength },
-			_ => new SimpleMovingAverage { Length = effectiveLength },
+			_ => new SMA { Length = effectiveLength },
 		};
 	}
 

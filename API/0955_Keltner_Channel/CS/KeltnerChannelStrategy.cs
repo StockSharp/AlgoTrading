@@ -147,9 +147,9 @@ public class KeltnerChannelStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var kc = new KeltnerChannels
 		{
@@ -157,15 +157,15 @@ public class KeltnerChannelStrategy : Strategy
 			Multiplier = Multiplier
 		};
 		
-		var emaFast = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var emaSlow = new ExponentialMovingAverage { Length = SlowEmaPeriod };
-		var emaTrend = new ExponentialMovingAverage { Length = TrendEmaPeriod };
+		var emaFast = new EMA { Length = FastEmaPeriod };
+		var emaSlow = new EMA { Length = SlowEmaPeriod };
+		var emaTrend = new EMA { Length = TrendEmaPeriod };
 		var atr = new AverageTrueRange { Length = Length };
 		
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(kc, emaFast, emaSlow, emaTrend, atr, ProcessCandle).Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		var area = CreateChartArea();
 		if (area != null)

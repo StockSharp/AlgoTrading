@@ -51,22 +51,22 @@ public class VwapRsiScalperFinalV1Strategy : Strategy
 	{
 		_rsiLength = Param(nameof(RsiLength), 3)
 			.SetDisplay("RSI Length", "RSI period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 6, 1);
 
 		_rsiOversold = Param(nameof(RsiOversold), 35m)
 			.SetDisplay("RSI Oversold", "Oversold level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(25m, 45m, 5m);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 			.SetDisplay("RSI Overbought", "Overbought level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_emaLength = Param(nameof(EmaLength), 50)
 			.SetDisplay("EMA Length", "EMA period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 5);
 
 		_sessionStart = Param(nameof(SessionStart), TimeSpan.FromHours(9))
@@ -77,22 +77,22 @@ public class VwapRsiScalperFinalV1Strategy : Strategy
 
 		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 3)
 			.SetDisplay("Max Trades Per Day", "Daily trade limit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetDisplay("ATR Length", "ATR period", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_stopAtrMult = Param(nameof(StopAtrMult), 1m)
 			.SetDisplay("Stop ATR Mult", "ATR multiplier for stop", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_targetAtrMult = Param(nameof(TargetAtrMult), 2m)
 			.SetDisplay("Target ATR Mult", "ATR multiplier for target", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -116,12 +116,12 @@ public class VwapRsiScalperFinalV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new EMA { Length = EmaLength };
 		var vwap = new VolumeWeightedMovingAverage();
 		var atr = new AverageTrueRange { Length = AtrLength };
 

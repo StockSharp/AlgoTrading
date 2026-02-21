@@ -130,7 +130,7 @@ _zigZagWindowSize = Param(nameof(ZigZagWindowSize), 5)
 _tradingCandleType = Param(nameof(TradingCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Trading Candle", "Primary trading timeframe", "General");
 
-_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Daily Candle", "Higher timeframe for ZigZag filter", "General");
 
 ApplyZigZagWindow(_zigZagWindowSize.Value);
@@ -161,16 +161,16 @@ _previousHigh = 0m;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
 		_awesomeOscillator = new AwesomeOscillator
 		{
-			ShortPeriod = 5,
-			LongPeriod = 34
+			ShortMa = { Length = 5 },
+			LongMa = { Length = 34 }
 		};
 
 		var dailySubscription = SubscribeCandles(DailyCandleType);

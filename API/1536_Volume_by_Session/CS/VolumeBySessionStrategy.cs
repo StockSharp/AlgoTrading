@@ -61,9 +61,9 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).Set
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _sma1 = new SMA { Length = SmaLength };
 _sma2 = new SMA { Length = SmaLength };
@@ -77,7 +77,7 @@ subscription.Bind(candle =>
 if (candle.State != CandleStates.Finished)
 return;
 
-var hour = candle.OpenTime.LocalDateTime.Hour;
+var hour = candle.OpenTime.Hour;
 
 ProcessSession(candle, hour, Session1Start, Session1End, _sma1);
 ProcessSession(candle, hour, Session2Start, Session2End, _sma2);

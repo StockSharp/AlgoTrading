@@ -149,50 +149,50 @@ public class ThreeSignalDirectionalTrendStrategy : Strategy
 		_avgLength = Param(nameof(AvgLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Average Length", "SMA length for MA speed", "MA Speed")
-		.SetCanOptimize(true);
+		;
 
 		_rocLength = Param(nameof(RocLength), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("ROC Length", "ROC length for MA speed", "MA Speed")
-		.SetCanOptimize(true);
+		;
 
 		_avgRocLength = Param(nameof(AvgRocLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Avg ROC Length", "SMA length of ROC", "MA Speed")
-		.SetCanOptimize(true);
+		;
 
 		_stochLength = Param(nameof(StochLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Stoch Length", "Stochastic length", "Stochastic")
-		.SetCanOptimize(true);
+		;
 
 		_smoothK = Param(nameof(SmoothK), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Smooth K", "Stochastic smoothing", "Stochastic")
-		.SetCanOptimize(true);
+		;
 
 		_overbought = Param(nameof(Overbought), 80m)
 		.SetDisplay("Overbought", "Stochastic overbought level", "Stochastic")
-		.SetCanOptimize(true);
+		;
 
 		_oversold = Param(nameof(Oversold), 20m)
 		.SetDisplay("Oversold", "Stochastic oversold level", "Stochastic")
-		.SetCanOptimize(true);
+		;
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Fast Length", "Fast EMA length", "MACD")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Slow Length", "Slow EMA length", "MACD")
-		.SetCanOptimize(true);
+		;
 
 		_macdAvgLength = Param(nameof(MacdAvgLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Avg Length", "Signal EMA length", "MACD")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <inheritdoc />
@@ -214,9 +214,9 @@ public class ThreeSignalDirectionalTrendStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_avg = new SimpleMovingAverage { Length = AvgLength };
+		_avg = new SMA { Length = AvgLength };
 		_roc = new RateOfChange { Length = RocLength };
-		_avgRoc = new SimpleMovingAverage { Length = AvgRocLength };
+		_avgRoc = new SMA { Length = AvgRocLength };
 
 		_stochastic = new StochasticOscillator
 		{
@@ -252,9 +252,9 @@ public class ThreeSignalDirectionalTrendStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var avgValue = _avg.Process(candle);
-		var rocValue = _roc.Process(avgValue.ToDecimal(), candle.ServerTime, true);
-		var avgRocValue = _avgRoc.Process(rocValue, candle.ServerTime, true);
+		var avgValue = _avg.Process(new DecimalIndicatorValue(_avg, candle);
+		var rocValue = _roc.Process(avgValue.ToDecimal(), candle.ServerTime));
+		var avgRocValue = _avgRoc.Process(new DecimalIndicatorValue(_avgRoc, rocValue, candle.ServerTime));
 
 		if (!_stochastic.IsFormed || !_macd.IsFormed || !_avgRoc.IsFormed)
 		return;

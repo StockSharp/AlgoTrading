@@ -217,11 +217,11 @@ public class ExpSkyscraperFixDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 		Volume = TradeVolume;
 
 		var priceStep = Security?.PriceStep ?? 0m;
@@ -333,7 +333,7 @@ public class ExpSkyscraperFixDuplexStrategy : Strategy
 	/// <summary>
 	/// Skyscraper Fix indicator translated from the original MQL version.
 	/// </summary>
-	public class SkyscraperFixIndicator : BaseIndicator<decimal>
+	public class SkyscraperFixIndicator : BaseIndicator
 	{
 		private readonly AverageTrueRange _atr = new();
 		private readonly Highest _atrHighest = new();

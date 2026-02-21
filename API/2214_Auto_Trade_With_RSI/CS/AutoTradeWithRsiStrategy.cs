@@ -53,40 +53,40 @@ public class AutoTradeWithRsiStrategy : Strategy
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_averagePeriod = Param(nameof(AveragePeriod), 21)
 			.SetDisplay("Average Period", "Number of RSI values to average", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_buyThreshold = Param(nameof(BuyThreshold), 55m)
 			.SetDisplay("Buy Threshold", "Average RSI above which to buy", "Rules")
-			.SetCanOptimize(true);
+			;
 
 		_sellThreshold = Param(nameof(SellThreshold), 45m)
 			.SetDisplay("Sell Threshold", "Average RSI below which to sell", "Rules")
-			.SetCanOptimize(true);
+			;
 
 		_closeBuyThreshold = Param(nameof(CloseBuyThreshold), 47m)
 			.SetDisplay("Close Buy Threshold", "Average RSI below which to close long", "Rules")
-			.SetCanOptimize(true);
+			;
 
 		_closeSellThreshold = Param(nameof(CloseSellThreshold), 52m)
 			.SetDisplay("Close Sell Threshold", "Average RSI above which to close short", "Rules")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle data type", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create RSI indicator and SMA to average its values
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		var rsiAverage = new SimpleMovingAverage { Length = AveragePeriod };
+		var rsiAverage = new SMA { Length = AveragePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

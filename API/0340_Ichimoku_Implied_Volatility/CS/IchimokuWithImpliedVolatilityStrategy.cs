@@ -91,25 +91,25 @@ public class IchimokuWithImpliedVolatilityStrategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Tenkan-Sen Period", "Tenkan-Sen (Conversion Line) period", "Ichimoku Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 13, 2);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("Kijun-Sen Period", "Kijun-Sen (Base Line) period", "Ichimoku Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 30, 2);
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 		.SetGreaterThanZero()
 		.SetDisplay("Senkou Span B Period", "Senkou Span B (2nd Leading Span) period", "Ichimoku Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40, 60, 4);
 
 		_ivPeriod = Param(nameof(IVPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("IV Period", "Implied Volatility averaging period", "Volatility Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -135,9 +135,9 @@ public class IchimokuWithImpliedVolatilityStrategy : Strategy
 		_avgImpliedVolatility = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Ichimoku indicator
 		var ichimoku = new Ichimoku

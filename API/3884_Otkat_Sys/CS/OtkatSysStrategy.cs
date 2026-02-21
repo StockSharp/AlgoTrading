@@ -126,43 +126,43 @@ public class OtkatSysStrategy : Strategy
 		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Entry Candles", "Primary timeframe", "General");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Daily Candles", "Session statistics timeframe", "General");
 
 		_longExtraTakeProfit = Param(nameof(LongExtraTakeProfit), 3m)
 		.SetNotNegative()
 		.SetDisplay("Long Bonus Take Profit", "Additional points added to long take profit", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 10m, 0.5m);
 
 		_takeProfit = Param(nameof(TakeProfit), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Target distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 20m, 1m);
 
 		_stopLoss = Param(nameof(StopLoss), 51m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Protection distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 120m, 5m);
 
 		_pullbackThreshold = Param(nameof(PullbackThreshold), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Pullback", "Otkat threshold", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 1m);
 
 		_corridorThreshold = Param(nameof(CorridorThreshold), 18m)
 			.SetGreaterThanZero()
 			.SetDisplay("Corridor", "KoridorOC threshold", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 30m, 1m);
 
 		_toleranceThreshold = Param(nameof(ToleranceThreshold), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Tolerance", "KoridorOt tolerance", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -194,11 +194,11 @@ public class OtkatSysStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var entrySubscription = SubscribeCandles(EntryCandleType);
 		entrySubscription

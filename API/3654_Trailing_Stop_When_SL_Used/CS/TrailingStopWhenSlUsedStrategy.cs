@@ -43,7 +43,7 @@ public class TrailingStopWhenSlUsedStrategy : Strategy
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Step (points)", "Distance between trailing updates expressed in points", "Risk management")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -53,9 +53,9 @@ public class TrailingStopWhenSlUsedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Obtain the price step so that point-based settings can be converted into price distances.
 		_priceStep = Security?.PriceStep ?? 0m;

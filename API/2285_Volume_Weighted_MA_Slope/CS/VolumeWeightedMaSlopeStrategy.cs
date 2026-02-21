@@ -54,7 +54,7 @@ public class VolumeWeightedMaSlopeStrategy : Strategy
 		_vwmaPeriod = Param(nameof(VwmaPeriod), 12)
 				.SetGreaterThanZero()
 				.SetDisplay("VWMA Period", "Period of the Volume Weighted Moving Average", "General")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(5, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -78,9 +78,9 @@ public class VolumeWeightedMaSlopeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var vwma = new VolumeWeightedMovingAverage { Length = VwmaPeriod };
 

@@ -187,46 +187,46 @@ public class ScalperEmaSimpleStrategy : Strategy
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 39)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA", "Length of the fast EMA", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 80, 5);
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 740)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA", "Length of the slow EMA", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(400, 900, 40);
 
 		_stochasticLength = Param(nameof(StochasticLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic Length", "Base lookback for the stochastic", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 12, 1);
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %K", "Smoothing period for the %K line", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 10, 1);
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 5)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %D", "Smoothing period for the %D line", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 10, 1);
 
 		_stochasticOversold = Param(nameof(StochasticOversold), 20m)
 		.SetDisplay("Stochastic Oversold", "Level that confirms bullish momentum", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 30m, 5m);
 
 		_stochasticOverbought = Param(nameof(StochasticOverbought), 80m)
 		.SetDisplay("Stochastic Overbought", "Level that confirms bearish momentum", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(70m, 90m, 5m);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 37m)
 		.SetDisplay("ADX Threshold", "Maximum ADX value allowed to trade", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 50m, 5m);
 
 		_signalCooldownBars = Param(nameof(SignalCooldownBars), 4)
@@ -282,17 +282,16 @@ public class ScalperEmaSimpleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastEma = new EMA { Length = FastEmaPeriod };
 		var slowEma = new EMA { Length = SlowEmaPeriod };
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			KPeriod = StochasticKPeriod,
-			DPeriod = StochasticDPeriod
+			D = { Length = StochasticDPeriod }
 		};
 		var adx = new AverageDirectionalIndex { Length = 14 };
 

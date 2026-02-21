@@ -45,7 +45,7 @@ public class ConsolidationBreakoutStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for the breakout logic", "General");
 
-		_macdCandleType = Param(nameof(MacdCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_macdCandleType = Param(nameof(MacdCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("MACD Timeframe", "Timeframe used for confirming trades with MACD", "General");
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
@@ -111,23 +111,21 @@ public class ConsolidationBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Use the configured volume for market orders.
 		Volume = TradeVolume;
 
 		_fastMa = new WeightedMovingAverage
 		{
-			Length = FastMaPeriod,
-			CandlePrice = CandlePrice.Typical
+			Length = FastMaPeriod
 		};
 
 		_slowMa = new WeightedMovingAverage
 		{
-			Length = SlowMaPeriod,
-			CandlePrice = CandlePrice.Typical
+			Length = SlowMaPeriod
 		};
 
 		_momentum = new Momentum

@@ -220,9 +220,9 @@ public class BezierReOpenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bezier = new BezierIndicator
 		{
@@ -338,7 +338,7 @@ public class BezierReOpenStrategy : Strategy
 /// <summary>
 /// Custom Bezier indicator using binomial coefficients.
 /// </summary>
-public class BezierIndicator : LengthIndicator<decimal>
+public class BezierIndicator : DecimalLengthIndicator
 {
 	/// <summary>
 	/// Bezier curve tension parameter.

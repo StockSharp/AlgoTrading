@@ -79,7 +79,7 @@ public class TurnOfTheMonthOnSteroidsStrategy : Strategy
 		_rsiThreshold = Param(nameof(RsiThreshold), 65m)
 			.SetDisplay("RSI Exit", "RSI exit threshold", "Strategy");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Strategy");
 	}
 
@@ -99,9 +99,9 @@ public class TurnOfTheMonthOnSteroidsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 

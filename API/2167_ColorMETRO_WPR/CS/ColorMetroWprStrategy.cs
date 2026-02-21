@@ -105,27 +105,27 @@ public class ColorMetroWprStrategy : Strategy
 	{
 		_wprPeriod = Param(nameof(WprPeriod), 7)
 			.SetDisplay("Williams %R Period", "Period for Williams %R", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_fastStep = Param(nameof(FastStep), 5)
 			.SetDisplay("Fast Step", "Step size for fast line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_slowStep = Param(nameof(SlowStep), 15)
 			.SetDisplay("Slow Step", "Step size for slow line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 1);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
 			.SetDisplay("Take Profit (%)", "Take profit as percentage", "Risk parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 6m, 1m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop Loss (%)", "Stop loss as percentage", "Risk parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -157,9 +157,9 @@ public class ColorMetroWprStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_wpr = new WilliamsR { Length = WprPeriod };
 

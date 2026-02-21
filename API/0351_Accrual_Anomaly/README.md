@@ -14,7 +14,7 @@ Positions are adjusted once per year; no intraday signals are used.
 - **Stops**: No explicit stop logic.
 - **Default Values**:
   - `Deciles = 10`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Fundamental
   - Direction: Both

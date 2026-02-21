@@ -101,12 +101,12 @@ public class SupertrendSslToggleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_smaHigh = new SimpleMovingAverage { Length = SslPeriod };
-		_smaLow = new SimpleMovingAverage { Length = SslPeriod };
+		_smaHigh = new SMA { Length = SslPeriod };
+		_smaLow = new SMA { Length = SslPeriod };
 		var st = new SuperTrend { Length = AtrPeriod, Multiplier = Factor };
 
 		var subscription = SubscribeCandles(CandleType);

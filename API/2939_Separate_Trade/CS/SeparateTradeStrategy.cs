@@ -43,8 +43,8 @@ public class SeparateTradeStrategy : Strategy
 	private readonly StrategyParam<decimal> _stdLevelSell;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _slowMa = null!;
-	private LengthIndicator<decimal> _fastMa = null!;
+	private DecimalLengthIndicator _slowMa = null!;
+	private DecimalLengthIndicator _fastMa = null!;
 	private AverageTrueRange _atrBuy = null!;
 	private AverageTrueRange _atrSell = null!;
 	private StandardDeviation _stdBuy = null!;
@@ -384,9 +384,9 @@ public class SeparateTradeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 		{
@@ -643,14 +643,14 @@ public class SeparateTradeStrategy : Strategy
 		return decimals;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 

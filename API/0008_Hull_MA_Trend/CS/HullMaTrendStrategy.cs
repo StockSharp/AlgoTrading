@@ -70,17 +70,17 @@ public class HullMaTrendStrategy : Strategy
 	{
 		_hmaPeriod = Param(nameof(HmaPeriod), 9)
 			.SetDisplay("HMA Period", "Period for Hull Moving Average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 2);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "Period for Average True Range (stop-loss)", "Risk parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR to determine stop-loss distance", "Risk parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 3, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -102,9 +102,9 @@ public class HullMaTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var hma = new HullMovingAverage { Length = HmaPeriod };

@@ -34,7 +34,7 @@ public class IchiOscillatorStrategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 
 	private Ichimoku _ichimoku = null!;
-	private LengthIndicator<decimal> _smoother = null!;
+	private DecimalLengthIndicator _smoother = null!;
 	private readonly List<int> _colorHistory = new();
 	private decimal? _previousSmoothed;
 	private TimeSpan _timeShift;
@@ -50,7 +50,7 @@ public class IchiOscillatorStrategy : Strategy
 		_ichimokuBasePeriod = Param(nameof(IchimokuBasePeriod), 22)
 			.SetGreaterThanZero()
 			.SetDisplay("Ichimoku Base", "Base value to derive Tenkan, Kijun and Senkou spans", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.Jurik)
@@ -59,7 +59,7 @@ public class IchiOscillatorStrategy : Strategy
 		_smoothingLength = Param(nameof(SmoothingLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Length", "Length for oscillator smoothing", "Oscillator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 25, 1);
 
 		_smoothingPhase = Param(nameof(SmoothingPhase), 15)
@@ -84,13 +84,13 @@ public class IchiOscillatorStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Protective stop distance in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200, 2000, 200);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Protective take-profit distance in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200, 4000, 200);
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
@@ -231,9 +231,9 @@ public class IchiOscillatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -401,12 +401,12 @@ public class IchiOscillatorStrategy : Strategy
 		_previousSmoothed = smoothed;
 	}
 
-	private LengthIndicator<decimal> CreateSmoother(SmoothingMethods method, int length, int phase)
+	private DecimalLengthIndicator CreateSmoother(SmoothingMethods method, int length, int phase)
 	{
 		return method switch
 		{
-			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SMA { Length = length },
+			SmoothingMethods.Exponential => new EMA { Length = length },
 			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
 			SmoothingMethods.Jurik => new JurikMovingAverage { Length = length },

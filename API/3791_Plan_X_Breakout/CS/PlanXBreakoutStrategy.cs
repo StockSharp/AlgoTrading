@@ -128,35 +128,35 @@ public class PlanXBreakoutStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Default market order volume", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_longTargetPips = Param(nameof(LongTargetPips), 25)
 			.SetDisplay("Long Target (pips)", "Distance above the anchor that triggers a long entry", "Entries")
-			.SetCanOptimize(true);
+			;
 
 		_shortTargetPips = Param(nameof(ShortTargetPips), 20)
 			.SetDisplay("Short Target (pips)", "Distance below the anchor that triggers a short entry", "Entries")
-			.SetCanOptimize(true);
+			;
 
 		_initialStopPips = Param(nameof(InitialStopPips), 25)
 			.SetDisplay("Initial Stop (pips)", "Initial stop-loss distance from the entry price", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailTriggerPips = Param(nameof(TrailTriggerPips), 10)
 			.SetDisplay("Trail Trigger (pips)", "Advance the trailing stop once price moves this distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailStepPips = Param(nameof(TrailStepPips), 5)
 			.SetDisplay("Trail Step (pips)", "Increment applied when the trailing stop is updated", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_sessionStartHour = Param(nameof(SessionStartHour), 11m)
 			.SetDisplay("Session Start", "Hour that defines the anchor candle", "Session")
-			.SetCanOptimize(true);
+			;
 
 		_sessionEndHour = Param(nameof(SessionEndHour), 15m)
 			.SetDisplay("Session End", "Hour that terminates breakout checks", "Session")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series analyzed by the strategy", "General");
@@ -169,9 +169,9 @@ public class PlanXBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 		_timeFrame = GetTimeFrame();

@@ -114,32 +114,32 @@ public class IchimokuRsiStrategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 						.SetRange(5, 30)
 						.SetDisplay("Tenkan Period", "Tenkan-sen (Conversion Line) period", "Ichimoku Settings")
-						.SetCanOptimize(true);
+						;
 						
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 					   .SetRange(10, 50)
 					   .SetDisplay("Kijun Period", "Kijun-sen (Base Line) period", "Ichimoku Settings")
-					   .SetCanOptimize(true);
+					   ;
 					   
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 							 .SetRange(30, 100)
 							 .SetDisplay("Senkou Span B Period", "Senkou Span B (2nd Leading Span) period", "Ichimoku Settings")
-							 .SetCanOptimize(true);
+							 ;
 							 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 					 .SetRange(5, 30)
 					 .SetDisplay("RSI Period", "Period for RSI calculation", "RSI Settings")
-					 .SetCanOptimize(true);
+					 ;
 					 
 		_rsiOversold = Param(nameof(RsiOversold), 30)
 					   .SetRange(10, 40)
 					   .SetDisplay("RSI Oversold", "RSI oversold level", "RSI Settings")
-					   .SetCanOptimize(true);
+					   ;
 					   
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
 						 .SetRange(60, 90)
 						 .SetDisplay("RSI Overbought", "RSI overbought level", "RSI Settings")
-						 .SetCanOptimize(true);
+						 ;
 						 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 						   .SetRange(0.5m, 5m)
@@ -153,9 +153,9 @@ public class IchimokuRsiStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Set up stop loss protection
 		StartProtection(

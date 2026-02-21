@@ -35,13 +35,13 @@ public class ModifiedOptimumEllipticFilterStrategy : Strategy
 	/// </summary>
 	public ModifiedOptimumEllipticFilterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -85,7 +85,7 @@ public class ModifiedOptimumEllipticFilterStrategy : Strategy
 		}
 	}
 
-	private class ModifiedOptimumEllipticFilter : Indicator<decimal>
+	private class ModifiedOptimumEllipticFilter : BaseIndicator
 	{
 		private readonly List<decimal> _prices = new();
 		private readonly List<decimal> _filterValues = new();

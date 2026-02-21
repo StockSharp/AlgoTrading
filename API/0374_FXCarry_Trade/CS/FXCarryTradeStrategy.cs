@@ -65,7 +65,7 @@ public class FXCarryTradeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Min trade USD", "Minimum order value", "Risk");
 		
-		_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 
@@ -82,12 +82,12 @@ public class FXCarryTradeStrategy : Strategy
 		_lastDay = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe empty.");
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		var first = Universe.First();
 
 		// Use ONLY ONE currency's daily candle to trigger monthly rebalance

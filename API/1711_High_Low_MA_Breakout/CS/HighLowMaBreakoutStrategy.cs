@@ -123,14 +123,14 @@ public class HighLowMaBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_maHigh = new SimpleMovingAverage { Length = MaHighPeriod };
-		_maLow = new SimpleMovingAverage { Length = MaLowPeriod };
+		_maHigh = new SMA { Length = MaHighPeriod };
+		_maLow = new SMA { Length = MaLowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

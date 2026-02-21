@@ -94,22 +94,22 @@ public CandleTrailingStopStrategy()
 
 _maxTrades = Param(nameof(MaxTrades), 10)
 .SetGreaterThanZero()
-.SetCanOptimize(true)
+
 .SetDisplay("Max trades", "Maximum aggregated position expressed in trade count", "Trading");
 
 _fastHigherLength = Param(nameof(FastHigherLength), 9)
 .SetGreaterThanZero()
-.SetCanOptimize(true)
+
 .SetDisplay("Higher fast LWMA", "Length of the fast LWMA calculated on the higher timeframe", "Indicators");
 
 _middleHigherLength = Param(nameof(MiddleHigherLength), 20)
 .SetGreaterThanZero()
-.SetCanOptimize(true)
+
 .SetDisplay("Higher middle LWMA", "Length of the middle LWMA calculated on the higher timeframe", "Indicators");
 
 _slowHigherLength = Param(nameof(SlowHigherLength), 52)
 .SetGreaterThanZero()
-.SetCanOptimize(true)
+
 .SetDisplay("Higher slow LWMA", "Length of the slow LWMA calculated on the higher timeframe", "Indicators");
 
 _fastCurrentLength = Param(nameof(FastCurrentLength), 9)
@@ -580,9 +580,9 @@ _initialEquity = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _tickSize = Security?.PriceStep ?? 0.0001m;
 
@@ -596,9 +596,7 @@ _higherSlow = new WeightedMovingAverage { Length = SlowHigherLength };
 
 _momentum = new Momentum { Length = MomentumPeriod };
 
-_macd = new MovingAverageConvergenceDivergenceSignal
-{
-Fast = { Length = MacdFastLength },
+_macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = { Length = MacdFastLength } } },
 Slow = { Length = MacdSlowLength },
 Signal = { Length = MacdSignalLength }
 };
@@ -615,7 +613,7 @@ macdSubscription.BindEx(_macd, ProcessMacdCandle).Start();
 _initialEquity = GetPortfolioValue();
 _equityPeak = _initialEquity;
 
-StartProtection();
+StartProtection(null, null);
 }
 
 private void ProcessCurrentCandle(

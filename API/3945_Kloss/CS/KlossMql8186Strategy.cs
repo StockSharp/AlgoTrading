@@ -48,43 +48,43 @@ public class KlossMql8186Strategy : Strategy
                 _cciPeriod = Param(nameof(CciPeriod), 10)
                         .SetGreaterThanZero()
                         .SetDisplay("CCI Period", "Number of candles for the CCI calculation", "Indicators")
-                        .SetCanOptimize(true)
+                        
                         .SetOptimize(5, 40, 5);
 
                 _cciThreshold = Param(nameof(CciThreshold), 120m)
                         .SetGreaterThanZero()
                         .SetDisplay("CCI Threshold", "Absolute CCI level that triggers entries", "Indicators")
-                        .SetCanOptimize(true)
+                        
                         .SetOptimize(80m, 200m, 10m);
 
                 _stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
                         .SetGreaterThanZero()
                         .SetDisplay("Stochastic %K", "Period of the %K line", "Indicators")
-                        .SetCanOptimize(true)
+                        
                         .SetOptimize(3, 15, 1);
 
-                _stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+                _stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
                         .SetGreaterThanZero()
                         .SetDisplay("Stochastic %D", "SMA length of the %D line", "Indicators")
-                        .SetCanOptimize(true)
+                        
                         .SetOptimize(1, 10, 1);
 
                 _stochasticSmooth = Param(nameof(StochasticSmooth), 3)
                         .SetGreaterThanZero()
                         .SetDisplay("Stochastic Smoothing", "Smoothing applied to the %K calculation", "Indicators")
-                        .SetCanOptimize(true)
+                        
                         .SetOptimize(1, 10, 1);
 
                 _stochasticOversold = Param(nameof(StochasticOversold), 30m)
                         .SetNotNegative()
                         .SetDisplay("Stochastic Oversold", "Threshold under which %K confirms a long signal", "Signals")
-                        .SetCanOptimize(true)
+                        
                         .SetOptimize(10m, 40m, 5m);
 
                 _stochasticOverbought = Param(nameof(StochasticOverbought), 70m)
                         .SetNotNegative()
                         .SetDisplay("Stochastic Overbought", "Threshold above which %K confirms a short signal", "Signals")
-                        .SetCanOptimize(true)
+                        
                         .SetOptimize(60m, 90m, 5m);
 
                 _stopLossPoints = Param(nameof(StopLossPoints), 48m)
@@ -193,15 +193,14 @@ public class KlossMql8186Strategy : Strategy
         }
 
         /// <inheritdoc />
-        protected override void OnStarted(DateTimeOffset time)
+        protected override void OnStarted2(DateTime time)
         {
-                base.OnStarted(time);
+                base.OnStarted2(time);
 
                 // Instantiate indicators that mirror the MQL implementation.
                 _cci = new CommodityChannelIndex { Length = CciPeriod };
                 _stochastic = new StochasticOscillator
-                {
-                        Length = StochasticKPeriod,
+                { K = { Length = StochasticKPeriod },
                         K = { Length = StochasticKPeriod },
                         D = { Length = StochasticDPeriod },
                         Smooth = StochasticSmooth,

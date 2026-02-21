@@ -198,11 +198,11 @@ public class GrailExpertMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = MaPeriod };
+		_ema = new EMA { Length = MaPeriod };
 
 		_recentHighs.Clear();
 		_recentLows.Clear();
@@ -389,7 +389,7 @@ public class GrailExpertMaStrategy : Strategy
 	private void CompleteCandle(ICandleMessage candle)
 	{
 		var typicalPrice = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
-		var emaValue = _ema.Process(typicalPrice, candle.OpenTime, true);
+		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, typicalPrice, candle.OpenTime));
 
 		if (emaValue.IsFinal)
 		{

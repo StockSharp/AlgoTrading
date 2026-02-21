@@ -48,7 +48,7 @@ public class TpsShortLarryConnersStrategy : Strategy
 		_rsiLen = Param(nameof(RsiLength), 2);
 		_sma10Len = Param(nameof(Sma10Length), 10);
 		_sma30Len = Param(nameof(Sma30Length), 30);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
@@ -66,9 +66,9 @@ public class TpsShortLarryConnersStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_sma200 = new SMA { Length = Sma200Length };
 		_rsi = new RSI { Length = RsiLength };

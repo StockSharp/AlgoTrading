@@ -124,28 +124,28 @@ public class FractalZigZagStrategy : Strategy
 		_level = Param(nameof(Level), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Fractal Depth", "Number of candles around the extremum", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 6, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 25m)
 		.SetDisplay("Take Profit (points)", "Distance to the profit target", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 60m, 10m);
 
 		_initialStopPoints = Param(nameof(InitialStopPoints), 20m)
 		.SetDisplay("Initial Stop (points)", "Initial protective stop distance", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 50m, 10m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 10m)
 		.SetDisplay("Trailing Stop (points)", "Trailing stop offset", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 30m, 5m);
 
 		_lots = Param(nameof(Lots), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Lot Size", "Volume of each market order", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 2m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -176,11 +176,11 @@ public class FractalZigZagStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

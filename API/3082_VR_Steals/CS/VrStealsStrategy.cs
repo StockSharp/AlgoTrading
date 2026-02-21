@@ -73,19 +73,19 @@ public class VrStealsStrategy : Strategy
 	{
 		_stopLossDistance = Param(nameof(StopLossDistance), 0m)
 			.SetDisplay("Stop Loss Distance", "Loss distance in price units", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitDistance = Param(nameof(TakeProfitDistance), 0m)
 			.SetDisplay("Take Profit Distance", "Profit distance in price units", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopDistance = Param(nameof(TrailingStopDistance), 0m)
 			.SetDisplay("Trailing Stop Distance", "Base distance maintained from price", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepDistance = Param(nameof(TrailingStepDistance), 0m)
 			.SetDisplay("Trailing Step Distance", "Minimal advance required to move the trail", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -100,9 +100,9 @@ public class VrStealsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopDistance > 0m && TrailingStepDistance <= 0m)
 			throw new InvalidOperationException("Trailing step must be positive when the trailing stop is enabled.");

@@ -90,7 +90,7 @@ public class TwoDirectionMartinStylizedStrategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.35m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit as percent of price", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.05m);
 
 		_volumeToOrder = Param(nameof(VolumeToOrder), 0.10m)
@@ -133,9 +133,9 @@ public class TwoDirectionMartinStylizedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeLevel1()
 			.Bind(ProcessLevel1)
@@ -144,7 +144,7 @@ public class TwoDirectionMartinStylizedStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

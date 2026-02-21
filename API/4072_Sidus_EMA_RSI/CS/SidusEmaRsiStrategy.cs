@@ -120,13 +120,13 @@ public class SidusEmaRsiStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 80m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Take-profit distance expressed in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 160m, 20m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Stop-loss distance expressed in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 60m, 10m);
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
@@ -136,19 +136,19 @@ public class SidusEmaRsiStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA calculation period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA calculation period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(14, 28, 2);
 
 		_signalShift = Param(nameof(SignalShift), 1)
@@ -179,15 +179,15 @@ public class SidusEmaRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = ResolvePointValue();
 		Volume = TradeVolume;
 
-		_fastEma = new ExponentialMovingAverage { Length = FastPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
+		_fastEma = new EMA { Length = FastPeriod };
+		_slowEma = new EMA { Length = SlowPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

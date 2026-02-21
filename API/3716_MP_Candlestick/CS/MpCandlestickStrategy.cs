@@ -95,13 +95,13 @@ public class MpCandlestickStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 1m)
 		.SetNotNegative()
 		.SetDisplay("Risk Percent", "Percentage of portfolio equity risked per trade", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 10m, 0.5m);
 
 		_riskRewardRatio = Param(nameof(RiskRewardRatio), 1.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk/Reward Ratio", "Target reward multiple relative to the initial risk", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 4m, 0.25m);
 
 		_maxMarginUsage = Param(nameof(MaxMarginUsage), 30m)
@@ -111,7 +111,7 @@ public class MpCandlestickStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop-Loss Pips", "Fixed stop-loss size in MetaTrader pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 5);
 
 		_useAutoSl = Param(nameof(UseAutoSl), true)
@@ -140,11 +140,11 @@ public class MpCandlestickStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_atr = new AverageTrueRange { Length = 14 };
 

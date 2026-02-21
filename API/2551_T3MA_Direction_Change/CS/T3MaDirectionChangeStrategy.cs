@@ -104,7 +104,7 @@ public class T3MaDirectionChangeStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Length of the EMA used for the double smoothing", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 2);
 
 		_maShift = Param(nameof(MaShift), 0)
@@ -118,13 +118,13 @@ public class T3MaDirectionChangeStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (steps)", "Stop loss distance expressed in price steps", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 60m, 10m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 125m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (steps)", "Take profit distance expressed in price steps", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 25m);
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
@@ -156,15 +156,15 @@ public class T3MaDirectionChangeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
 		// Create EMA instances used for the double smoothing chain.
-		_emaPrice = new ExponentialMovingAverage { Length = MaLength };
-		_emaSmooth = new ExponentialMovingAverage { Length = MaLength };
+		_emaPrice = new EMA { Length = MaLength };
+		_emaSmooth = new EMA { Length = MaLength };
 
 		// Subscribe to candle updates and process them sequentially.
 		var subscription = SubscribeCandles(CandleType);

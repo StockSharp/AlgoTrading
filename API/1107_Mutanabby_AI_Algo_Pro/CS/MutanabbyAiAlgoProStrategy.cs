@@ -153,18 +153,18 @@ public MutanabbyAiAlgoProStrategy()
 _candleStabilityIndex = Param(nameof(CandleStabilityIndex), 0.5m)
 .SetDisplay("Candle Stability Index", "Minimum body/true range ratio", "Technical")
 .SetRange(0m, 1m)
-.SetCanOptimize(true)
+
 .SetOptimize(0.1m, 1m, 0.1m);
 
 _rsiIndex = Param(nameof(RsiIndex), 50)
 .SetDisplay("RSI Index", "RSI threshold for entries", "Technical")
 .SetRange(0, 100)
-.SetCanOptimize(true);
+;
 
 _candleDeltaLength = Param(nameof(CandleDeltaLength), 5)
 .SetDisplay("Candle Delta Length", "Bars for price comparison", "Technical")
 .SetRange(3, 50)
-.SetCanOptimize(true);
+;
 
 _disableRepeatingSignals = Param(nameof(DisableRepeatingSignals), false)
 .SetDisplay("Disable Repeating Signals", "Avoid consecutive identical signals", "Technical");
@@ -211,9 +211,9 @@ _entryPrice = 0;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var rsi = new RSI { Length = 14 };
 

@@ -56,19 +56,19 @@ public class RsiMaOnRsiDualStrategy : Strategy
 		_fastRsiPeriod = Param(nameof(FastRsiPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast RSI period", "Length of the fast RSI smoothing window.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 30, 1);
 
 		_slowRsiPeriod = Param(nameof(SlowRsiPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow RSI period", "Length of the slow RSI smoothing window.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 1);
 
 		_maPeriod = Param(nameof(MaPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("MA period", "Number of RSI values averaged by the smoothing moving average.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 30, 1);
 
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
@@ -76,7 +76,7 @@ public class RsiMaOnRsiDualStrategy : Strategy
 
 		_neutralLevel = Param(nameof(NeutralLevel), 50m)
 			.SetDisplay("Neutral level", "Neutral RSI level used to filter entries.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40m, 60m, 1m);
 
 		_allowLong = Param(nameof(AllowLong), true)
@@ -211,19 +211,19 @@ public class RsiMaOnRsiDualStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastRsi = new RelativeStrengthIndex { Length = FastRsiPeriod };
 		_slowRsi = new RelativeStrengthIndex { Length = SlowRsiPeriod };
-		_fastMa = new SimpleMovingAverage { Length = MaPeriod };
-		_slowMa = new SimpleMovingAverage { Length = MaPeriod };
+		_fastMa = new SMA { Length = MaPeriod };
+		_slowMa = new SMA { Length = MaPeriod };
 
 		_previousFastMa = null;
 		_previousSlowMa = null;
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -285,14 +285,14 @@ public class RsiMaOnRsiDualStrategy : Strategy
 		var price = GetAppliedPrice(candle, AppliedPrice);
 		var time = candle.OpenTime;
 
-		var fastRsiValue = _fastRsi.Process(price, time, true).ToDecimal();
-		var slowRsiValue = _slowRsi.Process(price, time, true).ToDecimal();
+		var fastRsiValue = _fastRsi.Process(new DecimalIndicatorValue(_fastRsi, price, time.UtcDateTime)).ToDecimal();
+		var slowRsiValue = _slowRsi.Process(new DecimalIndicatorValue(_slowRsi, price, time.UtcDateTime)).ToDecimal();
 
 		if (!_fastRsi.IsFormed || !_slowRsi.IsFormed)
 			return;
 
-		var fastMaValue = _fastMa.Process(fastRsiValue, time, true).ToDecimal();
-		var slowMaValue = _slowMa.Process(slowRsiValue, time, true).ToDecimal();
+		var fastMaValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, fastRsiValue, time.UtcDateTime)).ToDecimal();
+		var slowMaValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, slowRsiValue, time.UtcDateTime)).ToDecimal();
 
 		if (!_fastMa.IsFormed || !_slowMa.IsFormed)
 			return;

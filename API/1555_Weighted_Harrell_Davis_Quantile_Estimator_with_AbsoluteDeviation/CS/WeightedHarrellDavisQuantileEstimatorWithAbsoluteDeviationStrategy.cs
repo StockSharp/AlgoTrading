@@ -64,11 +64,11 @@ public WeightedHarrellDavisQuantileEstimatorWithAbsoluteDeviationStrategy()
 _length = Param(nameof(Length), 39)
 .SetGreaterThanZero()
 .SetDisplay("Length", "Lookback period", "General")
-.SetCanOptimize(true);
+;
 
 _deviationMultiplier = Param(nameof(DeviationMultiplier), 1.213m)
 .SetDisplay("Deviation Multiplier", "Band multiplier", "General")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
@@ -91,9 +91,9 @@ _lowerBand = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _median = new Median { Length = Length };
 _mad = new Median { Length = Length };
@@ -110,7 +110,7 @@ DrawIndicator(area, _mad);
 DrawOwnTrades(area);
 }
 
-StartProtection();
+StartProtection(null, null);
 }
 
 private void ProcessCandle(ICandleMessage candle)

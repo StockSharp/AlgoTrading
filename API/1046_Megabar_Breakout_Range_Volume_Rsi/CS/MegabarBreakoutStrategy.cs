@@ -153,14 +153,14 @@ public class MegabarBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiSma = new SimpleMovingAverage { Length = RsiMaPeriod };
-		_volumeSma = new SimpleMovingAverage { Length = VolumeAveragePeriod };
-		_rangeSma = new SimpleMovingAverage { Length = RangeAveragePeriod };
+		_rsiSma = new SMA { Length = RsiMaPeriod };
+		_volumeSma = new SMA { Length = VolumeAveragePeriod };
+		_rangeSma = new SMA { Length = RangeAveragePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

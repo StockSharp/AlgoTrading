@@ -41,12 +41,12 @@ public class HeikenAshiSimplifiedEaStrategy : Strategy
 	{
 		_maxPositions = Param(nameof(MaxPositions), 3)
 			.SetDisplay("Max Positions", "Maximum number of positions in direction", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_distancePoints = Param(nameof(DistancePoints), 300)
 			.SetDisplay("Distance Points", "Minimum distance in price steps from last HA open", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 500, 50);
 
 
@@ -105,9 +105,9 @@ public class HeikenAshiSimplifiedEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceDistance = DistancePoints * (Security?.MinPriceStep ?? 1m);
 

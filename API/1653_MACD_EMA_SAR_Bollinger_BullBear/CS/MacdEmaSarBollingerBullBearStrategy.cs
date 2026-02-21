@@ -193,8 +193,8 @@ public class MacdEmaSarBollingerBullBearStrategy : Strategy
 			SignalMa = { Length = MacdSignal }
 		};
 
-		var fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
-		var slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
+		var fastMa = new EMA { Length = FastMaPeriod };
+		var slowMa = new EMA { Length = SlowMaPeriod };
 		var sar = new ParabolicSar { AccelerationStep = SarStep, AccelerationMax = SarMax };
 		var bears = new BearPower { Length = PowerPeriod };
 		var bulls = new BullPower { Length = PowerPeriod };
@@ -221,7 +221,7 @@ public class MacdEmaSarBollingerBullBearStrategy : Strategy
 	if (candle.State != CandleStates.Finished)
 	return;
 
-	var time = candle.OpenTime.LocalDateTime.TimeOfDay;
+	var time = candle.OpenTime.TimeOfDay;
 	var boll = (BollingerBandsValue)bollingerValue;
 	var upperBand = boll.UpBand;
 	var bears = bearsValue.GetValue<decimal>();

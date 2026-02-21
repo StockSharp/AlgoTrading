@@ -20,7 +20,7 @@
   - `VixThreshold` = 44.
   - `HoldPeriods` = 8.
   - `CandleType` = TimeSpan.FromMinutes(1).TimeFrame().
-  - `VixCandleType` = TimeSpan.FromDays(1).TimeFrame().
+  - `VixCandleType` = TimeSpan.FromMinutes(5).TimeFrame().
 - **Фильтры**:
   - Категория: Пробой
   - Направление: Только лонг

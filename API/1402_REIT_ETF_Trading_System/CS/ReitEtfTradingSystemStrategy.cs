@@ -242,7 +242,7 @@ public class ReitEtfTradingSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_tnxLowest = new Lowest { Length = TnxLookbackPeriod };
 		_tnxHighest = new Highest { Length = TnxLookbackPeriod };
@@ -253,8 +253,8 @@ public class ReitEtfTradingSystemStrategy : Strategy
 
 		var bb = new BollingerBands { Length = BollingerLength, Width = BollingerMultiplier };
 		var atr = new AverageTrueRange { Length = 15 };
-		var stoch = new StochasticOscillator { Length = 10, KPeriod = 3, DPeriod = 1 };
-		var sma30 = new SimpleMovingAverage { Length = 30 };
+		var stoch = new StochasticOscillator { K = { Length = 10 }, D = { Length = 1 } };
+		var sma30 = new SMA { Length = 30 };
 		_highestClose2 = new Highest { Length = 2 };
 		_highestClose5 = new Highest { Length = 5 };
 
@@ -263,7 +263,7 @@ public class ReitEtfTradingSystemStrategy : Strategy
 			.BindEx(bb, stoch, atr, sma30, _highestClose2, _highestClose5, ProcessMainCandle)
 			.Start();
 
-		_spySma20 = new SimpleMovingAverage { Length = 20 };
+		_spySma20 = new SMA { Length = 20 };
 		var spySub = SubscribeCandles(CandleType, security: SpySecurity);
 		spySub
 			.Bind(_spySma20, ProcessSpyCandle)
@@ -283,7 +283,7 @@ public class ReitEtfTradingSystemStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessSpyCandle(ICandleMessage candle, decimal sma)
@@ -303,8 +303,8 @@ public class ReitEtfTradingSystemStrategy : Strategy
 
 		_tnxClose = candle.ClosePrice;
 
-		_tnxLl = _tnxLowest.Process(_tnxClose, candle.OpenTime, true).ToDecimal();
-		_tnxHh = _tnxHighest.Process(_tnxClose, candle.OpenTime, true).ToDecimal();
+		_tnxLl = _tnxLowest.Process(new DecimalIndicatorValue(_tnxLowest, _tnxClose, candle.OpenTime)).ToDecimal();
+		_tnxHh = _tnxHighest.Process(new DecimalIndicatorValue(_tnxHighest, _tnxClose, candle.OpenTime)).ToDecimal();
 
 		_tnxHighWindow[_tnxHighIndex] = _tnxClose;
 		_tnxHighIndex = (_tnxHighIndex + 1) % DonchianChannelLength;
@@ -342,17 +342,17 @@ public class ReitEtfTradingSystemStrategy : Strategy
 		if (stochVal is not StochasticOscillatorValue stochValue || stochValue.K is not decimal stochK)
 			return;
 
-		var stochHigh3 = _highestStoch3.Process(stochK, candle.OpenTime, true).ToDecimal();
+		var stochHigh3 = _highestStoch3.Process(new DecimalIndicatorValue(_highestStoch3, stochK, candle.OpenTime)).ToDecimal();
 		var atr = atrVal.ToDecimal();
 		var sma30 = sma30Val.ToDecimal();
 		var highestClose2 = high2Val.ToDecimal();
 		var highestClose5 = high5Val.ToDecimal();
 
-		var ll = _lowestLow.Process(candle.LowPrice, candle.OpenTime, true).ToDecimal();
-		var high3 = _highestHigh3.Process(candle.HighPrice, candle.OpenTime, true).ToDecimal();
+		var ll = _lowestLow.Process(new DecimalIndicatorValue(_lowestLow, candle.LowPrice, candle.OpenTime)).ToDecimal();
+		var high3 = _highestHigh3.Process(new DecimalIndicatorValue(_highestHigh3, candle.HighPrice, candle.OpenTime)).ToDecimal();
 
 		var dcUpper = _dcUpperPrev;
-		_dcUpperPrev = _highestDc.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
+		_dcUpperPrev = _highestDc.Process(new DecimalIndicatorValue(_highestDc, candle.ClosePrice, candle.OpenTime)).ToDecimal();
 
 		Shift(_corrMain, candle.ClosePrice);
 		Shift(_corrTnx, _tnxClose);

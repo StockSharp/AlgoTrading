@@ -163,12 +163,12 @@ public class ForexFrausSloggerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
-		_sma = new SimpleMovingAverage { Length = 1 };
+		_sma = new SMA { Length = 1 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

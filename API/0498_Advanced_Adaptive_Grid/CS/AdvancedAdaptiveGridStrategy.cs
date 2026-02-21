@@ -46,7 +46,7 @@ public class AdvancedAdaptiveGridStrategy : Strategy
 	private SimpleMovingAverage _shortMa;
 	private SimpleMovingAverage _longMa;
 	private SimpleMovingAverage _superLongMa;
-	private MovingAverageConvergenceDivergence _macd;
+	private MovingAverageConvergenceDivergenceSignal _macd;
 	private Momentum _momentum;
 
 	private readonly List<decimal> _gridLevels = new();
@@ -267,7 +267,7 @@ public class AdvancedAdaptiveGridStrategy : Strategy
 		_baseGridSize = Param(nameof(BaseGridSize), 1m)
 							.SetGreaterThanZero()
 							.SetDisplay("Base Grid Size %", "Base grid step as percentage", "Grid")
-							.SetCanOptimize(true)
+							
 							.SetOptimize(0.5m, 5m, 0.5m);
 
 		_maxPositions = Param(nameof(MaxPositions), 5)
@@ -353,17 +353,16 @@ public class AdvancedAdaptiveGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
-		_shortMa = new SimpleMovingAverage { Length = ShortMaLength };
-		_longMa = new SimpleMovingAverage { Length = LongMaLength };
-		_superLongMa = new SimpleMovingAverage { Length = SuperLongMaLength };
-		_macd = new MovingAverageConvergenceDivergence { Fast = MacdFastLength, Slow = MacdSlowLength,
-														 Signal = MacdSignalLength };
+		_shortMa = new SMA { Length = ShortMaLength };
+		_longMa = new SMA { Length = LongMaLength };
+		_superLongMa = new SMA { Length = SuperLongMaLength };
+		_macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = MacdFastLength }, LongMa = { Length = MacdSlowLength } }, SignalMa = { Length = MacdSignalLength } };
 		_momentum = new Momentum { Length = 10 };
 
 		var subscription = SubscribeCandles(CandleType);

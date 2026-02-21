@@ -81,17 +81,17 @@ public class RsiSlowdownStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 14, 1);
 
 		_levelMax = Param(nameof(LevelMax), 90m)
 			.SetDisplay("Upper Level", "Overbought RSI level", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 100m, 5m);
 
 		_levelMin = Param(nameof(LevelMin), 10m)
 			.SetDisplay("Lower Level", "Oversold RSI level", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 50m, 5m);
 
 		_seekSlowdown = Param(nameof(SeekSlowdown), true)
@@ -110,9 +110,9 @@ public class RsiSlowdownStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex
 		{

@@ -272,78 +272,78 @@ public FlatChannelBreakoutStrategy()
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume", "Order volume per pending entry", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 2m, 0.1m);
 
 		_pipSizeParam = Param(nameof(PipSize), 0.0001m)
 		.SetDisplay("Pip Size", "Custom pip size override", "Market")
-		.SetCanOptimize(false);
+		;
 
 		_stdDevPeriod = Param(nameof(StdDevPeriod), 46)
 		.SetGreaterThanZero()
 		.SetDisplay("StdDev Period", "Base standard deviation length", "Volatility")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 80, 5);
 
 		_smoothingLength = Param(nameof(SmoothingLength), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Smoothing Length", "Moving average applied to the volatility", "Volatility")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 5, 1);
 
 		_flatBars = Param(nameof(FlatBars), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Flat Bars", "Consecutive bars with shrinking volatility", "Channel")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 6, 1);
 
 		_channelLookback = Param(nameof(ChannelLookback), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Channel Lookback", "Candles used to compute channel extremes", "Channel")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 12, 1);
 
 		_channelMinPips = Param(nameof(ChannelMinPips), 15m)
 		.SetDisplay("Min Channel", "Minimum channel height in pips", "Channel")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 5m);
 
 		_channelMaxPips = Param(nameof(ChannelMaxPips), 105m)
 		.SetDisplay("Max Channel", "Maximum channel height in pips", "Channel")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60m, 200m, 10m);
 
 		_dynamicStopMultiplier = Param(nameof(DynamicStopMultiplier), 1m)
 		.SetDisplay("Stop Mult", "Channel height multiplier for dynamic stops", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2m, 0.25m);
 
 		_dynamicTakeMultiplier = Param(nameof(DynamicTakeMultiplier), 1m)
 		.SetDisplay("Take Mult", "Channel height multiplier for dynamic targets", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3m, 0.25m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
 		.SetDisplay("Stop Loss", "Fixed stop-loss distance in pips", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
 		.SetDisplay("Take Profit", "Fixed take-profit distance in pips", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_indentPips = Param(nameof(IndentPips), 0m)
 		.SetDisplay("Indent", "Additional offset in pips when placing stops", "Channel")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 20m, 2m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 		.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 30m, 5m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 		.SetDisplay("Trailing Step", "Minimal trailing step in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 20m, 2m);
 
 		_useBuy = Param(nameof(UseBuy), true)
@@ -355,18 +355,18 @@ public FlatChannelBreakoutStrategy()
 		_maxPositions = Param(nameof(MaxPositions), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Positions", "Maximum aggregated lots (TradeVolume multiplier)", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_useTradingHours = Param(nameof(UseTradingHours), true)
 		.SetDisplay("Use Trading Hours", "Enable intraday time filter", "Session");
 
 		_startHour = Param(nameof(StartHour), 0)
 		.SetDisplay("Start Hour", "Session start hour", "Session")
-		.SetCanOptimize(false);
+		;
 
 		_endHour = Param(nameof(EndHour), 23)
 		.SetDisplay("End Hour", "Session end hour", "Session")
-		.SetCanOptimize(false);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
@@ -408,9 +408,9 @@ public FlatChannelBreakoutStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (ChannelMinPips > 0m && ChannelMaxPips > 0m && ChannelMinPips >= ChannelMaxPips)
 			throw new InvalidOperationException("ChannelMinPips must be less than ChannelMaxPips when both are positive.");
@@ -424,7 +424,7 @@ public FlatChannelBreakoutStrategy()
 		_pipSize = ResolvePipSize();
 
 		_stdDev = new StandardDeviation { Length = StdDevPeriod };
-		_stdDevSma = SmoothingLength > 1 ? new SimpleMovingAverage { Length = SmoothingLength } : null;
+		_stdDevSma = SmoothingLength > 1 ? new SMA { Length = SmoothingLength } : null;
 
 		var lookback = Math.Max(ChannelLookback, FlatBars + 1);
 		_highest = new Highest { Length = lookback };
@@ -435,7 +435,7 @@ public FlatChannelBreakoutStrategy()
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -451,14 +451,14 @@ public FlatChannelBreakoutStrategy()
 		if (_stdDev is null || _highest is null || _lowest is null)
 			return;
 
-		var stdValue = _stdDev.Process(candle.ClosePrice, candle.OpenTime, true);
+		var stdValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, candle.ClosePrice, candle.OpenTime));
 		if (!stdValue.IsFormed)
 			return;
 
 		var currentStd = stdValue.ToDecimal();
 		if (_stdDevSma != null)
 		{
-			var smoothValue = _stdDevSma.Process(currentStd, candle.OpenTime, true);
+			var smoothValue = _stdDevSma.Process(new DecimalIndicatorValue(_stdDevSma, currentStd, candle.OpenTime));
 			if (!smoothValue.IsFormed)
 				return;
 
@@ -473,8 +473,8 @@ public FlatChannelBreakoutStrategy()
 			return;
 		}
 
-		var highestValue = _highest.Process(candle.HighPrice, candle.OpenTime, true);
-		var lowestValue = _lowest.Process(candle.LowPrice, candle.OpenTime, true);
+		var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime));
+		var lowestValue = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime));
 
 		if (!highestValue.IsFormed || !lowestValue.IsFormed)
 			return;

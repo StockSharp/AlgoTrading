@@ -276,17 +276,17 @@ public class ParallaxSellStrategy : Strategy
 		_entryWilliamsLength = Param(nameof(EntryWilliamsLength), 350)
 		.SetGreaterThanZero()
 		.SetDisplay("Entry Williams %R", "Lookback for entry Williams %R", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_exitWilliamsLength = Param(nameof(ExitWilliamsLength), 350)
 		.SetGreaterThanZero()
 		.SetDisplay("Exit Williams %R", "Lookback for exit Williams %R", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_entryStochasticLength = Param(nameof(EntryStochasticLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Entry Stochastic %K", "Lookback for entry stochastic", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_entryStochasticSignal = Param(nameof(EntryStochasticSignal), 1)
 		.SetGreaterThanZero()
@@ -299,7 +299,7 @@ public class ParallaxSellStrategy : Strategy
 		_exitStochasticLength = Param(nameof(ExitStochasticLength), 90)
 		.SetGreaterThanZero()
 		.SetDisplay("Exit Stochastic %K", "Lookback for exit stochastic", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_exitStochasticSignal = Param(nameof(ExitStochasticSignal), 7)
 		.SetGreaterThanZero()
@@ -312,17 +312,17 @@ public class ParallaxSellStrategy : Strategy
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Fast", "Fast EMA length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 120)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Slow", "Slow EMA length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal", "Signal EMA length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_entryWilliamsThreshold = Param(nameof(EntryWilliamsThreshold), -10m)
 		.SetDisplay("Entry WPR Threshold", "Minimum Williams %R value before shorting", "Signals");
@@ -392,15 +392,13 @@ public class ParallaxSellStrategy : Strategy
 	_entryWilliams = new WilliamsR { Length = EntryWilliamsLength };
 	_exitWilliams = new WilliamsR { Length = ExitWilliamsLength };
 	_entryStochastic = new StochasticOscillator
-	{
-	Length = EntryStochasticLength,
+	{ K = { Length = EntryStochasticLength },
 	K = { Length = EntryStochasticLength },
 	D = { Length = EntryStochasticSignal },
 	Slowing = EntryStochasticSlowing
 	};
 	_exitStochastic = new StochasticOscillator
-	{
-	Length = ExitStochasticLength,
+	{ K = { Length = ExitStochasticLength },
 	K = { Length = ExitStochasticLength },
 	D = { Length = ExitStochasticSignal },
 	Slowing = ExitStochasticSlowing

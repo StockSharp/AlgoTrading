@@ -158,12 +158,12 @@ public class BinarioStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 144)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Moving average length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 250, 10);
 
 		_maShift = Param(nameof(MaShift), 0)
 		.SetDisplay("MA Shift", "Horizontal shift in bars", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 5, 1);
 
 		_highMaMethod = Param(nameof(HighMaMethod), "SMA")
@@ -179,23 +179,23 @@ public class BinarioStrategy : Strategy
 		_differencePips = Param(nameof(DifferencePips), 25m)
 		.SetGreaterThanZero()
 		.SetDisplay("Difference (pips)", "Extra distance added to entry", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 50m, 5m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit (pips)", "Distance to take profit", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 100m, 10m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15m)
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 50m, 5m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 		.SetDisplay("Trailing Step (pips)", "Minimum progress before adjusting stop", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 20m, 1m);
 	}
 
@@ -237,9 +237,9 @@ public class BinarioStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highMa = CreateMovingAverage(HighMaMethod, MaPeriod);
 		_lowMa = CreateMovingAverage(LowMaMethod, MaPeriod);
@@ -271,8 +271,8 @@ public class BinarioStrategy : Strategy
 		if (_highMa is null || _lowMa is null)
 			return;
 
-		var highValue = _highMa.Process(candle.HighPrice, candle.ServerTime, true);
-		var lowValue = _lowMa.Process(candle.LowPrice, candle.ServerTime, true);
+		var highValue = _highMa.Process(new DecimalIndicatorValue(_highMa, candle.HighPrice, candle.ServerTime));
+		var lowValue = _lowMa.Process(new DecimalIndicatorValue(_lowMa, candle.LowPrice, candle.ServerTime));
 
 		if (!highValue.IsFinal || !lowValue.IsFinal)
 		{
@@ -582,10 +582,10 @@ public class BinarioStrategy : Strategy
 	{
 		return method.ToUpperInvariant() switch
 		{
-			"EMA" => new ExponentialMovingAverage { Length = length },
+			"EMA" => new EMA { Length = length },
 			"SMMA" or "RMA" => new ModifiedMovingAverage { Length = length },
 			"WMA" or "LWMA" => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 }

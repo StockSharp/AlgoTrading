@@ -111,25 +111,25 @@ public class ExpXPeriodCandleX2Strategy : Strategy
 		_trendPeriod = Param(nameof(TrendPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend Period", "Number of smoothed candles defining delayed open", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_entryPeriod = Param(nameof(EntryPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Period", "Number of smoothed candles defining delayed open", "Entry")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_trendLength = Param(nameof(TrendLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend Length", "Smoothing length for trend candles", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_entryLength = Param(nameof(EntryLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Length", "Smoothing length for entry candles", "Entry")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_trendPhase = Param(nameof(TrendPhase), 100m)
@@ -178,7 +178,7 @@ public class ExpXPeriodCandleX2Strategy : Strategy
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss Ticks", "Distance of the stop loss in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200, 2000, 200);
 
 		_useTakeProfit = Param(nameof(UseTakeProfit), true)
@@ -187,7 +187,7 @@ public class ExpXPeriodCandleX2Strategy : Strategy
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 2000)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit Ticks", "Distance of the take profit in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(400, 4000, 200);
 	}
 
@@ -418,9 +418,9 @@ public class ExpXPeriodCandleX2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_trendOpenMa = CreateMovingAverage(TrendSmoothing, TrendLength, TrendPhase);
 		_trendCloseMa = CreateMovingAverage(TrendSmoothing, TrendLength, TrendPhase);
@@ -453,7 +453,7 @@ public class ExpXPeriodCandleX2Strategy : Strategy
 		if (stopLoss is not null || takeProfit is not null)
 			StartProtection(takeProfit: takeProfit, stopLoss: stopLoss);
 		else
-			StartProtection();
+			StartProtection(null, null);
 	}
 
 	private void ProcessTrendCandle(ICandleMessage candle)
@@ -463,8 +463,8 @@ public class ExpXPeriodCandleX2Strategy : Strategy
 
 		var time = candle.OpenTime;
 
-		var smoothedOpen = _trendOpenMa.Process(candle.OpenPrice, time, true).ToDecimal();
-		var smoothedClose = _trendCloseMa.Process(candle.ClosePrice, time, true).ToDecimal();
+		var smoothedOpen = _trendOpenMa.Process(new DecimalIndicatorValue(_trendOpenMa, candle.OpenPrice, time)).ToDecimal();
+		var smoothedClose = _trendCloseMa.Process(new DecimalIndicatorValue(_trendCloseMa, candle.ClosePrice, time)).ToDecimal();
 
 		UpdateQueue(_trendOpenQueue, smoothedOpen, TrendPeriodLength);
 
@@ -495,8 +495,8 @@ public class ExpXPeriodCandleX2Strategy : Strategy
 
 		var time = candle.OpenTime;
 
-		var smoothedOpen = _entryOpenMa.Process(candle.OpenPrice, time, true).ToDecimal();
-		var smoothedClose = _entryCloseMa.Process(candle.ClosePrice, time, true).ToDecimal();
+		var smoothedOpen = _entryOpenMa.Process(new DecimalIndicatorValue(_entryOpenMa, candle.OpenPrice, time)).ToDecimal();
+		var smoothedClose = _entryCloseMa.Process(new DecimalIndicatorValue(_entryCloseMa, candle.ClosePrice, time)).ToDecimal();
 
 		UpdateQueue(_entryOpenQueue, smoothedOpen, EntryPeriodLength);
 
@@ -589,8 +589,8 @@ public class ExpXPeriodCandleX2Strategy : Strategy
 
 		IIndicator indicator = method switch
 		{
-			XPeriodCandleSmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
-			XPeriodCandleSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			XPeriodCandleSmoothingMethods.Simple => new SMA { Length = length },
+			XPeriodCandleSmoothingMethods.Exponential => new EMA { Length = length },
 			XPeriodCandleSmoothingMethods.Smoothed => new SMMA { Length = length },
 			XPeriodCandleSmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
 			XPeriodCandleSmoothingMethods.Hull => new HullMovingAverage { Length = length },

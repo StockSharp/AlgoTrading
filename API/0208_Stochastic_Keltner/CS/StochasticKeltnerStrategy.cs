@@ -107,37 +107,37 @@ public class StochasticKeltnerStrategy : Strategy
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetRange(5, 30)
 			.SetDisplay("Stoch Period", "Period for Stochastic Oscillator", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_stochK = Param(nameof(StochK), 3)
 			.SetRange(1, 10)
 			.SetDisplay("Stoch %K", "Stochastic %K smoothing period", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_stochD = Param(nameof(StochD), 3)
 			.SetRange(1, 10)
 			.SetDisplay("Stoch %D", "Stochastic %D smoothing period", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetRange(10, 50)
 			.SetDisplay("EMA Period", "EMA period for Keltner Channel", "Keltner")
-			.SetCanOptimize(true);
+			;
 
 		_keltnerMultiplier = Param(nameof(KeltnerMultiplier), 2m)
 			.SetRange(1m, 4m)
 			.SetDisplay("K Multiplier", "Multiplier for Keltner Channel", "Keltner")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetRange(7, 28)
 			.SetDisplay("ATR Period", "ATR period for Keltner Channel and stop-loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetRange(1m, 4m)
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -156,9 +156,9 @@ public class StochasticKeltnerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnStarted2(DateTime time)
 		{
-				base.OnStarted(time);
+				base.OnStarted2(time);
 
 		// Initialize indicators
 		var stochastic = new StochasticOscillator

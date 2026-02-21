@@ -80,7 +80,7 @@ public class MultiRegressionStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 90)
 			.SetDisplay("Length", "Number of bars for regression and risk calculations", "Regression")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 200, 10);
 
 		_riskMeasure = Param(nameof(RiskMeasure), RiskMeasureOptions.Atr)
@@ -88,7 +88,7 @@ public class MultiRegressionStrategy : Strategy
 
 		_riskMultiplier = Param(nameof(RiskMultiplier), 1m)
 			.SetDisplay("Risk Multiplier", "Multiplier for selected risk measure", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
@@ -104,9 +104,9 @@ public class MultiRegressionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_regression = new LinearRegression { Length = Length };
 		_atr = new AverageTrueRange { Length = Length };

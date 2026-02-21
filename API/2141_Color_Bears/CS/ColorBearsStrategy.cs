@@ -64,13 +64,13 @@ public class ColorBearsStrategy : Strategy
 		_ma1Period = Param(nameof(Ma1Period), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1", "First MA length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_ma2Period = Param(nameof(Ma2Period), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("MA2", "Second MA length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(12).TimeFrame())
@@ -84,12 +84,12 @@ public class ColorBearsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ma1 = new ExponentialMovingAverage { Length = Ma1Period };
-		_ma2 = new ExponentialMovingAverage { Length = Ma2Period };
+		_ma1 = new EMA { Length = Ma1Period };
+		_ma2 = new EMA { Length = Ma2Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

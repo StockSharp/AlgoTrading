@@ -154,19 +154,19 @@ public class AdxMaStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("SMMA Period", "Length of the smoothed moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Length of the ADX indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 1);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 16m)
 			.SetNotNegative()
 			.SetDisplay("ADX Threshold", "Minimum ADX required to trade", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 2m);
 
 		_takeProfitBuyPips = Param(nameof(TakeProfitBuyPips), 1300m)
@@ -196,7 +196,7 @@ public class AdxMaStrategy : Strategy
 		_volume = Param(nameof(VolumePerTrade), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 1m, 0.05m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -231,20 +231,18 @@ public class AdxMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ma = new SmoothedMovingAverage
 		{
-			Length = MaPeriod,
-			CandlePrice = CandlePrice.Median
+			Length = MaPeriod
 		};
 
 		var adx = new AverageDirectionalIndex
 		{
-			Length = AdxPeriod,
-			CandlePrice = CandlePrice.Median
+			Length = AdxPeriod
 		};
 
 		var subscription = SubscribeCandles(CandleType);

@@ -318,9 +318,9 @@ public class TokyoSessionStrategy : Strategy
 		_lastTimeCloseDate = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_timeFrame = CandleType.Arg switch
 		{

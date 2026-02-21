@@ -145,7 +145,7 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("%K Period", "Number of bars for the Stochastic %K", "Stochastic");
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 4)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("%D Period", "Number of bars for the Stochastic %D", "Stochastic");
 
@@ -223,9 +223,9 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_pipSize = CalculatePipSize();
 
@@ -238,14 +238,14 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 	_stochastic = new StochasticOscillator
 	{
 	KPeriod = _stochasticKPeriod.Value,
-	DPeriod = _stochasticDPeriod.Value,
+	D = {  K = { Length = _stochasticDPeriod } }.Value,
 	Slowing = _stochasticSlowing.Value
 	};
 
 	_awesome = new AwesomeOscillator
 	{
-	ShortPeriod = _aoFastPeriod.Value,
-	LongPeriod = _aoSlowPeriod.Value
+	ShortMa = { Length = _aoFastPeriod }.Value,
+	LongMa = { Length = _aoSlowPeriod }.Value
 	};
 
 	_averageTrueRange = new AverageTrueRange
@@ -273,7 +273,7 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 	DrawIndicator(area, _awesome);
 	}
 
-	StartProtection();
+	StartProtection(null, null);
 	}
 
 	private void ProcessIndicators(

@@ -152,27 +152,27 @@ public class UltimateBalanceStrategy : Strategy
 	{
 		_weightRoc = Param(nameof(WeightRoc), 2m)
 			.SetDisplay("ROC Weight", "Weight of ROC", "Weightings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 5m, 0.5m);
 
 		_weightRsi = Param(nameof(WeightRsi), 0.5m)
 			.SetDisplay("RSI Weight", "Weight of RSI", "Weightings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 5m, 0.5m);
 
 		_weightCci = Param(nameof(WeightCci), 2m)
 			.SetDisplay("CCI Weight", "Weight of CCI", "Weightings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 5m, 0.5m);
 
 		_weightWilliams = Param(nameof(WeightWilliams), 0.5m)
 			.SetDisplay("Williams %R Weight", "Weight of Williams %R", "Weightings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 5m, 0.5m);
 
 		_weightAdx = Param(nameof(WeightAdx), 0.5m)
 			.SetDisplay("ADX Weight", "Weight of ADX", "Weightings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 5m, 0.5m);
 
 		_enableShort = Param(nameof(EnableShort), false)
@@ -180,12 +180,12 @@ public class UltimateBalanceStrategy : Strategy
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 0.75m)
 			.SetDisplay("Overbought Level", "Overbought threshold", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.6m, 0.9m, 0.05m);
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 0.25m)
 			.SetDisplay("Oversold Level", "Oversold threshold", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.4m, 0.05m);
 
 		_maType = Param(nameof(MaType), "SMA")
@@ -194,7 +194,7 @@ public class UltimateBalanceStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Length of MA", "MA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -215,9 +215,9 @@ public class UltimateBalanceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_roc = new RateOfChange { Length = 20 };
 		_rocMax = new Highest { Length = 20 };
@@ -238,7 +238,7 @@ public class UltimateBalanceStrategy : Strategy
 			.Bind(_roc, _rocMax, _rocMin, _rsi, _cci, _cciMax, _cciMin, _williams, _williamsMax, _williamsMin, _adx, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -301,10 +301,10 @@ public class UltimateBalanceStrategy : Strategy
 	{
 		return MaType switch
 		{
-			"EMA" => new ExponentialMovingAverage { Length = MaLength },
+			"EMA" => new EMA { Length = MaLength },
 			"WMA" => new WeightedMovingAverage { Length = MaLength },
 			"DEMA" => new DoubleExponentialMovingAverage { Length = MaLength },
-			_ => new SimpleMovingAverage { Length = MaLength },
+			_ => new SMA { Length = MaLength },
 		};
 	}
 }

@@ -118,35 +118,35 @@ set => _candleType.Value = value;
 public StarterEdgeStrategy()
 {
 _zlemaLength = Param(nameof(ZlemaLength), 34)
-.SetDisplay("ZLEMA Length")
-.SetCanOptimize(true);
+.SetDisplay("ZLEMA Length", "ZLEMA Length", "General")
+;
 
 _shortLength = Param(nameof(ShortLength), 12)
-.SetDisplay("MACD Short Length")
-.SetCanOptimize(true);
+.SetDisplay("MACD Short Length", "MACD Short Length", "General")
+;
 
 _longLength = Param(nameof(LongLength), 26)
-.SetDisplay("MACD Long Length")
-.SetCanOptimize(true);
+.SetDisplay("MACD Long Length", "MACD Long Length", "General")
+;
 
 _signalLength = Param(nameof(SignalLength), 9)
-.SetDisplay("Signal Length")
-.SetCanOptimize(true);
+.SetDisplay("Signal Length", "Signal Length", "General")
+;
 
 _emaLength = Param(nameof(EmaLength), 100)
-.SetDisplay("EMA 100 Length")
-.SetCanOptimize(true);
+.SetDisplay("EMA 100 Length", "EMA 100 Length", "General")
+;
 
 _takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
-.SetDisplay("Take Profit %")
-.SetCanOptimize(true);
+.SetDisplay("Take Profit %", "Take Profit %", "General")
+;
 
 _stopLossPercent = Param(nameof(StopLossPercent), 1m)
-.SetDisplay("Stop Loss %")
-.SetCanOptimize(true);
+.SetDisplay("Stop Loss %", "Stop Loss %", "General")
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-.SetDisplay("Candle Type");
+.SetDisplay("Candle Type", "Candle Type", "General");
 }
 
 /// <inheritdoc />
@@ -156,15 +156,15 @@ return [(Security, CandleType)];
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _zlema = new ZeroLagExponentialMovingAverage { Length = ZlemaLength };
-_fastMa = new ExponentialMovingAverage { Length = ShortLength };
-_slowMa = new ExponentialMovingAverage { Length = LongLength };
-_signalMa = new SimpleMovingAverage { Length = SignalLength };
-_ema = new ExponentialMovingAverage { Length = EmaLength };
+_fastMa = new EMA { Length = ShortLength };
+_slowMa = new EMA { Length = LongLength };
+_signalMa = new SMA { Length = SignalLength };
+_ema = new EMA { Length = EmaLength };
 _rsi = new RelativeStrengthIndex { Length = 14 };
 
 var subscription = SubscribeCandles(CandleType);
@@ -197,10 +197,10 @@ return;
 if (!IsFormedAndOnlineAndAllowTrading())
 return;
 
-var fastValue = _fastMa.Process(zlemaValue, candle.ServerTime, true).ToDecimal();
-var slowValue = _slowMa.Process(zlemaValue, candle.ServerTime, true).ToDecimal();
+var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, zlemaValue, candle.ServerTime)).ToDecimal();
+var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, zlemaValue, candle.ServerTime)).ToDecimal();
 var macdLine = fastValue - slowValue;
-var signalValue = _signalMa.Process(macdLine, candle.ServerTime, true).ToDecimal();
+var signalValue = _signalMa.Process(new DecimalIndicatorValue(_signalMa, macdLine, candle.ServerTime)).ToDecimal();
 var histValue = macdLine - signalValue;
 
 if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_signalMa.IsFormed)

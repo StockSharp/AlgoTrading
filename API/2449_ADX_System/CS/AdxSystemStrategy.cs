@@ -124,9 +124,9 @@ public class AdxSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
@@ -135,7 +135,7 @@ public class AdxSystemStrategy : Strategy
 		.BindEx(_adx, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

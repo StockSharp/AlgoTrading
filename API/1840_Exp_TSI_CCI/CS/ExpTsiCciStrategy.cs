@@ -89,25 +89,25 @@ public class ExpTsiCciStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "CCI calculation period", "CCI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_tsiShortLength = Param(nameof(TsiShortLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("TSI Short Length", "Short smoothing length", "TSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_tsiLongLength = Param(nameof(TsiLongLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("TSI Long Length", "Long smoothing length", "TSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_signalLength = Param(nameof(SignalLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "Signal EMA length", "TSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 	}
 
@@ -126,13 +126,13 @@ public class ExpTsiCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_tsi = new TrueStrengthIndex { ShortLength = TsiShortLength, LongLength = TsiLongLength };
-		_signal = new ExponentialMovingAverage { Length = SignalLength };
+		_signal = new EMA { Length = SignalLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

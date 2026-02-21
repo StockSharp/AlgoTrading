@@ -265,16 +265,16 @@ public class ColorZerolagDeMarkerStrategy : Strategy
 		
 		_stopLossPct = Param(nameof(StopLossPct), 0m)
 		.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-		.SetCanOptimize(true);
+		;
 		_takeProfitPct = Param(nameof(TakeProfitPct), 0m)
 		.SetDisplay("Take Profit %", "Take profit percentage", "Risk")
-		.SetCanOptimize(true);
+		;
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_smoothConst = (Smoothing - 1m) / Smoothing;
 		
@@ -287,7 +287,7 @@ public class ColorZerolagDeMarkerStrategy : Strategy
 		var subscription = SubscribeCandles(new TimeFrameCandleMessage { TimeFrame = CandleTimeframe });
 		subscription.Bind(de1, de2, de3, de4, de5, ProcessCandle).Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2, decimal d3, decimal d4, decimal d5)

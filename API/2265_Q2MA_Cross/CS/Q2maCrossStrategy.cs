@@ -93,17 +93,17 @@ public class Q2maCrossStrategy : Strategy
 		_length = Param(nameof(Length), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Moving average length", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 1000)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in ticks", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 2000)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in ticks", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
 			.SetDisplay("Buy Open", "Allow opening long positions", "Trading");
@@ -144,12 +144,12 @@ public class Q2maCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_closeMa = new SimpleMovingAverage { Length = Length };
-		_openMa = new SimpleMovingAverage { Length = Length };
+		_closeMa = new SMA { Length = Length };
+		_openMa = new SMA { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -163,7 +163,7 @@ public class Q2maCrossStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

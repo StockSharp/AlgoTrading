@@ -79,19 +79,19 @@ public class RefinedMaEngulfingStrategy : Strategy
 		_ma1Length = Param(nameof(Ma1Length), 66)
 						 .SetGreaterThanZero()
 						 .SetDisplay("MA1 Length", "Length of first MA", "Parameters")
-						 .SetCanOptimize(true)
+						 
 						 .SetOptimize(10, 200, 1);
 
 		_ma2Length = Param(nameof(Ma2Length), 85)
 						 .SetGreaterThanZero()
 						 .SetDisplay("MA2 Length", "Length of second MA", "Parameters")
-						 .SetCanOptimize(true)
+						 
 						 .SetOptimize(10, 200, 1);
 
 		_cooldownBars = Param(nameof(CooldownBars), 5)
 							.SetGreaterThanZero()
 							.SetDisplay("Cooldown Bars", "Bars to wait after a trade", "Parameters")
-							.SetCanOptimize(true)
+							
 							.SetOptimize(1, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -99,14 +99,14 @@ public class RefinedMaEngulfingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		var sma1 = new SimpleMovingAverage { Length = Ma1Length };
-		var sma2 = new SimpleMovingAverage { Length = Ma2Length };
+		var sma1 = new SMA { Length = Ma1Length };
+		var sma2 = new SMA { Length = Ma2Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(sma1, sma2, ProcessCandle).Start();

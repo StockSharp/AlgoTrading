@@ -61,42 +61,42 @@ public class IbsRsiCciV4Strategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for calculations", "General")
-		.SetCanOptimize(true);
+		;
 
 		_ibsPeriod = Param(nameof(IbsPeriod), 5)
 		.SetDisplay("IBS Period", "Smoothing period for the internal bar strength component", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_ibsAverageType = Param(nameof(IbsAverageType), MovingAverageKinds.Simple)
 		.SetDisplay("IBS MA Type", "Moving average type applied to the IBS series", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetDisplay("RSI Period", "Lookback period for the RSI filter", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 		.SetDisplay("CCI Period", "Lookback period for the CCI filter", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_rangePeriod = Param(nameof(RangePeriod), 25)
 		.SetDisplay("Range Period", "Window size for highest/lowest range calculation", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_smoothPeriod = Param(nameof(SmoothPeriod), 3)
 		.SetDisplay("Range Smooth", "Smoothing period for the range bands", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_rangeAverageType = Param(nameof(RangeAverageType), MovingAverageKinds.Simple)
 		.SetDisplay("Range MA Type", "Moving average type applied to the range envelopes", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_stepThreshold = Param(nameof(StepThreshold), 50m)
 		.SetDisplay("Step Threshold", "Maximum adjustment applied when the composite signal jumps", "Trading")
-		.SetCanOptimize(true);
+		;
 		_cciWeight = Param(nameof(CciWeight), 1m)
 		.SetDisplay("CCI Weight", "Weight applied to the CCI component within the composite signal", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_ibsWeight = Param(nameof(IbsWeight), 700m)
 		.SetDisplay("IBS Weight", "Weight applied to IBS component", "Trading");
@@ -106,7 +106,7 @@ public class IbsRsiCciV4Strategy : Strategy
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetDisplay("Signal Bar", "Number of closed candles used for confirmation", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_enableLongOpen = Param(nameof(EnableLongOpen), true)
 		.SetDisplay("Enable Long Entries", "Allow opening long positions", "Trading");
@@ -122,7 +122,7 @@ public class IbsRsiCciV4Strategy : Strategy
 
 		_volume = Param(nameof(OrderVolume), 1m)
 		.SetDisplay("Order Volume", "Base volume used for market orders", "Trading")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>
@@ -294,9 +294,9 @@ public class IbsRsiCciV4Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -313,7 +313,7 @@ public class IbsRsiCciV4Strategy : Strategy
 		.Bind(_rsi, _cci, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -451,10 +451,10 @@ public class IbsRsiCciV4Strategy : Strategy
 	{
 		return kind switch
 		{
-			MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageKinds.Exponential => new EMA { Length = length },
 			MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageKinds.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

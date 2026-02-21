@@ -39,23 +39,23 @@ public class ColorXdinMAStDevStrategy : Strategy
 
 		_mainLength = Param(nameof(MainLength), 10)
 			.SetDisplay("Main MA Length", "Length of primary moving average", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_plusLength = Param(nameof(PlusLength), 20)
 			.SetDisplay("Plus MA Length", "Length of secondary moving average", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_stdPeriod = Param(nameof(StdPeriod), 9)
 			.SetDisplay("StdDev Period", "Period for standard deviation of MA changes", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_k1 = Param(nameof(K1), 1.5m)
 			.SetDisplay("Filter K1", "First multiplier for standard deviation", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_k2 = Param(nameof(K2), 2.5m)
 			.SetDisplay("Filter K2", "Second multiplier for standard deviation", "Parameters")
-			.SetCanOptimize(true);
+			;
 	}
 
 	public DataType CandleType
@@ -101,12 +101,12 @@ public class ColorXdinMAStDevStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_mainMa = new SimpleMovingAverage { Length = MainLength };
-		_plusMa = new SimpleMovingAverage { Length = PlusLength };
+		_mainMa = new SMA { Length = MainLength };
+		_plusMa = new SMA { Length = PlusLength };
 		_stdDev = new StandardDeviation { Length = StdPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -140,7 +140,7 @@ public class ColorXdinMAStDevStrategy : Strategy
 		var change = xdin - _prevXdin.Value;
 		_prevXdin = xdin;
 
-		var stDev = _stdDev.Process(change, candle.ServerTime, true).ToDecimal();
+		var stDev = _stdDev.Process(new DecimalIndicatorValue(_stdDev, change, candle.ServerTime)).ToDecimal();
 
 		if (!_stdDev.IsFormed || stDev == 0)
 			return;

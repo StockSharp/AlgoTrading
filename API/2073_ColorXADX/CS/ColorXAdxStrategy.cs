@@ -36,22 +36,22 @@ public class ColorXAdxStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetRange(5, 50)
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_adxThreshold = Param(nameof(AdxThreshold), 30m)
 			.SetRange(10m, 60m)
 			.SetDisplay("ADX Threshold", "Minimum ADX level for trades", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 1000)
 			.SetRange(100, 5000)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 2000)
 			.SetRange(100, 5000)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -109,9 +109,9 @@ public class ColorXAdxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 

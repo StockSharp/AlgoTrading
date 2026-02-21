@@ -81,30 +81,30 @@ public class ReversalTrapSniperStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 			.SetDisplay("RSI Overbought", "Overbought level", "General")
-			.SetCanOptimize(true);
+			;
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
 			.SetDisplay("RSI Oversold", "Oversold level", "General")
-			.SetCanOptimize(true);
+			;
 
 		_riskReward = Param(nameof(RiskReward), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Reward", "Risk-reward ratio", "General")
-			.SetCanOptimize(true);
+			;
 
 		_maxBars = Param(nameof(MaxBars), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Bars", "Maximum bars to hold", "General")
-			.SetCanOptimize(true);
+			;
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -132,9 +132,9 @@ public class ReversalTrapSniperStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_atr = new AverageTrueRange { Length = AtrLength };

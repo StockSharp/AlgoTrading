@@ -111,37 +111,37 @@ public class EmaCross2Strategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Volume of each market order", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 5m, 0.1m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Distance from entry to take-profit in broker points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 200m, 5m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Distance from entry to stop-loss in broker points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 200m, 5m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 50m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop (points)", "Trailing distance maintained after entry", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 200m, 5m);
 
 		_shortEmaPeriod = Param(nameof(ShortEmaPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Short EMA", "Length of the fast EMA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 40, 1);
 
 		_longEmaPeriod = Param(nameof(LongEmaPeriod), 60)
 		.SetGreaterThanZero()
 		.SetDisplay("Long EMA", "Length of the slow EMA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 5);
 	}
 
@@ -167,15 +167,15 @@ public class EmaCross2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 		_pointSize = CalculatePointSize();
 
-		_shortEma = new ExponentialMovingAverage { Length = ShortEmaPeriod };
-		_longEma = new ExponentialMovingAverage { Length = LongEmaPeriod };
+		_shortEma = new EMA { Length = ShortEmaPeriod };
+		_longEma = new EMA { Length = LongEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

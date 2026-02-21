@@ -88,25 +88,25 @@ public class ETurboFxMomentumStrategy : Strategy
 		_depthAnalysis = Param(nameof(DepthAnalysis), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Depth Analysis", "Number of finished candles used for pattern detection", "Trading Rules")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 6, 1);
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 120m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (steps)", "Take profit distance in price steps (ticks)", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 180m, 20m);
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 70m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (steps)", "Stop loss distance in price steps (ticks)", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40m, 120m, 10m);
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume used for entries", "Trading Rules")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.5m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -127,9 +127,9 @@ public class ETurboFxMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 		Volume = TradeVolume;

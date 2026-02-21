@@ -98,12 +98,12 @@ public class TsiCloudCrossStrategy : Strategy
 		_longLength = Param(nameof(LongLength), 25)
 			.SetDisplay("Long Length", "Long EMA length for TSI", "TSI")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 1);
 		_shortLength = Param(nameof(ShortLength), 13)
 			.SetDisplay("Short Length", "Short EMA length for TSI", "TSI")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 		_triggerShift = Param(nameof(TriggerShift), 1)
 			.SetDisplay("Trigger Shift", "Bars to shift TSI", "TSI")
@@ -121,11 +121,11 @@ public class TsiCloudCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_tsi = new TrueStrengthIndex
 		{

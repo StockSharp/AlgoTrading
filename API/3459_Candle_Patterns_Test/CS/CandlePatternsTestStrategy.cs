@@ -52,7 +52,7 @@ public class CandlePatternsTestStrategy : Strategy
 		_averageBodyPeriod = Param(nameof(AverageBodyPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Body Average Period", "Number of candles for average body", "Pattern")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 24, 2);
 
 		_enableBullishPatterns = Param(nameof(EnableBullishPatterns), true)
@@ -64,13 +64,13 @@ public class CandlePatternsTestStrategy : Strategy
 		_stopLossFactor = Param(nameof(StopLossFactor), 1.5m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop Loss Factor", "Average body multiplier for stop", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_takeProfitFactor = Param(nameof(TakeProfitFactor), 3m)
 			.SetRange(1m, 8m)
 			.SetDisplay("Take Profit Factor", "Average body multiplier for target", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 6m, 1m);
 	}
 
@@ -153,12 +153,12 @@ public class CandlePatternsTestStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_closeAverage = new SimpleMovingAverage { Length = AverageBodyPeriod };
-		_bodyAverage = new SimpleMovingAverage { Length = AverageBodyPeriod };
+		_closeAverage = new SMA { Length = AverageBodyPeriod };
+		_bodyAverage = new SMA { Length = AverageBodyPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -173,7 +173,7 @@ public class CandlePatternsTestStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal closeAverage)

@@ -204,9 +204,9 @@ public class ExpAfirmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_armaHistory.Clear();
 
@@ -316,7 +316,7 @@ public class ExpAfirmaStrategy : Strategy
 /// <summary>
 /// AFIRMA indicator implementation producing FIR and ARMA components.
 /// </summary>
-public sealed class AfirmaIndicator : BaseIndicator<decimal>
+public sealed class AfirmaIndicator : BaseIndicator
 {
 	private readonly List<decimal> _prices = new();
 	private decimal[] _weights = Array.Empty<decimal>();

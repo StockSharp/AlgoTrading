@@ -75,9 +75,9 @@ public class CandleStopTrailingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var upChannel = new DonchianChannels { Length = UpTrailPeriods };
 		var downChannel = new DonchianChannels { Length = DnTrailPeriods };

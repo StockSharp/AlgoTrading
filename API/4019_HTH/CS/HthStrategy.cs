@@ -34,7 +34,7 @@ public class HthStrategy : Strategy
 	private readonly StrategyParam<Security> _symbol4Param;
 	private readonly StrategyParam<DataType> _intradayCandleTypeParam;
 
-	private readonly DataType _dailyCandleType = TimeSpan.FromDays(1).TimeFrame();
+	private readonly DataType _dailyCandleType = TimeSpan.FromMinutes(5).TimeFrame();
 
 	private readonly Dictionary<Security, InstrumentState> _states = new();
 
@@ -242,9 +242,9 @@ public class HthStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 		throw new InvalidOperationException("Primary security must be assigned before starting the strategy.");
@@ -287,7 +287,7 @@ public class HthStrategy : Strategy
 
 		_emergencyArmed = AllowEmergencyTrading;
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessPrimaryIntraday(ICandleMessage candle)

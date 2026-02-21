@@ -87,17 +87,17 @@ public class MaVolumeStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 20)
 					.SetRange(5, 200)
 					.SetDisplay("MA Period", "Period for moving average calculation", "MA Settings")
-					.SetCanOptimize(true);
+					;
 					
 		_volumePeriod = Param(nameof(VolumePeriod), 20)
 						.SetRange(5, 100)
 						.SetDisplay("Volume MA Period", "Period for volume moving average calculation", "Volume Settings")
-						.SetCanOptimize(true);
+						;
 						
 		_volumeThreshold = Param(nameof(VolumeThreshold), 1.5m)
 						   .SetRange(1.0m, 3.0m)
 						   .SetDisplay("Volume Threshold", "Volume threshold multiplier for volume confirmation", "Volume Settings")
-						   .SetCanOptimize(true);
+						   ;
 						   
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 						   .SetRange(0.5m, 5m)
@@ -111,9 +111,9 @@ public class MaVolumeStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Set up stop loss protection
 		StartProtection(
@@ -122,8 +122,8 @@ public class MaVolumeStrategy : Strategy
 		);
 		
 		// Initialize indicators
-		_priceSma = new SimpleMovingAverage { Length = MaPeriod };
-		_volumeSma = new SimpleMovingAverage { Length = VolumePeriod };
+		_priceSma = new SMA { Length = MaPeriod };
+		_volumeSma = new SMA { Length = VolumePeriod };
 		
 		// Create candle subscription
 		var subscription = SubscribeCandles(CandleType);
@@ -158,10 +158,10 @@ public class MaVolumeStrategy : Strategy
 			return;
 			
 		// Process indicators
-		var smaValue = _priceSma.Process(candle).ToDecimal();
+		var smaValue = _priceSma.Process(new DecimalIndicatorValue(_priceSma, candle).ToDecimal();
 		
 		// Handle volume
-		var volumeSmaValue = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var volumeSmaValue = _volumeSma.Process(candle.TotalVolume, candle.ServerTime)).ToDecimal();
 		
 		if (!IsFormedAndOnlineAndAllowTrading() || !_priceSma.IsFormed || !_volumeSma.IsFormed)
 			return;

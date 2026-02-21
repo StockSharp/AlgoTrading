@@ -148,12 +148,12 @@ public class SpotFuturesArbitrageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Spot == null || Future == null)
 			throw new InvalidOperationException("Both spot and futures securities must be set.");
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_spreadAverage = new SMA { Length = LookbackPeriod };
 		_spreadStd = new StandardDeviation { Length = LookbackPeriod };
@@ -189,8 +189,8 @@ public class SpotFuturesArbitrageStrategy : Strategy
 
 		var spread = (_futurePrice - _spotPrice) / _spotPrice;
 
-		var avg = _spreadAverage.Process(spread, candle.ServerTime, true).ToDecimal();
-		var std = _spreadStd.Process(spread, candle.ServerTime, true).ToDecimal();
+		var avg = _spreadAverage.Process(new DecimalIndicatorValue(_spreadAverage, spread, candle.ServerTime)).ToDecimal();
+		var std = _spreadStd.Process(new DecimalIndicatorValue(_spreadStd, spread, candle.ServerTime)).ToDecimal();
 
 		var minSpread = MinSpreadPct / 100m;
 		var entryLong = minSpread;

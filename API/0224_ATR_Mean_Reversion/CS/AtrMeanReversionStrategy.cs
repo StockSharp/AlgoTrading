@@ -71,19 +71,19 @@ public class AtrMeanReversionStrategy : Strategy
 		_maPeriodParam = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_atrPeriodParam = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR indicator", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_multiplierParam = Param(nameof(Multiplier), 2.0m)
 			.SetRange(0.1m, decimal.MaxValue)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for entry threshold", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -106,12 +106,12 @@ public class AtrMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		_sma = new SimpleMovingAverage { Length = MaPeriod };
+		_sma = new SMA { Length = MaPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
 		// Create subscription and bind indicators

@@ -74,17 +74,17 @@ public class CronexDeMarkerCrossoverStrategy : Strategy
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 25)
 			.SetRange(2, 150)
 			.SetDisplay("DeMarker Period", "Length of the DeMarker oscillator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 14)
 			.SetRange(2, 100)
 			.SetDisplay("Fast LWMA Period", "Length of the fast linear weighted moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 25)
 			.SetRange(2, 150)
 			.SetDisplay("Slow LWMA Period", "Length of the slow linear weighted moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame of processed candles", "General");
@@ -106,9 +106,9 @@ public class CronexDeMarkerCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Instantiate indicators matching the original MetaTrader logic.
 		_deMarker = new DeMarker
@@ -141,7 +141,7 @@ public class CronexDeMarkerCrossoverStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -151,11 +151,11 @@ public class CronexDeMarkerCrossoverStrategy : Strategy
 			return;
 
 		// Update the DeMarker oscillator with the full candle data.
-		var deMarkerValue = _deMarker.Process(candle).ToDecimal();
+		var deMarkerValue = _deMarker.Process(new DecimalIndicatorValue(_deMarker, candle).ToDecimal();
 
 		// Smooth the oscillator with linear weighted moving averages.
-		var fastValue = _fastMa.Process(deMarkerValue, candle.OpenTime, true).ToDecimal();
-		var slowValue = _slowMa.Process(deMarkerValue, candle.OpenTime, true).ToDecimal();
+		var fastValue = _fastMa.Process(deMarkerValue, candle.OpenTime)).ToDecimal();
+		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, deMarkerValue, candle.OpenTime)).ToDecimal();
 
 		// Ensure all indicators accumulated enough samples.
 		if (!_deMarker.IsFormed || !_fastMa.IsFormed || !_slowMa.IsFormed)

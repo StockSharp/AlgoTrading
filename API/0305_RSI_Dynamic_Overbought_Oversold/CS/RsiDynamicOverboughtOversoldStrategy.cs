@@ -79,25 +79,25 @@ public class RsiDynamicOverboughtOversoldStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicator Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_movingAvgPeriod = Param(nameof(MovingAvgPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for moving average of RSI and price", "Indicator Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("StdDev Multiplier", "Multiplier for standard deviation to define overbought/oversold levels", "Strategy Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Strategy Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -118,16 +118,16 @@ public class RsiDynamicOverboughtOversoldStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_rsiSma = new SimpleMovingAverage { Length = MovingAvgPeriod };
+		_rsiSma = new SMA { Length = MovingAvgPeriod };
 		_rsiStdDev = new StandardDeviation { Length = MovingAvgPeriod };
 
 		// Create indicators
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		var priceSma = new SimpleMovingAverage { Length = MovingAvgPeriod };
+		var priceSma = new SMA { Length = MovingAvgPeriod };
 
 		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
@@ -165,8 +165,8 @@ public class RsiDynamicOverboughtOversoldStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var smaValue = _rsiSma.Process(rsiValue, candle.ServerTime, candle.State == CandleStates.Finished);
-		var stdDevValue = _rsiStdDev.Process(rsiValue, candle.ServerTime, candle.State == CandleStates.Finished);
+		var smaValue = _rsiSma.Process(new DecimalIndicatorValue(_rsiSma, rsiValue, candle.ServerTime));
+		var stdDevValue = _rsiStdDev.Process(new DecimalIndicatorValue(_rsiStdDev, rsiValue, candle.ServerTime));
 
 		// Get values from indicators
 		var rsiSmaValue = smaValue.ToDecimal();

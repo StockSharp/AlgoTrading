@@ -56,43 +56,43 @@ public class KlossSimpleStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Length of the exponential moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_cciPeriod = Param(nameof(CciPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Length of the commodity channel index", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_cciLevel = Param(nameof(CciLevel), 120m)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Level", "Distance from zero to trigger signals", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 200m, 10m);
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "Period of the %K line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Period of the %D line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_stochasticSmooth = Param(nameof(StochasticSmooth), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Smooth", "Smoothing factor for %K", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_stochasticLevel = Param(nameof(StochasticLevel), 25m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Level", "Distance from 50 to trigger signals", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_maxOrders = Param(nameof(MaxOrders), 3)
@@ -224,16 +224,16 @@ public class KlossSimpleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = MaPeriod };
+		_ema = new EMA { Length = MaPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_stochastic = new StochasticOscillator
 		{
 			KPeriod = StochasticKPeriod,
-			DPeriod = StochasticDPeriod,
+			D = {  K = { Length = StochasticDPeriod } },
 			Smooth = StochasticSmooth
 		};
 
@@ -284,7 +284,7 @@ public class KlossSimpleStrategy : Strategy
 
 		// Weighted close price replicates PRICE_WEIGHTED input from MT4.
 		var weightedClose = (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m;
-		var maResult = _ema.Process(weightedClose, candle.CloseTime, true).ToNullableDecimal();
+		var maResult = _ema.Process(new DecimalIndicatorValue(_ema, weightedClose, candle.CloseTime)).ToNullableDecimal();
 		var cciResult = _cci.Process(candle).ToNullableDecimal();
 		var stochasticValue = (StochasticOscillatorValue)_stochastic.Process(candle);
 

@@ -89,32 +89,32 @@ public class Combo220EmaBandpassFilterStrategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 2)
 			.SetRange(1, 10)
 			.SetDisplay("Fast EMA Length", "Length for fast EMA", "EMA Settings")
-			.SetCanOptimize(true);
+			;
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 20)
 			.SetRange(5, 50)
 			.SetDisplay("Slow EMA Length", "Length for slow EMA", "EMA Settings")
-			.SetCanOptimize(true);
+			;
 
 		_bpfLength = Param(nameof(BpfLength), 20)
 			.SetRange(5, 50)
 			.SetDisplay("Bandpass Length", "Length for bandpass filter", "BP Filter")
-			.SetCanOptimize(true);
+			;
 
 		_bpfDelta = Param(nameof(BpfDelta), 0.5m)
 			.SetRange(0.1m, 2m)
 			.SetDisplay("BP Delta", "Delta for bandpass filter", "BP Filter")
-			.SetCanOptimize(true);
+			;
 
 		_bpfSellZone = Param(nameof(BpfSellZone), 5m)
 			.SetRange(1m, 10m)
 			.SetDisplay("BP Sell Zone", "Sell zone for bandpass filter", "BP Filter")
-			.SetCanOptimize(true);
+			;
 
 		_bpfBuyZone = Param(nameof(BpfBuyZone), -5m)
 			.SetRange(-10m, -1m)
 			.SetDisplay("BP Buy Zone", "Buy zone for bandpass filter", "BP Filter")
-			.SetCanOptimize(true);
+			;
 
 		_reverse = Param(nameof(Reverse), false)
 			.SetDisplay("Reverse Signals", "Trade opposite signals", "Misc");
@@ -147,16 +147,16 @@ public class Combo220EmaBandpassFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_beta = (decimal)Math.Cos(Math.PI * (360.0 / BpfLength) / 180.0);
 		_gamma = 1m / (decimal)Math.Cos(Math.PI * (720.0 * (double)BpfDelta / BpfLength) / 180.0);
 		_alpha = _gamma - (decimal)Math.Sqrt((double)(_gamma * _gamma - 1m));
 
-		var emaFast = new ExponentialMovingAverage { Length = FastEmaLength };
-		var emaSlow = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var emaFast = new EMA { Length = FastEmaLength };
+		var emaSlow = new EMA { Length = SlowEmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

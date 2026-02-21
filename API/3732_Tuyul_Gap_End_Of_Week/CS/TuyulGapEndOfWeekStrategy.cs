@@ -151,22 +151,20 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tickSize = Security?.PriceStep ?? 0m;
 
 		_highestHigh = new Highest
 		{
-			Length = Math.Max(2, LookbackBars),
-			CandlePrice = CandlePrice.High,
+			Length = Math.Max(2, LookbackBars)
 		};
 
 		_lowestLow = new Lowest
 		{
-			Length = Math.Max(2, LookbackBars),
-			CandlePrice = CandlePrice.Low,
+			Length = Math.Max(2, LookbackBars)
 		};
 
 		var subscription = SubscribeCandles(CandleType);

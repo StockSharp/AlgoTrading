@@ -84,22 +84,22 @@ public class ScalpelEaStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Period of CCI indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 5);
 
 		_cciLimit = Param(nameof(CciLimit), 3m)
 			.SetDisplay("CCI Limit", "CCI threshold for entries", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_takeProfit = Param(nameof(TakeProfit), 30m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_stopLoss = Param(nameof(StopLoss), 21m)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -128,9 +128,9 @@ public class ScalpelEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 

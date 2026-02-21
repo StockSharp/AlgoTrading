@@ -100,11 +100,11 @@ public class AdxEaStrategy : Strategy
 	{
 		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
 			.SetDisplay("Trade Volume", "Base volume for each new entry.", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Primary Candle Type", "Timeframe used for ADX and moving averages.", "Data")
-			.SetCanOptimize(false);
+			;
 
 		_momentumCandleType = Param(nameof(MomentumCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Momentum Candle Type", "Higher timeframe used to evaluate momentum strength.", "Data");
@@ -114,19 +114,19 @@ public class AdxEaStrategy : Strategy
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 			.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 			.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "Period of the Average Directional Index.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetDisplay("Momentum Period", "Period for the momentum calculation on the higher timeframe.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetDisplay("MACD Fast", "Fast EMA period for the exit MACD filter.", "Indicators");
@@ -477,8 +477,8 @@ public class AdxEaStrategy : Strategy
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 
@@ -863,7 +863,7 @@ var breakEvenOffset = BreakEvenOffset > 0m ? BreakEvenOffset * step : 0m;
 
 if (Position > 0)
 {
-var entry = PositionAvgPrice;
+var entry = PositionPrice;
 
 if (trailingDistance > 0m)
 {
@@ -893,7 +893,7 @@ _longTrailingStop = null;
 }
 else if (Position < 0)
 {
-var entry = PositionAvgPrice;
+var entry = PositionPrice;
 var absPosition = Math.Abs(Position);
 
 if (trailingDistance > 0m)

@@ -91,29 +91,29 @@ public class UniversalEaStrategy : Strategy
 		_kPeriod = Param(nameof(KPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("%K Period", "Stochastic calculation period", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 		
 		_dPeriod = Param(nameof(DPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("%D Period", "%D smoothing period", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 20, 1);
 		
 		_slowing = Param(nameof(Slowing), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Slowing", "%K slowing period", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 20, 1);
 		
 		_oversold = Param(nameof(Oversold), 20m)
 		.SetDisplay("Oversold", "%K oversold threshold", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 5m);
 		
 		_overbought = Param(nameof(Overbought), 80m)
 		.SetDisplay("Overbought", "%K overbought threshold", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60m, 90m, 5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -135,13 +135,12 @@ public class UniversalEaStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var stochastic = new StochasticOscillator
-		{
-			Length = KPeriod,
+		{ K = { Length = KPeriod },
 			K = { Length = Slowing },
 			D = { Length = DPeriod },
 		};

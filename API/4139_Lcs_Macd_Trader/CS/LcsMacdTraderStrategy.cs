@@ -69,19 +69,19 @@ public class LcsMacdTraderStrategy : Strategy
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period of the MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 2);
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period of the MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Period", "Signal line period of the MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 2);
 
 		_useStochasticFilter = Param(nameof(UseStochasticFilter), true)
@@ -97,7 +97,7 @@ public class LcsMacdTraderStrategy : Strategy
 			.SetDisplay("%K Period", "Length of the %K line", "Stochastic")
 			.SetRange(1, 50);
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("%D Period", "Length of the %D smoothing", "Stochastic")
 			.SetRange(1, 50);
@@ -110,7 +110,7 @@ public class LcsMacdTraderStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Lot size used for each entry", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
@@ -413,8 +413,7 @@ public class LcsMacdTraderStrategy : Strategy
 		};
 
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochasticKPeriod,
+		{ K = { Length = StochasticKPeriod },
 			K = { Length = StochasticSlowing },
 			D = { Length = StochasticDPeriod }
 		};

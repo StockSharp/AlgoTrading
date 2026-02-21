@@ -101,11 +101,11 @@ public class MaOscillatorHistogramStrategy : Strategy
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 13)
 			.SetDisplay("Fast Period", "Period of fast moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 24)
 			.SetDisplay("Slow Period", "Period of slow moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_enableBuyOpen = Param(nameof(EnableBuyOpen), true)
 			.SetDisplay("Enable Buy Open", "Allow opening long positions", "Signals");
@@ -139,13 +139,13 @@ public class MaOscillatorHistogramStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create moving averages
-		var fastMa = new SimpleMovingAverage { Length = FastPeriod };
-		var slowMa = new SimpleMovingAverage { Length = SlowPeriod };
+		var fastMa = new SMA { Length = FastPeriod };
+		var slowMa = new SMA { Length = SlowPeriod };
 
 		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);

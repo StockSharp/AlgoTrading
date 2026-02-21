@@ -224,22 +224,22 @@ public class GordagoEaStrategy : Strategy
 
 		_stopLossBuyPips = Param(nameof(StopLossBuyPips), 40m)
 			.SetDisplay("Buy SL", "Stop loss for long trades (pips)", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_takeProfitBuyPips = Param(nameof(TakeProfitBuyPips), 70m)
 			.SetDisplay("Buy TP", "Take profit for long trades (pips)", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 150m, 10m);
 
 		_stopLossSellPips = Param(nameof(StopLossSellPips), 10m)
 			.SetDisplay("Sell SL", "Stop loss for short trades (pips)", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 80m, 10m);
 
 		_takeProfitSellPips = Param(nameof(TakeProfitSellPips), 40m)
 			.SetDisplay("Sell TP", "Take profit for short trades (pips)", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 120m, 10m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
@@ -339,11 +339,11 @@ public class GordagoEaStrategy : Strategy
 		{
 			Length = StochasticLength,
 			KPeriod = StochasticSmoothing,
-			DPeriod = StochasticSignalPeriod,
+			D = { Length = StochasticSignalPeriod },
 		};
 
 		var baseSubscription = SubscribeCandles(CandleType);
-		baseSubscription.WhenNew(ProcessBaseCandle).Start();
+		baseSubscription.Bind(ProcessBaseCandle).Start();
 
 		var macdSubscription = SubscribeCandles(MacdCandleType);
 		macdSubscription.Bind(_macd, ProcessMacd).Start();

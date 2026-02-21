@@ -211,11 +211,11 @@ public class GoodGbbiStrategy : Strategy {
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
+	protected override void OnStarted2(DateTime time) {
 	var subscription = SubscribeCandles(CandleType);
 	subscription.Bind(ProcessCandle).Start();
 
-	base.OnStarted(time);
+	base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle) {

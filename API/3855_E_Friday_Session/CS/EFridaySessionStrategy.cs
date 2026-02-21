@@ -194,7 +194,7 @@ public class EFridaySessionStrategy : Strategy
 		_intradayCandleType = Param(nameof(IntradayCandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Intraday Candles", "Candle type for intraday timing", "Data");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Daily Candles", "Candle type for previous day analysis", "Data");
 	}
 
@@ -220,9 +220,9 @@ public class EFridaySessionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var intradaySubscription = SubscribeCandles(IntradayCandleType);
 		intradaySubscription

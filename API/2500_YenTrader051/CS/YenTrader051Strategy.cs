@@ -158,7 +158,7 @@ public class YenTrader051Strategy : Strategy
 			.SetDisplay("Allow Hedging", "Allow simultaneous trades without closing existing ones", "Risk");
 		_enableAtrLevels = Param(nameof(EnableAtrLevels), false)
 			.SetDisplay("Use ATR Levels", "Use ATR based distances instead of pips", "Risk");
-		_atrCandleType = Param(nameof(AtrCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_atrCandleType = Param(nameof(AtrCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("ATR Candles", "Timeframe for ATR calculations", "Risk");
 		_atrPeriod = Param(nameof(AtrPeriod), 21)
 			.SetGreaterThanZero()
@@ -487,39 +487,39 @@ public class YenTrader051Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializeIndicators();
 
 		var tradingSubscription = SubscribeCandles(CandleType);
-		tradingSubscription.WhenNew(ProcessTradingCandle).Start();
+		tradingSubscription.Bind(ProcessTradingCandle).Start();
 
 		if (MajorSecurity != null)
 		{
 			var majorSubscription = SubscribeCandles(CandleType, true, MajorSecurity);
-			majorSubscription.WhenNew(ProcessMajorCandle).Start();
+			majorSubscription.Bind(ProcessMajorCandle).Start();
 		}
 
 		if (UsdJpySecurity != null)
 		{
 			var usdJpySubscription = SubscribeCandles(CandleType, true, UsdJpySecurity);
-			usdJpySubscription.WhenNew(ProcessUsdJpyCandle).Start();
+			usdJpySubscription.Bind(ProcessUsdJpyCandle).Start();
 		}
 
 		if (EnableAtrLevels)
 		{
 			_atr = new AverageTrueRange { Length = AtrPeriod };
 			var atrSubscription = SubscribeCandles(AtrCandleType, true, Security);
-			atrSubscription.WhenNew(ProcessAtrCandle).Start();
+			atrSubscription.Bind(ProcessAtrCandle).Start();
 		}
 		else
 		{
 			_atr = null;
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -1038,7 +1038,7 @@ public class YenTrader051Strategy : Strategy
 		_majorRsi = new RelativeStrengthIndex { Length = 14 };
 		_majorCci = new CommodityChannelIndex { Length = 14 };
 		_majorRvi = new RelativeVigorIndex { Length = 10 };
-		_majorRviSignal = new SimpleMovingAverage { Length = 4 };
+		_majorRviSignal = new SMA { Length = 4 };
 		_majorMa = CreateMovingAverage(MaMode, MaPeriod);
 
 		_usdJpyHighest = new Highest { Length = breakoutLength };
@@ -1046,7 +1046,7 @@ public class YenTrader051Strategy : Strategy
 		_usdJpyRsi = new RelativeStrengthIndex { Length = 14 };
 		_usdJpyCci = new CommodityChannelIndex { Length = 14 };
 		_usdJpyRvi = new RelativeVigorIndex { Length = 10 };
-		_usdJpyRviSignal = new SimpleMovingAverage { Length = 4 };
+		_usdJpyRviSignal = new SMA { Length = 4 };
 		_usdJpyMa = CreateMovingAverage(MaMode, MaPeriod);
 	}
 
@@ -1072,7 +1072,7 @@ public class YenTrader051Strategy : Strategy
 		ref decimal? rviMain,
 		ref decimal? rviSignalValue)
 	{
-		var rsiVal = rsi.Process(candle);
+		var rsiVal = rsi.Process(new DecimalIndicatorValue(rsi, candle);
 		if (rsiVal.IsFinal)
 			rsiValue = rsiVal.ToDecimal();
 
@@ -1086,7 +1086,7 @@ public class YenTrader051Strategy : Strategy
 			var main = rviVal.ToDecimal();
 			rviMain = main;
 
-			var signalVal = rviSignal.Process(main, candle.CloseTime, true);
+			var signalVal = rviSignal.Process(main, candle.CloseTime));
 			if (signalVal.IsFinal)
 				rviSignalValue = signalVal.ToDecimal();
 		}
@@ -1125,11 +1125,11 @@ public class YenTrader051Strategy : Strategy
 
 		return mode switch
 		{
-			MovingAverageModes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageModes.Simple => new SMA { Length = length },
+			MovingAverageModes.Exponential => new EMA { Length = length },
 			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageModes.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

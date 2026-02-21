@@ -60,7 +60,7 @@ public class TimeshifterTripleTimeframeStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Medium Timeframe", "Chart timeframe", "General");
 
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Higher Timeframe", "Higher timeframe for trend", "General");
 
 		_lowerCandleType = Param(nameof(LowerCandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -113,13 +113,13 @@ public class TimeshifterTripleTimeframeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var higherMa = new SimpleMovingAverage { Length = HigherMaLength };
-		var lowerMa = new SimpleMovingAverage { Length = LowerMaLength };
-		var mediumMa = new SimpleMovingAverage { Length = MediumMaLength };
+		var higherMa = new SMA { Length = HigherMaLength };
+		var lowerMa = new SMA { Length = LowerMaLength };
+		var mediumMa = new SMA { Length = MediumMaLength };
 		var adx = new AverageDirectionalIndex { Length = AdxLength };
 
 		var higherSub = SubscribeCandles(HigherCandleType);
@@ -181,7 +181,7 @@ public class TimeshifterTripleTimeframeStrategy : Strategy
 			return;
 		var adxCondition = !UseAdx || adxMa > AdxThreshold;
 
-		var hour = candle.OpenTime.UtcDateTime.Hour;
+		var hour = candle.OpenTime.Hour;
 		var inLondon = UseLondon && hour >= 7 && hour < 16;
 		var inNewYork = UseNewYork && hour >= 13 && hour < 22;
 		var inTokyo = UseTokyo && hour >= 0 && hour < 9;

@@ -90,37 +90,37 @@ public class MaxPainStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 70)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for volume and price change", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1m)
 			.SetRange(1m, 5m)
 			.SetDisplay("Volume Multiplier", "Threshold multiplier for volume", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_priceChangeMultiplier = Param(nameof(PriceChangeMultiplier), 0.029m)
 			.SetRange(0.01m, 0.1m)
 			.SetDisplay("Price Change Multiplier", "Threshold for price movement", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 2.4m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop-Loss Multiplier", "Multiplier for volatility-based stop-loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_vixThreshold = Param(nameof(VixThreshold), 44m)
 			.SetGreaterThanZero()
 			.SetDisplay("VIX Threshold", "VIX level below which trading is allowed", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_holdPeriods = Param(nameof(HoldPeriods), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Hold Periods", "Number of periods to hold the position", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Main candle timeframe", "General");
 
-		_vixCandleType = Param(nameof(VixCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_vixCandleType = Param(nameof(VixCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("VIX Candle Type", "VIX data timeframe", "General");
 	}
 
@@ -146,14 +146,14 @@ public class MaxPainStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (VixSecurity == null)
 			throw new InvalidOperationException("VixSecurity is not specified.");
 
-		_volumeSma = new SimpleMovingAverage { Length = LookbackPeriod };
+		_volumeSma = new SMA { Length = LookbackPeriod };
 		_shift = new Shift { Length = LookbackPeriod };
 		_volatility = new StandardDeviation { Length = LookbackPeriod };
 

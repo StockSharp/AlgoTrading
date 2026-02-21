@@ -123,45 +123,45 @@ public class CloseDeleteEaStrategy : Strategy
 	{
 		_closeBuyPositions = Param(nameof(CloseBuyPositions), true)
 			.SetDisplay("Close Buy Positions", "Close long exposure that matches the filters", "General")
-			.SetCanOptimize(false);
+			;
 
 		_closeSellPositions = Param(nameof(CloseSellPositions), true)
 			.SetDisplay("Close Sell Positions", "Close short exposure that matches the filters", "General")
-			.SetCanOptimize(false);
+			;
 
 		_closeMarketPositions = Param(nameof(CloseMarketPositions), true)
 			.SetDisplay("Close Market Positions", "Send market orders to flatten exposure", "General")
-			.SetCanOptimize(false);
+			;
 
 		_cancelPendingOrders = Param(nameof(CancelPendingOrders), true)
 			.SetDisplay("Cancel Pending Orders", "Cancel working orders that match the filters", "General")
-			.SetCanOptimize(false);
+			;
 
 		_closeOnlyProfitable = Param(nameof(CloseOnlyProfitable), false)
 			.SetDisplay("Close Only Profitable", "Close positions only when PnL is non-negative", "Filters")
-			.SetCanOptimize(false);
+			;
 
 		_closeOnlyLosing = Param(nameof(CloseOnlyLosing), false)
 			.SetDisplay("Close Only Losing", "Close positions only when PnL is non-positive", "Filters")
-			.SetCanOptimize(false);
+			;
 
 		_applyToCurrentSecurity = Param(nameof(ApplyToCurrentSecurity), true)
 			.SetDisplay("Current Security Only", "Restrict actions to the strategy security", "Scope")
-			.SetCanOptimize(false);
+			;
 
 		_targetStrategyId = Param(nameof(TargetStrategyId), string.Empty)
 			.SetDisplay("Target Strategy Id", "Filter by strategy id (leave empty for all)", "Scope")
-			.SetCanOptimize(false);
+			;
 
 		_timerInterval = Param(nameof(TimerInterval), TimeSpan.FromMilliseconds(500))
 			.SetDisplay("Timer Interval", "Frequency of the management loop", "General")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Portfolio == null)
 			throw new InvalidOperationException("Portfolio must be assigned before starting the strategy.");

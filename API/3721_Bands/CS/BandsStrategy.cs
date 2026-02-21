@@ -57,7 +57,7 @@ public class BandsStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Net volume in lots sent with every order", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for indicator calculations", "Market Data");
@@ -65,37 +65,37 @@ public class BandsStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Number of candles used for the Bollinger Bands", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for the Bollinger Bands", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_donchianPeriod = Param(nameof(DonchianPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Donchian Period", "Donchian Channel length used as trend filter", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_confirmationPeriod = Param(nameof(ConfirmationPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Slope Confirmation", "Minimum number of bars that must keep the Donchian slope intact", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Length of the Average True Range used for stops", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopAtrMultiplier = Param(nameof(StopAtrMultiplier), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop ATR Multiplier", "How many ATRs below/above the entry to place the stop", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeAtrMultiplier = Param(nameof(TakeAtrMultiplier), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take ATR Multiplier", "How many ATRs below/above the entry to place the target", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -180,9 +180,9 @@ public class BandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bollinger = new BollingerBands
 		{

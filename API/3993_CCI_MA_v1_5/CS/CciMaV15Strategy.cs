@@ -146,35 +146,35 @@ public class CciMaV15Strategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI Period", "Length of the primary CCI", "CCI")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 35, 7);
 
 		_signalCciPeriod = Param(nameof(SignalCciPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Exit CCI Period", "Length of the secondary CCI", "CCI")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 35, 7);
 
 		_maPeriod = Param(nameof(MaPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI MA Period", "Simple MA length applied to the CCI", "CCI")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 21, 3);
 
 		_stopLossPips = Param(nameof(StopLossPips), 40m)
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 120m, 20m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 150m, 25m);
 
 		_lotVolume = Param(nameof(LotVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Lot Volume", "Base order volume before scaling", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2m, 0.5m);
 
 		_useMoneyManagement = Param(nameof(UseMoneyManagement), false)
@@ -183,7 +183,7 @@ public class CciMaV15Strategy : Strategy
 		_depositPerLot = Param(nameof(DepositPerLot), 1000m)
 		.SetGreaterThanZero()
 		.SetDisplay("Deposit Per Lot", "Balance required to increase the lot multiplier", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(500m, 5000m, 500m);
 
 		_maxMultiplier = Param(nameof(MaxMultiplier), 20)
@@ -208,25 +208,23 @@ public class CciMaV15Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 
 		_cci = new CommodityChannelIndex
 		{
-			Length = CciPeriod,
-			CandlePrice = CandlePrice.Close,
+			Length = CciPeriod
 		};
 
 		_signalCci = new CommodityChannelIndex
 		{
-			Length = SignalCciPeriod,
-			CandlePrice = CandlePrice.Close,
+			Length = SignalCciPeriod
 		};
 
-		_cciSignal = new SimpleMovingAverage
+		_cciSignal = new SMA
 		{
 			Length = MaPeriod,
 		};
@@ -238,7 +236,7 @@ public class CciMaV15Strategy : Strategy
 		.Bind(_cci, _signalCci, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal cciValue, decimal signalCciValue)
@@ -246,7 +244,7 @@ public class CciMaV15Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var maValue = _cciSignal.Process(cciValue, candle.OpenTime, true).ToDecimal();
+		var maValue = _cciSignal.Process(new DecimalIndicatorValue(_cciSignal, cciValue, candle.OpenTime)).ToDecimal();
 
 		if (!_cci.IsFormed || !_signalCci.IsFormed || !_cciSignal.IsFormed)
 		{

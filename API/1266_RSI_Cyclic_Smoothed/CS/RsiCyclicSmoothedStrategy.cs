@@ -42,17 +42,17 @@ public class RsiCyclicSmoothedStrategy : Strategy
 		_dominantCycle = Param(nameof(DominantCycleLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Dominant Cycle", "Dominant cycle length", "General")
-		.SetCanOptimize(true);
+		;
 		
 		_vibration = Param(nameof(Vibration), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Vibration", "Vibration factor", "General")
-		.SetCanOptimize(true);
+		;
 		
 		_leveling = Param(nameof(Leveling), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Leveling", "Percentile for bands", "General")
-		.SetCanOptimize(true);
+		;
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type for strategy", "General");
@@ -64,9 +64,9 @@ public class RsiCyclicSmoothedStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var cycleLen = Math.Max(DominantCycleLength / 2, 1);
 		var phasingLag = Math.Max((Vibration - 1) / 2, 0);

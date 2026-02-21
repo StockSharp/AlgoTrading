@@ -47,17 +47,17 @@ public class RingSystemStrategy : Strategy
 		_entryThreshold = Param(nameof(EntryThreshold), 0.0005m)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Threshold", "Relative imbalance needed to open the ring.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_exitThreshold = Param(nameof(ExitThreshold), 0.0001m)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Threshold", "Relative imbalance level required to close the ring.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_orderVolume = Param(nameof(OrderVolume), 10000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume sent to every leg of the ring.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle aggregation used to evaluate spreads.", "General");
@@ -145,9 +145,9 @@ public class RingSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var currencies = ParseCurrencies();
 
@@ -161,7 +161,7 @@ public class RingSystemStrategy : Strategy
 		Subscribe(_pairTwo);
 		Subscribe(_pairThree);
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />

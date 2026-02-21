@@ -46,12 +46,12 @@ public class TrendFollowingMas3DStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastMa = new SimpleMovingAverage { Length = 5 };
-		var slowMa = new SimpleMovingAverage { Length = 10 };
+		var fastMa = new SMA { Length = 5 };
+		var slowMa = new SMA { Length = 10 };
 
 		var subscription = SubscribeCandles(CandleType);
 

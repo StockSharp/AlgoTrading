@@ -44,17 +44,17 @@ public class Ema34CrossoverWithBreakEvenStopLossStrategy : Strategy
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 34)
 			.SetDisplay("EMA Period", "Period for EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 1);
 
 		_takeProfitMultiplier = Param(nameof(TakeProfitMultiplier), 10m)
 			.SetDisplay("Take Profit RR", "Risk reward multiplier for take profit", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 20m, 1m);
 
 		_breakEvenMultiplier = Param(nameof(BreakEvenMultiplier), 3m)
 			.SetDisplay("Break Even RR", "Risk reward to move stop to break even", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -62,11 +62,11 @@ public class Ema34CrossoverWithBreakEvenStopLossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ema, ProcessCandle).Start();

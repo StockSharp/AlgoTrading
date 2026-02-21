@@ -110,17 +110,17 @@ public class FractalAdxCloudStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 30)
 			.SetRange(5, 60)
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetRange(100m, 5000m)
 			.SetDisplay("Stop Loss", "Stop loss level", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetRange(100m, 10000m)
 			.SetDisplay("Take Profit", "Take profit level", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
 			.SetDisplay("Buy Open", "Allow opening long positions", "Trading");
@@ -145,9 +145,9 @@ public class FractalAdxCloudStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 

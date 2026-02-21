@@ -38,7 +38,7 @@ public class BandOsMaCustomStrategy : Strategy
 
 	private MovingAverageConvergenceDivergenceHistogram _osma;
 	private BollingerBands _osmaBands;
-	private LengthIndicator<decimal> _osmaAverage;
+	private DecimalLengthIndicator _osmaAverage;
 
 	private readonly List<decimal> _osmaHistory = new();
 	private readonly List<decimal> _upperHistory = new();
@@ -177,58 +177,58 @@ public class BandOsMaCustomStrategy : Strategy
 		_fastOsmaPeriod = Param(nameof(FastOsmaPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast OsMA", "Fast EMA period for the MACD histogram", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_slowOsmaPeriod = Param(nameof(SlowOsmaPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow OsMA", "Slow EMA period for the MACD histogram", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal", "Signal SMA period for the MACD histogram", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Typical)
 		.SetDisplay("Applied Price", "Which candle price feeds the OsMA", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_bandsPeriod = Param(nameof(BandsPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("Bands Period", "Length of the Bollinger Bands on the OsMA", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_bandsShift = Param(nameof(BandsShift), 0)
 		.SetDisplay("Bands Shift", "Bar shift applied to the Bollinger values", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_bandsDeviation = Param(nameof(BandsDeviation), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bands Deviation", "Standard deviation multiplier for the bands", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_maPeriod = Param(nameof(MaPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Length of the exit moving average", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_maShift = Param(nameof(MaShift), 0)
 		.SetDisplay("MA Shift", "Bar shift applied to the exit moving average", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
 		.SetDisplay("MA Method", "Calculation method for the exit average", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Stop distance expressed in price steps", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_orderVolume = Param(nameof(OrderVolume), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Trade volume that matches the Lots input", "General")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <inheritdoc />
@@ -257,9 +257,9 @@ public class BandOsMaCustomStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = Security?.PriceStep ?? 0m;
 		Volume = OrderVolume;
@@ -470,15 +470,15 @@ public class BandOsMaCustomStrategy : Strategy
 		return new Unit(distanceInPoints * _pointValue, UnitTypes.Absolute);
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

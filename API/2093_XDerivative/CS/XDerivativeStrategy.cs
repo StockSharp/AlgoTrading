@@ -83,25 +83,25 @@ public class XDerivativeStrategy : Strategy
 		_rocPeriod = Param(nameof(RocPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("ROC Period", "Period for rate of change calculation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_maLength = Param(nameof(MaLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("JMA Length", "Period for Jurik MA smoothing", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_takeProfit = Param(nameof(TakeProfitPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_stopLoss = Param(nameof(StopLossPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -124,9 +124,9 @@ public class XDerivativeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_jma.Length = MaLength;
 

@@ -84,76 +84,76 @@ public class EarlyBirdRangeBreakoutStrategy : Strategy
 	{
 		_enableAutoTrading = Param(nameof(EnableAutoTrading), true)
 		.SetDisplay("Auto Trading", "Enable automatic entries", "Trading")
-		.SetCanOptimize(false);
+		;
 
 		_enableHedging = Param(nameof(EnableHedging), true)
 		.SetDisplay("Allow Hedging", "Permit reversing positions within the session", "Trading")
-		.SetCanOptimize(false);
+		;
 
 		_directionMode = Param(nameof(DirectionMode), (int)TradeDirections.Both)
 		.SetDisplay("Trade Direction", "0 = both, 1 = long only, 2 = short only", "Trading")
-		.SetCanOptimize(false);
+		;
 
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 25m)
 		.SetDisplay("Take Profit (pips)", "Maximum profit target distance", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15m)
 		.SetDisplay("Trailing Trigger (pips)", "Distance required to arm trailing", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingRiskMultiplier = Param(nameof(TrailingRiskMultiplier), 1m)
 		.SetDisplay("Trailing Risk", "Multiplier applied to average volatility", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_entryBufferPips = Param(nameof(EntryBufferPips), 2m)
 		.SetDisplay("Entry Buffer (pips)", "Offset added above/below the range boundary", "Range")
-		.SetCanOptimize(true);
+		;
 
 		_tradingStartHour = Param(nameof(TradingStartHour), 7)
 		.SetDisplay("Session Start Hour", "Hour when new trades may begin", "Session")
-		.SetCanOptimize(false);
+		;
 
 		_tradingStartMinute = Param(nameof(TradingStartMinute), 15)
 		.SetDisplay("Session Start Minute", "Minute component for session start", "Session")
-		.SetCanOptimize(false);
+		;
 
 		_tradingEndHour = Param(nameof(TradingEndHour), 15)
 		.SetDisplay("Session End Hour", "Hour that stops accepting new trades", "Session")
-		.SetCanOptimize(false);
+		;
 
 		_closingHour = Param(nameof(ClosingHour), 17)
 		.SetDisplay("Closing Hour", "Hour to force day-trade exits", "Session")
-		.SetCanOptimize(false);
+		;
 
 		_rangeStartHour = Param(nameof(RangeStartHour), 3)
 		.SetDisplay("Range Start Hour", "Hour to begin the overnight range scan", "Range")
-		.SetCanOptimize(false);
+		;
 
 		_rangeEndHour = Param(nameof(RangeEndHour), 7)
 		.SetDisplay("Range End Hour", "Hour to finish the range scan", "Range")
-		.SetCanOptimize(false);
+		;
 
 		_summerTimeStartDay = Param(nameof(SummerTimeStartDay), 87)
 		.SetDisplay("Summer Time Start", "Day-of-year when DST begins", "Calendar")
-		.SetCanOptimize(false);
+		;
 
 		_winterTimeStartDay = Param(nameof(WinterTimeStartDay), 297)
 		.SetDisplay("Winter Time Start", "Day-of-year when DST ends", "Calendar")
-		.SetCanOptimize(false);
+		;
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetDisplay("RSI Length", "Number of periods for RSI", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe for calculations", "Data")
-		.SetCanOptimize(false);
+		;
 		_volatilityWindowLength = Param(nameof(VolatilityWindowLength), 16)
 			.SetGreaterThanZero()
 			.SetDisplay("Volatility Window", "Number of bars used to average volatility for trailing decisions", "Risk");
@@ -385,9 +385,9 @@ public class EarlyBirdRangeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
@@ -409,7 +409,7 @@ public class EarlyBirdRangeBreakoutStrategy : Strategy
 		var currentRangePips = ComputeRangeInPips(candle);
 		var averageVolatility = _volatilityWindow.Count == VolatilityWindowLength ? _volatilitySum / VolatilityWindowLength : 0m;
 
-		var rsiValue = _rsi.Process(candle.OpenPrice, candle.CloseTime, true);
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.OpenPrice, candle.CloseTime));
 		if (!rsiValue.IsFinal)
 		{
 			AddVolatilitySample(currentRangePips);

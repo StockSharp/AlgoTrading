@@ -90,8 +90,8 @@ public class TrendSignalsWithTpSlUAlgoStrategy : Strategy {
 		_shortTake = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time) {
-		base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 

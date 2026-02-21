@@ -86,37 +86,37 @@ public class CandelsHighOpenStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for processing", "General")
-			.SetCanOptimize(true);
+			;
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse Signals", "Invert long and short signals", "General")
-			.SetCanOptimize(true);
+			;
 
 		_stopLevel = Param(nameof(StopLevel), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Level", "Absolute stop loss distance", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_takeLevel = Param(nameof(TakeLevel), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Level", "Absolute take profit distance", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Step", "Acceleration factor step for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_sarMax = Param(nameof(SarMax), 0.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Max", "Maximum acceleration factor for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var psar = new ParabolicSar
 		{

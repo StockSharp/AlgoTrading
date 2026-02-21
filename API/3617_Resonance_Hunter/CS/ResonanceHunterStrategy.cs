@@ -82,17 +82,17 @@ public class ResonanceHunterStrategy : Strategy
 			KPeriodParam = owner.Param($"Slot{index}KPeriod", 5)
 				.SetGreaterThanZero()
 				.SetDisplay(kLabel, "Base calculation window for the Stochastic %K", _groupName)
-				.SetCanOptimize(true);
+				;
 
 			DPeriodParam = owner.Param($"Slot{index}DPeriod", 3)
 				.SetGreaterThanZero()
 				.SetDisplay(dLabel, "Smoothing period for the Stochastic %D", _groupName)
-				.SetCanOptimize(true);
+				;
 
 			SlowingParam = owner.Param($"Slot{index}Slowing", 3)
 				.SetGreaterThanZero()
 				.SetDisplay(slowingLabel, "Additional smoothing for the %K line", _groupName)
-				.SetCanOptimize(true);
+				;
 
 			VolumeParam = owner.Param($"Slot{index}Volume", 0.1m)
 				.SetGreaterThanZero()
@@ -218,9 +218,9 @@ public class ResonanceHunterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		foreach (var slot in _slots)
 		{
@@ -239,7 +239,7 @@ public class ResonanceHunterStrategy : Strategy
 				instrument.Stochastic = new StochasticOscillator
 				{
 					KPeriod = slot.KPeriod,
-					DPeriod = slot.DPeriod,
+					D = {  K = { Length = slot } }.DPeriod,
 					Slowing = slot.Slowing
 				};
 

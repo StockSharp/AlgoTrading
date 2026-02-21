@@ -124,19 +124,19 @@ public class ChoWithFlatStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast Period", "Fast period for Chaikin Oscillator", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 20, 1);
 		
 		_slowPeriod = Param(nameof(SlowPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow Period", "Slow period for Chaikin Oscillator", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 		
 		_maPeriod = Param(nameof(MaPeriod), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Period for signal moving average", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 		
 		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
@@ -153,7 +153,7 @@ public class ChoWithFlatStrategy : Strategy
 		_flatThreshold = Param(nameof(FlatThreshold), 100m)
 		.SetGreaterThanZero()
 		.SetDisplay("Flat Threshold", "Minimum band width in points", "Flat Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 200m, 10m);
 	}
 	
@@ -173,11 +173,11 @@ public class ChoWithFlatStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		var cho = new ChaikinOscillator { ShortPeriod = FastPeriod, LongPeriod = SlowPeriod };
+		var cho = new ChaikinOscillator { ShortMa = { Length = FastPeriod }, LongMa = { Length = SlowPeriod } };
 		var signalMa = new MovingAverage { Length = MaPeriod, Type = MaType };
 		var bollinger = new BollingerBands { Length = BollingerPeriod, Width = StdDeviation };
 		

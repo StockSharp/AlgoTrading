@@ -111,9 +111,9 @@ public class NewsTradingEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_straddleStart = StartDateTime + TimeSpan.FromMinutes(StartStraddle);
 		_straddleEnd = _straddleStart + TimeSpan.FromMinutes(StopStraddle);

@@ -37,22 +37,22 @@ public class ExpFishingStrategy : Strategy
 		_priceStep = Param(nameof(PriceStep), 300m)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Step", "Minimum price move to enter or add", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_maxOrders = Param(nameof(MaxOrders), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Orders", "Maximum number of orders in one direction", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss distance in price units", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit distance in price units", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for analysis", "Parameters");
@@ -119,9 +119,9 @@ public class ExpFishingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));
 

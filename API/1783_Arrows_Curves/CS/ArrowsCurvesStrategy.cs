@@ -41,15 +41,15 @@ public class ArrowsCurvesStrategy : Strategy
 	{
 		_ssp = Param(nameof(SspPeriod), 20)
 			.SetDisplay("SSP", "Period for channel", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_channel = Param(nameof(Channel), 0m)
 			.SetDisplay("Channel", "Channel expansion percent", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_stopChannel = Param(nameof(StopChannel), 30m)
 			.SetDisplay("Stop Channel", "Inner stop channel percent", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -133,15 +133,15 @@ public class ArrowsCurvesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = SspPeriod };
 		_lowest = new Lowest { Length = SspPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

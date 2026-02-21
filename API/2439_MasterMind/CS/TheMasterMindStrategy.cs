@@ -105,15 +105,15 @@ public class TheMasterMindStrategy : Strategy
 	{
 		_stochLength = Param(nameof(StochasticLength), 100)
 			.SetDisplay("Stochastic Length", "Base length for Stochastic", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 150m)
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 450m)
 			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStop = Param(nameof(TrailingStop), 350m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in points", "Risk");
@@ -129,13 +129,12 @@ public class TheMasterMindStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			K = { Length = 3 },
 			D = { Length = 3 }
 		};
@@ -147,7 +146,7 @@ public class TheMasterMindStrategy : Strategy
 			.BindEx(_stochastic, _wpr, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue, IIndicatorValue wprValue)

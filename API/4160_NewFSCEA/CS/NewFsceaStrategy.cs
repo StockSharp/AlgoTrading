@@ -174,9 +174,9 @@ public class NewFsceaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -190,7 +190,7 @@ public class NewFsceaStrategy : Strategy
 			SignalMa = { Length = 9 },
 		};
 
-		_ema = new ExponentialMovingAverage
+		_ema = new EMA
 		{
 			Length = TrendPeriod
 		};
@@ -209,7 +209,7 @@ public class NewFsceaStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue emaValue)

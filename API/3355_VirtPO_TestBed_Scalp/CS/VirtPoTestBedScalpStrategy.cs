@@ -530,9 +530,9 @@ public class VirtPoTestBedScalpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -545,14 +545,14 @@ public class VirtPoTestBedScalpStrategy : Strategy
 		_stochastic = new StochasticOscillator
 		{
 			KPeriod = StochasticK,
-			DPeriod = StochasticD,
+			D = {  K = { Length = StochasticD } },
 			Smooth = StochasticSmooth
 		};
 
-		_fastSma = new SimpleMovingAverage { Length = SmaFastPeriod };
-		_slowSma = new SimpleMovingAverage { Length = SmaSlowPeriod };
-		_volumeAverage = new SimpleMovingAverage { Length = 3 };
-		_volatilityAverage = new SimpleMovingAverage { Length = VolatilityPeriod };
+		_fastSma = new SMA { Length = SmaFastPeriod };
+		_slowSma = new SMA { Length = SmaSlowPeriod };
+		_volumeAverage = new SMA { Length = 3 };
+		_volatilityAverage = new SMA { Length = VolatilityPeriod };
 
 		var candleSubscription = SubscribeCandles(CandleType);
 		candleSubscription

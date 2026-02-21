@@ -14,7 +14,7 @@ Signals use daily data and do not rely on stops.
   - `Length = 5`
   - `StdevMultiplier = 7.1m`
   - `VolatilitySecurity = "TVC:VIX"`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Volatility
   - Direction: Both

@@ -109,37 +109,37 @@ public class IctBreadAndButterSellSetupStrategy : Strategy
 		_shortStopTicks = Param(nameof(ShortStopTicks), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Stop Ticks", "Stop loss ticks for NY short entry", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_shortTakeTicks = Param(nameof(ShortTakeTicks), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Take Profit Ticks", "Take profit ticks for NY short entry", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_buyStopTicks = Param(nameof(BuyStopTicks), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy Stop Ticks", "Stop loss ticks for London close buy", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_buyTakeTicks = Param(nameof(BuyTakeTicks), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy Take Profit Ticks", "Take profit ticks for London close buy", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_asiaStopTicks = Param(nameof(AsiaStopTicks), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Asia Stop Ticks", "Stop loss ticks for Asia sell entry", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_asiaTakeTicks = Param(nameof(AsiaTakeTicks), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Asia Take Profit Ticks", "Take profit ticks for Asia sell entry", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -165,9 +165,9 @@ public class IctBreadAndButterSellSetupStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

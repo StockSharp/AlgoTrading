@@ -126,35 +126,35 @@ public class ProfitableSuperTrendMAStochStrategy : Strategy
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetDisplay("ATR Period", "ATR period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 3m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maFastPeriod = Param(nameof(MaFastPeriod), 9)
 			.SetDisplay("Fast MA Period", "Fast EMA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maSlowPeriod = Param(nameof(MaSlowPeriod), 21)
 			.SetDisplay("Slow MA Period", "Slow EMA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochKPeriod = Param(nameof(StochKPeriod), 14)
 			.SetDisplay("Stoch %K", "%K period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
-		_stochDPeriod = Param(nameof(StochDPeriod), 3)
+		_stochD = { Length = Param }(nameof(StochDPeriod), 3)
 			.SetDisplay("Stoch %D", "%D smoothing", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -182,16 +182,15 @@ public class ProfitableSuperTrendMAStochStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var emaFast = new ExponentialMovingAverage { Length = MaFastPeriod };
-		var emaSlow = new ExponentialMovingAverage { Length = MaSlowPeriod };
+		var emaFast = new EMA { Length = MaFastPeriod };
+		var emaSlow = new EMA { Length = MaSlowPeriod };
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochKPeriod,
+		{ K = { Length = StochKPeriod },
 			K = { Length = 1 },
 			D = { Length = StochDPeriod }
 		};
@@ -212,7 +211,7 @@ public class ProfitableSuperTrendMAStochStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastValue, IIndicatorValue slowValue, IIndicatorValue stochValue, IIndicatorValue atrValue)

@@ -80,15 +80,15 @@ public class UniversalInvestor3920Strategy : Strategy
 		_movingPeriod = Param(nameof(MovingPeriod), 23)
 			.SetGreaterThanZero()
 			.SetDisplay("Moving Period", "EMA and LWMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maximumRisk = Param(nameof(MaximumRisk), 0.05m)
 			.SetDisplay("Maximum Risk", "Risk fraction used for volume calculation", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_decreaseFactor = Param(nameof(DecreaseFactor), 0m)
 			.SetDisplay("Decrease Factor", "Volume reduction factor after losses", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -112,11 +112,11 @@ public class UniversalInvestor3920Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = MovingPeriod };
+		var ema = new EMA { Length = MovingPeriod };
 		var lwma = new WeightedMovingAverage { Length = MovingPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

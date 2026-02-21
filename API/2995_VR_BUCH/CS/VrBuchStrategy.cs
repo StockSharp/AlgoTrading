@@ -53,8 +53,8 @@ public class VrBuchStrategy : Strategy
 	private readonly StrategyParam<CandlePrices> _signalPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _fastMa = null!;
-	private LengthIndicator<decimal> _slowMa = null!;
+	private DecimalLengthIndicator _fastMa = null!;
+	private DecimalLengthIndicator _slowMa = null!;
 
 	private decimal[] _fastBuffer = Array.Empty<decimal>();
 	private int _fastIndex;
@@ -219,9 +219,9 @@ public class VrBuchStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = CreateMovingAverage(FastMethod, FastPeriod, FastPrice);
 		_slowMa = CreateMovingAverage(SlowMethod, SlowPeriod, SlowPrice);
@@ -330,17 +330,17 @@ public class VrBuchStrategy : Strategy
 		return true;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period, CandlePrices price)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int period, CandlePrices price)
 	{
 		var length = Math.Max(1, period);
 
-		LengthIndicator<decimal> indicator = method switch
+		DecimalLengthIndicator indicator = method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 
 		indicator.CandlePrice = price;

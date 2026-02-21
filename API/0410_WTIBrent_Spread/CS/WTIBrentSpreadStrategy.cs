@@ -81,7 +81,7 @@ public class WTIBrentSpreadStrategy : Strategy
 		_minUsd = Param(nameof(MinTradeUsd), 200m)
 			.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "Data");
 	}
 

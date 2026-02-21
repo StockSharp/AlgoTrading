@@ -285,9 +285,9 @@ public class MABreakImpulseBuyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var priceStep = Security?.PriceStep ?? 0m;
 		var stopDistance = StopLossPips > 0m && priceStep > 0m ? StopLossPips * priceStep : 0m;
@@ -301,15 +301,15 @@ public class MABreakImpulseBuyStrategy : Strategy
 		}
 		else
 		{
-			StartProtection();
+			StartProtection(null, null);
 		}
 
-		var firstFast = new ExponentialMovingAverage { Length = FirstFastPeriod };
-		var firstSlow = new ExponentialMovingAverage { Length = FirstSlowPeriod };
-		var secondFast = new ExponentialMovingAverage { Length = SecondFastPeriod };
-		var secondSlow = new ExponentialMovingAverage { Length = SecondSlowPeriod };
-		var trendMa = new ExponentialMovingAverage { Length = TrendMaPeriod };
-		var breakoutMa = new ExponentialMovingAverage { Length = BreakoutMaPeriod };
+		var firstFast = new EMA { Length = FirstFastPeriod };
+		var firstSlow = new EMA { Length = FirstSlowPeriod };
+		var secondFast = new EMA { Length = SecondFastPeriod };
+		var secondSlow = new EMA { Length = SecondSlowPeriod };
+		var trendMa = new EMA { Length = TrendMaPeriod };
+		var breakoutMa = new EMA { Length = BreakoutMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

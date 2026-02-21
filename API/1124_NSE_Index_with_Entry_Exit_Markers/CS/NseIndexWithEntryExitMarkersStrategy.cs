@@ -92,30 +92,30 @@ public class NseIndexWithEntryExitMarkersStrategy : Strategy
 	{
 		_smaPeriod = Param(nameof(SmaPeriod), 200)
 			.SetDisplay("SMA Period", "SMA period for trend filtering", "General")
-			.SetCanOptimize(true)
+			
 			.SetRange(1, 1000);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI calculation period", "General")
-			.SetCanOptimize(true)
+			
 			.SetRange(1, 1000);
 
 		_rsiOversold = Param(nameof(RsiOversold), 40m)
 			.SetDisplay("RSI Oversold", "Oversold level for RSI", "General")
-			.SetCanOptimize(true)
+			
 			.SetRange(0m, 100m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "ATR calculation period", "General")
-			.SetCanOptimize(true)
+			
 			.SetRange(1, 1000);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop loss and take profit", "General")
-			.SetCanOptimize(true)
+			
 			.SetRange(0.1m, 10m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -137,13 +137,13 @@ public class NseIndexWithEntryExitMarkersStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		var sma = new SimpleMovingAverage
+		var sma = new SMA
 		{
 			Length = SmaPeriod
 		};

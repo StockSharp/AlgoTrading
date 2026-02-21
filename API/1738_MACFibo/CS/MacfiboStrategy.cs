@@ -146,7 +146,7 @@ public class MacfiboStrategy : Strategy
 			  .SetGreaterThanZero()
 			  .SetDisplay("Fast EMA", "Length of the fast EMA",
 					  "Moving Averages")
-			  .SetCanOptimize(true)
+			  
 			  .SetOptimize(5, 20, 1);
 
 	_midLength = Param(nameof(MidLength), 8)
@@ -163,13 +163,13 @@ public class MacfiboStrategy : Strategy
 		Param(nameof(MinTakeProfit), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Min TP", "Minimum take profit", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 30m, 5m);
 
 	_maxStopLoss = Param(nameof(MaxStopLoss), 50m)
 			   .SetGreaterThanZero()
 			   .SetDisplay("Max SL", "Maximum stop loss", "Risk")
-			   .SetCanOptimize(true)
+			   
 			   .SetOptimize(20m, 100m, 10m);
 
 	_startHour =
@@ -218,8 +218,8 @@ public class MacfiboStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
-	base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+	base.OnStarted2(time);
 
 		_fastMa = new EMA { Length = FastLength };
 	_midMa = new SMA { Length = MidLength };

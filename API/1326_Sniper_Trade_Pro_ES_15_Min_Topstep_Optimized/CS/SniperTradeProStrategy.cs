@@ -102,20 +102,20 @@ public class SniperTradeProStrategy : Strategy
 		_mfdSignal?.Reset();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_emaFast = new ExponentialMovingAverage { Length = EmaFastLength };
-		_emaSlow = new ExponentialMovingAverage { Length = EmaSlowLength };
+		_emaFast = new EMA { Length = EmaFastLength };
+		_emaSlow = new EMA { Length = EmaSlowLength };
 		_vwap = new VolumeWeightedMovingAverage();
 		_adx = new AverageDirectionalIndex { Length = AdxLength };
 		_atr = new AverageTrueRange { Length = 14 };
 		_momentum = new Momentum { Length = 14 };
-		_mfdEma = new ExponentialMovingAverage { Length = 10 };
-		_mfdSignal = new SimpleMovingAverage { Length = 10 };
+		_mfdEma = new EMA { Length = 10 };
+		_mfdSignal = new SMA { Length = 10 };
 
 		var sub = SubscribeCandles(CandleType);
 		sub

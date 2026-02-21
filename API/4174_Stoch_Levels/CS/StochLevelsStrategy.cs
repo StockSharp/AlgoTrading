@@ -88,28 +88,28 @@ public class StochLevelsStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20m)
 			.SetDisplay("Take Profit (steps)", "Distance for take profit orders in price steps", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 60m, 10m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 40m)
 			.SetDisplay("Stop Loss (steps)", "Distance for stop loss orders in price steps", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 100m, 10m);
 
 		_rangeMultiplier = Param(nameof(RangeMultiplier), 1.1m)
 			.SetDisplay("Range Multiplier", "Multiplier applied to the previous candle range", "Calculation")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.1m);
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetDisplay("Order Volume", "Volume for pending limit orders", "Trading")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 	}
 
@@ -136,9 +136,9 @@ public class StochLevelsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 

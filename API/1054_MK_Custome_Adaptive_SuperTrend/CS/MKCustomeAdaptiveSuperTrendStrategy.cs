@@ -86,9 +86,9 @@ public class MKCustomeAdaptiveSuperTrendStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 	
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_atrHigh = new Highest { Length = TrainingPeriod };
@@ -107,8 +107,8 @@ public class MKCustomeAdaptiveSuperTrendStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		var atrHigh = _atrHigh.Process(atr, candle.OpenTime, true).ToDecimal();
-		var atrLow = _atrLow.Process(atr, candle.OpenTime, true).ToDecimal();
+		var atrHigh = _atrHigh.Process(new DecimalIndicatorValue(_atrHigh, atr, candle.OpenTime)).ToDecimal();
+		var atrLow = _atrLow.Process(new DecimalIndicatorValue(_atrLow, atr, candle.OpenTime)).ToDecimal();
 		
 		var highVol = atrLow + (atrHigh - atrLow) * HighVolPercent;
 		var midVol = atrLow + (atrHigh - atrLow) * MidVolPercent;

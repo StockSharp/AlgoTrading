@@ -76,19 +76,19 @@ public MalrChannelBreakoutStrategy()
 _maPeriod = Param(nameof(MaPeriod), 120)
 .SetGreaterThanZero()
 .SetDisplay("MA", "Moving average period", "General")
-.SetCanOptimize(true)
+
 .SetOptimize(50, 200, 10);
 
 _channelReversal = Param(nameof(ChannelReversal), 1.1m)
 .SetGreaterThanZero()
 .SetDisplay("Reversal", "Channel reversal width", "General")
-.SetCanOptimize(true)
+
 .SetOptimize(0.5m, 2m, 0.1m);
 
 _channelBreakout = Param(nameof(ChannelBreakout), 1.1m)
 .SetGreaterThanZero()
 .SetDisplay("Breakout", "Channel breakout width", "General")
-.SetCanOptimize(true)
+
 .SetOptimize(0.5m, 2m, 0.1m);
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -102,11 +102,11 @@ return [(Security, CandleType)];
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-_sma = new SimpleMovingAverage { Length = MaPeriod };
+_sma = new SMA { Length = MaPeriod };
 _lwma = new WeightedMovingAverage { Length = MaPeriod };
 _stdDev = new StandardDeviation { Length = MaPeriod };
 

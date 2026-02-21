@@ -86,7 +86,7 @@ public class AutoRXDV167Strategy : Strategy
 	{
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 		.SetDisplay("Order Volume", "Volume for new entries", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 2m, 0.01m);
 
 		_useAtrTargets = Param(nameof(UseAtrTargets), true)
@@ -94,37 +94,37 @@ public class AutoRXDV167Strategy : Strategy
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 		.SetDisplay("ATR Period", "Average True Range period", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 50, 1);
 
 		_atrTakeProfitFactor = Param(nameof(AtrTakeProfitFactor), 4m)
 		.SetDisplay("ATR TP Factor", "Multiplier applied to ATR for take profit", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 6m, 0.5m);
 
 		_atrStopLossFactor = Param(nameof(AtrStopLossFactor), 3m)
 		.SetDisplay("ATR SL Factor", "Multiplier applied to ATR for stop loss", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 6m, 0.5m);
 
 		_longTakeProfitPoints = Param(nameof(LongTakeProfitPoints), 1000m)
 		.SetDisplay("Long TP Points", "Take profit points for long trades", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 2000m, 50m);
 
 		_longStopLossPoints = Param(nameof(LongStopLossPoints), 1000m)
 		.SetDisplay("Long SL Points", "Stop loss points for long trades", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 2000m, 50m);
 
 		_shortTakeProfitPoints = Param(nameof(ShortTakeProfitPoints), 1000m)
 		.SetDisplay("Short TP Points", "Take profit points for short trades", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 2000m, 50m);
 
 		_shortStopLossPoints = Param(nameof(ShortStopLossPoints), 1000m)
 		.SetDisplay("Short SL Points", "Stop loss points for short trades", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 2000m, 50m);
 
 		_useIndicatorFilters = Param(nameof(UseIndicatorFilters), true)
@@ -143,47 +143,47 @@ public class AutoRXDV167Strategy : Strategy
 		.SetDisplay("Use CCI Filter", "Require CCI confirmation", "Filters");
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 		.SetDisplay("ADX Period", "ADX calculation period", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 40, 1);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 21m)
 		.SetDisplay("ADX Threshold", "Minimum ADX value", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 1m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetDisplay("RSI Period", "RSI calculation period", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 		.SetDisplay("CCI Period", "CCI calculation period", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_macdFast = Param(nameof(MacdFast), 12)
 		.SetDisplay("MACD Fast", "Fast EMA length", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 18, 1);
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 		.SetDisplay("MACD Slow", "Slow EMA length", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 1);
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 		.SetDisplay("MACD Signal", "Signal SMA length", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 18, 1);
 
 		_shortMaPeriod = Param(nameof(ShortMaPeriod), 21)
 		.SetDisplay("Short MA Period", "Perceptron short MA period", "Perceptron")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 1);
 
 		_shortStep = Param(nameof(ShortStep), 5)
 		.SetDisplay("Short Step", "Lag in candles for short perceptron", "Perceptron")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 40, 1);
 
 		_shortX1 = Param(nameof(ShortX1), 100m)
@@ -203,12 +203,12 @@ public class AutoRXDV167Strategy : Strategy
 
 		_longMaPeriod = Param(nameof(LongMaPeriod), 21)
 		.SetDisplay("Long MA Period", "Perceptron long MA period", "Perceptron")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 1);
 
 		_longStep = Param(nameof(LongStep), 5)
 		.SetDisplay("Long Step", "Lag in candles for long perceptron", "Perceptron")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 40, 1);
 
 		_longX1 = Param(nameof(LongX1), 100m)
@@ -228,12 +228,12 @@ public class AutoRXDV167Strategy : Strategy
 
 		_supervisorMaPeriod = Param(nameof(SupervisorMaPeriod), 21)
 		.SetDisplay("Supervisor MA Period", "Supervisor MA period", "Perceptron")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 1);
 
 		_supervisorStep = Param(nameof(SupervisorStep), 5)
 		.SetDisplay("Supervisor Step", "Lag for supervisor perceptron", "Perceptron")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 40, 1);
 
 		_supervisorX1 = Param(nameof(SupervisorX1), 100m)
@@ -330,9 +330,9 @@ public class AutoRXDV167Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -356,7 +356,7 @@ LongMa = { Length = _macdSlow.Value }
 		.BindEx(_atr, _rsi, _cci, _macd, _adx, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

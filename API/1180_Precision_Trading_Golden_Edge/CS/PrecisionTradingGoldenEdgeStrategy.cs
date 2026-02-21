@@ -89,36 +89,36 @@ public class PrecisionTradingGoldenEdgeStrategy : Strategy
 	{
 		_fastEmaLength = Param(nameof(FastEmaLength), 3)
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_slowEmaLength = Param(nameof(SlowEmaLength), 33)
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_hmaLength = Param(nameof(HmaLength), 66)
 			.SetDisplay("HMA Length", "Hull MA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_rsiLength = Param(nameof(RsiLength), 12)
 			.SetDisplay("RSI Length", "RSI period", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetDisplay("ATR Length", "ATR period", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_atrThreshold = Param(nameof(AtrThreshold), 0.1m)
 			.SetDisplay("ATR Threshold", "Minimum ATR", "Filters")
-			.SetCanOptimize(true);
+			;
 		_rangeFilterMultiplier = Param(nameof(RangeFilterMultiplier), 0.5m)
 			.SetDisplay("Range Multiplier", "ATR multiplier for range filter", "Filters")
-			.SetCanOptimize(true);
+			;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		_fastEma = new EMA { Length = FastEmaLength };
+		_slowEma = new EMA { Length = SlowEmaLength };
 		_hma = new HullMovingAverage { Length = HmaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_atr = new AverageTrueRange { Length = AtrLength };

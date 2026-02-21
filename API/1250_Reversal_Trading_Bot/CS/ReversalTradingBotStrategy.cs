@@ -232,16 +232,16 @@ public class ReversalTradingBotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var fastRsi = new RelativeStrengthIndex { Length = FastRsiLength };
 		var slowRsi = new RelativeStrengthIndex { Length = SlowRsiLength };
 		var adx = new AverageDirectionalIndex { Length = 14 };
 		var bb = new BollingerBands { Length = BbLength, Width = 2m };
-		var volSma = new SimpleMovingAverage { Length = 20 };
+		var volSma = new SMA { Length = 20 };
 
 		_priceLowest = new Lowest { Length = DivLookback };
 		_rsiLowest = new Lowest { Length = DivLookback };

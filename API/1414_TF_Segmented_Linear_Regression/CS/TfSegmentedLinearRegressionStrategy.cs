@@ -58,7 +58,7 @@ public class TfSegmentedLinearRegressionStrategy : Strategy
 		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Channel width multiplier", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 	}
 
@@ -80,9 +80,9 @@ public class TfSegmentedLinearRegressionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_linearReg = new LinearRegression();
 		_stdDev = new StandardDeviation();
@@ -125,7 +125,7 @@ public class TfSegmentedLinearRegressionStrategy : Strategy
 		if (regTyped.LinearReg is not decimal regression)
 			return;
 
-		var stdValue = _stdDev.Process(candle.ClosePrice - regression, candle.ServerTime, true).ToNullableDecimal();
+		var stdValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, candle.ClosePrice - regression, candle.ServerTime)).ToNullableDecimal();
 		if (stdValue is not decimal stdDev || !_linearReg.IsFormed || !_stdDev.IsFormed)
 			return;
 

@@ -67,13 +67,13 @@ public class LuckyStrategy : Strategy
 		_shiftPoints = Param(nameof(ShiftPoints), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Shift points", "Minimum pip movement required to trigger a trade", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_limitPoints = Param(nameof(LimitPoints), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Limit points", "Maximum adverse pip movement before closing", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 5);
 
 		_reverse = Param(nameof(Reverse), false)
@@ -94,9 +94,9 @@ public class LuckyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_shiftThreshold = CalculatePriceOffset(ShiftPoints);
 		_limitThreshold = CalculatePriceOffset(LimitPoints);

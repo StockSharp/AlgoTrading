@@ -89,25 +89,25 @@ public class ParabolicSarDistanceBreakoutStrategy : Strategy
 		_acceleration = Param(nameof(Acceleration), 0.02m)
 			.SetGreaterThanZero()
 			.SetDisplay("Acceleration", "Initial acceleration factor for Parabolic SAR", "Indicator Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_maxAcceleration = Param(nameof(MaxAcceleration), 0.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Acceleration", "Maximum acceleration factor for Parabolic SAR", "Indicator Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.5m, 0.1m);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for statistical calculations", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -134,7 +134,7 @@ public class ParabolicSarDistanceBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_parabolicSar = new ParabolicSar
 		{
@@ -164,7 +164,7 @@ public class ParabolicSarDistanceBreakoutStrategy : Strategy
 			isStopTrailing: true
 		);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal sarValue)

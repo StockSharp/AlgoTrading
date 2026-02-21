@@ -279,9 +279,9 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_brainTrendIndicator = new BrainTrend2Indicator
 		{
@@ -491,7 +491,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 		Demark,
 	}
 
-	private class BrainTrend2Indicator : Indicator<ICandleMessage>
+	private class BrainTrend2Indicator : BaseIndicator
 	{
 		private decimal _coefficient = 0.7m;
 
@@ -657,7 +657,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 		}
 	}
 
-	private class AbsolutelyNoLagLwmaIndicator : Indicator<ICandleMessage>
+	private class AbsolutelyNoLagLwmaIndicator : BaseIndicator
 	{
 		private decimal[] _priceBuffer = Array.Empty<decimal>();
 		private decimal[] _lwmaBuffer = Array.Empty<decimal>();

@@ -16,7 +16,7 @@
 - **Значения по умолчанию**:
   - `TopN = 5`
   - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Фильтры**:
   - Категория: Momentum
   - Направление: Лонг

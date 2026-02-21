@@ -268,9 +268,9 @@ public class MulticurrencyOverlayHedgeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var universe = Universe;
 		if (universe == null)
@@ -308,7 +308,7 @@ public class MulticurrencyOverlayHedgeStrategy : Strategy
 				.Start();
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, Security security)

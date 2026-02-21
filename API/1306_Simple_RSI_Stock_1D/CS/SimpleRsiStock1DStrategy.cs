@@ -135,49 +135,49 @@ public class SimpleRsiStock1DStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 5)
 		.SetRange(2, 30)
 		.SetDisplay("RSI Period", "Number of bars for RSI", "Indicator Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 30)
 		.SetRange(10, 50)
 		.SetDisplay("Oversold Level", "RSI value considered oversold", "Signal Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_smaLength = Param(nameof(SmaLength), 200)
 		.SetRange(50, 300)
 		.SetDisplay("SMA Length", "Period for SMA filter", "Indicator Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_atrLength = Param(nameof(AtrLength), 20)
 		.SetRange(5, 40)
 		.SetDisplay("ATR Length", "Bars for ATR calculation", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 		.SetRange(1m, 3m)
 		.SetDisplay("ATR Multiplier", "Multiplier for ATR stop", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfit1 = Param(nameof(TakeProfit1), 5m)
 		.SetRange(1m, 10m)
 		.SetDisplay("Take Profit 1 %", "First take profit percentage", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfit2 = Param(nameof(TakeProfit2), 10m)
 		.SetRange(5m, 20m)
 		.SetDisplay("Take Profit 2 %", "Second take profit percentage", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfit3 = Param(nameof(TakeProfit3), 15m)
 		.SetRange(10m, 30m)
 		.SetDisplay("Take Profit 3 %", "Third take profit percentage", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 25m)
 		.SetRange(5m, 50m)
 		.SetDisplay("Stop Loss %", "Percentage stop loss", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -201,16 +201,16 @@ public class SimpleRsiStock1DStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex
 		{
 			Length = RsiPeriod
 		};
 
-		var sma = new SimpleMovingAverage
+		var sma = new SMA
 		{
 			Length = SmaLength
 		};

@@ -60,15 +60,15 @@ public class SupertrendLongOnlyForQqqStrategy : Strategy
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 32)
 			.SetDisplay("ATR Period", "ATR period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 2);
 
 		_multiplier = Param(nameof(Multiplier), 4.35m)
 			.SetDisplay("Multiplier", "ATR multiplier", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 6m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(new DateTime(1995, 1, 1), TimeSpan.Zero))
@@ -94,9 +94,9 @@ public class SupertrendLongOnlyForQqqStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var subscription = SubscribeCandles(CandleType);

@@ -29,7 +29,7 @@ public class SwettenStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPoints;
 
 	private SimpleMovingAverage _slowSma = null!;
-	private readonly SimpleMovingAverage[] _fastSmas = new SimpleMovingAverage[FastPeriods.Length];
+	private readonly SimpleMovingAverage[] _fastSmas = new SMA[FastPeriods.Length];
 	private decimal _priceStep;
 	private decimal? _longEntryPrice;
 	private decimal? _shortEntryPrice;
@@ -115,17 +115,17 @@ public class SwettenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 
-		_slowSma = new SimpleMovingAverage { Length = SlowPeriod };
+		_slowSma = new SMA { Length = SlowPeriod };
 
 		for (var i = 0; i < _fastSmas.Length; i++)
 		{
-			_fastSmas[i] = new SimpleMovingAverage { Length = FastPeriods[i] };
+			_fastSmas[i] = new SMA { Length = FastPeriods[i] };
 		}
 
 		var subscription = SubscribeCandles(CandleType);

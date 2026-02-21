@@ -107,7 +107,7 @@ public class JSatlDigitSystemStrategy : Strategy
 		_jmaLength = Param(nameof(JmaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("JMA Length", "Period of Jurik MA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 30, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -116,13 +116,13 @@ public class JSatlDigitSystemStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
@@ -139,9 +139,9 @@ public class JSatlDigitSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var jma = new JurikMovingAverage { Length = JmaLength };
 

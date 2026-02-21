@@ -128,9 +128,9 @@ public class FrankUdMinimalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var security = Security ?? throw new InvalidOperationException("Security is not assigned.");
 		var priceStep = security.PriceStep ?? throw new InvalidOperationException("Security.PriceStep is unknown.");

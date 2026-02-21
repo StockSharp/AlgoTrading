@@ -99,29 +99,29 @@ public class PeadStrategy : Strategy
 	{
 		_gapThreshold = Param(nameof(GapThreshold), 1m)
 			.SetDisplay("Gap Threshold", "Gap-up threshold (%)", "General")
-			.SetCanOptimize(true);
+			;
 
 		_epsSurpriseThreshold = Param(nameof(EpsSurpriseThreshold), 5m)
 			.SetDisplay("EPS Surprise", "EPS surprise threshold (%)", "General")
-			.SetCanOptimize(true);
+			;
 
 		_perfDays = Param(nameof(PerfDays), 20)
 			.SetDisplay("Performance Days", "Positive-performance look-back", "General")
-			.SetCanOptimize(true);
+			;
 
 		_stopPct = Param(nameof(StopPct), 8m)
 			.SetDisplay("Stop Percent", "Initial fixed stop-loss (%)", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_emaLen = Param(nameof(EmaLen), 50)
 			.SetDisplay("EMA Length", "Daily EMA length for trail stop", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maxHoldBars = Param(nameof(MaxHoldBars), 50)
 			.SetDisplay("Max Hold Bars", "Exit after N bars from entry", "General")
-			.SetCanOptimize(true);
+			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -143,11 +143,11 @@ public class PeadStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = EmaLen };
+		var ema = new EMA { Length = EmaLen };
 		var roc = new RateOfChange { Length = PerfDays + 1 };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -194,12 +194,12 @@ public class PeadStrategy : Strategy
 			_barsInTrade++;
 
 			if (_stopLevel == 0)
-				_stopLevel = PositionAvgPrice * (1m - StopPct / 100m);
+				_stopLevel = PositionPrice * (1m - StopPct / 100m);
 
-			var tradeProfit = candle.ClosePrice - PositionAvgPrice;
-			var riskAmount = PositionAvgPrice * (StopPct / 100m);
-			if (tradeProfit >= 2m * riskAmount && _stopLevel < PositionAvgPrice)
-				_stopLevel = PositionAvgPrice;
+			var tradeProfit = candle.ClosePrice - PositionPrice;
+			var riskAmount = PositionPrice * (StopPct / 100m);
+			if (tradeProfit >= 2m * riskAmount && _stopLevel < PositionPrice)
+				_stopLevel = PositionPrice;
 
 			if (candle.ClosePrice > _stopLevel)
 				SellStop(_stopLevel);

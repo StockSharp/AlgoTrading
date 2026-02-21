@@ -104,8 +104,8 @@ public class ParallelStrategiesStrategy : Strategy
 		_heikin = new HeikinAshi();
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = MacdFast,
-			LongPeriod = MacdSlow,
+			ShortMa = { Length = MacdFast },
+			LongMa = { Length = MacdSlow },
 			SignalPeriod = MacdSignal
 		};
 

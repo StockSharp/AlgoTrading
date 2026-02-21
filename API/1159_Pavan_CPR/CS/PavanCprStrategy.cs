@@ -54,7 +54,7 @@ public class PavanCprStrategy : Strategy
 		_takeProfitTarget = Param(nameof(TakeProfitTarget), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit distance in price points", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -64,7 +64,7 @@ public class PavanCprStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
+		return [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
 	}
 
 	/// <inheritdoc />
@@ -79,11 +79,11 @@ public class PavanCprStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var daily = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var daily = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		daily.Bind(ProcessDaily).Start();
 
 		var subscription = SubscribeCandles(CandleType);

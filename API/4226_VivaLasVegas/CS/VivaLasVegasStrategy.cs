@@ -42,13 +42,13 @@ private readonly StrategyParam<MoneyManagementModes> _moneyManagementMode;
 		_stopTakePips = Param(nameof(StopTakePips), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop/take distance", "Protective distance expressed in pips for both stop-loss and take-profit.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 		_baseVolume = Param(nameof(BaseVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base volume", "Initial lot size used as the anchor for all money management progressions.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 _moneyManagementMode = Param(nameof(MoneyManagement), MoneyManagementModes.Martingale)
@@ -98,9 +98,9 @@ InitializeMoneyManagement();
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = BaseVolume;
 
@@ -116,7 +116,7 @@ InitializeMoneyManagement();
 		}
 		else
 		{
-			StartProtection();
+			StartProtection(null, null);
 		}
 
 		TryOpenPosition();

@@ -255,7 +255,7 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("%K Period", "Length of Stochastic %K", "Stochastic");
 
-		_stochDPeriod = Param(nameof(StochDPeriod), 3)
+		_stochD = { Length = Param }(nameof(StochDPeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("%D Period", "Length of Stochastic %D", "Stochastic");
 
@@ -313,9 +313,9 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -326,7 +326,7 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 		_stochastic = new StochasticOscillator
 		{
 			KPeriod = StochKPeriod,
-			DPeriod = StochDPeriod,
+			D = {  K = { Length = StochDPeriod } },
 			Slowing = StochSlowing
 		};
 
@@ -352,7 +352,7 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 		return;
 
 		var maInput = GetAppliedPrice(candle, MaPriceType);
-		var maValue = _movingAverage.Process(maInput, candle.OpenTime, true).ToDecimal();
+		var maValue = _movingAverage.Process(new DecimalIndicatorValue(_movingAverage, maInput, candle.OpenTime)).ToDecimal();
 		_maHistory.Add(maValue);
 
 		var maxHistory = Math.Max(MaPeriod + MaShift + 5, MaPeriod * 2);
@@ -360,7 +360,7 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 		_maHistory.RemoveRange(0, _maHistory.Count - maxHistory);
 
 		var rsiInput = GetAppliedPrice(candle, RsiPriceType);
-		var rsiValue = _rsi.Process(rsiInput, candle.OpenTime, true).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiInput, candle.OpenTime)).ToDecimal();
 
 		if (!stochValue.IsFinal)
 		return;
@@ -548,11 +548,11 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

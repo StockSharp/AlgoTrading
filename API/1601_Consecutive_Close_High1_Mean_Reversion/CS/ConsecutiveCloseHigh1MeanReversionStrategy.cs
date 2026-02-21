@@ -88,7 +88,7 @@ public class ConsecutiveCloseHigh1MeanReversionStrategy : Strategy {
 				.SetGreaterThanZero()
 				.SetDisplay("Threshold", "Consecutive closes above prior high",
 							"Parameters")
-				.SetCanOptimize(true);
+				;
 
 		_useEmaFilter =
 			Param(nameof(UseEmaFilter), true)
@@ -99,7 +99,7 @@ public class ConsecutiveCloseHigh1MeanReversionStrategy : Strategy {
 						 .SetGreaterThanZero()
 						 .SetDisplay("EMA Period",
 									 "EMA length for trend filter", "Filters")
-						 .SetCanOptimize(true);
+						 ;
 
 		_candleType =
 			Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -132,12 +132,12 @@ public class ConsecutiveCloseHigh1MeanReversionStrategy : Strategy {
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
-		base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_ema200 = new ExponentialMovingAverage { Length = EmaPeriod };
+		_ema200 = new EMA { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_ema200, ProcessCandle).Start();

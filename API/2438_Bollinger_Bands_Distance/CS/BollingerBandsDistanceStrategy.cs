@@ -93,9 +93,9 @@ public class BollingerBandsDistanceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bb = new BollingerBands
 		{
@@ -108,7 +108,7 @@ public class BollingerBandsDistanceStrategy : Strategy
 			.Bind(bb, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)

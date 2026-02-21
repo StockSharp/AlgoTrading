@@ -83,14 +83,14 @@ public class OrbHeikinAshiSpyCorrelationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (CorrelationSecurity == null)
 			throw new InvalidOperationException("CorrelationSecurity is not set.");
 
-		_volumeSma = new SimpleMovingAverage { Length = RelativeVolumePeriod };
+		_volumeSma = new SMA { Length = RelativeVolumePeriod };
 
 		var mainSub = SubscribeCandles(CandleType);
 		mainSub.Bind(c => c.Volume, _volumeSma, ProcessMainCandle).Start();

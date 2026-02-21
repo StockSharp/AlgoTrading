@@ -62,13 +62,13 @@ public class ColorBullsStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Period of high price moving average", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_smoothLength = Param(nameof(SmoothLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth Length", "Period of smoothing moving average", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -90,9 +90,9 @@ public class ColorBullsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var highMa = new SMA { Length = FastLength };
 		var bullsMa = new SMA { Length = SmoothLength };
@@ -102,7 +102,7 @@ public class ColorBullsStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		void ProcessCandle(ICandleMessage candle)
 		{

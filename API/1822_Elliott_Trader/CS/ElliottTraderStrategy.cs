@@ -111,19 +111,19 @@ public class ElliottTraderStrategy : Strategy
 		_stochLength = Param(nameof(StochLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Length", "Length for %K", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_overbought = Param(nameof(OverboughtLevel), 80m)
 			.SetDisplay("Overbought", "Level to start selling", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_oversold = Param(nameof(OversoldLevel), 20m)
 			.SetDisplay("Oversold", "Level to start buying", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_profitTarget = Param(nameof(ProfitTarget), 100m)
 			.SetDisplay("Profit Target", "Close when PnL reaches value", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_order2 = Param(nameof(Order2Offset), 55m)
 			.SetDisplay("Order2 Offset", "Distance for second order", "Orders");
@@ -161,15 +161,14 @@ public class ElliottTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_step = Security?.PriceStep ?? 1m;
 
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochLength,
+		{ K = { Length = StochLength },
 			K = { Length = 3 },
 			D = { Length = 3 }
 		};
@@ -200,7 +199,7 @@ public class ElliottTraderStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue, IIndicatorValue bbValue, IIndicatorValue maSlowValue, IIndicatorValue maFastValue)

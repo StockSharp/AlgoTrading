@@ -82,23 +82,23 @@ public class BollingerEmaStatsStrategy : Strategy
 		_bbLength = Param(nameof(BbLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Length", "Bollinger Bands period", "Bollinger Bands")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_entryMultiplier = Param(nameof(EntryMultiplier), 2.0m)
 			.SetDisplay("Entry StdDev Mult", "StdDev multiplier for entry bands", "Bollinger Bands")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 4.0m, 0.5m);
 
 		_stopMultiplier = Param(nameof(StopMultiplier), 3.0m)
 			.SetDisplay("Stop StdDev Mult", "StdDev multiplier for stop bands", "Bollinger Bands")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2.0m, 5.0m, 0.5m);
 
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Exit Period", "EMA period for exit", "EMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -120,11 +120,11 @@ public class BollingerEmaStatsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var bbEntry = new BollingerBands { Length = BbLength, Width = EntryMultiplier };
 		var bbStop = new BollingerBands { Length = BbLength, Width = StopMultiplier };

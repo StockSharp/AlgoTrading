@@ -278,13 +278,13 @@ public class AutoAdjustingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_emaFast = new ExponentialMovingAverage { Length = FastEmaLength };
-		_emaMiddle = new ExponentialMovingAverage { Length = MiddleEmaLength };
-		_emaSlow = new ExponentialMovingAverage { Length = SlowEmaLength };
+		_emaFast = new EMA { Length = FastEmaLength };
+		_emaMiddle = new EMA { Length = MiddleEmaLength };
+		_emaSlow = new EMA { Length = SlowEmaLength };
 		_momentum = new Momentum { Length = MomentumLength };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -322,9 +322,9 @@ public class AutoAdjustingStrategy : Strategy
 		return;
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-		var fastValue = _emaFast.Process(median, candle.OpenTime, true);
-		var middleValue = _emaMiddle.Process(median, candle.OpenTime, true);
-		var slowValue = _emaSlow.Process(median, candle.OpenTime, true);
+		var fastValue = _emaFast.Process(new DecimalIndicatorValue(_emaFast, median, candle.OpenTime));
+		var middleValue = _emaMiddle.Process(new DecimalIndicatorValue(_emaMiddle, median, candle.OpenTime));
+		var slowValue = _emaSlow.Process(new DecimalIndicatorValue(_emaSlow, median, candle.OpenTime));
 
 		if (!fastValue.IsFinal || !middleValue.IsFinal || !slowValue.IsFinal)
 		return;
@@ -349,8 +349,8 @@ public class AutoAdjustingStrategy : Strategy
 
 		var pad = ConvertPipsToPrice(PadAmount);
 		var swingSlice = candles.Skip(Math.Max(0, candles.Length - CandlesBack));
-		var lowestLow = swingSlice.Min(c => c.Low);
-		var highestHigh = swingSlice.Max(c => c.High);
+		var lowestLow = swingSlice.Min(c => c.LowPrice);
+		var highestHigh = swingSlice.Max(c => c.HighPrice);
 
 		UpdateExistingPosition(last.Close, lowestLow, highestHigh, pad);
 
@@ -399,7 +399,7 @@ public class AutoAdjustingStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var value = _momentum.Process(candle.ClosePrice, candle.OpenTime, true);
+		var value = _momentum.Process(new DecimalIndicatorValue(_momentum, candle.ClosePrice, candle.OpenTime));
 		if (!value.IsFinal)
 		return;
 

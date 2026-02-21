@@ -64,13 +64,13 @@ _shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(4).TimeFram
 _longEmaLength = Param(nameof(LongEmaLength), 50.01m)
 .SetGreaterThanZero()
 .SetDisplay("Long EMA Length", "Length of long side pentuple EMA", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(20m, 100m, 5m);
 
 _shortEmaLength = Param(nameof(ShortEmaLength), 50.01m)
 .SetGreaterThanZero()
 .SetDisplay("Short EMA Length", "Length of short side pentuple EMA", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(20m, 100m, 5m);
 
 _longPriceMode = Param(nameof(LongPriceMode), AppliedPrices.Close)
@@ -87,12 +87,12 @@ _shortDigits = Param(nameof(ShortDigits), 2)
 
 _longSignalBar = Param(nameof(LongSignalBar), 1)
 .SetDisplay("Long Signal Bar", "Bars back used for long signal", "Signals")
-.SetCanOptimize(true)
+
 .SetOptimize(1, 3, 1);
 
 _shortSignalBar = Param(nameof(ShortSignalBar), 1)
 .SetDisplay("Short Signal Bar", "Bars back used for short signal", "Signals")
-.SetCanOptimize(true)
+
 .SetOptimize(1, 3, 1);
 
 _longAllowOpen = Param(nameof(LongAllowOpen), true)
@@ -124,7 +124,7 @@ _shortTimeExitMinutes = Param(nameof(ShortTimeExitMinutes), 1920)
 _tradeVolume = Param(nameof(TradeVolume), 1m)
 .SetGreaterThanZero()
 .SetDisplay("Trade Volume", "Default order volume", "Trading")
-.SetCanOptimize(true)
+
 .SetOptimize(0.5m, 5m, 0.5m);
 
 _stopLossSteps = Param(nameof(StopLossSteps), 1000m)
@@ -346,9 +346,9 @@ _shortEntryTime = null;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 Volume = TradeVolume;
 
@@ -602,7 +602,7 @@ public const int Up = 2;
 /// Pentuple exponential moving average indicator with color style output.
 /// Provides current and previous values in the resulting indicator value.
 /// </summary>
-public sealed class PentupleExponentialMovingAverageIndicator : BaseIndicator<decimal>
+public sealed class PentupleExponentialMovingAverageIndicator : BaseIndicator
 {
 private decimal? _ema1;
 private decimal? _ema2;

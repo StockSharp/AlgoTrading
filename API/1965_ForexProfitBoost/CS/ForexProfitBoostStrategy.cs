@@ -84,23 +84,23 @@ public class ForexProfitBoostStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Period", "Period of the fast EMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA Period", "Period of the slow SMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetDisplay("Stop Loss", "Stop loss distance in price points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 2000m, 100m);
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetDisplay("Take Profit", "Take profit distance in price points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1000m, 4000m, 100m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
@@ -124,9 +124,9 @@ public class ForexProfitBoostStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastEma = new EMA { Length = FastPeriod };
 		var slowSma = new SMA { Length = SlowPeriod };

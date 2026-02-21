@@ -68,7 +68,7 @@ public class GlobalTakeProfitStrategy : Strategy
 
 		_takeProfit = Param(nameof(TakeProfit), 100m)
 			.SetDisplay("Take Profit", "Threshold value", "Strategy")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
@@ -81,16 +81,16 @@ public class GlobalTakeProfitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_initialBalance = Portfolio?.CurrentValue ?? 0m;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

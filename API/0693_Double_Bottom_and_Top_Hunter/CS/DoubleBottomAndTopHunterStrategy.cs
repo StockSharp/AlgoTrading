@@ -64,12 +64,12 @@ public class DoubleBottomAndTopHunterStrategy : Strategy
 		_length = Param(nameof(Length), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Lookback for extremes", "General")
-			.SetCanOptimize(true);
+			;
 
 		_lookback = Param(nameof(Lookback), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Period to confirm doubles", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -91,9 +91,9 @@ public class DoubleBottomAndTopHunterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var lowestLength = new Lowest { Length = Length };
 		var highestLength = new Highest { Length = Length };

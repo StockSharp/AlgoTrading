@@ -84,19 +84,19 @@ public class AdxMeanReversionStrategy : Strategy
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 5)
 			.SetDisplay("ADX Period", "Period for ADX indicator", "Indicators");
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10)
 			.SetDisplay("Average Period", "Period for calculating ADX average and standard deviation", "Settings");
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3m, 0.5m)
 			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation", "Settings");
 
@@ -105,7 +105,7 @@ public class AdxMeanReversionStrategy : Strategy
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m)
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management");
 	}
@@ -131,7 +131,7 @@ public class AdxMeanReversionStrategy : Strategy
 
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		// Create ADX indicator
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
@@ -157,7 +157,7 @@ public class AdxMeanReversionStrategy : Strategy
 			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
 		);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)

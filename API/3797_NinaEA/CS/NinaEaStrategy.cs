@@ -39,12 +39,12 @@ public NinaEaStrategy()
 
 _atrPeriod = Param(nameof(AtrPeriod), 10)
 .SetDisplay("ATR Period", "ATR length for the SuperTrend filter", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 40, 5);
 
 _atrMultiplier = Param(nameof(AtrMultiplier), 1m)
 .SetDisplay("ATR Multiplier", "ATR multiplier applied by SuperTrend", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(0.5m, 4m, 0.5m);
 
 _stopLossPoints = Param(nameof(StopLossPoints), 0m)
@@ -98,9 +98,9 @@ yield return (Security, CandleType);
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _superTrend = new SuperTrend
 {
@@ -114,7 +114,7 @@ subscription
 .Start();
 
 // Start basic protection so trailing or manual risk controls can be added later.
-StartProtection();
+StartProtection(null, null);
 }
 
 private void ProcessCandle(ICandleMessage candle, IIndicatorValue superTrendValue)

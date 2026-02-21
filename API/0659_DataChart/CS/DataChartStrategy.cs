@@ -43,7 +43,7 @@ public class DataChartStrategy : Strategy
 		_duration = Param(nameof(Duration), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Duration", "Number of candles to measure displacement", "Chart")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 5);
 
 		_useAtrReference = Param(nameof(UseAtrReference), true)
@@ -52,7 +52,7 @@ public class DataChartStrategy : Strategy
 		_atrLength = Param(nameof(AtrLength), 24)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Length", "ATR period for normalization", "Chart")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 
 		_atr = new AverageTrueRange { Length = AtrLength };
@@ -66,9 +66,9 @@ public class DataChartStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(Process).Start();

@@ -45,9 +45,9 @@ public class AutostopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var step = Security?.PriceStep ?? 1m;
 		var tp = MonitorTakeProfit ? new Unit(TakeProfitTicks * step, UnitTypes.Point) : new Unit();

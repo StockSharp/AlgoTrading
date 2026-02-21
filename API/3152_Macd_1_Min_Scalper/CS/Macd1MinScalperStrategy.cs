@@ -348,7 +348,7 @@ public class Macd1MinScalperStrategy : Strategy
 
 		if (_useBaseForMomentum)
 		{
-			var momentumValue = _momentum.Process(candle.ClosePrice, candle.CloseTime, true);
+			var momentumValue = _momentum.Process(new DecimalIndicatorValue(_momentum, candle.ClosePrice, candle.CloseTime));
 			if (momentumValue.IsFinal)
 			{
 				UpdateMomentum(momentumValue.ToDecimal());
@@ -520,8 +520,7 @@ public class Macd1MinScalperStrategy : Strategy
 	{
 		return new WeightedMovingAverage
 		{
-			Length = length,
-			CandlePrice = CandlePrice.Typical
+			Length = length
 		};
 	}
 

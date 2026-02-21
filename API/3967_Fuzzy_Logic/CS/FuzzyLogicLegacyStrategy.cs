@@ -154,12 +154,12 @@ public class FuzzyLogicLegacyStrategy : Strategy
 		_longThreshold = Param(nameof(LongThreshold), 0.75m)
 			.SetDisplay("Long Threshold", "Decision level for long entries", "Trading")
 			.SetRange(0.5m, 0.9m)
-			.SetCanOptimize(true);
+			;
 
 		_shortThreshold = Param(nameof(ShortThreshold), 0.25m)
 			.SetDisplay("Short Threshold", "Decision level for short entries", "Trading")
 			.SetRange(0.1m, 0.5m)
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 60m)
 			.SetDisplay("Stop Loss (points)", "Stop loss distance in price steps", "Risk Management");
@@ -220,9 +220,9 @@ public class FuzzyLogicLegacyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_williamsIndicator = new WilliamsR { Length = 14 };
 		_rsiIndicator = new RelativeStrengthIndex { Length = 14 };

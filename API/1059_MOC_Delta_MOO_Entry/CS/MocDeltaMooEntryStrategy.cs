@@ -76,17 +76,17 @@ public class MocDeltaMooEntryStrategy : Strategy
 	{
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 20)
 			.SetDisplay("Take Profit (Ticks)", "Take profit in ticks", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 10)
 			.SetDisplay("Stop Loss (Ticks)", "Stop loss in ticks", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_deltaThreshold = Param(nameof(DeltaThreshold), 2m)
 			.SetDisplay("Delta % Threshold", "MOC delta percentage threshold", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -112,9 +112,9 @@ public class MocDeltaMooEntryStrategy : Strategy
 		_mocDeltaPct = null;
 	}
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var tickSize = Security.PriceStep ?? 1m;
 		StartProtection(

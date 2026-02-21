@@ -42,37 +42,37 @@ public class BollingerBandsRsiStrategy : Strategy
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Length", "Period of Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Multiplier", "Standard deviation multiplier", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Period of RSI", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 			.SetNotNegative()
 			.SetDisplay("RSI Overbought", "RSI level considered overbought", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
 			.SetNotNegative()
 			.SetDisplay("RSI Oversold", "RSI level considered oversold", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_rsiExit = Param(nameof(RsiExit), 50m)
 			.SetNotNegative()
 			.SetDisplay("RSI Exit", "RSI level for exiting", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40m, 60m, 5m);
 	}
 
@@ -82,9 +82,9 @@ public class BollingerBandsRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bollinger = new BollingerBands
 		{

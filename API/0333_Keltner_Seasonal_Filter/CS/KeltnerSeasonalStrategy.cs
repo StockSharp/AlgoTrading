@@ -116,15 +116,15 @@ public class KeltnerSeasonalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize seasonal strength for current month
 		UpdateSeasonalStrength(time);
 
 		// Create indicators for Keltner Channel
-		var ema = new ExponentialMovingAverage
+		var ema = new EMA
 		{
 			Length = EmaPeriod
 		};

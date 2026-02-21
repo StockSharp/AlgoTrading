@@ -245,9 +245,9 @@ public class AwesomeOscTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = Lots;
 
@@ -255,11 +255,11 @@ public class AwesomeOscTraderStrategy : Strategy
 		_bollinger.Width = BollingerSigma;
 
 		_stochastic.KPeriod = StochK;
-		_stochastic.DPeriod = StochD;
+		_stochastic.D = { Length = StochD };
 		_stochastic.Slowing = StochSlow;
 
-		_awesome.ShortPeriod = PeriodFast;
-		_awesome.LongPeriod = PeriodSlow;
+		_awesome.ShortMa = { Length = PeriodFast };
+		_awesome.LongMa = { Length = PeriodSlow };
 
 		_aoAbsMax.Length = Math.Max(100, PeriodSlow * 3);
 

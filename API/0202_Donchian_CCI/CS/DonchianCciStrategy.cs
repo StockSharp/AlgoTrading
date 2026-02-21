@@ -67,17 +67,17 @@ public class DonchianCciStrategy : Strategy
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 			.SetRange(10, 50)
 			.SetDisplay("Donchian Period", "Period for Donchian Channel", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetRange(10, 50)
 			.SetDisplay("CCI Period", "Period for CCI indicator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -96,9 +96,9 @@ public class DonchianCciStrategy : Strategy
 
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize Indicators
 		var donchian = new DonchianChannels { Length = DonchianPeriod };

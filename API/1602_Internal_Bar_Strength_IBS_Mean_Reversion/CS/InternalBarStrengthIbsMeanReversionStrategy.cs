@@ -76,13 +76,13 @@ public class InternalBarStrengthIbsMeanReversionStrategy : Strategy {
 				.SetRange(0m, 1m)
 				.SetDisplay("Upper Threshold", "IBS value to trigger entry",
 							"Parameters")
-				.SetCanOptimize(true);
+				;
 
 		_lowerThreshold = Param(nameof(LowerThreshold), 0.3m)
 							  .SetRange(0m, 1m)
 							  .SetDisplay("Lower Threshold",
 										  "IBS value to exit", "Parameters")
-							  .SetCanOptimize(true);
+							  ;
 
 		_candleType =
 			Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -112,10 +112,10 @@ public class InternalBarStrengthIbsMeanReversionStrategy : Strategy {
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
-		base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

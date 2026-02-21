@@ -54,7 +54,7 @@ public class CrunchstersNormalisedTrendStrategy : Strategy
 
 		_hmaOffset = Param(nameof(HmaOffset), 0)
 			.SetDisplay("HMA Offset", "Offset for HMA input", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 20, 1);
 
 		_stopMultiple = Param(nameof(StopMultiple), 1m)
@@ -141,9 +141,9 @@ public class CrunchstersNormalisedTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_returnsStdDev.Length = NormPeriod;
 		_hma.Length = HmaPeriod;
@@ -175,7 +175,7 @@ public class CrunchstersNormalisedTrendStrategy : Strategy
 		}
 
 		var diff = candle.ClosePrice - _prevClose.Value;
-		var stdDevValue = _returnsStdDev.Process(diff, candle.OpenTime, true).ToDecimal();
+		var stdDevValue = _returnsStdDev.Process(new DecimalIndicatorValue(_returnsStdDev, diff, candle.OpenTime)).ToDecimal();
 
 		if (stdDevValue == 0)
 		{
@@ -196,7 +196,7 @@ public class CrunchstersNormalisedTrendStrategy : Strategy
 			return;
 		}
 
-		var hmaValue = _hma.Process(shifted, candle.OpenTime, true).ToDecimal();
+		var hmaValue = _hma.Process(new DecimalIndicatorValue(_hma, shifted, candle.OpenTime)).ToDecimal();
 		var atrValue = _atr.Process(candle).ToDecimal();
 
 		if (UseLong && _prevNPrice <= _prevHma && _nPrice > hmaValue && Position <= 0)

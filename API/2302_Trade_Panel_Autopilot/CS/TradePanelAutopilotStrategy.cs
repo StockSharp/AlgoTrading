@@ -51,13 +51,13 @@ public class TradePanelAutopilotStrategy : Strategy
 		for (var i = 0; i < _states.Length; i++)
 			_states[i] = new CandleState();
 
-		_autopilot = Param(nameof(Autopilot), false).SetDisplay("Autopilot").SetCanOptimize(false);
-		_openThreshold = Param(nameof(OpenThreshold), 85m).SetDisplay("Open Threshold").SetCanOptimize(true);
-		_closeThreshold = Param(nameof(CloseThreshold), 55m).SetDisplay("Close Threshold").SetCanOptimize(true);
-		_lotFix = Param(nameof(LotFixed), 0.01m).SetDisplay("Fixed Lot").SetCanOptimize(true);
-		_lotPercent = Param(nameof(LotPercent), 0.01m).SetDisplay("Lot Percent").SetCanOptimize(true);
-		_useFixedLot = Param(nameof(UseFixedLot), false).SetDisplay("Use Fixed Lot").SetCanOptimize(false);
-		_useStopLoss = Param(nameof(UseStopLoss), false).SetDisplay("Use Stop Loss").SetCanOptimize(false);
+		_autopilot = Param(nameof(Autopilot), false).SetDisplay("Autopilot", "Autopilot", "General");
+		_openThreshold = Param(nameof(OpenThreshold), 85m).SetDisplay("Open Threshold", "Open Threshold", "General");
+		_closeThreshold = Param(nameof(CloseThreshold), 55m).SetDisplay("Close Threshold", "Close Threshold", "General");
+		_lotFix = Param(nameof(LotFixed), 0.01m).SetDisplay("Fixed Lot", "Fixed Lot", "General");
+		_lotPercent = Param(nameof(LotPercent), 0.01m).SetDisplay("Lot Percent", "Lot Percent", "General");
+		_useFixedLot = Param(nameof(UseFixedLot), false).SetDisplay("Use Fixed Lot", "Use Fixed Lot", "General");
+		_useStopLoss = Param(nameof(UseStopLoss), false).SetDisplay("Use Stop Loss", "Use Stop Loss", "General");
 	}
 
 	public bool Autopilot { get => _autopilot.Value; set => _autopilot.Value = value; }
@@ -69,12 +69,12 @@ public class TradePanelAutopilotStrategy : Strategy
 	public bool UseStopLoss { get => _useStopLoss.Value; set => _useStopLoss.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (UseStopLoss)
-			StartProtection();
+			StartProtection(null, null);
 
 		for (var i = 0; i < _timeframes.Length; i++)
 		{

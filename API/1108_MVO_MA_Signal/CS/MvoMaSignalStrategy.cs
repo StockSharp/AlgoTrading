@@ -160,43 +160,43 @@ public class MvoMaSignalStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 55)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR calculation period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_mfiPeriod = Param(nameof(MfiPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("MFI Period", "Period for MFI", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_riskMult = Param(nameof(RiskMult), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("SL Multiplier", "Stop loss in ATR", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_rewardMult = Param(nameof(RewardMult), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("TP Multiplier", "Take profit in ATR", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_breakevenTicks = Param(nameof(BreakevenTicks), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Breakeven ATR", "Move to breakeven after", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_trailAtrMult = Param(nameof(TrailAtrMult), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trail ATR", "Trailing stop after breakeven", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
@@ -238,9 +238,9 @@ public class MvoMaSignalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ma = new SMA { Length = MaPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };

@@ -81,22 +81,22 @@ public class AtrGodStrategy : Strategy
 	{
 		_period = Param(nameof(Period), 10)
 		.SetDisplay("Period", "ATR period for Supertrend", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 21, 2);
 		
 		_multiplier = Param(nameof(Multiplier), 3m)
 		.SetDisplay("Multiplier", "ATR multiplier for Supertrend", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 		
 		_riskMultiplier = Param(nameof(RiskMultiplier), 4.5m)
 		.SetDisplay("Risk Multiplier", "ATR multiplier for stop loss", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 6m, 0.5m);
 		
 		_rewardRisk = Param(nameof(RewardRiskRatio), 1.5m)
 		.SetDisplay("RR Ratio", "Risk to reward ratio", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -121,9 +121,9 @@ public class AtrGodStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var atr = new AverageTrueRange { Length = Period };
 		

@@ -36,13 +36,13 @@ public class DigVariationStrategy : Strategy
 	/// </summary>
 	public DigVariationStrategy()
 	{
-		_period = this.Param("Period", 12).SetDisplay("Period").SetCanOptimize(true);
-		_buyOpen = this.Param("BuyOpen", true).SetDisplay("Open Long");
-		_sellOpen = this.Param("SellOpen", true).SetDisplay("Open Short");
-		_buyClose = this.Param("BuyClose", true).SetDisplay("Close Long");
-		_sellClose = this.Param("SellClose", true).SetDisplay("Close Short");
-		_stopLoss = this.Param("StopLoss", 1000m).SetDisplay("Stop Loss").SetCanOptimize(true);
-		_takeProfit = this.Param("TakeProfit", 2000m).SetDisplay("Take Profit").SetCanOptimize(true);
+		_period = this.Param("Period", 12).SetDisplay("Period", "Period", "General");
+		_buyOpen = this.Param("BuyOpen", true).SetDisplay("Open Long", "Open Long", "General");
+		_sellOpen = this.Param("SellOpen", true).SetDisplay("Open Short", "Open Short", "General");
+		_buyClose = this.Param("BuyClose", true).SetDisplay("Close Long", "Close Long", "General");
+		_sellClose = this.Param("SellClose", true).SetDisplay("Close Short", "Close Short", "General");
+		_stopLoss = this.Param("StopLoss", 1000m).SetDisplay("Stop Loss", "Stop Loss", "General");
+		_takeProfit = this.Param("TakeProfit", 2000m).SetDisplay("Take Profit", "Take Profit", "General");
 	}
 
 	/// <summary>
@@ -109,13 +109,13 @@ public class DigVariationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(StopLoss, TakeProfit);
 
-		var sma = new SimpleMovingAverage { Length = Period };
+		var sma = new SMA { Length = Period };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(sma, ProcessCandle).Start();
 	}

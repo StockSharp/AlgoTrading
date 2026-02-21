@@ -50,13 +50,13 @@ public class StochasticThreePeriodsStrategy:Strategy
 		return [(Security, CandleType1), (Security, CandleType2), (Security, CandleType3)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		var st1=new StochasticOscillator{Length=KPeriod1};
-		var st2=new StochasticOscillator{Length=KPeriod2};
-		var st3=new StochasticOscillator{Length=KPeriod3};
-		var stExit=new StochasticOscillator{Length=KExitPeriod};
+		base.OnStarted2(time);
+		var st1=new StochasticOscillator{ K = { Length = KPeriod1 }};
+		var st2=new StochasticOscillator{ K = { Length = KPeriod2 }};
+		var st3=new StochasticOscillator{ K = { Length = KPeriod3 }};
+		var stExit=new StochasticOscillator{ K = { Length = KExitPeriod }};
 		SubscribeCandles(CandleType2).BindEx(st2,ProcessTf2).Start();
 		SubscribeCandles(CandleType3).BindEx(st3,ProcessTf3).Start();
 		var sub1=SubscribeCandles(CandleType1);

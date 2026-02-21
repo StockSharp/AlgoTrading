@@ -199,7 +199,7 @@ public class XoSignalReopenStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "ATR lookback used for volatility assessment", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
@@ -275,9 +275,9 @@ public class XoSignalReopenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var subscription = SubscribeCandles(CandleType);

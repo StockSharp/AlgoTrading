@@ -88,19 +88,19 @@ public class SmcBtc1HObFvgStrategy : Strategy
 		_atrFactor = Param(nameof(AtrFactor), 6m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Factor", "ATR multiplier for stop loss", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 10m, 1m);
 		
 		_riskReward = Param(nameof(RiskRewardRatio), 2.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk/Reward", "Take profit multiplier", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 		
 		_zoneTimeout = Param(nameof(ZoneTimeout), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Zone Timeout", "Bars until zone expires", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 5);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -129,10 +129,10 @@ public class SmcBtc1HObFvgStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 		
 		var atr = new ATR { Length = 14 };
 		

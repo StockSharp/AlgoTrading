@@ -87,13 +87,13 @@ public class VolatilitySkewArbitrageStrategy : Strategy
 
 		_lookbackPeriodParam = Param(nameof(LookbackPeriod), 20)
 			.SetDisplay("Lookback Period", "Period for calculating average volatility skew", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5)
 			.SetGreaterThanZero();
 
 		_thresholdParam = Param(nameof(Threshold), 2m)
 			.SetDisplay("Threshold", "Threshold multiplier for standard deviation", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m)
 			.SetNotNegative();
 
@@ -115,9 +115,9 @@ public class VolatilitySkewArbitrageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 
 		// Subscribe to implied volatility for both options
@@ -167,7 +167,7 @@ public class VolatilitySkewArbitrageStrategy : Strategy
 			return;
 
 		// Process volatility skew through the indicator
-		var stdDevValue = _volSkewStdDev.Process(volSkew, time, isFinal);
+		var stdDevValue = _volSkewStdDev.Process(new DecimalIndicatorValue(_volSkewStdDev, volSkew, time.UtcDateTime));
 
 		// Update running average for the first LookbackPeriod bars
 		if (_barCount < LookbackPeriod)

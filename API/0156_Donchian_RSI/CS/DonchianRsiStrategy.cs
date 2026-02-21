@@ -93,31 +93,31 @@ public class DonchianRsiStrategy : Strategy
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Donchian Period", "Period for Donchian Channels calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_rsiOverboughtLevel = Param(nameof(RsiOverboughtLevel), 70m)
 			.SetRange(50, 90)
 			.SetDisplay("RSI Overbought", "RSI level considered overbought", "Trading Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(65, 80, 5);
 
 		_rsiOversoldLevel = Param(nameof(RsiOversoldLevel), 30m)
 			.SetRange(10, 50)
 			.SetDisplay("RSI Oversold", "RSI level considered oversold", "Trading Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 35, 5);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -141,9 +141,9 @@ public class DonchianRsiStrategy : Strategy
 			}
 
 			/// <inheritdoc />
-			protected override void OnStarted(DateTimeOffset time)
+			protected override void OnStarted2(DateTime time)
 			{
-					base.OnStarted(time);
+					base.OnStarted2(time);
 
 					// Create indicators
 					var donchian = new DonchianChannels { Length = DonchianPeriod };

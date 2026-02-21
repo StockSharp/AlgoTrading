@@ -83,9 +83,9 @@ public class SpyTltStrategy : Strategy
 			yield return (_tltSecurity, CandleType);
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tltSecurity = SecurityProvider.LookupById(TltSymbol);
 		if (_tltSecurity == null)

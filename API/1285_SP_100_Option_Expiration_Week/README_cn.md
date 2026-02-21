@@ -12,7 +12,7 @@
   - 在当月第三个周五平多头仓位。
 - **止损**：无。
 - **默认值**：
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame()。
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()。
 - **筛选**：
   - 类型: 季节性
   - 方向: 多头

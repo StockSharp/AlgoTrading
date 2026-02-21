@@ -56,27 +56,27 @@ public class MacdStochasticTrailingStrategy : Strategy
 		_longStopLoss = Param(nameof(LongStopLoss), 17m)
 			.SetNotNegative()
 			.SetDisplay("Long Stop Loss", "Distance for the long stop loss in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_shortStopLoss = Param(nameof(ShortStopLoss), 40m)
 			.SetNotNegative()
 			.SetDisplay("Short Stop Loss", "Distance for the short stop loss in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_longTrailingStop = Param(nameof(LongTrailingStop), 88m)
 			.SetNotNegative()
 			.SetDisplay("Long Trailing", "Trailing distance for long positions in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_shortTrailingStop = Param(nameof(ShortTrailingStop), 76m)
 			.SetNotNegative()
 			.SetDisplay("Short Trailing", "Trailing distance for short positions in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetNotNegative()
 			.SetDisplay("Order Volume", "Base volume used when opening positions", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_macdCandleType = Param(nameof(MacdCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("MACD Candles", "Timeframe used to calculate MACD filters", "Data");
@@ -212,15 +212,13 @@ public class MacdStochasticTrailingStrategy : Strategy
 		};
 
 		_entryStochastic = new StochasticOscillator
-		{
-			Length = 5,
+		{ K = { Length = 5 },
 			K = { Length = 11 },
 			D = { Length = 3 }
 		};
 
 		_exitStochastic = new StochasticOscillator
-		{
-			Length = 9,
+		{ K = { Length = 9 },
 			K = { Length = 19 },
 			D = { Length = 3 }
 		};

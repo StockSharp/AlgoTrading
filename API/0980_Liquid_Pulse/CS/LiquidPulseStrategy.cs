@@ -76,9 +76,9 @@ public class LiquidPulseStrategy : Strategy
 		_trades = 0;
 	}
 	
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var (lookback, threshold) = VolumeSensitivity switch
 		{
@@ -86,11 +86,11 @@ public class LiquidPulseStrategy : Strategy
 			VolumeSensitivityLevels.Medium => (20, 1.8m),
 			_ => (11, 2m)
 		};
-		_volSma = new SimpleMovingAverage { Length = lookback };
+		_volSma = new SMA { Length = lookback };
 		
 		var (fast, slow, signal) = MacdSpeed switch
 		{
-			MacdSpeedOptions.Fast => (2, 7, 5),
+			MacdSpeedOptions.ShortMa => (2, 7, 5),
 			MacdSpeedOptions.Medium => (5, 13, 9),
 			_ => (12, 26, 9)
 		};
@@ -105,7 +105,7 @@ public class LiquidPulseStrategy : Strategy
 		var sub = SubscribeCandles(CandleType);
 		sub.BindEx(_macd, _adx, _atr, ProcessCandle).Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		_volParams = () => (lookback, threshold);
 		

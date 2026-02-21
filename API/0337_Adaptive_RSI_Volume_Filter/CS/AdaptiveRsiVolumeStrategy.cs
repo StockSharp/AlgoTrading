@@ -124,9 +124,9 @@ public class AdaptiveRsiVolumeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_currentRsiPeriod = MaxRsiPeriod;
 
@@ -141,7 +141,7 @@ public class AdaptiveRsiVolumeStrategy : Strategy
 			Length = _currentRsiPeriod
 		};
 
-		_volumeSma = new SimpleMovingAverage
+		_volumeSma = new SMA
 		{
 			Length = VolumeLookback
 		};
@@ -246,7 +246,7 @@ public class AdaptiveRsiVolumeStrategy : Strategy
 	private void ProcessVolume(ICandleMessage candle)
 	{
 		// Process volume with SMA
-		var volumeValue = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished);
+		var volumeValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime));
 		
 		if (volumeValue.IsFinal)
 		{

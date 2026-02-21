@@ -70,7 +70,7 @@ public class JanuaryBarometerStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Min trade USD", "Minimum order value", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 

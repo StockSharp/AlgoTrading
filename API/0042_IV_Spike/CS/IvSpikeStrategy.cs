@@ -71,19 +71,19 @@ public class IVSpikeStrategy : Strategy
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_ivPeriod = Param(nameof(IVPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("IV Period", "Period for Implied Volatility calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_ivSpikeThreshold = Param(nameof(IVSpikeThreshold), 1.5m)
 			.SetRange(1.0m, decimal.MaxValue)
 			.SetDisplay("IV Spike Threshold", "Minimum IV increase multiplier (e.g., 1.5 = 50% increase)", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.2m, 2.0m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -105,12 +105,12 @@ public class IVSpikeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		var ma = new SimpleMovingAverage { Length = MAPeriod };
+		var ma = new SMA { Length = MAPeriod };
 		var hv = new StandardDeviation { Length = IVPeriod }; // Using standard deviation as proxy for IV
 
 		// Create subscription and bind indicators

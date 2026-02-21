@@ -11,7 +11,7 @@
 - **默认值**：
   - `DaysBefore = 5`
   - `DaysAfter = 1`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **筛选**：
   - 类别：事件驱动
   - 方向：多头

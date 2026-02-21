@@ -105,13 +105,13 @@ public class VixSpikeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(new Unit(3, UnitTypes.Percent), new Unit(2, UnitTypes.Percent));
 
-		var ma = new SimpleMovingAverage { Length = StdDevLength };
+		var ma = new SMA { Length = StdDevLength };
 		var std = new StandardDeviation { Length = StdDevLength };
 
 		var mainSub = SubscribeCandles(CandleType);

@@ -79,13 +79,13 @@ public class CanxMaCrossoverStrategy : Strategy
 		_length = Param(nameof(Length), 17)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Period of the fast EMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_ratio = Param(nameof(Ratio), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Slow EMA is fast EMA length times this value", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_longOnly = Param(nameof(LongOnly), false)
@@ -93,7 +93,7 @@ public class CanxMaCrossoverStrategy : Strategy
 
 		_startYear = Param(nameof(StartYear), 2024)
 			.SetDisplay("Start Year", "Ignore data before this year", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2015, 2025, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -113,20 +113,18 @@ public class CanxMaCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage
+		var fastEma = new EMA
 		{
 			Length = Length,
-			CandlePrice = CandlePrice.Median,
 		};
 
-		var slowEma = new ExponentialMovingAverage
+		var slowEma = new EMA
 		{
 			Length = Length * Ratio,
-			CandlePrice = CandlePrice.Median,
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -189,6 +187,6 @@ public class CanxMaCrossoverStrategy : Strategy
 			})
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 }

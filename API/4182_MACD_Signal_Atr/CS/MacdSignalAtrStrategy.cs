@@ -137,7 +137,7 @@ public MacdSignalAtrStrategy()
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance for the fixed take-profit target in price steps.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 10m)
 			.SetGreaterThanZero()
@@ -146,32 +146,32 @@ public MacdSignalAtrStrategy()
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 25)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Trailing distance in price steps. Set to 0 to disable trailing.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_fastPeriod = Param(nameof(FastPeriod), 9)
 			.SetRange(1, 100)
 			.SetDisplay("MACD Fast EMA", "Length of the fast EMA used by MACD.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 15)
 			.SetRange(2, 150)
 			.SetDisplay("MACD Slow EMA", "Length of the slow EMA used by MACD.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_signalPeriod = Param(nameof(SignalPeriod), 8)
 			.SetRange(1, 100)
 			.SetDisplay("MACD Signal EMA", "Smoothing period for the MACD signal line.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_thresholdMultiplier = Param(nameof(ThresholdMultiplier), 0.004m)
 			.SetNotNegative()
 			.SetDisplay("ATR Multiplier", "Multiplier applied to ATR to form the breakout threshold.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 200)
 			.SetRange(10, 500)
 			.SetDisplay("ATR Period", "Length of the Average True Range filter.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for MACD and ATR calculations.", "General");

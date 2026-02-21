@@ -151,21 +151,21 @@ public class OsMaMasterStrategy : Strategy
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Period", "Fast EMA length used inside MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Period", "Slow EMA length used inside MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_signalPeriod = Param(nameof(SignalPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Period", "Signal EMA length used inside MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_appliedPrice = Param(nameof(AppliedPrice), 0)
 			.SetDisplay("Applied Price", "MetaTrader PRICE_* code controlling the MACD input", "General")
-			.SetCanOptimize(true);
+			;
 
 		_shift1 = Param(nameof(Shift1), 0)
 			.SetDisplay("Shift 1", "First OsMA shift parameter", "Logic");
@@ -182,12 +182,12 @@ public class OsMaMasterStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance expressed in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		Volume = 0.01m;
 	}

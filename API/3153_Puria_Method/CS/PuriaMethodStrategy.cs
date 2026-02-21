@@ -81,9 +81,9 @@ public class PuriaMethodStrategy : Strategy
 	private readonly StrategyParam<int> _macdTrendBars;
 	private readonly StrategyParam<CandlePrices> _macdPrice;
 
-	private LengthIndicator<decimal> _ma0 = null!;
-	private LengthIndicator<decimal> _ma1 = null!;
-	private LengthIndicator<decimal> _ma2 = null!;
+	private DecimalLengthIndicator _ma0 = null!;
+	private DecimalLengthIndicator _ma1 = null!;
+	private DecimalLengthIndicator _ma2 = null!;
 	private Shift _ma0ShiftIndicator;
 	private Shift _ma1ShiftIndicator;
 	private Shift _ma2ShiftIndicator;
@@ -481,7 +481,7 @@ public class PuriaMethodStrategy : Strategy
 		_pointSize = CalculatePointSize();
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		StartProtection();
 
@@ -750,9 +750,9 @@ public class PuriaMethodStrategy : Strategy
 			_previousMacd = macd.Value;
 	}
 
-	private decimal? ProcessMovingAverage(LengthIndicator<decimal> indicator, Shift shift, ICandleMessage candle)
+	private decimal? ProcessMovingAverage(DecimalLengthIndicator indicator, Shift shift, ICandleMessage candle)
 	{
-		var value = indicator.Process(candle);
+		var value = indicator.Process(new DecimalIndicatorValue(indicator, candle);
 		if (!value.IsFinal)
 			return null;
 
@@ -761,7 +761,7 @@ public class PuriaMethodStrategy : Strategy
 		if (shift == null)
 			return result;
 
-		var shifted = shift.Process(value, candle.OpenTime, true);
+		var shifted = shift.Process(value, candle.OpenTime));
 		if (!shift.IsFormed || !shifted.IsFinal)
 			return null;
 
@@ -885,17 +885,17 @@ public class PuriaMethodStrategy : Strategy
 		_shortLowestPrice = null;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int length, CandlePrices price)
+	private static DecimalLengthIndicator CreateMovingAverage(MaMethods method, int length, CandlePrices price)
 	{
 		var maLength = Math.Max(1, length);
 
 		return method switch
 		{
-			MaMethods.Simple => new SimpleMovingAverage { Length = maLength, CandlePrice = price },
-			MaMethods.Exponential => new ExponentialMovingAverage { Length = maLength, CandlePrice = price },
+			MaMethods.Simple => new SMA { Length = maLength, CandlePrice = price },
+			MaMethods.Exponential => new EMA { Length = maLength, CandlePrice = price },
 			MaMethods.Smoothed => new SmoothedMovingAverage { Length = maLength, CandlePrice = price },
 			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = maLength, CandlePrice = price },
-			_ => new SimpleMovingAverage { Length = maLength, CandlePrice = price }
+			_ => new SMA { Length = maLength, CandlePrice = price }
 		};
 	}
 

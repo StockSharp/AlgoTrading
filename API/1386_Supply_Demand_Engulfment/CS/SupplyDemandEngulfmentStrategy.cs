@@ -48,7 +48,7 @@ public class SupplyDemandEngulfmentStrategy : Strategy
 	{
 		_zonePeriod = Param(nameof(ZonePeriod), 20)
 			.SetDisplay("Zone Period", "Lookback for zones", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -69,9 +69,9 @@ public class SupplyDemandEngulfmentStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var donchian = new DonchianChannel { Length = ZonePeriod };
 

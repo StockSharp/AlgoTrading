@@ -85,10 +85,10 @@ public class ZeroLagMaTrendFollowingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_zlma = new ZeroLagExponentialMovingAverage { Length = Length };
-		_ema = new ExponentialMovingAverage { Length = Length };
+		_ema = new EMA { Length = Length };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -96,7 +96,7 @@ public class ZeroLagMaTrendFollowingStrategy : Strategy
 			.Bind(_zlma, _ema, _atr, ProcessCandle)
 			.Start();
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal zlma, decimal ema, decimal atrValue)

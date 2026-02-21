@@ -72,25 +72,25 @@ public class VwapVolumeStrategy : Strategy
 					_volumePeriod = Param(nameof(VolumePeriod), 20)
 							.SetGreaterThanZero()
 							.SetDisplay("Volume MA Period", "Period for volume moving average", "Indicators")
-							.SetCanOptimize(true)
+							
 							.SetOptimize(10, 50, 10);
 
 					_volumeThreshold = Param(nameof(VolumeThreshold), 1.5m)
 							.SetGreaterThanZero()
 							.SetDisplay("Volume Threshold", "Multiplier for average volume to confirm signal", "Trading Levels")
-							.SetCanOptimize(true)
+							
 							.SetOptimize(1.2m, 2.0m, 0.2m);
 
 					_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 							.SetGreaterThanZero()
 							.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-							.SetCanOptimize(true)
+							
 							.SetOptimize(1.0m, 3.0m, 0.5m);
 
 					_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 							.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-					_volumeMA = new SimpleMovingAverage { Length = VolumePeriod };
+					_volumeMA = new SMA { Length = VolumePeriod };
 			}
 
 	/// <inheritdoc />
@@ -104,13 +104,13 @@ public class VwapVolumeStrategy : Strategy
 			{
 					base.OnReseted();
 
-					_volumeMA = new SimpleMovingAverage { Length = VolumePeriod };
+					_volumeMA = new SMA { Length = VolumePeriod };
 			}
 
 			/// <inheritdoc />
-			protected override void OnStarted(DateTimeOffset time)
+			protected override void OnStarted2(DateTime time)
 			{
-					base.OnStarted(time);
+					base.OnStarted2(time);
 
 					// Create indicators
 					var vwap = new VolumeWeightedMovingAverage();
@@ -149,7 +149,7 @@ public class VwapVolumeStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		// Process volume with indicator
-		var volumeMA = _volumeMA.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var volumeMA = _volumeMA.Process(new DecimalIndicatorValue(_volumeMA, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 		// Calculate VWAP manually for the current candle
 		decimal vwap = 0;

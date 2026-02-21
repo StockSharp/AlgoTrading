@@ -60,19 +60,19 @@ public class VossPredictorStrategy : Strategy
 		_periodBandpass = Param(nameof(PeriodBandpass), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Bandpass Period", "Period for band-pass filter", "Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 
 		_bandWidth = Param(nameof(BandWidth), 0.25m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bandwidth", "Bandwidth coefficient", "Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 1.0m, 0.05m);
 
 		_barsPrediction = Param(nameof(BarsPrediction), 3.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bars of Prediction", "Look ahead bars", "Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -86,9 +86,9 @@ public class VossPredictorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var alpha = 2.0 * Math.PI / PeriodBandpass;
 		var cosAlpha = (decimal)Math.Cos(alpha);

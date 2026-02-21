@@ -29,7 +29,7 @@ public class BuiltInKellyRatioStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 
-	private LengthIndicator<decimal> _ma;
+	private DecimalLengthIndicator _ma;
 	private AverageTrueRange _atr;
 
 	private decimal _prevClose;
@@ -56,17 +56,17 @@ public class BuiltInKellyRatioStrategy : Strategy
 
 		_length = Param(nameof(Length), 20)
 		.SetDisplay("MA Length", "Moving average length", "Channel")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 
 		_multiplier = Param(nameof(Multiplier), 1m)
 		.SetDisplay("Multiplier", "Range multiplier", "Channel")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2m, 0.5m);
 
 		_atrLength = Param(nameof(AtrLength), 10)
 		.SetDisplay("ATR Length", "ATR period", "Channel")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 5);
 
 		_useEma = Param(nameof(UseEma), true)
@@ -120,13 +120,13 @@ public class BuiltInKellyRatioStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = UseEma
-		? new ExponentialMovingAverage { Length = Length }
-		: new SimpleMovingAverage { Length = Length };
+		? new EMA { Length = Length }
+		: new SMA { Length = Length };
 
 		_atr = new AverageTrueRange { Length = AtrLength };
 

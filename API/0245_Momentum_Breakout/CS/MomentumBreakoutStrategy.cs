@@ -77,19 +77,19 @@ public class MomentumBreakoutStrategy : Strategy
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Period for momentum calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Average Period", "Period for momentum average calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_multiplier = Param(nameof(Multiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier for entry", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -113,13 +113,13 @@ public class MomentumBreakoutStrategy : Strategy
 
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_momentum = new Momentum { Length = MomentumPeriod };
-		_momentumAverage = new SimpleMovingAverage { Length = AveragePeriod };
+		_momentumAverage = new SMA { Length = AveragePeriod };
 		_momentumStdDev = new StandardDeviation { Length = AveragePeriod };
 
 		// Create candle subscription
@@ -155,8 +155,8 @@ public class MomentumBreakoutStrategy : Strategy
 		_currentMomentum = momentumValue;
 
 		// Process momentum through average and standard deviation indicators
-		var avgIndicatorValue = _momentumAverage.Process(momentumValue, candle.ServerTime, candle.State == CandleStates.Finished);
-		var stdDevIndicatorValue = _momentumStdDev.Process(momentumValue, candle.ServerTime, candle.State == CandleStates.Finished);
+		var avgIndicatorValue = _momentumAverage.Process(new DecimalIndicatorValue(_momentumAverage, momentumValue, candle.ServerTime));
+		var stdDevIndicatorValue = _momentumStdDev.Process(new DecimalIndicatorValue(_momentumStdDev, momentumValue, candle.ServerTime));
 		
 		_momentumAvgValue = avgIndicatorValue.ToDecimal();
 		_momentumStdDevValue = stdDevIndicatorValue.ToDecimal();

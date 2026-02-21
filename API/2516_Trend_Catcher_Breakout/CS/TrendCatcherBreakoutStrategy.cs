@@ -351,14 +351,14 @@ public class TrendCatcherBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators for Parabolic SAR and EMA filters.
-		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
-		_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
-		_fastFilterMa = new ExponentialMovingAverage { Length = FastFilterPeriod };
+		_slowMa = new EMA { Length = SlowMaPeriod };
+		_fastMa = new EMA { Length = FastMaPeriod };
+		_fastFilterMa = new EMA { Length = FastFilterPeriod };
 		_parabolicSar = new ParabolicSar
 		{
 			Acceleration = SarStep,

@@ -62,13 +62,13 @@ public class VCPStrategy : Strategy
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for calculating breakout levels", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -90,12 +90,12 @@ public class VCPStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		var ma = new SimpleMovingAverage { Length = MAPeriod };
+		var ma = new SMA { Length = MAPeriod };
 		var highest = new Highest { Length = LookbackPeriod };
 		var lowest = new Lowest { Length = LookbackPeriod };
 

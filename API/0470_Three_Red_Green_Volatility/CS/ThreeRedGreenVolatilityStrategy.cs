@@ -72,13 +72,13 @@ public class ThreeRedGreenVolatilityStrategy : Strategy
 	/// </summary>
 	public ThreeRedGreenVolatilityStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_maxTradeDuration = Param(nameof(MaxTradeDuration), 22)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trade Duration", "Maximum bars in position", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_useGreenExit = Param(nameof(UseGreenExit), true)
@@ -87,7 +87,7 @@ public class ThreeRedGreenVolatilityStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 12)
 			.SetRange(0, 100)
 			.SetDisplay("ATR Period", "ATR period (0 disables)", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 30, 1);
 	}
 
@@ -109,12 +109,12 @@ public class ThreeRedGreenVolatilityStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = Math.Max(1, AtrPeriod) };
-		_atrAverage = new SimpleMovingAverage { Length = 30 };
+		_atrAverage = new SMA { Length = 30 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -203,9 +203,9 @@ public class Twenty200ExpertAutoLotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_shiftT1 = new Shift { Length = T1 };
 		_shiftT2 = new Shift { Length = T2 };
@@ -253,8 +253,8 @@ public class Twenty200ExpertAutoLotStrategy : Strategy
 			return;
 
 		var pip = Security?.PriceStep ?? 1m;
-		var openT1 = _shiftT1.Process(candle.OpenPrice, candle.OpenTime, true).ToDecimal();
-		var openT2 = _shiftT2.Process(candle.OpenPrice, candle.OpenTime, true).ToDecimal();
+		var openT1 = _shiftT1.Process(new DecimalIndicatorValue(_shiftT1, candle.OpenPrice, candle.OpenTime)).ToDecimal();
+		var openT2 = _shiftT2.Process(new DecimalIndicatorValue(_shiftT2, candle.OpenPrice, candle.OpenTime)).ToDecimal();
 
 		if (Position != 0)
 		{

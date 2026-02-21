@@ -424,9 +424,9 @@ public TenPipsMomentumStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 		// Align the strategy volume with the MetaTrader lot size.
@@ -445,8 +445,8 @@ public TenPipsMomentumStrategy()
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = 12,
-			LongPeriod = 26,
+			ShortMa = { Length = 12 },
+			LongMa = { Length = 26 },
 			SignalPeriod = 9
 		};
 
@@ -750,7 +750,7 @@ public TenPipsMomentumStrategy()
 		return;
 
 		_activeSide = Sides.Buy;
-		_entryPrice = PositionAvgPrice;
+		_entryPrice = PositionPrice;
 		_stopPrice = StopLossPips > 0m ? _entryPrice - GetPipDistance(StopLossPips) : null;
 		_takeProfitPrice = TakeProfitPips > 0m ? _entryPrice + GetPipDistance(TakeProfitPips) : null;
 		_highestSinceEntry = candle.HighPrice;
@@ -765,7 +765,7 @@ public TenPipsMomentumStrategy()
 		return;
 
 		_activeSide = Sides.Sell;
-		_entryPrice = PositionAvgPrice;
+		_entryPrice = PositionPrice;
 		_stopPrice = StopLossPips > 0m ? _entryPrice + GetPipDistance(StopLossPips) : null;
 		_takeProfitPrice = TakeProfitPips > 0m ? _entryPrice - GetPipDistance(TakeProfitPips) : null;
 		_highestSinceEntry = candle.HighPrice;
@@ -916,7 +916,7 @@ public TenPipsMomentumStrategy()
 		if (Position == 0)
 		return 0m;
 
-		var entry = PositionAvgPrice;
+		var entry = PositionPrice;
 		if (entry == 0m)
 		return 0m;
 

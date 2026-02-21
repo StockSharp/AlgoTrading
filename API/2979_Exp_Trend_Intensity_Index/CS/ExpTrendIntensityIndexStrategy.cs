@@ -57,7 +57,7 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 
 		_priceMaLength = Param(nameof(PriceMaLength), 60)
 		.SetDisplay("Price MA Length", "Number of bars for the base smoothing", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 120, 10);
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), MovingAverageMethods.Simple)
@@ -65,7 +65,7 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 
 		_smoothingLength = Param(nameof(SmoothingLength), 30)
 		.SetDisplay("Signal MA Length", "Number of bars for the flow smoothing", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 90, 10);
 
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceOptions.Close)
@@ -73,12 +73,12 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 
 		_highLevel = Param(nameof(HighLevel), 80m)
 		.SetDisplay("High Level", "Upper threshold for Trend Intensity Index", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60m, 90m, 5m);
 
 		_lowLevel = Param(nameof(LowLevel), 20m)
 		.SetDisplay("Low Level", "Lower threshold for Trend Intensity Index", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 5m);
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -256,9 +256,9 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceMa = CreateMovingAverage(PriceMaMethod, PriceMaLength);
 		_positiveMa = CreateMovingAverage(SmoothingMethod, SmoothingLength);
@@ -298,7 +298,7 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 
 		var price = GetAppliedPrice(candle, AppliedPrice);
 
-		var maValue = _priceMa.Process(price, candle.OpenTime, true);
+		var maValue = _priceMa.Process(new DecimalIndicatorValue(_priceMa, price, candle.OpenTime));
 		if (!maValue.IsFinal)
 		return;
 
@@ -307,8 +307,8 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 		var positive = diff > 0 ? diff : 0m;
 		var negative = diff < 0 ? -diff : 0m;
 
-		var posValue = _positiveMa.Process(positive, candle.OpenTime, true);
-		var negValue = _negativeMa.Process(negative, candle.OpenTime, true);
+		var posValue = _positiveMa.Process(new DecimalIndicatorValue(_positiveMa, positive, candle.OpenTime));
+		var negValue = _negativeMa.Process(new DecimalIndicatorValue(_negativeMa, negative, candle.OpenTime));
 
 		if (!posValue.IsFinal || !negValue.IsFinal)
 		return;
@@ -412,11 +412,11 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

@@ -16,7 +16,7 @@ This strategy opens a long position on selected paydays (1st, 2nd, 16th, 31st of
   - `Trade2nd` = true.
   - `Trade16th` = true.
   - `Trade31st` = true.
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame().
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame().
 - **Filters**:
   - Category: Seasonality
   - Direction: Long

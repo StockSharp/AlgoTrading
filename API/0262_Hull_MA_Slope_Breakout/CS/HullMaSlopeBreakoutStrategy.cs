@@ -89,19 +89,19 @@ public class HullMaSlopeBreakoutStrategy : Strategy
 		_hullLength = Param(nameof(HullLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Hull MA Length", "Period for Hull Moving Average", "Indicator Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for slope statistics calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 			
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
@@ -131,7 +131,7 @@ public class HullMaSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_slopes = new decimal[LookbackPeriod];
 
@@ -159,7 +159,7 @@ public class HullMaSlopeBreakoutStrategy : Strategy
 			isStopTrailing: false
 		);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal hullValue, decimal atrValue)

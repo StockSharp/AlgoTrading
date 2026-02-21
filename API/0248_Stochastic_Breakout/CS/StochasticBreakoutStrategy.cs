@@ -95,27 +95,27 @@ public class StochasticBreakoutStrategy : Strategy
 	{
 		_stochasticPeriod = Param(nameof(StochasticPeriod), 14)
 			.SetDisplay("Stochastic Period", "Stochastic oscillator period", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_kPeriod = Param(nameof(KPeriod), 3)
 			.SetDisplay("K Period", "Stochastic %K smoothing period", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetDisplay("D Period", "Stochastic %D smoothing period", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation", "Breakout")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
 			.SetDisplay("Deviation Multiplier", "Deviation multiplier for breakout detection", "Breakout")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -139,9 +139,9 @@ public class StochasticBreakoutStrategy : Strategy
 
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_stochastic = new StochasticOscillator
@@ -150,7 +150,7 @@ public class StochasticBreakoutStrategy : Strategy
 			D = { Length = DPeriod },
 		};
 
-		_stochAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_stochAverage = new SMA { Length = LookbackPeriod };
 		_stochStdDev = new StandardDeviation { Length = LookbackPeriod };
 		
 		// Create subscription and bind indicators
@@ -191,8 +191,8 @@ public class StochasticBreakoutStrategy : Strategy
 			return;
 
 		// Calculate average and standard deviation of stochastic
-		var stochAvgValue = _stochAverage.Process(stochK, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-		var tempStdDevValue = _stochStdDev.Process(stochK, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var stochAvgValue = _stochAverage.Process(new DecimalIndicatorValue(_stochAverage, stochK, candle.ServerTime)).ToDecimal();
+		var tempStdDevValue = _stochStdDev.Process(new DecimalIndicatorValue(_stochStdDev, stochK, candle.ServerTime)).ToDecimal();
 		
 		// First values initialization - skip trading decision
 		if (_prevStochValue == 0)

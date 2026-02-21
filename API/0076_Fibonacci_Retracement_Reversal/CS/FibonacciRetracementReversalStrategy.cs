@@ -79,13 +79,13 @@ public class FibonacciRetracementReversalStrategy : Strategy
 		_swingLookbackPeriod = Param(nameof(SwingLookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Swing Lookback Period", "Number of candles to look back for swing detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_fibLevelBuffer = Param(nameof(FibLevelBuffer), 0.5m)
 			.SetNotNegative()
 			.SetDisplay("Fib Level Buffer %", "Buffer percentage around Fibonacci levels", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.2m, 1.0m, 0.2m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -94,7 +94,7 @@ public class FibonacciRetracementReversalStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 	}
 
@@ -116,9 +116,9 @@ public class FibonacciRetracementReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create subscription
 		var subscription = SubscribeCandles(CandleType);

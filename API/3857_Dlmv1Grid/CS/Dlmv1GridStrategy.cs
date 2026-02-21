@@ -75,29 +75,29 @@ public class Dlmv1GridStrategy : Strategy
 	{
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
 			.SetDisplay("Take Profit (pips)", "Take profit distance applied to each entry", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
 			.SetDisplay("Stop Loss (pips)", "Initial stop loss distance for every entry", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance that activates after the trigger", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_maxTrades = Param(nameof(MaxTrades), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum number of martingale steps", "General")
-			.SetCanOptimize(true);
+			;
 
 		_gridDistancePips = Param(nameof(GridDistancePips), 15m)
 			.SetGreaterThanZero()
 			.SetDisplay("Grid Distance (pips)", "Distance in pips between consecutive entries", "General")
-			.SetCanOptimize(true);
+			;
 
 		_lotSize = Param(nameof(LotSize), 0.1m)
 			.SetDisplay("Lot Size", "Base lot size when money management is disabled", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useMoneyManagement = Param(nameof(UseMoneyManagement), false)
 			.SetDisplay("Use Money Management", "Enable balance based position sizing", "Risk");
@@ -105,7 +105,7 @@ public class Dlmv1GridStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 12m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Percent", "Risk percentage used for balance based sizing", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_accountType = Param(nameof(AccountType), 1)
 			.SetDisplay("Account Type", "0=standard, 1=mini, 2=micro lot scaling", "Risk");
@@ -115,33 +115,33 @@ public class Dlmv1GridStrategy : Strategy
 
 		_secureProfit = Param(nameof(SecureProfit), 20m)
 			.SetDisplay("Secure Profit", "Floating profit (in currency units) required to close the basket", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_ordersToProtect = Param(nameof(OrdersToProtect), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Orders To Protect", "Number of last entries protected by secure profit", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_equityProtection = Param(nameof(EquityProtection), true)
 			.SetDisplay("Equity Protection", "Close all trades when equity falls below the threshold", "Risk");
 
 		_equityProtectionPercent = Param(nameof(EquityProtectionPercent), 90)
 			.SetDisplay("Equity Percent", "Percentage of initial equity to protect", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_moneyProtection = Param(nameof(AccountMoneyProtection), false)
 			.SetDisplay("Money Protection", "Close trades when drawdown in currency exceeds the threshold", "Risk");
 
 		_moneyProtectionValue = Param(nameof(AccountMoneyProtectionValue), 3000m)
 			.SetDisplay("Money Protection Value", "Drawdown in currency units that triggers the protection", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_tradeOnFriday = Param(nameof(TradeOnFriday), true)
 			.SetDisplay("Trade On Friday", "Allow opening new baskets on Fridays", "Filters");
 
 		_ordersLifeSeconds = Param(nameof(OrdersLifeSeconds), 0)
 			.SetDisplay("Orders Lifetime (sec)", "Maximum lifetime for the most recent order", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse Signals", "Reverse the Fisher Transform direction", "Filters");
@@ -158,16 +158,16 @@ public class Dlmv1GridStrategy : Strategy
 		_fisherLength = Param(nameof(FisherLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fisher Length", "Lookback for the Fisher Transform", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_signalSmoothing = Param(nameof(SignalSmoothing), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Smoothing", "SMA period applied to Fisher values", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_defaultPipValue = Param(nameof(DefaultPipValue), 5m)
 			.SetDisplay("Default Pip Value", "Fallback pip value used for profit calculations", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -425,9 +425,9 @@ public class Dlmv1GridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = Security?.PriceStep ?? 0m;
 		if (_pipSize <= 0m)
@@ -438,14 +438,14 @@ public class Dlmv1GridStrategy : Strategy
 		_martingaleBaseVolume = CalculateBaseVolume();
 
 		_fisher = new EhlersFisherTransform { Length = FisherLength };
-		_signalSma = new SimpleMovingAverage { Length = SignalSmoothing };
+		_signalSma = new SMA { Length = SignalSmoothing };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fisherValue)

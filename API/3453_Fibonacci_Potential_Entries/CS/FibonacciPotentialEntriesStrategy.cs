@@ -161,9 +161,9 @@ public class FibonacciPotentialEntriesStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_firstTrade.EntryPrice = PriceOn50Level;
 		_secondTrade.EntryPrice = PriceOn61Level;

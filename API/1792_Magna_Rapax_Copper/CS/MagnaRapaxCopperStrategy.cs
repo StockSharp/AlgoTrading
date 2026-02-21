@@ -111,17 +111,17 @@ public class MagnaRapaxCopperStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_ema2 = new ExponentialMovingAverage { Length = 2 };
-		_ema3 = new ExponentialMovingAverage { Length = 3 };
-		_ema5 = new ExponentialMovingAverage { Length = 5 };
-		_ema8 = new ExponentialMovingAverage { Length = 8 };
-		_ema13 = new ExponentialMovingAverage { Length = 13 };
-		_ema21 = new ExponentialMovingAverage { Length = 21 };
-		_ema34 = new ExponentialMovingAverage { Length = 34 };
-		_ema55 = new ExponentialMovingAverage { Length = 55 };
-		_ema89 = new ExponentialMovingAverage { Length = 89 };
-		_ema144 = new ExponentialMovingAverage { Length = 144 };
-		_ema233 = new ExponentialMovingAverage { Length = 233 };
+		_ema2 = new EMA { Length = 2 };
+		_ema3 = new EMA { Length = 3 };
+		_ema5 = new EMA { Length = 5 };
+		_ema8 = new EMA { Length = 8 };
+		_ema13 = new EMA { Length = 13 };
+		_ema21 = new EMA { Length = 21 };
+		_ema34 = new EMA { Length = 34 };
+		_ema55 = new EMA { Length = 55 };
+		_ema89 = new EMA { Length = 89 };
+		_ema144 = new EMA { Length = 144 };
+		_ema233 = new EMA { Length = 233 };
 
 		_macd = new MovingAverageConvergenceDivergence
 		{

@@ -70,12 +70,12 @@ public class BeeLinePairsStrategy : Strategy
 		_trainingRange = Param(nameof(TrainingRange), 640)
 			.SetGreaterThanZero()
 			.SetDisplay("Training Range", "Number of candles used to re-estimate price compression", "Optimization")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200, 1000, 100);
 
 		_profitPercent = Param(nameof(ProfitPercent), 3m)
 			.SetDisplay("Profit %", "Close all positions once portfolio profit reaches this percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_signalCorrection = Param(nameof(SignalCorrection), 0.7m)
@@ -86,13 +86,13 @@ public class BeeLinePairsStrategy : Strategy
 
 		_retrainInterval = Param(nameof(RetrainInterval), 120)
 			.SetDisplay("Retrain Interval", "Number of finished candles before recomputing compression", "Optimization")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60, 240, 30);
 
 		_maxDeals = Param(nameof(MaxDeals), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Deals", "Maximum scaling factor applied to the base volume", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_closeCorrection = Param(nameof(CloseCorrection), 0.618034m)
@@ -252,9 +252,9 @@ public class BeeLinePairsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (SecondSecurity == null)
 			throw new InvalidOperationException("Secondary security must be specified before starting the strategy.");
@@ -275,7 +275,7 @@ public class BeeLinePairsStrategy : Strategy
 			.Bind(ProcessSecondCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

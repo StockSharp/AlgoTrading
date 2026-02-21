@@ -126,9 +126,9 @@ public class AeronJjnStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tickSize = Security?.PriceStep ?? 0.0001m;
 
@@ -137,7 +137,7 @@ public class AeronJjnStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(atr, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue)

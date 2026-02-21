@@ -240,7 +240,7 @@ public class SlopeRsiMtfStrategy : Strategy
 		_fourHourTimeframe = Param(nameof(FourHourTimeframe), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("4H Timeframe", "Second confirmation timeframe", "Timeframes");
 
-		_dayTimeframe = Param(nameof(DayTimeframe), TimeSpan.FromDays(1).TimeFrame())
+		_dayTimeframe = Param(nameof(DayTimeframe), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Day Timeframe", "Highest confirmation timeframe", "Timeframes");
 	}
 
@@ -275,9 +275,9 @@ public class SlopeRsiMtfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_baseState = new TimeframeState(SlopeTriggerLength, RsiPeriod);
 		_hourState = new TimeframeState(SlopeTrendLength, RsiPeriod);

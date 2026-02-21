@@ -48,7 +48,7 @@ public class VortexMtfStrategy : Strategy
 		_length = Param(nameof(Length), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Vortex Length", "Period of the Vortex indicator", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(240).TimeFrame())
@@ -62,9 +62,9 @@ public class VortexMtfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var vortex = new VortexIndicator { Length = Length };
 

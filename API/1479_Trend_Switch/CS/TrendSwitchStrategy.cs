@@ -66,11 +66,11 @@ public TrendSwitchStrategy()
 _length = Param(nameof(Length), 10)
 .SetGreaterThanZero()
 .SetDisplay("Length", "Lookback period", "General")
-.SetCanOptimize(true);
+;
 _threshold = Param(nameof(Threshold), 1m)
 .SetGreaterThanZero()
 .SetDisplay("Slope Threshold", "Minimal slope", "General")
-.SetCanOptimize(true);
+;
 _fastLimit = Param(nameof(FastLimit), 0.5m)
 .SetGreaterThanZero()
 .SetDisplay("Fast Limit", "Fast limit for KAMA", "Indicators");
@@ -101,9 +101,9 @@ _entryPrice = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _slope = new LinearRegression { Length = Length };
 _kama = new KaufmanAdaptiveMovingAverage { Length = Length, FastSCPeriod = FastLimit, SlowSCPeriod = SlowLimit };

@@ -45,12 +45,12 @@ public class PhaseCrossWithZoneStrategy : Strategy
 		_length = Param(nameof(Length), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Smoothing length", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 1);
 
 		_offset = Param(nameof(Offset), 0.5m)
 			.SetDisplay("Offset", "Phase offset", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 1m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -69,9 +69,9 @@ public class PhaseCrossWithZoneStrategy : Strategy
 		_prevLag = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		var sma = new Sma { Length = Length };
 		var ema = new Ema { Length = Length };
 		var subscription = SubscribeCandles(CandleType);

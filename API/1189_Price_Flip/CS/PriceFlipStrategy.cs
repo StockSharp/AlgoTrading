@@ -99,28 +99,28 @@ public class PriceFlipStrategy : Strategy
 		_tickerMaxLookback = Param(nameof(TickerMaxLookback), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("Ticker Max Lookback", "Lookback for highest high", "Indicators")
-		.SetCanOptimize(true);
+		;
 		
 		_tickerMinLookback = Param(nameof(TickerMinLookback), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("Ticker Min Lookback", "Lookback for lowest low", "Indicators")
-		.SetCanOptimize(true);
+		;
 		
 		_fastMaLength = Param(nameof(FastMaLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA Length", "Length of fast moving average", "Indicators")
-		.SetCanOptimize(true);
+		;
 		
 		_slowMaLength = Param(nameof(SlowMaLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA Length", "Length of slow moving average", "Indicators")
-		.SetCanOptimize(true);
+		;
 		
 		_useTrendFilter = Param(nameof(UseTrendFilter), true)
 		.SetDisplay("Use Trend Filter", "Enable trend filter based on slow MA", "Strategy Parameters")
-		.SetCanOptimize(true);
+		;
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "Data");
 	}
 	
@@ -139,9 +139,9 @@ public class PriceFlipStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_tickerMax = new Highest { Length = TickerMaxLookback };
 		_tickerMin = new Lowest { Length = TickerMinLookback };
@@ -153,7 +153,7 @@ public class PriceFlipStrategy : Strategy
 		.Bind(_tickerMax, _tickerMin, _fastMa, _slowMa, ProcessCandle)
 		.Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, decimal maxValue, decimal minValue, decimal fastMaValue, decimal slowMaValue)

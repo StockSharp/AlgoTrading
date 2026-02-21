@@ -29,7 +29,7 @@ public class OnePriceSlTpStrategy : Strategy
 		_zenPrice = Param(nameof(ZenPrice), 0m)
 		.SetNotNegative()
 		.SetDisplay("Target price", "Absolute price level applied to stop loss or take profit depending on the current market side.", "Execution")
-		.SetCanOptimize(true);
+		;
 	}
 
 	public decimal ZenPrice
@@ -59,9 +59,9 @@ public class OnePriceSlTpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = GetPriceStep();
 

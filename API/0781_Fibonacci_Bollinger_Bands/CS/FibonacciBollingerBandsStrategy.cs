@@ -43,19 +43,19 @@ public class FibonacciBollingerBandsStrategy : Strategy
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Length", "Period of Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Multiplier", "Standard deviation multiplier", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_fibPeriod = Param(nameof(FibPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Fibonacci Lookback", "Bars for Fibonacci levels", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 	}
 
@@ -65,9 +65,9 @@ public class FibonacciBollingerBandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bollinger = new BollingerBands
 		{

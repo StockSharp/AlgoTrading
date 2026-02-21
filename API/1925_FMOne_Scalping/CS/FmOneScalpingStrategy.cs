@@ -101,27 +101,27 @@ public class FmOneScalpingStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 12)
 			.SetRange(1, 100)
 			.SetDisplay("Fast EMA Period", "Period for fast EMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 26)
 			.SetRange(1, 200)
 			.SetDisplay("Slow EMA Period", "Period for slow EMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetRange(1, 50)
 			.SetDisplay("MACD Signal Period", "Signal line period for MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetRange(0.1m, 5m)
 			.SetDisplay("Stop Loss %", "Stop loss as percent of entry price", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetRange(0.1m, 5m)
 			.SetDisplay("Take Profit %", "Take profit as percent of entry price", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_enableTrailingStop = Param(nameof(EnableTrailingStop), true)
 			.SetDisplay("Trailing Stop", "Enable trailing stop", "Risk");
@@ -152,12 +152,12 @@ public class FmOneScalpingStrategy : Strategy
 	base.OnStarted(time);
 
 	// Initialize indicators with current parameters.
-	_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
-	_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
+	_fastMa = new EMA { Length = FastMaPeriod };
+	_slowMa = new EMA { Length = SlowMaPeriod };
 	_macd = new MovingAverageConvergenceDivergence
 	{
-	ShortPeriod = FastMaPeriod,
-	LongPeriod = SlowMaPeriod,
+	ShortMa = { Length = FastMaPeriod },
+	LongMa = { Length = SlowMaPeriod },
 	SignalPeriod = MacdSignalPeriod
 	};
 

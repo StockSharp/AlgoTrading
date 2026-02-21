@@ -157,23 +157,21 @@ public class RollbackSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
 		// Prepare high/low trackers for the previous 24 hourly bars.
 		_highest = new Highest
 		{
-			Length = 24,
-			CandlePrice = CandlePrice.High
+			Length = 24
 		};
 
 		_lowest = new Lowest
 		{
-			Length = 24,
-			CandlePrice = CandlePrice.Low
+			Length = 24
 		};
 
 		_pipValue = CalculatePipValue();

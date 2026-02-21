@@ -46,41 +46,41 @@ public SmartAcTraderStrategy()
 _fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 .SetGreaterThanZero()
 .SetDisplay("Fast EMA", "Length of the fast EMA trend filter", "Trend")
-.SetCanOptimize(true)
+
 .SetOptimize(4, 20, 2);
 
 _slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 .SetGreaterThanZero()
 .SetDisplay("Slow EMA", "Length of the slow EMA trend filter", "Trend")
-.SetCanOptimize(true)
+
 .SetOptimize(30, 150, 10);
 
 _rocPeriod = Param(nameof(RocPeriod), 13)
 .SetGreaterThanZero()
 .SetDisplay("ROC Period", "Rate of change lookback for momentum confirmation", "Momentum")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 30, 5);
 
 _buyMomentumThreshold = Param(nameof(BuyMomentumThreshold), 0.3m)
 .SetDisplay("Buy Momentum", "Minimum positive ROC to allow long entries", "Momentum")
-.SetCanOptimize(true)
+
 .SetOptimize(0.1m, 1.0m, 0.1m);
 
 _sellMomentumThreshold = Param(nameof(SellMomentumThreshold), 0.3m)
 .SetDisplay("Sell Momentum", "Minimum negative ROC (absolute) to allow short entries", "Momentum")
-.SetCanOptimize(true)
+
 .SetOptimize(0.1m, 1.0m, 0.1m);
 
 _stopLossPoints = Param(nameof(StopLossPoints), 100m)
 .SetGreaterThanZero()
 .SetDisplay("Stop Loss", "Protective stop in price steps", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(20m, 200m, 20m);
 
 _takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 .SetGreaterThanZero()
 .SetDisplay("Take Profit", "Target distance in price steps", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(20m, 150m, 10m);
 
 _useTrailingStop = Param(nameof(UseTrailingStop), true)
@@ -89,7 +89,7 @@ _useTrailingStop = Param(nameof(UseTrailingStop), true)
 _trailingStopPoints = Param(nameof(TrailingStopPoints), 40m)
 .SetGreaterThanZero()
 .SetDisplay("Trailing", "Distance in price steps for the trailing stop", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(10m, 100m, 10m);
 
 _useBreakEven = Param(nameof(UseBreakEven), true)
@@ -98,13 +98,13 @@ _useBreakEven = Param(nameof(UseBreakEven), true)
 _breakEvenTriggerPoints = Param(nameof(BreakEvenTriggerPoints), 30m)
 .SetGreaterThanZero()
 .SetDisplay("Break Even Trigger", "Profit in price steps required to arm break-even", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(10m, 80m, 10m);
 
 _breakEvenOffsetPoints = Param(nameof(BreakEvenOffsetPoints), 30m)
 .SetGreaterThanZero()
 .SetDisplay("Break Even Offset", "Distance in price steps kept after break-even is armed", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(10m, 80m, 10m);
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -244,9 +244,9 @@ _priceStep = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 if (Security?.PriceStep is not decimal step || step <= 0m)
 {
@@ -257,7 +257,7 @@ return;
 
 _priceStep = step;
 
-StartProtection();
+StartProtection(null, null);
 
 var fastEma = new EMA { Length = FastMaPeriod };
 var slowEma = new EMA { Length = SlowMaPeriod };

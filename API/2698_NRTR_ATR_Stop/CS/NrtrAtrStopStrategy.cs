@@ -215,7 +215,7 @@ public class NrtrAtrStopStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Volume used when opening positions", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
@@ -263,19 +263,19 @@ public class NrtrAtrStopStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "Number of bars used to calculate ATR", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "Multiplier applied to the ATR value", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 4m, 0.5m);
 
 		_signalBarDelay = Param(nameof(SignalBarDelay), 1)
 		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Number of closed bars to wait before acting", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 3, 1);
 	}
 
@@ -302,9 +302,9 @@ public class NrtrAtrStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -582,7 +582,7 @@ public class NrtrAtrStopStrategy : Strategy
 
 	private bool IsWithinTradingWindow(DateTimeOffset time)
 	{
-		var current = time.LocalDateTime;
+		var current = time;
 		var hour = current.Hour;
 		var minute = current.Minute;
 

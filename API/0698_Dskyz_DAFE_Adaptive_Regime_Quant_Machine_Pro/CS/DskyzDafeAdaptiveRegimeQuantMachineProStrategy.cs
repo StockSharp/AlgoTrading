@@ -43,19 +43,19 @@ public class DskyzDafeAdaptiveRegimeQuantMachineProStrategy : Strategy
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "ATR period", "ATR")
-			.SetCanOptimize(true);
+			;
 
 		_fastMaLength = Param(nameof(FastMaLength), 20)
 			.SetDisplay("Fast MA Length", "Fast moving average length", "MA")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaLength = Param(nameof(SlowMaLength), 50)
 			.SetDisplay("Slow MA Length", "Slow moving average length", "MA")
-			.SetCanOptimize(true);
+			;
 
 		_maStrengthThreshold = Param(nameof(MaStrengthThreshold), 0.5m)
 			.SetDisplay("MA Strength Threshold", "Trend threshold", "MA")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -71,25 +71,34 @@ public class DskyzDafeAdaptiveRegimeQuantMachineProStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var fastMa = new ExponentialMovingAverage { Length = FastMaLength };
-		var slowMa = new ExponentialMovingAverage { Length = SlowMaLength };
+		var fastMa = new EMA { Length = FastMaLength };
+		var slowMa = new EMA { Length = SlowMaLength };
 		var boll = new BollingerBands { Length = 20, Width = 2m };
 		var adx = new AverageDirectionalIndex { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(atr, fastMa, slowMa, boll, adx, ProcessCandle).Start();
+		subscription.BindEx(atr, fastMa, slowMa, boll, adx, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atr, decimal fastMa, decimal slowMa, decimal middle, decimal upper, decimal lower, decimal adx)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue, IIndicatorValue fastMaValue, IIndicatorValue slowMaValue, IIndicatorValue bollValue, IIndicatorValue adxValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		var atr = atrValue.ToDecimal();
+		var fastMa = fastMaValue.ToDecimal();
+		var slowMa = slowMaValue.ToDecimal();
+		var adx = adxValue.ToDecimal();
+
+		var boll = (BollingerBandsValue)bollValue;
+		if (boll.UpBand is not decimal upper || boll.LowBand is not decimal lower || boll.Mid is not decimal middle)
 			return;
 
 		var atrAvg = _atrAvg.Process(atr).GetValue<decimal>();

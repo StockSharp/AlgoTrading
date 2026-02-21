@@ -82,7 +82,7 @@ public class TripleRviStrategy : Strategy
 		_rviPeriod = Param(nameof(RviPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Period", "Period of RVI", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType1 = Param(nameof(CandleType1), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Timeframe 1", "Higher timeframe", "General");
@@ -122,27 +122,27 @@ public class TripleRviStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rvi1 = new RelativeVigorIndex { Length = RviPeriod };
 		_rvi2 = new RelativeVigorIndex { Length = RviPeriod };
 		_rvi3 = new RelativeVigorIndex { Length = RviPeriod };
-		_signal1 = new SimpleMovingAverage { Length = 4 };
-		_signal2 = new SimpleMovingAverage { Length = 4 };
-		_signal3 = new SimpleMovingAverage { Length = 4 };
+		_signal1 = new SMA { Length = 4 };
+		_signal2 = new SMA { Length = 4 };
+		_signal3 = new SMA { Length = 4 };
 
 		var sub1 = SubscribeCandles(CandleType1);
-		sub1.WhenNew(ProcessCandle1).Start();
+		sub1.Bind(ProcessCandle1).Start();
 
 		var sub2 = SubscribeCandles(CandleType2);
-		sub2.WhenNew(ProcessCandle2).Start();
+		sub2.Bind(ProcessCandle2).Start();
 
 		var sub3 = SubscribeCandles(CandleType3);
-		sub3.WhenNew(ProcessCandle3).Start();
+		sub3.Bind(ProcessCandle3).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

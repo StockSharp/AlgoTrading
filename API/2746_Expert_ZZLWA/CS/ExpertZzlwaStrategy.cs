@@ -242,9 +242,9 @@ public class ExpertZzlwaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(
 		stopLoss: new Unit(StopLossPoints * GetPriceStep(), UnitTypes.Point),
@@ -275,7 +275,7 @@ public class ExpertZzlwaStrategy : Strategy
 
 			case StrategyModes.MovingAverageTest:
 				_slowMa = new SmoothedMovingAverage { Length = SlowMaPeriod };
-				_fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
+				_fastMa = new SMA { Length = FastMaPeriod };
 				subscription.Bind(_slowMa, _fastMa, ProcessMovingAverageCandle).Start();
 				break;
 

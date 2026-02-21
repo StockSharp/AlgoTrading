@@ -49,16 +49,16 @@ public class ColorGradientFrameworkStrategy : Strategy
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period")
-			.SetCanOptimize(true)
+			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
+			
 			.SetOptimize(10, 30, 2);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type");
+			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		var rsi = new RelativeStrengthIndex
 		{
@@ -78,7 +78,7 @@ public class ColorGradientFrameworkStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsi)

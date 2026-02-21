@@ -91,27 +91,27 @@ public class VirtualTrailingStopStrategy : Strategy
 	{
 		_stopLoss = Param(nameof(StopLoss), 0)
 			.SetDisplay("Stoploss", "Stop-loss distance in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 20, 1);
 
 		_takeProfit = Param(nameof(TakeProfit), 0)
 			.SetDisplay("Takeprofit", "Take-profit distance in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 20, 1);
 
 		_trailingStop = Param(nameof(TrailingStop), 5)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in price steps", "Trailing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_trailingStart = Param(nameof(TrailingStart), 5)
 			.SetDisplay("Trailing Start", "Start trailing after price moves this many steps", "Trailing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_trailingStep = Param(nameof(TrailingStep), 1)
 			.SetDisplay("Trailing Step", "Minimal step to update trailing level", "Trailing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -133,9 +133,9 @@ public class VirtualTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

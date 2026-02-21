@@ -70,8 +70,8 @@ public class TrendTraderRemasteredStrategy : Strategy {
 		_prevPriceAbove = false;
 	}
 
-	protected override void OnStarted(DateTimeOffset time) {
-		base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+		base.OnStarted2(time);
 
 		var psar = new ParabolicSar { Acceleration = Acceleration,
 									  AccelerationStep = Increment,

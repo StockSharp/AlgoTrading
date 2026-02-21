@@ -125,12 +125,12 @@ public class MaCrossoverDemandSupplyZonesSltpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var shortSma = new SimpleMovingAverage { Length = ShortMaLength };
-		var longSma = new SimpleMovingAverage { Length = LongMaLength };
+		var shortSma = new SMA { Length = ShortMaLength };
+		var longSma = new SMA { Length = LongMaLength };
 		_lowest = new Lowest { Length = ZoneLookback };
 		_highest = new Highest { Length = ZoneLookback };
 
@@ -148,7 +148,7 @@ public class MaCrossoverDemandSupplyZonesSltpStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal shortMa, decimal longMa, decimal lowest, decimal highest)

@@ -118,7 +118,7 @@ public class Madx07AdxMaStrategy : Strategy
 		_bigMaPeriod = Param(nameof(BigMaPeriod), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Big MA Period", "Period of the slower moving average", "MA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_bigMaType = Param(nameof(BigMaType), MovingAverageTypes.Smoothed)
@@ -127,7 +127,7 @@ public class Madx07AdxMaStrategy : Strategy
 		_smallMaPeriod = Param(nameof(SmallMaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Small MA Period", "Period of the faster moving average", "MA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 2);
 
 		_smallMaType = Param(nameof(SmallMaType), MovingAverageTypes.Exponential)
@@ -140,7 +140,7 @@ public class Madx07AdxMaStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 11)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX indicator", "ADX")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_adxMainLevel = Param(nameof(AdxMainLevel), 13m)
@@ -189,13 +189,13 @@ public class Madx07AdxMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		var bigMa = new SimpleMovingAverage { Length = BigMaPeriod, Type = BigMaType };
-		var smallMa = new SimpleMovingAverage { Length = SmallMaPeriod, Type = SmallMaType };
+		var bigMa = new SMA { Length = BigMaPeriod, Type = BigMaType };
+		var smallMa = new SMA { Length = SmallMaPeriod, Type = SmallMaType };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
 		// Subscribe to candles and bind indicators

@@ -17,7 +17,7 @@
   - `RsiOversold` = 40。
   - `AtrPeriod` = 14。
   - `AtrMultiplier` = 1.5。
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame()。
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()。
 - **筛选**：
   - 类型: 趋势
   - 方向: 多头

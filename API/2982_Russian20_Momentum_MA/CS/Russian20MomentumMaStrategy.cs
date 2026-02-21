@@ -110,11 +110,11 @@ public class Russian20MomentumMaStrategy : Strategy
 
 		_movingAverageLength = Param(nameof(MovingAverageLength), 20)
 		.SetDisplay("Moving Average Period", "Simple moving average filter length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 5)
 		.SetDisplay("Momentum Period", "Length for the Momentum indicator", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossBuyPips = Param(nameof(StopLossBuyPips), 50m)
 		.SetDisplay("Stop Loss Buy (pips)", "Stop loss distance for long positions", "Risk")
@@ -148,13 +148,13 @@ public class Russian20MomentumMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdateRiskOffsets();
 
-		_movingAverage = new SimpleMovingAverage
+		_movingAverage = new SMA
 		{
 			Length = MovingAverageLength,
 		};

@@ -68,11 +68,11 @@ public class LiquidityGrabVolumeTrapStrategy : Strategy
 	{
 		_volumeMaLength = Param(nameof(VolumeMaLength), 20)
 		.SetDisplay("Volume MA Length", "Length of volume moving average", "General")
-		.SetCanOptimize(true);
+		;
 		
 		_maxVolumeDeviation = Param(nameof(MaxVolumeDeviation), 0.05m)
 		.SetDisplay("Max Volume Deviation (%)", "Maximum allowed deviation from volume MA", "General")
-		.SetCanOptimize(true);
+		;
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Candles for calculations", "General");
@@ -93,11 +93,11 @@ public class LiquidityGrabVolumeTrapStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_volumeSma = new SimpleMovingAverage { Length = VolumeMaLength };
+		_volumeSma = new SMA { Length = VolumeMaLength };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -117,7 +117,7 @@ public class LiquidityGrabVolumeTrapStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		var volMa = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var volMa = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 		if (volMa == 0m)
 		{
 			_prev2 = _prev1;

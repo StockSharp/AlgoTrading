@@ -93,7 +93,7 @@ public class ZeroLagTemaCrossesPakunStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_fastTema = new TripleExponentialMovingAverage { Length = FastPeriod };
 		_slowTema = new TripleExponentialMovingAverage { Length = SlowPeriod };
@@ -105,7 +105,7 @@ public class ZeroLagTemaCrossesPakunStrategy : Strategy
 			.Bind(_fastTema, _slowTema, _highest, _lowest, ProcessCandle)
 			.Start();
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal highest, decimal lowest)

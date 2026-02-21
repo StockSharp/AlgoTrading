@@ -59,11 +59,11 @@ public class DealersTradeMacdStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 90m)
 			.SetDisplay("Stop Loss pts", "Stop loss distance in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 30m)
 			.SetDisplay("Take Profit pts", "Take profit distance in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 15m)
 			.SetDisplay("Trailing Stop pts", "Trailing stop distance in price steps", "Risk");

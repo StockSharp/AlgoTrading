@@ -62,22 +62,22 @@ public class ChandelExitReopenStrategy : Strategy
 		_rangePeriod = Param(nameof(RangePeriod), 15)
 			.SetDisplay("Range Period", "Lookback for highest high and lowest low", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_shift = Param(nameof(Shift), 1)
 			.SetDisplay("Shift", "Bars to skip from the most recent data", "Indicator")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "ATR length for volatility filter", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 4m)
 			.SetDisplay("ATR Multiplier", "Multiplier applied to ATR", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "How many bars back to read signals", "Trading")
@@ -86,7 +86,7 @@ public class ChandelExitReopenStrategy : Strategy
 		_priceStepPoints = Param(nameof(PriceStepPoints), 300m)
 			.SetDisplay("Re-entry Distance", "Minimum favorable move in price steps before adding", "Position Management")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_maxAdditions = Param(nameof(MaxAdditions), 10)
 			.SetDisplay("Max Additions", "Maximum number of re-entries after the initial position", "Position Management")
@@ -262,11 +262,11 @@ public class ChandelExitReopenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var subscription = SubscribeCandles(CandleType);

@@ -97,9 +97,9 @@ public class OptimizedGridWithKnnStrategy : Strategy
 		_openTrades = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastEma1 = new() { Length = 5 };
 		_fastEma2 = new() { Length = 5 };
@@ -118,7 +118,7 @@ public class OptimizedGridWithKnnStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -196,12 +196,12 @@ public class OptimizedGridWithKnnStrategy : Strategy
 	decimal price,
 	DateTimeOffset time)
 	{
-	var e1 = ema1.Process(price, time, true).ToDecimal();
-	var e2 = ema2.Process(e1, time, true).ToDecimal();
-	var e3 = ema3.Process(e2, time, true).ToDecimal();
-	var e4 = ema4.Process(e3, time, true).ToDecimal();
-	var e5 = ema5.Process(e4, time, true).ToDecimal();
-	var e6 = ema6.Process(e5, time, true).ToDecimal();
+	var e1 = ema1.Process(new DecimalIndicatorValue(ema1, price, time.UtcDateTime)).ToDecimal();
+	var e2 = ema2.Process(new DecimalIndicatorValue(ema2, e1, time.UtcDateTime)).ToDecimal();
+	var e3 = ema3.Process(new DecimalIndicatorValue(ema3, e2, time.UtcDateTime)).ToDecimal();
+	var e4 = ema4.Process(new DecimalIndicatorValue(ema4, e3, time.UtcDateTime)).ToDecimal();
+	var e5 = ema5.Process(new DecimalIndicatorValue(ema5, e4, time.UtcDateTime)).ToDecimal();
+	var e6 = ema6.Process(new DecimalIndicatorValue(ema6, e5, time.UtcDateTime)).ToDecimal();
 
 	const decimal ab = 0.7m;
 	var ac1 = -ab * ab * ab;

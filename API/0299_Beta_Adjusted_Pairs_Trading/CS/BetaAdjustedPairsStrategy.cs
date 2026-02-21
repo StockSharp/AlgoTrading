@@ -146,19 +146,19 @@ public class BetaAdjustedPairsStrategy : Strategy
 		_lookbackPeriodParam = Param(nameof(LookbackPeriod), 20)
 			.SetDisplay("Lookback Period", "Period for calculating spread statistics", "Parameters")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 			
 		_entryThresholdParam = Param(nameof(EntryThreshold), 2.0m)
 			.SetDisplay("Entry Threshold", "Standard deviation threshold for entries", "Parameters")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 			
 		_stopLossParam = Param(nameof(StopLoss), 2.0m)
 			.SetDisplay("Stop Loss", "Stop loss as percentage of entry spread", "Risk Management")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 	}
 
@@ -188,9 +188,9 @@ public class BetaAdjustedPairsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Verify that both assets and portfolios are set
 		if (Asset1 == null)

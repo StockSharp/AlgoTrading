@@ -109,19 +109,19 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for SuperTrend", "SuperTrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_atrFactor = Param(nameof(AtrFactor), 3m)
 			.SetRange(0.5m, 10m)
 			.SetDisplay("ATR Factor", "ATR factor for SuperTrend", "SuperTrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 6m, 0.5m);
 
 		_smaLength = Param(nameof(SmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Length of deviation smoothing", "Oscillator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 	 _direction = Param(nameof(Direction), null)
 	        .SetDisplay("Trade Direction", "Allowed trading direction", "Strategy");
@@ -152,9 +152,9 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_superTrend = new() { Length = AtrPeriod, Multiplier = AtrFactor };
 		_sma = new() { Length = SmaLength };

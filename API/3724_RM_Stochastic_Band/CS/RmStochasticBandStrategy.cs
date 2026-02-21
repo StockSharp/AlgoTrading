@@ -190,37 +190,37 @@ public class RmStochasticBandStrategy : Strategy
 		_stochasticLength = Param(nameof(StochasticLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Length", "%K lookback period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_stochasticSmoothing = Param(nameof(StochasticSmoothing), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Smoothing", "Smoothing period applied to %K", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 7, 1);
 
 		_stochasticSignalLength = Param(nameof(StochasticSignalLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Signal", "%D moving average length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Lookback for ATR volatility filter", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 30, 1);
 
 		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("SL Multiplier", "ATR multiplier for stop-loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.25m);
 
 		_takeProfitMultiplier = Param(nameof(TakeProfitMultiplier), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("TP Multiplier", "ATR multiplier for take-profit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 6m, 0.5m);
 
 		_minMargin = Param(nameof(MinMargin), 100m)
@@ -237,12 +237,12 @@ public class RmStochasticBandStrategy : Strategy
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 20m)
 			.SetDisplay("Oversold Level", "Threshold that defines oversold conditions", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 40m, 5m);
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 80m)
 			.SetDisplay("Overbought Level", "Threshold that defines overbought conditions", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 95m, 5m);
 
 		_baseCandleType = Param(nameof(BaseCandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -284,9 +284,9 @@ public class RmStochasticBandStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var baseStochastic = CreateStochastic();
 		var midStochastic = CreateStochastic();
@@ -312,8 +312,7 @@ public class RmStochasticBandStrategy : Strategy
 	private StochasticOscillator CreateStochastic()
 	{
 		return new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			K = { Length = StochasticSmoothing },
 			D = { Length = StochasticSignalLength }
 		};

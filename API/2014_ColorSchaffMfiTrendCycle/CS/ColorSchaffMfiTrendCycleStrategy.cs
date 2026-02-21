@@ -69,9 +69,9 @@ public class ColorSchaffMfiTrendCycleStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 	
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_fastMfi = new MFI { Length = FastMfiPeriod };
 		_slowMfi = new MFI { Length = SlowMfiPeriod };

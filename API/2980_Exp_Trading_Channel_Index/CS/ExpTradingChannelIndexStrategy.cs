@@ -249,15 +249,15 @@ public class ExpTradingChannelIndexStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetDisplay("Trade Volume", "Quantity used for each order", "Orders")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetDisplay("Stop Loss (pts)", "Stop loss in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 2000, 100);
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 			.SetDisplay("Take Profit (pts)", "Take profit in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200, 4000, 100);
 		_buyPositionOpen = Param(nameof(BuyPositionOpen), true)
 			.SetDisplay("Enable Long Entries", "Allow opening long positions", "Signals");
@@ -269,7 +269,7 @@ public class ExpTradingChannelIndexStrategy : Strategy
 			.SetDisplay("Enable Short Exits", "Allow closing short positions via indicator", "Signals");
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Number of bars back for color lookup", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 		_highLevel = Param(nameof(HighLevel), 50)
 			.SetDisplay("High Level", "Upper level for color coding", "Indicator");
@@ -292,7 +292,7 @@ public class ExpTradingChannelIndexStrategy : Strategy
 		_coefficient = Param(nameof(Coefficient), 0.015m)
 			.SetDisplay("Coefficient", "Normalization factor", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.005m, 0.05m, 0.005m);
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for calculations", "Indicator");
@@ -316,9 +316,9 @@ public class ExpTradingChannelIndexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 
@@ -487,14 +487,14 @@ public class ExpTradingChannelIndexStrategy : Strategy
 
 	private void SetLongProtection(decimal fallbackPrice)
 	{
-		var entryPrice = Position > 0 ? PositionAvgPrice : fallbackPrice;
+		var entryPrice = Position > 0 ? PositionPrice : fallbackPrice;
 		_longStopLoss = StopLossPoints > 0 ? entryPrice - StopLossPoints * _priceStep : null;
 		_longTakeProfit = TakeProfitPoints > 0 ? entryPrice + TakeProfitPoints * _priceStep : null;
 	}
 
 	private void SetShortProtection(decimal fallbackPrice)
 	{
-		var entryPrice = Position < 0 ? PositionAvgPrice : fallbackPrice;
+		var entryPrice = Position < 0 ? PositionPrice : fallbackPrice;
 		_shortStopLoss = StopLossPoints > 0 ? entryPrice + StopLossPoints * _priceStep : null;
 		_shortTakeProfit = TakeProfitPoints > 0 ? entryPrice - TakeProfitPoints * _priceStep : null;
 	}
@@ -515,7 +515,7 @@ public class ExpTradingChannelIndexStrategy : Strategy
 /// <summary>
 /// Indicator computing the Trading Channel Index values and color codes.
 /// </summary>
-public class TradingChannelIndexIndicator : BaseIndicator<decimal>
+public class TradingChannelIndexIndicator : BaseIndicator
 {
 	private IIndicator _primaryMa;
 	private IIndicator _volatilityMa;
@@ -633,12 +633,12 @@ public class TradingChannelIndexIndicator : BaseIndicator<decimal>
 	{
 		return method switch
 		{
-			SmoothMethod.Simple => new SimpleMovingAverage { Length = length },
-			SmoothMethod.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothMethod.Simple => new SMA { Length = length },
+			SmoothMethod.Exponential => new EMA { Length = length },
 			SmoothMethod.Smoothed => new SmoothedMovingAverage { Length = length },
 			SmoothMethod.Weighted => new WeightedMovingAverage { Length = length },
 			SmoothMethod.Jurik => new JurikMovingAverage { Length = length, Phase = phase },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

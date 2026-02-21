@@ -117,43 +117,43 @@ public class MultiFactorStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "MACD fast EMA length", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 24, 2);
 
 		_slowLength = Param(nameof(SlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "MACD slow EMA length", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_signalLength = Param(nameof(SignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "MACD signal EMA length", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 1);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period", "ATR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 1);
 
 		_stopAtrMultiplier = Param(nameof(StopAtrMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop ATR Mult", "ATR multiplier for stop", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_profitAtrMultiplier = Param(nameof(ProfitAtrMultiplier), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit ATR Mult", "ATR multiplier for take profit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 6m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -174,9 +174,9 @@ public class MultiFactorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_macd = new()
 		{

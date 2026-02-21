@@ -253,25 +253,25 @@ public class GannGridStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast LWMA", "Fast linear weighted moving average length", "Trend Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow LWMA", "Slow linear weighted moving average length", "Trend Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 120, 5);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Period", "Lookback for momentum calculation", "Trend Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum %", "Minimal momentum deviation in percent", "Trend Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1.5m, 0.1m);
 
 		_anchorPeriod = Param(nameof(AnchorPeriod), 100)
@@ -281,13 +281,13 @@ public class GannGridStrategy : Strategy
 		_takeProfitOffset = Param(nameof(TakeProfitOffset), 0.005m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit", "Absolute take-profit distance", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.001m, 0.02m, 0.001m);
 
 		_stopLossOffset = Param(nameof(StopLossOffset), 0.002m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss", "Absolute stop-loss distance", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.001m, 0.02m, 0.001m);
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
@@ -296,13 +296,13 @@ public class GannGridStrategy : Strategy
 		_trailingActivation = Param(nameof(TrailingActivation), 0.003m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Activation", "Profit required before trailing starts", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.001m, 0.02m, 0.001m);
 
 		_trailingStep = Param(nameof(TrailingStep), 0.0015m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Step", "Distance between peak profit and trailing stop", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.0005m, 0.01m, 0.0005m);
 
 		_enableBreakEven = Param(nameof(EnableBreakEven), true)
@@ -311,7 +311,7 @@ public class GannGridStrategy : Strategy
 		_breakEvenTrigger = Param(nameof(BreakEvenTrigger), 0.0025m)
 		.SetGreaterThanZero()
 		.SetDisplay("Break-Even Trigger", "Profit needed to arm break-even", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.001m, 0.02m, 0.001m);
 
 		_breakEvenOffset = Param(nameof(BreakEvenOffset), 0m)
@@ -320,19 +320,19 @@ public class GannGridStrategy : Strategy
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Fast", "Fast EMA period inside MACD", "MACD Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 18, 1);
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Slow", "Slow EMA period inside MACD", "MACD Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(18, 40, 1);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal", "Signal EMA period inside MACD", "MACD Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 18, 1);
 	}
 
@@ -376,8 +376,8 @@ public class GannGridStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = new WeightedMovingAverage { Length = Math.Max(1, FastMaPeriod), CandlePrice = CandlePrice.Typical };
-		_slowMa = new WeightedMovingAverage { Length = Math.Max(1, SlowMaPeriod), CandlePrice = CandlePrice.Typical };
+		_fastMa = new WeightedMovingAverage { Length = Math.Max(1, FastMaPeriod) };
+		_slowMa = new WeightedMovingAverage { Length = Math.Max(1, SlowMaPeriod) };
 		_momentum = new Momentum { Length = Math.Max(1, MomentumPeriod) };
 		_highest = new Highest { Length = Math.Max(1, AnchorPeriod) };
 		_lowest = new Lowest { Length = Math.Max(1, AnchorPeriod) };
@@ -454,11 +454,11 @@ public class GannGridStrategy : Strategy
 		var previousAnchorHigh = _anchorHigh;
 		var previousAnchorLow = _anchorLow;
 
-		var highestValue = _highest.Process(candle.HighPrice, candle.OpenTime, true);
+		var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime));
 		if (highestValue.IsFinal)
 			_anchorHigh = highestValue.ToDecimal();
 
-		var lowestValue = _lowest.Process(candle.LowPrice, candle.OpenTime, true);
+		var lowestValue = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime));
 		if (lowestValue.IsFinal)
 			_anchorLow = lowestValue.ToDecimal();
 

@@ -84,7 +84,7 @@ public class FibonacciTrendStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Bars used for swing detection", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_fibLevel1 = Param(nameof(FibLevel1), 0.236m).SetDisplay("Fib Level 1", "First Fibonacci ratio", "Fibonacci");
@@ -120,9 +120,9 @@ public class FibonacciTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

@@ -116,52 +116,52 @@ public class ProMartMacdMartingaleStrategy : Strategy
 		_balanceDivider = Param(nameof(BalanceDivider), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Balance Divider", "Divider to derive base volume from portfolio equity.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_maxDoublingCount = Param(nameof(MaxDoublingCount), 1)
 			.SetNotNegative()
 			.SetDisplay("Max Doubling", "Maximum number of volume doublings after losses.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Points", "Stop-loss distance expressed in price points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 1500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit Points", "Take-profit distance expressed in price points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_macd1Fast = Param(nameof(Macd1Fast), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD1 Fast", "Fast EMA period for the primary MACD.", "Signal")
-			.SetCanOptimize(true);
+			;
 
 		_macd1Slow = Param(nameof(Macd1Slow), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD1 Slow", "Slow EMA period for the primary MACD.", "Signal")
-			.SetCanOptimize(true);
+			;
 
 		_macd1Signal = Param(nameof(Macd1Signal), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD1 Signal", "Signal SMA period for the primary MACD.", "Signal")
-			.SetCanOptimize(true);
+			;
 
 		_macd2Fast = Param(nameof(Macd2Fast), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD2 Fast", "Fast EMA period for the secondary MACD.", "Filter")
-			.SetCanOptimize(true);
+			;
 
 		_macd2Slow = Param(nameof(Macd2Slow), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD2 Slow", "Slow EMA period for the secondary MACD.", "Filter")
-			.SetCanOptimize(true);
+			;
 
 		_macd2Signal = Param(nameof(Macd2Signal), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD2 Signal", "Signal SMA period for the secondary MACD.", "Filter")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Data type used for signal generation.", "General");

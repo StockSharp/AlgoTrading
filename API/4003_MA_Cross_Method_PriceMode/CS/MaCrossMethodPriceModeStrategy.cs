@@ -30,8 +30,8 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _firstMa = null!;
-	private LengthIndicator<decimal> _secondMa = null!;
+	private DecimalLengthIndicator _firstMa = null!;
+	private DecimalLengthIndicator _secondMa = null!;
 
 	private readonly List<decimal> _firstValues = new();
 	private readonly List<decimal> _secondValues = new();
@@ -44,30 +44,30 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 		_firstPeriod = Param(nameof(FirstPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Period", "Length of the first moving average.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 50, 1);
 
 		_secondPeriod = Param(nameof(SecondPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Period", "Length of the second moving average.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 100, 1);
 
 		_firstMethod = Param(nameof(FirstMethod), MaMethods.Simple)
 			.SetDisplay("Fast MA Method", "Smoothing method applied to the first moving average.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_secondMethod = Param(nameof(SecondMethod), MaMethods.LinearWeighted)
 			.SetDisplay("Slow MA Method", "Smoothing method applied to the second moving average.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_firstPriceMode = Param(nameof(FirstPriceMode), AppliedPriceModes.Close)
 			.SetDisplay("Fast MA Price", "Price source used for the first moving average.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_secondPriceMode = Param(nameof(SecondPriceMode), AppliedPriceModes.Median)
 			.SetDisplay("Slow MA Price", "Price source used for the second moving average.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_firstShift = Param(nameof(FirstShift), 0)
 			.SetNotNegative()
@@ -80,7 +80,7 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Base order volume used for new entries.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for price processing.", "General");
@@ -188,9 +188,9 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_firstMa = CreateMovingAverage(FirstMethod, FirstPeriod);
 		_secondMa = CreateMovingAverage(SecondMethod, SecondPeriod);
@@ -209,7 +209,7 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -221,8 +221,8 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 		var firstPrice = SelectPrice(candle, FirstPriceMode);
 		var secondPrice = SelectPrice(candle, SecondPriceMode);
 
-		var firstValue = _firstMa.Process(firstPrice, candle.OpenTime, true);
-		var secondValue = _secondMa.Process(secondPrice, candle.OpenTime, true);
+		var firstValue = _firstMa.Process(new DecimalIndicatorValue(_firstMa, firstPrice, candle.OpenTime));
+		var secondValue = _secondMa.Process(new DecimalIndicatorValue(_secondMa, secondPrice, candle.OpenTime));
 
 		if (!firstValue.IsFinal || !secondValue.IsFinal)
 			return;
@@ -309,15 +309,15 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int period)
+	private static DecimalLengthIndicator CreateMovingAverage(MaMethods method, int period)
 	{
 		return method switch
 		{
-			MaMethods.Simple => new SimpleMovingAverage { Length = period },
-			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MaMethods.Simple => new SMA { Length = period },
+			MaMethods.Exponential => new EMA { Length = period },
 			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
-			_ => new SimpleMovingAverage { Length = period }
+			_ => new SMA { Length = period }
 		};
 	}
 

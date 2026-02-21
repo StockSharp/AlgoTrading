@@ -89,29 +89,29 @@ public class MaCciStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Period for CCI calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 100m)
 			.SetDisplay("Overbought Level", "CCI level considered overbought", "Trading Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(80, 150, 25);
 
 		_oversoldLevel = Param(nameof(OversoldLevel), -100m)
 			.SetDisplay("Oversold Level", "CCI level considered oversold", "Trading Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-150, -80, 25);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 1.0m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -125,9 +125,9 @@ public class MaCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var ma = new SMA { Length = MaPeriod };

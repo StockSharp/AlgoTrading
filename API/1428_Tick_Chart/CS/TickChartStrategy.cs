@@ -37,9 +37,9 @@ public class TickChartStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, DataType.Ticks)];
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 

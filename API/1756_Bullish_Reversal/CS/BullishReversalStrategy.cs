@@ -76,7 +76,7 @@ public class BullishReversalStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 50)
 			.SetDisplay("MA Period", "SMA length", "Parameters")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_trailingStop = Param(nameof(TrailingStop), 50m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk")
@@ -107,13 +107,13 @@ public class BullishReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_sma = new SimpleMovingAverage { Length = MaPeriod };
+		_sma = new SMA { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_sma, ProcessCandle).Start();

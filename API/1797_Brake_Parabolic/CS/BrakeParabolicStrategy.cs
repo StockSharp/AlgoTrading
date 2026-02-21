@@ -75,18 +75,18 @@ public class BrakeParabolicStrategy : Strategy
 	{
 		_a = Param(nameof(A), 1.5m)
 		.SetDisplay("A", "Curve exponent", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 
 		_b = Param(nameof(B), 1.0m)
 		.SetDisplay("B", "Curve speed", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2m, 0.1m);
 
 		_beginShift = Param(nameof(BeginShift), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Shift", "Initial shift in points", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 20m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -107,9 +107,9 @@ public class BrakeParabolicStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 
@@ -131,7 +131,7 @@ public class BrakeParabolicStrategy : Strategy
 			DrawCandles(area, subscription);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ResetState()

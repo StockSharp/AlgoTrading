@@ -76,16 +76,16 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 	{
 		_startBalance = Param(nameof(StartBalance), 1000m)
 			.SetDisplay("Start Balance", "Initial balance for drawdown measurement.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 300m)
 			.SetDisplay("Stop-Loss (points)", "Distance from entry price to the protective stop.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400m)
 			.SetDisplay("Take-Profit (points)", "Distance from entry price to the profit target.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe that drives drawdown monitoring.", "General");
@@ -108,9 +108,9 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(
 			stopLoss: new Unit(StopLossPoints * GetPriceStep(), UnitTypes.Point),

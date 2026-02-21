@@ -176,9 +176,9 @@ _barIndex = 0;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _basis = new SMA { Length = ZScorePeriod };
 _stdev = new StandardDeviation { Length = ZScorePeriod };
@@ -198,12 +198,12 @@ return;
 
 _barIndex++;
 
-var basisValue = _basis.Process(candle).ToDecimal();
+var basisValue = _basis.Process(new DecimalIndicatorValue(_basis, candle).ToDecimal();
 var stdevValue = _stdev.Process(candle).ToDecimal();
 var emaTrend = _emaTrend.Process(candle).ToDecimal();
 var rsiValue = _rsi.Process(candle).ToDecimal();
-var rsiEmaValue = _rsiEma.Process(rsiValue, candle.OpenTime, true).ToDecimal();
-var basisShift = _basisShift.Process(basisValue, candle.OpenTime, true).ToDecimal();
+var rsiEmaValue = _rsiEma.Process(rsiValue, candle.OpenTime)).ToDecimal();
+var basisShift = _basisShift.Process(new DecimalIndicatorValue(_basisShift, basisValue, candle.OpenTime)).ToDecimal();
 
 var zscore = stdevValue == 0 ? 0 : (candle.ClosePrice - basisValue) / stdevValue;
 

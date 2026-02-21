@@ -19,7 +19,7 @@
   - `Quantiles` = 10
   - `Leverage` = 1m
   - `MinTradeUsd` = 50m
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame()
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
 - **Фильтры**:
   - Категория: Фундаментальная
   - Направление: Оба

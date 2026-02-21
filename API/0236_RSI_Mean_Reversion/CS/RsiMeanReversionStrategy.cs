@@ -75,19 +75,19 @@ public class RsiMeanReversionStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period for RSI calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Average Period", "Period for RSI average calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_multiplier = Param(nameof(Multiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier for entry", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -108,14 +108,14 @@ public class RsiMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 
 		// Create indicators
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiAverage = new SimpleMovingAverage { Length = AveragePeriod };
+		_rsiAverage = new SMA { Length = AveragePeriod };
 		_rsiStdDev = new StandardDeviation { Length = AveragePeriod };
 
 		// Create candle subscription
@@ -148,8 +148,8 @@ public class RsiMeanReversionStrategy : Strategy
 			return;
 
 		// Process RSI through average and standard deviation indicators
-		var rsiAvgValue = _rsiAverage.Process(rsiValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-		var rsiStdDevValue = _rsiStdDev.Process(rsiValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var rsiAvgValue = _rsiAverage.Process(new DecimalIndicatorValue(_rsiAverage, rsiValue, candle.ServerTime)).ToDecimal();
+		var rsiStdDevValue = _rsiStdDev.Process(new DecimalIndicatorValue(_rsiStdDev, rsiValue, candle.ServerTime)).ToDecimal();
 		
 		// Store previous RSI value for changes detection
 		decimal currentRsiValue = rsiValue;

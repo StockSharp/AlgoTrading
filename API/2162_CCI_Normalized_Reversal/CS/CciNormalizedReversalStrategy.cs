@@ -81,22 +81,22 @@ public class CciNormalizedReversalStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 10)
 			.SetDisplay("CCI Period", "Lookback period for CCI", "General")
 			.SetRange(5, 50)
-			.SetCanOptimize(true);
+			;
 
 		_highLevel = Param(nameof(HighLevel), 100)
 			.SetDisplay("High Level", "Upper CCI threshold", "General")
 			.SetRange(50, 200)
-			.SetCanOptimize(true);
+			;
 
 		_middleLevel = Param(nameof(MiddleLevel), 0)
 			.SetDisplay("Middle Level", "Middle CCI threshold", "General")
 			.SetRange(-50, 50)
-			.SetCanOptimize(true);
+			;
 
 		_lowLevel = Param(nameof(LowLevel), -100)
 			.SetDisplay("Low Level", "Lower CCI threshold", "General")
 			.SetRange(-200, -50)
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -118,9 +118,9 @@ public class CciNormalizedReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(useMarketOrders: true);
 

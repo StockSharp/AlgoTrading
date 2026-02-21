@@ -111,37 +111,37 @@ public MilestoneTrendStrategy()
 {
 _slowMaPeriod = Param(nameof(SlowMaPeriod), 120)
 .SetGreaterThanZero()
-.SetCanOptimize(true)
-.SetDisplay("Slow MA Period");
+
+.SetDisplay("Slow MA Period", "Slow MA Period", "General");
 
 _fastMaPeriod = Param(nameof(FastMaPeriod), 30)
 .SetGreaterThanZero()
-.SetCanOptimize(true)
-.SetDisplay("Fast MA Period");
+
+.SetDisplay("Fast MA Period", "Fast MA Period", "General");
 
 _atrPeriod = Param(nameof(AtrPeriod), 14)
 .SetGreaterThanZero()
-.SetCanOptimize(true)
-.SetDisplay("ATR Period");
+
+.SetDisplay("ATR Period", "ATR Period", "General");
 
 _minTrend = Param(nameof(MinTrend), 10m)
-.SetCanOptimize(true)
-.SetDisplay("Minimum Trend");
+
+.SetDisplay("Minimum Trend", "Minimum Trend", "General");
 
 _maxTrend = Param(nameof(MaxTrend), 100m)
-.SetCanOptimize(true)
-.SetDisplay("Maximum Trend");
+
+.SetDisplay("Maximum Trend", "Maximum Trend", "General");
 
 _minRange = Param(nameof(MinRange), 5m)
-.SetCanOptimize(true)
-.SetDisplay("Minimum ATR");
+
+.SetDisplay("Minimum ATR", "Minimum ATR", "General");
 
 _candleSpike = Param(nameof(CandleSpike), 10m)
-.SetCanOptimize(true)
-.SetDisplay("Maximum Candle Body");
+
+.SetDisplay("Maximum Candle Body", "Maximum Candle Body", "General");
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-.SetDisplay("Candle Type");
+.SetDisplay("Candle Type", "Candle Type", "General");
 }
 
 /// <inheritdoc />
@@ -159,11 +159,11 @@ _prevCandle = null;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-StartProtection();
+StartProtection(null, null);
 
 var slowMa = new SMA { Length = SlowMaPeriod };
 var fastMa = new SMA { Length = FastMaPeriod };

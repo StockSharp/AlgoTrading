@@ -100,31 +100,31 @@ public class RangeFilterAtrLowDrawdownStrategy : Strategy
 		_period = Param(nameof(Period), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Sampling Period", "Range filter sampling period", "Range Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Multiplier", "Range multiplier", "Range Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_atrMultiplierSl = Param(nameof(AtrMultiplierSl), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR SL Mult", "ATR multiplier for stop loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_atrMultiplierTp = Param(nameof(AtrMultiplierTp), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR TP Mult", "ATR multiplier for take profit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -151,11 +151,11 @@ public class RangeFilterAtrLowDrawdownStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_avrng.Length = Period;

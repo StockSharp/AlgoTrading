@@ -295,9 +295,9 @@ public class ColorXmuvTimeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_xma = CreateMovingAverage(XmaMethod, XLength);
 
@@ -315,7 +315,7 @@ public class ColorXmuvTimeStrategy : Strategy
 		}
 
 		var price = CalculateSignalPrice(candle);
-		var indicatorValue = _xma.Process(price, candle.OpenTime, true);
+		var indicatorValue = _xma.Process(new DecimalIndicatorValue(_xma, price, candle.OpenTime));
 
 		if (!_xma.IsFormed)
 		{
@@ -516,17 +516,17 @@ public class ColorXmuvTimeStrategy : Strategy
 	{
 		return method switch
 		{
-			SmoothMethods.Sma => new SimpleMovingAverage { Length = length },
-			SmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.Sma => new SMA { Length = length },
+			SmoothMethods.Ema => new EMA { Length = length },
 			SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
 			SmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
 			SmoothMethods.Jjma => new JurikMovingAverage { Length = length },
 			SmoothMethods.Jurx => new JurikMovingAverage { Length = length },
 			SmoothMethods.Parma => new WeightedMovingAverage { Length = length },
-			SmoothMethods.T3 => new ExponentialMovingAverage { Length = length },
-			SmoothMethods.Vidya => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.T3 => new EMA { Length = length },
+			SmoothMethods.Vidya => new EMA { Length = length },
 			SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 

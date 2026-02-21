@@ -182,16 +182,16 @@ public class ProffessorV3Strategy : Strategy
 
 		_lotMultiplier = Param(nameof(LotMultiplier), 1m)
 		.SetDisplay("Lot Multiplier", "Multiplier applied to pending order volume", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_lotAddition = Param(nameof(LotAddition), 0.01m)
 		.SetDisplay("Lot Addition", "Additional volume added to each grid order", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_maxLevels = Param(nameof(MaxLevels), 5)
 		.SetRange(0, 10)
 		.SetDisplay("Max Levels", "Maximum number of pending orders per side", "Grid")
-		.SetCanOptimize(true);
+		;
 
 		_gridDeltaIncrement = Param(nameof(GridDeltaIncrement), -5m)
 		.SetDisplay("Delta Increment", "Increment added to the spacing for deeper levels (points)", "Grid");
@@ -199,16 +199,16 @@ public class ProffessorV3Strategy : Strategy
 		_gridInitialOffset = Param(nameof(GridInitialOffset), 70m)
 		.SetGreaterThanZero()
 		.SetDisplay("Initial Offset", "Distance to the first protective order (points)", "Grid")
-		.SetCanOptimize(true);
+		;
 
 		_gridStep = Param(nameof(GridStep), 60m)
 		.SetGreaterThanZero()
 		.SetDisplay("Grid Step", "Distance between subsequent grid levels (points)", "Grid")
-		.SetCanOptimize(true);
+		;
 
 		_profitTarget = Param(nameof(ProfitTarget), 15m)
 		.SetDisplay("Profit Close", "Unrealized profit target for closing everything", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_lossLimit = Param(nameof(LossLimit), -150m)
 		.SetDisplay("Loss Close", "Unrealized loss threshold that forces liquidation", "Risk");
@@ -216,11 +216,11 @@ public class ProffessorV3Strategy : Strategy
 		_adxFlatLevel = Param(nameof(AdxFlatLevel), 40m)
 		.SetGreaterThanZero()
 		.SetDisplay("ADX Flat Level", "ADX threshold distinguishing flat and trend regimes", "Indicators")
-		.SetCanOptimize(true);
+		;
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetRange(1, 100)
 			.SetDisplay("ADX Period", "Length of the Average Directional Index", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_barOffset = Param(nameof(BarOffset), 2)
 		.SetRange(0, 10)
@@ -255,9 +255,9 @@ public class ProffessorV3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
@@ -610,7 +610,7 @@ public class ProffessorV3Strategy : Strategy
 
 	private bool IsWithinTradingHours(DateTimeOffset time)
 	{
-		var hour = time.UtcDateTime.Hour;
+		var hour = time.Hour;
 
 		if (StartHour < EndHour)
 		return hour >= StartHour && hour < EndHour;

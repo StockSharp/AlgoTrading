@@ -103,17 +103,17 @@ public class FuturesTradingHoursRsiStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Period of the RSI", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_overSoldLevel = Param(nameof(OverSoldLevel), 30m)
 			.SetDisplay("RSI Oversold", "Oversold level", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 10m);
 
 		_overBoughtLevel = Param(nameof(OverBoughtLevel), 70m)
 			.SetDisplay("RSI Overbought", "Overbought level", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 10m);
 
 		_sessionStart = Param(nameof(SessionStart), new TimeSpan(8, 30, 0))
@@ -144,9 +144,9 @@ public class FuturesTradingHoursRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var subscription = SubscribeCandles(CandleType);
@@ -172,7 +172,7 @@ public class FuturesTradingHoursRsiStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var adjustedTime = candle.OpenTime.UtcDateTime.AddHours(TimezoneOffset);
+		var adjustedTime = candle.OpenTime.AddHours(TimezoneOffset);
 		var weekdayFilter = adjustedTime.DayOfWeek >= DayOfWeek.Monday && adjustedTime.DayOfWeek <= DayOfWeek.Friday;
 
 		if (weekdayFilter && (adjustedTime.Hour > SessionEnd.Hours || (adjustedTime.Hour == SessionEnd.Hours && adjustedTime.Minute >= SessionEnd.Minutes)))

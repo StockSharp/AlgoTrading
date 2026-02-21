@@ -81,7 +81,7 @@ public class AssetClassTrendFollowingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Min Trade USD", "Minimal dollar amount per trade", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -103,16 +103,16 @@ public class AssetClassTrendFollowingStrategy : Strategy
 		_lastDay = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe is empty.");
 
 		foreach (var (sec, dt) in GetWorkingSecurities())
 		{
-			var sma = new SimpleMovingAverage { Length = SmaLength };
+			var sma = new SMA { Length = SmaLength };
 			_sma[sec] = sma;
 
 			SubscribeCandles(dt, true, sec)

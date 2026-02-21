@@ -303,9 +303,9 @@ public class KolierSuperTrendX2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_trendSuperTrend = new SuperTrend
 		{
@@ -348,7 +348,7 @@ public class KolierSuperTrendX2Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessTrendCandle(ICandleMessage candle, IIndicatorValue value)

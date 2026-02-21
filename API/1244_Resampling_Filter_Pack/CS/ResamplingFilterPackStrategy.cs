@@ -30,7 +30,7 @@ public class ResamplingFilterPackStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _ma;
+	private DecimalLengthIndicator _ma;
 	private int _barCounter;
 	private decimal _currentFilter;
 	private decimal _previousFilter;
@@ -79,7 +79,7 @@ public class ResamplingFilterPackStrategy : Strategy
 	{
 		_barsPerSample = Param(nameof(BarsPerSample), 5)
 			.SetDisplay("Bars Per Sample", "Number of bars between samples", "Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 7, 1);
 
 		_filterType = Param(nameof(MovingAverageType), FilterTypes.Ema)
@@ -87,7 +87,7 @@ public class ResamplingFilterPackStrategy : Strategy
 
 		_maPeriod = Param(nameof(MaPeriod), 9)
 			.SetDisplay("Filter Period", "Moving average period", "Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -101,13 +101,13 @@ public class ResamplingFilterPackStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = MovingAverageType == FilterTypes.Sma
-			? new SimpleMovingAverage { Length = MaPeriod }
-			: new ExponentialMovingAverage { Length = MaPeriod };
+			? new SMA { Length = MaPeriod }
+			: new EMA { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

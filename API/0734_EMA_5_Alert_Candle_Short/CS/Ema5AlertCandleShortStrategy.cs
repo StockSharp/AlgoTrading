@@ -64,13 +64,13 @@ public class Ema5AlertCandleShortStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period for EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_riskPerTrade = Param(nameof(RiskPerTrade), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Per Trade", "Risk amount per trade", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -97,11 +97,11 @@ public class Ema5AlertCandleShortStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription

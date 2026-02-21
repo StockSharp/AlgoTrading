@@ -153,47 +153,47 @@ public class TripleCciMfiConfirmedStrategy : Strategy
 		_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 1.75m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("ATR Stop Loss", "ATR multiplier for stop loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingActivationMultiplier = Param(nameof(TrailingActivationMultiplier), 2.25m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("ATR Trailing Activation", "ATR multiplier to activate trailing", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_fastCciPeriod = Param(nameof(FastCciPeriod), 14)
 			.SetRange(5, 50)
 			.SetDisplay("CCI Fast Length", "Fast CCI period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_middleCciPeriod = Param(nameof(MiddleCciPeriod), 25)
 			.SetRange(5, 100)
 			.SetDisplay("CCI Middle Length", "Middle CCI period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowCciPeriod = Param(nameof(SlowCciPeriod), 50)
 			.SetRange(10, 150)
 			.SetDisplay("CCI Slow Length", "Slow CCI period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_mfiLength = Param(nameof(MfiLength), 14)
 			.SetRange(1, 200)
 			.SetDisplay("MFI Length", "Money Flow Index length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_emaLength = Param(nameof(EmaLength), 50)
 			.SetRange(10, 200)
 			.SetDisplay("EMA Length", "EMA filter length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_trailingEmaLength = Param(nameof(TrailingEmaLength), 20)
 			.SetRange(10, 100)
 			.SetDisplay("Trailing EMA Length", "EMA length for trailing profit", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetRange(5, 50)
 			.SetDisplay("ATR Period", "ATR calculation period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -224,16 +224,16 @@ public class TripleCciMfiConfirmedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastCci = new CommodityChannelIndex { Length = FastCciPeriod };
 		var middleCci = new CommodityChannelIndex { Length = MiddleCciPeriod };
 		var slowCci = new CommodityChannelIndex { Length = SlowCciPeriod };
 		var mfi = new MoneyFlowIndex { Length = MfiLength };
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
-		var trailingEma = new ExponentialMovingAverage { Length = TrailingEmaLength };
+		var ema = new EMA { Length = EmaLength };
+		var trailingEma = new EMA { Length = TrailingEmaLength };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

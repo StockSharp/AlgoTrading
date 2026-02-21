@@ -149,17 +149,17 @@ public class MultiTimeframeRsiGridWithArrowsStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Number of periods", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_oversold = Param(nameof(Oversold), 30)
 			.SetDisplay("Oversold", "Oversold level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_overbought = Param(nameof(Overbought), 70)
 			.SetDisplay("Overbought", "Overbought level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 90, 5);
 
 		_higherTimeframe1 = Param(nameof(HigherTimeframe1), TimeSpan.FromMinutes(60).TimeFrame())
@@ -171,13 +171,13 @@ public class MultiTimeframeRsiGridWithArrowsStrategy : Strategy
 		_gridFactor = Param(nameof(GridFactor), 1.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Grid Factor", "ATR multiplier", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.1m);
 
 		_lotMultiplier = Param(nameof(LotMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Multiplier", "Order size multiplier", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.1m);
 
 		_maxGridLevels = Param(nameof(MaxGridLevels), 5)
@@ -191,7 +191,7 @@ public class MultiTimeframeRsiGridWithArrowsStrategy : Strategy
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 	}
 
@@ -217,9 +217,9 @@ public class MultiTimeframeRsiGridWithArrowsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
@@ -239,7 +239,7 @@ public class MultiTimeframeRsiGridWithArrowsStrategy : Strategy
 			.Bind(htf2Rsi, ProcessHigherTf2)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessHigherTf1(ICandleMessage candle, decimal rsi)
@@ -266,7 +266,7 @@ public class MultiTimeframeRsiGridWithArrowsStrategy : Strategy
 		var close = candle.ClosePrice;
 		_gridSpace = atr * GridFactor;
 
-		var day = candle.Time.Date;
+		var day = candle.ServerTime.Date;
 		if (day != _currentDay)
 		{
 			var equity = Portfolio?.CurrentValue ?? 0m;

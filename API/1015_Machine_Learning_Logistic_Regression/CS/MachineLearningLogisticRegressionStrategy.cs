@@ -85,25 +85,25 @@ public class MachineLearningLogisticRegressionStrategy : Strategy
 		_lookback = Param(nameof(Lookback), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Number of bars for training", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_learningRate = Param(nameof(LearningRate), 0.0009m)
 			.SetGreaterThanZero()
 			.SetDisplay("Learning Rate", "Gradient descent step", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0001m, 0.01m, 0.0001m);
 
 		_iterations = Param(nameof(Iterations), 1000)
 			.SetGreaterThanZero()
 			.SetDisplay("Iterations", "Training iterations", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 5000, 50);
 
 		_holdingPeriod = Param(nameof(HoldingPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Holding Period", "Bars to hold position", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -130,9 +130,9 @@ public class MachineLearningLogisticRegressionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

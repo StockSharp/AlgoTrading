@@ -21,7 +21,7 @@
   - `RsiOverbought` = 65m
   - `RsiOversold` = 30m
   - `SupertrendMultiplier` = 1m
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame()
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
 - **过滤器**:
   - 类别: 趋势
   - 方向: 双向

@@ -77,13 +77,13 @@ public class OBVDivergenceStrategy : Strategy
 		_divergencePeriod = Param(nameof(DivergencePeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Divergence Period", "Number of periods to look back for divergence", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for moving average calculation (used for exit signal)", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -92,7 +92,7 @@ public class OBVDivergenceStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 	}
 
@@ -116,13 +116,13 @@ public class OBVDivergenceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_obv = new OnBalanceVolume();
-		_ma = new SimpleMovingAverage
+		_ma = new SMA
 		{
 			Length = MAPeriod
 		};

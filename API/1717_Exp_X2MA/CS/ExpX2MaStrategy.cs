@@ -90,22 +90,22 @@ public class ExpX2MaStrategy : Strategy
 		_firstMaLength = Param(nameof(FirstMaLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("First MA Length", "Period for first smoothing", "General")
-		.SetCanOptimize(true);
+		;
 
 		_secondMaLength = Param(nameof(SecondMaLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Second MA Length", "Period for second smoothing", "General")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss Points", "Fixed stop loss in price points", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit Points", "Fixed take profit in price points", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -138,17 +138,17 @@ public class ExpX2MaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = FirstMaLength };
+		_sma = new SMA { Length = FirstMaLength };
 		_jma = new JurikMovingAverage { Length = SecondMaLength };
 
 		var sub = SubscribeCandles(CandleType);
-		sub.WhenNew(ProcessCandle).Start();
+		sub.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

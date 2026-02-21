@@ -60,22 +60,22 @@ public class EmaTrendHeikinAshiEntryStrategy : Strategy
 	{
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 		.SetDisplay("Bollinger Period", "Bollinger Bands length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 		
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 		.SetDisplay("Bollinger Deviation", "Bollinger Bands standard deviation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 		
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 9)
 		.SetDisplay("Fast EMA", "Fast EMA length", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 21)
 		.SetDisplay("Slow EMA", "Slow EMA length", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 1);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -163,9 +163,9 @@ public class EmaTrendHeikinAshiEntryStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var bb = new BollingerBands
 		{
@@ -173,8 +173,8 @@ public class EmaTrendHeikinAshiEntryStrategy : Strategy
 			Width = BollingerDeviation
 		};
 		
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var fastEma = new EMA { Length = FastEmaPeriod };
+		var slowEma = new EMA { Length = SlowEmaPeriod };
 		
 		var mainSub = SubscribeCandles(CandleType);
 		mainSub.Bind(bb, ProcessCandle).Start();

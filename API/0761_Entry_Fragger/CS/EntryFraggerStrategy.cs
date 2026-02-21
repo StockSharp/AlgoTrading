@@ -94,12 +94,12 @@ public class EntryFraggerStrategy : Strategy
 	{
 		_signalAccuracy = Param(nameof(SignalAccuracy), 2)
 			.SetDisplay("Buy Signal Accuracy", "Required red vectors count before buy", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_sellSignalAccuracy = Param(nameof(SellSignalAccuracy), 2)
 			.SetDisplay("Sell Signal Accuracy", "Required green vectors count before sell", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_reverseTrading = Param(nameof(ReverseTrading), false)
@@ -134,11 +134,11 @@ public class EntryFraggerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var ema50 = new EMA { Length = 50 };
 		var ema200 = new EMA { Length = 200 };

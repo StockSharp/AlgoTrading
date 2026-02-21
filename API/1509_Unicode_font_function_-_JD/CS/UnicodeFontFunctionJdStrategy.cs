@@ -64,9 +64,9 @@ public class UnicodeFontFunctionJdStrategy : Strategy
 		return [];
 	}
 	
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		var converted = ConvertText(InputString, UpperCase, Bold, Italic);
 		LogInfo("{0} -> {1}", InputString, converted);
 	}

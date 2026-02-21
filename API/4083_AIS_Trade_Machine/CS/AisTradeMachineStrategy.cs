@@ -86,13 +86,13 @@ public AisTradeMachineStrategy()
 	_accountReserve = Param(nameof(AccountReserve), 0.2m)
 	.SetRange(0m, 0.9m)
 	.SetDisplay("Account Reserve", "Fraction of equity kept as reserve (0-0.9).", "Risk Management")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(0.1m, 0.5m, 0.05m);
 
 	_orderReserve = Param(nameof(OrderReserve), 0.04m)
 	.SetRange(0.001m, 0.5m)
 	.SetDisplay("Order Reserve", "Fraction of equity allocated to a single trade.", "Risk Management")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(0.01m, 0.1m, 0.01m);
 }
 
@@ -171,9 +171,9 @@ protected override void OnReseted()
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_peakEquity = Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? 0m;
 

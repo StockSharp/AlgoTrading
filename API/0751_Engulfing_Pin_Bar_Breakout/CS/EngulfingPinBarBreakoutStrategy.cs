@@ -78,15 +78,15 @@ public class EngulfingPinBarBreakoutStrategy : Strategy
 	{
 		_longProfitRatio = Param(nameof(LongProfitRatio), 5m)
 			.SetDisplay("Long Profit Ratio", "Risk/reward for long trades", "General")
-			.SetCanOptimize(true);
+			;
 
 		_shortProfitRatio = Param(nameof(ShortProfitRatio), 4m)
 			.SetDisplay("Short Profit Ratio", "Risk/reward for short trades", "General")
-			.SetCanOptimize(true);
+			;
 
 		_riskPercent = Param(nameof(RiskPercent), 0.02m)
 			.SetDisplay("Risk Percent", "Capital risk per trade", "Money Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
@@ -113,9 +113,9 @@ public class EngulfingPinBarBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

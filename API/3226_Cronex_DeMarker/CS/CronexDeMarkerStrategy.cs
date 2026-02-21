@@ -110,17 +110,17 @@ public class CronexDeMarkerStrategy : Strategy
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 25)
 			.SetRange(5, 100)
 			.SetDisplay("DeMarker Period", "Length for the DeMarker oscillator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetRange(2, 50)
 			.SetDisplay("Fast Period", "Length for the fast smoothing average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 25)
 			.SetRange(2, 100)
 			.SetDisplay("Slow Period", "Length for the slow smoothing average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signal generation", "General");
@@ -154,14 +154,14 @@ public class CronexDeMarkerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Build indicator chain: raw DeMarker value -> fast SMA -> slow SMA.
 		var deMarker = new DeMarker { Length = DeMarkerPeriod };
-		var fastAverage = new SimpleMovingAverage { Length = FastPeriod };
-		var slowAverage = new SimpleMovingAverage { Length = SlowPeriod };
+		var fastAverage = new SMA { Length = FastPeriod };
+		var slowAverage = new SMA { Length = SlowPeriod };
 
 		// Subscribe to candles and bind indicators sequentially.
 		var subscription = SubscribeCandles(CandleType);

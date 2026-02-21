@@ -57,12 +57,12 @@ public class WilliamsPercentRStrategy : Strategy
 		_period = Param(nameof(Period), 14)
 			.SetDisplay("Period", "Period for Williams %R calculation", "Indicators")
 			.SetRange(5, 50)
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 			.SetRange(0.5m, 5m)
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -75,9 +75,9 @@ public class WilliamsPercentRStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Williams %R indicator
 		var williamsR = new WilliamsR { Length = Period };

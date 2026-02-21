@@ -57,60 +57,60 @@ public class TrendLineStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 		.SetNotNegative()
 		.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 		.SetNotNegative()
 		.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 		.SetNotNegative()
 		.SetDisplay("Momentum Period", "Number of candles used in the momentum calculation.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 		.SetDisplay("Long Momentum", "Minimum momentum required before entering long positions.", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), -0.3m)
 		.SetDisplay("Short Momentum", "Maximum momentum allowed before opening short positions.", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 		.SetNotNegative()
 		.SetDisplay("MACD Fast", "Fast EMA length of the MACD indicator.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 		.SetNotNegative()
 		.SetDisplay("MACD Slow", "Slow EMA length of the MACD indicator.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 		.SetNotNegative()
 		.SetDisplay("MACD Signal", "Signal EMA length of the MACD indicator.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 20m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Protective stop distance expressed in price steps.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit", "Protective take profit distance expressed in price steps.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopSteps = Param(nameof(TrailingStopSteps), 40m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance expressed in price steps.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingTriggerSteps = Param(nameof(TrailingTriggerSteps), 40m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Trigger", "Profit in steps required before the trailing stop activates.", "Risk")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>

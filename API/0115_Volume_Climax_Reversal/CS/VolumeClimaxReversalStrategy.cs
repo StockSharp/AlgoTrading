@@ -84,22 +84,22 @@ public class VolumeClimaxReversalStrategy : Strategy
 		_volumePeriod = Param(nameof(VolumePeriod), 20)
 			.SetRange(10, 50)
 			.SetDisplay("Volume Period", "Period for volume average calculation", "Volume")
-			.SetCanOptimize(true);
+			;
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 3m)
 			.SetRange(1.5m, 5m)
 			.SetDisplay("Volume Multiplier", "Volume threshold as multiplier of average volume", "Volume")
-			.SetCanOptimize(true);
+			;
 
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetRange(10, 50)
 			.SetDisplay("MA Period", "Period for moving average calculation", "Moving Average")
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplier = Param(nameof(ATRMultiplier), 2m)
 			.SetRange(1m, 5m)
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR to calculate stop loss", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -109,13 +109,13 @@ public class VolumeClimaxReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
-		_ma = new SimpleMovingAverage { Length = MAPeriod };
-		_volumeAverage = new SimpleMovingAverage { Length = VolumePeriod };
+		_ma = new SMA { Length = MAPeriod };
+		_volumeAverage = new SMA { Length = VolumePeriod };
 		_atr = new AverageTrueRange { Length = VolumePeriod };
 
 		// Create and subscribe to candles
@@ -143,7 +143,7 @@ public class VolumeClimaxReversalStrategy : Strategy
 			return;
 
 		// Process indicators
-		var volumeAverageValue = _volumeAverage.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var volumeAverageValue = _volumeAverage.Process(new DecimalIndicatorValue(_volumeAverage, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())

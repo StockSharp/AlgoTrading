@@ -29,7 +29,7 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 
 	private Highest _highest = null!;
 	private Lowest _lowest = null!;
-	private LengthIndicator<decimal> _maIndicator = null!;
+	private DecimalLengthIndicator _maIndicator = null!;
 	private readonly Queue<decimal> _maValues = new();
 
 	private decimal? _currentMaValue;
@@ -123,19 +123,19 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 		_calcPeriod = Param(nameof(CalcPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Calc Period", "Lookback of higher timeframe candles for extremes", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 12, 1);
 
 		_stopLossPips = Param(nameof(StopLossPips), 300)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 600, 50);
 
 		_maPeriod = Param(nameof(MaPeriod), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average length on the higher timeframe", "Moving Average")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_maShift = Param(nameof(MaShift), 0)
@@ -148,7 +148,7 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Weighted)
 			.SetDisplay("Applied Price", "Price source fed into the moving average", "Moving Average");
 
-		_tradeCandleType = Param(nameof(TradeCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_tradeCandleType = Param(nameof(TradeCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Trade Candle Type", "Primary timeframe that triggers entries", "General");
 
 		_maCandleType = Param(nameof(MaCandleType), TimeSpan.FromDays(7).TimeFrame())
@@ -182,12 +182,12 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_highest = new Highest { Length = Math.Max(1, CalcPeriod), CandlePrice = CandlePrice.High };
-		_lowest = new Lowest { Length = Math.Max(1, CalcPeriod), CandlePrice = CandlePrice.Low };
+		_highest = new Highest { Length = Math.Max(1, CalcPeriod) };
+		_lowest = new Lowest { Length = Math.Max(1, CalcPeriod) };
 		_maIndicator = CreateMovingAverage(MaMethod, MaPeriod);
 
 		var weeklySubscription = SubscribeCandles(MaCandleType);
@@ -215,7 +215,7 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 		var lowestValue = _lowest.Process(candle).ToNullableDecimal();
 		var isFinished = candle.State == CandleStates.Finished;
 		var price = GetAppliedPrice(candle, AppliedPrice);
-		var maValue = _maIndicator.Process(price, candle.OpenTime, isFinished).ToNullableDecimal();
+		var maValue = _maIndicator.Process(new DecimalIndicatorValue(_maIndicator, price, candle.OpenTime)).ToNullableDecimal();
 
 		if (!isFinished)
 			return;
@@ -403,15 +403,15 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 

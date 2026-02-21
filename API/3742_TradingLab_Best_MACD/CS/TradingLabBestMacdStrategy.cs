@@ -58,51 +58,51 @@ public class TradingLabBestMacdStrategy : Strategy
 	{
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetDisplay("Order Volume", "Fixed volume sent with each market order", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_signalValidity = Param(nameof(SignalValidity), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Validity", "Number of candles a MACD or box trigger remains active", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_maLength = Param(nameof(MaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Simple moving average period used as the trend filter", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_boxPeriod = Param(nameof(BoxPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Box Period", "Lookback length for the support/resistance box", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast Length", "Fast EMA length for MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow Length", "Slow EMA length for MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal Length", "Signal line length for MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopDistancePoints = Param(nameof(StopDistancePoints), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Distance (points)", "Protective stop distance from the moving average expressed in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_riskRewardMultiplier = Param(nameof(RiskRewardMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk-Reward Multiplier", "Multiplier applied to derive the take-profit distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Data type used to subscribe for candles", "General")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -196,20 +196,15 @@ public class TradingLabBestMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Configure the indicators that replicate the MetaTrader calculations.
-		_sma = new SimpleMovingAverage { Length = MaLength };
+		_sma = new SMA { Length = MaLength };
 		_highest = new Highest { Length = BoxPeriod };
 		_lowest = new Lowest { Length = BoxPeriod };
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Fast = MacdFastLength,
-			Slow = MacdSlowLength,
-			Signal = MacdSignalLength
-		};
+		_macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = MacdFastLength }, LongMa = { Length = MacdSlowLength } }, SignalMa = { Length = MacdSignalLength } };
 
 		// Subscribe to the configured candle stream and bind indicator outputs to the handler.
 		var subscription = SubscribeCandles(CandleType);
@@ -217,7 +212,7 @@ public class TradingLabBestMacdStrategy : Strategy
 			.BindEx(new IIndicator[] { _sma, _highest, _lowest, _macd }, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)

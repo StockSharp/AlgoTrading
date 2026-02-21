@@ -134,12 +134,12 @@ public class ColorZerolagMomentumX2Strategy : Strategy
 		_trendMomentumPeriod = Param(nameof(TrendMomentumPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend Momentum Period", "Momentum length for trend", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_trendMaLength = Param(nameof(TrendMaLength), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend Smooth Length", "Zero lag MA length for trend", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Signal Timeframe", "Candle type for signals", "General");
@@ -147,12 +147,12 @@ public class ColorZerolagMomentumX2Strategy : Strategy
 		_signalMomentumPeriod = Param(nameof(SignalMomentumPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Momentum Period", "Momentum length for signals", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_signalMaLength = Param(nameof(SignalMaLength), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Smooth Length", "Zero lag MA length for signals", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
 			.SetDisplay("Buy Entries", "Enable long entries", "Signals");
@@ -184,11 +184,11 @@ public class ColorZerolagMomentumX2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var trendMomentum = new Momentum { Length = TrendMomentumPeriod };
 		var trendMa = new ZeroLagExponentialMovingAverage { Length = TrendMaLength };

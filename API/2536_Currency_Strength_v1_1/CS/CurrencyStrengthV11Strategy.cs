@@ -68,12 +68,12 @@ public class CurrencyStrengthV11Strategy : Strategy
 	public CurrencyStrengthV11Strategy()
 	{
 		// Configure the timeframe used for strength calculations.
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for strength calculation", "General");
 
 		_differenceThreshold = Param(nameof(DifferenceThreshold), 0.5m)
 		.SetDisplay("Strength Threshold", "Minimum difference between currencies", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 2m, 0.1m);
 
 		_tradeOncePerDay = Param(nameof(TradeOncePerDay), true)
@@ -427,9 +427,9 @@ public class CurrencyStrengthV11Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pairStates.Clear();
 

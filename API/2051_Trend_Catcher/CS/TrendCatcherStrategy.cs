@@ -119,36 +119,36 @@ public TrendCatcherStrategy()
 {
 _slowMaPeriod = Param(nameof(SlowMaPeriod), 200)
 .SetDisplay("Slow MA Period", "Period of the slow moving average", "Moving Averages")
-.SetCanOptimize(true)
+
 .SetOptimize(100, 300, 50);
 
 _fastMaPeriod = Param(nameof(FastMaPeriod), 50)
 .SetDisplay("Fast MA Period", "Period of the first fast moving average", "Moving Averages")
-.SetCanOptimize(true)
+
 .SetOptimize(20, 80, 10);
 
 _fastMa2Period = Param(nameof(FastMa2Period), 25)
 .SetDisplay("Second Fast MA Period", "Period of the second fast moving average", "Moving Averages")
-.SetCanOptimize(true)
+
 .SetOptimize(10, 50, 5);
 
 _sarStep = Param(nameof(SarStep), 0.004m)
 .SetDisplay("SAR Step", "Parabolic SAR acceleration step", "Parabolic SAR")
-.SetCanOptimize(true)
+
 .SetOptimize(0.002m, 0.01m, 0.002m);
 
 _sarMax = Param(nameof(SarMax), 0.2m)
 .SetDisplay("SAR Max", "Parabolic SAR maximum acceleration", "Parabolic SAR")
-.SetCanOptimize(true)
+
 .SetOptimize(0.1m, 0.4m, 0.1m);
 
 _slMultiplier = Param(nameof(SlMultiplier), 1m)
 .SetDisplay("SL Multiplier", "Multiplier applied to SAR distance for stop-loss", "Risk")
-.SetCanOptimize(true);
+;
 
 _tpMultiplier = Param(nameof(TpMultiplier), 1m)
 .SetDisplay("TP Multiplier", "Take-profit as multiple of stop-loss", "Risk")
-.SetCanOptimize(true);
+;
 
 _minStopLoss = Param(nameof(MinStopLoss), 10m)
 .SetDisplay("Min Stop Loss", "Minimum allowed stop-loss distance", "Risk");
@@ -191,9 +191,9 @@ _breakevenSet = false;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var sar = new ParabolicSar
 {

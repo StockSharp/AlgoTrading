@@ -52,11 +52,11 @@ public TrailingProfitGuardianStrategy()
 	{
 		_trailPercent = Param(nameof(TrailPercent), 33m)
 			.SetDisplay("Trail Percent", "Percentage of profit preserved before closing", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_activationProfit = Param(nameof(ActivationProfit), 1000m)
 			.SetDisplay("Activation Profit", "Unrealized profit needed to enable trailing", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -64,12 +64,12 @@ public TrailingProfitGuardianStrategy()
 		=> [(Security, DataType.Ticks)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeTicks().Bind(ProcessTrade).Start();
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />

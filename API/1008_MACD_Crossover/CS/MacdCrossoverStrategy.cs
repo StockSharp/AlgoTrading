@@ -91,29 +91,29 @@ public class MacdCrossoverStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Fast EMA period", "MACD Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 2);
 
 		_slowLength = Param(nameof(SlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow EMA period", "MACD Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 32, 2);
 
 		_signalLength = Param(nameof(SignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "Signal line period", "MACD Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 13, 2);
 
 		_lowerThreshold = Param(nameof(LowerThreshold), -0.5m)
 			.SetDisplay("Lower Threshold", "Lower bound for MACD zone", "MACD Zone")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-1m, 0m, 0.1m);
 
 		_upperThreshold = Param(nameof(UpperThreshold), 0.5m)
 			.SetDisplay("Upper Threshold", "Upper bound for MACD zone", "MACD Zone")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 1m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

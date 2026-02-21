@@ -61,22 +61,22 @@ public class TrailingStopAndTakeStrategy : Strategy
 		_initialStopLossPoints = Param(nameof(InitialStopLossPoints), 400m)
 			.SetRange(0m, 10000m)
 			.SetDisplay("Initial Stop", "Initial stop-loss size in price points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_initialTakeProfitPoints = Param(nameof(InitialTakeProfitPoints), 400m)
 			.SetRange(0m, 10000m)
 			.SetDisplay("Initial Take", "Initial take-profit size in price points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopLossPoints = Param(nameof(TrailingStopLossPoints), 200m)
 			.SetRange(0m, 10000m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in price points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingTakeProfitPoints = Param(nameof(TrailingTakeProfitPoints), 200m)
 			.SetRange(0m, 10000m)
 			.SetDisplay("Trailing Take", "Trailing take-profit distance in price points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 10m)
 			.SetRange(0m, 1000m)
@@ -205,11 +205,11 @@ public class TrailingStopAndTakeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 		if (_priceStep <= 0m)

@@ -71,13 +71,13 @@ public class OpenDriveStrategy : Strategy
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR to define gap size", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2.0m, 0.5m);
 		
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 		
 		_maPeriod = Param(nameof(MaPeriod), 20)
@@ -102,11 +102,11 @@ public class OpenDriveStrategy : Strategy
 		_prevClosePrice = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		// Create indicators
-		var sma = new SimpleMovingAverage { Length = MaPeriod };
+		var sma = new SMA { Length = MaPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 		
 		// Create subscription and bind indicators

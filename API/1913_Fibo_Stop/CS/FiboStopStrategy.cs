@@ -74,17 +74,17 @@ public class FiboStopStrategy : Strategy
 		_fiboStart = Param(nameof(FiboStart), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Start Price", "Fibonacci start level", "Fibonacci")
-			.SetCanOptimize(true);
+			;
 
 		_fiboEnd = Param(nameof(FiboEnd), 110m)
 			.SetGreaterThanZero()
 			.SetDisplay("End Price", "Fibonacci end level", "Fibonacci")
-			.SetCanOptimize(true);
+			;
 
 		_offsetPoints = Param(nameof(OffsetPoints), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Offset Points", "Distance from level to stop in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -107,9 +107,9 @@ public class FiboStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_diff = FiboEnd - FiboStart;
 		_isLong = _diff > 0m;

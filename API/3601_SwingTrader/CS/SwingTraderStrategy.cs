@@ -90,25 +90,25 @@ public class SwingTraderStrategy : Strategy
 		_takeProfitFactor = Param(nameof(TakeProfitFactor), 0.05m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit Factor", "Multiplier applied to invested capital when closing the basket", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 0.2m, 0.01m);
 
 		_multiplier = Param(nameof(Multiplier), 1.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume Multiplier", "Scaling factor for every new averaging order", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.1m, 3m, 0.1m);
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Period", "Number of candles used in the Bollinger Bands", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 
 		_initialVolume = Param(nameof(InitialVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Initial Volume", "Volume of the first grid order", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 5m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -116,11 +116,11 @@ public class SwingTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var bollinger = new BollingerBands
 		{
@@ -208,19 +208,19 @@ public class SwingTraderStrategy : Strategy
 	{
 	if (!_upTouch && !_downTouch)
 	{
-	_upTouch = candle.High > bands.Upper;
-	_downTouch = candle.Low < bands.Lower;
+	_upTouch = candle.HighPrice > bands.Upper;
+	_downTouch = candle.LowPrice < bands.Lower;
 	}
 
 	if (_upTouch)
 	{
-	_downTouch = candle.Low < bands.Lower;
+	_downTouch = candle.LowPrice < bands.Lower;
 	_upTouch = !_downTouch;
 	}
 
 	if (_downTouch)
 	{
-	_upTouch = candle.High > bands.Upper;
+	_upTouch = candle.HighPrice > bands.Upper;
 	_downTouch = !_upTouch;
 	}
 	}
@@ -236,7 +236,7 @@ public class SwingTraderStrategy : Strategy
 	? _savedPrice.Value - _martingaleStep * _gridWidth
 	: _savedPrice.Value + _martingaleStep * _gridWidth;
 
-	var shouldAdd = isLong ? candle.Low <= threshold : candle.High >= threshold;
+	var shouldAdd = isLong ? candle.LowPrice <= threshold : candle.HighPrice >= threshold;
 	if (!shouldAdd)
 	return;
 
@@ -247,12 +247,12 @@ public class SwingTraderStrategy : Strategy
 	if (isLong)
 	{
 	BuyMarket(nextVolume);
-	entries.Add(new GridEntry(candle.Close, nextVolume));
+	entries.Add(new GridEntry(candle.ClosePrice, nextVolume));
 	}
 	else
 	{
 	SellMarket(nextVolume);
-	entries.Add(new GridEntry(candle.Close, nextVolume));
+	entries.Add(new GridEntry(candle.ClosePrice, nextVolume));
 	}
 
 	_martingaleStep++;

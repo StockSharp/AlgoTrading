@@ -68,12 +68,12 @@ public class ThreeCommasHaMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ma1 = new ExponentialMovingAverage { Length = MaFast };
-		var ma2 = new ExponentialMovingAverage { Length = MaSlow };
+		var ma1 = new EMA { Length = MaFast };
+		var ma2 = new EMA { Length = MaSlow };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

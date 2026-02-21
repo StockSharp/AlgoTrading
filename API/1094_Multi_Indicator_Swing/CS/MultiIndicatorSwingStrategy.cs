@@ -147,9 +147,9 @@ public class MultiIndicatorSwingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_psar = new ParabolicSar
 		{
@@ -165,9 +165,9 @@ public class MultiIndicatorSwingStrategy : Strategy
 		};
 
 		_adx = new AverageDirectionalIndex { Length = AdxLength };
-		_deltaSma = new SimpleMovingAverage { Length = DeltaLength };
-		_volumeSma = new SimpleMovingAverage { Length = DeltaLength };
-		_deltaEma = new ExponentialMovingAverage { Length = DeltaSmooth };
+		_deltaSma = new SMA { Length = DeltaLength };
+		_volumeSma = new SMA { Length = DeltaLength };
+		_deltaEma = new EMA { Length = DeltaSmooth };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

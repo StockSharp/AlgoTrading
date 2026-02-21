@@ -115,9 +115,9 @@ public class DoctorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_wmaSlope = new WeightedMovingAverage { Length = 40 };
 		_wmaTrend = new WeightedMovingAverage { Length = 400 };

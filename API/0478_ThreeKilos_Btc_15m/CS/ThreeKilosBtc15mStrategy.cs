@@ -156,9 +156,9 @@ public class ThreeKilosBtc15mStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_ema1Short = new() { Length = ShortPeriod };
 	_ema2Short = new() { Length = ShortPeriod };
@@ -259,9 +259,9 @@ public class ThreeKilosBtc15mStrategy : Strategy
 					decimal price, DateTimeOffset time,
 					bool isFinal)
 	{
-	var e1 = ema1.Process(price, time, isFinal).ToDecimal();
-	var e2 = ema2.Process(e1, time, isFinal).ToDecimal();
-	var e3 = ema3.Process(e2, time, isFinal).ToDecimal();
+	var e1 = ema1.Process(new DecimalIndicatorValue(ema1, price, time.UtcDateTime)).ToDecimal();
+	var e2 = ema2.Process(new DecimalIndicatorValue(ema2, e1, time.UtcDateTime)).ToDecimal();
+	var e3 = ema3.Process(new DecimalIndicatorValue(ema3, e2, time.UtcDateTime)).ToDecimal();
 	return 3m * (e1 - e2) + e3;
 	}
 }

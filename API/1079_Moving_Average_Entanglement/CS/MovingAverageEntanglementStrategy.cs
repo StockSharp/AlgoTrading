@@ -126,9 +126,9 @@ public class MovingAverageEntanglementStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = CreateMa(MaTypeParam, FastLength);
 		_slowMa = CreateMa(MaTypeParam, SlowLength);
@@ -180,8 +180,8 @@ public class MovingAverageEntanglementStrategy : Strategy
 	{
 		return type switch
 		{
-			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			MaTypes.Ema => new EMA { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

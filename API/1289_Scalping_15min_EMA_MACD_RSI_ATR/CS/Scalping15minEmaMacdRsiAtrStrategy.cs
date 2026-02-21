@@ -142,61 +142,61 @@ public class Scalping15minEmaMacdRsiAtrStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period for EMA indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA length for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 2);
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA length for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal smoothing length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 1);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period for RSI indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 1);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Overbought", "RSI overbought level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 5m);
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR indicator period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_slAtrMultiplier = Param(nameof(SlAtrMultiplier), 1m)
 			.SetRange(0.1m, decimal.MaxValue)
 			.SetDisplay("SL ATR Mult", "ATR multiplier for stop loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_tpAtrMultiplier = Param(nameof(TpAtrMultiplier), 2m)
 			.SetRange(0.1m, decimal.MaxValue)
 			.SetDisplay("TP ATR Mult", "ATR multiplier for take profit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -225,11 +225,11 @@ public class Scalping15minEmaMacdRsiAtrStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_ema = new EMA { Length = EmaPeriod };
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFast,
-			LongPeriod = MacdSlow,
+			ShortMa = { Length = MacdFast },
+			LongMa = { Length = MacdSlow },
 			SignalPeriod = MacdSignal
 		};
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };

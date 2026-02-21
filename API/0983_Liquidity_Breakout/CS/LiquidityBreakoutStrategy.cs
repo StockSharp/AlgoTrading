@@ -89,9 +89,9 @@ public StopLossModes StopLoss { get => _stopLossMode.Value; set => _stopLossMode
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = PivotLength };
 		_lowest = new Lowest { Length = PivotLength };
@@ -105,7 +105,7 @@ public StopLossModes StopLoss { get => _stopLossMode.Value; set => _stopLossMode
 		if (StopLoss == StopLossModes.FixedPercentage)
 			StartProtection(stopLoss: new Unit(FixedPercentage, UnitTypes.Percent));
 		else
-			StartProtection();
+			StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

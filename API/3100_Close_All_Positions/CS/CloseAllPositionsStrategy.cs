@@ -49,7 +49,7 @@ public class CloseAllPositionsStrategy : Strategy
 	{
 		_profitThreshold = Param(nameof(ProfitThreshold), 10m)
 			.SetDisplay("Profit Threshold", "Floating profit required to close every position", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 50m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -71,9 +71,9 @@ public class CloseAllPositionsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 

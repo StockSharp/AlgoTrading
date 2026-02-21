@@ -80,25 +80,25 @@ public class Tdi2ReOpenStrategy : Strategy
 		_moneyManagement = Param(nameof(MoneyManagement), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Money Management", "Volume used for each market order", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 1m, 0.05m);
 
 		_maxEntries = Param(nameof(MaxEntries), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Entries", "Maximum number of scale-in trades per direction", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in instrument points", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100, 2000, 100);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Take profit distance expressed in instrument points", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(200, 3000, 100);
 
 		_slippagePoints = Param(nameof(SlippagePoints), 10)
@@ -108,7 +108,7 @@ public class Tdi2ReOpenStrategy : Strategy
 		_priceStepPoints = Param(nameof(PriceStepPoints), 300m)
 		.SetNotNegative()
 		.SetDisplay("Re-entry Step (points)", "Minimum favorable price movement (in points) before adding to an open position", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50m, 500m, 50m);
 
 		_buyOpenAllowed = Param(nameof(BuyOpenAllowed), true)
@@ -125,30 +125,30 @@ public class Tdi2ReOpenStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Data series used for indicator calculations", "Data")
-		.SetCanOptimize(false);
+		;
 
 		_tdiMethod = Param(nameof(TdiMethod), SmoothMethods.Sma)
 		.SetDisplay("TDI Smoothing", "Smoothing method used inside the TDI-2 indicator", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_tdiPeriod = Param(nameof(TdiPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("TDI Period", "Momentum lookback period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 50, 5);
 
 		_tdiPhase = Param(nameof(TdiPhase), 15)
 		.SetDisplay("TDI Phase", "Phase parameter used by advanced smoothing modes", "Indicator")
-		.SetCanOptimize(false);
+		;
 
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
 		.SetDisplay("Applied Price", "Price source used by the TDI-2 indicator", "Indicator")
-		.SetCanOptimize(false);
+		;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Bar", "Number of closed candles to look back when evaluating crosses", "Indicator")
-		.SetCanOptimize(false);
+		;
 	}
 
 	/// <summary>
@@ -317,9 +317,9 @@ public class Tdi2ReOpenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = MoneyManagement;
 
@@ -560,7 +560,7 @@ public class Tdi2ReOpenStrategy : Strategy
 /// Custom implementation of the TDI-2 indicator.
 /// Produces the directional momentum line and the TDI index line.
 /// </summary>
-public class Tdi2Indicator : BaseIndicator<decimal>
+public class Tdi2Indicator : BaseIndicator
 {
 	private Momentum _momentum;
 	private IIndicator _momentumSmoother;
@@ -636,8 +636,8 @@ public class Tdi2Indicator : BaseIndicator<decimal>
 	{
 		return Method switch
 		{
-			SmoothMethod.Sma => new SimpleMovingAverage { Length = length },
-			SmoothMethod.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothMethod.Sma => new SMA { Length = length },
+			SmoothMethod.Ema => new EMA { Length = length },
 			SmoothMethod.Smma => new SmoothedMovingAverage { Length = length },
 			SmoothMethod.Lwma => new WeightedMovingAverage { Length = length },
 			_ => throw new NotSupportedException($"Smoothing method {Method} is not supported."),

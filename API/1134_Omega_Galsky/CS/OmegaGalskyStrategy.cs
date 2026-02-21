@@ -108,13 +108,13 @@ public class OmegaGalskyStrategy : Strategy
 		_ema8Period = Param(nameof(Ema8Period), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA 8 Period", "Period for fast EMA", "EMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 20, 1);
 
 		_ema21Period = Param(nameof(Ema21Period), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA 21 Period", "Period for slow EMA", "EMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 1);
 
 		_ema89Period = Param(nameof(Ema89Period), 89)
@@ -124,19 +124,19 @@ public class OmegaGalskyStrategy : Strategy
 		_slPercentage = Param(nameof(SlPercentage), 0.001m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0005m, 0.005m, 0.0005m);
 
 		_tpPercentage = Param(nameof(TpPercentage), 0.0025m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.01m, 0.001m);
 
 		_fixedRiskReward = Param(nameof(FixedRiskReward), 1.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Reward", "Multiplier for moving stop", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -162,13 +162,13 @@ public class OmegaGalskyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema8 = new ExponentialMovingAverage { Length = Ema8Period };
-		_ema21 = new ExponentialMovingAverage { Length = Ema21Period };
-		_ema89 = new ExponentialMovingAverage { Length = Ema89Period };
+		_ema8 = new EMA { Length = Ema8Period };
+		_ema21 = new EMA { Length = Ema21Period };
+		_ema89 = new EMA { Length = Ema89Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_ema8, _ema21, _ema89, ProcessCandle).Start();

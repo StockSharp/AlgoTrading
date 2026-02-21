@@ -119,7 +119,7 @@ public class CryptoRebalancingPremiumStrategy : Strategy
 		// Store the latest closing price for this security
 		_latestPrices[security] = candle.ClosePrice;
 
-		OnTick(candle.OpenTime.UtcDateTime);
+		OnTick(candle.OpenTime);
 	}
 
 	private void OnTick(DateTime utc)

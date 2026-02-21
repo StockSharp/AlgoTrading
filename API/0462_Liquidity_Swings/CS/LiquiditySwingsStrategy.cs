@@ -73,13 +73,13 @@ public class LiquiditySwingsStrategy : Strategy
 		_lookback = Param(nameof(Lookback), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Pivot Lookback", "Pivot detection lookback", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 10, 1);
 
 		_stopLossBuffer = Param(nameof(StopLossBuffer), 0.5m)
 		.SetRange(0.1m, 5m)
 		.SetDisplay("Stop Loss Buffer %", "Additional stop loss buffer", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1.0m, 0.1m);
 	}
 
@@ -106,9 +106,9 @@ public class LiquiditySwingsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

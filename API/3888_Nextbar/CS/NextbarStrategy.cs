@@ -58,27 +58,27 @@ public class NextbarStrategy : Strategy
 		_barsToCheck = Param(nameof(BarsToCheck), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Bars To Check", "Lookback distance for the momentum filter", "Trading Rules")
-			.SetCanOptimize(true);
+			;
 
 		_barsToHold = Param(nameof(BarsToHold), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Bars To Hold", "Maximum number of completed candles to keep a trade open", "Trading Rules")
-			.SetCanOptimize(true);
+			;
 
 		_minMovePoints = Param(nameof(MinMovePoints), 77)
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Move (points)", "Required point distance between the recent closes", "Trading Rules")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 115)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (points)", "Target distance counted in MetaTrader points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 115)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (points)", "Protective distance expressed in MetaTrader points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_direction = Param(nameof(Direction), NextbarDirections.Follow)
 			.SetDisplay("Direction", "Choose between trend-following or contrarian behaviour", "Trading Rules");
@@ -164,9 +164,9 @@ public class NextbarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

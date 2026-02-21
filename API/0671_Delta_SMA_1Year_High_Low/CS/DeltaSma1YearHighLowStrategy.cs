@@ -68,14 +68,14 @@ public class DeltaSma1YearHighLowStrategy : Strategy
 		_deltaSmaLength = Param(nameof(DeltaSmaLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Delta SMA Length", "Period for delta SMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_lookbackBars = Param(nameof(LookbackBars), 365)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Bars", "Bars for yearly high/low", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
 
@@ -99,9 +99,9 @@ public class DeltaSma1YearHighLowStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_deltaSma = new SMA { Length = DeltaSmaLength };
 		_highest = new Highest { Length = LookbackBars };

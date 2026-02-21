@@ -102,7 +102,7 @@ public class FootprintStrategy : Strategy
 		_imbalancePercent = Param(nameof(ImbalancePercent), 300)
 			.SetGreaterThanZero()
 			.SetDisplay("Imbalance %", "Required buy/sell volume imbalance", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 500, 100);
 
 		_useTrend = Param(nameof(UseTrend), true)
@@ -111,13 +111,13 @@ public class FootprintStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromSeconds(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for footprint calculation", "General");
 
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Trend Candle", "Timeframe for trend filter", "Trend");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss as percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_enableStopLoss = Param(nameof(EnableStopLoss), false)
@@ -126,7 +126,7 @@ public class FootprintStrategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit as percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 	}
 
@@ -149,9 +149,9 @@ public class FootprintStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var candleSub = SubscribeCandles(CandleType);
 		candleSub

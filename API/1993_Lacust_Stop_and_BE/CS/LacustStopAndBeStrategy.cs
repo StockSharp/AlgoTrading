@@ -97,19 +97,19 @@ public class LacustStopAndBeStrategy : Strategy
 	public LacustStopAndBeStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle type");
+			.SetDisplay("Candle type", "Candle type", "General");
 		_stopLoss = Param(nameof(StopLoss), 40m)
-			.SetDisplay("Stop loss").SetCanOptimize(true);
+			.SetDisplay("Stop loss", "Stop loss", "General");
 		_takeProfit = Param(nameof(TakeProfit), 200m)
-			.SetDisplay("Take profit").SetCanOptimize(true);
+			.SetDisplay("Take profit", "Take profit", "General");
 		_trailingStart = Param(nameof(TrailingStart), 30m)
-			.SetDisplay("Trailing start").SetCanOptimize(true);
+			.SetDisplay("Trailing start", "Trailing start", "General");
 		_trailingStop = Param(nameof(TrailingStop), 20m)
-			.SetDisplay("Trailing stop").SetCanOptimize(true);
+			.SetDisplay("Trailing stop", "Trailing stop", "General");
 		_breakevenGain = Param(nameof(BreakevenGain), 25m)
-			.SetDisplay("Breakeven gain").SetCanOptimize(true);
+			.SetDisplay("Breakeven gain", "Breakeven gain", "General");
 		_breakeven = Param(nameof(Breakeven), 10m)
-			.SetDisplay("Breakeven").SetCanOptimize(true);
+			.SetDisplay("Breakeven", "Breakeven", "General");
 	}
 
 	/// <inheritdoc />
@@ -123,9 +123,9 @@ public class LacustStopAndBeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

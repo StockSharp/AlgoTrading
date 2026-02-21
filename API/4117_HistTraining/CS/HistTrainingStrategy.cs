@@ -36,19 +36,19 @@ public class HistTrainingStrategy : Strategy
 
 		_buyTrigger = Param(nameof(BuyTrigger), false)
 			.SetDisplay("Buy trigger", "Set to true to request a new long position when the strategy is flat.", "Manual signals")
-			.SetCanOptimize(false);
+			;
 
 		_sellTrigger = Param(nameof(SellTrigger), false)
 			.SetDisplay("Sell trigger", "Set to true to request a new short position when the strategy is flat.", "Manual signals")
-			.SetCanOptimize(false);
+			;
 
 		_closeTrigger = Param(nameof(CloseTrigger), false)
 			.SetDisplay("Close trigger", "Set to true to close the current position regardless of its direction.", "Manual signals")
-			.SetCanOptimize(false);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle type", "Candle series used only as a heartbeat for polling the manual triggers.", "Data")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <summary>
@@ -101,16 +101,16 @@ public class HistTrainingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume; // Ensure helper shortcuts use the requested trade size
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(); // Activate position protection once, mirroring the recommended pattern
+		StartProtection(null, null); // Activate position protection once, mirroring the recommended pattern
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

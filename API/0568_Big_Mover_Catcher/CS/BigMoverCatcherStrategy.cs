@@ -300,16 +300,16 @@ public class BigMoverCatcherStrategy : Strategy
 		var rsi = new RSI { Length = RsiLength };
 		var adx = new AverageDirectionalIndex { Length = AdxLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
-		var emaFilter = new ExponentialMovingAverage { Length = EmaFilterLen };
+		var emaFilter = new EMA { Length = EmaFilterLen };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd = { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow } },
 			SignalMa = { Length = MacdSignal }
 		};
 
-		_rsiSmooth = new ExponentialMovingAverage { Length = RsiSmoothLen };
-		_adxSmooth = new ExponentialMovingAverage { Length = AdxSmoothLen };
-		_atrSmooth = new ExponentialMovingAverage { Length = AtrSmoothLen };
+		_rsiSmooth = new EMA { Length = RsiSmoothLen };
+		_adxSmooth = new EMA { Length = AdxSmoothLen };
+		_atrSmooth = new EMA { Length = AtrSmoothLen };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

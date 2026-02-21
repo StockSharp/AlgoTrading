@@ -135,13 +135,13 @@ public class MaLWorldStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastMa = new WeightedMovingAverage { Length = FastMaLength, CandlePrice = CandlePrice.Close };
-		_slowMa = new WeightedMovingAverage { Length = SlowMaLength, CandlePrice = CandlePrice.Close };
-		_trailingMa = new ExponentialMovingAverage { Length = TrailingMaPeriod, CandlePrice = CandlePrice.Close };
+		_fastMa = new WeightedMovingAverage { Length = FastMaLength };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaLength };
+		_trailingMa = new EMA { Length = TrailingMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_fastMa, _slowMa, _trailingMa, ProcessCandle).Start();

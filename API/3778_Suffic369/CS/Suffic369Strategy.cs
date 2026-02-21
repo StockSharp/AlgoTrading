@@ -163,31 +163,31 @@ public class Suffic369Strategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA Length", "Period of the SMA built on close prices", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_highMaLength = Param(nameof(HighMaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("High SMA Length", "Period of the SMA built on high prices", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 12, 1);
 
 		_lowMaLength = Param(nameof(LowMaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Low SMA Length", "Period of the SMA built on low prices", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 12, 1);
 
 		_bollingerLength = Param(nameof(BollingerLength), 156)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Length", "Number of candles in the Bollinger Bands window", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 250, 10);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.1m);
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
@@ -196,7 +196,7 @@ public class Suffic369Strategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss Points", "Stop-loss distance measured in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 80m, 5m);
 
 		_useTakeProfit = Param(nameof(UseTakeProfit), true)
@@ -205,7 +205,7 @@ public class Suffic369Strategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 60m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit Points", "Take-profit distance measured in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 150m, 5m);
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
@@ -214,7 +214,7 @@ public class Suffic369Strategy : Strategy
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop Points", "Trailing stop offset measured in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -249,19 +249,19 @@ public class Suffic369Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 		if (_priceStep <= 0m)
 			_priceStep = 1m;
 
-		_fastCloseSma = new SimpleMovingAverage { Length = FastMaLength };
-		_highPriceSma = new SimpleMovingAverage { Length = HighMaLength };
-		_lowPriceSma = new SimpleMovingAverage { Length = LowMaLength };
+		_fastCloseSma = new SMA { Length = FastMaLength };
+		_highPriceSma = new SMA { Length = HighMaLength };
+		_lowPriceSma = new SMA { Length = LowMaLength };
 		_bollinger = new BollingerBands
 		{
 			Length = BollingerLength,

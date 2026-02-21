@@ -71,19 +71,19 @@ public class KyrieCrossoverStrategy : Strategy
 		_shortEmaPeriod = Param(nameof(ShortEmaPeriod), 11)
 			.SetGreaterThanZero()
 			.SetDisplay("Short EMA Period", "Period of the short EMA", "EMA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_longEmaPeriod = Param(nameof(LongEmaPeriod), 323)
 			.SetGreaterThanZero()
 			.SetDisplay("Long EMA Period", "Period of the long EMA", "EMA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 500, 10);
 
 		_riskPercent = Param(nameof(RiskPercent), 1.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -105,9 +105,9 @@ public class KyrieCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var shortEma = new EMA { Length = ShortEmaPeriod };
 		var longEma = new EMA { Length = LongEmaPeriod };
@@ -168,7 +168,7 @@ public class KyrieCrossoverStrategy : Strategy
 			})
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

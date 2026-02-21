@@ -61,10 +61,10 @@ public class HullCandlesStrategy : Strategy
 	{
 		_bodyLength = Param(nameof(BodyLength), 10)
 			.SetDisplay("Body HMA", "Hull MA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_smaLength = Param(nameof(SmaLength), 1)
 			.SetDisplay("Close SMA", "Close SMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
@@ -82,12 +82,12 @@ public class HullCandlesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bodyHma = new HullMovingAverage { Length = BodyLength };
-		_sma = new SimpleMovingAverage { Length = SmaLength };
+		_sma = new SMA { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -103,7 +103,7 @@ public class HullCandlesStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal sma)

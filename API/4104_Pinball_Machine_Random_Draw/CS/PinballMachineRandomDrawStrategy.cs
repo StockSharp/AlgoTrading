@@ -152,16 +152,16 @@ public PinballMachineRandomDrawStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize the pseudo-random generator either from a fixed seed or from the current time.
 		_random = RandomSeed == 0
 			? new Random(Environment.TickCount ^ GetHashCode())
 			: new Random(RandomSeed);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		// Subscribe to candle data to trigger the random decision logic on every finished bar.
 		SubscribeCandles(CandleType)

@@ -52,39 +52,39 @@ public class FigurelliSeriesStrategy : Strategy
 		_startPeriod = Param(nameof(StartPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Start Period", "Initial period for moving averages", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 6);
 
 		_step = Param(nameof(Step), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Step", "Step between moving average periods", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 12, 2);
 
 		_total = Param(nameof(Total), 36)
 			.SetGreaterThanZero()
 			.SetDisplay("Total", "Number of moving averages", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(12, 48, 12);
 
 		_startHour = Param(nameof(StartHour), 8)
 			.SetDisplay("Start Hour", "Hour to start trading", "Time")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 23, 1);
 
 		_startMinute = Param(nameof(StartMinute), 0)
 			.SetDisplay("Start Minute", "Minute to start trading", "Time")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 59, 1);
 
 		_stopHour = Param(nameof(StopHour), 23)
 			.SetDisplay("Stop Hour", "Hour to stop trading", "Time")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 23, 1);
 
 		_stopMinute = Param(nameof(StopMinute), 59)
 			.SetDisplay("Stop Minute", "Minute to stop trading", "Time")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 59, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -98,9 +98,9 @@ public class FigurelliSeriesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var figurelli = new FigurelliSeriesIndicator
 		{
@@ -152,7 +152,7 @@ public class FigurelliSeriesStrategy : Strategy
 		}
 	}
 
-	private class FigurelliSeriesIndicator : Indicator<decimal>
+	private class FigurelliSeriesIndicator : BaseIndicator
 	{
 		public int StartPeriod { get; set; }
 		public int Step { get; set; }

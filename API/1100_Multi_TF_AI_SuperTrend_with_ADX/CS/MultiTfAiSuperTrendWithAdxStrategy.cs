@@ -103,9 +103,9 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_superTrend1 = new() { Length = AtrPeriod1, Multiplier = AtrFactor1 };
 		_superTrend2 = new() { Length = AtrPeriod2, Multiplier = AtrFactor2 };
@@ -145,10 +145,10 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 		var atr1 = atr1Value.ToDecimal();
 		var st2 = st2Value.ToDecimal();
 
-		var priceWma1 = _priceWma1.Process(candle.ClosePrice, candle.ServerTime, true).ToDecimal();
-		var superWma1 = _superWma1.Process(st1, candle.ServerTime, true).ToDecimal();
-		var priceWma2 = _priceWma2.Process(candle.ClosePrice, candle.ServerTime, true).ToDecimal();
-		var superWma2 = _superWma2.Process(st2, candle.ServerTime, true).ToDecimal();
+		var priceWma1 = _priceWma1.Process(new DecimalIndicatorValue(_priceWma1, candle.ClosePrice, candle.ServerTime)).ToDecimal();
+		var superWma1 = _superWma1.Process(new DecimalIndicatorValue(_superWma1, st1, candle.ServerTime)).ToDecimal();
+		var priceWma2 = _priceWma2.Process(new DecimalIndicatorValue(_priceWma2, candle.ClosePrice, candle.ServerTime)).ToDecimal();
+		var superWma2 = _superWma2.Process(new DecimalIndicatorValue(_superWma2, st2, candle.ServerTime)).ToDecimal();
 
 		var isBull1 = priceWma1 > superWma1;
 		var isBull2 = priceWma2 > superWma2;

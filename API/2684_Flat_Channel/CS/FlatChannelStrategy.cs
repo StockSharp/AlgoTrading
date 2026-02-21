@@ -324,9 +324,9 @@ public class FlatChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = FixedVolume;
 
@@ -354,7 +354,7 @@ public class FlatChannelStrategy : Strategy
 		return;
 
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
-		var stdDevValue = _stdDev.Process(medianPrice, candle.CloseTime, true).ToDecimal();
+		var stdDevValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, medianPrice, candle.CloseTime)).ToDecimal();
 
 		if (!_stdDev.IsFormed || channelValue is not DonchianChannelsValue donchianValue)
 		{

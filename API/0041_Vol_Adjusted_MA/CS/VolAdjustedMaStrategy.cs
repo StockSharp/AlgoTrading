@@ -71,19 +71,19 @@ public class VolAdjustedMAStrategy : Strategy
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_atrPeriod = Param(nameof(ATRPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for Average True Range calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_atrMultiplier = Param(nameof(ATRMultiplier), 2.0m)
 			.SetRange(0.1m, decimal.MaxValue)
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR to adjust MA bands", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -106,12 +106,12 @@ public class VolAdjustedMAStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		var ma = new SimpleMovingAverage() { Length = MAPeriod };
+		var ma = new SMA() { Length = MAPeriod };
 		var atr = new AverageTrueRange() { Length = ATRPeriod };
 
 		// Create subscription and bind indicators

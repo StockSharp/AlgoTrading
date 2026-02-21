@@ -34,13 +34,13 @@ public class KhaledTamimsAvellanedaStoikovStrategy : Strategy
 	/// </summary>
 	public KhaledTamimsAvellanedaStoikovStrategy()
 	{
-		_gamma = Param("Gamma", 2m).SetDisplay("Gamma").SetCanOptimize(true);
-		_sigma = Param("Sigma", 8m).SetDisplay("Sigma").SetCanOptimize(true);
-		_t = Param("T", 0.0833m).SetDisplay("T").SetCanOptimize(true);
-		_k = Param("K", 5m).SetDisplay("K").SetCanOptimize(true);
-		_m = Param("M", 0.5m).SetDisplay("M").SetCanOptimize(true);
-		_fee = Param("Fee", 0m).SetDisplay("Fee").SetCanOptimize(true);
-		_candleType = Param("Candle type", TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type").SetCanOptimize(false);
+		_gamma = Param("Gamma", 2m).SetDisplay("Gamma", "Gamma", "General");
+		_sigma = Param("Sigma", 8m).SetDisplay("Sigma", "Sigma", "General");
+		_t = Param("T", 0.0833m).SetDisplay("T", "T", "General");
+		_k = Param("K", 5m).SetDisplay("K", "K", "General");
+		_m = Param("M", 0.5m).SetDisplay("M", "M", "General");
+		_fee = Param("Fee", 0m).SetDisplay("Fee", "Fee", "General");
+		_candleType = Param("Candle type", TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	public decimal Gamma { get => _gamma.Value; set => _gamma.Value = value; }
@@ -52,14 +52,14 @@ public class KhaledTamimsAvellanedaStoikovStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

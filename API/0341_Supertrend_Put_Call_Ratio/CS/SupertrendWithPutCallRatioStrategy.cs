@@ -93,25 +93,25 @@ public class SupertrendWithPutCallRatioStrategy : Strategy
 		_period = Param(nameof(Period), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Supertrend Period", "Supertrend ATR period", "Supertrend Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 3);
 
 		_multiplier = Param(nameof(Multiplier), 3m)
 		.SetGreaterThanZero()
 		.SetDisplay("Supertrend Multiplier", "Supertrend ATR multiplier", "Supertrend Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 4m, 0.5m);
 
 		_pcrPeriod = Param(nameof(PCRPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("PCR Period", "Put/Call Ratio averaging period", "PCR Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 		_pcrMultiplier = Param(nameof(PCRMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("PCR Std Dev Multiplier", "Multiplier for PCR standard deviation", "PCR Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -137,9 +137,9 @@ public class SupertrendWithPutCallRatioStrategy : Strategy
 		_pcrStdDev = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Supertrend indicator
 		var supertrend = new SuperTrend { Length = Period, Multiplier = Multiplier };

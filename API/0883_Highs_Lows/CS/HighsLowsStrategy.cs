@@ -67,17 +67,17 @@ public class HighsLowsStrategy : Strategy
 		_range = Param(nameof(Range), 100)
 			.SetDisplay("Range", "Number of candles for high/low", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 25);
 
 		_lowThreshold = Param(nameof(LowThreshold), 15m)
 			.SetDisplay("Low Threshold", "Oversold level", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 25m, 5m);
 
 		_highThreshold = Param(nameof(HighThreshold), 85m)
 			.SetDisplay("High Threshold", "Overbought level", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(75m, 95m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(240).TimeFrame())
@@ -91,9 +91,9 @@ public class HighsLowsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var highest = new Highest { Length = Range };
 		var lowest = new Lowest { Length = Range };

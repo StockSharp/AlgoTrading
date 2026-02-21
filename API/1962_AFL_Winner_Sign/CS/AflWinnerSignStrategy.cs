@@ -74,19 +74,19 @@ public class AflWinnerSignStrategy : Strategy
 		_period = Param(nameof(Period), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Stoch Period", "Base period for stochastic calculation", "AFL WinnerSign")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_kPeriod = Param(nameof(KPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("%K Period", "Smoothing period for %K line", "AFL WinnerSign")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 10, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("%D Period", "Smoothing period for %D line", "AFL WinnerSign")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -108,13 +108,12 @@ public class AflWinnerSignStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stochastic = new StochasticOscillator
-		{
-			Length = Period,
+		{ K = { Length = Period },
 			K = { Length = KPeriod },
 			D = { Length = DPeriod },
 		};

@@ -34,7 +34,7 @@ public class MaTrendStrategy : Strategy
 	private readonly StrategyParam<bool> _closeOpposite;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _movingAverage;
+	private DecimalLengthIndicator _movingAverage;
 	private readonly List<decimal> _maHistory = new();
 	private decimal _pipSize;
 	private int _historyCapacity;
@@ -236,9 +236,9 @@ public class MaTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
 			throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");
@@ -274,7 +274,7 @@ public class MaTrendStrategy : Strategy
 			return;
 
 		var price = GetAppliedPrice(candle, AppliedPrice);
-		var maValue = _movingAverage.Process(price, candle.OpenTime, true).ToDecimal();
+		var maValue = _movingAverage.Process(new DecimalIndicatorValue(_movingAverage, price, candle.OpenTime)).ToDecimal();
 
 		if (!_movingAverage.IsFormed)
 			return;
@@ -500,12 +500,12 @@ public class MaTrendStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKinds kind, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageKinds kind, int length)
 	{
 		return kind switch
 		{
-			MovingAverageKinds.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageKinds.Simple => new SMA { Length = length },
+			MovingAverageKinds.Exponential => new EMA { Length = length },
 			MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageKinds.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new WeightedMovingAverage { Length = length },

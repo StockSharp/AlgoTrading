@@ -129,55 +129,55 @@ public class KeltnerStochasticStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period of the EMA for Keltner Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period of the ATR for Keltner Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_keltnerMultiplier = Param(nameof(KeltnerMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Keltner Multiplier", "Multiplier for ATR in Keltner Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Period of the Stochastic Oscillator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_stochK = Param(nameof(StochK), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "Smoothing of the %K line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_stochD = Param(nameof(StochD), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Smoothing of the %D line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_stochOversold = Param(nameof(StochOversold), 20m)
 			.SetNotNegative()
 			.SetDisplay("Stochastic Oversold", "Level considered oversold", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 30m, 5m);
 
 		_stochOverbought = Param(nameof(StochOverbought), 80m)
 			.SetNotNegative()
 			.SetDisplay("Stochastic Overbought", "Level considered overbought", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(70m, 90m, 5m);
 
 		_stopLossAtr = Param(nameof(StopLossAtr), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss ATR", "Stop loss as ATR multiplier", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -191,9 +191,9 @@ public class KeltnerStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		// Create a full Keltner Channel indicator for visualization

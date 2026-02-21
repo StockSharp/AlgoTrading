@@ -82,7 +82,7 @@ _wickToBodyRatio = Param(nameof(WickToBodyRatio), 1m)
 .SetGreaterThanZero()
 .SetDisplay("Wick/Body Ratio", "Minimum wick to body ratio", "Setup");
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Candles used for processing", "General");
 }
 
@@ -101,9 +101,9 @@ _swingHigh = null;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var bands = new BollingerBands
 {

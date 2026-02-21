@@ -61,13 +61,13 @@ public class KalmanFilterTrendStrategy : Strategy
 		_processNoiseParam = Param(nameof(ProcessNoise), 0.01m)
 			.SetRange(0.0001m, 1)
 			.SetDisplay("Process Noise", "Process noise coefficient for Kalman filter", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.1m, 0.005m);
 
 		_measurementNoiseParam = Param(nameof(MeasurementNoise), 0.1m)
 			.SetRange(0.0001m, 1)
 			.SetDisplay("Measurement Noise", "Measurement noise coefficient for Kalman filter", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 1.0m, 0.1m);
 
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -90,9 +90,9 @@ public class KalmanFilterTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_kalmanFilter = new KalmanFilter 

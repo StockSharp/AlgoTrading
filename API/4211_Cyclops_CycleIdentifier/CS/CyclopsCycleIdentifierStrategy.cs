@@ -169,12 +169,12 @@ _cycleFilterMode = Param(nameof(CycleFilterMode), CycleFilterModes.Sma)
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
 		.SetRange(0m, 10000m)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Take Profit", "Fixed take-profit distance in pips", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
 		.SetRange(0m, 10000m)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Stop Loss", "Fixed stop-loss distance in pips", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -423,9 +423,9 @@ set => _cycleFilterMode.Value = value;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = GetPipSize();
 

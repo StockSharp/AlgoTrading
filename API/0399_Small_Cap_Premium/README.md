@@ -9,7 +9,7 @@ The **Small Cap Premium** strategy captures the historical tendency for small ca
 - **Exit Criteria**: Periodic rebalance.
 - **Stops**: No explicit stop.
 - **Default Values**:
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Fundamental
   - Direction: Both

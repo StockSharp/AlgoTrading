@@ -61,13 +61,13 @@ public class SimilarityMeasuresStrategy : Strategy
 		_length = Param(nameof(Length), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Number of bars for distance", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_threshold = Param(nameof(Threshold), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Threshold", "Euclidean distance threshold", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -79,11 +79,11 @@ public class SimilarityMeasuresStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var sma = new SMA { Length = Length };
 		var subscription = SubscribeCandles(CandleType);

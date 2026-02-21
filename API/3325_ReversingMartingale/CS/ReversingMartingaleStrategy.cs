@@ -41,12 +41,12 @@ public class ReversingMartingaleStrategy : Strategy
 		_startVolume = Param(nameof(StartVolume), 0.05m)
 			.SetGreaterThanZero()
 			.SetDisplay("Start Lot", "Initial trade volume used at the beginning of every winning cycle.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_lotMultiplier = Param(nameof(LotMultiplier), 2m)
 			.SetGreaterThan(1m)
 			.SetDisplay("Lot Multiplier", "Volume multiplier applied after a losing trade.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_firstTradeSide = Param(nameof(FirstTradeSide), Sides.Buy)
 			.SetDisplay("First Trade Side", "Direction of the very first trade in a new session.", "Trading");
@@ -54,7 +54,7 @@ public class ReversingMartingaleStrategy : Strategy
 		_targetPoints = Param(nameof(TargetPoints), 500)
 			.SetGreaterThanZero()
 			.SetDisplay("Target (points)", "Protective stop-loss and take-profit distance expressed in price steps.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_orderComment = Param(nameof(OrderComment), "Reversing Martingale EA")
 			.SetDisplay("Order Comment", "Text tag assigned to every market order.", "General");
@@ -119,9 +119,9 @@ public class ReversingMartingaleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_nextSide = FirstTradeSide;
 		_nextVolume = NormalizeVolume(StartVolume);
@@ -135,7 +135,7 @@ public class ReversingMartingaleStrategy : Strategy
 		}
 		else
 		{
-			StartProtection();
+			StartProtection(null, null);
 		}
 
 		TryOpenPosition();

@@ -60,31 +60,31 @@ public class EaMaEmailStrategy : Strategy
 	{
 		_sendEmailAlert = Param(nameof(SendEmailAlert), true)
 			.SetDisplay("Send Email Alert", "Log messages that emulate the email notification", "Notifications")
-			.SetCanOptimize(true);
+			;
 
 		_monitor20Over50 = Param(nameof(Monitor20Over50), false)
 			.SetDisplay("Monitor EMA 20 vs 50", "Track crossovers between EMA 20 and EMA 50", "Pairs")
-			.SetCanOptimize(true);
+			;
 
 		_monitor20Over100 = Param(nameof(Monitor20Over100), false)
 			.SetDisplay("Monitor EMA 20 vs 100", "Track crossovers between EMA 20 and EMA 100", "Pairs")
-			.SetCanOptimize(true);
+			;
 
 		_monitor20Over200 = Param(nameof(Monitor20Over200), false)
 			.SetDisplay("Monitor EMA 20 vs 200", "Track crossovers between EMA 20 and EMA 200", "Pairs")
-			.SetCanOptimize(true);
+			;
 
 		_monitor50Over100 = Param(nameof(Monitor50Over100), false)
 			.SetDisplay("Monitor EMA 50 vs 100", "Track crossovers between EMA 50 and EMA 100", "Pairs")
-			.SetCanOptimize(true);
+			;
 
 		_monitor50Over200 = Param(nameof(Monitor50Over200), true)
 			.SetDisplay("Monitor EMA 50 vs 200", "Track crossovers between EMA 50 and EMA 200", "Pairs")
-			.SetCanOptimize(true);
+			;
 
 		_monitor100Over200 = Param(nameof(Monitor100Over200), false)
 			.SetDisplay("Monitor EMA 100 vs 200", "Track crossovers between EMA 100 and EMA 200", "Pairs")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for EMA calculations", "General");
@@ -181,34 +181,30 @@ public class EaMaEmailStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_periodDescription = DescribeCandlePeriod();
 
-		_ema20 = new ExponentialMovingAverage
+		_ema20 = new EMA
 		{
-			Length = 20,
-			CandlePrice = CandlePrice.Open,
+			Length = 20
 		};
 
-		_ema50 = new ExponentialMovingAverage
+		_ema50 = new EMA
 		{
-			Length = 50,
-			CandlePrice = CandlePrice.Open,
+			Length = 50
 		};
 
-		_ema100 = new ExponentialMovingAverage
+		_ema100 = new EMA
 		{
-			Length = 100,
-			CandlePrice = CandlePrice.Open,
+			Length = 100
 		};
 
-		_ema200 = new ExponentialMovingAverage
+		_ema200 = new EMA
 		{
-			Length = 200,
-			CandlePrice = CandlePrice.Open,
+			Length = 200
 		};
 
 		var subscription = SubscribeCandles(CandleType);

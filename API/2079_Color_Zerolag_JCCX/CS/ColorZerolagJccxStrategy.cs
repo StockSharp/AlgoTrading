@@ -65,13 +65,13 @@ public class ColorZerolagJccxStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast moving average period", "Moving Average")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow moving average period", "Moving Average")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -85,12 +85,12 @@ public class ColorZerolagJccxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastMa = new SimpleMovingAverage { Length = FastPeriod };
-		_slowMa = new SimpleMovingAverage { Length = SlowPeriod };
+		_fastMa = new SMA { Length = FastPeriod };
+		_slowMa = new SMA { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -107,7 +107,7 @@ public class ColorZerolagJccxStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)

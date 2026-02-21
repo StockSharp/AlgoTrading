@@ -130,7 +130,7 @@ public class SarTradingV20Strategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Number of bars for the simple moving average.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maShift = Param(nameof(MaShift), 2)
 			.SetNotNegative()
@@ -139,12 +139,12 @@ public class SarTradingV20Strategy : Strategy
 		_sarStep = Param(nameof(SarStep), 0.02m)
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Step", "Acceleration factor for Parabolic SAR.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_sarMaxStep = Param(nameof(SarMaxStep), 0.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Max", "Maximum acceleration factor for Parabolic SAR.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetNotNegative()
@@ -185,9 +185,9 @@ public class SarTradingV20Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = Security?.PriceStep ?? 0m;
 		if (_pipSize <= 0m)
@@ -196,7 +196,7 @@ public class SarTradingV20Strategy : Strategy
 			_pipSize = 0.0001m;
 		}
 
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
+		_ma = new SMA { Length = MaPeriod };
 		_parabolicSar = new ParabolicSar
 		{
 			AccelerationStep = SarStep,

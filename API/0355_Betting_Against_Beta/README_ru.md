@@ -12,7 +12,7 @@
 - **Значения по умолчанию**:
   - `WindowDays = 252`
   - `Deciles = 10`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
   - `MinTradeUsd = 100`
 - **Фильтры**:
   - Категория: Факторная

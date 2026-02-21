@@ -102,83 +102,83 @@ public class RangeBreakout2Strategy : Strategy
 	{
 		_periodicity = Param(nameof(Periodicity), PeriodicityModes.Weekly)
 			.SetDisplay("Periodicity", "Schedule of the range preparation", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_dayOfWeek = Param(nameof(DayOfWeekSetting), DayOfWeek.Monday)
 			.SetDisplay("Day", "Trading day used in weekly mode", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_hour = Param(nameof(Hour), 0)
 			.SetDisplay("Hour", "Hour of the day when the range is prepared", "Schedule")
 			.SetOptimize(0, 23, 1)
-			.SetCanOptimize(true);
+			;
 
 		_rangeMode = Param(nameof(RangeMode), RangeCalculationModes.Atr)
 			.SetDisplay("Range Mode", "Method used to calculate the raw range", "Range")
-			.SetCanOptimize(true);
+			;
 
 		_atrPercentage = Param(nameof(AtrPercentage), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Percentage", "Percentage of ATR applied to the range", "Range")
-			.SetCanOptimize(true);
+			;
 
 		_pricePercentage = Param(nameof(PricePercentage), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Percentage", "Percentage of the ask price used as range", "Range")
-			.SetCanOptimize(true);
+			;
 
 		_fixedRangePoints = Param(nameof(FixedRangePoints), 1000)
 			.SetGreaterThanZero()
 			.SetDisplay("Fixed Range Points", "Fixed range expressed in price steps", "Range")
-			.SetCanOptimize(true);
+			;
 
 		_atrLength = Param(nameof(AtrLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "Number of candles used for ATR calculation", "Range")
-			.SetCanOptimize(true);
+			;
 
 		_tradeMode = Param(nameof(TradeMode), TradeModeOptions.Stop)
 			.SetDisplay("Trade Mode", "Order type used on range breakout", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_rangePercentage = Param(nameof(RangePercentage), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Percentage", "Percentage of the raw range used to set breakout levels", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPercentage = Param(nameof(TakeProfitPercentage), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take-Profit Percentage", "Percentage of the range used for take-profit", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercentage = Param(nameof(StopLossPercentage), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop-Loss Percentage", "Percentage of the range used for stop-loss", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_lotMode = Param(nameof(LotMode), LotManagementModes.Martingale)
 			.SetDisplay("Lot Mode", "Money management scheme", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_marginPercentage = Param(nameof(MarginPercentage), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Margin Percentage", "Percentage of free capital reserved for the base volume", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_lotMultiplier = Param(nameof(LotMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Multiplier", "Multiplier applied in martingale or scaling logic", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_rangeMultiplier = Param(nameof(RangeMultiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Multiplier", "Multiplier applied to the take-profit range after a loss", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Signal Candle", "Candle type that drives the schedule", "Data");
 
-		_atrCandleType = Param(nameof(AtrCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_atrCandleType = Param(nameof(AtrCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("ATR Candle", "Candle type used for ATR calculation", "Data");
 	}
 
@@ -381,20 +381,20 @@ public class RangeBreakout2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security?.PriceStep == null || Security.PriceStep <= 0m)
 			throw new InvalidOperationException("Security price step must be defined.");
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_lastRealizedPnL = PnLManager?.RealizedPnL ?? 0m;
 
 		var signalSubscription = SubscribeCandles(SignalCandleType);
 		signalSubscription
-			.WhenNew(ProcessSignalCandle)
+			.Bind(ProcessSignalCandle)
 			.Start();
 
 		if (RangeMode == RangeCalculationModes.Atr)

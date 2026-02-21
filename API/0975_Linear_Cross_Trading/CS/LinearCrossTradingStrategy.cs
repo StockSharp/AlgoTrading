@@ -77,12 +77,12 @@ public class LinearCrossTradingStrategy : Strategy
 		_length = Param(nameof(Length), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Regression Length", "Number of bars for regression", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_linearLength = Param(nameof(LinearLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Linear Lookback", "Lookback for moving average of predicted price", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
@@ -112,9 +112,9 @@ public class LinearCrossTradingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_macd = new()
 		{
@@ -149,8 +149,8 @@ public class LinearCrossTradingStrategy : Strategy
 		if (predicted is null)
 		return;
 
-		var wma = _wma.Process(predicted.Value, candle.ServerTime, true).ToDecimal();
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(predicted.Value, candle.ServerTime, true);
+		var wma = _wma.Process(new DecimalIndicatorValue(_wma, predicted.Value, candle.ServerTime)).ToDecimal();
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(new DecimalIndicatorValue(_macd, predicted.Value, candle.ServerTime));
 		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
 		return;
 

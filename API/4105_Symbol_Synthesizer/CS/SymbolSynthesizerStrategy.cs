@@ -109,7 +109,7 @@ public class SymbolSynthesizerStrategy : Strategy
 
 		_tradeActionParam = Param(nameof(TradeAction), SyntheticTradeActions.None)
 		.SetDisplay("Trade Action", "Set to Buy or Sell to place paired orders", "Manual")
-		.SetCanOptimize(false);
+		;
 	}
 
 	/// <inheritdoc />
@@ -146,9 +146,9 @@ public class SymbolSynthesizerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		EnsureCombinationInitialized(true);
 

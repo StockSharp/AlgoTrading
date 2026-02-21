@@ -69,19 +69,19 @@ public class BasicTrailingStopStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss Pips", "Trailing stop distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 50m, 5m);
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Commodity Channel Index period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Relative Strength Index period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -104,9 +104,9 @@ public class BasicTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var cci = new CommodityChannelIndex { Length = CciPeriod };

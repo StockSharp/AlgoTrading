@@ -89,16 +89,16 @@ public class TwoXSpyTipsStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 200)
 		                 .SetGreaterThanZero()
 		                 .SetDisplay("SMA Length", "Length of moving averages", "Indicators")
-		                 .SetCanOptimize(true)
+		                 
 		                 .SetOptimize(100, 300, 50);
 
 		_leverage = Param(nameof(Leverage), 2m)
 		                .SetGreaterThanZero()
 		                .SetDisplay("Leverage", "Position leverage multiplier", "Trading")
-		                .SetCanOptimize(true)
+		                
 		                .SetOptimize(1m, 6m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		                  .SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -120,15 +120,15 @@ public class TwoXSpyTipsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Sp500Security == null || TipsSecurity == null)
 			throw new InvalidOperationException("Required securities are not specified.");
 
-		var sp500Sma = new SimpleMovingAverage { Length = SmaLength };
-		var tipsSma = new SimpleMovingAverage { Length = SmaLength };
+		var sp500Sma = new SMA { Length = SmaLength };
+		var tipsSma = new SMA { Length = SmaLength };
 
 		var mainSub = SubscribeCandles(CandleType).Bind(ProcessMain).Start();
 

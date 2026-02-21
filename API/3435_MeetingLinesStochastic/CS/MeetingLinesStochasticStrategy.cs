@@ -50,35 +50,35 @@ public class MeetingLinesStochasticStrategy : Strategy
 
 		_stochasticLength = Param(nameof(StochasticLength), 3)
 			.SetDisplay("%K Length", "Lookback period for the raw %K calculation.", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticSmoothing = Param(nameof(StochasticSmoothing), 25)
 			.SetDisplay("%K Smoothing", "Smoothing period applied to %K (MetaTrader slowing).", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticSignal = Param(nameof(StochasticSignal), 36)
 			.SetDisplay("%D Period", "Smoothing period for the %D signal line.", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_bodyAveragePeriod = Param(nameof(BodyAveragePeriod), 3)
 			.SetDisplay("Body Average Period", "Number of candles used to average body size.", "Pattern")
-			.SetCanOptimize(true);
+			;
 
 		_longEntryLevel = Param(nameof(LongEntryLevel), 30m)
 			.SetDisplay("Bullish Confirmation", "Maximum %D level allowed for bullish entries.", "Trading Rules")
-			.SetCanOptimize(true);
+			;
 
 		_shortEntryLevel = Param(nameof(ShortEntryLevel), 70m)
 			.SetDisplay("Bearish Confirmation", "Minimum %D level required for bearish entries.", "Trading Rules")
-			.SetCanOptimize(true);
+			;
 
 		_exitLowerLevel = Param(nameof(ExitLowerLevel), 20m)
 			.SetDisplay("Lower Exit Level", "Threshold used for upward crosses that close shorts.", "Trading Rules")
-			.SetCanOptimize(true);
+			;
 
 		_exitUpperLevel = Param(nameof(ExitUpperLevel), 80m)
 			.SetDisplay("Upper Exit Level", "Threshold used for downward crosses that close longs.", "Trading Rules")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -181,9 +181,9 @@ public class MeetingLinesStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (StochasticLength <= 0)
 			throw new InvalidOperationException("StochasticLength must be greater than zero.");
@@ -198,13 +198,12 @@ public class MeetingLinesStochasticStrategy : Strategy
 			throw new InvalidOperationException("BodyAveragePeriod must be greater than zero.");
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			K = { Length = StochasticSmoothing },
 			D = { Length = StochasticSignal },
 		};
 
-		_bodyAverage = new SimpleMovingAverage
+		_bodyAverage = new SMA
 		{
 			Length = BodyAveragePeriod,
 		};

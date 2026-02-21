@@ -102,32 +102,32 @@ public class MacdSignalCrossoverStrategy : Strategy
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 23)
 			.SetDisplay("Fast Period", "Fast EMA length for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 40)
 			.SetDisplay("Slow Period", "Slow EMA length for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 60, 1);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 8)
 			.SetDisplay("Signal Period", "Signal line length for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
 			.SetDisplay("Take Profit", "Take profit distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 800m, 50m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 80m)
 			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 200m, 20m);
 
 		_partialProfitPoints = Param(nameof(PartialProfitPoints), 70m)
 			.SetDisplay("Partial Profit", "Distance in points to close half position", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

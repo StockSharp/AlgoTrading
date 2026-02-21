@@ -94,8 +94,8 @@ public class IntradayVolumeSwingsStrategy : Strategy {
 	private decimal? _prevDaySwingHighBottom;
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
-		base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -111,7 +111,7 @@ public class IntradayVolumeSwingsStrategy : Strategy {
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var day = candle.OpenTime.UtcDateTime.Date;
+		var day = candle.OpenTime.Date;
 		var isNewDay = _currentDay != day;
 		if (isNewDay) {
 			_currentDay = day;

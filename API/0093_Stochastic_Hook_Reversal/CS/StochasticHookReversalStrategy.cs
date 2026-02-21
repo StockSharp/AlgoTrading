@@ -111,37 +111,37 @@ public class StochasticHookReversalStrategy : Strategy
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetDisplay("Stochastic Period", "Period for Stochastic calculation", "Stochastic Settings")
 			.SetRange(7, 21)
-			.SetCanOptimize(true);
+			;
 			
 		_kPeriod = Param(nameof(KPeriod), 3)
 			.SetDisplay("K Period", "%K Period for Stochastic calculation", "Stochastic Settings")
 			.SetRange(1, 5)
-			.SetCanOptimize(true);
+			;
 			
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetDisplay("D Period", "%D Period for Stochastic calculation", "Stochastic Settings")
 			.SetRange(1, 5)
-			.SetCanOptimize(true);
+			;
 			
 		_oversoldLevel = Param(nameof(OversoldLevel), 20)
 			.SetDisplay("Oversold Level", "Oversold level for Stochastic", "Stochastic Settings")
 			.SetRange(10, 30)
-			.SetCanOptimize(true);
+			;
 			
 		_overboughtLevel = Param(nameof(OverboughtLevel), 80)
 			.SetDisplay("Overbought Level", "Overbought level for Stochastic", "Stochastic Settings")
 			.SetRange(70, 90)
-			.SetCanOptimize(true);
+			;
 			
 		_exitLevel = Param(nameof(ExitLevel), 50)
 			.SetDisplay("Exit Level", "Exit level for Stochastic (neutral zone)", "Stochastic Settings")
 			.SetRange(45, 55)
-			.SetCanOptimize(true);
+			;
 			
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 			.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
 			.SetRange(1m, 3m)
-			.SetCanOptimize(true);
+			;
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -162,9 +162,9 @@ public class StochasticHookReversalStrategy : Strategy
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnStarted2(DateTime time)
 		{
-				base.OnStarted(time);
+				base.OnStarted2(time);
 
 				// Enable position protection using stop-loss
 				StartProtection(

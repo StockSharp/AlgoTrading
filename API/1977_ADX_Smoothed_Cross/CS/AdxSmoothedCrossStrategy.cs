@@ -139,27 +139,27 @@ public class AdxSmoothedCrossStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetRange(5, 50)
 			.SetDisplay("ADX Period", "Period of ADX calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_alpha1 = Param(nameof(Alpha1), 0.25m)
 			.SetRange(0.1m, 0.9m)
 			.SetDisplay("Alpha1", "First smoothing factor", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_alpha2 = Param(nameof(Alpha2), 0.33m)
 			.SetRange(0.1m, 0.9m)
 			.SetDisplay("Alpha2", "Second smoothing factor", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 1000)
 			.SetRange(100, 5000)
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 2000)
 			.SetRange(100, 5000)
 			.SetDisplay("Take Profit", "Take profit in points", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_allowBuy = Param(nameof(AllowBuy), true)
 			.SetDisplay("Allow Buy", "Enable long entries", "Trading");
@@ -184,9 +184,9 @@ public class AdxSmoothedCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create ADX indicator
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };

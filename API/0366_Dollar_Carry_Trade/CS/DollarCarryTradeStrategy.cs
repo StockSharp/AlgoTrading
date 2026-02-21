@@ -96,7 +96,7 @@ public class DollarCarryTradeStrategy : Strategy
 		_minUsd = Param(nameof(MinTradeUsd), 100m)
 			.SetDisplay("Min Trade $", "Ignore tiny rebalances", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -122,9 +122,9 @@ public class DollarCarryTradeStrategy : Strategy
 		_lastRebalanceDate = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (!Pairs.Any())
 			throw new InvalidOperationException("Pairs list is empty – populate before start.");

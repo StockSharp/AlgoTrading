@@ -193,16 +193,16 @@ public class Pipsover8167Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	Volume = TradeVolume;
 
-	_sma = new SimpleMovingAverage { Length = MaLength };
+	_sma = new SMA { Length = MaLength };
 	_adl = new AccumulationDistributionLine();
-	_chaikinFast = new ExponentialMovingAverage { Length = ChaikinFastLength };
-	_chaikinSlow = new ExponentialMovingAverage { Length = ChaikinSlowLength };
+	_chaikinFast = new EMA { Length = ChaikinFastLength };
+	_chaikinSlow = new EMA { Length = ChaikinSlowLength };
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription

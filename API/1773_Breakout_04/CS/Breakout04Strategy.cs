@@ -64,17 +64,17 @@ public class Breakout04Strategy : Strategy
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, DataType.Ticks), (Security, TimeSpan.FromDays(1).TimeFrame())];
+		return [(Security, DataType.Ticks), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeTicks().Bind(ProcessTrade).Start();
-		SubscribeCandles(TimeSpan.FromDays(1).TimeFrame()).Bind(ProcessDaily).Start();
+		SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame()).Bind(ProcessDaily).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private decimal GetVolume()

@@ -309,9 +309,9 @@ public class AverageChangeCandleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create smoothing indicators for the baseline and the transformed candles.
 		_baseMa = CreateSmoothing(MaMethod1, Length1, Phase1);
@@ -471,19 +471,19 @@ public class AverageChangeCandleStrategy : Strategy
 		// Unsupported methods fall back to EMA to keep the strategy functional.
 		return method switch
 		{
-			SmoothMethods.Sma => new SimpleMovingAverage { Length = Math.Max(1, length) },
-			SmoothMethods.Ema => new ExponentialMovingAverage { Length = Math.Max(1, length) },
+			SmoothMethods.Sma => new SMA { Length = Math.Max(1, length) },
+			SmoothMethods.Ema => new EMA { Length = Math.Max(1, length) },
 			SmoothMethods.Smma => new SmoothedMovingAverage { Length = Math.Max(1, length) },
 			SmoothMethods.Lwma => new WeightedMovingAverage { Length = Math.Max(1, length) },
 			SmoothMethods.Jjma => new JurikMovingAverage { Length = Math.Max(1, length) },
 			SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = Math.Max(1, length) },
-			_ => new ExponentialMovingAverage { Length = Math.Max(1, length) },
+			_ => new EMA { Length = Math.Max(1, length) },
 		};
 	}
 
 	private static decimal? ProcessIndicator(IIndicator indicator, decimal value, DateTimeOffset time)
 	{
-		var result = indicator.Process(new DecimalIndicatorValue(indicator, value, time));
+		var result = indicator.Process(new DecimalIndicatorValue(indicator, value, time.UtcDateTime));
 
 		if (!result.IsFinal || !indicator.IsFormed)
 		return null;

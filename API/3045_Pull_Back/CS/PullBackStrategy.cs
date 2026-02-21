@@ -234,42 +234,42 @@ public class PullBackStrategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast WMA Length", "Length of the fast weighted MA on the trading timeframe", "Trend")
-		.SetCanOptimize(true);
+		;
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow WMA Length", "Length of the slow weighted MA on the trading timeframe", "Trend")
-		.SetCanOptimize(true);
+		;
 
 		_bounceSlowLength = Param(nameof(BounceSlowLength), 200)
 		.SetGreaterThanZero()
 		.SetDisplay("Bounce Slow Length", "Slow weighted MA length on the confirmation timeframe", "Trend")
-		.SetCanOptimize(true);
+		;
 
 		_momentumLength = Param(nameof(MomentumLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Length", "Lookback for the momentum confirmation", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Buy Threshold", "Minimal |Momentum-100| for long entries", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Sell Threshold", "Minimal |Momentum-100| for short entries", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 200)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (ticks)", "Stop-loss distance expressed in ticks", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 500)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit (ticks)", "Take-profit distance expressed in ticks", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
 		.SetDisplay("Use Trailing Stop", "Enable trailing stop logic", "Risk");
@@ -277,7 +277,7 @@ public class PullBackStrategy : Strategy
 		_trailingStopTicks = Param(nameof(TrailingStopTicks), 400)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Stop (ticks)", "Trailing stop distance in ticks", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
 		.SetDisplay("Use Break Even", "Enable break-even stop adjustment", "Risk");
@@ -285,27 +285,27 @@ public class PullBackStrategy : Strategy
 		_breakEvenTriggerTicks = Param(nameof(BreakEvenTriggerTicks), 300)
 		.SetGreaterThanZero()
 		.SetDisplay("Break-Even Trigger", "Profit in ticks required to move the stop", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_breakEvenOffsetTicks = Param(nameof(BreakEvenOffsetTicks), 300)
 		.SetGreaterThanZero()
 		.SetDisplay("Break-Even Offset", "Offset in ticks added to the break-even stop", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Fast", "Fast EMA length for MACD", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Slow", "Slow EMA length for MACD", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal", "Signal EMA length for MACD", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Trading Timeframe", "Primary timeframe for trade execution", "General");
@@ -372,8 +372,8 @@ public class PullBackStrategy : Strategy
 
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = MacdFastLength,
-			LongPeriod = MacdSlowLength,
+			ShortMa = { Length = MacdFastLength },
+			LongMa = { Length = MacdSlowLength },
 			SignalPeriod = MacdSignalLength
 		};
 

@@ -70,7 +70,7 @@ public class UnseasonalisedAtrForecastStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Desired Range", "Target range for confidence interval", "Parameters");
 
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series for analysis", "Common");
 	}
 
@@ -93,9 +93,9 @@ public class UnseasonalisedAtrForecastStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to candles of selected type
 		var subscription = SubscribeCandles(CandleType);
@@ -110,7 +110,7 @@ public class UnseasonalisedAtrForecastStrategy : Strategy
 		}
 
 		// Enable position protection in case of manual trading
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

@@ -66,13 +66,13 @@ public class CostarStrategy : Strategy
 		_length = Param(nameof(Length), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Regression Length", "Period for linear regression", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 25);
 
 		_multiplier = Param(nameof(Multiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Band Multiplier", "Standard deviation multiplier for bands", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.25m);
 	}
 
@@ -91,9 +91,9 @@ public class CostarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_linearReg = new LinearRegression { Length = Length };
 		_stdDev = new StandardDeviation { Length = Length };
@@ -122,7 +122,7 @@ public class CostarStrategy : Strategy
 			return;
 
 		var residual = candle.ClosePrice - regression;
-		var stdValue = _stdDev.Process(residual, candle.ServerTime, true).ToNullableDecimal();
+		var stdValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, residual, candle.ServerTime)).ToNullableDecimal();
 
 		if (stdValue is not decimal stdDev || !_linearReg.IsFormed || !_stdDev.IsFormed)
 			return;

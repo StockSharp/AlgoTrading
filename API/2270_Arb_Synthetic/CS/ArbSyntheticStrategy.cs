@@ -92,7 +92,7 @@ public class ArbSyntheticStrategy : Strategy
 
 		_spreadParam = Param(nameof(Spread), 35)
 			.SetDisplay("Spread", "Spread deviations in points", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 	}
 
@@ -110,9 +110,9 @@ public class ArbSyntheticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (EurUsd != null && GbpUsd != null && EurGbp != null)
 		{
@@ -138,7 +138,7 @@ public class ArbSyntheticStrategy : Strategy
 			LogWarning("One or more securities are not specified.");
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessEurUsd(ICandleMessage candle)

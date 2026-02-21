@@ -100,19 +100,19 @@ public class GannFanStrategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast LWMA", "Fast linear weighted moving average length", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow LWMA", "Slow linear weighted moving average length", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40, 120, 5);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Period", "Lookback for momentum calculation", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 25, 1);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
@@ -497,15 +497,15 @@ public class GannFanStrategy : Strategy
 	{
 		var typical = GetTypicalPrice(candle);
 
-		var fastValue = _fastMa.Process(typical, candle.OpenTime, isFinal);
+		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, typical, candle.OpenTime));
 		if (fastValue.IsFinal)
 			_fastValue = fastValue.ToDecimal();
 
-		var slowValue = _slowMa.Process(typical, candle.OpenTime, isFinal);
+		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, typical, candle.OpenTime));
 		if (slowValue.IsFinal)
 			_slowValue = slowValue.ToDecimal();
 
-		var macdValue = _macd.Process(candle.ClosePrice, candle.OpenTime, isFinal);
+		var macdValue = _macd.Process(new DecimalIndicatorValue(_macd, candle.ClosePrice, candle.OpenTime));
 		if (macdValue.IsFinal && macdValue is MovingAverageConvergenceDivergenceSignalValue typed)
 		{
 			_macdMain = typed.Macd;

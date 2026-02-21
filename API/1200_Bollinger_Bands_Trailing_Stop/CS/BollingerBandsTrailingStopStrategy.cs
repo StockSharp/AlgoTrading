@@ -66,22 +66,22 @@ public class BollingerBandsTrailingStopStrategy : Strategy
 		_bbLength = Param(nameof(BbLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Length", "Bollinger Bands length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bbDeviation = Param(nameof(BbDeviation), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Deviation", "Standard deviation multiplier", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR calculation period", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "ATR trailing stop multiplier", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
 			.SetDisplay("MA Type", "Moving average for Bollinger basis", "Indicators");
@@ -105,9 +105,9 @@ public class BollingerBandsTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ma = CreateMa(MaType, BbLength);
 		var bb = new BollingerBands { Length = BbLength, Width = BbDeviation, MovingAverage = ma };
@@ -167,15 +167,15 @@ public class BollingerBandsTrailingStopStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MovingAverageTypes type, int length)
+	private static DecimalLengthIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

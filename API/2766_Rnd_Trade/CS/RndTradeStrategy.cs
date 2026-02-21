@@ -50,9 +50,9 @@ public class RndTradeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Use time-based candles as a deterministic timer replacement.
 		var timeFrame = TimeSpan.FromMinutes(IntervalMinutes).TimeFrame();
@@ -63,7 +63,7 @@ public class RndTradeStrategy : Strategy
 			.Start();
 
 		// Ensure position protection is initialized (no stop/target by default).
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

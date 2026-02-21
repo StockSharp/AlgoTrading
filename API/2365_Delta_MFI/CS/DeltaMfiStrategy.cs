@@ -69,19 +69,19 @@ public class DeltaMfiStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MFI Period", "Period for fast Money Flow Index", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MFI Period", "Period for slow Money Flow Index", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_level = Param(nameof(Level), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Level", "MFI level to confirm signals", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 70, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -95,12 +95,12 @@ public class DeltaMfiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Enable position protection once
-		StartProtection();
+		StartProtection(null, null);
 
 		var fastMfi = new MoneyFlowIndex { Length = FastPeriod };
 		var slowMfi = new MoneyFlowIndex { Length = SlowPeriod };

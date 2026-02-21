@@ -240,9 +240,9 @@ public class YtgMultiStochStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_contexts.Clear();
 
@@ -262,7 +262,7 @@ public class YtgMultiStochStrategy : Strategy
 				.Start();
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private IEnumerable<Security> EnumerateEnabledSecurities()
@@ -283,8 +283,7 @@ public class YtgMultiStochStrategy : Strategy
 	private static StochasticOscillator CreateStochastic()
 	{
 		return new StochasticOscillator
-		{
-			Length = 5,
+		{ K = { Length = 5 },
 			Smooth = 3,
 			K = { Length = 3 },
 			D = { Length = 3 }

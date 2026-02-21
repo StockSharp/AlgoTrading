@@ -75,12 +75,12 @@ public class DoubleTopStrategy : Strategy
 		_distanceParam = Param(nameof(Distance), 5)
 			.SetRange(3, 15)
 			.SetDisplay("Distance between tops", "Number of bars between two tops", "Pattern Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_similarityPercent = Param(nameof(SimilarityPercent), 2.0m)
 			.SetRange(0.5m, 5.0m)
 			.SetDisplay("Similarity %", "Maximum percentage difference between two tops", "Pattern Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -88,7 +88,7 @@ public class DoubleTopStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetRange(0.5m, 3.0m)
 			.SetDisplay("Stop Loss %", "Percentage above top for stop-loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -110,9 +110,9 @@ public class DoubleTopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicator to find highest values
 		_highestIndicator = new Highest { Length = Distance * 2 };

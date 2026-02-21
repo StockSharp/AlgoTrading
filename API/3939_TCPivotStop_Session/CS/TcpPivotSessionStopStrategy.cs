@@ -81,7 +81,7 @@ public class TcpPivotSessionStopStrategy : Strategy
 		_targetLevel = Param(nameof(TargetLevel), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Target Level", "Pivot level used for stop-loss and take-profit (1-3)", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 3, 1);
 
 		_closeAtSessionStart = Param(nameof(CloseAtSessionStart), false)
@@ -89,7 +89,7 @@ public class TcpPivotSessionStopStrategy : Strategy
 
 		_sessionCloseHour = Param(nameof(SessionCloseHour), 0)
 			.SetDisplay("Session Close Hour", "Hour of the day (0-23) used when closing at session start", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 23, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -99,7 +99,7 @@ public class TcpPivotSessionStopStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
+		return [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
 	}
 
 	/// <inheritdoc />
@@ -120,13 +120,13 @@ public class TcpPivotSessionStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 
 		dailySubscription
 			.Bind(ProcessDailyCandle)

@@ -109,7 +109,7 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 		switch (Indicator)
 		{
 			case IndicatorTypes.MA:
-				_ma = new SimpleMovingAverage { Length = MaLength };
+				_ma = new SMA { Length = MaLength };
 				subscription.Bind(_ma, ProcessMa).Start();
 				break;
 			case IndicatorTypes.MACD:

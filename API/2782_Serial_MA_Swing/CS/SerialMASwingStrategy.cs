@@ -174,9 +174,9 @@ public class SerialMASwingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_serialMa = new SerialMovingAverageIndicator();
 
@@ -360,7 +360,7 @@ public class SerialMASwingStrategy : Strategy
 /// <summary>
 /// Serial moving average indicator replicating the original MQL logic.
 /// </summary>
-public class SerialMovingAverageIndicator : Indicator<ICandleMessage>
+public class SerialMovingAverageIndicator : BaseIndicator
 {
 	private decimal _sum;
 	private int _count;

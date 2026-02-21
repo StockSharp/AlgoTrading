@@ -70,17 +70,17 @@ public class BitcoinBullishPercentIndexStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_overbought = Param(nameof(Overbought), 70m)
 			.SetDisplay("Overbought", "Upper RSI threshold", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_oversold = Param(nameof(Oversold), 30m)
 			.SetDisplay("Oversold", "Lower RSI threshold", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -101,11 +101,11 @@ public class BitcoinBullishPercentIndexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var rsi = new RSI { Length = RsiPeriod };
 

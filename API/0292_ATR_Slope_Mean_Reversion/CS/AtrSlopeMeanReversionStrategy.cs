@@ -99,25 +99,25 @@ public class AtrSlopeMeanReversionStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR indicator", "Indicator Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for calculating average and standard deviation of the slope", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation to determine entry threshold", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss ATR Multiplier", "Multiplier for ATR to set stop loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -126,7 +126,7 @@ public class AtrSlopeMeanReversionStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2.0m, 0.5m);
 	}
 
@@ -151,7 +151,7 @@ public class AtrSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		// Initialize indicators
 		_atr = new AverageTrueRange
@@ -181,7 +181,7 @@ public class AtrSlopeMeanReversionStrategy : Strategy
 			new Unit(StopLossPercent, UnitTypes.Percent)
 		);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue)

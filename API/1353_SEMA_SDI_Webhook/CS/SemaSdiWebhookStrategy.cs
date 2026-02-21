@@ -117,14 +117,14 @@ public class SemaSdiWebhookStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
-		_fastSmooth = new ExponentialMovingAverage { Length = SmoothLength };
-		_slowSmooth = new ExponentialMovingAverage { Length = SmoothLength };
+		_fastEma = new EMA { Length = FastEmaLength };
+		_slowEma = new EMA { Length = SlowEmaLength };
+		_fastSmooth = new EMA { Length = SmoothLength };
+		_slowSmooth = new EMA { Length = SmoothLength };
 		_dmi = new AverageDirectionalIndex { Length = DiLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -193,7 +193,7 @@ public class SemaSdiWebhookStrategy : Strategy
 		}
 
 		var dir = Math.Sign(Position);
-		var entry = PositionAvgPrice;
+		var entry = PositionPrice;
 
 		var currentProfit = dir > 0
 			? (candle.HighPrice - entry) / entry * 100m

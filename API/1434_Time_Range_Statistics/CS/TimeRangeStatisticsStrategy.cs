@@ -69,12 +69,12 @@ public TimeRangeStatisticsStrategy()
 _startIndex = Param(nameof(StartIndex), 9000)
 .SetGreaterThanZero()
 .SetDisplay("Start Index", "Start bar index", "General")
-.SetCanOptimize(true);
+;
 
 _endIndex = Param(nameof(EndIndex), 10000)
 .SetGreaterThanZero()
 .SetDisplay("End Index", "End bar index", "General")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
@@ -104,12 +104,12 @@ _prevLow = default;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var subscription = SubscribeCandles(CandleType);
-subscription.WhenNew(ProcessCandle).Start();
+subscription.Bind(ProcessCandle).Start();
 }
 
 private void ProcessCandle(ICandleMessage candle)

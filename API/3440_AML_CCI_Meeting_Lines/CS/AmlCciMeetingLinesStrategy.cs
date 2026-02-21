@@ -95,27 +95,27 @@ public class AmlCciMeetingLinesStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 18)
 			.SetRange(5, 100)
 			.SetDisplay("CCI Period", "Length of the Commodity Channel Index", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_averageBodyPeriod = Param(nameof(AverageBodyPeriod), 3)
 			.SetRange(1, 10)
 			.SetDisplay("Average Body Period", "Number of candles used to estimate body size", "Patterns")
-			.SetCanOptimize(true);
+			;
 
 		_longEntryCciLevel = Param(nameof(LongEntryCciLevel), -50m)
 			.SetRange(-200m, 0m)
 			.SetDisplay("Long Entry CCI", "CCI level confirming bullish Meeting Lines", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_shortEntryCciLevel = Param(nameof(ShortEntryCciLevel), 50m)
 			.SetRange(0m, 200m)
 			.SetDisplay("Short Entry CCI", "CCI level confirming bearish Meeting Lines", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_extremeCciLevel = Param(nameof(ExtremeCciLevel), 80m)
 			.SetRange(20m, 200m)
 			.SetDisplay("Extreme CCI", "Extreme level for exit crossovers", "Signals")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -134,9 +134,9 @@ public class AmlCciMeetingLinesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 

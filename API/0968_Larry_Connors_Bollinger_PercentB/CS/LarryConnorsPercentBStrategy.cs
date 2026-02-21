@@ -102,38 +102,38 @@ public class LarryConnorsPercentBStrategy : Strategy
 		_smaPeriod = Param(nameof(SmaPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Period for long-term trend filter", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 50);
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Bollinger")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation for Bollinger Bands", "Bollinger")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_lowPercentB = Param(nameof(LowPercentB), 0.2m)
 			.SetDisplay("Low %B", "Lower threshold for %B", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.3m, 0.05m);
 
 		_highPercentB = Param(nameof(HighPercentB), 0.8m)
 			.SetDisplay("High %B", "Upper threshold for %B to exit", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.7m, 0.9m, 0.05m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 1.0m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -153,9 +153,9 @@ public class LarryConnorsPercentBStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var sma = new SMA { Length = SmaPeriod };
 		var bollinger = new BollingerBands

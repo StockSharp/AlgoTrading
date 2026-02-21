@@ -73,17 +73,17 @@ public class TTMGridStrategy : Strategy
 		_ttmPeriod = Param(nameof(TtmPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("TTM Period", "EMA period for TTM calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_gridLevels = Param(nameof(GridLevels), 5)
 			.SetRange(2, 20)
 			.SetDisplay("Grid Levels", "Number of price levels in the grid", "Strategy")
-			.SetCanOptimize(true);
+			;
 
 		_gridSpacing = Param(nameof(GridSpacing), 0.01m)
 			.SetRange(0.001m, 0.05m)
 			.SetDisplay("Grid Spacing", "Distance between grid levels (fraction)", "Strategy")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -105,20 +105,18 @@ public class TTMGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_lowEma = new ExponentialMovingAverage
+		_lowEma = new EMA
 		{
-			Length = TtmPeriod,
-			CandlePrice = CandlePrice.Low
+			Length = TtmPeriod
 		};
 
-		_highEma = new ExponentialMovingAverage
+		_highEma = new EMA
 		{
-			Length = TtmPeriod,
-			CandlePrice = CandlePrice.High
+			Length = TtmPeriod
 		};
 
 		var subscription = SubscribeCandles(CandleType);

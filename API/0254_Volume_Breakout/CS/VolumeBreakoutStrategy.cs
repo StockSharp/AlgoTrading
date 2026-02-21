@@ -73,13 +73,13 @@ public class VolumeBreakoutStrategy : Strategy
 		_avgPeriod = Param(nameof(AvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Average Period", "Period for volume average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 		
 		_multiplier = Param(nameof(Multiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -88,7 +88,7 @@ public class VolumeBreakoutStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 	}
 	
@@ -107,14 +107,14 @@ public class VolumeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		
 		// Create indicators for volume analysis
-		_volumeAverage = new SimpleMovingAverage { Length = AvgPeriod };
-		_volumeStdDev = new SimpleMovingAverage { Length = AvgPeriod };
+		_volumeAverage = new SMA { Length = AvgPeriod };
+		_volumeStdDev = new SMA { Length = AvgPeriod };
 		
 		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
@@ -148,12 +148,12 @@ public class VolumeBreakoutStrategy : Strategy
 		var volume = candle.TotalVolume;
 		
 		// Calculate volume average
-		var avgValue = _volumeAverage.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished);
+		var avgValue = _volumeAverage.Process(new DecimalIndicatorValue(_volumeAverage, volume, candle.ServerTime));
 		var avgVolume = avgValue.ToDecimal();
 		
 		// Calculate standard deviation approximation
 		var deviation = Math.Abs(volume - avgVolume);
-		var stdDevValue = _volumeStdDev.Process(deviation, candle.ServerTime, candle.State == CandleStates.Finished);
+		var stdDevValue = _volumeStdDev.Process(new DecimalIndicatorValue(_volumeStdDev, deviation, candle.ServerTime));
 		var stdDev = stdDevValue.ToDecimal();
 		
 		// Skip the first N candles until we have enough data

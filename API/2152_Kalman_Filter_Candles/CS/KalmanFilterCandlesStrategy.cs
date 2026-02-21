@@ -52,7 +52,7 @@ public class KalmanFilterCandlesStrategy : Strategy
 	{
 		_processNoise = Param(nameof(ProcessNoise), 1m)
 			.SetDisplay("Process Noise", "Kalman filter smoothing factor", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "Common");
@@ -74,9 +74,9 @@ public class KalmanFilterCandlesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_openFilter = new KalmanFilter
 		{
@@ -103,7 +103,7 @@ public class KalmanFilterCandlesStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal closeValue)

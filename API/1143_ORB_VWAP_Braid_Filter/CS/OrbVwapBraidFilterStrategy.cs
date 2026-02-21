@@ -97,7 +97,7 @@ public class OrbVwapBraidFilterStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		var thirty = TimeSpan.FromMinutes(30).TimeFrame();
-		var daily = TimeSpan.FromDays(1).TimeFrame();
+		var daily = TimeSpan.FromMinutes(5).TimeFrame();
 		return [(Security, CandleType), (Security, thirty), (Security, daily)];
 	}
 	
@@ -121,15 +121,15 @@ public class OrbVwapBraidFilterStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
-		_ema1 = new ExponentialMovingAverage { Length = 3 };
-		_ema2 = new ExponentialMovingAverage { Length = 7 };
-		_ema3 = new ExponentialMovingAverage { Length = 14 };
+		_ema1 = new EMA { Length = 3 };
+		_ema2 = new EMA { Length = 7 };
+		_ema3 = new EMA { Length = 14 };
 		_atr = new AverageTrueRange { Length = 14 };
 		_vwap = new VolumeWeightedMovingAverage();
 		
@@ -139,7 +139,7 @@ public class OrbVwapBraidFilterStrategy : Strategy
 		var sub30 = SubscribeCandles(TimeSpan.FromMinutes(30).TimeFrame());
 		sub30.Bind(ProcessPreMarket).Start();
 		
-		var subD = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var subD = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		subD.Bind(ProcessDaily).Start();
 	}
 	

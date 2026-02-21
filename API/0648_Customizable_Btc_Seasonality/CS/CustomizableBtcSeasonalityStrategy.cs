@@ -57,12 +57,12 @@ public class CustomizableBtcSeasonalityStrategy : Strategy
 		_entryHour = Param(nameof(EntryHour), 21)
 			.SetRange(0, 23)
 			.SetDisplay("Entry Hour", "Entry hour in UTC", "Strategy")
-			.SetCanOptimize(true);
+			;
 
 		_exitHour = Param(nameof(ExitHour), 23)
 			.SetRange(0, 23)
 			.SetDisplay("Exit Hour", "Exit hour in UTC", "Strategy")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
@@ -75,9 +75,9 @@ public class CustomizableBtcSeasonalityStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -98,7 +98,7 @@ public class CustomizableBtcSeasonalityStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var closeTime = candle.CloseTime.UtcDateTime;
+		var closeTime = candle.CloseTime;
 
 		if (closeTime.Hour == EntryHour && closeTime.Minute == 0 && Position <= 0)
 		{

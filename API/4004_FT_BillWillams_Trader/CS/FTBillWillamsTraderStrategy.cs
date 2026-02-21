@@ -56,9 +56,9 @@ public class FTBillWillamsTraderStrategy : Strategy
 	private readonly StrategyParam<CandlePrices> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _jaw = null!;
-	private LengthIndicator<decimal> _teeth = null!;
-	private LengthIndicator<decimal> _lips = null!;
+	private DecimalLengthIndicator _jaw = null!;
+	private DecimalLengthIndicator _teeth = null!;
+	private DecimalLengthIndicator _lips = null!;
 	private SimpleMovingAverage _slopeSma = null!;
 
 	private decimal?[] _jawHistory = Array.Empty<decimal?>();
@@ -429,9 +429,9 @@ public class FTBillWillamsTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_point = Security?.PriceStep ?? 0m;
 		if (_point <= 0m)
@@ -443,7 +443,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 		_jaw = CreateMovingAverage(MaMethod, JawPeriod);
 		_teeth = CreateMovingAverage(MaMethod, TeethPeriod);
 		_lips = CreateMovingAverage(MaMethod, LipsPeriod);
-		_slopeSma = new SimpleMovingAverage { Length = SlopeSmaPeriod };
+		_slopeSma = new SMA { Length = SlopeSmaPeriod };
 
 		_jawHistory = CreateHistoryBuffer(JawShift);
 		_teethHistory = CreateHistoryBuffer(TeethShift);
@@ -524,10 +524,10 @@ public class FTBillWillamsTraderStrategy : Strategy
 
 		var price = GetAppliedPrice(candle);
 
-		var jawValue = _jaw.Process(price, candle.OpenTime, true);
-		var teethValue = _teeth.Process(price, candle.OpenTime, true);
-		var lipsValue = _lips.Process(price, candle.OpenTime, true);
-		var slopeValue = _slopeSma.Process(candle.ClosePrice, candle.OpenTime, true);
+		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, price, candle.OpenTime));
+		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, price, candle.OpenTime));
+		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, price, candle.OpenTime));
+		var slopeValue = _slopeSma.Process(new DecimalIndicatorValue(_slopeSma, candle.ClosePrice, candle.OpenTime));
 
 		if (!jawValue.IsFinal || !teethValue.IsFinal || !lipsValue.IsFinal || !slopeValue.IsFinal)
 		{
@@ -960,15 +960,15 @@ public class FTBillWillamsTraderStrategy : Strategy
 		return Math.Abs(first - second) <= _point / 2m;
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
-		LengthIndicator<decimal> indicator = method switch
+		DecimalLengthIndicator indicator = method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 
 		return indicator;

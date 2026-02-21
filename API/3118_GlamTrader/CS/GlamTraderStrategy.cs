@@ -33,7 +33,7 @@ public class GlamTraderStrategy : Strategy
 	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<decimal> _laguerreGamma;
 
-	private LengthIndicator<decimal> _maIndicator = null!;
+	private DecimalLengthIndicator _maIndicator = null!;
 	private AwesomeOscillator _awesomeOscillator = null!;
 	private readonly List<decimal> _maBuffer = new();
 	private decimal? _previousAo;
@@ -64,55 +64,55 @@ public class GlamTraderStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trade Volume", "Order size used for entries", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 5m, 0.1m);
 
 		_stopLossBuyPips = Param(nameof(StopLossBuyPips), 50m)
 		.SetNotNegative()
 		.SetDisplay("Buy Stop Loss (pips)", "Protective stop distance for long trades", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 150m, 5m);
 
 		_takeProfitBuyPips = Param(nameof(TakeProfitBuyPips), 50m)
 		.SetNotNegative()
 		.SetDisplay("Buy Take Profit (pips)", "Profit target distance for long trades", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 200m, 5m);
 
 		_stopLossSellPips = Param(nameof(StopLossSellPips), 50m)
 		.SetNotNegative()
 		.SetDisplay("Sell Stop Loss (pips)", "Protective stop distance for short trades", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 150m, 5m);
 
 		_takeProfitSellPips = Param(nameof(TakeProfitSellPips), 50m)
 		.SetNotNegative()
 		.SetDisplay("Sell Take Profit (pips)", "Profit target distance for short trades", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 200m, 5m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance applied after profits accumulate", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 50m, 1m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 15m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Extra movement required before adjusting the trailing stop", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 100m, 1m);
 
 		_maPeriod = Param(nameof(MaPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Length of the moving average applied to price", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 1);
 
 		_maShift = Param(nameof(MaShift), 1)
 		.SetNotNegative()
 		.SetDisplay("MA Shift", "Bars of displacement applied to the moving average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 5, 1);
 
 		_maMethod = Param(nameof(MaMethods), MaIndicators.LinearWeighted)
@@ -124,7 +124,7 @@ public class GlamTraderStrategy : Strategy
 		_laguerreGamma = Param(nameof(LaguerreGamma), 0.7m)
 		.SetRange(0.1m, 0.9m)
 		.SetDisplay("Laguerre Gamma", "Smoothing factor of the Laguerre RSI", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.4m, 0.9m, 0.02m);
 	}
 
@@ -273,9 +273,9 @@ public class GlamTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 		if (_priceStep <= 0m)
@@ -313,7 +313,7 @@ public class GlamTraderStrategy : Strategy
 			DrawIndicator(oscillatorArea, _awesomeOscillator);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal aoValue)
@@ -623,15 +623,15 @@ public class GlamTraderStrategy : Strategy
 		};
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MaIndicators method, int length)
+	private DecimalLengthIndicator CreateMovingAverage(MaIndicators method, int length)
 	{
 		return method switch
 		{
-			MaIndicators.Simple => new SimpleMovingAverage { Length = length },
-			MaIndicators.Exponential => new ExponentialMovingAverage { Length = length },
+			MaIndicators.Simple => new SMA { Length = length },
+			MaIndicators.Exponential => new EMA { Length = length },
 			MaIndicators.Smoothed => new SmoothedMovingAverage { Length = length },
 			MaIndicators.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

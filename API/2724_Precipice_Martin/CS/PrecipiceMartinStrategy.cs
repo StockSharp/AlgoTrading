@@ -122,9 +122,9 @@ public class PrecipiceMartinStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Calculate the pip size based on the instrument tick size.
 		_pipSize = (Security?.PriceStep ?? 1m) * 10m;

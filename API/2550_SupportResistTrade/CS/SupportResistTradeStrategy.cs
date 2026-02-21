@@ -81,12 +81,12 @@ public class SupportResistTradeStrategy : Strategy
 		_lookback = Param(nameof(Lookback), 55)
 		.SetGreaterThanZero()
 		.SetDisplay("Lookback", "Candles used for support and resistance", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_maPeriod = Param(nameof(MaPeriod), 500)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Period", "Length of EMA trend filter", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -122,14 +122,14 @@ public class SupportResistTradeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
 		// Prepare indicators for EMA trend and swing levels.
-		_ema = new ExponentialMovingAverage { Length = MaPeriod };
+		_ema = new EMA { Length = MaPeriod };
 		_highest = new Highest { Length = Lookback };
 		_lowest = new Lowest { Length = Lookback };
 

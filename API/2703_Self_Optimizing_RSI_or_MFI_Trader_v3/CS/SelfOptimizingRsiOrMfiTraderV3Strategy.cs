@@ -255,7 +255,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 		_optimizingPeriods = Param(nameof(OptimizingPeriods), 144)
 			.SetGreaterThanZero()
 			.SetDisplay("Optimization Bars", "Number of bars used for optimization", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60, 240, 30);
 
 		_useAggressiveEntries = Param(nameof(UseAggressiveEntries), false)
@@ -347,9 +347,9 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = IndicatorChoice switch
 		{

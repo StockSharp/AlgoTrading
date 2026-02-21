@@ -60,12 +60,12 @@ public class LaguerreFilterStrategy : Strategy
 		_gamma = Param(nameof(Gamma), 0.7m)
 			.SetRange(0.1m, 0.9m)
 			.SetDisplay("Gamma", "Laguerre filter smoothing factor", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -85,9 +85,9 @@ public class LaguerreFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var laguerre = new AdaptiveLaguerreFilter { Gamma = Gamma };
 		var fir = new WeightedMovingAverage { Length = 4 };

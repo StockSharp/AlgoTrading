@@ -135,53 +135,53 @@ public class AudUsdScalpingStrategy : Strategy
 		_emaShort = Param(nameof(EmaShort), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Short EMA", "Fast EMA period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_emaLong = Param(nameof(EmaLong), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Long EMA", "Slow EMA period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 5);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 2);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
 			.SetDisplay("RSI Overbought", "Overbought threshold", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60, 80, 5);
 
 		_rsiOversold = Param(nameof(RsiOversold), 30)
 			.SetDisplay("RSI Oversold", "Oversold threshold", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 5);
 
 		_bbLength = Param(nameof(BbLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Length", "Bollinger Bands length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_bbMultiplier = Param(nameof(BbMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Mult", "Bollinger Bands multiplier", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_takeProfit = Param(nameof(TakeProfit), 0.0005m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0001m, 0.001m, 0.0001m);
 
 		_stopLoss = Param(nameof(StopLoss), 0.0004m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0001m, 0.001m, 0.0001m);
 	}
 
@@ -192,18 +192,18 @@ public class AudUsdScalpingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_emaFast = new ExponentialMovingAverage { Length = EmaShort };
-		_emaSlow = new ExponentialMovingAverage { Length = EmaLong };
+		_emaFast = new EMA { Length = EmaShort };
+		_emaSlow = new EMA { Length = EmaLong };
 		_bollinger = new BollingerBands { Length = BbLength, Width = BbMultiplier };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_bollinger, _emaFast, _emaSlow, _rsi, ProcessCandle)
+			.BindEx([_bollinger, _emaFast, _emaSlow, _rsi], ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -219,15 +219,20 @@ public class AudUsdScalpingStrategy : Strategy
 		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));
 	}
 
-	private void ProcessCandle(ICandleMessage candle,
-		decimal bbMiddle, decimal bbUpper, decimal bbLower,
-		decimal emaFast, decimal emaSlow, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!_bollinger.IsFormed || !_emaFast.IsFormed || !_emaSlow.IsFormed || !_rsi.IsFormed)
 			return;
+
+		var bbValue = (BollingerBandsValue)values[0];
+		if (bbValue.UpBand is not decimal bbUpper || bbValue.LowBand is not decimal bbLower)
+			return;
+		var emaFast = values[1].ToDecimal();
+		var emaSlow = values[2].ToDecimal();
+		var rsiValue = values[3].ToDecimal();
 
 		var isUpTrend = emaFast > emaSlow;
 		var isDownTrend = emaFast < emaSlow;

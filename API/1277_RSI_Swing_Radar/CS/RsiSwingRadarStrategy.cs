@@ -62,18 +62,18 @@ public class RsiSwingRadarStrategy : Strategy
 		_riskReward = Param(nameof(RiskReward), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk:Reward", "Reward to risk ratio", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 0.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 2m, 0.1m);
 
 		_rsiOversold = Param(nameof(RsiOversold), 35m)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 60m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -98,12 +98,12 @@ public class RsiSwingRadarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = 14 };
-		_rsiMa = new SimpleMovingAverage { Length = 14 };
+		_rsiMa = new SMA { Length = 14 };
 		_atr = new AverageTrueRange { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -124,7 +124,7 @@ public class RsiSwingRadarStrategy : Strategy
 			DrawIndicator(rsiArea, _rsiMa);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal atr)

@@ -150,22 +150,22 @@ public class EmaRsiSwingTrendFilterStrategy : Strategy
 	{
 		_emaFastPeriod = Param(nameof(EmaFastPeriod), 20)
 		.SetDisplay("EMA Fast", "Period of fast EMA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 		_emaSlowPeriod = Param(nameof(EmaSlowPeriod), 50)
 		.SetDisplay("EMA Slow", "Period of slow EMA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 80, 5);
 
 		_emaTrendPeriod = Param(nameof(EmaTrendPeriod), 200)
 		.SetDisplay("EMA Trend", "Period of trend EMA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100, 300, 50);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetDisplay("RSI Length", "Period for RSI calculation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 21, 7);
 
 		_useRsiFilter = Param(nameof(UseRsiFilter), true)
@@ -208,13 +208,13 @@ public class EmaRsiSwingTrendFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var emaFast = new ExponentialMovingAverage { Length = EmaFastPeriod };
-		var emaSlow = new ExponentialMovingAverage { Length = EmaSlowPeriod };
-		var emaTrend = new ExponentialMovingAverage { Length = EmaTrendPeriod };
+		var emaFast = new EMA { Length = EmaFastPeriod };
+		var emaSlow = new EMA { Length = EmaSlowPeriod };
+		var emaTrend = new EMA { Length = EmaTrendPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);

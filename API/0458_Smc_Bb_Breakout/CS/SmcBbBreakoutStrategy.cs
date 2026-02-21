@@ -88,7 +88,7 @@ public class SmcBbBreakoutStrategy : Strategy
 		_bbLength = Param(nameof(BbLength), 55)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Length", "Bollinger Bands period", "Bollinger")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 5);
 
 		_bbMultiplier = Param(nameof(BbMultiplier), 2m)
@@ -134,9 +134,9 @@ public class SmcBbBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bollinger = new BollingerBands { Length = BbLength, Width = BbMultiplier };
 		_orderBlockHigh = new Highest { Length = OrderBlockLength };

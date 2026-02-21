@@ -87,7 +87,7 @@ public class ColorJFatlDigitReOpenStrategy : Strategy
 		_jmaLength = Param(nameof(JmaLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("JMA Length", "Jurik moving average length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 20, 1);
 
 		_priceStepParam = Param(nameof(PriceStep), 300)
@@ -128,9 +128,9 @@ public class ColorJFatlDigitReOpenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = (Security?.PriceStep ?? 0m) * PriceStep;
 
@@ -141,7 +141,7 @@ public class ColorJFatlDigitReOpenStrategy : Strategy
 		.Bind(jma, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

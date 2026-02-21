@@ -84,25 +84,25 @@ public class MaRsiTriggerStrategy : Strategy
 		_fastRsiPeriod = Param(nameof(FastRsiPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast RSI Period", "Period of the fast RSI", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_slowRsiPeriod = Param(nameof(SlowRsiPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow RSI Period", "Period of the slow RSI", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 1);
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Period", "Period of the fast EMA", "MA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Period", "Period of the slow EMA", "MA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_allowBuyEntry = Param(nameof(AllowBuyEntry), true)
@@ -135,9 +135,9 @@ public class MaRsiTriggerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastRsi = new RSI { Length = FastRsiPeriod };
 		var slowRsi = new RSI { Length = SlowRsiPeriod };

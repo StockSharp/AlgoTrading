@@ -51,49 +51,49 @@ public class XManStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 150, 5);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Lookback length of the higher timeframe momentum", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 			.SetNotNegative()
 			.SetDisplay("Momentum Buy", "Minimum distance from 100 to allow long trades", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1.0m, 0.1m);
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
 			.SetNotNegative()
 			.SetDisplay("Momentum Sell", "Minimum distance from 100 to allow short trades", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1.0m, 0.1m);
 
 		_distancePoints = Param(nameof(DistancePoints), 25m)
 			.SetNotNegative()
 			.SetDisplay("Distance", "Additional points required between LWMA lines", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 60m, 5m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 120m, 10m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 80m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -236,18 +236,18 @@ public class XManStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create the indicators used by the trading rules.
-		var fastMa = new WeightedMovingAverage { Length = FastMaPeriod, CandlePrice = CandlePrice.Typical };
-		var slowMa = new WeightedMovingAverage { Length = SlowMaPeriod, CandlePrice = CandlePrice.Typical };
+		var fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		var slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 		var momentum = new Momentum { Length = MomentumPeriod };
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = 12,
-			LongPeriod = 26,
+			ShortMa = { Length = 12 },
+			LongMa = { Length = 26 },
 			SignalPeriod = 9
 		};
 

@@ -137,9 +137,9 @@ public class FollowLineStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bb = new BollingerBands { Length = BbPeriod, Width = BbDeviation };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
@@ -156,7 +156,7 @@ public class FollowLineStrategy : Strategy
 				.Start();
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

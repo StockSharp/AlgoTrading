@@ -71,7 +71,7 @@ public class MacdNoSampleStrategy : Strategy
 	private readonly StrategyParam<decimal> _macdLevelPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _ma = null!;
+	private DecimalLengthIndicator _ma = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
 	private decimal? _previousMa;
@@ -320,9 +320,9 @@ public class MacdNoSampleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = GetPipSize();
 
@@ -364,10 +364,10 @@ public class MacdNoSampleStrategy : Strategy
 		ManageOpenPositions(candle);
 
 		var maInput = GetAppliedPrice(candle, MaPrice);
-		var maValue = _ma.Process(maInput, candle.OpenTime, true).ToDecimal();
+		var maValue = _ma.Process(new DecimalIndicatorValue(_ma, maInput, candle.OpenTime)).ToDecimal();
 
 		var macdInput = GetAppliedPrice(candle, MacdPrice);
-		var macdValue = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(macdInput, candle.OpenTime, true);
+		var macdValue = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(new DecimalIndicatorValue(_macd, macdInput, candle.OpenTime));
 		var macd = macdValue.Macd as decimal?;
 		var signal = macdValue.Signal as decimal?;
 
@@ -695,14 +695,14 @@ public class MacdNoSampleStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethodOptions method)
+	private static DecimalLengthIndicator CreateMovingAverage(MaMethodOptions method)
 	{
 		return method switch
 		{
-			MaMethodOptions.Exponential => new ExponentialMovingAverage(),
+			MaMethodOptions.Exponential => new EMA(),
 			MaMethodOptions.Smoothed => new SmoothedMovingAverage(),
 			MaMethodOptions.Weighted => new WeightedMovingAverage(),
-			_ => new SimpleMovingAverage(),
+			_ => new SMA(),
 		};
 	}
 }

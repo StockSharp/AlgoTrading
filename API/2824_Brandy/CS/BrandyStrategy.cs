@@ -102,8 +102,8 @@ public class BrandyStrategy : Strategy
 	private readonly StrategyParam<int> _maOpenSignalBar;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _maOpenIndicator;
-	private LengthIndicator<decimal> _maCloseIndicator;
+	private DecimalLengthIndicator _maOpenIndicator;
+	private DecimalLengthIndicator _maCloseIndicator;
 	private decimal _pipSize;
 	private readonly Queue<decimal> _maOpenValues = new();
 	private readonly Queue<decimal> _maCloseValues = new();
@@ -349,9 +349,9 @@ public class BrandyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 		throw new InvalidOperationException("Trailing step must be greater than zero when trailing stop is enabled.");
@@ -392,8 +392,8 @@ public class BrandyStrategy : Strategy
 		var openSource = GetAppliedPrice(candle, MaOpenAppliedPrice);
 		var closeSource = GetAppliedPrice(candle, MaCloseAppliedPrice);
 
-		var maOpen = _maOpenIndicator!.Process(openSource, candle.OpenTime, true).ToDecimal();
-		var maClose = _maCloseIndicator!.Process(closeSource, candle.OpenTime, true).ToDecimal();
+		var maOpen = _maOpenIndicator!.Process(new DecimalIndicatorValue(_maOpenIndicator, openSource, candle.OpenTime)).ToDecimal();
+		var maClose = _maCloseIndicator!.Process(new DecimalIndicatorValue(_maCloseIndicator, closeSource, candle.OpenTime)).ToDecimal();
 
 		EnqueueValue(_maOpenValues, maOpen, _maxOpenQueueSize);
 		EnqueueValue(_maCloseValues, maClose, _maxCloseQueueSize);
@@ -624,15 +624,15 @@ public class BrandyStrategy : Strategy
 		return null;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-		MovingAverageMethods.Sma => new SimpleMovingAverage { Length = length },
-		MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = length },
+		MovingAverageMethods.Sma => new SMA { Length = length },
+		MovingAverageMethods.Ema => new EMA { Length = length },
 		MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = length },
 		MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = length },
-		_ => new ExponentialMovingAverage { Length = length }
+		_ => new EMA { Length = length }
 		};
 	}
 

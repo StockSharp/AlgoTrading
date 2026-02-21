@@ -84,7 +84,7 @@ public class DynamicSupportAndResistancePivotStrategy : Strategy
 		_pivotLength = Param(nameof(PivotLength), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Pivot Length", "Bars on each side for pivot detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_distancePercent = Param(nameof(SupportResistanceDistance), 0.4m)
@@ -123,9 +123,9 @@ public class DynamicSupportAndResistancePivotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highBuffer = new decimal[PivotLength * 2 + 1];
 		_lowBuffer = new decimal[PivotLength * 2 + 1];

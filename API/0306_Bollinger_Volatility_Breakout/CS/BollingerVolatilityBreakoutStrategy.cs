@@ -89,31 +89,31 @@ public class BollingerVolatilityBreakoutStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Indicator Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicator Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicator Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_atrDeviationMultiplier = Param(nameof(AtrDeviationMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Deviation Multiplier", "Standard deviation multiplier for ATR", "Strategy Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss Multiplier", "ATR multiplier for stop-loss", "Strategy Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -127,11 +127,11 @@ public class BollingerVolatilityBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_atrSma = new SimpleMovingAverage { Length = AtrPeriod };
+		_atrSma = new SMA { Length = AtrPeriod };
 		_atrStdDev = new StandardDeviation { Length = AtrPeriod };
 
 		// Create indicators
@@ -187,8 +187,8 @@ public class BollingerVolatilityBreakoutStrategy : Strategy
 		var atrDec = atrValue.ToDecimal();
 
 		// Get values from indicators
-		var atrSmaValue = _atrSma.Process(atrDec, candle.ServerTime, true).ToDecimal(); // Default to current ATR if SMA not available
-		var atrStdDevValue = _atrStdDev.Process(atrDec, candle.ServerTime, true).ToDecimal() * 0.2m; // Default to 20% of ATR if StdDev not available
+		var atrSmaValue = _atrSma.Process(new DecimalIndicatorValue(_atrSma, atrDec, candle.ServerTime)).ToDecimal(); // Default to current ATR if SMA not available
+		var atrStdDevValue = _atrStdDev.Process(new DecimalIndicatorValue(_atrStdDev, atrDec, candle.ServerTime)).ToDecimal() * 0.2m; // Default to 20% of ATR if StdDev not available
 		
 		// Calculate volatility threshold for breakout confirmation
 		var volatilityThreshold = atrSmaValue + AtrDeviationMultiplier * atrStdDevValue;

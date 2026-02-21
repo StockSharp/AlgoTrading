@@ -54,13 +54,13 @@ public class TrailingStopTriggerManagerStrategy : Strategy
 		_trailingPoints = Param(nameof(TrailingPoints), 1000)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Points", "Distance of the trailing stop in price steps", "Trailing Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 5000, 100);
 
 		_triggerPoints = Param(nameof(TriggerPoints), 1500)
 			.SetGreaterThanZero()
 			.SetDisplay("Trigger Points", "Profit in price steps required to activate the trailing stop", "Trailing Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 7500, 100);
 	}
 
@@ -77,9 +77,9 @@ public class TrailingStopTriggerManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdateDistances();
 

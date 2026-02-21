@@ -87,12 +87,12 @@ public class BollingerKMeansStrategy : Strategy
 	{
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 		.SetDisplay("Bollinger Length", "Length of the Bollinger Bands indicator", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 		.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -100,7 +100,7 @@ public class BollingerKMeansStrategy : Strategy
 
 		_kMeansHistoryLength = Param(nameof(KMeansHistoryLength), 50)
 		.SetDisplay("K-Means History Length", "Length of history for K-Means clustering", "Clustering")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 100, 10);
 	}
 
@@ -127,9 +127,9 @@ _currentClusterState = ClusterStates.Neutral;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_bollinger = new BollingerBands

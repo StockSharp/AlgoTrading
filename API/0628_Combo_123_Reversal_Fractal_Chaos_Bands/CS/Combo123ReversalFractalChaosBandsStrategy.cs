@@ -98,27 +98,27 @@ public class Combo123ReversalFractalChaosBandsStrategy : Strategy
 		_length = Param(nameof(Length), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Stochastic period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_kSmoothing = Param(nameof(KSmoothing), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("K Smoothing", "%K smoothing period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_dLength = Param(nameof(DLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("D Length", "%D smoothing period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_level = Param(nameof(Level), 50m)
 			.SetRange(1m, 100m)
 			.SetDisplay("Level", "Threshold level", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_pattern = Param(nameof(Pattern), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Pattern", "Fractal pattern size", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -147,9 +147,9 @@ public class Combo123ReversalFractalChaosBandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highs = new decimal?[Pattern * 2 + 2];
 		_lows = new decimal?[Pattern * 2 + 2];
@@ -157,8 +157,7 @@ public class Combo123ReversalFractalChaosBandsStrategy : Strategy
 
 		var stochastic = new StochasticOscillator
 		{
-			Length = Length,
-			K = { Length = KSmoothing },
+			K = { Length = Length },
 			D = { Length = DLength },
 		};
 

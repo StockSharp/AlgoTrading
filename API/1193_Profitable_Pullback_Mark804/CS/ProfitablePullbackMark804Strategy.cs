@@ -77,25 +77,25 @@ public class ProfitablePullbackMark804Strategy : Strategy
 		_fastLength = Param(nameof(FastLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Fast EMA period", "EMA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_signalLength = Param(nameof(SignalLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal EMA Length", "Signal EMA period", "EMA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_mediumLength = Param(nameof(MediumLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Medium EMA Length", "Medium EMA period", "EMA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 100, 5);
 
 		_slowLength = Param(nameof(SlowLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length", "Slow EMA period", "EMA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 10);
 
 		_enableSlowFilter = Param(nameof(EnableSlowFilter), true)
@@ -104,13 +104,13 @@ public class ProfitablePullbackMark804Strategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -131,14 +131,14 @@ public class ProfitablePullbackMark804Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastLength };
-		var signalEma = new ExponentialMovingAverage { Length = SignalLength };
-		var mediumEma = new ExponentialMovingAverage { Length = MediumLength };
-		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		var fastEma = new EMA { Length = FastLength };
+		var signalEma = new EMA { Length = SignalLength };
+		var mediumEma = new EMA { Length = MediumLength };
+		var slowEma = new EMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

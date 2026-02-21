@@ -100,37 +100,37 @@ public class DivergenceTraderStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast SMA length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 88)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow SMA length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 120, 5);
 
 		_dvBuySell = Param(nameof(DvBuySell), 0.0011m)
 			.SetNotNegative()
 			.SetDisplay("DV Buy/Sell", "Minimum divergence for entry", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0005m, 0.005m, 0.0005m);
 
 		_dvStayOut = Param(nameof(DvStayOut), 0.0079m)
 			.SetNotNegative()
 			.SetDisplay("DV Stay Out", "Maximum divergence for entry", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.02m, 0.001m);
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss in price units", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 1000m, 50m);
 
 		_takeProfit = Param(nameof(TakeProfit), 0m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit in price units", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 1000m, 50m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -144,9 +144,9 @@ public class DivergenceTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastSma = new SMA { Length = FastPeriod };
 		var slowSma = new SMA { Length = SlowPeriod };

@@ -52,7 +52,7 @@ public RedkSlowSmoothAverageRssWmaStrategy()
 _combinedSmoothness = Param(nameof(CombinedSmoothness), 15)
 .SetGreaterThanZero()
 .SetDisplay("Combined Smoothness", "Total smoothness for triple WMA", "Parameters")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 30, 1);
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -74,9 +74,9 @@ _prevUptrend = null;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var length = CombinedSmoothness;
 int w1, w2, w3;

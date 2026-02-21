@@ -54,31 +54,31 @@ public class IngritStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 80m)
 		.SetDisplay("Stop Loss (pips)", "Stop loss distance expressed in pips", "Risk")
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 150m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 70m)
 		.SetDisplay("Take Profit (pips)", "Take profit distance expressed in pips", "Risk")
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 150m, 10m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10m)
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 40m, 5m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 		.SetDisplay("Trailing Step (pips)", "Extra profit in pips required before the trailing stop moves", "Risk")
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 20m, 1m);
 
 		_stepPips = Param(nameof(StepPips), 25m)
 		.SetDisplay("Breakout Step (pips)", "Minimum distance between the swing points that activates a trade", "Signals")
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 80m, 5m);
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
@@ -178,9 +178,9 @@ public class IngritStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 		throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");
@@ -193,7 +193,7 @@ public class IngritStrategy : Strategy
 		.Bind(ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

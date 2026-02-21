@@ -89,12 +89,12 @@ _state = 0;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var length = SmoothFld ? FldSmoothing : 1;
-_sma = new SimpleMovingAverage { Length = length };
+_sma = new SMA { Length = length };
 
 _signalOffset = (int)Math.Round(SignalCycleLength / 2m);
 _tradeOffset = (int)Math.Round(TradeCycleLength / 2m);
@@ -112,7 +112,7 @@ if (candle.State != CandleStates.Finished)
 return;
 
 var price = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
-var fld = _sma.Process(price, candle.OpenTime, true).ToDecimal();
+var fld = _sma.Process(new DecimalIndicatorValue(_sma, price, candle.OpenTime)).ToDecimal();
 
 _signalQueue.Enqueue(fld);
 _tradeQueue.Enqueue(fld);

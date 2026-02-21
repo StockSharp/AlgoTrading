@@ -132,19 +132,19 @@ public class SupertrendEmaVolStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "ATR period", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 3m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "ATR multiplier", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 
 		_emaLength = Param(nameof(EmaLength), 21)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Length", "Length for price EMA", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 1);
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(2024, 1, 2, 0, 0, 0, TimeSpan.Zero))
@@ -159,7 +159,7 @@ public class SupertrendEmaVolStrategy : Strategy
 		_slMultiplier = Param(nameof(SlMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("SL Multiplier", "ATR multiplier for stop loss", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 
 		_useVolumeFilter = Param(nameof(UseVolumeFilter), true)
@@ -168,7 +168,7 @@ public class SupertrendEmaVolStrategy : Strategy
 		_volumeEmaLength = Param(nameof(VolumeEmaLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume EMA Length", "Length for volume EMA", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -191,14 +191,14 @@ public class SupertrendEmaVolStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var supertrend = new SuperTrend { Length = AtrPeriod, Multiplier = AtrMultiplier };
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new EMA { Length = EmaLength };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		_volumeEma = new ExponentialMovingAverage { Length = VolumeEmaLength };
+		_volumeEma = new EMA { Length = VolumeEmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -214,7 +214,7 @@ public class SupertrendEmaVolStrategy : Strategy
 		DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stValue, IIndicatorValue emaValue, IIndicatorValue atrValue)
@@ -222,7 +222,7 @@ public class SupertrendEmaVolStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var volEma = _volumeEma.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+		var volEma = _volumeEma.Process(new DecimalIndicatorValue(_volumeEma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 		if (!stValue.IsFinal || !emaValue.IsFinal || !atrValue.IsFinal || !_volumeEma.IsFormed)
 		return;
 

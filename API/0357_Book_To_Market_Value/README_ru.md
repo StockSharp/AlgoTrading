@@ -11,7 +11,7 @@
 - **Стопы**: отсутствуют.
 - **Значения по умолчанию**:
   - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Фильтры**:
   - Категория: Фундаментальная
   - Направление: Оба

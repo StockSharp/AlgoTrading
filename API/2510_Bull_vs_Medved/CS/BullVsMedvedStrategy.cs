@@ -66,31 +66,31 @@ public class BullVsMedvedStrategy : Strategy
 		_candleSizePips = Param(nameof(CandleSizePips), 75m)
 		.SetDisplay("Candle Size (pips)", "Minimum body size for the latest candle", "Filters")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(25m, 150m, 25m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 60m)
 		.SetDisplay("Stop Loss (pips)", "Distance from entry for protective stop", "Risk")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 120m, 20m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 60m)
 		.SetDisplay("Take Profit (pips)", "Distance from entry for profit target", "Risk")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 120m, 20m);
 
 		_indentUpPips = Param(nameof(IndentUpPips), 16m)
 		.SetDisplay("Buy Limit Offset (pips)", "Indent below the ask for buy limit orders", "Execution")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8m, 32m, 4m);
 
 		_indentDownPips = Param(nameof(IndentDownPips), 20m)
 		.SetDisplay("Sell Limit Offset (pips)", "Indent above the bid for sell limit orders", "Execution")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8m, 32m, 4m);
 
 		_entryWindowMinutes = Param(nameof(EntryWindowMinutes), 5)
@@ -265,9 +265,9 @@ public class BullVsMedvedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var decimals = Security?.Decimals ?? 0;
 		var adjust = decimals == 3 || decimals == 5 ? 10m : 1m;

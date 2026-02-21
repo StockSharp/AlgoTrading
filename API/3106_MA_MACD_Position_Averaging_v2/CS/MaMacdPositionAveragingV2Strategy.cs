@@ -53,7 +53,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _movingAverage = null!;
+	private DecimalLengthIndicator _movingAverage = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
 	private readonly Queue<decimal> _maBuffer = new();
@@ -82,17 +82,17 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Base volume for the first position", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance of the protective stop in pips", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance of the profit target in pips", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetNotNegative()
@@ -105,17 +105,17 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 		_stepLossPips = Param(nameof(StepLossPips), 30m)
 			.SetNotNegative()
 			.SetDisplay("Averaging Step (pips)", "Minimal adverse move before adding to the position", "Averaging")
-			.SetCanOptimize(true);
+			;
 
 		_lotCoefficient = Param(nameof(LotCoefficient), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Coefficient", "Multiplier applied to the losing leg volume", "Averaging")
-			.SetCanOptimize(true);
+			;
 
 		_barOffset = Param(nameof(BarOffset), 0)
 			.SetRange(0, 1000)
 			.SetDisplay("Bar Offset", "Number of bars to look back when reading indicators", "Signal")
-			.SetCanOptimize(true);
+			;
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse Signals", "Invert long and short entry directions", "Signal");
@@ -123,7 +123,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average length", "Moving Average")
-			.SetCanOptimize(true);
+			;
 
 		_maShift = Param(nameof(MaShift), 0)
 			.SetRange(0, 1000)
@@ -142,17 +142,17 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA period for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA period for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal EMA period for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_macdPrice = Param(nameof(MacdPrice), CandlePrices.Weighted)
 			.SetDisplay("MACD Price", "Applied price fed into MACD", "MACD");
@@ -160,7 +160,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 		_macdRatio = Param(nameof(MacdRatio), 0.9m)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Ratio", "Required ratio between MACD main and signal", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle type for calculations", "General");
@@ -671,14 +671,14 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 		_shortLegs.Clear();
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period, CandlePrices price)
+	private DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int period, CandlePrices price)
 	{
 		var length = Math.Max(1, period);
 
-		LengthIndicator<decimal> indicator = method switch
+		DecimalLengthIndicator indicator = method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new WeightedMovingAverage { Length = length }

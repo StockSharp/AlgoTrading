@@ -53,7 +53,7 @@ public class BearishAbandonedBabyStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetRange(0.1m, 5m)
 			.SetDisplay("Stop Loss %", "Stop Loss percentage above the high of the doji candle", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -73,9 +73,9 @@ public class BearishAbandonedBabyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create and subscribe to candles
 		var subscription = SubscribeCandles(CandleType);

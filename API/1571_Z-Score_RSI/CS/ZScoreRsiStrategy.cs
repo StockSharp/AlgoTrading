@@ -40,17 +40,17 @@ public class ZScoreRsiStrategy : Strategy
 		_zScoreLength = Param(nameof(ZScoreLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Z-Score Length", "Length for mean and deviation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLength = Param(nameof(RsiLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Length for RSI", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_smoothingLength = Param(nameof(SmoothingLength), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI EMA Length", "EMA length over RSI", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -71,9 +71,9 @@ public class ZScoreRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi.Length = RsiLength;
 		_rsiMa.Length = SmoothingLength;

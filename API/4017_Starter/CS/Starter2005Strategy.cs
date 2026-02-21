@@ -57,73 +57,73 @@ public class Starter2005Strategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 1.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Initial lot size used when risk-based sizing is unavailable", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_maximumRisk = Param(nameof(MaximumRisk), 0.036m)
 			.SetNotNegative()
 			.SetDisplay("Maximum Risk", "Fraction of account equity considered for sizing", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 0.1m, 0.005m);
 
 		_riskDivider = Param(nameof(RiskDivider), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Divider", "Divisor applied to risk capital (mimics the original /500 rule)", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1000m, 50m);
 
 		_decreaseFactor = Param(nameof(DecreaseFactor), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Decrease Factor", "Lot reduction factor after consecutive losses", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_maPeriod = Param(nameof(MaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Length of the exponential moving average applied to median price", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 30, 1);
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Commodity Channel Index lookback length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_cciThreshold = Param(nameof(CciThreshold), 5m)
 			.SetNotNegative()
 			.SetDisplay("CCI Threshold", "Absolute CCI level required for signals", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 50m, 1m);
 
 		_laguerreGamma = Param(nameof(LaguerreGamma), 0.66m)
 			.SetRange(0.1m, 0.9m)
 			.SetDisplay("Laguerre Gamma", "Smoothing factor of the Laguerre RSI filter", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.3m, 0.9m, 0.05m);
 
 		_laguerreEntryTolerance = Param(nameof(LaguerreEntryTolerance), 0.02m)
 			.SetRange(0m, 0.3m)
 			.SetDisplay("Laguerre Entry Tolerance", "Closeness to 0/1 required to mimic the original equality checks", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.005m, 0.1m, 0.005m);
 
 		_laguerreExitHigh = Param(nameof(LaguerreExitHigh), 0.9m)
 			.SetRange(0.5m, 1m)
 			.SetDisplay("Laguerre Exit High", "Upper exit level for long positions", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.6m, 1m, 0.05m);
 
 		_laguerreExitLow = Param(nameof(LaguerreExitLow), 0.1m)
 			.SetRange(0m, 0.5m)
 			.SetDisplay("Laguerre Exit Low", "Lower exit level for short positions", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 0.4m, 0.05m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance in price points before profit is locked", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 50m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -270,11 +270,11 @@ public class Starter2005Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = MaPeriod };
+		_ema = new EMA { Length = MaPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -298,8 +298,8 @@ public class Starter2005Strategy : Strategy
 
 		// Calculate median price to replicate PRICE_MEDIAN from MetaTrader.
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
-		var maValue = _ema.Process(medianPrice, candle.OpenTime, true);
-		var cciValue = _cci.Process(candle.ClosePrice, candle.OpenTime, true);
+		var maValue = _ema.Process(new DecimalIndicatorValue(_ema, medianPrice, candle.OpenTime));
+		var cciValue = _cci.Process(new DecimalIndicatorValue(_cci, candle.ClosePrice, candle.OpenTime));
 
 		var ma = maValue.ToDecimal();
 		var cci = cciValue.ToDecimal();

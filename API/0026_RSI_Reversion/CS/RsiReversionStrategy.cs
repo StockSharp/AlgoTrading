@@ -87,27 +87,27 @@ public class RsiReversionStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetRange(5, 30)
 			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_oversoldThreshold = Param(nameof(OversoldThreshold), 30m)
 			.SetRange(10m, 40m)
 			.SetDisplay("Oversold Threshold", "RSI threshold for oversold condition", "Strategy")
-			.SetCanOptimize(true);
+			;
 
 		_overboughtThreshold = Param(nameof(OverboughtThreshold), 70m)
 			.SetRange(60m, 90m)
 			.SetDisplay("Overbought Threshold", "RSI threshold for overbought condition", "Strategy")
-			.SetCanOptimize(true);
+			;
 
 		_exitLevel = Param(nameof(ExitLevel), 50m)
 			.SetRange(40m, 60m)
 			.SetDisplay("Exit Level", "RSI level for exits (mean reversion)", "Strategy")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -120,9 +120,9 @@ public class RsiReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create RSI indicator
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };

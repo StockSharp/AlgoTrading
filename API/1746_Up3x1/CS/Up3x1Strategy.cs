@@ -44,29 +44,29 @@ public Up3x1Strategy()
 {
 
 _takeProfit = Param<decimal>(nameof(TakeProfit), 150m)
-.SetDisplay("Take Profit")
-.SetCanOptimize(true);
+.SetDisplay("Take Profit", "Take Profit", "General")
+;
 _stopLoss = Param<decimal>(nameof(StopLoss), 100m)
-.SetDisplay("Stop Loss")
-.SetCanOptimize(true);
+.SetDisplay("Stop Loss", "Stop Loss", "General")
+;
 _trailingStop = Param<decimal>(nameof(TrailingStop), 100m)
-.SetDisplay("Trailing Stop")
-.SetCanOptimize(true);
+.SetDisplay("Trailing Stop", "Trailing Stop", "General")
+;
 _fastPeriod = Param(nameof(FastPeriod), 24)
-.SetDisplay("Fast Period")
-.SetCanOptimize(true);
+.SetDisplay("Fast Period", "Fast Period", "General")
+;
 _middlePeriod = Param(nameof(MiddlePeriod), 60)
-.SetDisplay("Middle Period")
-.SetCanOptimize(true);
+.SetDisplay("Middle Period", "Middle Period", "General")
+;
 _slowPeriod = Param(nameof(SlowPeriod), 120)
-.SetDisplay("Slow Period")
-.SetCanOptimize(true);
+.SetDisplay("Slow Period", "Slow Period", "General")
+;
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-.SetDisplay("Candle Type");
+.SetDisplay("Candle Type", "Candle Type", "General");
 
-_fastMa = new SimpleMovingAverage { Length = FastPeriod };
-_middleMa = new SimpleMovingAverage { Length = MiddlePeriod };
-_slowMa = new SimpleMovingAverage { Length = SlowPeriod };
+_fastMa = new SMA { Length = FastPeriod };
+_middleMa = new SMA { Length = MiddlePeriod };
+_slowMa = new SMA { Length = SlowPeriod };
 }
 
 public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
@@ -78,15 +78,15 @@ public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = val
 public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _fastMa.Length = FastPeriod;
 _middleMa.Length = MiddlePeriod;
 _slowMa.Length = SlowPeriod;
 
-StartProtection();
+StartProtection(null, null);
 
 var subscription = SubscribeCandles(CandleType);
 subscription

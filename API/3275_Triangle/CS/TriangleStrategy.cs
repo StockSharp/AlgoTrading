@@ -126,13 +126,13 @@ public class TriangleStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast LWMA", "Fast weighted moving average on the higher timeframe", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow LWMA", "Slow weighted moving average on the higher timeframe", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 150, 5);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
@@ -158,12 +158,12 @@ public class TriangleStrategy : Strategy
 		_stopLossSteps = Param(nameof(StopLossSteps), 20m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Protective stop distance measured in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Target distance measured in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Trading Candles", "Primary timeframe used for order execution", "General");

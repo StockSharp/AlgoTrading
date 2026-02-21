@@ -121,14 +121,14 @@ public class EmaSmaRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
-		_emaA = new ExponentialMovingAverage { Length = EmaALength };
-		_emaB = new ExponentialMovingAverage { Length = EmaBLength };
-		_emaC = new ExponentialMovingAverage { Length = EmaCLength };
+		_emaA = new EMA { Length = EmaALength };
+		_emaB = new EMA { Length = EmaBLength };
+		_emaC = new EMA { Length = EmaCLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		// Subscribe to candles using high-level API

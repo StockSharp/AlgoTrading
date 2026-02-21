@@ -88,17 +88,17 @@ public class RsiBoxPseudoGridBotStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "Length for RSI", "Parameters")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 2);
 
 		_overbought = Param(nameof(Overbought), 70m)
 			.SetDisplay("Overbought", "RSI overbought level", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_oversold = Param(nameof(Oversold), 30m)
 			.SetDisplay("Oversold", "RSI oversold level", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_useShorts = Param(nameof(UseShorts), false)
@@ -132,9 +132,9 @@ public class RsiBoxPseudoGridBotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var highest = new Highest { Length = RsiPeriod };

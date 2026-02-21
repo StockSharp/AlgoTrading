@@ -123,42 +123,42 @@ public class BollingerStochasticTrailingStopStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetRange(10, 50)
 			.SetDisplay("BB Period", "Bollinger Bands period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetRange(1m, 3m)
 			.SetDisplay("BB Deviation", "Bollinger Bands deviation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochLength = Param(nameof(StochLength), 14)
 			.SetRange(5, 30)
 			.SetDisplay("Stoch Length", "Stochastic period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochSmooth = Param(nameof(StochSmooth), 3)
 			.SetRange(1, 10)
 			.SetDisplay("Stoch Smooth", "Smoothing for %K and %D", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochOversold = Param(nameof(StochOversold), 20)
 			.SetRange(5, 30)
 			.SetDisplay("Oversold", "Oversold level", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_stochOverbought = Param(nameof(StochOverbought), 80)
 			.SetRange(70, 95)
 			.SetDisplay("Overbought", "Overbought level", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetRange(7, 28)
 			.SetDisplay("ATR Period", "ATR calculation period", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 			.SetRange(0.5m, 3m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for trailing stop", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -168,9 +168,9 @@ public class BollingerStochasticTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bollinger = new BollingerBands
 		{
@@ -179,8 +179,7 @@ public class BollingerStochasticTrailingStopStrategy : Strategy
 		};
 
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochLength,
+		{ K = { Length = StochLength },
 			K = { Length = StochSmooth },
 			D = { Length = StochSmooth },
 		};
@@ -207,7 +206,7 @@ public class BollingerStochasticTrailingStopStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue stochValue, IIndicatorValue atrValue)

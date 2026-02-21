@@ -56,12 +56,12 @@ public class XkriHistogramStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = KriPeriod };
-		_smooth = new ExponentialMovingAverage { Length = SmoothPeriod };
+		_ma = new SMA { Length = KriPeriod };
+		_smooth = new EMA { Length = SmoothPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_ma, ProcessCandle).Start();
@@ -88,7 +88,7 @@ public class XkriHistogramStrategy : Strategy
 			return;
 
 		var kri = 100m * (candle.ClosePrice - maValue) / maValue;
-		var smooth = _smooth.Process(kri, candle.OpenTime, true).ToDecimal();
+		var smooth = _smooth.Process(new DecimalIndicatorValue(_smooth, kri, candle.OpenTime)).ToDecimal();
 
 		if (!_smooth.IsFormed)
 			return;

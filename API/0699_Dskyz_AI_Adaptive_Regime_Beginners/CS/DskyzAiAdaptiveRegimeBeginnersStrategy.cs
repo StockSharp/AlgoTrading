@@ -115,18 +115,18 @@ public class DskyzAiAdaptiveRegimeBeginnersStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override IEnumerable<(Security, DataType)> OnSubscriptionsNeeded()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		yield return (Security, CandleType);
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastMa = new ExponentialMovingAverage { Length = FastMaLength };
-		var slowMa = new ExponentialMovingAverage { Length = SlowMaLength };
+		var fastMa = new EMA { Length = FastMaLength };
+		var slowMa = new EMA { Length = SlowMaLength };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
@@ -143,7 +143,7 @@ public class DskyzAiAdaptiveRegimeBeginnersStrategy : Strategy
 			DrawIndicator(area, slowMa);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastMa, decimal slowMa, decimal atr, decimal adx)

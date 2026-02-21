@@ -111,13 +111,13 @@ public class VelaSuperadaStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 25, 5);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation length", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 2);
 
 		_showLong = Param(nameof(ShowLong), true)
@@ -128,12 +128,12 @@ public class VelaSuperadaStrategy : Strategy
 
 		_tpPercent = Param(nameof(TpPercent), 1.2m)
 			.SetDisplay("TP Percent", "Take profit percentage", "Take Profit")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3.0m, 0.3m);
 
 		_slPercent = Param(nameof(SlPercent), 1.8m)
 			.SetDisplay("SL Percent", "Stop loss percentage", "Stop Loss")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5.0m, 0.5m);
 	}
 
@@ -157,12 +157,12 @@ public class VelaSuperadaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_macd = new MovingAverageConvergenceDivergence 
 		{ 

@@ -76,19 +76,19 @@ public class BillWilliamsStrategy : Strategy
 		_filterPoints = Param(nameof(FilterPoints), 30m)
 			.SetNotNegative()
 			.SetDisplay("Filter", "Minimal price offset in points", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 100m, 5m);
 
 		_gatorDivSlowPoints = Param(nameof(GatorDivSlowPoints), 250m)
 			.SetNotNegative()
 			.SetDisplay("Jaw-Teeth Points", "Required jaw-teeth distance", "Alligator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 500m, 25m);
 
 		_gatorDivFastPoints = Param(nameof(GatorDivFastPoints), 150m)
 			.SetNotNegative()
 			.SetDisplay("Lips-Teeth Points", "Required lips-teeth distance", "Alligator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 300m, 25m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -113,9 +113,9 @@ public class BillWilliamsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_jaw = new SmoothedMovingAverage { Length = 13 };
 		_teeth = new SmoothedMovingAverage { Length = 8 };
@@ -134,7 +134,7 @@ public class BillWilliamsStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

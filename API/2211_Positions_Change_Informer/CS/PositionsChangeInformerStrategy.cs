@@ -84,17 +84,17 @@ public class PositionsChangeInformerStrategy : Strategy
 	/// </summary>
 	public PositionsChangeInformerStrategy()
 	{
-		_alertType = Param(AlertTypes.Alert, nameof(Alert)).SetDisplay("Alert type");
-		_soundName = Param("alert.wav", nameof(SoundName)).SetDisplay("Sound filename");
-		_language = Param(MessageLanguages.Russian, nameof(Language)).SetDisplay("Language");
+		_alertType = Param(AlertTypes.Alert, nameof(Alert)).SetDisplay("Alert type", "Alert type", "General");
+		_soundName = Param("alert.wav", nameof(SoundName)).SetDisplay("Sound filename", "Sound filename", "General");
+		_language = Param(MessageLanguages.Russian, nameof(Language)).SetDisplay("Language", "Language", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />

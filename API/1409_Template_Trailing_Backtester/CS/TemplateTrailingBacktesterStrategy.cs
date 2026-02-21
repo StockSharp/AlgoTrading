@@ -70,9 +70,9 @@ public class TemplateTrailingBacktesterStrategy : Strategy
 		_trail = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		_fast.Length = FastLength;
 		_slow.Length = SlowLength;
 		var sub = SubscribeCandles(CandleType);
@@ -118,7 +118,7 @@ public class TemplateTrailingBacktesterStrategy : Strategy
 
 		if (Position > 0)
 		{
-			var trigger = PositionAvgPrice * (1 + TrailStartPercent / 100m);
+			var trigger = PositionPrice * (1 + TrailStartPercent / 100m);
 			if (candle.ClosePrice >= trigger)
 			{
 				var newStop = candle.ClosePrice * (1 - TrailDistancePercent / 100m);
@@ -132,7 +132,7 @@ public class TemplateTrailingBacktesterStrategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			var trigger = PositionAvgPrice * (1 - TrailStartPercent / 100m);
+			var trigger = PositionPrice * (1 - TrailStartPercent / 100m);
 			if (candle.ClosePrice <= trigger)
 			{
 				var newStop = candle.ClosePrice * (1 + TrailDistancePercent / 100m);

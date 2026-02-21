@@ -141,11 +141,11 @@ public class ExpertMasterEurusdStrategy : Strategy
 	{
 		_trailingPoints = Param(nameof(TrailingPoints), 25)
 			.SetDisplay("Trailing", "Trailing stop distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetRange(0, 1000);
 		_fixedVolume = Param(nameof(FixedVolume), 1m)
 			.SetDisplay("Fixed Volume", "Fallback trade volume", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetRange(0.01m, 100m);
 		_riskPercent = Param(nameof(RiskPercent), 0.01m)
 			.SetDisplay("Risk Percent", "Portfolio percentage used to size positions", "Risk")
@@ -177,23 +177,18 @@ public class ExpertMasterEurusdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Fast = MacdFastPeriod,
-			Slow = MacdSlowPeriod,
-			Signal = MacdSignalPeriod
-		};
+		_macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = MacdFastPeriod }, LongMa = { Length = MacdSlowPeriod } }, SignalMa = { Length = MacdSignalPeriod } };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.BindEx(_macd, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indicatorValue)

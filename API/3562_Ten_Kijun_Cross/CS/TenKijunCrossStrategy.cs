@@ -100,17 +100,17 @@ public class TenKijunCrossStrategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetRange(3, 18)
 			.SetDisplay("Tenkan Period", "Ichimoku Tenkan-sen lookback", "Ichimoku")
-			.SetCanOptimize(true);
+			;
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetRange(10, 52)
 			.SetDisplay("Kijun Period", "Ichimoku Kijun-sen lookback", "Ichimoku")
-			.SetCanOptimize(true);
+			;
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 			.SetRange(26, 104)
 			.SetDisplay("Senkou Span B Period", "Ichimoku Senkou Span B lookback", "Ichimoku")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series used for the Ichimoku calculation", "General");
@@ -131,9 +131,9 @@ public class TenKijunCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ichimoku = new Ichimoku
 		{

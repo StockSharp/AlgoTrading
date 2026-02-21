@@ -152,49 +152,49 @@ public class PrototypeIxStrategy : Strategy
 		_williamsPeriod = Param(nameof(WilliamsPeriod), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Williams %R Period", "Length of the Williams %R indicator", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 20, 2);
 
 		_criteriaWpr = Param(nameof(CriteriaWpr), 25m)
 		.SetGreaterThanZero()
 		.SetDisplay("Criteria WPR", "Absolute threshold for the Williams %R levels", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(15m, 35m, 5m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 40)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "Length of the ATR indicator", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 80, 10);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 0.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "Multiplier applied to ATR for breakout detection", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.3m, 1.0m, 0.1m);
 
 		_zeroBarDelay = Param(nameof(ZeroBarDelay), 8)
 		.SetNotNegative()
 		.SetDisplay("Zero Bar", "Bars before activating ATR trailing", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 12, 2);
 
 		_minTargetInSpread = Param(nameof(MinTargetInSpread), 5m)
 		.SetNotNegative()
 		.SetDisplay("Min Target Spread", "Minimum target measured in spread multiples", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 10m, 1m);
 
 		_tpSlCriteria = Param(nameof(TpSlCriteria), 2.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("TP/SL Criteria", "Required ratio between take-profit and stop-loss", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.2m, 3.0m, 0.2m);
 
 		_maxOpenedOrders = Param(nameof(MaxOpenedOrders), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Orders", "Maximum simultaneously opened orders", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 3, 1);
 
 		_maxOrderSize = Param(nameof(MaxOrderSize), 5m)
@@ -204,7 +204,7 @@ public class PrototypeIxStrategy : Strategy
 		_riskDelta = Param(nameof(RiskDelta), 5.0m)
 		.SetNotNegative()
 		.SetDisplay("Risk %", "Risk percentage used for position sizing", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.0m, 10.0m, 1.0m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -236,9 +236,9 @@ public class PrototypeIxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var williams = new WilliamsR { Length = WilliamsPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };

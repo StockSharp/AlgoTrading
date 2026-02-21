@@ -98,27 +98,27 @@ public class RangeFilterStrategy : Strategy
 	{
 		_samplingPeriod = Param(nameof(SamplingPeriod), 100)
 			.SetDisplay("Sampling Period", "Period for range calculation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 10);
 
 		_rangeMultiplier = Param(nameof(RangeMultiplier), 3m)
 			.SetDisplay("Range Multiplier", "Multiplier for range", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_riskPoints = Param(nameof(RiskPoints), 50m)
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_rewardPoints = Param(nameof(RewardPoints), 100m)
 			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 200m, 10m);
 
 		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 5)
 			.SetDisplay("Max Trades Per Day", "Daily trade limit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -132,12 +132,12 @@ public class RangeFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_avrng = new ExponentialMovingAverage { Length = SamplingPeriod };
-		_smrngEma = new ExponentialMovingAverage { Length = SamplingPeriod * 2 - 1 };
+		_avrng = new EMA { Length = SamplingPeriod };
+		_smrngEma = new EMA { Length = SamplingPeriod * 2 - 1 };
 
 		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)

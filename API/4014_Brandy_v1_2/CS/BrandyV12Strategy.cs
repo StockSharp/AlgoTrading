@@ -41,32 +41,32 @@ public class BrandyV12Strategy : Strategy
 		_longPeriod = Param(nameof(LongPeriod), 70)
 			.SetGreaterThanZero()
 			.SetDisplay("Long SMA Period", "Period for the longer moving average.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_longShift = Param(nameof(LongShift), 5)
 			.SetNotNegative()
 			.SetDisplay("Long SMA Shift", "Backward shift applied to the longer SMA.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_shortPeriod = Param(nameof(ShortPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Short SMA Period", "Period for the shorter moving average.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_shortShift = Param(nameof(ShortShift), 5)
 			.SetNotNegative()
 			.SetDisplay("Short SMA Shift", "Backward shift applied to the shorter SMA.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Initial stop-loss distance expressed in price steps.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 150m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance in price steps. Activates when >= 100.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series processed by the strategy.", "General");
@@ -156,12 +156,12 @@ public class BrandyV12Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_longSma = new SimpleMovingAverage { Length = LongPeriod };
-		_shortSma = new SimpleMovingAverage { Length = ShortPeriod };
+		_longSma = new SMA { Length = LongPeriod };
+		_shortSma = new SMA { Length = ShortPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

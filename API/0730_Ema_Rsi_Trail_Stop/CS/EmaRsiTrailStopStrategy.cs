@@ -189,13 +189,13 @@ public class EmaRsiTrailStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var emaA = new ExponentialMovingAverage { Length = EmaALength };
-		var emaB = new ExponentialMovingAverage { Length = EmaBLength };
-		var emaC = new ExponentialMovingAverage { Length = EmaCLength };
+		var emaA = new EMA { Length = EmaALength };
+		var emaB = new EMA { Length = EmaBLength };
+		var emaC = new EMA { Length = EmaCLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);

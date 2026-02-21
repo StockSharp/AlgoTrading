@@ -136,23 +136,23 @@ public class HybridScalperStrategy : Strategy
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 7)
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_emaFastPeriod = Param(nameof(EmaFastPeriod), 21)
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_emaSlowPeriod = Param(nameof(EmaSlowPeriod), 89)
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bbPeriod = Param(nameof(BbPeriod), 50)
 			.SetDisplay("BB Period", "Bollinger Bands period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bbDeviation = Param(nameof(BbDeviation), 4m)
 			.SetDisplay("BB Deviation", "Bollinger Bands deviation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_tradeMonday = Param(nameof(TradeMonday), true)
 			.SetDisplay("Trade Monday", "Allow trading on Monday", "Schedule");
@@ -180,9 +180,9 @@ public class HybridScalperStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var stochastic = new StochasticOscillator
@@ -190,8 +190,8 @@ public class HybridScalperStrategy : Strategy
 			K = { Length = 5 },
 			D = { Length = 3 },
 		};
-		var emaFast = new ExponentialMovingAverage { Length = EmaFastPeriod };
-		var emaSlow = new ExponentialMovingAverage { Length = EmaSlowPeriod };
+		var emaFast = new EMA { Length = EmaFastPeriod };
+		var emaSlow = new EMA { Length = EmaSlowPeriod };
 		var bollinger = new BollingerBands
 		{
 			Length = BbPeriod,
@@ -203,7 +203,7 @@ public class HybridScalperStrategy : Strategy
 			.BindEx(rsi, stochastic, emaFast, emaSlow, bollinger, ProcessIndicators)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -221,7 +221,7 @@ public class HybridScalperStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsTradingDay(candle.OpenTime.UtcDateTime.DayOfWeek))
+		if (!IsTradingDay(candle.OpenTime.DayOfWeek))
 			return;
 
 		var rsi = rsiValue.ToDecimal();

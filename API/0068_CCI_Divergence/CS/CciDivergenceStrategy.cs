@@ -96,12 +96,12 @@ public class CciDivergenceStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetRange(10, 30)
 			.SetDisplay("CCI Period", "Period for CCI calculation", "Indicator Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_divergencePeriod = Param(nameof(DivergencePeriod), 5)
 			.SetRange(3, 10)
 			.SetDisplay("Divergence Period", "Number of bars to look back for divergence", "Signal Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -109,17 +109,17 @@ public class CciDivergenceStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetRange(0.5m, 5.0m)
 			.SetDisplay("Stop Loss %", "Percentage-based stop loss from entry", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 100)
 			.SetRange(80, 200)
 			.SetDisplay("Overbought Level", "CCI level considered overbought", "Signal Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_oversoldLevel = Param(nameof(OversoldLevel), -100)
 			.SetRange(-200, -80)
 			.SetDisplay("Oversold Level", "CCI level considered oversold", "Signal Parameters")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -143,9 +143,9 @@ public class CciDivergenceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 // Create CCI indicator
 		var cci = new CommodityChannelIndex

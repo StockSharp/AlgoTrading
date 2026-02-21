@@ -98,26 +98,26 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 		_historyDays = Param(nameof(HistoryDays), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("History Days", "Number of days to collect statistics", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_minimumBodyPoints = Param(nameof(MinimumBodyPoints), 10)
 			.SetDisplay("Minimum Body (points)", "Ignore candles with smaller body", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_initialVolume = Param(nameof(InitialVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Starting order size", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_martingaleFactor = Param(nameof(MartingaleFactor), 1.618m)
 			.SetGreaterThanZero()
 			.SetDisplay("Martingale Factor", "Multiplier after losing trade", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for analysis", "General");
@@ -144,9 +144,9 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security.MinPriceStep ?? Security.PriceStep ?? 1m;
 

@@ -195,7 +195,7 @@ public class ProfitLossTrailStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_enableStopLoss = Param(nameof(EnableStopLoss), true)
 			.SetDisplay("Enable Stop Loss", "Control stop-loss exits automatically.", "Risk");
@@ -203,7 +203,7 @@ public class ProfitLossTrailStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_enableTrailingStop = Param(nameof(EnableTrailingStop), true)
 			.SetDisplay("Enable Trailing Stop", "Activate trailing stop management.", "Risk");
@@ -215,7 +215,7 @@ public class ProfitLossTrailStrategy : Strategy
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance applied after activation.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 1m)
 			.SetNotNegative()
@@ -268,9 +268,9 @@ public class ProfitLossTrailStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = GetPipSize();
 
@@ -279,7 +279,7 @@ public class ProfitLossTrailStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

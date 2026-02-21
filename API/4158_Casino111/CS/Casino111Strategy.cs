@@ -58,19 +58,19 @@ public class Casino111Strategy : Strategy
 		_betPoints = Param(nameof(BetPoints), 400m)
 			.SetDisplay("Stop/Take Distance", "Protective distance in MetaTrader points applied to both stop-loss and take-profit.", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 800m, 10m);
 
 		_upperOffsetPoints = Param(nameof(UpperOffsetPoints), 97m)
 			.SetDisplay("Upper Offset", "Points added to the previous daily high to define the sell trigger.", "Logic")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 5m);
 
 		_lowerOffsetPoints = Param(nameof(LowerOffsetPoints), 77m)
 			.SetDisplay("Lower Offset", "Points subtracted from the previous daily low to define the buy trigger.", "Logic")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 5m);
 
 		_useMoneyManagement = Param(nameof(UseMoneyManagement), false)
@@ -87,7 +87,7 @@ public class Casino111Strategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Trading Candle", "Primary timeframe evaluated for gap-break reversals.", "General");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Daily Candle", "Higher timeframe supplying the previous day's high and low levels.", "General");
 	}
 
@@ -212,9 +212,9 @@ public class Casino111Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 		if (_priceStep <= 0m)
@@ -251,7 +251,7 @@ public class Casino111Strategy : Strategy
 		}
 		else
 		{
-			StartProtection();
+			StartProtection(null, null);
 		}
 	}
 

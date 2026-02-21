@@ -45,7 +45,7 @@ public class CE_XAU_USDTStrategy : Strategy
 		_smaPeriod = Param(nameof(SmaPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("SMA Period", "Period for SMA", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -68,9 +68,9 @@ public class CE_XAU_USDTStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_sma = new SMA { Length = SmaPeriod };
 

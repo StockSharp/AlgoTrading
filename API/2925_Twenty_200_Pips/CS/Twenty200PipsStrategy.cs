@@ -103,13 +103,13 @@ public class Twenty200PipsStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (points)", "Take profit distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 500, 50);
 
 		_stopLoss = Param(nameof(StopLoss), 2000)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (points)", "Stop loss distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200, 4000, 100);
 
 		_tradeHour = Param(nameof(TradeHour), 18)
@@ -119,19 +119,19 @@ public class Twenty200PipsStrategy : Strategy
 		_firstOffset = Param(nameof(FirstOffset), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("First Offset", "Older bar index (Open[t1])", "Signal")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 12, 1);
 
 		_secondOffset = Param(nameof(SecondOffset), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Second Offset", "Newer bar index (Open[t2])", "Signal")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 6, 1);
 
 		_deltaPoints = Param(nameof(DeltaPoints), 70)
 			.SetGreaterThanZero()
 			.SetDisplay("Delta (points)", "Minimum difference between opens", "Signal")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 
@@ -157,9 +157,9 @@ public class Twenty200PipsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = Security?.PriceStep ?? 1m;
 		if (_pointValue <= 0m)
@@ -191,8 +191,8 @@ public class Twenty200PipsStrategy : Strategy
 		var isFinal = candle.State == CandleStates.Finished;
 
 		// Feed open prices into shift indicators to access historical opens.
-		var firstValue = _shiftFirst.Process(candle.OpenPrice, candle.OpenTime, isFinal);
-		var secondValue = _shiftSecond.Process(candle.OpenPrice, candle.OpenTime, isFinal);
+		var firstValue = _shiftFirst.Process(new DecimalIndicatorValue(_shiftFirst, candle.OpenPrice, candle.OpenTime));
+		var secondValue = _shiftSecond.Process(new DecimalIndicatorValue(_shiftSecond, candle.OpenPrice, candle.OpenTime));
 
 		// Synchronize indicator lengths with parameter values if the user changes them live.
 		if (_shiftFirst.Length != FirstOffset)

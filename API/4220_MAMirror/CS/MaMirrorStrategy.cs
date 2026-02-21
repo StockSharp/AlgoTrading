@@ -76,14 +76,14 @@ public class MaMirrorStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume; // Align helper methods with the configured trade size
 
-		_closeMovingAverage = new SimpleMovingAverage { Length = MovingPeriod };
-		_openMovingAverage = new SimpleMovingAverage { Length = MovingPeriod };
+		_closeMovingAverage = new SMA { Length = MovingPeriod };
+		_openMovingAverage = new SMA { Length = MovingPeriod };
 
 		_closeBuffer.Clear();
 		_openBuffer.Clear();
@@ -177,12 +177,12 @@ public class MaMirrorStrategy : Strategy
 		_signalInitialized = true;
 	}
 
-	private static decimal? ProcessMovingAverage(LengthIndicator<decimal> indicator, Queue<decimal> buffer, int shift, decimal price, ICandleMessage candle)
+	private static decimal? ProcessMovingAverage(DecimalLengthIndicator indicator, Queue<decimal> buffer, int shift, decimal price, ICandleMessage candle)
 	{
 		if (indicator == null)
 			return null;
 
-		var value = indicator.Process(price, candle.OpenTime, true);
+		var value = indicator.Process(new DecimalIndicatorValue(indicator, price, candle.OpenTime));
 
 		if (!indicator.IsFormed)
 			return null;

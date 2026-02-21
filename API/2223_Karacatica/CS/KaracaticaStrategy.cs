@@ -74,18 +74,18 @@ public class KaracaticaStrategy : Strategy
 		_period = Param(nameof(Period), 70)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "ADX period and lookback for close comparison", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 100, 10);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetDisplay("Take Profit %", "Take-profit as percentage of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop-loss as percentage of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -109,9 +109,9 @@ public class KaracaticaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_adx = new AverageDirectionalIndex { Length = Period };
 

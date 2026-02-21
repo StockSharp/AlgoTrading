@@ -42,17 +42,17 @@ public class ZapTeamProV6EmaStrategy : Strategy
 		_ema21Length = Param(nameof(Ema21Length), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA 21", "Fast EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_ema50Length = Param(nameof(Ema50Length), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA 50", "Slow EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_ema200Length = Param(nameof(Ema200Length), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA 200", "Trend EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_enableShorts = Param(nameof(EnableShorts), false)
 			.SetDisplay("Enable Shorts", "Allow short trades", "General");
@@ -68,9 +68,9 @@ public class ZapTeamProV6EmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ema21.Length = Ema21Length;
 		_ema50.Length = Ema50Length;

@@ -128,42 +128,42 @@ public class PurePriceActionBreakoutWith15RRStrategy : Strategy
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 9)
 		.SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 15, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 21)
 		.SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(15, 30, 1);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 2);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 		.SetDisplay("ATR Period", "ATR period for stop-loss", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 2);
 
 		_volumePeriod = Param(nameof(VolumePeriod), 20)
 		.SetDisplay("Volume SMA", "Volume SMA period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 
 		_stopLossFactor = Param(nameof(StopLossFactor), 1.5m)
 		.SetDisplay("Stop-Loss Factor", "ATR multiplier for stop-loss", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 
 		_riskRewardRatio = Param(nameof(RiskRewardRatio), 5m)
 		.SetDisplay("Risk Reward", "Take-profit to stop-loss ratio", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 6m, 1m);
 
 		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 5)
 		.SetDisplay("Max Trades", "Maximum trades per day", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -187,18 +187,18 @@ public class PurePriceActionBreakoutWith15RRStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (CandleType.Arg is TimeSpan tf && tf != TimeSpan.FromMinutes(5) && tf != TimeSpan.FromMinutes(15))
 		throw new ArgumentException("Only 5 or 15 minute candles are supported.");
 
-		_fastEma = new ExponentialMovingAverage { Length = FastPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
+		_fastEma = new EMA { Length = FastPeriod };
+		_slowEma = new EMA { Length = SlowPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_volumeSma = new SimpleMovingAverage { Length = VolumePeriod };
+		_volumeSma = new SMA { Length = VolumePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -220,7 +220,7 @@ public class PurePriceActionBreakoutWith15RRStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var volAvg = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var volAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 		if (!_fastEma.IsFormed || !_slowEma.IsFormed || !_rsi.IsFormed || !_atr.IsFormed || !_volumeSma.IsFormed)
 		{

@@ -68,13 +68,13 @@ public class BeerGodEmaTimingStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA length for the trend filter", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 120, 10);
 
 		_triggerMinutes = Param(nameof(TriggerMinutesFromOpen), 3)
 			.SetNotNegative()
 			.SetDisplay("Trigger Minutes", "Minutes after open to check signals", "Timing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -102,9 +102,9 @@ public class BeerGodEmaTimingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ema = new EMA
 		{
@@ -116,7 +116,7 @@ public class BeerGodEmaTimingStrategy : Strategy
 			.Bind(_ema, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaValue)

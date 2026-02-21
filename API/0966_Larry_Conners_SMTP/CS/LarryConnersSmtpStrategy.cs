@@ -50,10 +50,10 @@ public class LarryConnersSmtpStrategy : Strategy
 		_tickSize = Param(nameof(TickSize), 0.01m)
 			.SetDisplay("Tick Size", "Minimum price increment", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.1m, 0.001m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -72,10 +72,10 @@ public class LarryConnersSmtpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var lowest = new Lowest { Length = 10 };
 		_rangeHighest = new Highest { Length = 10 };

@@ -15,7 +15,7 @@ The strategy sells when case growth accelerates and buys when growth slows.
 - **Default Values**:
   - `Region` = "US"
   - `Lookback` = 2
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame()
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
 - **Filters**:
   - Category: Other
   - Direction: Both

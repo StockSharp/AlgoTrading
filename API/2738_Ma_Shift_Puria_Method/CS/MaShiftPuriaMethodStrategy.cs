@@ -291,8 +291,8 @@ public class MaShiftPuriaMethodStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastEma = new ExponentialMovingAverage { Length = FastLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		_fastEma = new EMA { Length = FastLength };
+		_slowEma = new EMA { Length = SlowLength };
 		_macd = new MovingAverageConvergenceDivergence
 		{
 			Fast = MacdFast,

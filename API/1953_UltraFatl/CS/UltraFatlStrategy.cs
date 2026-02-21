@@ -64,7 +64,7 @@ public class UltraFatlStrategy : Strategy
 
 		_length = Param(nameof(Length), 3)
 			.SetDisplay("Length", "Initial smoothing period", "UltraFATL")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -86,11 +86,11 @@ public class UltraFatlStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var ultraFatl = new UltraFatl
 		{

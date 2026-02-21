@@ -158,8 +158,8 @@ public class DayOpeningMacdHistogramStrategy : Strategy
 
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 

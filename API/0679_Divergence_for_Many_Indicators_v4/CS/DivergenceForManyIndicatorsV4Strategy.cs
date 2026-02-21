@@ -90,17 +90,17 @@ public class DivergenceForManyIndicatorsV4Strategy : Strategy
 		_minConfirmations = Param(nameof(MinConfirmations), 2)
 			.SetDisplay("Min divergences", "Minimum number of indicators confirming divergence.", "Parameters")
 			.SetRange(1, 7)
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
 			.SetDisplay("Take profit (%)", "Take profit percentage.", "Risk")
 			.SetRange(1m, 10m)
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop loss (%)", "Stop loss percentage.", "Risk")
 			.SetRange(1m, 5m)
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -126,9 +126,9 @@ public class DivergenceForManyIndicatorsV4Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -190,7 +190,8 @@ public class DivergenceForManyIndicatorsV4Strategy : Strategy
 			return;
 
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macd = macdTyped.Macd;
+		if (macdTyped.Macd is not decimal macd)
+			return;
 
 		var rsi = rsiValue.GetValue<decimal>();
 		var stochTyped = (StochasticOscillatorValue)stochValue;

@@ -133,12 +133,12 @@ public class LongLegDojiBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_sma = new SimpleMovingAverage { Length = 20 };
+		_sma = new SMA { Length = 20 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

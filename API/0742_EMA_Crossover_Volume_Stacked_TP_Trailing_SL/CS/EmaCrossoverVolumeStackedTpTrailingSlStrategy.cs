@@ -106,9 +106,9 @@ public class EmaCrossoverVolumeStackedTpTrailingSlStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_fastEma = new EMA { Length = FastLength };
 		_slowEma = new EMA { Length = SlowLength };
@@ -138,7 +138,7 @@ public class EmaCrossoverVolumeStackedTpTrailingSlStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 		
-		var avgVolume = _volumeSma.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+		var avgVolume = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 		var volumeOk = candle.TotalVolume > avgVolume * VolumeMultiplier;
 		
 		var fastAboveSlow = fast > slow;

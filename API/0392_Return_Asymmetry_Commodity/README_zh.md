@@ -14,7 +14,7 @@
   - `WindowDays = 120`
   - `TopN = 5`
   - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **筛选**：
   - 分类：动量
   - 方向：双向

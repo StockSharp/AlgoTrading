@@ -123,31 +123,31 @@ public class DoublerStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume for each hedge leg", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 150m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 500m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 300m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 1000m, 10m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 50m, 1m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimal progress before trailing", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 50m, 1m);
 
 		_logTradeDetails = Param(nameof(LogTradeDetails), false)
@@ -177,9 +177,9 @@ public class DoublerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 			throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");
@@ -190,7 +190,7 @@ public class DoublerStrategy : Strategy
 		_trailingStopOffset = TrailingStopPips > 0m ? TrailingStopPips * _pipValue : 0m;
 		_trailingStepOffset = TrailingStepPips > 0m ? TrailingStepPips * _pipValue : 0m;
 
-		StartProtection();
+		StartProtection(null, null);
 
 		SubscribeLevel1()
 			.Bind(ProcessLevel1)

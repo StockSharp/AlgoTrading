@@ -62,13 +62,13 @@ public class The950BarStrategy : Strategy
 		_targetTicks = Param(nameof(TargetTicks), 150)
 			.SetGreaterThanZero()
 			.SetDisplay("Target Ticks", "Profit target in ticks", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 50);
 
 		_stopTicks = Param(nameof(StopTicks), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Ticks", "Stop loss in ticks", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 50);
 
 	}
@@ -89,10 +89,10 @@ public class The950BarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(ProcessCandle).Start();
@@ -110,7 +110,7 @@ public class The950BarStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var nyTime = TimeZoneInfo.ConvertTime(candle.OpenTime.UtcDateTime, _nyTimeZone);
+		var nyTime = TimeZoneInfo.ConvertTime(candle.OpenTime, _nyTimeZone);
 
 		if (_tradeDate != nyTime.Date && nyTime.Hour == 9 && nyTime.Minute == 50)
 		{

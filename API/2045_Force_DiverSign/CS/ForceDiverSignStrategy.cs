@@ -25,8 +25,8 @@ public class ForceDiverSignStrategy : Strategy
 	private readonly StrategyParam<MovingAverageTypes> _maType1;
 	private readonly StrategyParam<MovingAverageTypes> _maType2;
 	private readonly StrategyParam<DataType> _candleType;
-	private LengthIndicator<decimal> _ma1;
-	private LengthIndicator<decimal> _ma2;
+	private DecimalLengthIndicator _ma1;
+	private DecimalLengthIndicator _ma2;
 	private readonly decimal[] _opens = new decimal[5];
 	private readonly decimal[] _closes = new decimal[5];
 	private readonly decimal[] _f1 = new decimal[5];
@@ -81,12 +81,12 @@ public class ForceDiverSignStrategy : Strategy
 		_period1 = Param(nameof(Period1), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast Period", "Period for fast Force index", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 10, 1);
 		_period2 = Param(nameof(Period2), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow Period", "Period for slow Force index", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		_maType1 = Param(nameof(MaType1), MovingAverageTypes.Exponential)
 		.SetDisplay("Fast MA Type", "Moving average type for fast Force", "Indicators");
@@ -114,9 +114,9 @@ public class ForceDiverSignStrategy : Strategy
 		Array.Clear(_f2);
 	}
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		_ma1 = CreateMa(MaType1, Period1);
 		_ma2 = CreateMa(MaType2, Period2);
 		var subscription = SubscribeCandles(CandleType);
@@ -180,16 +180,16 @@ public class ForceDiverSignStrategy : Strategy
 		array[i] = array[i - 1];
 		array[0] = value;
 	}
-	private static LengthIndicator<decimal> CreateMa(MovingAverageTypes type, int length)
+	private static DecimalLengthIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SMA { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 	/// <summary>

@@ -109,25 +109,25 @@ public class SidusStrategy : Strategy
 		_fastEma = Param(nameof(FastEma), 18)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA", "Length of the fast EMA", "Sidus")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 2);
 		
 		_slowEma = Param(nameof(SlowEma), 28)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA", "Length of the slow EMA", "Sidus")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 50, 2);
 		
 		_fastLwma = Param(nameof(FastLwma), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast LWMA", "Length of the fast LWMA", "Sidus")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 10, 1);
 		
 		_slowLwma = Param(nameof(SlowLwma), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow LWMA", "Length of the slow LWMA", "Sidus")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 15, 1);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -136,13 +136,13 @@ public class SidusStrategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit %", "Take profit in percent", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 1m);
 		
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss %", "Stop loss in percent", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3m, 0.5m);
 	}
 	
@@ -163,10 +163,10 @@ public class SidusStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		_fastEmaIndicator = new ExponentialMovingAverage { Length = FastEma };
-		_slowEmaIndicator = new ExponentialMovingAverage { Length = SlowEma };
+		_fastEmaIndicator = new EMA { Length = FastEma };
+		_slowEmaIndicator = new EMA { Length = SlowEma };
 		_fastLwmaIndicator = new WeightedMovingAverage { Length = FastLwma };
 		_slowLwmaIndicator = new WeightedMovingAverage { Length = SlowLwma };
 		
@@ -191,7 +191,7 @@ public class SidusStrategy : Strategy
 		new Unit(StopLossPercent, UnitTypes.Percent)
 		);
 		
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue, decimal fastLwmaValue, decimal slowLwmaValue)

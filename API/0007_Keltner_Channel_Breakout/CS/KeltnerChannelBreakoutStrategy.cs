@@ -73,17 +73,17 @@ public class KeltnerChannelBreakoutStrategy : Strategy
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetDisplay("EMA Period", "Period for Exponential Moving Average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "Period for Average True Range", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR to determine channel width", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 3, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -108,9 +108,9 @@ public class KeltnerChannelBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var keltnerChannel = new KeltnerChannels

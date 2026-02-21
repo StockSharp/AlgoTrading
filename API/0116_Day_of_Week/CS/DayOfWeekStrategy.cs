@@ -74,12 +74,12 @@ public class DayOfWeekStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Create a simple moving average indicator
-		var sma = new SimpleMovingAverage { Length = MaPeriod };
+		var sma = new SMA { Length = MaPeriod };
 		
 		// Create subscription and bind indicator
 		var subscription = SubscribeCandles(CandleType);

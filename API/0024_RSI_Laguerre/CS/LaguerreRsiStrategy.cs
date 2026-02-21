@@ -57,12 +57,12 @@ public class LaguerreRsiStrategy : Strategy
 		_gamma = Param(nameof(Gamma), 0.7m)
 			.SetRange(0.2m, 0.9m)
 			.SetDisplay("Gamma", "Gamma parameter for Laguerre RSI", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -75,9 +75,9 @@ public class LaguerreRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Laguerre RSI indicator
 		// Note: StockSharp doesn't have a built-in Laguerre RSI, so we'll use a custom implementation

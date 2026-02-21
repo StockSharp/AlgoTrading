@@ -80,17 +80,17 @@ public class ContrarianTradeMaWeeklyStrategy : Strategy
 		_calcPeriod = Param(nameof(CalcPeriod), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("Calculation Period", "Number of completed weeks in the extreme calculation", "General")
-		.SetCanOptimize(true);
+		;
 
 		_maPeriod = Param(nameof(MaPeriod), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Length of the simple moving average", "General")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 300m)
 		.SetDisplay("Stop Loss (points)", "Distance from the entry price to the protective stop", "Risk")
 		.SetRange(0m, decimal.MaxValue)
-		.SetCanOptimize(true);
+		;
 
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(7).TimeFrame())
@@ -116,20 +116,18 @@ public class ContrarianTradeMaWeeklyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest
 		{
-			Length = CalcPeriod,
-			CandlePrice = CandlePrice.High
+			Length = CalcPeriod
 		};
 
 		_lowest = new Lowest
 		{
-			Length = CalcPeriod,
-			CandlePrice = CandlePrice.Low
+			Length = CalcPeriod
 		};
 
 		_sma = new SMA
@@ -146,7 +144,7 @@ public class ContrarianTradeMaWeeklyStrategy : Strategy
 		.Bind(_highest, _lowest, _sma, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest, decimal smaValue)

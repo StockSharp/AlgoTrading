@@ -79,25 +79,25 @@ public class MasterMind3Strategy : Strategy
 		_wprPeriod1 = Param(nameof(WprPeriod1), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Period 1", "Length of the first Williams %R indicator", "WilliamsR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_wprPeriod2 = Param(nameof(WprPeriod2), 27)
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Period 2", "Length of the second Williams %R indicator", "WilliamsR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_wprPeriod3 = Param(nameof(WprPeriod3), 29)
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Period 3", "Length of the third Williams %R indicator", "WilliamsR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_wprPeriod4 = Param(nameof(WprPeriod4), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Period 4", "Length of the fourth Williams %R indicator", "WilliamsR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_candleType = Param(nameof(CandleType), System.TimeSpan.FromMinutes(1).TimeFrame())

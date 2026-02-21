@@ -85,19 +85,19 @@ public class TradeChannelBreakoutStrategy : Strategy
 		_channelLength = Param(nameof(ChannelLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Channel Length", "Number of candles for support/resistance", "Channel")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "ATR length for stop calculations", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 20, 2);
 
 		_trailingPoints = Param(nameof(TrailingPoints), 30m)
 		.SetNotNegative()
 		.SetDisplay("Trailing (points)", "Trailing stop distance in price steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 100m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -127,12 +127,12 @@ public class TradeChannelBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_highest = new Highest { Length = ChannelLength, CandlePrice = CandlePrice.High };
-		_lowest = new Lowest { Length = ChannelLength, CandlePrice = CandlePrice.Low };
+		_highest = new Highest { Length = ChannelLength };
+		_lowest = new Lowest { Length = ChannelLength };
 		_atr = new ATR { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

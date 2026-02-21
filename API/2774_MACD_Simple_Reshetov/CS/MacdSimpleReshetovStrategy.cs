@@ -54,9 +54,9 @@ public class MacdSimpleReshetovStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// The MQL version derives MACD periods from the signal period with DF and DS offsets.
 		var fastPeriod = SignalPeriod + Df;
@@ -64,8 +64,8 @@ public class MacdSimpleReshetovStrategy : Strategy
 
 		_macd = new MACD
 		{
-			ShortPeriod = fastPeriod,
-			LongPeriod = slowPeriod,
+			ShortMa = { Length = fastPeriod },
+			LongMa = { Length = slowPeriod },
 			SignalPeriod = SignalPeriod
 		};
 

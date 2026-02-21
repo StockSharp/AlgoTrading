@@ -73,19 +73,19 @@ public class MeanReversionStrategy : Strategy
 		_movingAveragePeriod = Param(nameof(MovingAveragePeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for moving average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for entry signals", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop-loss %", "Stop-loss as percentage of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -108,9 +108,9 @@ public class MeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 // Initialize indicators
 		_ma = new() { Length = MovingAveragePeriod };

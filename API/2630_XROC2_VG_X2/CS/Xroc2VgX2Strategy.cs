@@ -451,9 +451,9 @@ public class Xroc2VgX2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_higherSeries = new Xroc2VgSeries(
 			HigherRocMode,
@@ -706,7 +706,7 @@ public class Xroc2VgX2Strategy : Strategy
 					break;
 			}
 
-			var indicatorValue = _smoother.Process(new DecimalIndicatorValue(_smoother, roc, time));
+			var indicatorValue = _smoother.Process(new DecimalIndicatorValue(_smoother, roc, time.UtcDateTime));
 
 			return indicatorValue switch
 			{
@@ -723,14 +723,14 @@ public class Xroc2VgX2Strategy : Strategy
 
 		return method switch
 		{
-			SmoothingMethods.Sma => new SimpleMovingAverage { Length = len },
-			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = len },
+			SmoothingMethods.Sma => new SMA { Length = len },
+			SmoothingMethods.Ema => new EMA { Length = len },
 			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = len },
 			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = len },
 			SmoothingMethods.Jurik => new JurikMovingAverage { Length = len },
 			SmoothingMethods.Jurx => new JurikMovingAverage { Length = len },
 			SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = len },
-			_ => new ExponentialMovingAverage { Length = len },
+			_ => new EMA { Length = len },
 		};
 	}
 }

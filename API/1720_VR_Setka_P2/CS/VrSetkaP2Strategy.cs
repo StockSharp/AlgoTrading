@@ -37,7 +37,7 @@ public class VrSetkaP2Strategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 300)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Profit in price steps", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 500, 100);
 
 		_lot = Param(nameof(Lot), 0.1m)
@@ -54,7 +54,7 @@ public class VrSetkaP2Strategy : Strategy
 		_correlation = Param(nameof(Correlation), 50)
 			.SetDisplay("Correlation", "Offset for grid levels", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 
@@ -128,9 +128,9 @@ public class VrSetkaP2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

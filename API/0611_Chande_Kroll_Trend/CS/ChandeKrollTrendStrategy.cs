@@ -136,13 +136,13 @@ public class ChandeKrollTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 		_donchian = new DonchianChannels { Length = StopLength };
-		_sma = new SimpleMovingAverage { Length = SmaLength };
+		_sma = new SMA { Length = SmaLength };
 		_lowestClose = new Lowest { Length = 1560 };
 
 		_initialCapital = Portfolio.CurrentValue ?? 0m;
@@ -170,9 +170,9 @@ public class ChandeKrollTrendStrategy : Strategy
 		if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
 			return;
 
-		var atrVal = _atr.Process(candle);
-		var smaVal = _sma.Process(candle.ClosePrice, candle.OpenTime, true);
-		var lowCloseVal = _lowestClose.Process(candle.ClosePrice, candle.OpenTime, true);
+		var atrVal = _atr.Process(new DecimalIndicatorValue(_atr, candle.HighPrice - candle.LowPrice, candle.OpenTime));
+		var smaVal = _sma.Process(new DecimalIndicatorValue(_sma, candle.ClosePrice, candle.OpenTime));
+		var lowCloseVal = _lowestClose.Process(new DecimalIndicatorValue(_lowestClose, candle.ClosePrice, candle.OpenTime));
 
 		if (!atrVal.IsFinal || !smaVal.IsFinal || !lowCloseVal.IsFinal || !_donchian.IsFormed)
 		{

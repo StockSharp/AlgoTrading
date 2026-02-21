@@ -76,31 +76,31 @@ public class ChopFlowAtrScalpStrategy : Strategy
 		_atrLength = Param(nameof(AtrLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Length", "ATR calculation period", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 		.SetRange(0.1m, 5m)
 		.SetDisplay("ATR Multiplier", "ATR multiplier for exits", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 
 		_chopLength = Param(nameof(ChopLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Chop Length", "Choppiness Index period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 		_chopThreshold = Param(nameof(ChopThreshold), 60m)
 		.SetRange(20m, 100m)
 		.SetDisplay("Chop Threshold", "Choppiness threshold", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40m, 70m, 5m);
 
 		_obvEmaLength = Param(nameof(ObvEmaLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("OBV EMA Length", "OBV EMA period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 5);
 
 		_sessionInput = Param(nameof(SessionInput), "1700-1600")
@@ -126,11 +126,11 @@ public class ChopFlowAtrScalpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_obvEma = new ExponentialMovingAverage { Length = ObvEmaLength };
+		_obvEma = new EMA { Length = ObvEmaLength };
 
 		var obv = new OnBalanceVolume();
 		var atr = new AverageTrueRange { Length = AtrLength };
@@ -141,7 +141,7 @@ public class ChopFlowAtrScalpStrategy : Strategy
 		.BindEx(obv, atr, choppiness, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

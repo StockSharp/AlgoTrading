@@ -153,17 +153,17 @@ set => _candleType.Value = value;
 
 public DoubleUpStrategy()
 {
-_macdScale = Param(nameof(MacdScale), 1_000_000m).SetDisplay("MACD Scale").SetCanOptimize(true);
-_cciPeriod = Param(nameof(CciPeriod), 8).SetDisplay("CCI Period").SetCanOptimize(true);
-_threshold = Param(nameof(Threshold), 230m).SetDisplay("Threshold").SetCanOptimize(true);
-_macdFastPeriod = Param(nameof(MacdFastPeriod), 13).SetDisplay("MACD Fast").SetCanOptimize(true);
-_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 33).SetDisplay("MACD Slow").SetCanOptimize(true);
-_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 2).SetDisplay("MACD Signal").SetCanOptimize(true);
-_baseVolume = Param(nameof(BaseVolume), 0.01m).SetDisplay("Base Volume").SetCanOptimize(true);
-_initialWait = Param(nameof(InitialWait), 0m).SetDisplay("Initial Wait").SetCanOptimize(true);
-_preWait = Param(nameof(PreWait), 2m).SetDisplay("Pre Wait").SetCanOptimize(true);
-_backShift = Param(nameof(BackShift), 0).SetDisplay("Back Shift");
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type");
+_macdScale = Param(nameof(MacdScale), 1_000_000m).SetDisplay("MACD Scale");
+_cciPeriod = Param(nameof(CciPeriod), 8).SetDisplay("CCI Period");
+_threshold = Param(nameof(Threshold), 230m).SetDisplay("Threshold");
+_macdFastPeriod = Param(nameof(MacdFastPeriod), 13).SetDisplay("MACD Fast");
+_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 33).SetDisplay("MACD Slow");
+_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 2).SetDisplay("MACD Signal");
+_baseVolume = Param(nameof(BaseVolume), 0.01m).SetDisplay("Base Volume");
+_initialWait = Param(nameof(InitialWait), 0m).SetDisplay("Initial Wait");
+_preWait = Param(nameof(PreWait), 2m).SetDisplay("Pre Wait");
+_backShift = Param(nameof(BackShift), 0).SetDisplay("Back Shift", "Back Shift", "General");
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 }
 
 /// <inheritdoc />
@@ -191,8 +191,8 @@ _lastKnownPosition = Position;
 _cci = new CommodityChannelIndex { Length = CciPeriod };
 _macd = new MovingAverageConvergenceDivergence
 {
-ShortPeriod = MacdFastPeriod,
-LongPeriod = MacdSlowPeriod,
+ShortMa = { Length = MacdFastPeriod },
+LongMa = { Length = MacdSlowPeriod },
 SignalPeriod = MacdSignalPeriod,
 };
 

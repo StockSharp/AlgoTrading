@@ -291,17 +291,17 @@ protected override void OnReseted()
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	if (TrailingStopPoints > 0m && TrailingStepPoints <= 0m)
 	throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");
 
-	_h1FastMa = new SimpleMovingAverage { Length = H1FastPeriod };
-	_h1SlowMa = new SimpleMovingAverage { Length = H1SlowPeriod };
-	_h4FastMa = new SimpleMovingAverage { Length = H4FastPeriod };
-	_h4SlowMa = new SimpleMovingAverage { Length = H4SlowPeriod };
+	_h1FastMa = new SMA { Length = H1FastPeriod };
+	_h1SlowMa = new SMA { Length = H1SlowPeriod };
+	_h4FastMa = new SMA { Length = H4FastPeriod };
+	_h4SlowMa = new SMA { Length = H4SlowPeriod };
 
 	_pipSize = CalculatePipSize();
 
@@ -332,8 +332,8 @@ private void ProcessH4Candle(ICandleMessage candle)
 	if (candle.State != CandleStates.Finished)
 	return;
 
-	var fastValue = _h4FastMa.Process(candle.OpenPrice, candle.OpenTime, true);
-	var slowValue = _h4SlowMa.Process(candle.OpenPrice, candle.OpenTime, true);
+	var fastValue = _h4FastMa.Process(new DecimalIndicatorValue(_h4FastMa, candle.OpenPrice, candle.OpenTime));
+	var slowValue = _h4SlowMa.Process(new DecimalIndicatorValue(_h4SlowMa, candle.OpenPrice, candle.OpenTime));
 
 	if (!_h4FastMa.IsFormed || !_h4SlowMa.IsFormed)
 	return;
@@ -357,8 +357,8 @@ private void ProcessH1Candle(ICandleMessage candle)
 	if (candle.State != CandleStates.Finished)
 	return;
 
-	var fastValue = _h1FastMa.Process(candle.OpenPrice, candle.OpenTime, true);
-	var slowValue = _h1SlowMa.Process(candle.OpenPrice, candle.OpenTime, true);
+	var fastValue = _h1FastMa.Process(new DecimalIndicatorValue(_h1FastMa, candle.OpenPrice, candle.OpenTime));
+	var slowValue = _h1SlowMa.Process(new DecimalIndicatorValue(_h1SlowMa, candle.OpenPrice, candle.OpenTime));
 
 	if (!_h1FastMa.IsFormed || !_h1SlowMa.IsFormed)
 	return;

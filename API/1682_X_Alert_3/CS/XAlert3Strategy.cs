@@ -123,7 +123,7 @@ public class XAlert3Strategy : Strategy
 		_ma1Period = Param(nameof(Ma1Period), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1 Period", "Length of the first moving average", "MA1")
-			.SetCanOptimize(true);
+			;
 
 		_ma1Type = Param(nameof(Ma1Type), MovingAverageTypes.Simple)
 			.SetDisplay("MA1 Type", "Type of the first moving average", "MA1");
@@ -131,7 +131,7 @@ public class XAlert3Strategy : Strategy
 		_ma2Period = Param(nameof(Ma2Period), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("MA2 Period", "Length of the second moving average", "MA2")
-			.SetCanOptimize(true);
+			;
 
 		_ma2Type = Param(nameof(Ma2Type), MovingAverageTypes.Simple)
 			.SetDisplay("MA2 Type", "Type of the second moving average", "MA2");
@@ -161,9 +161,9 @@ public class XAlert3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma1 = CreateMovingAverage(Ma1Type, Ma1Period);
 		_ma2 = CreateMovingAverage(Ma2Type, Ma2Period);
@@ -186,8 +186,8 @@ public class XAlert3Strategy : Strategy
 			return;
 
 		var price = GetPrice(candle, PriceType);
-		var ma1 = _ma1!.Process(price, candle.OpenTime, true).ToDecimal();
-		var ma2 = _ma2!.Process(price, candle.OpenTime, true).ToDecimal();
+		var ma1 = _ma1!.Process(new DecimalIndicatorValue(_ma1, price, candle.OpenTime)).ToDecimal();
+		var ma2 = _ma2!.Process(new DecimalIndicatorValue(_ma2, price, candle.OpenTime)).ToDecimal();
 
 		var diff = ma1 - ma2;
 
@@ -207,10 +207,10 @@ public class XAlert3Strategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

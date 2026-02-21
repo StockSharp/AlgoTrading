@@ -158,9 +158,9 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
@@ -184,7 +184,7 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 			return;
 
 		var price = GetPrice(candle, RsiPrice);
-		var rsiValue = _rsi.Process(price, candle.OpenTime, true).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, price, candle.OpenTime)).ToDecimal();
 
 		if (!_rsi.IsFormed)
 		{

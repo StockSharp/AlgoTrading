@@ -13,7 +13,7 @@
 - **Стопы**: да.
 - **Значения по умолчанию**:
   - `TickSize` = 0.01
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame().
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame().
 - **Фильтры**:
   - Категория: Разворот
   - Направление: Лонг

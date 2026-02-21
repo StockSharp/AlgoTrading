@@ -55,69 +55,69 @@ public class CryptocurrencyDivergenceStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for calculations", "General")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetDisplay("Trade Volume", "Volume used for market orders", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 			.SetDisplay("Fast SMA", "Length of the fast moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 			.SetDisplay("Slow SMA", "Length of the slow moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetDisplay("RSI Length", "Period used to compute RSI", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiBullishLevel = Param(nameof(RsiBullishLevel), 45m)
 			.SetDisplay("RSI Bullish Level", "Maximum RSI value considered oversold", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiBearishLevel = Param(nameof(RsiBearishLevel), 55m)
 			.SetDisplay("RSI Bearish Level", "Minimum RSI value considered overbought", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdShortLength = Param(nameof(MacdShortLength), 12)
 			.SetDisplay("MACD Fast", "Short period of MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdLongLength = Param(nameof(MacdLongLength), 26)
 			.SetDisplay("MACD Slow", "Long period of MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 			.SetDisplay("MACD Signal", "Signal period of MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
 			.SetDisplay("Stop Loss (steps)", "Stop loss distance measured in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 			.SetDisplay("Take Profit (steps)", "Take profit distance measured in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_enableBreakEven = Param(nameof(EnableBreakEven), true)
 			.SetDisplay("Enable Break-Even", "Move stop loss to break-even after profit", "Risk");
 
 		_breakEvenTrigger = Param(nameof(BreakEvenTrigger), 30m)
 			.SetDisplay("Break-Even Trigger", "Profit distance required to move stop", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_breakEvenOffset = Param(nameof(BreakEvenOffset), 5m)
 			.SetDisplay("Break-Even Offset", "Offset added to entry price when moving stop", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
 			.SetDisplay("Enable Trailing", "Activate trailing stop management", "Risk");
 
 		_trailDistance = Param(nameof(TrailDistance), 40m)
 			.SetDisplay("Trail Distance", "Trailing stop distance in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -164,20 +164,20 @@ public class CryptocurrencyDivergenceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
-		StartProtection();
+		StartProtection(null, null);
 
-		var fastSma = new SimpleMovingAverage { Length = FastMaLength };
-		var slowSma = new SimpleMovingAverage { Length = SlowMaLength };
+		var fastSma = new SMA { Length = FastMaLength };
+		var slowSma = new SMA { Length = SlowMaLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdShortLength,
-			LongPeriod = MacdLongLength,
+			ShortMa = { Length = MacdShortLength },
+			LongMa = { Length = MacdLongLength },
 			SignalPeriod = MacdSignalLength
 		};
 

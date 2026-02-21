@@ -38,7 +38,7 @@ public class BitcoinMomentumStrategy : Strategy
 	
 	public BitcoinMomentumStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 		
 		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromDays(7).TimeFrame())
@@ -83,13 +83,13 @@ public class BitcoinMomentumStrategy : Strategy
 		_higherEmaValue = 0m;
 	}
 	
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
-		_higherEma = new ExponentialMovingAverage { Length = EmaLength };
+		_higherEma = new EMA { Length = EmaLength };
 		_swingHigh = new Highest { Length = 7 };
 		_trailSource = new Highest { Length = TrailStopLookback };
 		
@@ -126,8 +126,8 @@ public class BitcoinMomentumStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		var highVal = _swingHigh.Process(candle.HighPrice, candle.OpenTime, true);
-		var trailVal = _trailSource.Process(candle.LowPrice, candle.OpenTime, true);
+		var highVal = _swingHigh.Process(new DecimalIndicatorValue(_swingHigh, candle.HighPrice, candle.OpenTime));
+		var trailVal = _trailSource.Process(new DecimalIndicatorValue(_trailSource, candle.LowPrice, candle.OpenTime));
 		
 		if (!_swingHigh.IsFormed || !_trailSource.IsFormed || !_higherEma.IsFormed)
 		return;

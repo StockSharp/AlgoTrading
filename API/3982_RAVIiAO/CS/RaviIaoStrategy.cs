@@ -160,18 +160,18 @@ public class RaviIaoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 		if (_priceStep <= 0m)
 			throw new InvalidOperationException("Security must expose a positive price step.");
 
-		_fastMa = new SimpleMovingAverage { Length = FastLength };
-		_slowMa = new SimpleMovingAverage { Length = SlowLength };
+		_fastMa = new SMA { Length = FastLength };
+		_slowMa = new SMA { Length = SlowLength };
 		_ao = new AwesomeOscillator();
-		_aoAverage = new SimpleMovingAverage { Length = 5 };
+		_aoAverage = new SMA { Length = 5 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

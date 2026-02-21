@@ -186,49 +186,49 @@ public class BwWiseman1Strategy : Strategy
 		_back = Param(nameof(Back), 2)
 			.SetNotNegative()
 			.SetDisplay("Breakout Depth", "Number of previous bars checked for highs or lows", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 5, 1);
 
 		_jawLength = Param(nameof(JawLength), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Jaw Length", "Smoothed moving average length for the jaw", "Alligator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 21, 1);
 
 		_jawShift = Param(nameof(JawShift), 8)
 			.SetNotNegative()
 			.SetDisplay("Jaw Shift", "Forward displacement of the jaw line", "Alligator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 10, 1);
 
 		_teethLength = Param(nameof(TeethLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Teeth Length", "Smoothed moving average length for the teeth", "Alligator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_teethShift = Param(nameof(TeethShift), 5)
 			.SetNotNegative()
 			.SetDisplay("Teeth Shift", "Forward displacement of the teeth line", "Alligator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 8, 1);
 
 		_lipsLength = Param(nameof(LipsLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Lips Length", "Smoothed moving average length for the lips", "Alligator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_lipsShift = Param(nameof(LipsShift), 3)
 			.SetNotNegative()
 			.SetDisplay("Lips Shift", "Forward displacement of the lips line", "Alligator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 6, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Number of completed bars to wait before acting", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 3, 1);
 
 		_enableLong = Param(nameof(EnableLong), true)
@@ -267,9 +267,9 @@ public class BwWiseman1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_jawShiftBuffer.Clear();
 		_teethShiftBuffer.Clear();

@@ -99,51 +99,51 @@ public class AveragingDownStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 50);
 
 		_atrLength = Param(nameof(AtrLength), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 10);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 8m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Mult", "ATR band multiplier", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4m, 10m, 2m);
 
 		_tpPercent = Param(nameof(TpPercent), 3m)
 			.SetDisplay("TP %", "Take profit percent", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 5m, 1m);
 
 		_baseDeviation = Param(nameof(BaseDeviation), 3m)
 			.SetDisplay("Base Deviation %", "Percent move for first DCA", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 5m, 1m);
 
 		_stepScale = Param(nameof(StepScale), 1.5m)
 			.SetDisplay("Step Scale", "Multiplier for next deviation", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.2m, 2m, 0.2m);
 
 		_dcaMultiplier = Param(nameof(DcaMultiplier), 1.2m)
 			.SetDisplay("DCA Size Multiplier", "Size multiplier for each DCA", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 2m, 0.2m);
 
 		_maxDcaLevels = Param(nameof(MaxDcaLevels), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Max DCA Levels", "Maximum number of averaging entries", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_initialVolume = Param(nameof(InitialVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Initial order volume", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 	}
 
@@ -154,11 +154,11 @@ public class AveragingDownStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);

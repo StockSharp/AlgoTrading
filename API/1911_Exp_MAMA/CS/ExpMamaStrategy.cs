@@ -94,10 +94,10 @@ public class ExpMamaStrategy : Strategy
 	{
 		_fastLimit = Param(nameof(FastLimit), 0.5m)
 		.SetDisplay("Fast Limit", "Fast alpha limit", "Indicators")
-		.SetCanOptimize(true);
+		;
 		_slowLimit = Param(nameof(SlowLimit), 0.05m)
 		.SetDisplay("Slow Limit", "Slow alpha limit", "Indicators")
-		.SetCanOptimize(true);
+		;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe", "General");
 		_buyOpen = Param(nameof(BuyOpen), true)
@@ -127,9 +127,9 @@ public class ExpMamaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -143,7 +143,7 @@ public class ExpMamaStrategy : Strategy
 		return;
 
 		var price = candle.ClosePrice;
-		var result = _calc.Process(price, FastLimit, SlowLimit);
+		var result = _calc.Process(new DecimalIndicatorValue(_calc, price, FastLimit));
 		if (result is null)
 		return;
 

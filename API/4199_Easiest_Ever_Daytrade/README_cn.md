@@ -22,7 +22,7 @@
 | `EntryHourLimit` | 允许开仓的最后小时（不包含该小时），有效范围 `[0, 23]`。 | `1` |
 | `MarketCloseHour` | 每日强制平仓的小时数。 | `20` |
 | `IntradayCandleType` | 用于执行逻辑与仓位管理的时间框。 | `TimeSpan.FromMinutes(1).TimeFrame()` |
-| `DailyCandleType` | 用于读取上一交易日开盘与收盘的时间框。 | `TimeSpan.FromDays(1).TimeFrame()` |
+| `DailyCandleType` | 用于读取上一交易日开盘与收盘的时间框。 | `TimeSpan.FromMinutes(5).TimeFrame()` |
 
 所有参数均通过 `Param()` 注册，可在 StockSharp 优化器中调参。
 

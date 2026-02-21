@@ -178,7 +178,7 @@ public class ExecutorCandlesStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Trading timeframe", "General");
 
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Trend Candle Type", "Higher timeframe", "General");
 	}
 
@@ -206,9 +206,9 @@ public class ExecutorCandlesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0.0001m;
 		if (_priceStep <= 0m)

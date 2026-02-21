@@ -73,37 +73,37 @@ public class PulseWaveStrategy : Strategy
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 2);
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 30, 2);
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal line period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 12, 1);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Length for RSI", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 			.SetNotNegative()
 			.SetDisplay("RSI Overbought", "Upper threshold for RSI", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
 			.SetNotNegative()
 			.SetDisplay("RSI Oversold", "Lower threshold for RSI", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

@@ -148,48 +148,48 @@ public class BasicCciRsiStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 125m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 60m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop offset in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Extra profit before trailing adjusts", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_cciPeriod = Param(nameof(CciPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Commodity Channel Index period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Relative Strength Index period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLevelUp = Param(nameof(RsiLevelUp), 75m)
 			.SetDisplay("RSI Upper Level", "RSI overbought confirmation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLevelDown = Param(nameof(RsiLevelDown), 30m)
 			.SetDisplay("RSI Lower Level", "RSI oversold confirmation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_cciLevelUp = Param(nameof(CciLevelUp), 80m)
 			.SetDisplay("CCI Upper Level", "CCI overbought confirmation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_cciLevelDown = Param(nameof(CciLevelDown), -95m)
 			.SetDisplay("CCI Lower Level", "CCI oversold confirmation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for calculations", "General");
@@ -215,9 +215,9 @@ public class BasicCciRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = 0m;
 		if (Security?.PriceStep != null)

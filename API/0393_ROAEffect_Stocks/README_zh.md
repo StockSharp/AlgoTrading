@@ -13,7 +13,7 @@
 - **默认值**：
   - `Decile = 10`
   - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **筛选**：
   - 分类：基本面
   - 方向：双向

@@ -52,37 +52,37 @@ public class MovingAverageMartingaleStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("MA period", "Length of the simple moving average used for entries.", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_startingVolume = Param(nameof(StartingVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Starting volume", "Base order volume used after profitable trades.", "Money management")
-			.SetCanOptimize(true);
+			;
 
 		_maxVolume = Param(nameof(MaxVolume), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Maximum volume", "Upper limit for martingale scaling.", "Money management")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100)
 			.SetNotNegative()
 			.SetDisplay("Take profit (points)", "Initial profit target distance expressed in MetaTrader points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 300)
 			.SetNotNegative()
 			.SetDisplay("Stop loss (points)", "Initial stop-loss distance expressed in MetaTrader points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume multiplier", "Factor applied to the next trade volume after a loss.", "Money management")
-			.SetCanOptimize(true);
+			;
 
 		_targetMultiplier = Param(nameof(TargetMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Target multiplier", "Factor applied to stop-loss and take-profit distances after a loss.", "Money management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle type", "Primary timeframe processed by the strategy.", "General");
@@ -187,9 +187,9 @@ public class MovingAverageMartingaleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 

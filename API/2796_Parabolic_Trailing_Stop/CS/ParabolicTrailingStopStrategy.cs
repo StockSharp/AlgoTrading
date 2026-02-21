@@ -69,12 +69,12 @@ public class ParabolicTrailingStopStrategy : Strategy
 	{
 		_sarStep = Param(nameof(SarStep), 0.1m)
 			.SetDisplay("SAR Step", "Acceleration step for Parabolic SAR", "Parabolic SAR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.02m, 0.2m, 0.02m);
 
 		_sarMaxStep = Param(nameof(SarMaxStep), 0.11m)
 			.SetDisplay("SAR Max", "Maximum acceleration factor for Parabolic SAR", "Parabolic SAR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.5m, 0.05m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -105,9 +105,9 @@ public class ParabolicTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var parabolicSar = new ParabolicSar
 		{

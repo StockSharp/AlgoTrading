@@ -173,9 +173,9 @@ public class SwaperStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_initialCapital = BaseUnits * BeginPrice;
 		_realizedPnL = 0m;

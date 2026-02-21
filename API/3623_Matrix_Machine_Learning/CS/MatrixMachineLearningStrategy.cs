@@ -121,25 +121,25 @@ public class MatrixMachineLearningStrategy : Strategy
 		_historyDepth = Param(nameof(HistoryDepth), 120)
 			.SetGreaterThanZero()
 			.SetDisplay("History Depth", "Total amount of closes stored for the Hopfield network.", "Machine Learning")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(80, 200, 10);
 
 		_forwardDepth = Param(nameof(ForwardDepth), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Forward Depth", "Amount of closes kept for out-of-sample validation.", "Machine Learning")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 120, 10);
 
 		_predictorLength = Param(nameof(PredictorLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Predictor Length", "Length of binary vector passed to the network input.", "Machine Learning")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_forecastLength = Param(nameof(ForecastLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Forecast Length", "Length of the binary output vector produced by the network.", "Machine Learning")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -163,11 +163,11 @@ public class MatrixMachineLearningStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -83,19 +83,19 @@ public class EmaDowTheoryStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 47)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_slowLength = Param(nameof(SlowLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 10);
 
 		_swingLength = Param(nameof(SwingLength), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Swing Length", "Bars for swing detection", "Dow Theory")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 	}
 
@@ -115,12 +115,12 @@ public class EmaDowTheoryStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastEma = new ExponentialMovingAverage { Length = FastLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		_fastEma = new EMA { Length = FastLength };
+		_slowEma = new EMA { Length = SlowLength };
 		_highest = new Highest { Length = SwingLength };
 		_lowest = new Lowest { Length = SwingLength };
 
@@ -155,11 +155,11 @@ public class EmaDowTheoryStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_highest.IsFormed && candle.High == highestValue)
-			_lastSwingHigh = candle.High;
+		if (_highest.IsFormed && candle.HighPrice == highestValue)
+			_lastSwingHigh = candle.HighPrice;
 
-		if (_lowest.IsFormed && candle.Low == lowestValue)
-			_lastSwingLow = candle.Low;
+		if (_lowest.IsFormed && candle.LowPrice == lowestValue)
+			_lastSwingLow = candle.LowPrice;
 
 		if (_lastSwingHigh != 0m && candle.ClosePrice > _lastSwingHigh)
 			_trend = 1;

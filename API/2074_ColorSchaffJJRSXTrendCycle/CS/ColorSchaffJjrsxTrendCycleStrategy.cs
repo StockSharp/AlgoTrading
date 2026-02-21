@@ -33,31 +33,31 @@ public class ColorSchaffJjrsxTrendCycleStrategy : Strategy
 	{
 		_fast = Param(nameof(Fast), 23)
 			.SetDisplay("Fast JJRSX", "Fast period for the Schaff Trend Cycle", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_slow = Param(nameof(Slow), 50)
 			.SetDisplay("Slow JJRSX", "Slow period for the Schaff Trend Cycle", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_cycle = Param(nameof(Cycle), 10)
 			.SetDisplay("Cycle", "Cycle length of the Schaff Trend Cycle", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_highLevel = Param(nameof(HighLevel), 60m)
 			.SetDisplay("High Level", "Upper threshold for signals", "Levels")
-			.SetCanOptimize(true);
+			;
 
 		_lowLevel = Param(nameof(LowLevel), -60m)
 			.SetDisplay("Low Level", "Lower threshold for signals", "Levels")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var stc = new SchaffTrendCycle
 		{

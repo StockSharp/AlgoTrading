@@ -87,9 +87,9 @@ return [(Security, CandleType)];
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var adx = new ADX { Length = AdxPeriod };
 var bb = new BollingerBands { Length = BollingerPeriod, Width = 2m };

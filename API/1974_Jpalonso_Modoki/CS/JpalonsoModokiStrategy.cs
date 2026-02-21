@@ -101,13 +101,13 @@ public class JpalonsoModokiStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		StartProtection(takeProfit: TakeProfit, stopLoss: StopLoss);
 		
-		_sma = new SimpleMovingAverage { Length = SmaPeriod };
+		_sma = new SMA { Length = SmaPeriod };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription

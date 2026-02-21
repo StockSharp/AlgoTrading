@@ -207,7 +207,7 @@ public class MacdNotSoSampleStrategy : Strategy
 			SignalMa = { Length = SignalPeriod }
 		};
 
-		_trendEma = new ExponentialMovingAverage { Length = TrendPeriod };
+		_trendEma = new EMA { Length = TrendPeriod };
 
 		_hasPreviousValues = false;
 		_previousMacd = 0m;

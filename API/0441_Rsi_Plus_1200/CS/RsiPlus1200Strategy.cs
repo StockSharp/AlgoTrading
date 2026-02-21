@@ -127,25 +127,25 @@ public class RsiPlus1200Strategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation length", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 2);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 72)
 			.SetRange(50, 95)
 			.SetDisplay("RSI Overbought", "RSI overbought level", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(65, 85, 5);
 
 		_rsiOversold = Param(nameof(RsiOversold), 28)
 			.SetRange(5, 50)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 35, 5);
 
 		_emaLength = Param(nameof(EmaLength), 150)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period for trend filter", "Moving Average")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 200, 25);
 
 		_mtfTimeframe = Param(nameof(MtfTimeframe), TimeSpan.FromMinutes(120))
@@ -160,7 +160,7 @@ public class RsiPlus1200Strategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.10m)
 			.SetRange(0.01m, 0.50m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.20m, 0.02m);
 	}
 
@@ -182,13 +182,13 @@ public class RsiPlus1200Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 
 		// Create subscription for main timeframe
 		var subscription = SubscribeCandles(CandleType);

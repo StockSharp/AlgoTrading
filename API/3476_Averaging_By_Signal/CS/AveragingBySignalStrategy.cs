@@ -109,12 +109,12 @@ public AveragingBySignalStrategy()
 {
 _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 .SetDisplay("Candle Type", "Primary timeframe used for both moving averages.", "General")
-.SetCanOptimize(true);
+;
 
 _initialVolume = Param(nameof(InitialVolume), 0.1m)
 .SetDisplay("Initial Volume", "Base lot size used for the first entry.", "Money Management")
 .SetGreaterThanZero()
-.SetCanOptimize(true);
+;
 
 _lotSizing = Param(nameof(LotSizing), LotSizingModes.Multiplier)
 .SetDisplay("Lot Sizing", "Choose between fixed or multiplier-based sizing.", "Money Management");
@@ -122,12 +122,12 @@ _lotSizing = Param(nameof(LotSizing), LotSizingModes.Multiplier)
 _multiplier = Param(nameof(Multiplier), 2m)
 .SetDisplay("Multiplier", "Lot multiplier applied to every additional layer.", "Money Management")
 .SetGreaterThanZero()
-.SetCanOptimize(true);
+;
 
 _fastPeriod = Param(nameof(FastPeriod), 28)
 .SetDisplay("Fast Period", "Lookback for the fast moving average.", "Indicators")
 .SetGreaterThanZero()
-.SetCanOptimize(true);
+;
 
 _fastMethod = Param(nameof(FastMethod), MovingAverageMethods.LinearWeighted)
 .SetDisplay("Fast Method", "Moving average method for the fast line.", "Indicators");
@@ -135,7 +135,7 @@ _fastMethod = Param(nameof(FastMethod), MovingAverageMethods.LinearWeighted)
 _slowPeriod = Param(nameof(SlowPeriod), 50)
 .SetDisplay("Slow Period", "Lookback for the slow moving average.", "Indicators")
 .SetGreaterThanZero()
-.SetCanOptimize(true);
+;
 
 _slowMethod = Param(nameof(SlowMethod), MovingAverageMethods.Smoothed)
 .SetDisplay("Slow Method", "Moving average method for the slow line.", "Indicators");
@@ -143,7 +143,7 @@ _slowMethod = Param(nameof(SlowMethod), MovingAverageMethods.Smoothed)
 _takeProfitPips = Param(nameof(TakeProfitPips), 15)
 .SetDisplay("Take Profit (pips)", "Shared profit target attached to the basket.", "Risk")
 .SetNotNegative()
-.SetCanOptimize(true);
+;
 
 _averagingBySignal = Param(nameof(AveragingBySignal), true)
 .SetDisplay("Averaging By Signal", "Require a fresh signal before adding new layers.", "Averaging");
@@ -151,12 +151,12 @@ _averagingBySignal = Param(nameof(AveragingBySignal), true)
 _layerDistancePips = Param(nameof(LayerDistancePips), 10m)
 .SetDisplay("Layer Distance (pips)", "Minimal adverse move before adding a new order.", "Averaging")
 .SetGreaterThanZero()
-.SetCanOptimize(true);
+;
 
 _maxLayers = Param(nameof(MaxLayers), 10)
 .SetDisplay("Max Layers", "Maximum number of simultaneous orders per direction.", "Averaging")
 .SetGreaterThanZero()
-.SetCanOptimize(true);
+;
 
 _enableTrailing = Param(nameof(EnableTrailing), false)
 .SetDisplay("Trailing Stop", "Enable the single-order trailing stop logic.", "Protection");
@@ -164,12 +164,12 @@ _enableTrailing = Param(nameof(EnableTrailing), false)
 _trailingStartPips = Param(nameof(TrailingStartPips), 10m)
 .SetDisplay("Trailing Start (pips)", "Profit distance that activates the trailing stop.", "Protection")
 .SetNotNegative()
-.SetCanOptimize(true);
+;
 
 _trailingStepPips = Param(nameof(TrailingStepPips), 1m)
 .SetDisplay("Trailing Step (pips)", "Minimal improvement required to raise the stop.", "Protection")
 .SetNotNegative()
-.SetCanOptimize(true);
+;
 }
 
 /// <summary>
@@ -308,9 +308,9 @@ set => _trailingStepPips.Value = value;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 if (FastPeriod >= SlowPeriod)
 {
@@ -608,11 +608,11 @@ private IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 {
 return method switch
 {
-MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+MovingAverageMethods.Simple => new SMA { Length = length },
+MovingAverageMethods.Exponential => new EMA { Length = length },
 MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-_ => new SimpleMovingAverage { Length = length },
+_ => new SMA { Length = length },
 };
 }
 

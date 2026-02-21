@@ -114,7 +114,7 @@ public class HighYieldSpreadSmaFilterStrategy : Strategy
 		_threshold = Param(nameof(Threshold), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Threshold", "Spread threshold", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_isLong = Param(nameof(IsLong), true)
@@ -123,7 +123,7 @@ public class HighYieldSpreadSmaFilterStrategy : Strategy
 		_holdingPeriod = Param(nameof(HoldingPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Holding Period", "Number of candles to hold position", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_useSmaFilter = Param(nameof(UseSmaFilter), true)
@@ -132,10 +132,10 @@ public class HighYieldSpreadSmaFilterStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "SMA period for filter", "Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -158,11 +158,11 @@ public class HighYieldSpreadSmaFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_sma = new SMA { Length = SmaLength };
 

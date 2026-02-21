@@ -172,7 +172,7 @@ public class EaCloseStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K Smoothing", "Smoothing factor applied to the %K line.", "Indicators");
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D Smoothing", "Smoothing factor applied to the %D line.", "Indicators");
 
@@ -207,9 +207,9 @@ public class EaCloseStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var cci = new CommodityChannelIndex
 		{
@@ -222,10 +222,9 @@ public class EaCloseStrategy : Strategy
 		};
 
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			KPeriod = StochasticKPeriod,
-			DPeriod = StochasticDPeriod
+			D = { Length = StochasticDPeriod }
 		};
 
 		var subscription = SubscribeCandles(CandleType);

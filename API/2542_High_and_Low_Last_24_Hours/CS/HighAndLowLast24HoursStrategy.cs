@@ -70,9 +70,9 @@ public class HighAndLowLast24HoursStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_timeFrame = GetTimeFrame();
 		_cachedWindowLength = WindowLength;
@@ -81,14 +81,12 @@ public class HighAndLowLast24HoursStrategy : Strategy
 
 		_highest = new Highest
 		{
-			Length = length,
-			CandlePrice = CandlePrice.High
+			Length = length
 		};
 
 		_lowest = new Lowest
 		{
-			Length = length,
-			CandlePrice = CandlePrice.Low
+			Length = length
 		};
 
 		var subscription = SubscribeCandles(CandleType);

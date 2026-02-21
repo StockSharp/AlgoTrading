@@ -94,25 +94,25 @@ public class HybridEaStrategy : Strategy
 		_rviLength = Param(nameof(RviLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Length", "Length for RVI", "General")
-			.SetCanOptimize(true);
+			;
 
 		_signalLength = Param(nameof(SignalLength), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "Length for signal line", "General")
-			.SetCanOptimize(true);
+			;
 
 		_differenceThreshold = Param(nameof(DifferenceThreshold), 0.05m)
 			.SetGreaterThanZero()
 			.SetDisplay("Difference", "RVI difference threshold", "General")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 18m)
 			.SetDisplay("Take Profit", "Take profit in points", "General")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 9m)
 			.SetDisplay("Stop Loss", "Stop loss in points", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -135,17 +135,17 @@ public class HybridEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rvi = new RelativeVigorIndex { Length = RviLength };
-		_signal = new SimpleMovingAverage { Length = SignalLength };
+		_signal = new SMA { Length = SignalLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_rvi, _signal, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

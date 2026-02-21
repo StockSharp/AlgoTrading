@@ -91,8 +91,8 @@ public class DeltaRsiOscillatorStrategy : Strategy
 	public DeltaRsiOscillatorStrategy()
 	{
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
-		_rsiLength = Param(nameof(RsiLength), 21).SetRange(1, 100).SetDisplay("RSI Length", "RSI period", "Model Parameters").SetCanOptimize(true);
-		_signalLength = Param(nameof(SignalLength), 9).SetRange(1, 100).SetDisplay("Signal Length", "EMA period", "Model Parameters").SetCanOptimize(true);
+		_rsiLength = Param(nameof(RsiLength), 21).SetRange(1, 100).SetDisplay("RSI Length", "RSI period", "Model Parameters");
+		_signalLength = Param(nameof(SignalLength), 9).SetRange(1, 100).SetDisplay("Signal Length", "EMA period", "Model Parameters");
 		_buyCondition = Param(nameof(BuyCondition), SignalConditions.ZeroCrossing).SetDisplay("Buy Condition", "Entry condition for longs", "Conditions");
 		_sellCondition = Param(nameof(SellCondition), SignalConditions.ZeroCrossing).SetDisplay("Sell Condition", "Entry condition for shorts", "Conditions");
 		_exitCondition = Param(nameof(ExitCondition), SignalConditions.ZeroCrossing).SetDisplay("Exit Condition", "Exit condition", "Conditions");
@@ -116,10 +116,10 @@ public class DeltaRsiOscillatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_signal = new ExponentialMovingAverage { Length = SignalLength };
+		_signal = new EMA { Length = SignalLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -135,9 +135,9 @@ public class DeltaRsiOscillatorStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
@@ -151,7 +151,7 @@ public class DeltaRsiOscillatorStrategy : Strategy
 		var delta = rsiValue - _prevRsi;
 		_prevRsi = rsiValue;
 
-		var signalValue = _signal.Process(delta, candle.CloseTime, true).ToDecimal();
+		var signalValue = _signal.Process(new DecimalIndicatorValue(_signal, delta, candle.CloseTime)).ToDecimal();
 
 		if (!_signal.IsFormed)
 		{

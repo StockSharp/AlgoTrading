@@ -141,37 +141,37 @@ public class AdxTesterStrategy : Strategy
 		_momentumLength = Param(nameof(MomentumLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Length", "Momentum indicator length", "Momentum Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_adxSmoothingLength = Param(nameof(AdxSmoothingLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Smoothing", "ADX smoothing length", "Directional Movement Index")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 2);
 
 		_diLength = Param(nameof(DiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("DI Length", "DI calculation length", "Directional Movement Index")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 2);
 
 		_adxKeyLevel = Param(nameof(AdxKeyLevel), 23)
 			.SetRange(10, 50)
 			.SetDisplay("ADX Key Level", "Key level for ADX", "Directional Movement Index")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 35, 5);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation length", "Average True Range")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 2);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.6m)
 			.SetRange(0.1m, 10.0m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop loss", "Average True Range")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3.0m, 0.3m);
 
 		_structureLookback = Param(nameof(StructureLookback), 1)
@@ -202,14 +202,14 @@ public class AdxTesterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_highest = new Highest { Length = MomentumLength };
 		_lowest = new Lowest { Length = MomentumLength };
-		_closeSma = new SimpleMovingAverage { Length = MomentumLength };
+		_closeSma = new SMA { Length = MomentumLength };
 		_momentum = new LinearRegression { Length = MomentumLength };
 		_adx = new AverageDirectionalIndex { Length = DiLength };
 		_atr = new AverageTrueRange { Length = AtrLength };

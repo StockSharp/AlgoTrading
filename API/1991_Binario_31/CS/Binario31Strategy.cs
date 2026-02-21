@@ -72,25 +72,25 @@ public class Binario31Strategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 144)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period for high and low bands", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
 		_pipDifference = Param(nameof(PipDifference), 25m)
 			.SetGreaterThanZero()
 			.SetDisplay("Pip Difference", "Distance from EMA to entry", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 50m, 5m);
 
 		_takeProfit = Param(nameof(TakeProfit), 850m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1000m, 100m);
 
 		_trailingStop = Param(nameof(TrailingStop), 850m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop", "Trailing stop in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1000m, 100m);
 
 
@@ -112,12 +112,12 @@ public class Binario31Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_emaHigh = new ExponentialMovingAverage { Length = EmaLength };
-		_emaLow = new ExponentialMovingAverage { Length = EmaLength };
+		_emaHigh = new EMA { Length = EmaLength };
+		_emaLow = new EMA { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -137,8 +137,8 @@ public class Binario31Strategy : Strategy
 
 		var step = Security.PriceStep ?? 1m;
 
-		var emaHigh = _emaHigh.Process(candle.HighPrice, candle.OpenTime, true).ToDecimal();
-		var emaLow = _emaLow.Process(candle.LowPrice, candle.OpenTime, true).ToDecimal();
+		var emaHigh = _emaHigh.Process(new DecimalIndicatorValue(_emaHigh, candle.HighPrice, candle.OpenTime)).ToDecimal();
+		var emaLow = _emaLow.Process(new DecimalIndicatorValue(_emaLow, candle.LowPrice, candle.OpenTime)).ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading() || !_emaHigh.IsFormed || !_emaLow.IsFormed)
 			return;

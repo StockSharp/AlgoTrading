@@ -79,37 +79,37 @@ public class TemplateEAbyMarketStrategy : Strategy
 	{
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetDisplay("MACD Fast EMA", "Fast EMA period for the MACD calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 2);
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetDisplay("MACD Slow EMA", "Slow EMA period for the MACD calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetDisplay("MACD Signal", "Signal period for the MACD calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 			.SetDisplay("Take Profit", "Take profit distance in price points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 150m, 10m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
 			.SetDisplay("Stop Loss", "Stop loss distance in price points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 200m, 20m);
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetDisplay("Order Volume", "Volume used when sending market orders", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_maxOrders = Param(nameof(MaxOrders), 1)
 			.SetDisplay("Max Orders", "Maximum number of concurrent orders (volume multiples)", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -138,8 +138,8 @@ public class TemplateEAbyMarketStrategy : Strategy
 
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 

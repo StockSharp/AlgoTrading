@@ -187,9 +187,9 @@ public class XFatlXSatlCloudStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastIndicator = CreateIndicator(FastMethod, FastLength, FastPhase);
 		var slowIndicator = CreateIndicator(SlowMethod, SlowLength, SlowPhase);
@@ -295,8 +295,8 @@ public class XFatlXSatlCloudStrategy : Strategy
 	{
 		return method switch
 		{
-			SmoothMethods.Sma => new SimpleMovingAverage { Length = length },
-			SmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.Sma => new SMA { Length = length },
+			SmoothMethods.Ema => new EMA { Length = length },
 			SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
 			SmoothMethods.Wma => new WeightedMovingAverage { Length = length },
 			_ => CreateJurikIndicator(length, phase),

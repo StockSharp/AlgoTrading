@@ -80,22 +80,22 @@ public class TripleMAStrategy : Strategy
 	{
 		_shortMaPeriod = Param(nameof(ShortMaPeriod), 5)
 			.SetDisplay("Short MA Period", "Period for short moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_middleMaPeriod = Param(nameof(MiddleMaPeriod), 20)
 			.SetDisplay("Middle MA Period", "Period for middle moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 30, 5);
 
 		_longMaPeriod = Param(nameof(LongMaPeriod), 50)
 			.SetDisplay("Long MA Period", "Period for long moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 100, 10);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop Loss (%)", "Stop loss as a percentage of entry price", "Risk parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 3, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -117,14 +117,14 @@ public class TripleMAStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		var shortMa = new SimpleMovingAverage { Length = ShortMaPeriod };
-		var middleMa = new SimpleMovingAverage { Length = MiddleMaPeriod };
-		var longMa = new SimpleMovingAverage { Length = LongMaPeriod };
+		var shortMa = new SMA { Length = ShortMaPeriod };
+		var middleMa = new SMA { Length = MiddleMaPeriod };
+		var longMa = new SMA { Length = LongMaPeriod };
 
 		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);

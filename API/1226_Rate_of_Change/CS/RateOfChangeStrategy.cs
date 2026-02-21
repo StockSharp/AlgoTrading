@@ -115,27 +115,27 @@ public class RateOfChangeStrategy : Strategy
 		_rocLength = Param(nameof(RocLength), 365)
 			.SetRange(50, 500)
 			.SetDisplay("ROC Length", "Rate of Change lookback length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_bubbleThreshold = Param(nameof(BubbleThreshold), 180m)
 			.SetRange(50m, 300m)
 			.SetDisplay("Bubble Threshold", "ROC value defining bubble state", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 6m)
 			.SetRange(1m, 20m)
 			.SetDisplay("Stop Loss %", "Percentage stop loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_fixedRatioValue = Param(nameof(FixedRatioValue), 400m)
 			.SetRange(100m, 1000m)
 			.SetDisplay("Fixed Ratio", "Equity step to adjust order size", "Money Management")
-			.SetCanOptimize(true);
+			;
 
 		_increasingOrderAmount = Param(nameof(IncreasingOrderAmount), 200m)
 			.SetRange(50m, 500m)
 			.SetDisplay("Order Increase", "Amount added per fixed ratio step", "Money Management")
-			.SetCanOptimize(true);
+			;
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(new DateTime(2017, 1, 1)))
 			.SetDisplay("Start Date", "Backtest start", "Backtesting");
@@ -143,7 +143,7 @@ public class RateOfChangeStrategy : Strategy
 		_endDate = Param(nameof(EndDate), new DateTimeOffset(new DateTime(2024, 7, 1)))
 			.SetDisplay("End Date", "Backtest end", "Backtesting");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
 	/// <inheritdoc />
@@ -153,9 +153,9 @@ public class RateOfChangeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_capitalRef = Portfolio?.CurrentValue ?? 0m;
 		_cashOrder = _capitalRef * 0.95m;

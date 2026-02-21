@@ -57,7 +57,7 @@ public class HeikenAshiSmoothedTrendStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 30)
 			.SetDisplay("EMA Length", "Length for smoothing", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -83,14 +83,14 @@ public class HeikenAshiSmoothedTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_openEma = new ExponentialMovingAverage { Length = EmaLength };
-		_closeEma = new ExponentialMovingAverage { Length = EmaLength };
-		_highEma = new ExponentialMovingAverage { Length = EmaLength };
-		_lowEma = new ExponentialMovingAverage { Length = EmaLength };
+		_openEma = new EMA { Length = EmaLength };
+		_closeEma = new EMA { Length = EmaLength };
+		_highEma = new EMA { Length = EmaLength };
+		_lowEma = new EMA { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -98,7 +98,7 @@ public class HeikenAshiSmoothedTrendStrategy : Strategy
 			.Bind(_openEma, _closeEma, _highEma, _lowEma, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal openEma, decimal closeEma, decimal highEma, decimal lowEma)

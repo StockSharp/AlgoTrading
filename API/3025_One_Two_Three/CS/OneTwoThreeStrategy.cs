@@ -215,13 +215,13 @@ public class OneTwoThreeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Prepare Chaikin oscillator components.
-		_fastEma = new ExponentialMovingAverage { Length = FastLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		_fastEma = new EMA { Length = FastLength };
+		_slowEma = new EMA { Length = SlowLength };
 		var ad = new AccumulationDistributionLine();
 
 		// Subscribe to candles and bind accumulation/distribution values.
@@ -245,8 +245,8 @@ public class OneTwoThreeStrategy : Strategy
 			return;
 
 		// Update Chaikin oscillator using EMA difference on accumulation/distribution values.
-		var fastValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, adValue, candle.Time));
-		var slowValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, adValue, candle.Time));
+		var fastValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, adValue, candle.ServerTime));
+		var slowValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, adValue, candle.ServerTime));
 
 		if (!fastValue.IsFinal || !slowValue.IsFinal)
 		{

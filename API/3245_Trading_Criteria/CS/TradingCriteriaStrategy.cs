@@ -86,13 +86,13 @@ public class TradingCriteriaStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast LWMA", "Fast linear weighted moving average length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow LWMA", "Slow linear weighted moving average length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 1);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
@@ -102,13 +102,13 @@ public class TradingCriteriaStrategy : Strategy
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bull Momentum", "Minimum momentum deviation for long trades", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 2m, 0.1m);
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bear Momentum", "Minimum momentum deviation for short trades", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 2m, 0.1m);
 
 		_maxPositions = Param(nameof(MaxPositions), 1)
@@ -314,9 +314,9 @@ public class TradingCriteriaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var step = Security?.PriceStep ?? 0m;
 		if (step == 0m)
@@ -375,7 +375,7 @@ public class TradingCriteriaStrategy : Strategy
 			DrawIndicator(area, _slowMa);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessMainCandle(ICandleMessage candle, decimal fastMa, decimal slowMa)

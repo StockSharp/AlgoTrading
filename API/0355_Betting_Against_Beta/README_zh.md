@@ -12,7 +12,7 @@
 - **默认值**：
   - `WindowDays = 252`
   - `Deciles = 10`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
   - `MinTradeUsd = 100`
 - **过滤器**：
   - 分类: 因子

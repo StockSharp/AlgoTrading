@@ -35,7 +35,7 @@ public class StarterStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private CommodityChannelIndex _cci = null!;
-	private LengthIndicator<decimal> _movingAverage = null!;
+	private DecimalLengthIndicator _movingAverage = null!;
 
 	private readonly List<decimal> _cciHistory = new();
 	private readonly List<decimal> _maHistory = new();
@@ -69,13 +69,13 @@ public class StarterStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Number of bars for the Commodity Channel Index", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 1);
 
 		_cciLevel = Param(nameof(CciLevel), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Level", "Threshold used for oversold/overbought detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 200m, 10m);
 
 		_cciCurrentBar = Param(nameof(CciCurrentBar), 0)
@@ -89,7 +89,7 @@ public class StarterStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 120)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Number of bars for the moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 5);
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
@@ -102,25 +102,25 @@ public class StarterStrategy : Strategy
 		_maDelta = Param(nameof(MaDelta), 0.001m)
 			.SetNotNegative()
 			.SetDisplay("MA Delta", "Minimum slope difference between current and previous MA", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0001m, 0.01m, 0.0001m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Initial protective stop distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 10m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Base trailing distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 5m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimum improvement required before moving the trailing stop", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -254,9 +254,9 @@ public class StarterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = GetPipSize();
 		_historyCapacity = CalculateHistoryCapacity();
@@ -517,15 +517,15 @@ public class StarterStrategy : Strategy
 		return Math.Max(cciRequirement, maRequirement);
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int period)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = period },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MovingAverageMethods.Simple => new SMA { Length = period },
+			MovingAverageMethods.Exponential => new EMA { Length = period },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
-			_ => new SimpleMovingAverage { Length = period }
+			_ => new SMA { Length = period }
 		};
 	}
 

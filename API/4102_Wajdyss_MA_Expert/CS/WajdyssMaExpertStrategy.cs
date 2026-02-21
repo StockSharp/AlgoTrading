@@ -94,8 +94,8 @@ public class WajdyssMaExpertStrategy : Strategy
 	private readonly StrategyParam<int> _fridayCloseMinute;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _fastMa;
-	private LengthIndicator<decimal> _slowMa;
+	private DecimalLengthIndicator _fastMa;
+	private DecimalLengthIndicator _slowMa;
 	private readonly List<decimal> _fastHistory = new();
 	private readonly List<decimal> _slowHistory = new();
 	private decimal _pipSize;
@@ -386,9 +386,9 @@ public class WajdyssMaExpertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = InitialVolume;
 		_pipSize = CalculatePipSize();
@@ -709,15 +709,15 @@ public class WajdyssMaExpertStrategy : Strategy
 		return CandleType.Arg is TimeSpan span ? span : null;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Sma => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Sma => new SMA { Length = length },
+			MovingAverageMethods.Ema => new EMA { Length = length },
 			MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

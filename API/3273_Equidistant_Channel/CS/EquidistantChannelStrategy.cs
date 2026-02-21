@@ -250,25 +250,25 @@ public class EquidistantChannelStrategy : Strategy
 
 		_takeProfitMoney = Param(nameof(TakeProfitMoney), 10m)
 			.SetDisplay("TP Money", "Profit target in currency", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useTakeProfitPercent = Param(nameof(UseTakeProfitPercent), false)
 			.SetDisplay("Use TP (%)", "Close by percent of balance", "Risk");
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 10m)
 			.SetDisplay("TP Percent", "Percent of initial capital", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
 			.SetDisplay("Enable Trailing", "Activate trailing profit", "Risk");
 
 		_trailingTakeProfitMoney = Param(nameof(TrailingTakeProfitMoney), 40m)
 			.SetDisplay("Trail Activate", "Profit level that arms trailing", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopMoney = Param(nameof(TrailingStopMoney), 10m)
 			.SetDisplay("Trail Step", "Allowed pullback of floating profit", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useBollingerStop = Param(nameof(UseBollingerStop), true)
 			.SetDisplay("Use BB Stop", "Exit when price touches band", "Risk");
@@ -278,47 +278,47 @@ public class EquidistantChannelStrategy : Strategy
 
 		_breakevenTrigger = Param(nameof(BreakevenTrigger), 10m)
 			.SetDisplay("Breakeven Trigger", "Profit (points) to arm breakeven", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_breakevenOffset = Param(nameof(BreakevenOffset), 5m)
 			.SetDisplay("Breakeven Offset", "Extra distance (points) from entry", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetDisplay("BB Period", "Bollinger Bands period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetDisplay("BB Deviation", "Bollinger Bands width", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetDisplay("MACD Fast", "MACD fast EMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetDisplay("MACD Slow", "MACD slow EMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetDisplay("MACD Signal", "MACD signal EMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20)
 			.SetDisplay("Stop Loss", "Stop distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
 			.SetDisplay("Take Profit", "Take distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 40)
 			.SetDisplay("Trailing Stop", "Trailing distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetDisplay("Volume", "Order volume", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for calculations", "General");

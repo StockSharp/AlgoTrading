@@ -161,7 +161,7 @@ public class AutoTradeWithBollingerBandsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stoch K Period", "Stochastic %K length", "Indicators");
 
-		_stochDPeriod = Param(nameof(StochDPeriod), 3)
+		_stochD = { Length = Param }(nameof(StochDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stoch D Period", "Stochastic %D length", "Indicators");
 
@@ -178,9 +178,9 @@ public class AutoTradeWithBollingerBandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bollinger = new BollingerBands
 		{

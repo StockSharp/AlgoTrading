@@ -38,12 +38,12 @@ public class GrimSlashStrategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 15m)
 			.SetRange(0.1m, 100m)
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 5m)
 			.SetRange(0.1m, 100m)
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk Management")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -86,9 +86,9 @@ public class GrimSlashStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

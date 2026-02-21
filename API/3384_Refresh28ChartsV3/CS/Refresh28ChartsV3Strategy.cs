@@ -84,7 +84,7 @@ public class Refresh28ChartsV3Strategy : Strategy
 		_barsToRefresh = Param(nameof(BarsToRefresh), 50)
 			.SetDisplay("Bars To Refresh", "Minimal amount of history that needs to be cached", "History")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 		_symbols = Param(nameof(Symbols), string.Join(',', DefaultSymbols))
@@ -102,9 +102,9 @@ public class Refresh28ChartsV3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var securities = ResolveSecurities().ToArray();
 		if (securities.Length == 0)

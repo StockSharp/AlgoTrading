@@ -399,7 +399,7 @@ public class MarketMasterStrategy : Strategy
 		.SetDisplay("Stochastic %K", "%K period", "Indicators")
 		.SetGreaterThanZero();
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 		.SetDisplay("Stochastic %D", "%D period", "Indicators")
 		.SetGreaterThanZero();
 
@@ -484,9 +484,9 @@ public class MarketMasterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 		_atrHedge = new AverageTrueRange { Length = AtrHedgePeriod };
@@ -494,8 +494,7 @@ public class MarketMasterStrategy : Strategy
 		_bulls = new BullPower { Length = BullBearPeriod };
 		_bears = new BearPower { Length = BullBearPeriod };
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticKPeriod,
+		{ K = { Length = StochasticKPeriod },
 			K = { Length = StochasticSlowing },
 			D = { Length = StochasticDPeriod }
 		};
@@ -524,7 +523,7 @@ public class MarketMasterStrategy : Strategy
 		}
 		else
 		{
-			StartProtection();
+			StartProtection(null, null);
 		}
 	}
 

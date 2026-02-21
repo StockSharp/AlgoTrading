@@ -92,7 +92,7 @@ public class DispersionTradingStrategy : Strategy
 		_minTradeUsd = Param(nameof(MinTradeUsd), 100m)
 			.SetDisplay("Minimum Trade USD", "Minimal order value", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for analysis", "General");
 	}
 
@@ -114,9 +114,9 @@ public class DispersionTradingStrategy : Strategy
 		_open = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("IndexSec is not set.");

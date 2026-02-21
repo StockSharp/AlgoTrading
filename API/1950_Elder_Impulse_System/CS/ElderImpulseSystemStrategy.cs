@@ -81,22 +81,22 @@ public class ElderImpulseSystemStrategy : Strategy
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 13)
 		.SetDisplay("EMA Period", "Period for EMA calculation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 21, 1);
 		
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 		.SetDisplay("MACD Fast Period", "Fast EMA period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 20, 1);
 		
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 		.SetDisplay("MACD Slow Period", "Slow EMA period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 1);
 		
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 		.SetDisplay("MACD Signal Period", "Signal EMA period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 15, 1);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -125,7 +125,7 @@ public class ElderImpulseSystemStrategy : Strategy
 	{
 		base.OnStarted(time);
 		
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =

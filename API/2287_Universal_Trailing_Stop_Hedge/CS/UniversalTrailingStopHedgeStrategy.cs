@@ -121,7 +121,7 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "ATR calculation period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop distance", "Indicators")
@@ -137,7 +137,7 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 
 		_maPeriod = Param(nameof(MaPeriod), 34)
 			.SetDisplay("MA Period", "Moving average period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_percentProfit = Param(nameof(PercentProfit), 50m)
 			.SetDisplay("Percent Profit", "Percent of profit to trail", "Risk")
@@ -162,10 +162,10 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		switch (Mode)
@@ -179,7 +179,7 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 				subscription.Bind(sar, ProcessParabolic).Start();
 				break;
 			case TrailingModes.MovingAverage:
-				var ma = new SimpleMovingAverage { Length = MaPeriod };
+				var ma = new SMA { Length = MaPeriod };
 				subscription.Bind(ma, ProcessMa).Start();
 				break;
 			case TrailingModes.Percent:

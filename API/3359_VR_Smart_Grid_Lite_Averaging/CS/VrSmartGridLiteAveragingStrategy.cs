@@ -55,16 +55,16 @@ public class VrSmartGridLiteAveragingStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 300m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Target distance for single position exits", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_startVolume = Param(nameof(StartVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Start Volume", "Initial trade volume for the first grid order", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_maxVolume = Param(nameof(MaxVolume), 2.56m)
 			.SetDisplay("Max Volume", "Maximum allowed trade volume per order", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_closeMode = Param(nameof(Mode), CloseModes.Average)
 			.SetDisplay("Close Mode", "Averaging or partial close logic for managing the grid", "Risk Management");
@@ -72,12 +72,12 @@ public class VrSmartGridLiteAveragingStrategy : Strategy
 		_orderStepPips = Param(nameof(OrderStepPips), 390m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Step (pips)", "Minimum distance before adding a new grid order", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_minimalProfitPips = Param(nameof(MinimalProfitPips), 70m)
 			.SetGreaterThanZero()
 			.SetDisplay("Minimal Profit (pips)", "Profit buffer added to the averaging exit price", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Source candle type for decision making", "General");
@@ -162,11 +162,11 @@ public class VrSmartGridLiteAveragingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 		_pipSize = CalculatePipSize();
 
 		var subscription = SubscribeCandles(CandleType);

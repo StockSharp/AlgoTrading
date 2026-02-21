@@ -73,17 +73,17 @@ public class SMADirectionalMatrixLuxAlgoStrategy : Strategy
 	{
 		_min = Param(nameof(Min), 15)
 			.SetDisplay("Min Lookback", "Minimum lookback period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 1);
 
 		_max = Param(nameof(Max), 28)
 			.SetDisplay("Max Lookback", "Maximum lookback period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 1);
 
 		_columns = Param(nameof(Columns), 4)
 			.SetDisplay("Columns", "Number of columns in matrix", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 6, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -107,9 +107,9 @@ public class SMADirectionalMatrixLuxAlgoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		for (var i = Min; i <= Max; i++)
 		{

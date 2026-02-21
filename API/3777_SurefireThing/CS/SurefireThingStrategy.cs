@@ -40,22 +40,22 @@ public class SurefireThingStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume submitted with each pending order.", "General")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10m)
 			.SetNotNegative()
 			.SetDisplay("Take-Profit Points", "Distance in price steps used for take-profit orders.", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 15m)
 			.SetNotNegative()
 			.SetDisplay("Stop-Loss Points", "Distance in price steps used for stop-loss orders.", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_rangeMultiplier = Param(nameof(RangeMultiplier), 1.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Multiplier", "Multiplier applied to the previous candle range (1.1 in the original EA).", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe processed by the strategy.", "General");
@@ -124,9 +124,9 @@ public class SurefireThingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -169,11 +169,11 @@ public class SurefireThingStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var currentDay = candle.OpenTime.UtcDateTime.Date;
+		var currentDay = candle.OpenTime.Date;
 
 		if (_previousCandle != null)
 		{
-			var previousDay = _previousCandle.OpenTime.UtcDateTime.Date;
+			var previousDay = _previousCandle.OpenTime.Date;
 
 			if (currentDay > previousDay)
 			{

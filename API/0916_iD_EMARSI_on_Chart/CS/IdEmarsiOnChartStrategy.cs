@@ -123,12 +123,12 @@ public class IdEmarsiOnChartStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -153,8 +153,8 @@ public class IdEmarsiOnChartStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var rsiValue = _rsi.Process(candle).ToDecimal();
-		var emaValue = _ema.Process(rsiValue, candle.OpenTime, true).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle).ToDecimal();
+		var emaValue = _ema.Process(rsiValue, candle.OpenTime)).ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

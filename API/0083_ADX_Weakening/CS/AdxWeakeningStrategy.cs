@@ -71,17 +71,17 @@ public class AdxWeakeningStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
 			.SetRange(7, 28)
-			.SetCanOptimize(true);
+			;
 			
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetDisplay("MA Period", "Period for moving average", "Indicators")
 			.SetRange(10, 50)
-			.SetCanOptimize(true);
+			;
 			
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 			.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
 			.SetRange(1m, 3m)
-			.SetCanOptimize(true);
+			;
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -101,9 +101,9 @@ public class AdxWeakeningStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Enable position protection using stop-loss
 		StartProtection(
@@ -115,7 +115,7 @@ public class AdxWeakeningStrategy : Strategy
 
 
 		// Create indicators
-		var ma = new SimpleMovingAverage { Length = MaPeriod };
+		var ma = new SMA { Length = MaPeriod };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
 		// Create subscription

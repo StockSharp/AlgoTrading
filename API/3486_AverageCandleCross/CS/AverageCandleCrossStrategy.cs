@@ -50,16 +50,16 @@ public class AverageCandleCrossStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _pipSize;
 
-	private LengthIndicator<decimal> _firstTrendFastMa;
-	private LengthIndicator<decimal> _firstTrendSlowMa;
-	private LengthIndicator<decimal> _secondTrendFastMa;
-	private LengthIndicator<decimal> _secondTrendSlowMa;
-	private LengthIndicator<decimal> _bullCrossMa;
-	private LengthIndicator<decimal> _firstTrendBearFastMa;
-	private LengthIndicator<decimal> _firstTrendBearSlowMa;
-	private LengthIndicator<decimal> _secondTrendBearFastMa;
-	private LengthIndicator<decimal> _secondTrendBearSlowMa;
-	private LengthIndicator<decimal> _bearCrossMa;
+	private DecimalLengthIndicator _firstTrendFastMa;
+	private DecimalLengthIndicator _firstTrendSlowMa;
+	private DecimalLengthIndicator _secondTrendFastMa;
+	private DecimalLengthIndicator _secondTrendSlowMa;
+	private DecimalLengthIndicator _bullCrossMa;
+	private DecimalLengthIndicator _firstTrendBearFastMa;
+	private DecimalLengthIndicator _firstTrendBearSlowMa;
+	private DecimalLengthIndicator _secondTrendBearFastMa;
+	private DecimalLengthIndicator _secondTrendBearSlowMa;
+	private DecimalLengthIndicator _bearCrossMa;
 
 	private decimal? _prevFirstTrendFast;
 	private decimal? _prevFirstTrendSlow;
@@ -97,47 +97,47 @@ public class AverageCandleCrossStrategy : Strategy
 		_firstTrendFastPeriod = Param(nameof(FirstTrendFastPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("First Trend Fast Period", "Period of the fast trend filter moving average (buy side)", "Buy Filters")
-		.SetCanOptimize(true);
+		;
 
 		_firstTrendFastMethod = Param(nameof(FirstTrendFastMethod), MaMethodOptions.Simple)
 		.SetDisplay("First Trend Fast Method", "Smoothing method for the fast trend filter (buy side)", "Buy Filters")
-		.SetCanOptimize(true);
+		;
 
 		_firstTrendSlowPeriod = Param(nameof(FirstTrendSlowPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("First Trend Slow Period", "Period of the slow trend filter moving average (buy side)", "Buy Filters")
-		.SetCanOptimize(true);
+		;
 
 		_firstTrendSlowMethod = Param(nameof(FirstTrendSlowMethod), MaMethodOptions.Simple)
 		.SetDisplay("First Trend Slow Method", "Smoothing method for the slow trend filter (buy side)", "Buy Filters")
-		.SetCanOptimize(true);
+		;
 
 		_secondTrendFastPeriod = Param(nameof(SecondTrendFastPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Second Trend Fast Period", "Period of the secondary fast trend filter (buy side)", "Buy Filters")
-		.SetCanOptimize(true);
+		;
 
 		_secondTrendFastMethod = Param(nameof(SecondTrendFastMethod), MaMethodOptions.Simple)
 		.SetDisplay("Second Trend Fast Method", "Smoothing method for the secondary fast trend filter (buy side)", "Buy Filters")
-		.SetCanOptimize(true);
+		;
 
 		_secondTrendSlowPeriod = Param(nameof(SecondTrendSlowPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Second Trend Slow Period", "Period of the secondary slow trend filter (buy side)", "Buy Filters")
-		.SetCanOptimize(true);
+		;
 
 		_secondTrendSlowMethod = Param(nameof(SecondTrendSlowMethod), MaMethodOptions.Simple)
 		.SetDisplay("Second Trend Slow Method", "Smoothing method for the secondary slow trend filter (buy side)", "Buy Filters")
-		.SetCanOptimize(true);
+		;
 
 		_bullCrossPeriod = Param(nameof(BullCrossPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Bull Cross Period", "Period of the moving average used for bullish candle cross detection", "Buy Filters")
-		.SetCanOptimize(true);
+		;
 
 		_bullCrossMethod = Param(nameof(BullCrossMethod), MaMethodOptions.Simple)
 		.SetDisplay("Bull Cross Method", "Smoothing method for the candle cross moving average (buy side)", "Buy Filters")
-		.SetCanOptimize(true);
+		;
 
 		_buyVolume = Param(nameof(BuyVolume), 0.01m)
 		.SetGreaterThanZero()
@@ -154,47 +154,47 @@ public class AverageCandleCrossStrategy : Strategy
 		_firstTrendBearFastPeriod = Param(nameof(FirstTrendBearFastPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("First Trend Fast Period (Sell)", "Period of the fast trend filter moving average (sell side)", "Sell Filters")
-		.SetCanOptimize(true);
+		;
 
 		_firstTrendBearFastMethod = Param(nameof(FirstTrendBearFastMethod), MaMethodOptions.Simple)
 		.SetDisplay("First Trend Fast Method (Sell)", "Smoothing method for the fast trend filter (sell side)", "Sell Filters")
-		.SetCanOptimize(true);
+		;
 
 		_firstTrendBearSlowPeriod = Param(nameof(FirstTrendBearSlowPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("First Trend Slow Period (Sell)", "Period of the slow trend filter moving average (sell side)", "Sell Filters")
-		.SetCanOptimize(true);
+		;
 
 		_firstTrendBearSlowMethod = Param(nameof(FirstTrendBearSlowMethod), MaMethodOptions.Simple)
 		.SetDisplay("First Trend Slow Method (Sell)", "Smoothing method for the slow trend filter (sell side)", "Sell Filters")
-		.SetCanOptimize(true);
+		;
 
 		_secondTrendBearFastPeriod = Param(nameof(SecondTrendBearFastPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Second Trend Fast Period (Sell)", "Period of the secondary fast trend filter (sell side)", "Sell Filters")
-		.SetCanOptimize(true);
+		;
 
 		_secondTrendBearFastMethod = Param(nameof(SecondTrendBearFastMethod), MaMethodOptions.Simple)
 		.SetDisplay("Second Trend Fast Method (Sell)", "Smoothing method for the secondary fast trend filter (sell side)", "Sell Filters")
-		.SetCanOptimize(true);
+		;
 
 		_secondTrendBearSlowPeriod = Param(nameof(SecondTrendBearSlowPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Second Trend Slow Period (Sell)", "Period of the secondary slow trend filter (sell side)", "Sell Filters")
-		.SetCanOptimize(true);
+		;
 
 		_secondTrendBearSlowMethod = Param(nameof(SecondTrendBearSlowMethod), MaMethodOptions.Simple)
 		.SetDisplay("Second Trend Slow Method (Sell)", "Smoothing method for the secondary slow trend filter (sell side)", "Sell Filters")
-		.SetCanOptimize(true);
+		;
 
 		_bearCrossPeriod = Param(nameof(BearCrossPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Bear Cross Period", "Period of the moving average used for bearish candle cross detection", "Sell Filters")
-		.SetCanOptimize(true);
+		;
 
 		_bearCrossMethod = Param(nameof(BearCrossMethod), MaMethodOptions.Simple)
 		.SetDisplay("Bear Cross Method", "Smoothing method for the candle cross moving average (sell side)", "Sell Filters")
-		.SetCanOptimize(true);
+		;
 
 		_sellVolume = Param(nameof(SellVolume), 0.01m)
 		.SetGreaterThanZero()
@@ -400,9 +400,9 @@ public class AverageCandleCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_firstTrendFastMa = CreateMovingAverage(FirstTrendFastMethod, FirstTrendFastPeriod);
 		_firstTrendSlowMa = CreateMovingAverage(FirstTrendSlowMethod, FirstTrendSlowPeriod);
@@ -569,12 +569,12 @@ public class AverageCandleCrossStrategy : Strategy
 		return percent > 0m ? stopDistance * (percent / 100m) : 0m;
 	}
 
-	private static decimal? ProcessIndicator(LengthIndicator<decimal> indicator, decimal input, DateTimeOffset time)
+	private static decimal? ProcessIndicator(DecimalLengthIndicator indicator, decimal input, DateTimeOffset time)
 	{
 		if (indicator == null)
 		return null;
 
-		var value = indicator.Process(input, time, true);
+		var value = indicator.Process(new DecimalIndicatorValue(indicator, input, time.UtcDateTime));
 		return value.IsFinal ? value.ToDecimal() : (decimal?)null;
 	}
 
@@ -642,15 +642,15 @@ public class AverageCandleCrossStrategy : Strategy
 		CancelProtection(ref _takeProfitOrder);
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethodOptions method, int period)
+	private static DecimalLengthIndicator CreateMovingAverage(MaMethodOptions method, int period)
 	{
 		return method switch
 		{
-			MaMethodOptions.Simple => new SimpleMovingAverage { Length = period },
-			MaMethodOptions.Exponential => new ExponentialMovingAverage { Length = period },
+			MaMethodOptions.Simple => new SMA { Length = period },
+			MaMethodOptions.Exponential => new EMA { Length = period },
 			MaMethodOptions.Smoothed => new SmoothedMovingAverage { Length = period },
 			MaMethodOptions.LinearWeighted => new WeightedMovingAverage { Length = period },
-			_ => new SimpleMovingAverage { Length = period }
+			_ => new SMA { Length = period }
 		};
 	}
 

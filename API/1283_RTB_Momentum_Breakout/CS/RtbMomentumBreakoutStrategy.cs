@@ -79,9 +79,9 @@ protected override void OnReseted()
 	_prevSupport = null;
 }
 
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	var emaFast = new EMA { Length = EmaFastLength };
 	var emaSlow = new EMA { Length = EmaSlowLength };
@@ -127,7 +127,7 @@ private void ProcessCandle(ICandleMessage candle, decimal emaFastVal, decimal em
 
 	if (Position > 0)
 	{
-		var stopLoss = PositionAvgPrice - atrVal * AtrStopMultiplier;
+		var stopLoss = PositionPrice - atrVal * AtrStopMultiplier;
 		var trail = longHighVal - atrVal * AtrTrailMultiplier;
 		var exitPrice = Math.Max(stopLoss, trail);
 
@@ -136,7 +136,7 @@ private void ProcessCandle(ICandleMessage candle, decimal emaFastVal, decimal em
 	}
 	else if (Position < 0)
 	{
-		var stopLoss = PositionAvgPrice + atrVal * AtrStopMultiplier;
+		var stopLoss = PositionPrice + atrVal * AtrStopMultiplier;
 		var trail = shortLowVal + atrVal * AtrTrailMultiplier;
 		var exitPrice = Math.Min(stopLoss, trail);
 

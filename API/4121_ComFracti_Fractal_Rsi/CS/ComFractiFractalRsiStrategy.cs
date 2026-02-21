@@ -53,59 +53,59 @@ public class ComFractiFractalRsiStrategy : Strategy
 	{
 		_takeProfitPips = Param(nameof(TakeProfitPips), 700m)
 		.SetDisplay("Take Profit (pips)", "Distance to the profit target expressed in pips", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 2500m)
 		.SetDisplay("Stop Loss (pips)", "Distance to the stop-loss expressed in pips", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_expiryMinutes = Param(nameof(ExpiryMinutes), 5555)
 		.SetDisplay("Expiry (minutes)", "Close the position after this many minutes", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_closeOnOppositeSignal = Param(nameof(CloseOnOppositeSignal), false)
 		.SetDisplay("Close On Opposite", "Exit when the signal reverses", "Trading")
-		.SetCanOptimize(false);
+		;
 
 		_primaryBuyShift = Param(nameof(PrimaryBuyShift), 3)
 		.SetDisplay("Primary Buy Shift", "Bars back to inspect the fractal on the trading timeframe", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_higherBuyShift = Param(nameof(HigherBuyShift), 3)
 		.SetDisplay("Higher Buy Shift", "Bars back to inspect the fractal on the higher timeframe", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_primarySellShift = Param(nameof(PrimarySellShift), 3)
 		.SetDisplay("Primary Sell Shift", "Bars back to inspect the fractal on the trading timeframe for shorts", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_higherSellShift = Param(nameof(HigherSellShift), 3)
 		.SetDisplay("Higher Sell Shift", "Bars back to inspect the higher timeframe fractal for shorts", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_rsiBuyOffset = Param(nameof(RsiBuyOffset), 3m)
 		.SetDisplay("RSI Buy Offset", "Offset below 50 required to enable long setups", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_rsiSellOffset = Param(nameof(RsiSellOffset), 3m)
 		.SetDisplay("RSI Sell Offset", "Offset above 50 required to enable short setups", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 3)
 		.SetDisplay("RSI Period", "Length of the daily RSI filter", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_mainCandleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Main Timeframe", "Candle type used for trade execution", "Data")
-		.SetCanOptimize(false);
+		;
 
 		_higherCandleType = Param(nameof(HigherTimeFrame), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Higher Timeframe", "Candle type used for trend confirmation", "Data")
-		.SetCanOptimize(false);
+		;
 
-		_dailyCandleType = Param(nameof(DailyTimeFrame), TimeSpan.FromDays(1).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyTimeFrame), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Daily Timeframe", "Candle type used for the RSI filter", "Data")
-		.SetCanOptimize(false);
+		;
 	}
 
 	/// <summary>
@@ -252,9 +252,9 @@ public class ComFractiFractalRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_dailyRsi = new RelativeStrengthIndex
 		{
@@ -286,7 +286,7 @@ public class ComFractiFractalRsiStrategy : Strategy
 
 		_dailyRsi.Length = RsiPeriod;
 
-		var indicatorValue = _dailyRsi.Process(candle.OpenPrice, candle.CloseTime, true);
+		var indicatorValue = _dailyRsi.Process(new DecimalIndicatorValue(_dailyRsi, candle.OpenPrice, candle.CloseTime));
 		if (!indicatorValue.IsFinal)
 		return;
 

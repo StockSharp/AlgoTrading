@@ -172,33 +172,33 @@ public class IcciIrsiStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI Period", "Number of bars for the CCI smoothing", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 2);
 
 		_cciUpperLevel = Param(nameof(CciUpperLevel), 80m)
 		.SetDisplay("CCI Upper", "Overbought threshold for CCI", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60m, 140m, 10m);
 
 		_cciLowerLevel = Param(nameof(CciLowerLevel), -80m)
 		.SetDisplay("CCI Lower", "Oversold threshold for CCI", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(-140m, -40m, 10m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 42)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Number of bars for the RSI calculation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 60, 5);
 
 		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 60m)
 		.SetDisplay("RSI Upper", "Overbought threshold for RSI", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(55m, 80m, 5m);
 
 		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 30m)
 		.SetDisplay("RSI Lower", "Oversold threshold for RSI", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 45m, 5m);
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
@@ -207,31 +207,31 @@ public class IcciIrsiStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trade Volume", "Volume submitted with each market order", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1m, 0.1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
 		.SetNonNegative()
 		.SetDisplay("Stop Loss", "Protective stop-loss distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 200m, 20m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 140m)
 		.SetNonNegative()
 		.SetDisplay("Take Profit", "Profit target distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40m, 300m, 20m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 		.SetNonNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 50m, 5m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 		.SetNonNegative()
 		.SetDisplay("Trailing Step", "Minimum progress before updating the trailing stop", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 20m, 2m);
 	}
 
@@ -250,9 +250,9 @@ public class IcciIrsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 

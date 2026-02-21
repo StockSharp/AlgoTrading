@@ -71,7 +71,7 @@ public class JmaSlopeStrategy : Strategy
 		_jmaLength = Param(nameof(JmaLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("JMA Length", "Period for Jurik Moving Average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_jmaPhase = Param(nameof(JmaPhase), 0)
 			.SetDisplay("JMA Phase", "Phase parameter", "Indicators");
@@ -100,9 +100,9 @@ public class JmaSlopeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var jma = new JurikMovingAverage { Length = JmaLength, Phase = JmaPhase };
 

@@ -51,50 +51,50 @@ public class Surfing30Strategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume applied to every trade.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 80)
 			.SetNotNegative()
 			.SetDisplay("Take Profit Points", "Distance to the take profit in instrument points.", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss Points", "Distance to the stop loss in instrument points.", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 150, 10);
 
 		_maPeriod = Param(nameof(MaPeriod), 50)
 			.SetGreaterThan(1)
 			.SetDisplay("EMA Period", "Length of the exponential moving averages calculated over highs and lows.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 120, 5);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 10)
 			.SetGreaterThan(1)
 			.SetDisplay("RSI Period", "Length of the RSI filter.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_longRsiThreshold = Param(nameof(LongRsiThreshold), 40m)
 			.SetDisplay("Long RSI Threshold", "Minimum RSI value required for long entries.", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 60m, 5m);
 
 		_shortRsiThreshold = Param(nameof(ShortRsiThreshold), 65m)
 			.SetDisplay("Short RSI Threshold", "Maximum RSI value allowed for short entries.", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40m, 80m, 5m);
 
 		_tradeStartHour = Param(nameof(TradeStartHour), 8)
 			.SetDisplay("Trade Start Hour", "Hour of the day when new trades may start.", "Sessions")
-			.SetCanOptimize(false);
+			;
 
 		_tradeEndHour = Param(nameof(TradeEndHour), 18)
 			.SetDisplay("Trade End Hour", "Hour of the day when all positions are closed.", "Sessions")
-			.SetCanOptimize(false);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Aggregation used for calculations.", "Data");
@@ -213,9 +213,9 @@ public class Surfing30Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 

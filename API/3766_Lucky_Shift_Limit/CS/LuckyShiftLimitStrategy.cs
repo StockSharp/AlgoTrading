@@ -57,13 +57,13 @@ public class LuckyShiftLimitStrategy : Strategy
 		_shiftPoints = Param(nameof(ShiftPoints), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Shift points", "Minimum pip delta between consecutive quotes", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_limitPoints = Param(nameof(LimitPoints), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Limit points", "Maximum allowed drawdown in pips", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 80, 5);
 	}
 
@@ -81,9 +81,9 @@ public class LuckyShiftLimitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_shiftOffset = CalculatePriceOffset(ShiftPoints);
 		_limitOffset = CalculatePriceOffset(LimitPoints);

@@ -90,43 +90,43 @@ public class TechnicalTraderStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 25)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA", "Fast moving average period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA", "Slow moving average period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss Points", "Stop loss distance in price steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 80, 10);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit Points", "Take profit distance in price steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 200, 10);
 
 		_resistanceThreshold = Param(nameof(ResistanceThreshold), 15)
 		.SetGreaterThanZero()
 		.SetDisplay("Cluster Threshold", "Minimum occurrences for price level", "Levels")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 5);
 
 		_historyDepth = Param(nameof(HistoryDepth), 500)
 		.SetGreaterThanZero()
 		.SetDisplay("History Depth", "Number of candles for clustering", "Levels")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100, 600, 50);
 
 		_levelTolerance = Param(nameof(LevelTolerance), 0.0005m)
 		.SetNotNegative()
 		.SetDisplay("Level Tolerance", "Maximum distance from cluster", "Levels")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.0001m, 0.001m, 0.0001m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -154,12 +154,12 @@ public class TechnicalTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
-		_slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
+		_fastMa = new SMA { Length = FastMaPeriod };
+		_slowMa = new SMA { Length = SlowMaPeriod };
 
 		var candleSubscription = SubscribeCandles(CandleType);
 		candleSubscription

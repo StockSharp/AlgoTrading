@@ -45,7 +45,7 @@ public class RenkoStrategy : Strategy
 		_boxSize = Param(nameof(BoxSize), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Box Size", "Renko brick size", "Renko")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 20m, 1m);
 
 	}
@@ -63,9 +63,9 @@ public class RenkoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(_renkoType);
 		subscription
@@ -79,7 +79,7 @@ public class RenkoStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

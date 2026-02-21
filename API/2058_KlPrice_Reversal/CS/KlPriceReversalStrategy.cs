@@ -101,23 +101,23 @@ public class KlPriceReversalStrategy : Strategy
 		_priceMaLength = Param(nameof(PriceMaLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Price MA Length", "SMA period for price smoothing", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 10);
 
 		_atrLength = Param(nameof(AtrLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period for range estimation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_upLevel = Param(nameof(UpLevel), 50m)
 			.SetDisplay("Upper Level", "Upper threshold for signals", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 5);
 
 		_downLevel = Param(nameof(DownLevel), -50m)
 			.SetDisplay("Lower Level", "Lower threshold for signals", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-100, -20, 5);
 
 		_enableBuy = Param(nameof(EnableBuy), true)
@@ -134,14 +134,13 @@ public class KlPriceReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var priceMa = new SimpleMovingAverage
+		var priceMa = new SMA
 		{
-			Length = PriceMaLength,
-			CandlePrice = CandlePrice.Close
+			Length = PriceMaLength
 		};
 
 		var atr = new AverageTrueRange
@@ -201,6 +200,6 @@ public class KlPriceReversalStrategy : Strategy
 			})
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 }

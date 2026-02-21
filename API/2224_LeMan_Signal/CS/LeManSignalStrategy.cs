@@ -62,13 +62,13 @@ public class LeManSignalStrategy : Strategy
 		_period = Param(nameof(Period), 12)
 			.SetDisplay("Period", "LeManSignal lookback period", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Offset for confirmed signal", "Indicator")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 2, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -90,9 +90,9 @@ public class LeManSignalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

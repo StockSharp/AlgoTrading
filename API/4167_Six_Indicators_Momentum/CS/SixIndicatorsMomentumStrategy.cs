@@ -397,9 +397,9 @@ public class SixIndicatorsMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var security = Security;
 		if (security != null)
@@ -418,8 +418,7 @@ public class SixIndicatorsMomentumStrategy : Strategy
 
 		var awesome = new AwesomeOscillator();
 		var stochastic = new StochasticOscillator
-		{
-			Length = 5,
+		{ K = { Length = 5 },
 		K = { Length = 5 },
 		D = { Length = 5 }
 		};

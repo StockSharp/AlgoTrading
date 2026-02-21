@@ -153,17 +153,17 @@ private readonly StrategyParam<Sides?> _tradeDirection;
 		_atrLength = Param(nameof(AtrLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period for Supertrend", "Supertrend")
-			.SetCanOptimize(true);
+			;
 
 		_factor = Param(nameof(Factor), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Factor", "ATR multiplier", "Supertrend")
-			.SetCanOptimize(true);
+			;
 
 		_emaLength = Param(nameof(EmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Length for EMA filter", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_useEmaFilter = Param(nameof(UseEmaFilter), true)
 			.SetDisplay("Use EMA", "Enable EMA filter", "Filters");
@@ -174,15 +174,15 @@ private readonly StrategyParam<Sides?> _tradeDirection;
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Length for RSI", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 50m)
 			.SetDisplay("RSI Buy", "RSI level for longs", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_rsiSellLevel = Param(nameof(RsiSellLevel), 50m)
 			.SetDisplay("RSI Sell", "RSI level for shorts", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_useMacdFilter = Param(nameof(UseMacdFilter), true)
 			.SetDisplay("Use MACD", "Enable MACD filter", "Filters");
@@ -190,17 +190,17 @@ private readonly StrategyParam<Sides?> _tradeDirection;
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA length", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA length", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal length", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_useCciFilter = Param(nameof(UseCciFilter), true)
 			.SetDisplay("Use CCI", "Enable CCI filter", "Filters");
@@ -208,19 +208,19 @@ private readonly StrategyParam<Sides?> _tradeDirection;
 		_cciLength = Param(nameof(CciLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Length", "Length for CCI", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_cciBuyLevel = Param(nameof(CciBuyLevel), 200m)
 			.SetDisplay("CCI Buy", "CCI level for longs", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_cciSellLevel = Param(nameof(CciSellLevel), -200m)
 			.SetDisplay("CCI Sell", "CCI level for shorts", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_mode = Param(nameof(Mode), "Pullback")
 			.SetDisplay("Mode", "Entry mode", "General")
-			.SetOptions("Pullback", "Simple");
+			.SetOptimizeValues(new[] { "Pullback", "Simple" });
 
 		_tradeDirection = Param(nameof(TradeDirection), (Sides?)null)
 			.SetDisplay("Trade Direction", "Allowed trade sides", "General");
@@ -251,12 +251,12 @@ private readonly StrategyParam<Sides?> _tradeDirection;
 		base.OnStarted(time);
 
 		_atr = new AverageTrueRange { Length = AtrLength };
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFastLength,
-			LongPeriod = MacdSlowLength,
+			ShortMa = { Length = MacdFastLength },
+			LongMa = { Length = MacdSlowLength },
 			SignalPeriod = MacdSignalLength
 		};
 		_cci = new CommodityChannelIndex { Length = CciLength };

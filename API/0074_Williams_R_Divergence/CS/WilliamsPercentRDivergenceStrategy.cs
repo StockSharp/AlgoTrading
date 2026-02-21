@@ -76,13 +76,13 @@ public class WilliamsPercentRDivergenceStrategy : Strategy
 		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Period for Williams %R calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_divergencePeriod = Param(nameof(DivergencePeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Divergence Period", "Number of periods to look back for divergence", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -91,7 +91,7 @@ public class WilliamsPercentRDivergenceStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 	}
 
@@ -114,9 +114,9 @@ public class WilliamsPercentRDivergenceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Williams %R indicator
 		_williamsR = new WilliamsR

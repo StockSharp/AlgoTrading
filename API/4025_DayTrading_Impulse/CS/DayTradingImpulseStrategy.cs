@@ -61,22 +61,22 @@ public class DayTradingImpulseStrategy : Strategy
 		_lotSize = Param(nameof(LotSize), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Trade volume used for each market entry", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 15m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Distance used to trail profitable positions", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Fixed profit target measured in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Protective stop distance measured in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_slippagePoints = Param(nameof(SlippagePoints), 3m)
 			.SetNotNegative()
@@ -88,64 +88,64 @@ public class DayTradingImpulseStrategy : Strategy
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Length of the fast EMA in MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Length of the slow EMA in MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Length of the MACD signal EMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticLength = Param(nameof(StochasticLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "Period of the %K line", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticSignal = Param(nameof(StochasticSignal), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Period of the %D smoothing", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticSlow = Param(nameof(StochasticSlow), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Slowing", "Final smoothing applied to %K", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_stochasticBuyThreshold = Param(nameof(StochasticBuyThreshold), 35m)
 			.SetDisplay("Stochastic Buy", "Oversold %K threshold for long entries", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticSellThreshold = Param(nameof(StochasticSellThreshold), 60m)
 			.SetDisplay("Stochastic Sell", "Overbought %K threshold for short entries", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Number of candles used for Momentum", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_momentumNeutralLevel = Param(nameof(MomentumNeutralLevel), 100m)
 			.SetDisplay("Momentum Neutral", "Neutral momentum value used for signal confirmation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_sarAcceleration = Param(nameof(SarAcceleration), 0.02m)
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Acceleration", "Initial acceleration factor of Parabolic SAR", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Step", "Increment applied to the acceleration factor", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_sarMaximum = Param(nameof(SarMaximum), 0.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Maximum", "Maximum acceleration factor of Parabolic SAR", "Indicators")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -367,7 +367,7 @@ public class DayTradingImpulseStrategy : Strategy
 		_stochastic = new StochasticOscillator
 		{
 			KPeriod = StochasticLength,
-			DPeriod = StochasticSignal,
+			D = { Length = StochasticSignal },
 			Slowing = StochasticSlow,
 		};
 

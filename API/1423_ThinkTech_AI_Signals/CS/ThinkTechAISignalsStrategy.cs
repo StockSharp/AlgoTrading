@@ -51,17 +51,17 @@ public class ThinkTechAISignalsStrategy : Strategy
 	{
 		_riskRewardRatio = Param(nameof(RiskRewardRatio), 2m)
 		.SetDisplay("Risk/Reward", "Profit to risk ratio", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 		.SetDisplay("ATR Length", "ATR calculation length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 5);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 		.SetDisplay("ATR Mult", "ATR multiplier for stop", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3m, 0.5m);
 
 		_useTrendFilter = Param(nameof(UseTrendFilter), true)
@@ -96,12 +96,12 @@ public class ThinkTechAISignalsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrLength };
-		var ema = new ExponentialMovingAverage { Length = 50 };
+		var ema = new EMA { Length = 50 };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

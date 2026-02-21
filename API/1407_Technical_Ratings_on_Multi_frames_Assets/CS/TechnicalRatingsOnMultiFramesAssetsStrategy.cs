@@ -89,19 +89,19 @@ public class TechnicalRatingsOnMultiFramesAssetsStrategy : Strategy
 		_midCandleType = Param(nameof(MidCandleType), TimeSpan.FromMinutes(240).TimeFrame())
 			.SetDisplay("Middle Time Frame", "Middle candle interval", "General");
 
-		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Long Time Frame", "Longest candle interval", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 	}
 
@@ -124,11 +124,11 @@ public class TechnicalRatingsOnMultiFramesAssetsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		CreateSubscription(ShortCandleType, ProcessShort);
 		CreateSubscription(MidCandleType, ProcessMid);

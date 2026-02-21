@@ -48,12 +48,12 @@ public TradeChannelStrategy()
 {
 _channelPeriod = Param(nameof(ChannelPeriod), 20)
 .SetDisplay("Channel Period", "Donchian channel period", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(10, 50, 5);
 
 _atrPeriod = Param(nameof(AtrPeriod), 4)
 .SetDisplay("ATR Period", "ATR length for stop calculation", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(2, 14, 1);
 
 _trailing = Param(nameof(Trailing), 0m)
@@ -79,9 +79,9 @@ _stopPrice = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var donchian = new DonchianChannels { Length = ChannelPeriod };
 var atr = new ATR { Length = AtrPeriod };
@@ -91,7 +91,7 @@ subscription
 .BindEx(donchian, atr, ProcessCandle)
 .Start();
 
-StartProtection();
+StartProtection(null, null);
 
 var area = CreateChartArea();
 if (area != null)

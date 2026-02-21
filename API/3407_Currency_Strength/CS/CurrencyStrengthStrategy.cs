@@ -105,22 +105,22 @@ public class CurrencyStrengthStrategy : Strategy
 
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 			.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 20, 1);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 			.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 150, 5);
 
 		_momentumLength = Param(nameof(MomentumLength), 14)
 			.SetDisplay("Momentum Length", "Number of candles used for the momentum calculation.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 			.SetDisplay("Momentum Threshold", "Absolute momentum level required to open a trade.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1.5m, 0.1m);
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
@@ -240,8 +240,8 @@ public class CurrencyStrengthStrategy : Strategy
 		_momentumIndicator = new Momentum { Length = MomentumLength };
 		_macdIndicator = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFastLength,
-			LongPeriod = MacdSlowLength,
+			ShortMa = { Length = MacdFastLength },
+			LongMa = { Length = MacdSlowLength },
 			SignalPeriod = MacdSignalLength
 		};
 
@@ -292,10 +292,10 @@ public class CurrencyStrengthStrategy : Strategy
 
 		var typicalPrice = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
 
-		var fastValue = _fastMa.Process(typicalPrice, candle.OpenTime, true);
-		var slowValue = _slowMa.Process(typicalPrice, candle.OpenTime, true);
-		var momentumValue = _momentumIndicator.Process(candle.ClosePrice, candle.OpenTime, true);
-		var macdRaw = _macdIndicator.Process(candle.ClosePrice, candle.OpenTime, true);
+		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, typicalPrice, candle.OpenTime));
+		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, typicalPrice, candle.OpenTime));
+		var momentumValue = _momentumIndicator.Process(new DecimalIndicatorValue(_momentumIndicator, candle.ClosePrice, candle.OpenTime));
+		var macdRaw = _macdIndicator.Process(new DecimalIndicatorValue(_macdIndicator, candle.ClosePrice, candle.OpenTime));
 
 		if (!fastValue.IsFinal || !slowValue.IsFinal || !momentumValue.IsFinal)
 			return;

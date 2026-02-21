@@ -40,31 +40,31 @@ public class AhHmMfiStrategy : Strategy
 
 		_mfiPeriod = Param(nameof(MfiPeriod), 47)
 			.SetDisplay("MFI Period", "Lookback period for the Money Flow Index", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_maPeriod = Param(nameof(MaPeriod), 5)
 			.SetDisplay("MA Period", "Length of the moving average used for trend detection", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_hammerEntryThreshold = Param(nameof(HammerEntryThreshold), 40m)
 			.SetDisplay("Hammer MFI Threshold", "Maximum MFI value allowed to buy after a hammer", "Signals")
 			.SetRange(10m, 60m)
-			.SetCanOptimize(true);
+			;
 
 		_hangingEntryThreshold = Param(nameof(HangingEntryThreshold), 60m)
 			.SetDisplay("Hanging Man MFI Threshold", "Minimum MFI value required to sell after a hanging man", "Signals")
 			.SetRange(40m, 90m)
-			.SetCanOptimize(true);
+			;
 
 		_mfiUpperExitLevel = Param(nameof(MfiUpperExitLevel), 70m)
 			.SetDisplay("Upper Exit Level", "MFI level that triggers exits when crossed upward", "Risk")
 			.SetRange(50m, 90m)
-			.SetCanOptimize(true);
+			;
 
 		_mfiLowerExitLevel = Param(nameof(MfiLowerExitLevel), 30m)
 			.SetDisplay("Lower Exit Level", "MFI level that triggers exits when crossed downward", "Risk")
 			.SetRange(10m, 50m)
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -147,16 +147,16 @@ public class AhHmMfiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var mfi = new MoneyFlowIndex
 		{
 			Length = MfiPeriod
 		};
 
-		var average = new SimpleMovingAverage
+		var average = new SMA
 		{
 			Length = MaPeriod
 		};
@@ -167,7 +167,7 @@ public class AhHmMfiStrategy : Strategy
 			.BindEx(mfi, average, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue mfiValue, IIndicatorValue averageValue)

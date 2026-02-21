@@ -80,9 +80,9 @@ public class LuckyJumpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Determine minimal price increment.
 		_priceStep = Security.PriceStep ?? 1m;

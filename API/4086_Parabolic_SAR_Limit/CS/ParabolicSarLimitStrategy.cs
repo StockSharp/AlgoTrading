@@ -110,32 +110,32 @@ public class ParabolicSarLimitStrategy : Strategy
 	{
 		_sarStep = Param(nameof(SarStep), 0.009m)
 			.SetDisplay("SAR Step", "Acceleration factor for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.03m, 0.001m);
 
 		_sarMaximum = Param(nameof(SarMaximum), 0.2m)
 			.SetDisplay("SAR Maximum", "Maximum acceleration factor for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.5m, 0.05m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
 			.SetDisplay("Stop Loss (points)", "Stop loss distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1500m, 100m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
 			.SetDisplay("Take Profit (points)", "Take profit distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1500m, 100m);
 
 		_minOrderDistancePoints = Param(nameof(MinOrderDistancePoints), 0m)
 			.SetDisplay("Min Order Distance (points)", "Minimal distance between price and pending order", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 10m);
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetDisplay("Order Volume", "Volume for pending limit orders", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 2m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -165,9 +165,9 @@ public class ParabolicSarLimitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var parabolicSar = new ParabolicSar
 		{

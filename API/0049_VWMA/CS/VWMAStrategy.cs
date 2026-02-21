@@ -54,7 +54,7 @@ public class VWMAStrategy : Strategy
 		_vwmaPeriod = Param(nameof(VWMAPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("VWMA Period", "Period for Volume Weighted Moving Average calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -78,9 +78,9 @@ public class VWMAStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create VWMA indicator
 		var vwma = new VolumeWeightedMovingAverage { Length = VWMAPeriod };

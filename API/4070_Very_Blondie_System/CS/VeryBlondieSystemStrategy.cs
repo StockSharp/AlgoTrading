@@ -59,12 +59,12 @@ public class VeryBlondieSystemStrategy : Strategy
 		_limitPoints = Param(nameof(LimitPoints), 1000m)
 		.SetDisplay("Deviation Threshold", "Distance in points between price and range extreme", "General")
 		.SetRange(0m, 100_000m)
-		.SetCanOptimize(true);
+		;
 
 		_gridPoints = Param(nameof(GridPoints), 1500m)
 		.SetDisplay("Grid Step", "Distance in points between consecutive limit orders", "Orders")
 		.SetRange(0m, 100_000m)
-		.SetCanOptimize(true);
+		;
 
 		_gridOrderCount = Param(nameof(GridOrderCount), 4)
 		.SetGreaterThanZero()
@@ -73,12 +73,12 @@ public class VeryBlondieSystemStrategy : Strategy
 		_profitTarget = Param(nameof(ProfitTarget), 40m)
 		.SetDisplay("Profit Target", "Floating profit target in account currency", "Risk")
 		.SetRange(0m, 100_000m)
-		.SetCanOptimize(true);
+		;
 
 		_lockDownPoints = Param(nameof(LockDownPoints), 0m)
 		.SetDisplay("Lockdown Points", "Distance in points before activating break-even protection", "Risk")
 		.SetRange(0m, 100_000m)
-		.SetCanOptimize(true);
+		;
 
 		_pointValue = Param(nameof(PointValue), 0m)
 		.SetDisplay("Point Value", "Price change produced by one MT4 point (0 = auto from security)", "General")
@@ -184,14 +184,14 @@ public class VeryBlondieSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializePointMetrics();
 
-		_highest = new Highest { Length = PeriodLength, CandlePrice = CandlePrice.High };
-		_lowest = new Lowest { Length = PeriodLength, CandlePrice = CandlePrice.Low };
+		_highest = new Highest { Length = PeriodLength };
+		_lowest = new Lowest { Length = PeriodLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -327,7 +327,7 @@ public class VeryBlondieSystemStrategy : Strategy
 		if (ProfitTarget <= 0m)
 		return false;
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		if (entryPrice <= 0m)
 		return false;
 
@@ -346,7 +346,7 @@ public class VeryBlondieSystemStrategy : Strategy
 		if (_lockDistance <= 0m || Position == 0m)
 		return;
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		if (entryPrice <= 0m)
 		return;
 

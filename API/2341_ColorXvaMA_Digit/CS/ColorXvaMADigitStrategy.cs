@@ -63,13 +63,13 @@ public class ColorXvaMADigitStrategy : Strategy
 		_slowLength = Param(nameof(SlowLength), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "EMA period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 1);
 
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "JMA period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -92,9 +92,9 @@ public class ColorXvaMADigitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		_slowMa = new ExponentialMovingAverage { Length = SlowLength };
+		_slowMa = new EMA { Length = SlowLength };
 		_fastMa = new JurikMovingAverage { Length = FastLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -111,9 +111,9 @@ public class ColorXvaMADigitStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal slowValue, decimal fastValue)

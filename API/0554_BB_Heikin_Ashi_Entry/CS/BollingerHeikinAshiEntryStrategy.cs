@@ -66,12 +66,12 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 	{
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetDisplay("Bollinger Period", "Bollinger Bands length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetDisplay("Bollinger Deviation", "Bollinger Bands standard deviation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -112,9 +112,9 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bb = new BollingerBands
 		{
@@ -190,7 +190,7 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 			{
 				if (candle.HighPrice >= _firstTarget)
 				{
-					ClosePosition(Position / 2m);
+					SellMarket(Position / 2m);
 					_firstTargetReached = true;
 					_trailStop = _entryPrice;
 				}
@@ -210,7 +210,7 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 			{
 				if (candle.LowPrice <= _firstTarget)
 				{
-					ClosePosition(Math.Abs(Position) / 2m);
+					BuyMarket(Math.Abs(Position) / 2m);
 					_firstTargetReached = true;
 					_trailStop = _entryPrice;
 				}

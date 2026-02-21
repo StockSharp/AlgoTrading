@@ -80,12 +80,12 @@ public class TrendFollowingAdxParabolicSarStrategy : Strategy
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "Period for ADX", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
 			.SetDisplay("ADX Threshold", "Minimum ADX level", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
@@ -105,9 +105,9 @@ public class TrendFollowingAdxParabolicSarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		_sar = new ParabolicSar { AccelerationStep = SarStep, AccelerationMax = SarMax };
@@ -124,7 +124,7 @@ public class TrendFollowingAdxParabolicSarStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue sarValue)

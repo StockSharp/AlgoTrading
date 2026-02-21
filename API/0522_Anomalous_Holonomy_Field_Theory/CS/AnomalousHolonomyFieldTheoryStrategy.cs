@@ -51,7 +51,7 @@ public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 	{
 		_signalThreshold = Param(nameof(SignalThreshold), 2m)
 			.SetDisplay("Signal Threshold", "Absolute signal level required for trades", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetRange(0.5m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -72,12 +72,12 @@ public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema20 = new ExponentialMovingAverage { Length = 20 };
-		var ema50 = new ExponentialMovingAverage { Length = 50 };
+		var ema20 = new EMA { Length = 20 };
+		var ema50 = new EMA { Length = 50 };
 		var rsi = new RelativeStrengthIndex { Length = 14 };
 		var atr = new AverageTrueRange { Length = 14 };
 		var roc = new RateOfChange { Length = 10 };

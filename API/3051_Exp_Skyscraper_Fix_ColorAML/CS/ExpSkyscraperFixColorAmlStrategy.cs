@@ -66,7 +66,7 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 		_skyscraperAtrPeriod = Param(nameof(SkyscraperAtrPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Skyscraper ATR Period", "ATR period used for Skyscraper calculations", "Skyscraper")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_maxHistory = Param(nameof(MaxHistory), 512)
@@ -91,13 +91,13 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	_skyscraperLength = Param(nameof(SkyscraperLength), 10)
 	.SetGreaterThanZero()
 	.SetDisplay("ATR Sample Length", "Number of ATR samples used for the Skyscraper step", "Skyscraper")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(5, 20, 1);
 
 	_skyscraperMultiplier = Param(nameof(SkyscraperMultiplier), 0.9m)
 	.SetNotNegative()
 	.SetDisplay("Step Multiplier", "Coefficient applied to the ATR based step", "Skyscraper")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(0.3m, 1.5m, 0.1m);
 
 	_skyscraperPercentage = Param(nameof(SkyscraperPercentage), 0m)
@@ -141,13 +141,13 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	_colorAmlFractal = Param(nameof(ColorAmlFractal), 6)
 	.SetGreaterThanZero()
 	.SetDisplay("Fractal Length", "Fractal window for range calculations", "ColorAML")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(3, 12, 1);
 
 	_colorAmlLag = Param(nameof(ColorAmlLag), 7)
 	.SetGreaterThanZero()
 	.SetDisplay("Lag", "Lag parameter controlling the adaptive smoothing", "ColorAML")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(3, 14, 1);
 
 	_colorAmlSignalBar = Param(nameof(ColorAmlSignalBar), 1)
@@ -402,11 +402,11 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
-	StartProtection();
+	StartProtection(null, null);
 
 	var skyscraperSubscription = SubscribeCandles(SkyscraperCandleType);
 	skyscraperSubscription
@@ -672,9 +672,9 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	{
 	var seriesIndex = count - 1 - chrono;
 	var candle = candles[chrono];
-	closeSeries[seriesIndex] = candle.Close;
-	highSeries[seriesIndex] = candle.High;
-	lowSeries[seriesIndex] = candle.Low;
+	closeSeries[seriesIndex] = candle.ClosePrice;
+	highSeries[seriesIndex] = candle.HighPrice;
+	lowSeries[seriesIndex] = candle.LowPrice;
 	atrSeries[seriesIndex] = atrChrono[chrono];
 	}
 
@@ -798,18 +798,18 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	decimal tr;
 	if (prevClose is decimal previous)
 	{
-	var range1 = candle.High - candle.Low;
-	var range2 = Math.Abs(candle.High - previous);
-	var range3 = Math.Abs(candle.Low - previous);
+	var range1 = candle.HighPrice - candle.LowPrice;
+	var range2 = Math.Abs(candle.HighPrice - previous);
+	var range3 = Math.Abs(candle.LowPrice - previous);
 	tr = Math.Max(range1, Math.Max(range2, range3));
 	}
 	else
 	{
-	tr = candle.High - candle.Low;
+	tr = candle.HighPrice - candle.LowPrice;
 	}
 
 	trValues.Add(tr);
-	prevClose = candle.Close;
+	prevClose = candle.ClosePrice;
 	}
 
 	decimal? prevAtr = null;
@@ -859,10 +859,10 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	{
 	var index = count - 1 - chrono;
 	var candle = candles[chrono];
-	openSeries[index] = candle.Open;
-	highSeries[index] = candle.High;
-	lowSeries[index] = candle.Low;
-	closeSeries[index] = candle.Close;
+	openSeries[index] = candle.OpenPrice;
+	highSeries[index] = candle.HighPrice;
+	lowSeries[index] = candle.LowPrice;
+	closeSeries[index] = candle.ClosePrice;
 	}
 
 	var minRates = fractal + lag;

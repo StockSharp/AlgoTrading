@@ -66,55 +66,55 @@ public class GannLineStrategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 30, 1);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 150, 5);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Lookback used by the momentum oscillator", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 			.SetNotNegative()
 			.SetDisplay("Momentum Threshold", "Minimum distance from 100 required by the momentum filter", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1.5m, 0.1m);
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA length for the MACD filter", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 1);
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA length for the MACD filter", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal EMA length for the MACD filter", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (steps)", "Take profit distance expressed in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 120m, 10m);
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 20m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (steps)", "Stop loss distance expressed in price steps", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 60m, 5m);
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
@@ -123,13 +123,13 @@ public class GannLineStrategy : Strategy
 		_trailingActivationSteps = Param(nameof(TrailingActivationSteps), 40m)
 			.SetNotNegative()
 			.SetDisplay("Trail Activation", "Minimum profit in steps required before trailing activates", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 80m, 10m);
 
 		_trailingDistanceSteps = Param(nameof(TrailingDistanceSteps), 40m)
 			.SetNotNegative()
 			.SetDisplay("Trail Distance", "Distance between current extreme and trailing stop (steps)", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 80m, 10m);
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
@@ -138,13 +138,13 @@ public class GannLineStrategy : Strategy
 		_breakEvenActivationSteps = Param(nameof(BreakEvenActivationSteps), 30m)
 			.SetNotNegative()
 			.SetDisplay("BreakEven Activation", "Profit in steps required before moving to break-even", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 60m, 5m);
 
 		_breakEvenOffsetSteps = Param(nameof(BreakEvenOffsetSteps), 30m)
 			.SetNotNegative()
 			.SetDisplay("BreakEven Offset", "Additional profit (steps) locked after break-even", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 60m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

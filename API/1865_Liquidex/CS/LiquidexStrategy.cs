@@ -126,15 +126,15 @@ public class LiquidexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var keltner = new KeltnerChannels { Length = KcPeriod };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(keltner, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

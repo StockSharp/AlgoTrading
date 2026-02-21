@@ -124,12 +124,12 @@ public class CronexAcStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetRange(2, 100)
 			.SetDisplay("Fast Period", "Fast smoothing period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 25)
 			.SetRange(2, 150)
 			.SetDisplay("Slow Period", "Slow smoothing period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetRange(0, 10)
@@ -167,9 +167,9 @@ public class CronexAcStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bufferSize = Math.Max(2, SignalBar + 2);
 		_fastHistory = new decimal?[bufferSize];
@@ -267,15 +267,15 @@ public class CronexAcStrategy : Strategy
 		_slowHistory[0] = slowValue;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(CronexMovingAverageTypes type, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(CronexMovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			CronexMovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-			CronexMovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			CronexMovingAverageTypes.Simple => new SMA { Length = length },
+			CronexMovingAverageTypes.Exponential => new EMA { Length = length },
 			CronexMovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			CronexMovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

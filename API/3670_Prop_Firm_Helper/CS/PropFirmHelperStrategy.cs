@@ -59,22 +59,22 @@ public class PropFirmHelperStrategy : Strategy
 		_entryPeriod = Param(nameof(EntryPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Period", "Number of candles used for breakout Donchian channel", "Entries")
-			.SetCanOptimize(true);
+			;
 
 		_entryShift = Param(nameof(EntryShift), 1)
 			.SetRange(0, 20)
 			.SetDisplay("Entry Shift", "Number of finished candles ignored when reading Donchian breakout", "Entries")
-			.SetCanOptimize(true);
+			;
 
 		_exitPeriod = Param(nameof(ExitPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Period", "Number of candles used for trailing Donchian channel", "Exits")
-			.SetCanOptimize(true);
+			;
 
 		_exitShift = Param(nameof(ExitShift), 1)
 			.SetRange(0, 20)
 			.SetDisplay("Exit Shift", "Number of finished candles ignored when reading trailing Donchian", "Exits")
-			.SetCanOptimize(true);
+			;
 
 		_useChallenge = Param(nameof(UseChallenge), false)
 			.SetDisplay("Use Challenge Rules", "Enable prop firm pass and daily loss checks", "Challenge");
@@ -88,12 +88,12 @@ public class PropFirmHelperStrategy : Strategy
 		_riskPerTrade = Param(nameof(RiskPerTrade), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Per Trade %", "Percentage of equity risked per position", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Average True Range lookback used for trailing filters", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for Donchian calculations", "General");
@@ -215,11 +215,11 @@ public class PropFirmHelperStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_tickSize = Security?.PriceStep ?? 0.0001m;
 

@@ -36,13 +36,13 @@ public class RedkCompoundRatioMaStrategy : Strategy
 		_length = Param(nameof(Length), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Length", "Period for CoRa Wave", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 1);
 
 		_ratioMultiplier = Param(nameof(RatioMultiplier), 2m)
 		.SetNotNegative()
 		.SetDisplay("Comp Ratio Mult", "Multiplier for compound ratio", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 5m, 0.1m);
 
 		_autoSmoothing = Param(nameof(AutoSmoothing), true)
@@ -51,7 +51,7 @@ public class RedkCompoundRatioMaStrategy : Strategy
 		_manualSmoothing = Param(nameof(ManualSmoothing), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Manual Smoothing", "Manual smoothing length", "Smoothing")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -74,9 +74,9 @@ public class RedkCompoundRatioMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var smoothing = AutoSmoothing ? Math.Max((int)Math.Round(Math.Sqrt(Length)), 1) : ManualSmoothing;
 		_coraWma = new WeightedMovingAverage { Length = smoothing };

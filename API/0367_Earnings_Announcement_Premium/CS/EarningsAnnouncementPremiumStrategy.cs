@@ -115,7 +115,7 @@ public class EarningsAnnouncementPremiumStrategy : Strategy
 		_minUsd = Param(nameof(MinTradeUsd), 100m)
 			.SetDisplay("Minimum Trade (USD)", "Minimal trade value", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -134,9 +134,9 @@ public class EarningsAnnouncementPremiumStrategy : Strategy
 		_lastProcessed = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe is empty.");

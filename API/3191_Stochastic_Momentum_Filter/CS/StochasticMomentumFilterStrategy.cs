@@ -261,72 +261,72 @@ public class StochasticMomentumFilterStrategy : Strategy
 	{
 		_stochasticBuyLevel = Param(nameof(StochasticBuyLevel), 30m)
 		.SetDisplay("Stochastic Buy", "Oversold threshold for signals", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 5m);
 
 		_stochasticSellLevel = Param(nameof(StochasticSellLevel), 80m)
 		.SetDisplay("Stochastic Sell", "Overbought threshold for signals", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60m, 90m, 5m);
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast LWMA", "Length of the fast linear weighted MA", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow LWMA", "Length of the slow linear weighted MA", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 150, 5);
 
 		_fastStochasticPeriod = Param(nameof(FastStochasticPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast %K", "Period of the fast stochastic", "Oscillators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 9, 1);
 
 		_fastStochasticSignal = Param(nameof(FastStochasticSignal), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast %D", "Signal period of the fast stochastic", "Oscillators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 5, 1);
 
 		_fastStochasticSmoothing = Param(nameof(FastStochasticSmoothing), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast Smoothing", "Smoothing factor of the fast stochastic", "Oscillators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 5, 1);
 
 		_slowStochasticPeriod = Param(nameof(SlowStochasticPeriod), 21)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow %K", "Period of the slow stochastic", "Oscillators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(14, 42, 2);
 
 		_slowStochasticSignal = Param(nameof(SlowStochasticSignal), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow %D", "Signal period of the slow stochastic", "Oscillators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 8, 1);
 
 		_slowStochasticSmoothing = Param(nameof(SlowStochasticSmoothing), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow Smoothing", "Smoothing factor of the slow stochastic", "Oscillators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 14, 2);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Period", "Look-back of the momentum filter", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 21, 1);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 		.SetNotNegative()
 		.SetDisplay("Momentum Threshold", "Minimum deviation from baseline", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1.0m, 0.1m);
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
@@ -404,15 +404,13 @@ public class StochasticMomentumFilterStrategy : Strategy
 		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 
 		_fastStochastic = new StochasticOscillator
-		{
-			Length = FastStochasticPeriod,
+		{ K = { Length = FastStochasticPeriod },
 			K = { Length = FastStochasticSignal },
 			D = { Length = FastStochasticSmoothing }
 		};
 
 		_slowStochastic = new StochasticOscillator
-		{
-			Length = SlowStochasticPeriod,
+		{ K = { Length = SlowStochasticPeriod },
 			K = { Length = SlowStochasticSignal },
 			D = { Length = SlowStochasticSmoothing }
 		};
@@ -421,8 +419,8 @@ public class StochasticMomentumFilterStrategy : Strategy
 
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 

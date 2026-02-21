@@ -102,31 +102,31 @@ public class BasicRsiEaTemplateStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Number of bars for Relative Strength Index", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Overbought Level", "RSI threshold that allows short entries", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Oversold Level", "RSI threshold that allows long entries", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 30m)
 			.SetRange(0m, 1000m)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
 			.SetRange(0m, 1000m)
 			.SetDisplay("Take Profit (pips)", "Profit target distance expressed in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_orderVolume = Param(nameof(OrderVolume), 0.01m)
@@ -150,9 +150,9 @@ public class BasicRsiEaTemplateStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 

@@ -43,7 +43,7 @@ public class BollingerRsiMaStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Primary Candle Type", "Timeframe used for Bollinger Bands and RSI.", "General");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Daily Candle Type", "Higher timeframe used by the EMA filter.", "General");
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
@@ -177,15 +177,14 @@ public class BollingerRsiMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bollingerBands = new BollingerBands
 		{
 			Length = Math.Max(1, BollingerPeriod),
-			Width = BollingerDeviation,
-			CandlePrice = CandlePrice.Close
+			Width = BollingerDeviation
 		};
 
 		_rsi = new RelativeStrengthIndex
@@ -193,7 +192,7 @@ public class BollingerRsiMaStrategy : Strategy
 			Length = Math.Max(1, RsiPeriod)
 		};
 
-		_dailyEma = new ExponentialMovingAverage
+		_dailyEma = new EMA
 		{
 			Length = Math.Max(1, MaPeriod)
 		};
@@ -210,7 +209,7 @@ public class BollingerRsiMaStrategy : Strategy
 			.Bind(_bollingerBands, _rsi, ProcessTradingCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -227,7 +226,7 @@ public class BollingerRsiMaStrategy : Strategy
 		if (_dailyEma == null)
 			return;
 
-		var value = _dailyEma.Process(candle.ClosePrice, candle.OpenTime, candle.State == CandleStates.Finished).ToNullableDecimal();
+		var value = _dailyEma.Process(new DecimalIndicatorValue(_dailyEma, candle.ClosePrice, candle.OpenTime)).ToNullableDecimal();
 		if (candle.State != CandleStates.Finished)
 			return;
 

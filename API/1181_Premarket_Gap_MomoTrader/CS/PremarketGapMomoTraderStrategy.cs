@@ -73,13 +73,13 @@ public class PremarketGapMomoTraderStrategy : Strategy
 	{
 		_minGainPct = Param(nameof(MinGainPct), 5m)
 		.SetDisplay("Min % Gain for Entry", "Minimum percent gain from previous close", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 10m, 1m);
 		
 		_minVolume = Param(nameof(MinVolume), 15000)
 		.SetGreaterThanZero()
 		.SetDisplay("Min Volume for Entry", "Minimum candle volume required", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1000, 50000, 1000);
 		
 		_useSession = Param(nameof(UseSession), true)
@@ -107,14 +107,14 @@ public class PremarketGapMomoTraderStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle)

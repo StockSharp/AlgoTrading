@@ -207,16 +207,16 @@ public class RsiBackedWeightedMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_capitalRef = Portfolio?.CurrentValue ?? 0m;
 		_cashOrder = _capitalRef * 0.95m;
 
-		LengthIndicator<decimal> ma = MaTypes switch
+		DecimalLengthIndicator ma = MaTypes switch
 		{
-			MaTypes.SMA => new SimpleMovingAverage { Length = MaLength },
+			MaTypes.SMA => new SMA { Length = MaLength },
 			_ => new RetroWeightedMovingAverage { Length = MaLength }
 		};
 
@@ -227,7 +227,7 @@ public class RsiBackedWeightedMaStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ma, rsi, atr, OnProcess).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -396,7 +396,7 @@ public class RsiBackedWeightedMaStrategy : Strategy
 		RWMA
 	}
 
-	private class RetroWeightedMovingAverage : Indicator<decimal>
+	private class RetroWeightedMovingAverage : BaseIndicator
 	{
 		public int Length { get; set; }
 		private readonly Queue<decimal> _buffer = new();

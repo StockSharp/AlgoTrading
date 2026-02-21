@@ -61,43 +61,43 @@ public class MicroTrendBreakoutsStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Default volume for market orders", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 5m, 0.1m);
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast LWMA", "Fast linear weighted moving average period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow LWMA", "Slow linear weighted moving average period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 150, 5);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Period", "Momentum averaging period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 2);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Threshold", "Minimum absolute momentum to allow trades", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 2m, 0.1m);
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50)
 		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in price steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 10);
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 20)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop loss distance in price steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 150, 10);
 
 		_useTrailing = Param(nameof(UseTrailing), true)
@@ -106,13 +106,13 @@ public class MicroTrendBreakoutsStrategy : Strategy
 		_trailingStartSteps = Param(nameof(TrailingStartSteps), 40)
 		.SetNotNegative()
 		.SetDisplay("Trail Activation", "Profit in price steps before trailing starts", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 10);
 
 		_trailingStepSize = Param(nameof(TrailingStepSize), 40)
 		.SetNotNegative()
 		.SetDisplay("Trail Step", "Distance between current extreme and trailing stop in steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 10);
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
@@ -121,31 +121,31 @@ public class MicroTrendBreakoutsStrategy : Strategy
 		_breakEvenTriggerSteps = Param(nameof(BreakEvenTriggerSteps), 30)
 		.SetNotNegative()
 		.SetDisplay("Breakeven Trigger", "Profit in steps that activates breakeven", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 10);
 
 		_breakEvenPaddingSteps = Param(nameof(BreakEvenPaddingSteps), 30)
 		.SetNotNegative()
 		.SetDisplay("Breakeven Padding", "Extra steps added when moving stop to breakeven", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 100, 5);
 
-		_macdShortPeriod = Param(nameof(MacdShortPeriod), 12)
+		_macdShortMa = { Length = Param }(nameof(MacdShortPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Fast", "Fast EMA period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(6, 18, 1);
 
-		_macdLongPeriod = Param(nameof(MacdLongPeriod), 26)
+		_macdLongMa = { Length = Param }(nameof(MacdLongPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Slow", "Slow EMA period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 1);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal", "Signal EMA period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 15, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -329,9 +329,9 @@ public class MicroTrendBreakoutsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -340,8 +340,8 @@ public class MicroTrendBreakoutsStrategy : Strategy
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdShortPeriod,
-			LongPeriod = MacdLongPeriod,
+			ShortMa = { Length = MacdShortPeriod },
+			LongMa = { Length = MacdLongPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 
@@ -350,7 +350,7 @@ public class MicroTrendBreakoutsStrategy : Strategy
 		.Bind(_fastMa, _slowMa, _momentum, _macd, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var priceArea = CreateChartArea();
 		if (priceArea != null)

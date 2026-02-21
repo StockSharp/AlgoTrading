@@ -78,22 +78,22 @@ public class FridayBondShortStrategy : Strategy
 	{
 		_entryDay = Param(nameof(EntryDay), 6)
 			.SetDisplay("Entry Day", "Day of week to enter short (2=Mon..6=Fri)", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 6, 1);
 
 		_entryHour = Param(nameof(EntryHour), 13)
 			.SetDisplay("Entry Hour", "Hour to enter short (ET)", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 23, 1);
 
 		_exitDay = Param(nameof(ExitDay), 2)
 			.SetDisplay("Exit Day", "Day of week to exit (2=Mon..6=Fri)", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 6, 1);
 
 		_exitHour = Param(nameof(ExitHour), 13)
 			.SetDisplay("Exit Hour", "Hour to exit position (ET)", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 23, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -107,16 +107,16 @@ public class FridayBondShortStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

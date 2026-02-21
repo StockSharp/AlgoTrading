@@ -134,19 +134,19 @@ public class JBrainTrendReopenStrategy : Strategy
 		_stochPeriod = Param(nameof(StochPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Main period for Stochastic oscillator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_kPeriod = Param(nameof(KPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("K Period", "Smoothing for %K line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("D Period", "Smoothing for %D line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -155,25 +155,25 @@ public class JBrainTrendReopenStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 500m, 50m);
 
 		_takeProfit = Param(nameof(TakeProfit), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1000m, 100m);
 
 		_priceStep = Param(nameof(PriceStep), 300m)
 			.SetGreaterThanZero()
 			.SetDisplay("Re-entry Step", "Price move to add position", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1000m, 100m);
 
 		_maxPositions = Param(nameof(MaxPositions), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum entries in one direction", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_buyEnabled = Param(nameof(BuyEnabled), true)
@@ -184,13 +184,12 @@ public class JBrainTrendReopenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochPeriod,
+		{ K = { Length = StochPeriod },
 			K = { Length = KPeriod },
 			D = { Length = DPeriod }
 		};

@@ -127,11 +127,11 @@ public class BtcChopReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var macd = new MovingAverageConvergenceDivergenceSignal
@@ -176,11 +176,11 @@ public class BtcChopReversalStrategy : Strategy
 		var atr = atrValue.ToDecimal();
 		var rsi = rsiValue.ToDecimal();
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macdHist = macdTyped.Histogram;
+		var macdHist = (macdTyped.Macd ?? 0m) - (macdTyped.Signal ?? 0m);
 
 		var upperBand = ema + AtrMultiplier * atr;
 		var lowerBand = ema - AtrMultiplier * atr;
-		var volumeSma = _volSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var volumeSma = _volSma.Process(new DecimalIndicatorValue(_volSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 		var sellSpike = candle.TotalVolume > volumeSma * VolSpikeMultiplier && candle.ClosePrice < candle.OpenPrice;
 
 		var shortSetup = candle.HighPrice > upperBand &&

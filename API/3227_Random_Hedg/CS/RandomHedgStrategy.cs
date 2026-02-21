@@ -230,13 +230,13 @@ public class RandomHedgStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_pipSize = CalculatePipSize();
 		_stopLossDistance = StopLossPips * _pipSize;

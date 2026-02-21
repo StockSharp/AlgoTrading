@@ -78,17 +78,17 @@ public class CupFinderStrategy : Strategy
 		_lookback = Param(nameof(Lookback), 150)
 			.SetRange(30, 250)
 			.SetDisplay("Lookback", "Number of bars to search", "Pattern Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_widthPercent = Param(nameof(WidthPercent), 5m)
 			.SetRange(1m, 20m)
 			.SetDisplay("Width %", "Maximum cup width in percent", "Pattern Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop Loss %", "Percentage for stop-loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -116,9 +116,9 @@ public class CupFinderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = Lookback };
 		_lowest = new Lowest { Length = Lookback };

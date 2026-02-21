@@ -44,15 +44,15 @@ public class EugeneCandlePatternStrategy : Strategy
 		_stop = _take = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		var s = SubscribeCandles(CandleType);
 		s.Bind(Process).Start();
 		var a = CreateChartArea();
 		if (a != null)
 		{ DrawCandles(a, s); DrawOwnTrades(a); }
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void Process(ICandleMessage c)
@@ -91,7 +91,7 @@ public class EugeneCandlePatternStrategy : Strategy
 		var bb = bi && r2.ClosePrice < r2.OpenPrice;
 		var zb = r1.OpenPrice < r1.ClosePrice ? r1.ClosePrice - (r1.ClosePrice - r1.OpenPrice) / 3m : r1.ClosePrice - (r1.ClosePrice - r1.LowPrice) / 3m;
 		var zs = r1.OpenPrice > r1.ClosePrice ? r1.ClosePrice + (r1.OpenPrice - r1.ClosePrice) / 3m : r1.ClosePrice + (r1.HighPrice - r1.ClosePrice) / 3m;
-		var h = r0.OpenTime.UtcDateTime.Hour;
+		var h = r0.OpenTime.Hour;
 		var cB = (r0.LowPrice <= zb || h >= 8) && !bb && !wi;
 		var cS = (r0.HighPrice >= zs || h >= 8) && !wb && !bi;
 		var bSig = r0.HighPrice > r1.HighPrice;

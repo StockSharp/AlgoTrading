@@ -69,7 +69,7 @@ public class VwapAdxStrategy : Strategy
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "Period for Average Directional Movement Index", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -91,9 +91,9 @@ public class VwapAdxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create ADX indicator
 		_adx = new() { Length = AdxPeriod };

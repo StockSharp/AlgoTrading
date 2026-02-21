@@ -123,12 +123,12 @@ public class FullCandleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize EMA indicator
-		_ema = new ExponentialMovingAverage
+		_ema = new EMA
 		{
 			Length = EmaLength
 		};

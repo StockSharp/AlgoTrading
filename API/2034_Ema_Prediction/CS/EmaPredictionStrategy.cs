@@ -159,12 +159,12 @@ public class EmaPredictionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fast = new ExponentialMovingAverage { Length = FastPeriod };
-		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		_fast = new EMA { Length = FastPeriod };
+		_slow = new EMA { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

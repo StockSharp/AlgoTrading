@@ -117,43 +117,43 @@ public class LorenzoSuperScalpStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Length", "Bollinger Bands period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 1);
 
 		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Multiplier", "Bollinger Bands width", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "MACD fast length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "MACD slow length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 1);
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "MACD signal length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_minBarsBetweenTrades = Param(nameof(MinBarsBetweenTrades), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Bars", "Minimum bars between trades", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -188,8 +188,8 @@ public class LorenzoSuperScalpStrategy : Strategy
 		_bollinger = new BollingerBands { Length = BollingerLength, Width = BollingerMultiplier };
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFastLength,
-			LongPeriod = MacdSlowLength,
+			ShortMa = { Length = MacdFastLength },
+			LongMa = { Length = MacdSlowLength },
 			SignalPeriod = MacdSignalLength
 		};
 

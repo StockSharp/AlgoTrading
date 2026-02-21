@@ -90,25 +90,25 @@ public class PriceAndVolumeBreakoutBuyStrategy : Strategy
 		_priceBreakoutPeriod = Param(nameof(PriceBreakoutPeriod), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Breakout Period", "Lookback for price breakout", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 20);
 
 		_volumeBreakoutPeriod = Param(nameof(VolumeBreakoutPeriod), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Breakout Period", "Lookback for volume breakout", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 20);
 
 		_trendlineLength = Param(nameof(TrendlineLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Trendline Length", "Length of SMA filter", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 50);
 
 		_orderDirection = Param(nameof(OrderDirection), "Long")
 			.SetDisplay("Order Direction", "Trading direction", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -131,9 +131,9 @@ public class PriceAndVolumeBreakoutBuyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceHighest = new Highest { Length = PriceBreakoutPeriod };
 		_priceLowest = new Lowest { Length = PriceBreakoutPeriod };

@@ -124,41 +124,41 @@ public class MarketSlayerStrategy : Strategy
 	{
 		_shortLength = Param(nameof(ShortLength), 10)
 						   .SetGreaterThanZero()
-						   .SetDisplay("Short WMA Length")
-						   .SetCanOptimize(true);
+						   .SetDisplay("Short WMA Length", "Short WMA Length", "General")
+						   ;
 
 		_longLength = Param(nameof(LongLength), 20)
 						  .SetGreaterThanZero()
-						  .SetDisplay("Long WMA Length")
-						  .SetCanOptimize(true);
+						  .SetDisplay("Long WMA Length", "Long WMA Length", "General")
+						  ;
 
 		_confirmationTrendValue = Param(nameof(ConfirmationTrendValue), 2)
 									  .SetGreaterThanZero()
-									  .SetDisplay("Trend WMA Length")
-									  .SetCanOptimize(true);
+									  .SetDisplay("Trend WMA Length", "Trend WMA Length", "General")
+									  ;
 
 		_takeProfitEnabled = Param(nameof(TakeProfitEnabled), false)
-								 .SetDisplay("Enable Take Profit");
+								 .SetDisplay("Enable Take Profit", "Enable Take Profit", "General");
 
 		_takeProfitValue = Param(nameof(TakeProfitValue), 20m)
 							   .SetNotNegative()
-							   .SetDisplay("Take Profit")
-							   .SetCanOptimize(true);
+							   .SetDisplay("Take Profit", "Take Profit", "General")
+							   ;
 
 		_stopLossEnabled = Param(nameof(StopLossEnabled), false)
-							   .SetDisplay("Enable Stop Loss");
+							   .SetDisplay("Enable Stop Loss", "Enable Stop Loss", "General");
 
 		_stopLossValue = Param(nameof(StopLossValue), 50m)
 							 .SetNotNegative()
-							 .SetDisplay("Stop Loss")
-							 .SetCanOptimize(true);
+							 .SetDisplay("Stop Loss", "Stop Loss", "General")
+							 ;
 
 		_candleType = Param(nameof(CandleType),
 							TimeSpan.FromMinutes(5).TimeFrame())
-						  .SetDisplay("Candle Type");
+						  .SetDisplay("Candle Type", "Candle Type", "General");
 
 		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(240).TimeFrame())
-							   .SetDisplay("Trend Candle Type");
+							   .SetDisplay("Trend Candle Type", "Trend Candle Type", "General");
 	}
 
 	/// <inheritdoc />
@@ -183,9 +183,9 @@ public class MarketSlayerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var shortWma = new WeightedMovingAverage { Length = ShortLength };
 		var longWma = new WeightedMovingAverage { Length = LongLength };

@@ -143,12 +143,12 @@ public class ErrorEaStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetRange(5, 50)
 			.SetDisplay("ADX Period", "Smoothing period for the Average Directional Index", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maxTrades = Param(nameof(MaxTrades), 9)
 			.SetRange(1, 15)
 			.SetDisplay("Max Trades", "Maximum number of simultaneous entries per direction", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_enableRiskControl = Param(nameof(EnableRiskControl), true)
 			.SetDisplay("Enable Risk Control", "Adjust volume by portfolio value similar to the MQL version", "Risk");
@@ -164,17 +164,17 @@ public class ErrorEaStrategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 0.15m)
 			.SetNotNegative()
 			.SetDisplay("Base Volume", "Base lot used before applying risk control", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_riskDivider = Param(nameof(RiskDivider), 10000m)
 			.SetNotNegative()
 			.SetDisplay("Risk Divider", "Portfolio divider used to scale volume when risk control is enabled", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss Points", "Stop distance converted to price steps", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_enableTakeProfit = Param(nameof(EnableTakeProfit), true)
 			.SetDisplay("Enable Take Profit", "Activate the small scalping take profit from the EA", "Protection");
@@ -182,7 +182,7 @@ public class ErrorEaStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10)
 			.SetNotNegative()
 			.SetDisplay("Take Profit Points", "Take-profit distance converted to price steps", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for the strategy", "General");
@@ -207,9 +207,9 @@ public class ErrorEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 

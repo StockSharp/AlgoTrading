@@ -166,9 +166,9 @@ public class DynamicRsCStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = new DynamicRsCIndicator
 		{
@@ -180,7 +180,7 @@ public class DynamicRsCStrategy : Strategy
 			.BindEx(_indicator, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -377,7 +377,7 @@ public class DynamicRsCStrategy : Strategy
 /// Indicator that mimics the DynamicRS_C buffer behaviour from MetaTrader.
 /// It outputs both the line value and a discrete color index (0, 1, 2).
 /// </summary>
-public class DynamicRsCIndicator : BaseIndicator<decimal>
+public class DynamicRsCIndicator : BaseIndicator
 {
 	private readonly List<decimal> _highs = new();
 	private readonly List<decimal> _lows = new();

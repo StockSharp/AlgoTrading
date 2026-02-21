@@ -9,7 +9,7 @@
 - **出场条件**：定期再平衡。
 - **止损**：无显式止损。
 - **默认值**：
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **筛选**：
   - 分类：统计
   - 方向：双向

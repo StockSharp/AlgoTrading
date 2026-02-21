@@ -31,8 +31,8 @@ public class IinMaSignalStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 
-	private LengthIndicator<decimal> _fastMa = null!;
-	private LengthIndicator<decimal> _slowMa = null!;
+	private DecimalLengthIndicator _fastMa = null!;
+	private DecimalLengthIndicator _slowMa = null!;
 	private readonly List<MaSample> _maHistory = new();
 	private int _trend;
 
@@ -44,7 +44,7 @@ public class IinMaSignalStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetDisplay("Fast MA Period", "Length of the fast moving average.", "Moving averages")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_fastMaType = Param(nameof(FastMaType), MaTypes.Ema)
 			.SetDisplay("Fast MA Type", "Moving average type for the fast line (SMA, EMA, SMMA, LWMA).", "Moving averages");
@@ -52,7 +52,7 @@ public class IinMaSignalStrategy : Strategy
 		_slowPeriod = Param(nameof(SlowPeriod), 22)
 			.SetDisplay("Slow MA Period", "Length of the slow moving average.", "Moving averages")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_slowMaType = Param(nameof(SlowMaType), MaTypes.Sma)
 			.SetDisplay("Slow MA Type", "Moving average type for the slow line (SMA, EMA, SMMA, LWMA).", "Moving averages");
@@ -74,11 +74,11 @@ public class IinMaSignalStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 			.SetDisplay("Stop Loss Points", "Absolute distance for the protective stop loss (0 disables).", "Risk management")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetDisplay("Take Profit Points", "Absolute distance for the protective take profit (0 disables).", "Risk management")
-			.SetCanOptimize(true);
+			;
 	}
 
 	public DataType CandleType
@@ -154,9 +154,9 @@ public class IinMaSignalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create the moving averages that replicate the MQL indicator configuration.
 		_fastMa = CreateMa(FastMaType, FastPeriod);
@@ -265,12 +265,12 @@ public class IinMaSignalStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MaTypes type, int length)
+	private static DecimalLengthIndicator CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaTypes.Sma => new SimpleMovingAverage { Length = length },
-			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
+			MaTypes.Sma => new SMA { Length = length },
+			MaTypes.Ema => new EMA { Length = length },
 			MaTypes.Smma => new SmoothedMovingAverage { Length = length },
 			MaTypes.Lwma => new WeightedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unsupported moving average type."),

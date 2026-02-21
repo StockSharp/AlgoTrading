@@ -61,7 +61,7 @@ public class DonchianChannelsSystemStrategy : Strategy
 	{
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 		.SetDisplay("Donchian Period", "Lookback period for Donchian Channel", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 		
 		_shift = Param(nameof(Shift), 2)
@@ -88,9 +88,9 @@ public class DonchianChannelsSystemStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var donchian = new DonchianChannels { Length = DonchianPeriod };
 		

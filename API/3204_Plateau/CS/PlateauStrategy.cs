@@ -248,34 +248,34 @@ public class PlateauStrategy : Strategy
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 140m)
 			.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetDisplay("Trailing Step", "Minimal trailing step in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_moneyMode = Param(nameof(MoneyMode), PlateauMoneyManagementModes.RiskPercent)
 			.SetDisplay("Money Mode", "Choose between fixed lot or risk percent", "Money Management");
 
 		_moneyValue = Param(nameof(MoneyValue), 3m)
 			.SetDisplay("Lot / Risk", "Fixed lot when Money Mode=FixedLot or risk percent when Money Mode=RiskPercent", "Money Management")
-			.SetCanOptimize(true);
+			;
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 9)
 			.SetDisplay("Fast MA", "Fast moving average period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 24)
 			.SetDisplay("Slow MA", "Slow moving average period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maShift = Param(nameof(MaShift), 0)
 			.SetDisplay("MA Shift", "Horizontal shift applied to moving averages", "Indicators");
@@ -288,14 +288,14 @@ public class PlateauStrategy : Strategy
 
 		_bandsPeriod = Param(nameof(BandsPeriod), 150)
 			.SetDisplay("Bands Period", "Bollinger Bands averaging period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bandsShift = Param(nameof(BandsShift), 0)
 			.SetDisplay("Bands Shift", "Horizontal shift applied to Bollinger Bands", "Indicators");
 
 		_bandsDeviation = Param(nameof(BandsDeviation), 1m)
 			.SetDisplay("Bands Deviation", "Bollinger Bands deviation multiplier", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bandsAppliedPrice = Param(nameof(BandsAppliedPrice), PlateauAppliedPrices.Typical)
 			.SetDisplay("Bands Price", "Applied price for Bollinger Bands", "Indicators");
@@ -335,9 +335,9 @@ public class PlateauStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 			throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");
@@ -359,7 +359,7 @@ public class PlateauStrategy : Strategy
 		if (MoneyMode == PlateauMoneyManagementModes.FixedLot && MoneyValue > 0m)
 			Volume = MoneyValue;
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -702,8 +702,8 @@ public class PlateauStrategy : Strategy
 	{
 	return method switch
 	{
-	PlateauMovingAverageMethods.Simple => new SimpleMovingAverage { Length = Math.Max(1, period) },
-	PlateauMovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = Math.Max(1, period) },
+	PlateauMovingAverageMethods.Simple => new SMA { Length = Math.Max(1, period) },
+	PlateauMovingAverageMethods.Exponential => new EMA { Length = Math.Max(1, period) },
 	PlateauMovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = Math.Max(1, period) },
 	PlateauMovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = Math.Max(1, period) },
 	_ => new WeightedMovingAverage { Length = Math.Max(1, period) },

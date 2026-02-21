@@ -48,20 +48,20 @@ public class PSquareNthPercentileStrategy : Strategy
 
 	public PSquareNthPercentileStrategy()
 	{
-		_percentile = Param(nameof(Percentile), 84.1m).SetDisplay("Percentile");
-		_useReturns = Param(nameof(UseReturns), true).SetDisplay("Use returns");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
+		_percentile = Param(nameof(Percentile), 84.1m).SetDisplay("Percentile", "Percentile", "General");
+		_useReturns = Param(nameof(UseReturns), true).SetDisplay("Use returns", "Use returns", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_upper = new PSquareEstimator(Percentile);
 		_lower = new PSquareEstimator(100m - Percentile);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

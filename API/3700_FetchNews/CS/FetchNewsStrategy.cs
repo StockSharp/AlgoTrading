@@ -198,9 +198,9 @@ public class FetchNewsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 		LoadInstrumentCurrencies();
@@ -208,7 +208,7 @@ public class FetchNewsStrategy : Strategy
 		LoadCalendarEvents();
 
 		// Enable protective stop/take management helpers once.
-		StartProtection();
+		StartProtection(null, null);
 
 		// Subscribe to Level1 data for bid/ask updates and event processing.
 		SubscribeLevel1()

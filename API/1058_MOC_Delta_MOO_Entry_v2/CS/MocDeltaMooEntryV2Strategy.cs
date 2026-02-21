@@ -94,12 +94,12 @@ public class MocDeltaMooEntryV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma15 = new SimpleMovingAverage { Length = 15 };
-		var sma30 = new SimpleMovingAverage { Length = 30 };
+		var sma15 = new SMA { Length = 15 };
+		var sma30 = new SMA { Length = 30 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

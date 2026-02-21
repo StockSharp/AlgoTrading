@@ -139,14 +139,14 @@ public class DemaRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema1 = new ExponentialMovingAverage { Length = MaLength };
-		_ema2 = new ExponentialMovingAverage { Length = MaLength };
+		_ema1 = new EMA { Length = MaLength };
+		_ema2 = new EMA { Length = MaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_smooth = new ExponentialMovingAverage { Length = RsiSmoothLength };
+		_smooth = new EMA { Length = RsiSmoothLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -177,10 +177,10 @@ public class DemaRsiStrategy : Strategy
 			return;
 		}
 
-		var ema1Value = _ema1.Process(candle).ToDecimal();
-		var ema2Value = _ema2.Process(ema1Value, candle.OpenTime, true).ToDecimal();
-		var rsiValue = _rsi.Process(ema2Value, candle.OpenTime, true).ToDecimal();
-		var smoothValue = _smooth.Process(rsiValue, candle.OpenTime, true).ToDecimal();
+		var ema1Value = _ema1.Process(new DecimalIndicatorValue(_ema1, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var ema2Value = _ema2.Process(new DecimalIndicatorValue(_ema2, ema1Value, candle.OpenTime)).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, ema2Value, candle.OpenTime)).ToDecimal();
+		var smoothValue = _smooth.Process(new DecimalIndicatorValue(_smooth, rsiValue, candle.OpenTime)).ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

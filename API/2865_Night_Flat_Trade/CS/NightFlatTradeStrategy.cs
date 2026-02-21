@@ -138,9 +138,9 @@ public class NightFlatTradeStrategy : Strategy
 		_takeProfitPrice = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = RangeLength };
 		_lowest = new Lowest { Length = RangeLength };

@@ -83,17 +83,17 @@ public class IchimokuTenkanKijunStrategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetDisplay("Tenkan Period", "Period for Tenkan-sen calculation", "Ichimoku Settings")
 			.SetRange(7, 13)
-			.SetCanOptimize(true);
+			;
 			
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetDisplay("Kijun Period", "Period for Kijun-sen calculation", "Ichimoku Settings")
 			.SetRange(20, 30)
-			.SetCanOptimize(true);
+			;
 			
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 			.SetDisplay("Senkou Span B Period", "Period for Senkou Span B calculation", "Ichimoku Settings")
 			.SetRange(40, 60)
-			.SetCanOptimize(true);
+			;
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -101,7 +101,7 @@ public class IchimokuTenkanKijunStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2.0m, 0.5m);
 	}
 
@@ -120,9 +120,9 @@ public class IchimokuTenkanKijunStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ichimoku = new Ichimoku
 		{

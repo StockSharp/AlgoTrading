@@ -27,8 +27,8 @@ public class SeparatedMovingAverageStrategy : Strategy
 	private readonly StrategyParam<bool> _useHeikinAshi;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _maUp = null!;
-	private LengthIndicator<decimal> _maDown = null!;
+	private DecimalLengthIndicator _maUp = null!;
+	private DecimalLengthIndicator _maDown = null!;
 	private decimal _upValue;
 	private decimal _downValue;
 	private decimal _prevHaOpen;
@@ -72,10 +72,10 @@ public class SeparatedMovingAverageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		_maUp = CreateMa();
 		_maDown = CreateMa();
@@ -89,10 +89,10 @@ public class SeparatedMovingAverageStrategy : Strategy
 			.Start();
 	}
 
-	private LengthIndicator<decimal> CreateMa()
+	private DecimalLengthIndicator CreateMa()
 		=> MaType switch
 		{
-			MaTypes.EMA => new ExponentialMovingAverage { Length = Length },
+			MaTypes.EMA => new EMA { Length = Length },
 			MaTypes.HMA => new HullMovingAverage { Length = Length },
 			_ => new SMA { Length = Length },
 		};
@@ -122,8 +122,8 @@ public class SeparatedMovingAverageStrategy : Strategy
 		if (close < open)
 			_downValue = close;
 
-		var maUp = _maUp.Process(_upValue, candle.OpenTime, true).ToDecimal();
-		var maDown = _maDown.Process(_downValue, candle.OpenTime, true).ToDecimal();
+		var maUp = _maUp.Process(new DecimalIndicatorValue(_maUp, _upValue, candle.OpenTime)).ToDecimal();
+		var maDown = _maDown.Process(new DecimalIndicatorValue(_maDown, _downValue, candle.OpenTime)).ToDecimal();
 
 		if (!_maUp.IsFormed || !_maDown.IsFormed)
 			return;

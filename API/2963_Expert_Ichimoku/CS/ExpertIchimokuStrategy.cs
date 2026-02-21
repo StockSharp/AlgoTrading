@@ -158,19 +158,19 @@ public class ExpertIchimokuStrategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Tenkan Period", "Tenkan-sen length for Ichimoku", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Kijun Period", "Kijun-sen length for Ichimoku", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 			.SetGreaterThanZero()
 			.SetDisplay("Senkou Span B Period", "Senkou Span B length for Ichimoku", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 70, 2);
 
 		_stopLossOffset = Param(nameof(StopLossOffset), 0m)
@@ -232,9 +232,9 @@ public class ExpertIchimokuStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ichimoku = new Ichimoku
 		{

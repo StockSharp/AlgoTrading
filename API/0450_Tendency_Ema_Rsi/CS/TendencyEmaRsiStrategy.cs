@@ -132,25 +132,25 @@ public class TendencyEmaRsiStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation length", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 2);
 
 		_emaALength = Param(nameof(EmaALength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA A Length", "Fast EMA length", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 3);
 
 		_emaBLength = Param(nameof(EmaBLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA B Length", "Medium EMA length", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 30, 5);
 
 		_emaCLength = Param(nameof(EmaCLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA C Length", "Slow/Trend EMA length", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 25);
 
 		_showLong = Param(nameof(ShowLong), true)
@@ -165,7 +165,7 @@ public class TendencyEmaRsiStrategy : Strategy
 		_xBars = Param(nameof(XBars), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("X Bars", "Number of bars to close position", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 	}
 
@@ -189,15 +189,15 @@ public class TendencyEmaRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_emaA = new ExponentialMovingAverage { Length = EmaALength };
-		_emaB = new ExponentialMovingAverage { Length = EmaBLength };
-		_emaC = new ExponentialMovingAverage { Length = EmaCLength };
+		_emaA = new EMA { Length = EmaALength };
+		_emaB = new EMA { Length = EmaBLength };
+		_emaC = new EMA { Length = EmaCLength };
 
 		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);

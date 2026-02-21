@@ -50,54 +50,54 @@ public class ElliStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Default market order volume", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 60m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance to the protective take profit in pips", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 30m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance to the protective stop loss in pips", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 19)
 			.SetGreaterThanZero()
 			.SetDisplay("Tenkan Period", "Tenkan-sen period for the Ichimoku calculation", "Ichimoku")
-			.SetCanOptimize(true);
+			;
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Kijun Period", "Kijun-sen period for the Ichimoku calculation", "Ichimoku")
-			.SetCanOptimize(true);
+			;
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 120)
 			.SetGreaterThanZero()
 			.SetDisplay("Senkou Span B Period", "Senkou Span B period for the Ichimoku cloud", "Ichimoku")
-			.SetCanOptimize(true);
+			;
 
 		_tenkanKijunGapPips = Param(nameof(TenkanKijunGapPips), 20m)
 			.SetNotNegative()
 			.SetDisplay("Tenkan-Kijun Gap (pips)", "Minimum Tenkan/Kijun distance in pips required for entries", "Ichimoku")
-			.SetCanOptimize(true);
+			;
 
 		_convertHigh = Param(nameof(ConvertHigh), 13m)
 			.SetNotNegative()
 			.SetDisplay("DI High Threshold", "Current DI value that confirms momentum expansion", "ADX")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_convertLow = Param(nameof(ConvertLow), 6m)
 			.SetNotNegative()
 			.SetDisplay("DI Low Threshold", "Previous DI value that must stay below this level", "ADX")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_adxPeriod = Param(nameof(AdxPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period used for the Average Directional Index", "ADX")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Primary Candle Type", "Timeframe driving the Ichimoku structure", "Timeframes");
@@ -239,9 +239,9 @@ public class ElliStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 		Volume = OrderVolume;

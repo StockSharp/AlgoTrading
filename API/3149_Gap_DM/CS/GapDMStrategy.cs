@@ -100,22 +100,22 @@ public class GapDMStrategy : Strategy
 	{
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Order Volume", "Trading volume in lots", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Stop Loss (pips)", "Protective stop measured in pips. Set 0 to disable.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Take Profit (pips)", "Profit target measured in pips. Set 0 to disable.", "Risk");
 
 		_minGapPips = Param(nameof(MinGapPips), 1m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Minimum Gap (pips)", "Minimum distance between previous close and current open.", "Signals");
 
 		_maxPositions = Param(nameof(MaxPositions), 15)
@@ -151,9 +151,9 @@ public class GapDMStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (OrderVolume <= 0m)
 			throw new InvalidOperationException("Order volume must be positive.");

@@ -51,15 +51,15 @@ public class DeMarkerSignStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var deMarker = new DeMarker { Length = DeMarkerPeriod };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(deMarker, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal deMarker)

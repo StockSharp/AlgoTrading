@@ -108,12 +108,12 @@ public class AmlRsiMeetingLinesStrategy : Strategy
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 11)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("RSI Period", "Number of bars used for RSI calculation", "Indicators");
 
 		_bodyAveragePeriod = Param(nameof(BodyAveragePeriod), 3)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Body Average Period", "Number of candles used to average body sizes", "Patterns");
 
 		_bullishRsiLevel = Param(nameof(BullishRsiLevel), 40m)
@@ -150,16 +150,16 @@ public class AmlRsiMeetingLinesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex
 		{
 			Length = RsiPeriod
 		};
 
-		_bodyAverage = new SimpleMovingAverage
+		_bodyAverage = new SMA
 		{
 			Length = BodyAveragePeriod
 		};
@@ -167,7 +167,7 @@ public class AmlRsiMeetingLinesStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_rsi, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)

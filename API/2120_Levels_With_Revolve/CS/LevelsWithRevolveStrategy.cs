@@ -85,12 +85,12 @@ public class LevelsWithRevolveStrategy : Strategy
 
         _stopLoss = Param(nameof(StopLoss), 0m)
             .SetDisplay("Stop Loss", "Price distance for stop loss", "Risk")
-            .SetCanOptimize(true)
+            
             .SetOptimize(0m, 100m, 10m);
 
         _takeProfit = Param(nameof(TakeProfit), 0m)
             .SetDisplay("Take Profit", "Price distance for take profit", "Risk")
-            .SetCanOptimize(true)
+            
             .SetOptimize(0m, 200m, 10m);
 
         _enableReversal = Param(nameof(EnableReversal), false)
@@ -115,9 +115,9 @@ public class LevelsWithRevolveStrategy : Strategy
     }
 
     /// <inheritdoc />
-    protected override void OnStarted(DateTimeOffset time)
+    protected override void OnStarted2(DateTime time)
     {
-        base.OnStarted(time);
+        base.OnStarted2(time);
 
         var subscription = SubscribeCandles(CandleType);
         subscription

@@ -38,17 +38,17 @@ public class GoStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 174)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Length of EMA for price smoothing", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 50);
 
 		_openLevel = Param(nameof(OpenLevel), 0m)
 			.SetDisplay("Open Level", "GO level to open positions", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-10m, 10m, 1m);
 
 		_closeLevelDiff = Param(nameof(CloseLevelDiff), 0m)
 			.SetDisplay("Close Level Diff", "Difference between open and close levels", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 5m, 0.5m);
 
 		_showGo = Param(nameof(ShowGo), true)
@@ -63,11 +63,11 @@ public class GoStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var highMa = new EMA { Length = MaPeriod };
 		var lowMa = new EMA { Length = MaPeriod };

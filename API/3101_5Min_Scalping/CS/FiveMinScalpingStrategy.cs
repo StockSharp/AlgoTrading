@@ -111,31 +111,31 @@ public class FiveMinScalpingStrategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast LWMA", "Length of the fast LWMA filter", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow LWMA", "Length of the slow LWMA filter", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 120, 5);
 
 		_momentumLength = Param(nameof(MomentumLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Length", "Lookback for the momentum confirmation", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 			.SetNotNegative()
 			.SetDisplay("Momentum Buy Threshold", "Minimum |Momentum-100| required for long trades", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
 			.SetNotNegative()
 			.SetDisplay("Momentum Sell Threshold", "Minimum |Momentum-100| required for short trades", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
@@ -396,9 +396,9 @@ public class FiveMinScalpingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastLwma = new WeightedMovingAverage { Length = FastMaLength };
 		_slowLwma = new WeightedMovingAverage { Length = SlowMaLength };

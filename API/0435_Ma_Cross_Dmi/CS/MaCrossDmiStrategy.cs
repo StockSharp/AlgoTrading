@@ -153,20 +153,20 @@ public class MaCrossDmiStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize moving averages
 		if (Ma1IsEma)
-			_ma1 = new ExponentialMovingAverage { Length = Ma1Length };
+			_ma1 = new EMA { Length = Ma1Length };
 		else
-			_ma1 = new SimpleMovingAverage { Length = Ma1Length };
+			_ma1 = new SMA { Length = Ma1Length };
 
 		if (Ma2IsEma)
-			_ma2 = new ExponentialMovingAverage { Length = Ma2Length };
+			_ma2 = new EMA { Length = Ma2Length };
 		else
-			_ma2 = new SimpleMovingAverage { Length = Ma2Length };
+			_ma2 = new SMA { Length = Ma2Length };
 
 		// Initialize DMI
 		_dmi = new DirectionalIndex

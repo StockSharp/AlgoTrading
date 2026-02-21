@@ -83,9 +83,9 @@ public class XTrailStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma1 = new SMA { Length = Ma1Length };
 		_ma2 = new SMA { Length = Ma2Length };
@@ -103,8 +103,8 @@ public class XTrailStrategy : Strategy
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var ma1 = _ma1.Process(median, candle.OpenTime, true).ToDecimal();
-		var ma2 = _ma2.Process(median, candle.OpenTime, true).ToDecimal();
+		var ma1 = _ma1.Process(new DecimalIndicatorValue(_ma1, median, candle.OpenTime)).ToDecimal();
+		var ma2 = _ma2.Process(new DecimalIndicatorValue(_ma2, median, candle.OpenTime)).ToDecimal();
 
 		if (_prevMa1 != null && _prevMa2 != null && _prev2Ma1 != null && _prev2Ma2 != null)
 		{

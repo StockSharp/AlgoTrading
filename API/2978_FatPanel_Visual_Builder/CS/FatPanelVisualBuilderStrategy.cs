@@ -128,9 +128,9 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 
@@ -450,7 +450,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 						return;
 
 					var price = GetPrice(candle, _definition.Price);
-					var value = _indicator.Process(price, candle.OpenTime, true).ToNullableDecimal();
+					var value = _indicator.Process(new DecimalIndicatorValue(_indicator, price, candle.OpenTime)).ToNullableDecimal();
 
 					if (_indicator.IsFormed && value is decimal formed)
 					{

@@ -101,29 +101,29 @@ public class BlockbusterBollingerStrategy : Strategy
 	{
 		_profitTargetPoints = Param(nameof(ProfitTargetPoints), 3m)
 			.SetDisplay("Profit Target", "Target profit in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 20m, 1m);
 
 		_lossLimitPoints = Param(nameof(LossLimitPoints), 20m)
 			.SetDisplay("Loss Limit", "Stop-loss distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 50m, 5m);
 
 		_distancePoints = Param(nameof(DistancePoints), 3m)
 			.SetDisplay("Band Offset", "Extra distance beyond the band in points", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 10m, 1m);
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetDisplay("Bollinger Period", "Number of bars for Bollinger Bands", "Signals")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier", "Signals")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_volume = Param(nameof(TradeVolume), 1m)
@@ -151,9 +151,9 @@ public class BlockbusterBollingerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 

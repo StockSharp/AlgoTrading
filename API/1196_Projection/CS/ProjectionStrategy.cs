@@ -74,20 +74,20 @@ public class ProjectionStrategy : Strategy
 	{
 		_targetMultiple = Param(nameof(TargetMultiple), 0.2m)
 			.SetDisplay("Target Multiple", "Multiplier for average change", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_threshold = Param(nameof(Threshold), 1m)
 			.SetDisplay("Threshold", "Threshold percentage factor", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_calculationPeriod = Param(nameof(CalculationPeriod), 5)
 			.SetDisplay("Calculation Period", "Days for averaging", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -110,9 +110,9 @@ public class ProjectionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_changeSma = new SMA { Length = CalculationPeriod };
 
@@ -121,7 +121,7 @@ public class ProjectionStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

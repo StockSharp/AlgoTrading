@@ -114,9 +114,9 @@ public class MultiPairCloserStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Resolve the list of instruments that should be supervised.
 		var securities = ResolveWatchedSecurities().ToList();

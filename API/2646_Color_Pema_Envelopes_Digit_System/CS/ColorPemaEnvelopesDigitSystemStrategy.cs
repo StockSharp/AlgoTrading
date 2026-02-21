@@ -255,9 +255,9 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pema.Length = EmaLength;
 		_pema.Digit = Digit;
@@ -491,7 +491,7 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 		Demark
 	}
 
-	private class PemaIndicator : Indicator<decimal>
+	private class PemaIndicator : BaseIndicator
 	{
 		public decimal Length { get; set; } = 50.01m;
 		public int Digit { get; set; } = 2;

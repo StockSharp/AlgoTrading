@@ -89,25 +89,25 @@ public class AwesomeFxTraderStrategy : Strategy
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Period of the fast EMA driving the oscillator", "Awesome Oscillator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 20, 1);
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Period of the slow EMA driving the oscillator", "Awesome Oscillator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 40, 1);
 
 		_trendLwmaPeriod = Param(nameof(TrendLwmaPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend LWMA", "Length of the linear weighted trend average", "Trend Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 2);
 
 		_trendSmoothingPeriod = Param(nameof(TrendSmoothingPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend Smoother", "Length of the SMA applied to the trend LWMA", "Trend Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -135,14 +135,14 @@ public class AwesomeFxTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastEma = new EMA { Length = FastEmaPeriod };
 		_slowEma = new EMA { Length = SlowEmaPeriod };
 		_trendLwma = new WeightedMovingAverage { Length = TrendLwmaPeriod };
-		_trendSmoother = new SimpleMovingAverage { Length = TrendSmoothingPeriod };
+		_trendSmoother = new SMA { Length = TrendSmoothingPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

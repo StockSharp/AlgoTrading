@@ -63,31 +63,31 @@ public class ImprovedEmaCdcTrailingStopStrategy : Strategy
 		_ema60Period = Param(nameof(Ema60Period), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA 60 Period", "Length of the fast EMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_ema90Period = Param(nameof(Ema90Period), 90)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA 90 Period", "Length of the slow EMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 120, 10);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(14, 50, 2);
 
 		_multiplier = Param(nameof(Multiplier), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "Multiplier for trailing stop", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_profitTargetMultiplier = Param(nameof(ProfitTargetMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Target Multiplier", "ATR multiplier for take profit", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -101,18 +101,18 @@ public class ImprovedEmaCdcTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var ema60 = new EMA { Length = Ema60Period };
 		var ema90 = new EMA { Length = Ema90Period };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = 12,
-			LongPeriod = 26,
+			ShortMa = { Length = 12 },
+			LongMa = { Length = 26 },
 			SignalPeriod = 9
 		};
 

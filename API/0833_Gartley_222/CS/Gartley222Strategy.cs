@@ -89,25 +89,25 @@ public class Gartley222Strategy : Strategy
 		_pivotLength = Param(nameof(PivotLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Pivot Length", "Bars left/right for pivot", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_fibTolerance = Param(nameof(FibTolerance), 0.05m)
 			.SetRange(0m, 0.2m)
 			.SetDisplay("Fib Tolerance", "Allowed Fibonacci ratio deviation", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 0.1m, 0.01m);
 
 		_tpFibExtension = Param(nameof(TpFibExtension), 1.27m)
 			.SetGreaterThanZero()
 			.SetDisplay("TP Fib Extension", "Take profit Fibonacci extension", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.1m, 1.6m, 0.05m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.1m, 10m)
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -135,9 +135,9 @@ public class Gartley222Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var size = PivotLength * 2 + 1;
 		_highs = new decimal?[size];

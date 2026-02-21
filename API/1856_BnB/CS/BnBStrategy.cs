@@ -89,7 +89,7 @@ public class BnBStrategy : Strategy
 
 		_length = Param(nameof(Length), 14)
 			.SetDisplay("EMA Length", "Length of smoothing for bulls and bears", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
@@ -130,13 +130,13 @@ public class BnBStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
-		_bullsMa = new ExponentialMovingAverage { Length = Length };
-		_bearsMa = new ExponentialMovingAverage { Length = Length };
+		_bullsMa = new EMA { Length = Length };
+		_bearsMa = new EMA { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

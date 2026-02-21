@@ -113,19 +113,19 @@ public class TradingPanelBatchStrategy : Strategy
 		_numberOfOrders = Param(nameof(NumberOfOrders), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Trades Count", "Number of market orders per batch", "Execution")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 5, 1);
 
 		_stopLossPips = Param(nameof(StopLossPips), 2m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 10m, 1m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 20m, 2m);
 
 		_orderVolume = Param(nameof(OrderVolume), 0.01m)
@@ -153,9 +153,9 @@ public class TradingPanelBatchStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 

@@ -333,22 +333,22 @@ public class BlauErgodicMdiTimeStrategy : Strategy
 		_baseLength = Param(nameof(BaseLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Base Length", "Length of the base EMA", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_firstSmoothingLength = Param(nameof(FirstSmoothingLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("First Smooth", "Length of the first smoothing", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_secondSmoothingLength = Param(nameof(SecondSmoothingLength), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Second Smooth", "Length of the second smoothing", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_thirdSmoothingLength = Param(nameof(ThirdSmoothingLength), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Third Smooth", "Length of the third smoothing", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetDisplay("Signal Bar", "Number of bars back used for the signal", "Indicator");
@@ -426,16 +426,16 @@ public class BlauErgodicMdiTimeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_candleSpan = GetCandleSpan();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

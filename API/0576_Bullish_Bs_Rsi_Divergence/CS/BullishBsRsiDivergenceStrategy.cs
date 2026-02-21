@@ -80,7 +80,7 @@ public class BullishBsRsiDivergenceStrategy : Strategy
 
 	public BullishBsRsiDivergenceStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 9).SetDisplay("RSI Period", "RSI calculation period", "Indicators").SetCanOptimize(true).SetOptimize(5, 20, 1);
+		_rsiPeriod = Param(nameof(RsiPeriod), 9).SetDisplay("RSI Period", "RSI calculation period", "Indicators").SetOptimize(5, 20, 1);
 		_pivotRight = Param(nameof(PivotLookbackRight), 3).SetDisplay("Pivot Right", "Bars to the right", "General");
 		_pivotLeft = Param(nameof(PivotLookbackLeft), 1).SetDisplay("Pivot Left", "Bars to the left", "General");
 		_takeProfit = Param(nameof(TakeProfitRsiLevel), 80).SetDisplay("RSI Take Profit", "RSI level", "Risk Management");
@@ -112,9 +112,9 @@ public class BullishBsRsiDivergenceStrategy : Strategy
 		_prevRsi = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_atr = new AverageTrueRange { Length = AtrLength };
 		var subscription = SubscribeCandles(CandleType);
@@ -127,7 +127,7 @@ public class BullishBsRsiDivergenceStrategy : Strategy
 			DrawIndicator(area, _atr);
 			DrawOwnTrades(area);
 		}
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal atr)

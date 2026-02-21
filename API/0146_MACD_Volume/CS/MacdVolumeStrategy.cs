@@ -102,37 +102,37 @@ public class MacdVolumeStrategy : Strategy
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA period of MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 4);
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA period of MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 32, 4);
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal line period of MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 13, 4);
 
 		_volumePeriod = Param(nameof(VolumePeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Period", "Period for volume averaging", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Multiplier", "Multiplier for average volume to confirm entry", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 2.0m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -172,7 +172,7 @@ public class MacdVolumeStrategy : Strategy
 			},
 			SignalMa = { Length = MacdSignal }
 		};
-		var volumeAvg = new SimpleMovingAverage
+		var volumeAvg = new SMA
 		{
 			Length = VolumePeriod
 		};

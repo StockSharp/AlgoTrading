@@ -33,7 +33,7 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 	private readonly StrategyParam<MovingAverageMethods> _maMethod;
 	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 
-	private LengthIndicator<decimal> _movingAverage;
+	private DecimalLengthIndicator _movingAverage;
 	private decimal[] _maBuffer = Array.Empty<decimal>();
 	private int _bufferCount;
 	private decimal _pipSize;
@@ -45,11 +45,11 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 30)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance expressed in pips.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetDisplay("Take Profit (pips)", "Take profit distance expressed in pips.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_startHour = Param(nameof(StartHour), 8)
 			.SetDisplay("Start Hour", "Hour (inclusive) when trading window opens.", "Session");
@@ -59,7 +59,7 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 
 		_differenceThreshold = Param(nameof(DifferenceThreshold), 0.0001m)
 			.SetDisplay("MA Difference", "Required difference between MA values.", "Logic")
-			.SetCanOptimize(true);
+			;
 
 		_barA = Param(nameof(BarA), 0)
 			.SetDisplay("Bar A", "Index of the first bar for MA comparison.", "Logic");
@@ -188,9 +188,9 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (MaLength <= 0)
 			throw new InvalidOperationException("MA length must be greater than zero.");
@@ -341,15 +341,15 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 		};
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 

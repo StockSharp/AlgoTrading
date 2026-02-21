@@ -157,13 +157,13 @@ public class ColorJjrsxTimePlusStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Period for the RSI calculation", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 20, 1);
 
 		_smoothingLength = Param(nameof(SmoothingLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Length", "Jurik moving average length", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_signalShift = Param(nameof(SignalShift), 1)
@@ -187,7 +187,7 @@ public class ColorJjrsxTimePlusStrategy : Strategy
 		_holdingMinutes = Param(nameof(HoldingMinutes), 240)
 			.SetGreaterThanZero()
 			.SetDisplay("Holding Minutes", "Maximum time in minutes to keep a position", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60, 720, 60);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
@@ -213,9 +213,9 @@ public class ColorJjrsxTimePlusStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex
 		{

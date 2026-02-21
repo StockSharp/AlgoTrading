@@ -102,7 +102,7 @@ public class IfsFractalsStrategy : Strategy
 		_entryThreshold = Param(nameof(EntryThreshold), 0.20m)
 			.SetRange(0.05m, 1.00m)
 			.SetDisplay("Entry Threshold", "Normalized EMA value required to open a position", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_exitThreshold = Param(nameof(ExitThreshold), 0.05m)
 			.SetRange(0.01m, 0.50m)
@@ -111,7 +111,7 @@ public class IfsFractalsStrategy : Strategy
 		_smoothingPeriod = Param(nameof(SmoothingPeriod), 14)
 			.SetRange(5, 60)
 			.SetDisplay("EMA Period", "Length of the smoothing EMA applied to the fractal signal", "Fractal")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 0m)
 			.SetRange(0m, 5m)
@@ -215,11 +215,11 @@ public class IfsFractalsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		BuildProbabilityTable();
 
-		_fractalEma = new ExponentialMovingAverage
+		_fractalEma = new EMA
 		{
 			Length = SmoothingPeriod,
 		};
@@ -241,7 +241,7 @@ public class IfsFractalsStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -253,7 +253,7 @@ public class IfsFractalsStrategy : Strategy
 
 		var normalizedX = Scale != 0m ? _currentX / Scale : _currentX;
 
-		var emaValue = _fractalEma.Process(normalizedX, candle.CloseTime, true);
+		var emaValue = _fractalEma.Process(new DecimalIndicatorValue(_fractalEma, normalizedX, candle.CloseTime));
 		if (!_fractalEma.IsFormed)
 			return;
 

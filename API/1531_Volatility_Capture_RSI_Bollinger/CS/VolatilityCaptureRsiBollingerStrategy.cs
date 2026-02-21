@@ -89,12 +89,12 @@ private readonly StrategyParam<Sides?> _direction;
 		_bollingerLength = Param(nameof(BollingerLength), 50)
 		.SetRange(10, 100)
 		.SetDisplay("Bollinger Length", "Period for Bollinger calculation", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_multiplier = Param(nameof(Multiplier), 2.7183m)
 		.SetRange(1m, 5m)
 		.SetDisplay("Multiplier", "Deviation multiplier for Bollinger bands", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_useRsi = Param(nameof(UseRsi), true)
 		.SetDisplay("Use RSI", "Enable RSI filter", "Strategy");
@@ -102,22 +102,22 @@ private readonly StrategyParam<Sides?> _direction;
 		_rsiPeriod = Param(nameof(RsiPeriod), 10)
 		.SetRange(5, 30)
 		.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_rsiSmaPeriod = Param(nameof(RsiSmaPeriod), 5)
 		.SetRange(2, 20)
 		.SetDisplay("RSI SMA Period", "SMA applied to RSI", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_boughtLevel = Param(nameof(BoughtRangeLevel), 55m)
 		.SetRange(0m, 100m)
 		.SetDisplay("Bought Range Level", "Upper threshold for RSI SMA", "Strategy")
-		.SetCanOptimize(true);
+		;
 
 		_soldLevel = Param(nameof(SoldRangeLevel), 50m)
 		.SetRange(0m, 100m)
 		.SetDisplay("Sold Range Level", "Lower threshold for RSI SMA", "Strategy")
-		.SetCanOptimize(true);
+		;
 
 		_direction = Param(nameof(Direction), (Sides?)null)
 			.SetDisplay("Trade Direction", "Choose long, short or both", "General");
@@ -143,9 +143,9 @@ private readonly StrategyParam<Sides?> _direction;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bollinger = new BollingerBands
 		{
@@ -158,7 +158,7 @@ private readonly StrategyParam<Sides?> _direction;
 			Length = RsiPeriod
 		};
 
-		_rsiSma = new SimpleMovingAverage
+		_rsiSma = new SMA
 		{
 			Length = RsiSmaPeriod
 		};
@@ -176,7 +176,7 @@ private readonly StrategyParam<Sides?> _direction;
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal rsi, decimal rsiSma)

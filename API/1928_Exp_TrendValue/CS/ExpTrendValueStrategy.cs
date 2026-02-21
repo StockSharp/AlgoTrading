@@ -134,9 +134,9 @@ public class ExpTrendValueStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_wmaHigh.Length = MaPeriod;
 		_wmaLow.Length = MaPeriod;
@@ -146,7 +146,7 @@ public class ExpTrendValueStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(atr, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

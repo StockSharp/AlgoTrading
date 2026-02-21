@@ -94,11 +94,11 @@ public class TsiMacdCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_tsi = new TrueStrengthIndex
 		{
@@ -106,7 +106,7 @@ public class TsiMacdCrossoverStrategy : Strategy
 			ShortLength = ShortLength
 		};
 
-		_signal = new ExponentialMovingAverage { Length = SignalLength };
+		_signal = new EMA { Length = SignalLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

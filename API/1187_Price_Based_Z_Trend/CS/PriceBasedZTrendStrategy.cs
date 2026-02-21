@@ -65,11 +65,11 @@ _direction = Param(nameof(Direction), (Sides?)null)
 		_prevZScore = 0m;
 	}
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = PriceAverageLength };
+		var ema = new EMA { Length = PriceAverageLength };
 		var stdDev = new StandardDeviation { Length = PriceDeviationLength };
 
 		var subscription = SubscribeCandles(CandleType);

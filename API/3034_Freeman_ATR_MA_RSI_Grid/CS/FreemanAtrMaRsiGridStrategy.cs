@@ -40,7 +40,7 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 	private readonly StrategyParam<int> _currentBarOffset;
 
 	private AverageTrueRange _atr = null!;
-	private LengthIndicator<decimal> _ma = null!;
+	private DecimalLengthIndicator _ma = null!;
 	private RelativeStrengthIndex _rsi = null!;
 
 	private readonly List<decimal> _maValues = new();
@@ -63,27 +63,27 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		_maxPositions = Param(nameof(MaxPositions), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Positions", "Maximum number of simultaneously open positions", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_distancePips = Param(nameof(DistancePips), 5m)
 		.SetNotNegative()
 		.SetDisplay("Distance Between Entries (pips)", "Minimum price distance between layered entries", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "ATR length used for stop loss and take profit", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_atrStopLossMultiplier = Param(nameof(AtrStopLossMultiplier), 3m)
 		.SetNotNegative()
 		.SetDisplay("ATR Stop Multiplier", "ATR multiplier that defines the protective stop", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_atrTakeProfitMultiplier = Param(nameof(AtrTakeProfitMultiplier), 2m)
 		.SetNotNegative()
 		.SetDisplay("ATR Target Multiplier", "ATR multiplier that defines the profit target", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_useTrendFilter = Param(nameof(UseTrendFilter), true)
 		.SetDisplay("Use MA Trend Filter", "Enable the moving average slope filter", "Filters");
@@ -91,17 +91,17 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		_distanceFromMaPips = Param(nameof(DistanceFromMaPips), 5m)
 		.SetNotNegative()
 		.SetDisplay("Distance From MA (pips)", "Minimum distance between price and MA to validate entries", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_maPeriod = Param(nameof(MaPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Moving average lookback period", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_maShift = Param(nameof(MaShift), 1)
 		.SetNotNegative()
 		.SetDisplay("MA Shift", "Horizontal shift applied when reading MA values", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
 		.SetDisplay("MA Method", "Moving average calculation method", "Indicators");
@@ -114,16 +114,16 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 
 		_rsiLevelUp = Param(nameof(RsiLevelUp), 65m)
 		.SetDisplay("RSI Upper Level", "Upper RSI threshold that favours shorts", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_rsiLevelDown = Param(nameof(RsiLevelDown), 25m)
 		.SetDisplay("RSI Lower Level", "Lower RSI threshold that favours longs", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 25)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Number of bars for RSI calculation", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_rsiPriceType = Param(nameof(RsiPriceType), AppliedPrices.Median)
 		.SetDisplay("RSI Price", "Price source used by RSI", "Indicators");
@@ -131,17 +131,17 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance measured in pips", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Additional move required before trail adjustment", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_currentBarOffset = Param(nameof(CurrentBarOffset), 0)
 		.SetNotNegative()
 		.SetDisplay("Indicator Bar Offset", "Bar shift used when reading indicator values", "Indicators")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>
@@ -331,9 +331,9 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 		_ma = CreateMovingAverage(MaMethod, MaPeriod);
@@ -345,7 +345,7 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		_shortPositions.Clear();
 		_pipSize = 0m;
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -365,12 +365,12 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		// Feed technical indicators with the completed candle.
 		var atrValue = _atr.Process(candle).ToNullableDecimal();
 		var maInput = GetAppliedPrice(candle, MaPriceType);
-		var maValue = _ma.Process(maInput, candle.OpenTime, true).ToNullableDecimal();
+		var maValue = _ma.Process(new DecimalIndicatorValue(_ma, maInput, candle.OpenTime)).ToNullableDecimal();
 		if (maValue != null)
 			AddValue(_maValues, maValue.Value);
 
 		var rsiInput = GetAppliedPrice(candle, RsiPriceType);
-		var rsiValue = _rsi.Process(rsiInput, candle.OpenTime, true).ToNullableDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiInput, candle.OpenTime)).ToNullableDecimal();
 		if (rsiValue != null)
 			AddValue(_rsiValues, rsiValue.Value);
 
@@ -668,15 +668,15 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 			values.RemoveAt(0);
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

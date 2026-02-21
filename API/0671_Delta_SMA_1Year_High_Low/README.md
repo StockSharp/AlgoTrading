@@ -10,7 +10,7 @@ The **Delta SMA 1-Year High Low** strategy calculates volume delta (buy minus se
 - **Stops**: No.
 - **Default Values**:
   - `DeltaSmaLength = 14`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Volume
   - Direction: Long

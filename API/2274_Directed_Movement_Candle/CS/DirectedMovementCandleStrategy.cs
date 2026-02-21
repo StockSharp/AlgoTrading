@@ -34,16 +34,16 @@ public class DirectedMovementCandleStrategy : Strategy
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI period", "Indicator")
-			.SetCanOptimize(true);
+			;
 		_highLevel = Param(nameof(HighLevel), 70m)
 			.SetDisplay("High Level", "Upper threshold", "Indicator")
-			.SetCanOptimize(true);
+			;
 		_middleLevel = Param(nameof(MiddleLevel), 50m)
 			.SetDisplay("Middle Level", "Middle threshold", "Indicator")
-			.SetCanOptimize(true);
+			;
 		_lowLevel = Param(nameof(LowLevel), 30m)
 			.SetDisplay("Low Level", "Lower threshold", "Indicator")
-			.SetCanOptimize(true);
+			;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "Data");
 	}
@@ -74,9 +74,9 @@ public class DirectedMovementCandleStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex
 		{

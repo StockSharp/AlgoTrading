@@ -52,11 +52,11 @@ public class BtcFutureGammaWeightedMomentumModelStrategy : Strategy
 		_length = Param(nameof(Length), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Length for GWAP calculation", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_gammaFactor = Param(nameof(GammaFactor), 0.75m)
 			.SetDisplay("Gamma Factor", "Gamma weight factor", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -82,9 +82,9 @@ public class BtcFutureGammaWeightedMomentumModelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

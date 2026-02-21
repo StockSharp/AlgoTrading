@@ -187,9 +187,9 @@ set => _candleType.Value = value;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var security = Security ?? throw new InvalidOperationException("Security is not specified.");
 var step = security.PriceStep ?? 0m;
@@ -204,7 +204,7 @@ step = 0.0001m;
 
 _pointValue = step;
 
-_ema = new ExponentialMovingAverage { Length = MaPeriod };
+_ema = new EMA { Length = MaPeriod };
 
 var subscription = SubscribeCandles(CandleType);
 subscription
@@ -221,7 +221,7 @@ if (_ema is null)
 return;
 
 var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
-var emaValue = _ema.Process(medianPrice, candle.CloseTime, true).ToDecimal();
+var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, medianPrice, candle.CloseTime)).ToDecimal();
 
 if (!_ema.IsFormed)
 {

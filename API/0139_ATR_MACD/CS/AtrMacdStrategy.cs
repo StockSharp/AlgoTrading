@@ -124,43 +124,43 @@ public class AtrMacdStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR indicator period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_atrAvgPeriod = Param(nameof(AtrAvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Avg Period", "ATR average period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "ATR comparison multiplier", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 2.0m, 0.1m);
 
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "MACD fast period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 4);
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "MACD slow period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 32, 4);
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "MACD signal period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 13, 4);
 
 		_stopLossAtr = Param(nameof(StopLossAtr), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss ATR", "Stop loss as ATR multiplier", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -169,7 +169,7 @@ public class AtrMacdStrategy : Strategy
 		_atrDeltaPercent = Param(nameof(AtrDeltaPercent), 10.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Delta %", "Minimum ATR increase percent compared to previous value", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5.0m, 20.0m, 1.0m);
 	}
 
@@ -201,7 +201,7 @@ public class AtrMacdStrategy : Strategy
 			Length = AtrPeriod
 		};
 
-		_atrAvg = new SimpleMovingAverage
+		_atrAvg = new SMA
 		{
 			Length = AtrAvgPeriod
 		};

@@ -135,17 +135,17 @@ public class EmaWprTrendStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 144)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period for EMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_wprPeriod = Param(nameof(WprPeriod), 46)
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Period", "%R length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_wprRetracement = Param(nameof(WprRetracement), 30m)
 			.SetNotNegative()
 			.SetDisplay("WPR Retracement", "Retracement for next trade", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_useWprExit = Param(nameof(UseWprExit), true)
 			.SetDisplay("Use WPR Exit", "Exit using Williams %R", "Exits");
@@ -184,13 +184,13 @@ public class EmaWprTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_ema = new EMA { Length = EmaPeriod };
 		_wpr = new WilliamsR { Length = WprPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

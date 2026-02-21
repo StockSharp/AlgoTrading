@@ -102,37 +102,37 @@ public class SuperTrendSdiWebhookStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "ATR length for SuperTrend", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.8m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "ATR multiplier for SuperTrend", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.1m);
 		_diLength = Param(nameof(DiLength), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("DI Length", "Length for directional indicator", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 20, 1);
 		_diSmooth = Param(nameof(DiSmooth), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("DI Smooth", "Smoothing for directional indicator", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 20, 1);
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 25m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit %", "Percent take profit", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 50m, 5m);
 		_stopLossPercent = Param(nameof(StopLossPercent), 4.8m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss %", "Percent stop loss", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 10m, 1m);
 		_trailingPercent = Param(nameof(TrailingPercent), 1.9m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing %", "Trailing stop percent", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.1m);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -153,9 +153,9 @@ public class SuperTrendSdiWebhookStrategy : Strategy
 		_trailingPrice = 0m;
 	}
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		var supertrend = new SuperTrend { Length = AtrPeriod, Multiplier = AtrMultiplier };
 		var adx = new AverageDirectionalIndex { Length = DiLength, Smooth = DiSmooth };
 		var subscription = SubscribeCandles(CandleType);

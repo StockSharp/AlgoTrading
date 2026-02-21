@@ -68,17 +68,17 @@ public StreakBasedTradingStrategy()
 
 		_streakThreshold = Param(nameof(StreakThreshold), 8)
 			.SetDisplay("Streak Threshold", "Number of streaks before trade", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_holdDuration = Param(nameof(HoldDuration), 7)
 			.SetDisplay("Hold Duration", "Holding period in candles", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_dojiThreshold = Param(nameof(DojiThreshold), 0.01m)
 			.SetDisplay("Doji Threshold (%)", "Doji sensitivity in percent", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.1m, 0.001m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -102,9 +102,9 @@ public StreakBasedTradingStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

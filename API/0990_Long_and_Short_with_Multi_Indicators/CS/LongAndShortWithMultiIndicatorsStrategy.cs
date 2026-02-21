@@ -110,7 +110,7 @@ public class LongAndShortWithMultiIndicatorsStrategy : Strategy
 	{
 		_rsiLength = Param(nameof(RsiLength), 5)
 			.SetDisplay("RSI Length", "Length of RSI", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero()
 			.SetOptimize(2, 20, 1);
 
@@ -157,14 +157,14 @@ public class LongAndShortWithMultiIndicatorsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var roc = new RateOfChange { Length = RocLength };
 		var ma = CreateMa(MaTypeParam, MaLength);
-		var bearishMa = new SimpleMovingAverage { Length = BearishMaLength };
+		var bearishMa = new SMA { Length = BearishMaLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -240,14 +240,14 @@ public class LongAndShortWithMultiIndicatorsStrategy : Strategy
 	{
 		return type switch
 		{
-			MaTypes.Sma => new SimpleMovingAverage { Length = length },
-			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
+			MaTypes.Sma => new SMA { Length = length },
+			MaTypes.Ema => new EMA { Length = length },
 			MaTypes.Wma => new WeightedMovingAverage { Length = length },
 			MaTypes.Hma => new HullMovingAverage { Length = length },
 			MaTypes.Vwma => new VolumeWeightedMovingAverage { Length = length },
 			MaTypes.Rma => new SmoothedMovingAverage { Length = length },
 			MaTypes.Tema => new TripleExponentialMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

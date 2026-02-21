@@ -73,51 +73,51 @@ private readonly StrategyParam<Sides?> _direction;
 
 		_supertrendPeriod = Param(nameof(_supertrendPeriod), 10)
 		.SetDisplay("SuperTrend Length", "ATR period", "SuperTrend")
-		.SetCanOptimize(true);
+		;
 
 		_supertrendFactor = Param(nameof(_supertrendFactor), 4m)
 		.SetDisplay("SuperTrend Factor", "ATR multiplier", "SuperTrend")
-		.SetCanOptimize(true);
+		;
 
 		_maxDepth = Param(nameof(_maxDepth), 5m)
 		.SetDisplay("Max Flag Depth", "Max pullback percent", "Bull Flag")
-		.SetCanOptimize(true);
+		;
 
 		_minFlagLength = Param(nameof(_minFlagLength), 3)
 		.SetDisplay("Min Flag Length", "Min bars for flag", "Bull Flag")
-		.SetCanOptimize(true);
+		;
 
 		_maxFlagLength = Param(nameof(_maxFlagLength), 7)
 		.SetDisplay("Max Flag Length", "Max bars for flag", "Bull Flag")
-		.SetCanOptimize(true);
+		;
 
 		_maxRally = Param(nameof(_maxRally), 5m)
 		.SetDisplay("Max Flag Rally", "Max rally percent", "Bear Flag")
-		.SetCanOptimize(true);
+		;
 
 		_minFlagLengthBear = Param(nameof(_minFlagLengthBear), 3)
 		.SetDisplay("Min Bear Flag Length", "Min bars", "Bear Flag")
-		.SetCanOptimize(true);
+		;
 
 		_maxFlagLengthBear = Param(nameof(_maxFlagLengthBear), 7)
 		.SetDisplay("Max Bear Flag Length", "Max bars", "Bear Flag")
-		.SetCanOptimize(true);
+		;
 
 		_poleMin = Param(nameof(_poleMin), 3m)
 		.SetDisplay("Prior Uptrend Minimum", "Min percent run-up", "Bull Flag")
-		.SetCanOptimize(true);
+		;
 
 		_poleLength = Param(nameof(_poleLength), 7)
 		.SetDisplay("Flag Pole Length", "Bars for run-up", "Bull Flag")
-		.SetCanOptimize(true);
+		;
 
 		_poleMinBear = Param(nameof(_poleMinBear), 3m)
 		.SetDisplay("Prior Downtrend Minimum", "Min percent drop", "Bear Flag")
-		.SetCanOptimize(true);
+		;
 
 		_poleLengthBear = Param(nameof(_poleLengthBear), 7)
 		.SetDisplay("Flag Pole Length Bear", "Bars for drop", "Bear Flag")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -147,9 +147,9 @@ private readonly StrategyParam<Sides?> _direction;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_superTrend = new SuperTrend { Length = _supertrendPeriod.Value, Multiplier = _supertrendFactor.Value };
 		_poleLow = new Lowest { Length = _poleLength.Value };

@@ -100,26 +100,26 @@ public class TurtleTraderV1Strategy : Strategy
 		_prevRsi = _prevCci = _prevMomentum = _prevCho = _prevFastMa = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
-		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
+		_fastMa = new EMA { Length = FastMaPeriod };
+		_slowMa = new EMA { Length = SlowMaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_stochastic = new StochasticOscillator { Length = StochPeriod };
+		_stochastic = new StochasticOscillator { K = { Length = StochPeriod } };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_ad = new AccumulationDistributionLine();
-		_choFastEma = new ExponentialMovingAverage { Length = ChoFastPeriod };
-		_choSlowEma = new ExponentialMovingAverage { Length = ChoSlowPeriod };
+		_choFastEma = new EMA { Length = ChoFastPeriod };
+		_choSlowEma = new EMA { Length = ChoSlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.BindEx(_fastMa, _slowMa, _rsi, _stochastic, _cci, _momentum, _ad, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -158,8 +158,8 @@ public class TurtleTraderV1Strategy : Strategy
 		var momentum = momentumValue.GetValue<decimal>();
 		var ad = adValue.GetValue<decimal>();
 
-		var fastCho = _choFastEma.Process(new DecimalIndicatorValue(_choFastEma, ad, candle.Time));
-		var slowCho = _choSlowEma.Process(new DecimalIndicatorValue(_choSlowEma, ad, candle.Time));
+		var fastCho = _choFastEma.Process(new DecimalIndicatorValue(_choFastEma, ad, candle.ServerTime));
+		var slowCho = _choSlowEma.Process(new DecimalIndicatorValue(_choSlowEma, ad, candle.ServerTime));
 		if (!fastCho.IsFinal || !slowCho.IsFinal)
 		{
 			_prevCho = fastCho.ToDecimal() - slowCho.ToDecimal();

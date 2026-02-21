@@ -96,11 +96,11 @@ public class RandomTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = SmaPeriod };
+		var sma = new SMA { Length = SmaPeriod };
 		var subscription = SubscribeCandles(TimeSpan.FromMinutes(1).TimeFrame());
 
 		subscription.Bind(sma, ProcessCandle).Start();
@@ -113,7 +113,7 @@ public class RandomTrailingStopStrategy : Strategy
 			DrawIndicator(area, sma, "SMA");
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue)

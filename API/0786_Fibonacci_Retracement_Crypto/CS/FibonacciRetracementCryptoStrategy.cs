@@ -54,7 +54,7 @@ public class FibonacciRetracementCryptoStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Lookback period for Fibonacci calculation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -75,9 +75,9 @@ public class FibonacciRetracementCryptoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = LookbackPeriod };
 		_lowest = new Lowest { Length = LookbackPeriod };

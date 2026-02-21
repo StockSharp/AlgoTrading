@@ -35,12 +35,12 @@ public class TrailingStarPriceStrategy : Strategy
 		_entryPrice = Param(nameof(EntryPrice), 0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Activation price", "Price level that must be reached before the trailing stop starts.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingPointPips = Param(nameof(TrailingPointPips), 15m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing distance (pips)", "Distance between price and stop order expressed in MetaTrader points.", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -78,9 +78,9 @@ public class TrailingStarPriceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = CalculatePointValue();
 

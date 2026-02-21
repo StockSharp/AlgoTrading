@@ -38,18 +38,18 @@ public class HftSpreaderForFortsStrategy : Strategy
 		_spreadMultiplier = Param(nameof(SpreadMultiplier), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Spread Multiplier", "Spread ticks required to place orders", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		Volume = 1;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		SubscribeOrderBook()
 			.Bind(ProcessOrderBook)

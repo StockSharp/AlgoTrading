@@ -50,7 +50,7 @@ public class GoCandleBodyReversalStrategy : Strategy
 		_period = Param(nameof(Period), 174)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "SMA period for candle body", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 25);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -71,11 +71,11 @@ public class GoCandleBodyReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = Period };
+		_sma = new SMA { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -90,15 +90,13 @@ public class GoCandleBodyReversalStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
-		var maValue = _sma.Process(
-			candle.ClosePrice - candle.OpenPrice,
-			candle.ServerTime,
-			candle.State == CandleStates.Finished);
+		var maValue = _sma.Process(new DecimalIndicatorValue(_sma, 
+			candle.ClosePrice - candle.OpenPrice, candle.ServerTime));
 
 		if (!maValue.IsFinal)
 			return;

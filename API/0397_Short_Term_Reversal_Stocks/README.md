@@ -11,7 +11,7 @@ Positions are held for only a few days before re-evaluating.
 - **Exit Criteria**: Positions closed after several days or when rankings update.
 - **Stops**: Volatility-based stop may be used.
 - **Default Values**:
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

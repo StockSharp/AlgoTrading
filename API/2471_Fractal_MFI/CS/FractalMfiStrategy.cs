@@ -86,22 +86,22 @@ public class FractalMfiStrategy : Strategy
 		_mfiPeriod = Param(nameof(MfiPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("MFI Period", "Length of MFI indicator", "Indicator")
-		.SetCanOptimize(true);
+		;
 		
 		_highLevel = Param<decimal>(nameof(HighLevel), 70m)
 		.SetDisplay("High Level", "Upper MFI threshold", "Levels")
-		.SetCanOptimize(true);
+		;
 		
 		_lowLevel = Param<decimal>(nameof(LowLevel), 30m)
 		.SetDisplay("Low Level", "Lower MFI threshold", "Levels")
-		.SetCanOptimize(true);
+		;
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 		
 		_trend = Param(nameof(Trend), TrendModes.Direct)
 		.SetDisplay("Trend Mode", "Follow or trade against the trend", "General")
-		.SetCanOptimize(true);
+		;
 		
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
 		.SetDisplay("Buy Open", "Enable long entries", "Signals");
@@ -131,9 +131,9 @@ public class FractalMfiStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var mfi = new MoneyFlowIndex { Length = MfiPeriod };
 		var subscription = SubscribeCandles(CandleType);
@@ -165,7 +165,7 @@ public class FractalMfiStrategy : Strategy
 		})
 		.Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		var area = CreateChartArea();
 		if (area != null)

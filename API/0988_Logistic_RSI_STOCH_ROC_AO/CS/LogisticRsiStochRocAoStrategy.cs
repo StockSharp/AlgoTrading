@@ -122,29 +122,29 @@ public class LogisticRsiStochRocAoStrategy : Strategy
 		_indicator = Param(nameof(Indicator), IndicatorSources.LogisticDominance)
 						 .SetDisplay("Indicator", "Source indicator", "General");
 
-		_length = Param(nameof(Length), 13).SetDisplay("Length", "Logistic map length", "General").SetCanOptimize(true);
+		_length = Param(nameof(Length), 13).SetDisplay("Length", "Logistic map length", "General");
 
 		_lenLd = Param(nameof(LenLd), 5)
 					 .SetDisplay("Len LD", "Length for logistic dominance", "Sources")
-					 .SetCanOptimize(true);
+					 ;
 
-		_lenRoc = Param(nameof(LenRoc), 9).SetDisplay("Len ROC", "ROC length", "Sources").SetCanOptimize(true);
+		_lenRoc = Param(nameof(LenRoc), 9).SetDisplay("Len ROC", "ROC length", "Sources");
 
-		_lenRsi = Param(nameof(LenRsi), 14).SetDisplay("Len RSI", "RSI length", "Sources").SetCanOptimize(true);
+		_lenRsi = Param(nameof(LenRsi), 14).SetDisplay("Len RSI", "RSI length", "Sources");
 
-		_lenSto = Param(nameof(LenSto), 14).SetDisplay("Len STO", "Stochastic length", "Sources").SetCanOptimize(true);
+		_lenSto = Param(nameof(LenSto), 14).SetDisplay("Len STO", "Stochastic length", "Sources");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 						  .SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ao.ShortPeriod = 5;
-		_ao.LongPeriod = 34;
+		_ao.ShortMa = { Length = 5 };
+		_ao.LongMa = { Length = 34 };
 		_roc.Length = LenRoc;
 		_rocLd.Length = LenLd;
 		_rsi.Length = LenRsi;
@@ -155,7 +155,7 @@ public class LogisticRsiStochRocAoStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(_ao, _roc, _rsi, _stoch, _rocLd, _highest, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private static decimal LogisticMap(decimal s, decimal r, decimal highest)

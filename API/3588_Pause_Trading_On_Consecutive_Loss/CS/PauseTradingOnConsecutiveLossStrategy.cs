@@ -86,19 +86,19 @@ public class PauseTradingOnConsecutiveLossStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume for entries and exits", "Execution")
-			.SetCanOptimize(true);
+			;
 
 		_consecutiveLosses = Param(nameof(ConsecutiveLosses), 3)
 			.SetDisplay("Consecutive Losses", "Losses required before pausing", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_withinMinutes = Param(nameof(WithinMinutes), 20)
 			.SetDisplay("Within Minutes", "Window in minutes that contains the loss streak", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_pauseMinutes = Param(nameof(PauseMinutes), 20)
 			.SetDisplay("Pause Minutes", "Duration of the cool-down after the streak", "Risk Management")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -118,9 +118,9 @@ public class PauseTradingOnConsecutiveLossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_lastRealizedPnL = PnLManager?.RealizedPnL ?? 0m;
 

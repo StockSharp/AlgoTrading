@@ -12,7 +12,7 @@
   - `LookbackDays = 7 * 21`
   - `HoldingMonths = 6`
   - `MinTradeUsd = 50`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Фильтры**:
   - Категория: Моментум
   - Направление: Оба

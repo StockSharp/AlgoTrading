@@ -74,13 +74,13 @@ public class HancockRsiVolumeStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation period", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 30, 1);
 
 		_threshold = Param(nameof(Threshold), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Threshold", "RSI trend threshold", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_useWicks = Param(nameof(UseWicks), true)
@@ -109,11 +109,11 @@ public class HancockRsiVolumeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

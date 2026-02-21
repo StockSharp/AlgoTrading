@@ -51,7 +51,7 @@ public class BarBalanceStrategy : Strategy
 		_length = Param(nameof(Length), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Balance MA Length", "Period for bar balance average", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -65,11 +65,11 @@ public class BarBalanceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_balanceMa = new SimpleMovingAverage { Length = Length };
+		_balanceMa = new SMA { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -99,7 +99,7 @@ public class BarBalanceStrategy : Strategy
 		var down = candle.HighPrice - candle.ClosePrice;
 		var balance = (up - down) / range;
 
-		var maValue = _balanceMa.Process(balance, candle.ServerTime, true).ToDecimal();
+		var maValue = _balanceMa.Process(new DecimalIndicatorValue(_balanceMa, balance, candle.ServerTime)).ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading() || !_balanceMa.IsFormed)
 			return;

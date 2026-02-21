@@ -150,12 +150,12 @@ public class DayTradingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var fastEma = new EMA { Length = FastEmaLength };
+		var slowEma = new EMA { Length = SlowEmaLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);

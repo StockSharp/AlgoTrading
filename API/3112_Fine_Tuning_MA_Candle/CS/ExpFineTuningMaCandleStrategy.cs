@@ -150,7 +150,7 @@ public class ExpFineTuningMaCandleStrategy : Strategy
 		_length = Param(nameof(Length), 10)
 			.SetDisplay("Length", "Number of candles in the weighted window", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_rank1 = Param(nameof(Rank1), 2m)
@@ -222,9 +222,9 @@ public class ExpFineTuningMaCandleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = new FineTuningMaCandleIndicator
 		{

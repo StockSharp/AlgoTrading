@@ -31,8 +31,8 @@ public class ExpertClorCloseManagerStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrTarget;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _fastMa;
-	private LengthIndicator<decimal> _slowMa;
+	private DecimalLengthIndicator _fastMa;
+	private DecimalLengthIndicator _slowMa;
 	private AverageTrueRange _atr;
 
 	private decimal? _fastPrev1;
@@ -124,7 +124,7 @@ public class ExpertClorCloseManagerStrategy : Strategy
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 5)
 			.SetDisplay("Fast MA Period", "Length of the fast moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 30, 1);
 
 		_fastMaMethod = Param(nameof(FastMaMethod), MovingAverageMethods.Exponential)
@@ -135,7 +135,7 @@ public class ExpertClorCloseManagerStrategy : Strategy
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 7)
 			.SetDisplay("Slow MA Period", "Length of the slow moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 1);
 
 		_slowMaMethod = Param(nameof(SlowMaMethod), MovingAverageMethods.Exponential)
@@ -149,12 +149,12 @@ public class ExpertClorCloseManagerStrategy : Strategy
 
 		_atrPeriod = Param(nameof(AtrPeriod), 12)
 			.SetDisplay("ATR Period", "ATR period for the trailing stop", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_atrTarget = Param(nameof(AtrTarget), 2m)
 			.SetDisplay("ATR Target", "Multiplier for the ATR trailing stop", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -181,9 +181,9 @@ public class ExpertClorCloseManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		// Create indicators based on user configuration.
 
 		_fastMa = CreateMovingAverage(FastMaMethod, FastMaPeriod);
@@ -223,8 +223,8 @@ public class ExpertClorCloseManagerStrategy : Strategy
 		var priceSlow = GetPrice(candle, SlowPriceType);
 		// Calculate indicator values for the current bar.
 
-		var fastValue = _fastMa.Process(priceFast, candle.OpenTime, true).ToDecimal();
-		var slowValue = _slowMa.Process(priceSlow, candle.OpenTime, true).ToDecimal();
+		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, priceFast, candle.OpenTime)).ToDecimal();
+		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, priceSlow, candle.OpenTime)).ToDecimal();
 		var atrValue = _atr.Process(candle).ToDecimal();
 		var atrFormed = _atr.IsFormed;
 		// Track whether the moving average cross should force an exit.
@@ -354,15 +354,15 @@ public class ExpertClorCloseManagerStrategy : Strategy
 		return BreakevenPips * step;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 

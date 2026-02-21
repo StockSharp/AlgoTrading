@@ -80,7 +80,7 @@ public class EaObjpropChartIdStrategy : Strategy
 		_channelLength = Param(nameof(ChannelLength), 22)
 			.SetGreaterThanZero()
 			.SetDisplay("Channel Length", "Length of Donchian Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 2);
 
 		_primaryCandleType = Param(nameof(PrimaryCandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -89,7 +89,7 @@ public class EaObjpropChartIdStrategy : Strategy
 		_h4CandleType = Param(nameof(H4CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("H4 Candle", "H4 context timeframe", "General");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Daily Candle", "Daily context timeframe", "General");
 	}
 
@@ -116,9 +116,9 @@ public class EaObjpropChartIdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Prepare Donchian Channels for each timeframe to replicate the original chart layout.
 		_primaryChannel = new DonchianChannels { Length = ChannelLength };

@@ -177,7 +177,7 @@ public class ESkochPendingOrdersStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
+		return [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
 	}
 
 	/// <inheritdoc />
@@ -210,9 +210,9 @@ public class ESkochPendingOrdersStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var priceStep = Security?.PriceStep ?? 0m;
 		var decimals = Security?.Decimals ?? 0;
@@ -229,7 +229,7 @@ public class ESkochPendingOrdersStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessMainCandle).Start();
 
-		SubscribeCandles(TimeSpan.FromDays(1).TimeFrame()).Bind(ProcessDailyCandle).Start();
+		SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame()).Bind(ProcessDailyCandle).Start();
 	}
 
 	private void ProcessDailyCandle(ICandleMessage candle)

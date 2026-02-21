@@ -122,8 +122,8 @@ public class IntraBullishProfitPingV40Strategy : Strategy
 	{
 		base.OnStarted(time);
 
-		var emaShort = new ExponentialMovingAverage { Length = ShortEmaLength };
-		var emaLong = new ExponentialMovingAverage { Length = LongEmaLength };
+		var emaShort = new EMA { Length = ShortEmaLength };
+		var emaLong = new EMA { Length = LongEmaLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{

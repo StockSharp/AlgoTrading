@@ -89,19 +89,19 @@ public class X2MADigitDm361Strategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Length of fast moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 25, 1);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Length of slow moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_adxLength = Param(nameof(AdxLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Length", "Length of Average Directional Index", "Directional Movement")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -110,13 +110,13 @@ public class X2MADigitDm361Strategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 	}
 
@@ -127,12 +127,12 @@ public class X2MADigitDm361Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastMa = new SimpleMovingAverage { Length = FastMaLength };
-		var slowMa = new SimpleMovingAverage { Length = SlowMaLength };
+		var fastMa = new SMA { Length = FastMaLength };
+		var slowMa = new SMA { Length = SlowMaLength };
 		var adx = new AverageDirectionalIndex { Length = AdxLength };
 
 		var subscription = SubscribeCandles(CandleType);

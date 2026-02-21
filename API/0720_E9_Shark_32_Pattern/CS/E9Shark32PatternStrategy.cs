@@ -69,12 +69,12 @@ public class E9Shark32PatternStrategy : Strategy
 	{
 		_longStopLoss = Param(nameof(LongStopLoss), 1m)
 			.SetDisplay("Long Stop Loss %", "Stop loss for long positions", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_shortStopLoss = Param(nameof(ShortStopLoss), 1m)
 			.SetDisplay("Short Stop Loss %", "Stop loss for short positions", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -105,9 +105,9 @@ public class E9Shark32PatternStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

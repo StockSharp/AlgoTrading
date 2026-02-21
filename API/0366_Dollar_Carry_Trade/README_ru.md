@@ -10,7 +10,7 @@
 - **Стопы**: нет явных стопов.
 - **Значения по умолчанию**:
   - `K = 3`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Фильтры**:
   - Категория: фундаментальная
   - Направление: обе

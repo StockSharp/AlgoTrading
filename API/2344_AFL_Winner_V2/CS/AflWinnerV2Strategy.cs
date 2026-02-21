@@ -27,10 +27,10 @@ public class AflWinnerV2Strategy : Strategy
 
 	public AflWinnerV2Strategy()
 	{
-		_kPeriod = Param<int>("KPeriod", 5).SetDisplay("%K Period").SetCanOptimize(true);
-		_dPeriod = Param<int>("DPeriod", 3).SetDisplay("%D Period").SetCanOptimize(true);
-		_highLevel = Param<decimal>("HighLevel", 40m).SetDisplay("High Level").SetCanOptimize(true);
-		_lowLevel = Param<decimal>("LowLevel", -40m).SetDisplay("Low Level").SetCanOptimize(true);
+		_kPeriod = Param<int>("KPeriod", 5).SetDisplay("%K Period", "%K Period", "General");
+		_dPeriod = Param<int>("DPeriod", 3).SetDisplay("%D Period", "%D Period", "General");
+		_highLevel = Param<decimal>("HighLevel", 40m).SetDisplay("High Level", "High Level", "General");
+		_lowLevel = Param<decimal>("LowLevel", -40m).SetDisplay("Low Level", "Low Level", "General");
 	}
 
 	public int KPeriod { get => _kPeriod.Value; set => _kPeriod.Value = value; }
@@ -39,16 +39,16 @@ public class AflWinnerV2Strategy : Strategy
 	public decimal LowLevel { get => _lowLevel.Value; set => _lowLevel.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var stochastic = new StochasticOscillator
 		{
 			KPeriod = KPeriod,
-			DPeriod = DPeriod,
+			D = {  K = { Length = DPeriod } },
 		};
 
 		var subscription = SubscribeCandles(CandleType);

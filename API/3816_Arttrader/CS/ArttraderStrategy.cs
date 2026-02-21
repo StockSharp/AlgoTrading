@@ -281,9 +281,9 @@ public class ArttraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = GetPipSize();
 		_timeFrame = GetTimeFrame(CandleType);
@@ -300,10 +300,9 @@ public class ArttraderStrategy : Strategy
 		_open4 = null;
 		_open5 = null;
 
-		_ema = new ExponentialMovingAverage
+		_ema = new EMA
 		{
-			Length = Math.Max(1, EmaPeriod),
-			CandlePrice = CandlePrice.Open,
+			Length = Math.Max(1, EmaPeriod)
 		};
 
 		var subscription = SubscribeCandles(CandleType);

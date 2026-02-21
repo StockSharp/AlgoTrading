@@ -57,43 +57,43 @@ public class AscvBrainTrendSignalStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Length used for Average True Range", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_stochasticPeriod = Param(nameof(StochasticPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Base period for Stochastic oscillator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 30, 6);
 
 		_jmaLength = Param(nameof(JmaLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("JMA Length", "Length of Jurik moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_stopLossPips = Param(nameof(StopLossPips), 15)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 5);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 46)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 50, 5);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimum price move to adjust trailing stop", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
@@ -251,12 +251,12 @@ public class AscvBrainTrendSignalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_stochastic = new StochasticOscillator { Length = StochasticPeriod };
+		_stochastic = new StochasticOscillator { K = { Length = StochasticPeriod } };
 		_jmaClose = new JurikMovingAverage { Length = JmaLength };
 
 		var subscription = SubscribeCandles(CandleType);

@@ -84,51 +84,51 @@ public class CvdDivergenceVolumeHmaRsiMacdStrategy : Strategy
 	{
 		_hma20Length = Param(nameof(Hma20Length), 20)
 		.SetDisplay("HMA 20 Length", "Fast Hull MA period", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_hma50Length = Param(nameof(Hma50Length), 50)
 		.SetDisplay("HMA 50 Length", "Slow Hull MA period", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetDisplay("RSI Length", "Relative Strength Index period", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
 		.SetDisplay("RSI Overbought", "Upper RSI level", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_rsiOversold = Param(nameof(RsiOversold), 30)
 		.SetDisplay("RSI Oversold", "Lower RSI level", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_macdFast = Param(nameof(MacdFast), 12)
 		.SetDisplay("MACD Fast", "MACD fast period", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 		.SetDisplay("MACD Slow", "MACD slow period", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 		.SetDisplay("MACD Signal", "MACD signal period", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_volumeMaLength = Param(nameof(VolumeMaLength), 20)
 		.SetDisplay("Volume MA Length", "Volume moving average period", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
 		.SetDisplay("Volume Multiplier", "High volume threshold multiplier", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_cvdLength = Param(nameof(CvdLength), 14)
 		.SetDisplay("CVD Length", "CVD smoothing period", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_divergenceLookback = Param(nameof(DivergenceLookback), 5)
 		.SetDisplay("Divergence Lookback", "Bars for pivot detection", "Parameters")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <inheritdoc />
@@ -136,20 +136,19 @@ public class CvdDivergenceVolumeHmaRsiMacdStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var hma20 = new HullMovingAverage { Length = Hma20Length };
 		var hma50 = new HullMovingAverage { Length = Hma50Length };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var macd = new MovingAverageConvergenceDivergence
+		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = MacdFast,
-			LongPeriod = MacdSlow,
-			SignalPeriod = MacdSignal
+			Macd = { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow } },
+			SignalMa = { Length = MacdSignal }
 		};
 
-		_volumeSma = new SimpleMovingAverage { Length = VolumeMaLength };
-		_cvdSma = new SimpleMovingAverage { Length = CvdLength };
+		_volumeSma = new SMA { Length = VolumeMaLength };
+		_cvdSma = new SMA { Length = CvdLength };
 		_priceHigh = new Highest { Length = DivergenceLookback };
 		_priceLow = new Lowest { Length = DivergenceLookback };
 		_cvdHigh = new Highest { Length = DivergenceLookback };
@@ -163,12 +162,12 @@ public class CvdDivergenceVolumeHmaRsiMacdStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(hma20, hma50, rsi, macd, _volumeSma, ProcessCandle)
+		.BindEx(hma20, hma50, rsi, macd, _volumeSma, ProcessCandle)
 		.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal hma20, decimal hma50, decimal rsi,
-		decimal macdLine, decimal macdSignal, decimal macdHist, decimal volumeMa)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue hma20Value, IIndicatorValue hma50Value, IIndicatorValue rsiValue,
+		IIndicatorValue macdValue, IIndicatorValue volumeMaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
@@ -176,14 +175,24 @@ public class CvdDivergenceVolumeHmaRsiMacdStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
+		var hma20 = hma20Value.ToDecimal();
+		var hma50 = hma50Value.ToDecimal();
+		var rsi = rsiValue.ToDecimal();
+		var volumeMa = volumeMaValue.ToDecimal();
+
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal macdSignal)
+			return;
+		var macdHist = macdLine - macdSignal;
+
 		var direction = candle.ClosePrice > candle.OpenPrice ? 1m : candle.ClosePrice < candle.OpenPrice ? -1m : 0m;
 		var cvdRaw = candle.TotalVolume * direction;
-		var cvd = _cvdSma.Process(cvdRaw, candle.OpenTime, true).ToDecimal();
+		var cvd = _cvdSma.Process(new DecimalIndicatorValue(_cvdSma, cvdRaw, candle.OpenTime)).ToDecimal();
 
-		var priceHigh = _priceHigh.Process(candle.HighPrice, candle.OpenTime, true).ToDecimal();
-		var priceLow = _priceLow.Process(candle.LowPrice, candle.OpenTime, true).ToDecimal();
-		var cvdHigh = _cvdHigh.Process(cvd, candle.OpenTime, true).ToDecimal();
-		var cvdLow = _cvdLow.Process(cvd, candle.OpenTime, true).ToDecimal();
+		var priceHigh = _priceHigh.Process(new DecimalIndicatorValue(_priceHigh, candle.HighPrice, candle.OpenTime)).ToDecimal();
+		var priceLow = _priceLow.Process(new DecimalIndicatorValue(_priceLow, candle.LowPrice, candle.OpenTime)).ToDecimal();
+		var cvdHigh = _cvdHigh.Process(new DecimalIndicatorValue(_cvdHigh, cvd, candle.OpenTime)).ToDecimal();
+		var cvdLow = _cvdLow.Process(new DecimalIndicatorValue(_cvdLow, cvd, candle.OpenTime)).ToDecimal();
 
 		var pricePivotHigh = priceHigh == candle.HighPrice;
 		var pricePivotLow = priceLow == candle.LowPrice;

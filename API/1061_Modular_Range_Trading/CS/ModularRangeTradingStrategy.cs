@@ -241,25 +241,25 @@ public class ModularRangeTradingStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Period", "Bollinger Bands period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_bollingerWidth = Param(nameof(BollingerWidth), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Width", "Bollinger Bands width", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 1);
 
 		_rsiMaPeriod = Param(nameof(RsiMaPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI MA Period", "RSI moving average period", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 1);
 
 		_macdFast = Param(nameof(MacdFast), 12)

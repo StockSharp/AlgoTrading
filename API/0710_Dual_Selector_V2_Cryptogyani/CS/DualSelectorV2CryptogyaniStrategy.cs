@@ -96,7 +96,7 @@ public class DualSelectorV2CryptogyaniStrategy : Strategy
 		_s2PartialTakeProfitPerc = Param(nameof(S2PartialTakeProfitPerc), 50m)
 			.SetDisplay("Partial Take Profit % (S2)", "Percent of position to close at target.", "Strategy 2");
 
-		_s2TimeframeTrend = Param(nameof(S2TimeframeTrend), TimeSpan.FromDays(1).TimeFrame())
+		_s2TimeframeTrend = Param(nameof(S2TimeframeTrend), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Trend Timeframe (S2)", "Higher timeframe for trend filter.", "Strategy 2");
 	}
 
@@ -185,16 +185,16 @@ public class DualSelectorV2CryptogyaniStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var s1Fast = new SimpleMovingAverage { Length = S1FastLength };
-		var s1Slow = new SimpleMovingAverage { Length = S1SlowLength };
-		var s2Fast = new SimpleMovingAverage { Length = S2FastLength };
-		var s2Slow = new SimpleMovingAverage { Length = S2SlowLength };
+		var s1Fast = new SMA { Length = S1FastLength };
+		var s1Slow = new SMA { Length = S1SlowLength };
+		var s2Fast = new SMA { Length = S2FastLength };
+		var s2Slow = new SMA { Length = S2SlowLength };
 		var s2Atr = new AverageTrueRange { Length = S2AtrLength };
-		var trendSma = new SimpleMovingAverage { Length = S2SlowLength };
+		var trendSma = new SMA { Length = S2SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

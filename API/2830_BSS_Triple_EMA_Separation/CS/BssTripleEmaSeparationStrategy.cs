@@ -181,9 +181,9 @@ public class BssTripleEmaSeparationStrategy : Strategy
 		_lastEntryTime = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (FirstMaPeriod >= SecondMaPeriod)
 			throw new InvalidOperationException("First MA period must be less than second MA period.");
@@ -200,7 +200,7 @@ public class BssTripleEmaSeparationStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_firstMa, _secondMa, _thirdMa, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private static IIndicator CreateMovingAverage(MaMethods method, int period)
@@ -210,7 +210,7 @@ public class BssTripleEmaSeparationStrategy : Strategy
 			MaMethods.Simple => new SMA { Length = period },
 			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
-			_ => new ExponentialMovingAverage { Length = period },
+			_ => new EMA { Length = period },
 		};
 	}
 

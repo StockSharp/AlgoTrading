@@ -168,9 +168,9 @@ public class GridTradingAtVolatileMarketStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (CandleType.Arg is not TimeSpan baseSpan || baseSpan <= TimeSpan.Zero)
 		throw new InvalidOperationException("CandleType must contain a positive TimeSpan argument.");

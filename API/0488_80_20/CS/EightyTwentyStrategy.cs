@@ -50,7 +50,7 @@ public class EightyTwentyStrategy : Strategy
 		_rangePercent = Param(nameof(RangePercent), 0.2m)
 			.SetRange(0.05m, 0.5m)
 			.SetDisplay("Range Percent", "Fraction of candle range for trigger zone", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.3m, 0.05m);
 	}
 
@@ -61,9 +61,9 @@ public class EightyTwentyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 

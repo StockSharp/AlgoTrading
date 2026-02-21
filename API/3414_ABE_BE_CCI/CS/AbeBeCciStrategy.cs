@@ -98,29 +98,29 @@ public class AbeBeCciStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 49)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI Period", "Number of candles used for the Commodity Channel Index", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(14, 80, 1);
 
 		_bodyAveragePeriod = Param(nameof(BodyAveragePeriod), 11)
 		.SetGreaterThanZero()
 		.SetDisplay("Body Average Period", "Candles used to estimate typical body size", "Pattern")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 
 		_entryOversoldLevel = Param(nameof(EntryOversoldLevel), -50m)
 		.SetDisplay("Oversold Level", "CCI threshold for bullish engulfing confirmation", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(-100m, -10m, 5m);
 
 		_entryOverboughtLevel = Param(nameof(EntryOverboughtLevel), 50m)
 		.SetDisplay("Overbought Level", "CCI threshold for bearish engulfing confirmation", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 100m, 5m);
 
 		_exitLevel = Param(nameof(ExitLevel), 80m)
 		.SetGreaterThanZero()
 		.SetDisplay("Exit Level", "Absolute CCI level triggering position exit", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40m, 120m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -150,9 +150,9 @@ public class AbeBeCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 

@@ -69,12 +69,12 @@ public class MeanReversionDonchianStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 200)
 		.SetDisplay("Lookback", "Number of candles used for range detection", "Signals")
 		.SetRange(20, 500)
-		.SetCanOptimize(true);
+		;
 
 		_riskPercent = Param(nameof(RiskPercent), 1m)
 		.SetDisplay("Risk %", "Percentage of equity risked per entry", "Money Management")
 		.SetRange(0.25m, 5m)
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <inheritdoc />
@@ -94,9 +94,9 @@ public class MeanReversionDonchianStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_donchian = new DonchianChannels { Length = LookbackPeriod };
 

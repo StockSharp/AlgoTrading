@@ -70,16 +70,16 @@ public class LarryConnors3DayHighLowStrategy : Strategy
 		_longMaLength = Param(nameof(LongMaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Long MA Length", "Period of the long moving average", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 50);
 
 		_shortMaLength = Param(nameof(ShortMaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Short MA Length", "Period of the short moving average", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -100,9 +100,9 @@ public class LarryConnors3DayHighLowStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_longSma = new SMA { Length = LongMaLength };
 		_shortSma = new SMA { Length = ShortMaLength };

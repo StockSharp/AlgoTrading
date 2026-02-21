@@ -61,13 +61,13 @@ public class AdjustableMaAlternatingExtremitiesStrategy : Strategy
 		_length = Param(nameof(Length), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Periods for Bollinger Bands", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Bollinger band width", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -89,9 +89,9 @@ public class AdjustableMaAlternatingExtremitiesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bands = new BollingerBands
 		{
@@ -122,14 +122,14 @@ public class AdjustableMaAlternatingExtremitiesStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (candle.High > upper && _isUpper != true)
+		if (candle.HighPrice > upper && _isUpper != true)
 		{
 			_isUpper = true;
 
 			if (Position <= 0)
 				BuyMarket();
 		}
-		else if (candle.Low < lower && _isUpper != false)
+		else if (candle.LowPrice < lower && _isUpper != false)
 		{
 			_isUpper = false;
 

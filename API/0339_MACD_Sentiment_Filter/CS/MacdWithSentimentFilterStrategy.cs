@@ -99,31 +99,31 @@ public class MacdWithSentimentFilterStrategy : Strategy
 		_macdFast = Param(nameof(MacdFast), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Fast", "Fast moving average period for MACD", "MACD Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 20, 1);
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Slow", "Slow moving average period for MACD", "MACD Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 34, 2);
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal", "Signal line period for MACD", "MACD Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 13, 1);
 
 		_threshold = Param(nameof(Threshold), 0.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Sentiment Threshold", "Threshold for sentiment filter", "Sentiment Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.2m, 0.8m, 0.1m);
 
 		_stopLoss = Param(nameof(StopLoss), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (%)", "Stop Loss percentage from entry price", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

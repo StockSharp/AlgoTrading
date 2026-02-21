@@ -83,24 +83,24 @@ public class TutorialAddingSessionsToStrategiesStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation length", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 1);
 
 		_upper = Param(nameof(Upper), 70m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Upper Level", "Overbought threshold", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_lower = Param(nameof(Lower), 30m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Lower Level", "Oversold threshold", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_session = Param(nameof(Session), "1300-1700")
 			.SetDisplay("Session", "Active trading session", "General")
-			.SetOptions("0930-1600", "1300-1700", "1700-2100");
+			.SetOptimizeValues(new[] { "0930-1600", "1300-1700", "1700-2100" });
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -120,11 +120,11 @@ public class TutorialAddingSessionsToStrategiesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var parts = Session.Split('-');
 		if (parts.Length != 2 ||

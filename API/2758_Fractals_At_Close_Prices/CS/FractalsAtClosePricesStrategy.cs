@@ -128,7 +128,7 @@ public class FractalsAtClosePricesStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Volume used for entries", "General")
-		.SetCanOptimize(true);
+		;
 
 		_startHour = Param(nameof(StartHour), 10)
 		.SetRange(0, 23)
@@ -141,22 +141,22 @@ public class FractalsAtClosePricesStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 30)
 		.SetRange(0, 1000)
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 		.SetRange(0, 1000)
 		.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15)
 		.SetRange(0, 1000)
 		.SetDisplay("Trailing Stop (pips)", "Base distance for the trailing stop", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 		.SetRange(0, 1000)
 		.SetDisplay("Trailing Step (pips)", "Additional move required before trailing", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles processed by the strategy", "General");
@@ -190,9 +190,9 @@ public class FractalsAtClosePricesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var priceStep = Security?.PriceStep ?? 1m;
 		var decimals = Security?.Decimals ?? 0;

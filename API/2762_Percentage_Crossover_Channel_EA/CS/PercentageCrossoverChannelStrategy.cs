@@ -71,7 +71,7 @@ public class PercentageCrossoverChannelStrategy : Strategy
 
 		_percent = Param(nameof(Percent), 50m)
 			.SetDisplay("Percent", "Channel width percent", "Channel")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_priceMode = Param(nameof(PriceMode), PercentageChannelPriceModes.Close)
@@ -176,9 +176,9 @@ public class PercentageCrossoverChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 

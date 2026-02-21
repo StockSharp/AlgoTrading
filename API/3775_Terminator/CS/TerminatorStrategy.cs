@@ -71,33 +71,33 @@ public class TerminatorStrategy : Strategy
 	{
 		_takeProfitPips = Param(nameof(TakeProfitPips), 38m)
 			.SetDisplay("Take Profit (pips)", "Distance of the take profit for each entry in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_lotSize = Param(nameof(LotSize), 0.1m)
 			.SetDisplay("Base Lot Size", "Fixed lot size used when money management is disabled", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_initialStopPips = Param(nameof(InitialStopPips), 0m)
 			.SetDisplay("Initial Stop (pips)", "Initial protective stop distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance that activates after the threshold", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_maxTrades = Param(nameof(MaxTrades), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum number of simultaneously open martingale trades", "General")
-			.SetCanOptimize(true);
+			;
 
 		_entryDistancePips = Param(nameof(EntryDistancePips), 18m)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Distance (pips)", "Minimum adverse movement required before adding a new position", "General")
-			.SetCanOptimize(true);
+			;
 
 		_secureProfit = Param(nameof(SecureProfit), 10m)
 			.SetDisplay("Secure Profit", "Floating profit in currency units required to protect the account", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useAccountProtection = Param(nameof(UseAccountProtection), true)
 			.SetDisplay("Use Account Protection", "Enable partial liquidation when floating profit exceeds the threshold", "Risk");
@@ -108,7 +108,7 @@ public class TerminatorStrategy : Strategy
 		_ordersToProtect = Param(nameof(OrdersToProtect), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Orders To Protect", "Number of final trades protected by the secure profit rule", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse Signals", "Reverse the MACD slope interpretation", "Filters");
@@ -122,46 +122,46 @@ public class TerminatorStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Percent", "Risk percentage used to derive the base lot size", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_isStandardAccount = Param(nameof(IsStandardAccount), false)
 			.SetDisplay("Standard Account", "Use standard lot calculations instead of mini account scaling", "Risk");
 
 		_eurUsdPipValue = Param(nameof(EurUsdPipValue), 10m)
 			.SetDisplay("EURUSD Pip Value", "Monetary value of one pip for EURUSD", "Currency")
-			.SetCanOptimize(true);
+			;
 
 		_gbpUsdPipValue = Param(nameof(GbpUsdPipValue), 10m)
 			.SetDisplay("GBPUSD Pip Value", "Monetary value of one pip for GBPUSD", "Currency")
-			.SetCanOptimize(true);
+			;
 
 		_usdChfPipValue = Param(nameof(UsdChfPipValue), 8.7m)
 			.SetDisplay("USDCHF Pip Value", "Monetary value of one pip for USDCHF", "Currency")
-			.SetCanOptimize(true);
+			;
 
 		_usdJpyPipValue = Param(nameof(UsdJpyPipValue), 9.715m)
 			.SetDisplay("USDJPY Pip Value", "Monetary value of one pip for USDJPY", "Currency")
-			.SetCanOptimize(true);
+			;
 
 		_defaultPipValue = Param(nameof(DefaultPipValue), 5m)
 			.SetDisplay("Default Pip Value", "Fallback pip value used for other symbols", "Currency")
-			.SetCanOptimize(true);
+			;
 
 		_startYear = Param(nameof(StartYear), 2005)
 			.SetDisplay("Start Year", "First year when new trades are allowed", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_startMonth = Param(nameof(StartMonth), 1)
 			.SetDisplay("Start Month", "First month when new trades are allowed", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_endYear = Param(nameof(EndYear), 2030)
 			.SetDisplay("End Year", "Last year when new trades are allowed", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_endMonth = Param(nameof(EndMonth), 12)
 			.SetDisplay("End Month", "Last month when new trades are allowed", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signal generation", "General");
@@ -169,17 +169,17 @@ public class TerminatorStrategy : Strategy
 		_macdFastLength = Param(nameof(MacdFastLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA period used in MACD", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA period used in MACD", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal EMA period used in MACD", "Filters")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -472,8 +472,8 @@ public class TerminatorStrategy : Strategy
 
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = MacdFastLength,
-			LongPeriod = MacdSlowLength,
+			ShortMa = { Length = MacdFastLength },
+			LongMa = { Length = MacdSlowLength },
 			SignalPeriod = MacdSignalLength
 		};
 

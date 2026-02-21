@@ -111,32 +111,32 @@ public class GapsStrategy : Strategy
 	{
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Order Volume", "Trading volume in lots", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Trailing Step (pips)", "Increment required to move the trailing stop", "Risk");
 
 		_gapPips = Param(nameof(GapPips), 1m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Gap Threshold (pips)", "Minimum opening gap measured in pips", "Signals");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -171,9 +171,9 @@ public class GapsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 			throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");

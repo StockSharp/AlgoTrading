@@ -94,7 +94,7 @@ public class VeryBlondeSystemStrategy : Strategy
 		_countBars = Param(nameof(CountBars), 10)
 		.SetDisplay("Count Bars", "Number of candles to search extremes", "General")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 		
 		_limit = Param(nameof(Limit), 240m)
@@ -134,9 +134,9 @@ public class VeryBlondeSystemStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var highest = new Highest { Length = CountBars };
 		var lowest = new Lowest { Length = CountBars };

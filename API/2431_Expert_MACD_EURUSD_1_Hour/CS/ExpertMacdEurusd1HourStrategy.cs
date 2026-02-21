@@ -62,15 +62,15 @@ public class ExpertMacdEurusd1HourStrategy : Strategy
 	{
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetDisplay("Fast Length", "Fast EMA length for MACD", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_slowLength = Param(nameof(SlowLength), 15)
 			.SetDisplay("Slow Length", "Slow EMA length for MACD", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_signalLength = Param(nameof(SignalLength), 3)
 			.SetDisplay("Signal Length", "Signal length for MACD", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_trailingPoints = Param(nameof(TrailingPoints), 25m)
 			.SetDisplay("Trailing Points", "Trailing stop distance in points", "Risk");

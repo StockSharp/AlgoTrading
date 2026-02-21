@@ -199,9 +199,9 @@ public class SilverTrendV3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = Security?.PriceStep ?? 1m;
 		if (_pointValue <= 0m)
@@ -221,7 +221,7 @@ public class SilverTrendV3Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -450,7 +450,7 @@ public class SilverTrendV3Strategy : Strategy
 			return false;
 		}
 
-		var time = candle.OpenTime.LocalDateTime;
+		var time = candle.OpenTime;
 		return time.DayOfWeek == DayOfWeek.Friday && time.Hour > FridayCutoffHour;
 	}
 

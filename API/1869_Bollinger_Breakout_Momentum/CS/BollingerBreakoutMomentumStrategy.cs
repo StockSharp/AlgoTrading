@@ -81,17 +81,17 @@ public class BollingerBreakoutMomentumStrategy : Strategy
 	{
 		_bollingerLength = Param(nameof(BollingerLength), 18)
 			.SetDisplay("BB Length", "Bollinger Bands length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetDisplay("BB Deviation", "Bollinger Bands deviation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_breakoutFactor = Param(nameof(BreakoutFactor), 0.0015m)
 			.SetDisplay("Breakout Factor", "Minimum width of bands", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0005m, 0.003m, 0.0005m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
@@ -116,9 +116,9 @@ public class BollingerBreakoutMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bollinger = new BollingerBands
 		{
@@ -126,12 +126,12 @@ public class BollingerBreakoutMomentumStrategy : Strategy
 			Width = BollingerDeviation
 		};
 
-		var ema = new ExponentialMovingAverage { Length = 3 };
+		var ema = new EMA { Length = 3 };
 
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = 12,
-			LongPeriod = 26,
+			ShortMa = { Length = 12 },
+			LongMa = { Length = 26 },
 			SignalPeriod = 9
 		};
 
@@ -142,7 +142,7 @@ public class BollingerBreakoutMomentumStrategy : Strategy
 			.Bind(bollinger, ema, macd, rsi, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal emaValue, decimal macdValue, decimal signal, decimal histogram, decimal rsiValue)

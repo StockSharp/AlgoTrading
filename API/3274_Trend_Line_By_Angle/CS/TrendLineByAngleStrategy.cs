@@ -283,25 +283,25 @@ public class TrendLineByAngleStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order size placed per entry", "Orders")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_maxEntries = Param(nameof(MaxEntries), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Entries", "Number of sequential volume blocks", "Orders")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 60m, 5m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 120m, 10m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
@@ -377,19 +377,14 @@ public class TrendLineByAngleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 		_stepPrice = CalculateStepPrice();
 
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Fast = MacdFastPeriod,
-			Slow = MacdSlowPeriod,
-			Signal = MacdSignalPeriod
-		};
+		_macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = MacdFastPeriod }, LongMa = { Length = MacdSlowPeriod } }, SignalMa = { Length = MacdSignalPeriod } };
 
 		_bollinger = new BollingerBands
 		{
@@ -407,7 +402,7 @@ public class TrendLineByAngleStrategy : Strategy
 			.BindEx(_macd, ProcessMacdCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 	private void ProcessMacdCandle(ICandleMessage candle, IIndicatorValue indicatorValue)
 	{

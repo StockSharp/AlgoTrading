@@ -149,17 +149,17 @@ public class PriceChannelSignalV2Strategy : Strategy
 		_channelPeriod = Param(nameof(ChannelPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Channel Period", "Donchian lookback used for Price Channel", "Price Channel")
-			.SetCanOptimize(true);
+			;
 
 		_riskFactor = Param(nameof(RiskFactor), 3m)
 			.SetRange(0m, 10m)
 			.SetDisplay("Risk Factor", "Risk factor shifting entry bands", "Price Channel")
-			.SetCanOptimize(true);
+			;
 
 		_exitLevel = Param(nameof(ExitLevel), 5m)
 			.SetRange(0m, 33m)
 			.SetDisplay("Exit Level", "Exit factor shifting protective bands", "Price Channel")
-			.SetCanOptimize(true);
+			;
 
 		_useReEntry = Param(nameof(UseReEntry), true)
 			.SetDisplay("Enable Re-Entry", "Allow channel re-entry trades", "Signals");
@@ -212,9 +212,9 @@ public class PriceChannelSignalV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (ExitLevel <= RiskFactor)
 			throw new InvalidOperationException("Exit level must be greater than risk factor to create meaningful exit bands.");

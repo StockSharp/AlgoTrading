@@ -98,15 +98,15 @@ public class MasterMmDroidStrategy : Strategy
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", string.Empty, "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 30m)
 			.SetDisplay("RSI Oversold", string.Empty, "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 70m)
 			.SetDisplay("RSI Overbought", string.Empty, "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_rsiMaxEntries = Param(nameof(RsiMaxEntries), 3)
 			.SetDisplay("RSI Entries", "Maximum pyramiding steps", "RSI");
@@ -304,9 +304,9 @@ public class MasterMmDroidStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// RSI indicator reused across modules.
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
@@ -322,7 +322,7 @@ public class MasterMmDroidStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var shiftedTime = candle.CloseTime.UtcDateTime + TimeSpan.FromHours(TimeShiftHours);
+		var shiftedTime = candle.CloseTime + TimeSpan.FromHours(TimeShiftHours);
 
 		// Refresh daily aggregates for gap detection.
 		UpdateDailyState(candle, shiftedTime);

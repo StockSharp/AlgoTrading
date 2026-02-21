@@ -58,9 +58,9 @@ public class DnseVn301SmaEmaCrossStrategy : Strategy
 	    return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 
 	    var ema15 = new EMA { Length = 15 };
 	    var sma60 = new SMA { Length = 60 };

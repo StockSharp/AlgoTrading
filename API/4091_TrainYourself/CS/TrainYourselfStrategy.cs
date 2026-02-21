@@ -46,27 +46,27 @@ public class TrainYourselfStrategy : Strategy
 
 		_channelLength = Param(nameof(ChannelLength), 20)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Channel Length", "Number of candles used for the Donchian channel", "Channel");
 
 		_bufferPoints = Param(nameof(BufferPoints), 50m)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Buffer Points", "Extra distance in points added around the current price", "Channel");
 
 		_activationPoints = Param(nameof(ActivationPoints), 2m)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Activation Margin", "Points required inside the channel before arming breakouts", "Channel");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Stop Loss", "Stop-loss distance expressed in points", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Take Profit", "Take-profit distance expressed in points", "Risk");
 
 		_enableTrendTrade = Param(nameof(EnableTrendTrade), true)
@@ -173,9 +173,9 @@ public class TrainYourselfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_channel = new DonchianChannels
 		{

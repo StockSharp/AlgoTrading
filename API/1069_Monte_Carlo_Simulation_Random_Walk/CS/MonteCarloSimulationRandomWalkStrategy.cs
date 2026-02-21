@@ -62,13 +62,13 @@ public class MonteCarloSimulationRandomWalkStrategy : Strategy
 		_numberOfBarsToPredict = Param(nameof(NumberOfBarsToPredict), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Bars to Predict", "Prediction horizon", "Simulation")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 100, 10);
 
 		_numberOfSimulations = Param(nameof(NumberOfSimulations), 500)
 		.SetGreaterThanZero()
 		.SetDisplay("Simulations", "Number of random paths", "Simulation")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100, 1000, 100);
 
 		_dataLength = Param(nameof(DataLength), 2000)
@@ -99,9 +99,9 @@ public class MonteCarloSimulationRandomWalkStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 		.Bind(ProcessCandle)

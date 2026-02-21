@@ -78,37 +78,37 @@ public class GoldEurUsdStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetRange(5, 50)
 			.SetDisplay("RSI Length", "RSI period", "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_overbought = Param(nameof(Overbought), 70m)
 			.SetRange(60m, 90m)
 			.SetDisplay("RSI Overbought", "RSI overbought level", "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_oversold = Param(nameof(Oversold), 30m)
 			.SetRange(10m, 40m)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_maLength = Param(nameof(MaLength), 50)
 			.SetRange(10, 200)
 			.SetDisplay("MA Length", "SMA period", "MA")
-			.SetCanOptimize(true);
+			;
 
 		_stochLength = Param(nameof(StochLength), 14)
 			.SetRange(5, 50)
 			.SetDisplay("Stoch Length", "Stochastic %K period", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_stochOverbought = Param(nameof(StochOverbought), 80m)
 			.SetRange(50m, 100m)
 			.SetDisplay("Stoch Overbought", "Stochastic overbought level", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_stochOversold = Param(nameof(StochOversold), 20m)
 			.SetRange(0m, 50m)
 			.SetDisplay("Stoch Oversold", "Stochastic oversold level", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -121,9 +121,9 @@ public class GoldEurUsdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var ma = new SMA { Length = MaLength };

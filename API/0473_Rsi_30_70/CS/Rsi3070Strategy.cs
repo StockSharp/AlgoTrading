@@ -72,19 +72,19 @@ public class Rsi3070Strategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation length", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
 			.SetRange(50, 95)
 			.SetDisplay("RSI Overbought", "Overbought level", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(65, 85, 5);
 
 		_rsiOversold = Param(nameof(RsiOversold), 30)
 			.SetRange(5, 50)
 			.SetDisplay("RSI Oversold", "Oversold level", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 35, 5);
 	}
 
@@ -95,9 +95,9 @@ public class Rsi3070Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 

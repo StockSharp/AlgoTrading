@@ -143,7 +143,7 @@ public class Ais1TradingRobotStrategy : Strategy
 			.SetNotNegative()
 			.SetLessOrEquals(0.50m);
 
-		_primaryCandleType = Param(nameof(PrimaryCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_primaryCandleType = Param(nameof(PrimaryCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Primary Candle", "Timeframe used for breakouts", "General");
 
 		_secondaryCandleType = Param(nameof(SecondaryCandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -208,9 +208,9 @@ public class Ais1TradingRobotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_maxEquity = Portfolio?.CurrentValue ?? 0m;
 		_isEquitySafe = true;
@@ -250,7 +250,7 @@ public class Ais1TradingRobotStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessPrimaryCandle(ICandleMessage candle)

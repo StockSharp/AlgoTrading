@@ -174,12 +174,12 @@ public class SimpleMartingaleTemplateStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastSma = new SimpleMovingAverage { Length = FastPeriod };
-		_slowSma = new SimpleMovingAverage { Length = SlowPeriod };
+		_fastSma = new SMA { Length = FastPeriod };
+		_slowSma = new SMA { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -187,7 +187,7 @@ public class SimpleMartingaleTemplateStrategy : Strategy
 			.Start();
 
 		InitializeVolume();
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)

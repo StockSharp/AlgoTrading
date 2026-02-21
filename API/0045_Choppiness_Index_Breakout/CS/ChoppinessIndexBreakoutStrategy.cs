@@ -82,25 +82,25 @@ public class ChoppinessIndexBreakoutStrategy : Strategy
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_choppinessPeriod = Param(nameof(ChoppinessPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Choppiness Period", "Period for Choppiness Index calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_choppinessThreshold = Param(nameof(ChoppinessThreshold), 38.2m)
 			.SetRange(20m, 50m)
 			.SetDisplay("Choppiness Threshold", "Threshold below which market is considered trending", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30m, 45m, 2.5m);
 
 		_highChoppinessThreshold = Param(nameof(HighChoppinessThreshold), 61.8m)
 			.SetRange(50m, 80m)
 			.SetDisplay("High Choppiness Threshold", "Threshold above which to exit positions", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(55m, 70m, 2.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -122,12 +122,12 @@ public class ChoppinessIndexBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		var ma = new SimpleMovingAverage { Length = MAPeriod };
+		var ma = new SMA { Length = MAPeriod };
 		var choppinessIndex = new ChoppinessIndex { Length = ChoppinessPeriod };
 
 		// Create subscription and bind indicators

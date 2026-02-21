@@ -138,16 +138,16 @@ public class FibHurstBreakoutStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_dailyHurstIndicator = new HurstExponent { Length = HurstPeriod };
 		
 		var mainSub = SubscribeCandles(CandleType);
 		mainSub.Bind(ProcessCandle).Start();
 		
-		var dailySub = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySub = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		dailySub.Bind(_dailyHurstIndicator, ProcessDaily).Start();
 		
 		StartProtection(

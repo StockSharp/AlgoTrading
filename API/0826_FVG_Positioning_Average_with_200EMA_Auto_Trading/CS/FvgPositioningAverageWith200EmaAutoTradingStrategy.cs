@@ -54,13 +54,13 @@ public class FvgPositioningAverageWith200EmaAutoTradingStrategy : Strategy
 		_fvgLookback = Param(nameof(FvgLookback), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("FVG Lookback", "Number of FVG values in average", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 0.25m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "ATR multiplier for FVG size", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.25m, 1m, 0.25m);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
@@ -95,14 +95,14 @@ public class FvgPositioningAverageWith200EmaAutoTradingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = 200 };
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
-		_upAverage = new SimpleMovingAverage { Length = FvgLookback };
-		_downAverage = new SimpleMovingAverage { Length = FvgLookback };
+		_ema = new EMA { Length = EmaPeriod };
+		_upAverage = new SMA { Length = FvgLookback };
+		_downAverage = new SMA { Length = FvgLookback };
 		_highest = new Highest { Length = LookbackPeriod };
 		_lowest = new Lowest { Length = LookbackPeriod };
 
@@ -119,7 +119,7 @@ public class FvgPositioningAverageWith200EmaAutoTradingStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal atr, decimal ema, decimal recentHigh, decimal recentLow)

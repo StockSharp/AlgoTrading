@@ -75,7 +75,7 @@ public class WavePowerEAStrategy : Strategy
 	private readonly StrategyParam<decimal> _trendSlopeThreshold;
 
 	private StochasticOscillator _stochastic = null!;
-	private MovingAverageConvergenceDivergence _macd = null!;
+	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 	private CommodityChannelIndex _cci = null!;
 	private AwesomeOscillator _ao = null!;
 	private SimpleMovingAverage _fastMa = null!;
@@ -373,35 +373,29 @@ public class WavePowerEAStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = Security?.Step ?? Security?.PriceStep ?? 0.0001m;
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = 14,
+		{ K = { Length = 14 },
 			K = { Length = 3 },
 			D = { Length = 3 }
 		};
 
-		_macd = new MovingAverageConvergenceDivergence
-		{
-			Fast = 14,
-			Slow = 26,
-			Signal = 9
-		};
+		_macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = 14 }, LongMa = { Length = 26 } }, SignalMa = { Length = 9 } };
 
 		_cci = new CommodityChannelIndex { Length = 15 };
-		_ao = new AwesomeOscillator { ShortPeriod = 5, LongPeriod = 34 };
-		_fastMa = new SimpleMovingAverage { Length = 3 };
-		_slowMa = new SimpleMovingAverage { Length = 8 };
+		_ao = new AwesomeOscillator { ShortMa = { Length = 5 }, LongMa = { Length = 34 } };
+		_fastMa = new SMA { Length = 3 };
+		_slowMa = new SMA { Length = 8 };
 		_rsi = new RelativeStrengthIndex { Length = 14 };
-		_smaShort = new SimpleMovingAverage { Length = 15 };
-		_smaMedium = new SimpleMovingAverage { Length = 20 };
-		_smaLong = new SimpleMovingAverage { Length = 25 };
-		_smaLongest = new SimpleMovingAverage { Length = 50 };
+		_smaShort = new SMA { Length = 15 };
+		_smaMedium = new SMA { Length = 20 };
+		_smaLong = new SMA { Length = 25 };
+		_smaLongest = new SMA { Length = 50 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -427,7 +421,7 @@ public class WavePowerEAStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(

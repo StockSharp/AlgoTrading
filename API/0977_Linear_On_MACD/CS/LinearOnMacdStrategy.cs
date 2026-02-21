@@ -71,22 +71,22 @@ public class LinearOnMacdStrategy : Strategy
 	{
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetDisplay("Fast Length", "Fast EMA period for OBV MACD", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 2);
 
 		_slowLength = Param(nameof(SlowLength), 26)
 			.SetDisplay("Slow Length", "Slow EMA period for OBV MACD", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 32, 2);
 
 		_signalLength = Param(nameof(SignalLength), 9)
 			.SetDisplay("Signal Length", "Signal period for OBV MACD", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 13, 2);
 
 		_lookback = Param(nameof(Lookback), 21)
 			.SetDisplay("Lookback", "Lookback for price regression", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_riskHigh = Param(nameof(RiskHigh), false)
@@ -127,7 +127,7 @@ public class LinearOnMacdStrategy : Strategy
 		};
 		_priceMacd = new MovingAverageConvergenceDivergenceSignal();
 		_priceReg = new LinearRegression { Length = Lookback };
-		_riskMa = new SimpleMovingAverage { Length = Lookback };
+		_riskMa = new SMA { Length = Lookback };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -151,9 +151,9 @@ public class LinearOnMacdStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var obvMacdTyped = (MovingAverageConvergenceDivergenceSignalValue)_obvMacd.Process(obvValue, candle.ServerTime, true);
-		var priceMacdTyped = (MovingAverageConvergenceDivergenceSignalValue)_priceMacd.Process(candle.ClosePrice, candle.ServerTime, true);
-		var regTyped = (LinearRegressionValue)_priceReg.Process(candle.ClosePrice, candle.ServerTime, true);
+		var obvMacdTyped = (MovingAverageConvergenceDivergenceSignalValue)_obvMacd.Process(new DecimalIndicatorValue(_obvMacd, obvValue, candle.ServerTime));
+		var priceMacdTyped = (MovingAverageConvergenceDivergenceSignalValue)_priceMacd.Process(new DecimalIndicatorValue(_priceMacd, candle.ClosePrice, candle.ServerTime));
+		var regTyped = (LinearRegressionValue)_priceReg.Process(new DecimalIndicatorValue(_priceReg, candle.ClosePrice, candle.ServerTime));
 
 		if (obvMacdTyped.Macd is not decimal obvMacd ||
 			obvMacdTyped.Signal is not decimal obvSignal ||
@@ -165,7 +165,7 @@ public class LinearOnMacdStrategy : Strategy
 		var riskLevel = predicted;
 		if (RiskHigh)
 		{
-			var maValue = _riskMa.Process(predicted, candle.ServerTime, true);
+			var maValue = _riskMa.Process(new DecimalIndicatorValue(_riskMa, predicted, candle.ServerTime));
 			if (maValue.IsFinal)
 				riskLevel = maValue.ToDecimal();
 		}

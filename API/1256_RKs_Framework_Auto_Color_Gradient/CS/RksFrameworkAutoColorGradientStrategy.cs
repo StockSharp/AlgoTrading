@@ -42,18 +42,18 @@ public class RksFrameworkAutoColorGradientStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 21)
 		.SetGreaterThanZero()
-		.SetDisplay("Length")
-		.SetCanOptimize(true);
+		.SetDisplay("Length", "Length", "General")
+		;
 
 		_scaleLength = Param(nameof(ScaleLength), 200)
 		.SetGreaterThanZero()
-		.SetDisplay("Scale Length");
+		.SetDisplay("Scale Length", "Scale Length", "General");
 
 		_revertScale = Param(nameof(RevertScale), true)
-		.SetDisplay("Revert Scale");
+		.SetDisplay("Revert Scale", "Revert Scale", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type");
+		.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	protected override void OnReseted()
@@ -68,7 +68,7 @@ public class RksFrameworkAutoColorGradientStrategy : Strategy
 		_lowestRsi = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_bb = new BollingerBands { Length = Length, Width = 2m };
 		_rsi = new RelativeStrengthIndex { Length = Length };
@@ -92,7 +92,7 @@ public class RksFrameworkAutoColorGradientStrategy : Strategy
 		DrawOwnTrades(area);
 		}
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal rsi)

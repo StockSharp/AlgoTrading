@@ -67,12 +67,12 @@ public class ExpBlauCmiStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _orderVolume;
 
-	private LengthIndicator<decimal> _momentumStage1 = null!;
-	private LengthIndicator<decimal> _momentumStage2 = null!;
-	private LengthIndicator<decimal> _momentumStage3 = null!;
-	private LengthIndicator<decimal> _absStage1 = null!;
-	private LengthIndicator<decimal> _absStage2 = null!;
-	private LengthIndicator<decimal> _absStage3 = null!;
+	private DecimalLengthIndicator _momentumStage1 = null!;
+	private DecimalLengthIndicator _momentumStage2 = null!;
+	private DecimalLengthIndicator _momentumStage3 = null!;
+	private DecimalLengthIndicator _absStage1 = null!;
+	private DecimalLengthIndicator _absStage2 = null!;
+	private DecimalLengthIndicator _absStage3 = null!;
 
 	private readonly Queue<decimal> _priceBuffer = new();
 	private readonly List<decimal> _indicatorHistory = new();
@@ -302,9 +302,9 @@ public class ExpBlauCmiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 		_stopLossDistance = StopLossPoints > 0 ? StopLossPoints * _priceStep : 0m;
@@ -336,16 +336,16 @@ public class ExpBlauCmiStrategy : Strategy
 		}
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(SmoothingMethods method, int length)
+	private DecimalLengthIndicator CreateMovingAverage(SmoothingMethods method, int length)
 	{
 		var normalized = Math.Max(1, length);
 
 		return method switch
 		{
-			SmoothingMethods.Simple => new SimpleMovingAverage { Length = normalized },
+			SmoothingMethods.Simple => new SMA { Length = normalized },
 			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = normalized },
 			SmoothingMethods.LinearWeighted => new WeightedMovingAverage { Length = normalized },
-			_ => new ExponentialMovingAverage { Length = normalized }
+			_ => new EMA { Length = normalized }
 		};
 	}
 
@@ -368,7 +368,7 @@ public class ExpBlauCmiStrategy : Strategy
 		var delayedPrice = _priceBuffer.Peek();
 		var momentum = frontPrice - delayedPrice;
 		var absMomentum = Math.Abs(momentum);
-		var time = candle.Time;
+		var time = candle.ServerTime;
 
 		var stage1 = _momentumStage1.Process(new DecimalIndicatorValue(_momentumStage1, momentum, time)).ToDecimal();
 		var absStage1 = _absStage1.Process(new DecimalIndicatorValue(_absStage1, absMomentum, time)).ToDecimal();

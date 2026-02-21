@@ -99,13 +99,13 @@ public class PowerZoneStrategy : Strategy
 	{
 		_periods = Param(nameof(Periods), 5)
 			.SetDisplay("Periods", "Number of candles in PowerZone", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_threshold = Param(nameof(Threshold), 0m)
 			.SetDisplay("Threshold", "Minimum move in percent", "General")
 			.SetRange(0m, 10m)
-			.SetCanOptimize(true);
+			;
 
 		_useWicks = Param(nameof(UseWicks), false)
 			.SetDisplay("Use Wicks", "Use full range high/low", "General");
@@ -113,12 +113,12 @@ public class PowerZoneStrategy : Strategy
 		_takeProfitFactor = Param(nameof(TakeProfitFactor), 1.5m)
 			.SetDisplay("Take Profit Factor", "Multiplier for profit target", "Risk")
 			.SetRange(0.5m, 3m)
-			.SetCanOptimize(true);
+			;
 
 		_stopLossFactor = Param(nameof(StopLossFactor), 1m)
 			.SetDisplay("Stop Loss Factor", "Multiplier for stop loss", "Risk")
 			.SetRange(0.5m, 3m)
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -141,11 +141,11 @@ public class PowerZoneStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

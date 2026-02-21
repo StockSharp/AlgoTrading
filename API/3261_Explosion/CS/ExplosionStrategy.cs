@@ -123,31 +123,31 @@ public class ExplosionStrategy : Strategy
 		_volume = Param(nameof(TradeVolume), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume", "Order volume used for entries", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 60m, 5m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 80m, 5m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 25m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop activation distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 60m, 5m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Trailing stop step in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 30m, 5m);
 
 		_useAutoPipMultiplier = Param(nameof(UseAutoPipMultiplier), true)
@@ -180,9 +180,9 @@ public class ExplosionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 		{
@@ -201,7 +201,7 @@ public class ExplosionStrategy : Strategy
 		_trailingStopOffset = TrailingStopPips * _pipSize;
 		_trailingStepOffset = TrailingStepPips * _pipSize;
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

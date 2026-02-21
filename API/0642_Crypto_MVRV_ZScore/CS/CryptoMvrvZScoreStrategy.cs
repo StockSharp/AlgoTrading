@@ -86,23 +86,23 @@ public class CryptoMvrvZScoreStrategy : Strategy
 		_zScorePeriod = Param(nameof(ZScoreCalculationPeriod), 252)
 			.SetGreaterThanZero()
 			.SetDisplay("Z-Score Period", "Period for z-score calculation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 50);
 
 		_longEntryThreshold = Param(nameof(LongEntryThreshold), 0.382m)
 			.SetDisplay("Long Entry Threshold", "Threshold for long entries", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.2m, 0.5m, 0.05m);
 
 		_shortEntryThreshold = Param(nameof(ShortEntryThreshold), -0.382m)
 			.SetDisplay("Short Entry Threshold", "Threshold for short entries", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-0.5m, -0.2m, 0.05m);
 
                _direction = Param(nameof(Direction), (Sides?)null)
                        .SetDisplay("Trade Direction", "Allowed trade direction", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "Parameters");
 	}
 
@@ -121,15 +121,15 @@ public class CryptoMvrvZScoreStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_realMarketCap = new SimpleMovingAverage { Length = ZScoreCalculationPeriod };
+		_realMarketCap = new SMA { Length = ZScoreCalculationPeriod };
 		_marketCapStdDev = new StandardDeviation { Length = ZScoreCalculationPeriod };
-		_spreadAverage = new SimpleMovingAverage { Length = ZScoreCalculationPeriod };
+		_spreadAverage = new SMA { Length = ZScoreCalculationPeriod };
 		_spreadStdDev = new StandardDeviation { Length = ZScoreCalculationPeriod };
-		_spreadZScoreAverage = new SimpleMovingAverage { Length = 2 };
+		_spreadZScoreAverage = new SMA { Length = 2 };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -141,11 +141,11 @@ public class CryptoMvrvZScoreStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _spreadZScoreAverage, "Spread Z-Score");
+			DrawIndicator(area, _spreadZScoreAverage);
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal realCap, decimal capStdDev)
@@ -161,8 +161,8 @@ public class CryptoMvrvZScoreStrategy : Strategy
 		var marketZscore = (price - realCap) / capStdDev;
 		var spread = marketZscore - mvrvRatio;
 
-		var spreadAvgVal = _spreadAverage.Process(spread, candle.ServerTime, true);
-		var spreadStdVal = _spreadStdDev.Process(spread, candle.ServerTime, true);
+		var spreadAvgVal = _spreadAverage.Process(new DecimalIndicatorValue(_spreadAverage, spread, candle.ServerTime));
+		var spreadStdVal = _spreadStdDev.Process(new DecimalIndicatorValue(_spreadStdDev, spread, candle.ServerTime));
 
 		var spreadAvg = spreadAvgVal.ToDecimal();
 		var spreadStd = spreadStdVal.ToDecimal();
@@ -171,7 +171,7 @@ public class CryptoMvrvZScoreStrategy : Strategy
 			return;
 
 		var spreadZScoreRaw = (spread - spreadAvg) / spreadStd;
-		var spreadZScoreVal = _spreadZScoreAverage.Process(spreadZScoreRaw, candle.ServerTime, true);
+		var spreadZScoreVal = _spreadZScoreAverage.Process(new DecimalIndicatorValue(_spreadZScoreAverage, spreadZScoreRaw, candle.ServerTime));
 		var spreadZScore = spreadZScoreVal.ToDecimal();
 
 		if (!_spreadZScoreAverage.IsFormed)

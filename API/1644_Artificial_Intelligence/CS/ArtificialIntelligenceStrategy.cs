@@ -92,27 +92,27 @@ public class ArtificialIntelligenceStrategy : Strategy
 	{
 		_x1 = Param(nameof(X1), 135)
 			.SetDisplay("X1", "Perceptron weight 1", "Perceptron")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 200, 5);
 
 		_x2 = Param(nameof(X2), 127)
 			.SetDisplay("X2", "Perceptron weight 2", "Perceptron")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 200, 5);
 
 		_x3 = Param(nameof(X3), 16)
 			.SetDisplay("X3", "Perceptron weight 3", "Perceptron")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 200, 5);
 
 		_x4 = Param(nameof(X4), 93)
 			.SetDisplay("X4", "Perceptron weight 4", "Perceptron")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 200, 5);
 
 		_stopLoss = Param(nameof(StopLoss), 85m)
 			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -138,9 +138,9 @@ public class ArtificialIntelligenceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ao = new AwesomeOscillator();
 
@@ -167,7 +167,7 @@ public class ArtificialIntelligenceStrategy : Strategy
 			return;
 
 		var ao = aoValue.GetValue<decimal>();
-		var aoSmaValue = _aoSma.Process(ao, candle.ServerTime, true);
+		var aoSmaValue = _aoSma.Process(new DecimalIndicatorValue(_aoSma, ao, candle.ServerTime));
 
 		if (!aoSmaValue.IsFormed)
 			return;

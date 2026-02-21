@@ -257,9 +257,9 @@ _trailingStepPoints = Param(nameof(TrailingStepPoints), 0m)
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = BaseVolume;
 
@@ -608,7 +608,7 @@ _trailingStepPoints = Param(nameof(TrailingStepPoints), 0m)
 		return stepPrice > 0m ? stepPrice : step;
 	}
 
-	private sealed class ImpulseIndicator : Indicator<ICandleMessage>
+	private sealed class ImpulseIndicator : BaseIndicator
 	{
 		public int Length { get; set; } = 21;
 		public decimal PriceStep { get; set; } = 1m;

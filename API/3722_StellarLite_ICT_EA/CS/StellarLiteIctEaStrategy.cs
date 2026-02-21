@@ -83,54 +83,54 @@ public class StellarLiteIctEaStrategy : Strategy
 
 		_higherMaPeriod = Param(nameof(HigherMaPeriod), 200)
 			.SetDisplay("Higher MA Period", "Moving average length for higher timeframe bias", "Bias")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "Average True Range lookback", "Volatility")
-			.SetCanOptimize(true);
+			;
 
 		_liquidityLookback = Param(nameof(LiquidityLookback), 120)
 			.SetDisplay("Liquidity Lookback", "Number of candles to detect liquidity pools", "Structure")
-			.SetCanOptimize(true);
+			;
 
 		_atrThreshold = Param(nameof(AtrThreshold), 0.5m)
 			.SetDisplay("ATR Threshold", "Maximum candle range relative to ATR", "Structure")
-			.SetCanOptimize(true);
+			;
 
 		_tp1Ratio = Param(nameof(Tp1Ratio), 1m)
 			.SetDisplay("TP1 Risk Reward", "Risk reward multiplier for the first target", "Targets")
-			.SetCanOptimize(true);
+			;
 
 		_tp2Ratio = Param(nameof(Tp2Ratio), 2m)
 			.SetDisplay("TP2 Risk Reward", "Risk reward multiplier for the second target", "Targets")
-			.SetCanOptimize(true);
+			;
 
 		_tp3Ratio = Param(nameof(Tp3Ratio), 3m)
 			.SetDisplay("TP3 Risk Reward", "Risk reward multiplier for the final target", "Targets")
-			.SetCanOptimize(true);
+			;
 
 		_tp1Percent = Param(nameof(Tp1Percent), 50m)
 			.SetDisplay("TP1 Close %", "Percentage of volume closed at the first target", "Targets")
-			.SetCanOptimize(true);
+			;
 
 		_tp2Percent = Param(nameof(Tp2Percent), 25m)
 			.SetDisplay("TP2 Close %", "Percentage of volume closed at the second target", "Targets")
-			.SetCanOptimize(true);
+			;
 
 		_tp3Percent = Param(nameof(Tp3Percent), 25m)
 			.SetDisplay("TP3 Close %", "Percentage of volume closed at the final target", "Targets")
-			.SetCanOptimize(true);
+			;
 
 		_moveToBreakEven = Param(nameof(MoveToBreakEven), true)
 			.SetDisplay("Break Even After TP1", "Move the stop to break even after the first partial", "Protection");
 
 		_breakEvenOffset = Param(nameof(BreakEvenOffset), 1m)
 			.SetDisplay("Break Even Offset", "Additional price steps added to the break even stop", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_trailingDistance = Param(nameof(TrailingDistance), 10m)
 			.SetDisplay("Trailing Distance", "Price steps used after TP2 for trailing stop", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_useSilverBullet = Param(nameof(UseSilverBullet), true)
 			.SetDisplay("Use Silver Bullet", "Enable the Silver Bullet setup", "Structure");
@@ -143,11 +143,11 @@ public class StellarLiteIctEaStrategy : Strategy
 
 		_riskPercent = Param(nameof(RiskPercent), 0.25m)
 			.SetDisplay("Risk %", "Risk percentage of account equity used to size trades", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_oteLowerLevel = Param(nameof(OteLowerLevel), 0.618m)
 			.SetDisplay("OTE Lower", "Lower Fibonacci level used for the entry", "Structure")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -360,9 +360,9 @@ public class StellarLiteIctEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var security = Security;
 		_priceStep = security?.PriceStep ?? 1m;
@@ -373,7 +373,7 @@ public class StellarLiteIctEaStrategy : Strategy
 		if (_volumeStep <= 0m)
 			_volumeStep = 1m;
 
-		_higherMa = new SimpleMovingAverage
+		_higherMa = new SMA
 		{
 			Length = HigherMaPeriod
 		};
@@ -410,7 +410,7 @@ public class StellarLiteIctEaStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessHigherCandle(ICandleMessage candle, decimal maValue)

@@ -40,7 +40,7 @@ public VortexIndicatorBreakoutStrategy()
 		_vortexLength = Param(nameof(VortexLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Vortex Length", "Period applied to the Vortex indicator.", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 35, 7);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -85,9 +85,9 @@ public VortexIndicatorBreakoutStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 

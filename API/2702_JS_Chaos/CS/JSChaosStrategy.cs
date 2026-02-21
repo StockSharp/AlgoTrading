@@ -268,22 +268,22 @@ public class JSChaosStrategy : Strategy
 		_fractalLookback = Param(nameof(FractalLookback), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fractal Lookback", "Bars required to confirm fractal levels", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_jawShift = Param(nameof(JawShift), 8)
 			.SetRange(1, 30)
 			.SetDisplay("Jaw Shift", "Shift applied to the jaw moving average", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_teethShift = Param(nameof(TeethShift), 5)
 			.SetRange(1, 30)
 			.SetDisplay("Teeth Shift", "Shift applied to the teeth moving average", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_lipsShift = Param(nameof(LipsShift), 3)
 			.SetRange(1, 30)
 			.SetDisplay("Lips Shift", "Shift applied to the lips moving average", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
@@ -328,9 +328,9 @@ public class JSChaosStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdatePriceSettings();
 
@@ -338,8 +338,8 @@ public class JSChaosStrategy : Strategy
 		_teeth = new SmoothedMovingAverage { Length = 8 };
 		_lips = new SmoothedMovingAverage { Length = 5 };
 		_ma21 = new SmoothedMovingAverage { Length = 21 };
-		_ao = new AwesomeOscillator { ShortPeriod = 5, LongPeriod = 34 };
-		_aoSma = new SimpleMovingAverage { Length = 5 };
+		_ao = new AwesomeOscillator { ShortMa = { Length = 5 }, LongMa = { Length = 34 } };
+		_aoSma = new SMA { Length = 5 };
 		_stdDev = new StandardDeviation { Length = 10 };
 
 		var subscription = SubscribeCandles(CandleType);

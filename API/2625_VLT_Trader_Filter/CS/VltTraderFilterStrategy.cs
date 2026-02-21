@@ -56,31 +56,31 @@ public class VltTraderFilterStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Distance for the take profit order", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 30m, 5m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Distance for the protective stop", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 30m, 5m);
 
 		_breakoutBufferPips = Param(nameof(BreakoutBufferPips), 10m)
 			.SetNotNegative()
 			.SetDisplay("Breakout Buffer (pips)", "Additional distance added to breakout entries", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 30m, 5m);
 
 		_maxCandleSizePips = Param(nameof(MaxCandleSizePips), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Candle Size (pips)", "Largest candle range considered for comparison", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 200m, 20m);
 
 		_candleCount = Param(nameof(CandleCount), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Candle Count", "Number of historical candles used for the volatility filter", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -164,9 +164,9 @@ public class VltTraderFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 		UpdateOffsets();

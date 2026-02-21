@@ -122,12 +122,12 @@ public class InverseReactionStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 250m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take-profit distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
@@ -140,22 +140,22 @@ public class InverseReactionStrategy : Strategy
 		_minCriteriaPoints = Param(nameof(MinCriteriaPoints), 300m)
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Bar Size", "Lower bound for candle size", "Signal")
-			.SetCanOptimize(true);
+			;
 
 		_maxCriteriaPoints = Param(nameof(MaxCriteriaPoints), 2000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Maximum Bar Size", "Upper bound for candle size", "Signal")
-			.SetCanOptimize(true);
+			;
 
 		_coefficient = Param(nameof(Coefficient), 1.618m)
 			.SetGreaterThanZero()
 			.SetDisplay("Coefficient", "Confidence coefficient", "Signal")
-			.SetCanOptimize(true);
+			;
 
 		_maPeriod = Param(nameof(MaPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average length", "Signal")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
@@ -179,9 +179,9 @@ public class InverseReactionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (MaPeriod < 3)
 			throw new InvalidOperationException("MaPeriod must be at least 3.");
@@ -189,7 +189,7 @@ public class InverseReactionStrategy : Strategy
 		if (MaxCriteriaPoints <= MinCriteriaPoints)
 			throw new InvalidOperationException("MaxCriteriaPoints must be greater than MinCriteriaPoints.");
 
-		StartProtection();
+		StartProtection(null, null);
 
 		Volume = TradeVolume;
 
@@ -323,7 +323,7 @@ public class InverseReactionStrategy : Strategy
 		_takeProfitPrice = null;
 	}
 
-	private sealed class InverseReactionIndicator : Indicator<ICandleMessage>
+	private sealed class InverseReactionIndicator : BaseIndicator
 	{
 		public int Period { get; set; } = 3;
 		public decimal Coefficient { get; set; } = 1.618m;

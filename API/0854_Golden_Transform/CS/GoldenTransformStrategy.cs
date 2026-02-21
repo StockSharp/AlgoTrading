@@ -103,23 +103,23 @@ public class GoldenTransformStrategy : Strategy
 	{
 		_rocLength = Param(nameof(RocLength), 50)
 			.SetDisplay("ROC Length", "Period for Rate of Change", "General")
-			.SetCanOptimize(true);
+			;
 
 		_trixLength = Param(nameof(TrixLength), 90)
 			.SetDisplay("Hull TRIX Length", "Length for triple Hull moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_hmaEntryLength = Param(nameof(HullEntryLength), 65)
 			.SetDisplay("Hull Entry Length", "Length for entry Hull MA filter", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_fisherLength = Param(nameof(FisherLength), 50)
 			.SetDisplay("Fisher Length", "Period for Fisher Transform", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_fisherSmoothLength = Param(nameof(FisherSmoothLength), 5)
 			.SetDisplay("Fisher Smooth Length", "Smoothing length for Fisher", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -143,9 +143,9 @@ public class GoldenTransformStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_roc = new RateOfChange { Length = RocLength };
 		_hmaEntry = new HullMovingAverage { Length = HullEntryLength };
@@ -165,7 +165,7 @@ public class GoldenTransformStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

@@ -79,31 +79,31 @@ public class SupertrendAndMacdStrategy : Strategy
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 		.SetDisplay("ATR Period", "ATR period for Supertrend", "Supertrend")
-		.SetCanOptimize(true);
+		;
 
 		_factor = Param(nameof(Factor), 3m)
 		.SetDisplay("Factor", "Multiplier for Supertrend", "Supertrend")
-		.SetCanOptimize(true);
+		;
 
 		_emaPeriod = Param(nameof(EmaPeriod), 200)
 		.SetDisplay("EMA Period", "Period for EMA filter", "EMA")
-		.SetCanOptimize(true);
+		;
 
 		_stopLookback = Param(nameof(StopLookback), 10)
 		.SetDisplay("Stop Lookback", "Bars for stop calculation", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_macdFast = Param(nameof(MacdFast), 12)
 		.SetDisplay("Fast Length", "MACD fast MA length", "MACD")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 		.SetDisplay("Slow Length", "MACD slow MA length", "MACD")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 		.SetDisplay("Signal Length", "MACD signal length", "MACD")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -130,15 +130,15 @@ public class SupertrendAndMacdStrategy : Strategy
 		base.OnStarted(time);
 
 		var supertrend = new SuperTrend { Length = AtrPeriod, Multiplier = Factor };
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
 			{
-				ShortMa = new ExponentialMovingAverage { Length = MacdFast },
-				LongMa = new ExponentialMovingAverage { Length = MacdSlow }
+				ShortMa = new EMA { Length = MacdFast },
+				LongMa = new EMA { Length = MacdSlow }
 			},
-			SignalMa = new ExponentialMovingAverage { Length = MacdSignal }
+			SignalMa = new EMA { Length = MacdSignal }
 		};
 
 		_highest = new Highest { Length = StopLookback };

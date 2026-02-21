@@ -59,19 +59,19 @@ public class SmaBufferStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Period of the moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 25);
 
 		_entryPercent = Param(nameof(EntryPercent), 5m)
 			.SetRange(0.1m, 100m)
 			.SetDisplay("Entry %", "Percent above SMA to enter", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_exitPercent = Param(nameof(ExitPercent), 3m)
 			.SetRange(0.1m, 100m)
 			.SetDisplay("Exit %", "Percent below SMA to exit", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 	}
 
@@ -82,11 +82,11 @@ public class SmaBufferStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = SmaLength };
+		_sma = new SMA { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

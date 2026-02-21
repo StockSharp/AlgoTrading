@@ -124,13 +124,12 @@ public class OkxMaCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage {
-			Length = Length,
-			CandlePrice = CandlePrice.Close,
+		var sma = new SMA {
+			Length = Length
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -169,8 +168,8 @@ public class OkxMaCrossoverStrategy : Strategy
 			return;
 		}
 
-		var doLong = candle.Low < _prevMa;
-		var doShort = candle.High > _prevMa;
+		var doLong = candle.LowPrice < _prevMa;
+		var doShort = candle.HighPrice > _prevMa;
 
 		if (!_prevDoLong2 && doLong && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
 			BuyMarket(Volume + Math.Abs(Position));

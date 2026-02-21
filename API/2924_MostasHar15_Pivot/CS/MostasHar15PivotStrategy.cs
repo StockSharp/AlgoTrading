@@ -144,44 +144,44 @@ public class MostasHar15PivotStrategy : Strategy
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetDisplay("Stop Loss (pips)", "Distance to stop loss in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop size in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetDisplay("Trailing Step (pips)", "Minimum move before updating trailing stop", "Risk")
-			.SetCanOptimize(true);
+			;
 		_minDistancePips = Param(nameof(MinimumDistancePips), 14m)
 			.SetDisplay("Minimum Distance (pips)", "Required distance to support/resistance", "Filters")
-			.SetCanOptimize(true);
+			;
 		_emaSlopePips = Param(nameof(EmaSlopePips), 5m)
 			.SetDisplay("EMA Slope (pips)", "Required EMA separation in pips", "Filters")
-			.SetCanOptimize(true);
+			;
 		_adxThreshold = Param(nameof(AdxThreshold), 20)
 			.SetDisplay("ADX Threshold", "Minimum ADX value", "Filters")
-			.SetCanOptimize(true);
+			;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Primary Candle Type", "Intraday candle type", "General");
 		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Daily Candle Type", "Daily candle series for pivots", "General");
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "Length of Average Directional Index", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_emaClosePeriod = Param(nameof(EmaClosePeriod), 5)
 			.SetDisplay("EMA Close Period", "EMA length on close price", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_emaOpenPeriod = Param(nameof(EmaOpenPeriod), 8)
 			.SetDisplay("EMA Open Period", "EMA length on open price", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetDisplay("MACD Fast Period", "Fast EMA length for MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetDisplay("MACD Slow Period", "Slow EMA length for MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetDisplay("MACD Signal Period", "Signal line length for MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />

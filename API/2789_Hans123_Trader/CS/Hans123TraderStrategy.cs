@@ -127,43 +127,43 @@ public class Hans123TraderStrategy : Strategy
 	{
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetDisplay("Order Volume", "Breakout order volume", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 2m, 0.1m);
 
 		_rangeLength = Param(nameof(RangeLength), 80)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Length", "Candles in breakout range", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 120, 10);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 150, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 200, 10);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 100, 5);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetDisplay("Trailing Step (pips)", "Extra pips before trailing updates", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 50, 5);
 
 		_startHour = Param(nameof(StartHour), 6)
 			.SetDisplay("Start Hour", "Hour (UTC) when orders can be placed", "Schedule")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 23, 1);
 
 		_endHour = Param(nameof(EndHour), 10)
 			.SetDisplay("End Hour", "Hour (UTC) when orders stop", "Schedule")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 24, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -189,9 +189,9 @@ public class Hans123TraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (StartHour < 0 || StartHour > 23)
 			throw new ArgumentOutOfRangeException(nameof(StartHour), "Start hour must be between 0 and 23.");

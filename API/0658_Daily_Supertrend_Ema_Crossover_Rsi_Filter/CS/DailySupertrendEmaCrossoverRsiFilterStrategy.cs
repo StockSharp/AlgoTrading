@@ -152,58 +152,58 @@ public class DailySupertrendEmaCrossoverRsiFilterStrategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Period for fast EMA", "EMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length", "Period for slow EMA", "EMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 30, 2);
 
 		_atrLength = Param(nameof(AtrLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 2.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop ATR Mult", "ATR multiplier for stop-loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_takeProfitMultiplier = Param(nameof(TakeProfitMultiplier), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take ATR Mult", "ATR multiplier for take-profit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 8m, 1m);
 
 		_rsiLength = Param(nameof(RsiLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 65m)
 			.SetDisplay("RSI Overbought", "RSI overbought level", "RSI")
 			.SetRange(50m, 100m)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "RSI")
 			.SetRange(0m, 50m)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Mult", "ATR multiplier for Supertrend", "Supertrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(2023, 1, 1, 0, 0, 0, TimeSpan.Zero))
@@ -231,12 +231,12 @@ public class DailySupertrendEmaCrossoverRsiFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var fastEma = new EMA { Length = FastEmaLength };
+		var slowEma = new EMA { Length = SlowEmaLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var supertrend = new SuperTrend { Length = AtrLength, Multiplier = SupertrendMultiplier };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };

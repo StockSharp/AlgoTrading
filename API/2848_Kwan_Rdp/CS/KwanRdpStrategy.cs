@@ -35,7 +35,7 @@ public class KwanRdpStrategy : Strategy
 
 	private MoneyFlowIndex _mfi;
 	private Momentum _momentum;
-	private LengthIndicator<decimal> _smoother;
+	private DecimalLengthIndicator _smoother;
 	private SMA _deMaxAverage;
 	private SMA _deMinAverage;
 	private decimal? _previousHigh;
@@ -162,25 +162,25 @@ public class KwanRdpStrategy : Strategy
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("DeMarker Period", "DeMarker indicator length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 28, 1);
 
 		_mfiPeriod = Param(nameof(MfiPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("MFI Period", "Money Flow Index length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 28, 1);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Period", "Momentum indicator length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 28, 1);
 
 		_smoothingLength = Param(nameof(SmoothingLength), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("Smoothing Length", "Length of the smoothing average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.Jurik)
@@ -223,9 +223,9 @@ public class KwanRdpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_mfi = new MoneyFlowIndex { Length = MfiPeriod };
 		_momentum = new Momentum { Length = MomentumPeriod };
@@ -346,7 +346,7 @@ public class KwanRdpStrategy : Strategy
 		_previousTrend = currentTrend;
 	}
 
-	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethods method, int length)
+	private static DecimalLengthIndicator CreateSmoother(SmoothingMethods method, int length)
 	{
 		return method switch
 		{

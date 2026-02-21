@@ -72,7 +72,7 @@ public class AroonOscillatorSignAlertStrategy : Strategy
 		_aroonPeriod = Param(nameof(AroonPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Aroon Period", "Lookback for Aroon oscillator", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_upLevel = Param(nameof(UpLevel), 50)
 			.SetDisplay("Up Level", "Upper threshold for sell signal", "Indicator");
@@ -99,16 +99,16 @@ public class AroonOscillatorSignAlertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var aroon = new AroonOscillator { Length = AroonPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(aroon, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal aroonValue)

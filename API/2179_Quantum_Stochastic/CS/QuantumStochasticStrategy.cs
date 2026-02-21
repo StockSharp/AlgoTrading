@@ -111,13 +111,13 @@ public class QuantumStochasticStrategy : Strategy
 		_kPeriod = Param(nameof(KPeriod), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("%K Period", "Period of %K line", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 150, 10);
 
 		_dPeriod = Param(nameof(DPeriod), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("%D Period", "Period of %D line", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 150, 10);
 
 		_slowing = Param(nameof(Slowing), 3)
@@ -154,14 +154,14 @@ public class QuantumStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stochastic = new StochasticOscillator
 		{
 			KPeriod = KPeriod,
-			DPeriod = DPeriod,
+			D = {  K = { Length = DPeriod } },
 			Slowing = Slowing
 		};
 
@@ -170,7 +170,7 @@ public class QuantumStochasticStrategy : Strategy
 			.BindEx(stochastic, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

@@ -318,9 +318,9 @@ public class ZoneRecoveryButtonStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_currentDirection = StartDirection;
 		_equityHigh = GetCurrentEquity();
@@ -330,7 +330,7 @@ public class ZoneRecoveryButtonStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var chart = CreateChartArea();
 		if (chart != null)

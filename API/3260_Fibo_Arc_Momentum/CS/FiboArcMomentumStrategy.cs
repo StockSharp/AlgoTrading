@@ -88,73 +88,73 @@ public class FiboArcMomentumStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast LWMA", "Fast linear weighted moving average length", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow LWMA", "Slow linear weighted moving average length", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 150, 5);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Period", "Momentum lookback period", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 25, 1);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Threshold", "Minimum distance from 100 for momentum", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1.5m, 0.1m);
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Fast", "Fast EMA period for MACD", "MACD")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Slow", "Slow EMA period for MACD", "MACD")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 60, 1);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal", "Signal EMA period for MACD", "MACD")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_trendAnchorLength = Param(nameof(TrendAnchorLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Trend Anchor", "Number of bars between base and arc anchor", "Fibonacci")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 1);
 
 		_arcAnchorLength = Param(nameof(ArcAnchorLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Arc Anchor", "Bars offset for the second Fibonacci anchor", "Fibonacci")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_fibonacciRatio = Param(nameof(FibonacciRatio), 0.618m)
 		.SetGreaterThanZero()
 		.SetDisplay("Fibonacci Ratio", "Ratio applied between anchors", "Fibonacci")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.236m, 0.786m, 0.05m);
 
 		_stopLossDistance = Param(nameof(StopLossDistance), 0.0020m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss", "Fixed stop distance in price units", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.0005m, 0.0050m, 0.0005m);
 
 		_takeProfitDistance = Param(nameof(TakeProfitDistance), 0.0050m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit", "Fixed take profit distance in price units", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.0010m, 0.0100m, 0.0005m);
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
@@ -163,13 +163,13 @@ public class FiboArcMomentumStrategy : Strategy
 		_trailingTrigger = Param(nameof(TrailingTrigger), 0.0030m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Trigger", "Profit required before trailing activates", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.0010m, 0.0080m, 0.0005m);
 
 		_trailingDistance = Param(nameof(TrailingDistance), 0.0015m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Distance", "Distance between price and trailing stop", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.0005m, 0.0040m, 0.0005m);
 
 		_enableBreakEven = Param(nameof(EnableBreakEven), true)
@@ -178,13 +178,13 @@ public class FiboArcMomentumStrategy : Strategy
 		_breakEvenTrigger = Param(nameof(BreakEvenTrigger), 0.0025m)
 		.SetGreaterThanZero()
 		.SetDisplay("Break-even Trigger", "Profit required to move stop to entry", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.0010m, 0.0060m, 0.0005m);
 
 		_breakEvenOffset = Param(nameof(BreakEvenOffset), 0.0002m)
 		.SetGreaterThanZero()
 		.SetDisplay("Break-even Offset", "Additional profit locked after break-even", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.0001m, 0.0010m, 0.0001m);
 	}
 
@@ -389,8 +389,8 @@ public class FiboArcMomentumStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod, CandlePrice = CandlePrice.Typical };
-		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod, CandlePrice = CandlePrice.Typical };
+		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{

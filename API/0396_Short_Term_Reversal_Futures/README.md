@@ -11,7 +11,7 @@ Trades are held for a few days before closing on the next signal.
 - **Exit Criteria**: Positions closed after a short holding period or when ranking updates.
 - **Stops**: Volatility-based stop may be applied.
 - **Default Values**:
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

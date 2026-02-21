@@ -114,13 +114,13 @@ public class ExpOracleStrategy : Strategy
 		_oraclePeriod = Param(nameof(OraclePeriod), 55)
 			.SetGreaterThanZero()
 			.SetDisplay("Oracle Period", "Oracle period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 120, 5);
 
 		_smooth = Param(nameof(Smooth), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth", "Smoothing length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 2);
 
 		_mode = Param(nameof(Mode), AlgorithmModes.Twist)
@@ -137,11 +137,11 @@ public class ExpOracleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var oracle = new OracleIndicator
 		{
@@ -214,7 +214,7 @@ public class ExpOracleStrategy : Strategy
 /// <summary>
 /// Oracle indicator combining RSI and CCI with smoothing.
 /// </summary>
-public class OracleIndicator : Indicator<decimal>
+public class OracleIndicator : BaseIndicator
 {
 	public int Length { get; set; } = 55;
 	public int Smooth { get; set; } = 8;

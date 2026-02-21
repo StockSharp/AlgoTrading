@@ -85,25 +85,25 @@ public class SimpleApfBacktestingStrategy : Strategy
 		_correlationLength = Param(nameof(CorrelationLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Correlation Length", "Bars used for autocorrelation", "APF")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 400, 50);
 
 		_length = Param(nameof(Length), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Length", "Bars used for autocorrelation and regression", "APF")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 50, 5);
 
 		_thresholdGain = Param(nameof(ThresholdGain), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Threshold Gain", "Minimum expected price increase", "Strategy")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 20m, 1m);
 
 		_signalThreshold = Param(nameof(SignalThreshold), 0.5m)
 		.SetRange(0.1m, 1m)
 		.SetDisplay("Signal Threshold", "Autocorrelation level to store forecast", "APF")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 0.9m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -127,9 +127,9 @@ public class SimpleApfBacktestingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

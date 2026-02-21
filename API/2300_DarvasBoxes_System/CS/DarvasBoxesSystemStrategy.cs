@@ -115,17 +115,17 @@ public class DarvasBoxesSystemStrategy : Strategy
 		_boxPeriod = Param(nameof(BoxPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Box Period", "Period for box calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetDisplay("Stop Loss", "Distance from entry price to stop loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 2000m, 500m);
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetDisplay("Take Profit", "Distance from entry price to take profit", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1000m, 4000m, 500m);
 
 		_allowBuyEntry = Param(nameof(AllowBuyEntry), true)
@@ -162,9 +162,9 @@ public class DarvasBoxesSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var donchian = new DonchianChannels { Length = BoxPeriod };
 

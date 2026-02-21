@@ -39,8 +39,8 @@ public class LongEmaAdvancedExitStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _atrSma;
-	private LengthIndicator<decimal> _shortMa;
-	private LengthIndicator<decimal> _midMa;
+	private DecimalLengthIndicator _shortMa;
+	private DecimalLengthIndicator _midMa;
 	private decimal _prevShort;
 	private decimal _prevMid;
 	private decimal _prevMacd;
@@ -203,7 +203,7 @@ public class LongEmaAdvancedExitStrategy : Strategy
 		_midMa = CreateMa(MaType, MidTermPeriod);
 		var selectedMa = CreateMa(MaType, MaCloseExitPeriod);
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		_atrSma = new SimpleMovingAverage { Length = AtrPeriod };
+		_atrSma = new SMA { Length = AtrPeriod };
 		var macd = new MovingAverageConvergenceDivergence
 		{
 			FastLength = MacdFastLength,
@@ -237,14 +237,14 @@ public class LongEmaAdvancedExitStrategy : Strategy
 		StartProtection();
 	}
 
-	private static LengthIndicator<decimal> CreateMa(string type, int length)
+	private static DecimalLengthIndicator CreateMa(string type, int length)
 	{
 		return type switch
 		{
-			"SMA" => new SimpleMovingAverage { Length = length },
+			"SMA" => new SMA { Length = length },
 			"WMA" => new WeightedMovingAverage { Length = length },
 			"HMA" => new HullMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 
@@ -269,7 +269,7 @@ public class LongEmaAdvancedExitStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var atrAvg = _atrSma.Process(atrValue, candle.ServerTime, true).ToDecimal();
+		var atrAvg = _atrSma.Process(new DecimalIndicatorValue(_atrSma, atrValue, candle.ServerTime)).ToDecimal();
 
 		var priceAboveLong = candle.ClosePrice > longValue;
 		var crossOver = _prevShort <= _prevMid && shortValue > midValue;

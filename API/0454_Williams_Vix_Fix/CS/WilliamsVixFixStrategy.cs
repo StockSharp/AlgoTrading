@@ -108,34 +108,34 @@ public class WilliamsVixFixStrategy : Strategy
 		_bbLength = Param(nameof(BbLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Length", "Bollinger Bands length", "Bollinger Bands")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_bbMultiplier = Param(nameof(BbMultiplier), 2.0m)
 			.SetDisplay("BB Multiplier", "Bollinger Bands standard deviation multiplier", "Bollinger Bands")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_wvfPeriod = Param(nameof(WvfPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("WVF Period", "Williams VIX Fix lookback period for StdDev", "Williams VIX Fix")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_wvfLookback = Param(nameof(WvfLookback), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("WVF Lookback", "Williams VIX Fix lookback period for percentile", "Williams VIX Fix")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 70, 10);
 
 		_highestPercentile = Param(nameof(HighestPercentile), 0.85m)
 			.SetDisplay("Highest Percentile", "Highest percentile threshold", "Williams VIX Fix")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.75m, 0.95m, 0.05m);
 
 		_lowestPercentile = Param(nameof(LowestPercentile), 0.99m)
 			.SetDisplay("Lowest Percentile", "Lowest percentile threshold", "Williams VIX Fix")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.90m, 1.0m, 0.02m);
 	}
 
@@ -146,17 +146,17 @@ public class WilliamsVixFixStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_bollingerBands = new BollingerBands { Length = BbLength, Width = BbMultiplier };
 		_highestClose = new Highest { Length = WvfPeriod };
 		_lowestClose = new Lowest { Length = WvfPeriod };
-		_wvfSma = new SimpleMovingAverage { Length = BbLength };
+		_wvfSma = new SMA { Length = BbLength };
 		_wvfStdDev = new StandardDeviation { Length = BbLength };
-		_wvfInvSma = new SimpleMovingAverage { Length = BbLength };
+		_wvfInvSma = new SMA { Length = BbLength };
 		_wvfInvStdDev = new StandardDeviation { Length = BbLength };
 
 		// Create subscription for candles
@@ -193,8 +193,8 @@ public class WilliamsVixFixStrategy : Strategy
 		var wvf = ((highestValue.ToDecimal() - lowPrice) / highestValue.ToDecimal()) * 100;
 		
 		// Process WVF through SMA and StdDev using manual calculation
-		var wvfSmaValue = _wvfSma.Process(wvf, candle.ServerTime, candle.State == CandleStates.Finished);
-		var wvfStdDevValue = _wvfStdDev.Process(wvf, candle.ServerTime, candle.State == CandleStates.Finished);
+		var wvfSmaValue = _wvfSma.Process(new DecimalIndicatorValue(_wvfSma, wvf, candle.ServerTime));
+		var wvfStdDevValue = _wvfStdDev.Process(new DecimalIndicatorValue(_wvfStdDev, wvf, candle.ServerTime));
 
 		if (!wvfSmaValue.IsFormed || !wvfStdDevValue.IsFormed)
 			return;
@@ -205,8 +205,8 @@ public class WilliamsVixFixStrategy : Strategy
 		var wvfInv = ((highPrice - lowestValue.ToDecimal()) / lowestValue.ToDecimal()) * 100;
 		
 		// Process WVF Inverted through SMA and StdDev using manual calculation
-		var wvfInvSmaValue = _wvfInvSma.Process(wvfInv, candle.ServerTime, candle.State == CandleStates.Finished);
-		var wvfInvStdDevValue = _wvfInvStdDev.Process(wvfInv, candle.ServerTime, candle.State == CandleStates.Finished);
+		var wvfInvSmaValue = _wvfInvSma.Process(new DecimalIndicatorValue(_wvfInvSma, wvfInv, candle.ServerTime));
+		var wvfInvStdDevValue = _wvfInvStdDev.Process(new DecimalIndicatorValue(_wvfInvStdDev, wvfInv, candle.ServerTime));
 
 		if (!wvfInvSmaValue.IsFormed || !wvfInvStdDevValue.IsFormed)
 			return;

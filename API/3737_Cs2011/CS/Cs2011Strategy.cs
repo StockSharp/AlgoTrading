@@ -104,32 +104,32 @@ public class Cs2011Strategy : Strategy
 	{
 		_targetVolume = Param(nameof(TargetVolume), 1m)
 			.SetDisplay("Target Volume", "Absolute position size targeted on entries", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2200)
 			.SetDisplay("Take Profit (points)", "Take-profit distance in price points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200, 4000, 200);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0)
 			.SetDisplay("Stop Loss (points)", "Stop-loss distance in price points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 2000, 200);
 
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 30)
 			.SetDisplay("Fast EMA", "Fast EMA period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 500)
 			.SetDisplay("Slow EMA", "Slow EMA period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200, 700, 20);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 36)
 			.SetDisplay("Signal Period", "Signal line period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

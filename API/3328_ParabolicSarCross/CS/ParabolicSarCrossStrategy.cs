@@ -138,12 +138,12 @@ public class ParabolicSarCrossStrategy : Strategy
 	{
 		_sarStep = Param(nameof(SarStep), 0.02m)
 		.SetDisplay("SAR Step", "Acceleration factor used by Parabolic SAR", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_sarMaximum = Param(nameof(SarMaximum), 0.2m)
 		.SetDisplay("SAR Maximum", "Maximum acceleration factor for Parabolic SAR", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 0.5m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -198,9 +198,9 @@ public class ParabolicSarCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var parabolicSar = new ParabolicSar
 		{

@@ -136,19 +136,19 @@ public class ColorXMacdCandleStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 12)
 				.SetGreaterThanZero()
 				.SetDisplay("Fast Period", "Fast EMA period", "MACD")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(6, 18, 2);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
 				.SetGreaterThanZero()
 				.SetDisplay("Slow Period", "Slow EMA period", "MACD")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(20, 40, 2);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 				.SetGreaterThanZero()
 				.SetDisplay("Signal Period", "Signal line period", "MACD")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(6, 18, 1);
 
 		_enableBuyOpen = Param(nameof(EnableBuyOpen), true)
@@ -174,8 +174,8 @@ public class ColorXMacdCandleStrategy : Strategy
 
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = FastPeriod,
-			LongPeriod = SlowPeriod,
+			ShortMa = { Length = FastPeriod },
+			LongMa = { Length = SlowPeriod },
 			SignalPeriod = SignalPeriod
 		};
 

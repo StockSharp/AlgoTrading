@@ -143,29 +143,29 @@ public class BandsPriceStrategy : Strategy
 		_bandsPeriod = Param(nameof(BandsPeriod), 100)
 						   .SetGreaterThanZero()
 						   .SetDisplay("Bands Period", "Bollinger Bands period", "Indicator")
-						   .SetCanOptimize(true)
+						   
 						   .SetOptimize(50, 150, 10);
 
 		_bandsDeviation = Param(nameof(BandsDeviation), 2m)
 							  .SetGreaterThanZero()
 							  .SetDisplay("Bands Deviation", "Width of Bollinger Bands", "Indicator")
-							  .SetCanOptimize(true)
+							  
 							  .SetOptimize(1m, 3m, 0.5m);
 
 		_smooth = Param(nameof(Smooth), 5)
 					  .SetGreaterThanZero()
 					  .SetDisplay("Smoothing", "Length of smoothing SMA", "Indicator")
-					  .SetCanOptimize(true)
+					  
 					  .SetOptimize(3, 15, 1);
 
 		_upLevel = Param(nameof(UpLevel), 25)
 					   .SetDisplay("Upper Level", "Threshold for overbought zone", "Indicator")
-					   .SetCanOptimize(true)
+					   
 					   .SetOptimize(20, 40, 5);
 
 		_dnLevel = Param(nameof(DnLevel), -25)
 					   .SetDisplay("Lower Level", "Threshold for oversold zone", "Indicator")
-					   .SetCanOptimize(true)
+					   
 					   .SetOptimize(-40, -20, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -187,9 +187,9 @@ public class BandsPriceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bands = new BollingerBands { Length = BandsPeriod, Width = BandsDeviation };
 
@@ -249,7 +249,7 @@ public class BandsPriceStrategy : Strategy
 				  })
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

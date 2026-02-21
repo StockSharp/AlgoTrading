@@ -71,7 +71,7 @@ public class RangeBreakoutWeeklyStrategy : Strategy
 
 		_startHour = Param(nameof(StartHour), 0)
 			.SetDisplay("Start Hour", "Hour of day (0-23) used to measure the reference candle", "Schedule")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 23, 1);
 
 		_pricePercentage = Param(nameof(PricePercentage), 1m)
@@ -88,7 +88,7 @@ public class RangeBreakoutWeeklyStrategy : Strategy
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
 			.SetDisplay("Base Volume", "Initial order volume before martingale adjustments", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 20)
 			.SetGreaterThanZero()
@@ -97,7 +97,7 @@ public class RangeBreakoutWeeklyStrategy : Strategy
 		_hourCandleType = Param(nameof(HourCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Hour Candle Type", "Timeframe used to detect the breakout window", "Data");
 
-		_atrCandleType = Param(nameof(AtrCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_atrCandleType = Param(nameof(AtrCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("ATR Candle Type", "Timeframe feeding the ATR indicator", "Data");
 	}
 
@@ -233,9 +233,9 @@ public class RangeBreakoutWeeklyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_effectiveTradingDay = ResolveTradingDay(TradingDay);
 		if (_effectiveTradingDay != TradingDay)

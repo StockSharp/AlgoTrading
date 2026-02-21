@@ -50,17 +50,17 @@ public class ScalpingEAStrategy : Strategy
 	{
 		_profitTarget = Param(nameof(ProfitTarget), 20)
 			.SetDisplay("Profit Target", "Take profit points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 18)
 			.SetDisplay("Stop Loss", "Stop loss points", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var step = Security.PriceStep ?? 1m;
 		StartProtection(new Unit(ProfitTarget * step, UnitTypes.Absolute), new Unit(StopLoss * step, UnitTypes.Absolute));

@@ -189,14 +189,14 @@ public class Ma2CciAdaptiveVolumeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = BaseVolume;
 
-		var fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
-		var slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
+		var fastMa = new SMA { Length = FastMaPeriod };
+		var slowMa = new SMA { Length = SlowMaPeriod };
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 

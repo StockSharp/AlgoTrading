@@ -91,7 +91,7 @@ public class MonthlyBreakoutStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Holding Period", "Bars to hold position", "General");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Working candle timeframe", "General");
 		
 		_january = Param(nameof(January), false).SetDisplay("January", "Enable trading in January", "Months");
@@ -129,9 +129,9 @@ public class MonthlyBreakoutStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

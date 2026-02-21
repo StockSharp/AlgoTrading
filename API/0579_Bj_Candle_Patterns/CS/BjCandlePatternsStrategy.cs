@@ -51,7 +51,7 @@ public class BjCandlePatternsStrategy : Strategy
 		_dojiThreshold = Param(nameof(DojiThreshold), 0.1m)
 			.SetRange(0.05m, 0.2m)
 			.SetDisplay("Doji Threshold", "Max body size as % of range", "Pattern")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -61,16 +61,16 @@ public class BjCandlePatternsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

@@ -254,13 +254,13 @@ public class TrueScalperProfitLockStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 44m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit", "Take profit distance in steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 80m, 5m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 90m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss", "Stop loss distance in steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50m, 150m, 10m);
 
 		_fastPeriod = Param(nameof(FastPeriod), 3)
@@ -277,7 +277,7 @@ public class TrueScalperProfitLockStrategy : Strategy
 
 		_rsiThreshold = Param(nameof(RsiThreshold), 50m)
 		.SetDisplay("RSI Threshold", "RSI boundary for polarity", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40m, 60m, 5m);
 
 		_useRsiMethodA = Param(nameof(UseRsiMethodA), false)
@@ -335,9 +335,9 @@ public class TrueScalperProfitLockStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastEma = new EMA { Length = FastPeriod };
 		var slowEma = new EMA { Length = SlowPeriod };

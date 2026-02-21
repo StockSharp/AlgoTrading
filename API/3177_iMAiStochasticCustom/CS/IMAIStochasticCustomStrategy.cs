@@ -36,7 +36,7 @@ public class IMAIStochasticCustomStrategy : Strategy
 	private readonly StrategyParam<decimal> _stochasticLevel2;
 	private readonly StrategyParam<bool> _reverseSignals;
 
-	private LengthIndicator<decimal> _movingAverage = null!;
+	private DecimalLengthIndicator _movingAverage = null!;
 	private StochasticOscillator _stochastic = null!;
 	private readonly List<decimal> _maHistory = new();
 	private decimal _pipSize;
@@ -55,25 +55,25 @@ public class IMAIStochasticCustomStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 150, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in pips.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 10);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 25)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Distance that activates the trailing stop.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 150, 5);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Minimum price improvement before moving the trailing stop.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 50, 5);
 
 		_volumeMode = Param(nameof(ManagementMode), VolumeModes.RiskPercent)
@@ -86,7 +86,7 @@ public class IMAIStochasticCustomStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Length of the moving average envelope.", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 1);
 
 		_maShift = Param(nameof(MaShift), 0)
@@ -105,29 +105,29 @@ public class IMAIStochasticCustomStrategy : Strategy
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %K", "Lookback period for the stochastic oscillator.", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %D", "Signal smoothing period for the stochastic oscillator.", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_stochasticSlowing = Param(nameof(StochasticSlowing), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic Slowing", "Smoothing applied to the %K line.", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_stochasticLevel1 = Param(nameof(StochasticLevel1), 25m)
 		.SetDisplay("Level #1", "Threshold used for bullish confirmations.", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 5m);
 
 		_stochasticLevel2 = Param(nameof(StochasticLevel2), 75m)
 		.SetDisplay("Level #2", "Threshold used for bearish confirmations.", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60m, 90m, 5m);
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
@@ -258,18 +258,17 @@ public class IMAIStochasticCustomStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = GetPipSize();
 
 		_movingAverage = CreateMovingAverage(MaMethod, Math.Max(1, MaPeriod));
 		_stochastic = new StochasticOscillator
-		{
-			Length = Math.Max(1, StochasticKPeriod),
+		{ K = { Length = Math }.Max(1, StochasticKPeriod),
 			KPeriod = Math.Max(1, StochasticKPeriod),
-			DPeriod = Math.Max(1, StochasticDPeriod),
+			D = { Length = Math }.Max(1, StochasticDPeriod),
 			Smooth = Math.Max(1, StochasticSlowing)
 		};
 
@@ -570,12 +569,12 @@ public class IMAIStochasticCustomStrategy : Strategy
 		return decimals >= 3 ? step * 10m : step;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int period)
+	private static DecimalLengthIndicator CreateMovingAverage(MaMethods method, int period)
 	{
 		return method switch
 		{
-			MaMethods.Simple => new SimpleMovingAverage { Length = period },
-			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MaMethods.Simple => new SMA { Length = period },
+			MaMethods.Exponential => new EMA { Length = period },
 			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
 			_ => new SmoothedMovingAverage { Length = period }
 		};

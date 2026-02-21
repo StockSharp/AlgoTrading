@@ -61,12 +61,12 @@ public class ParabolicSarSentimentDivergenceStrategy : Strategy
 	{
 		_startAf = Param(nameof(StartAf), 0.02m)
 		.SetRange(0.01m, 0.1m)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Starting AF", "Starting acceleration factor for Parabolic SAR", "SAR Parameters");
 
 		_maxAf = Param(nameof(MaxAf), 0.2m)
 		.SetRange(0.1m, 0.5m)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Maximum AF", "Maximum acceleration factor for Parabolic SAR", "SAR Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -91,9 +91,9 @@ public class ParabolicSarSentimentDivergenceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicator
 		_parabolicSar = new ParabolicSar

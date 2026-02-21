@@ -73,9 +73,9 @@ public class NegativeSpreadStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var tick = Security?.PriceStep ?? 1m;
 		var tp = TakeProfitPips * tick;

@@ -54,22 +54,22 @@ public class TmaStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Length for first SMA", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_midLength = Param(nameof(MidLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Mid SMA", "Length for second SMA", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_mid2Length = Param(nameof(Mid2Length), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Third SMA", "Length for third SMA", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_slowLength = Param(nameof(SlowLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Length for trend filter", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_useSession = Param(nameof(UseSession), false)
 			.SetDisplay("Use Session", "Enable session filter", "Session");
@@ -99,15 +99,15 @@ public class TmaStrategy : Strategy
 		_candle3 = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_smaFast = new SimpleMovingAverage { Length = FastLength };
-		_smaMid = new SimpleMovingAverage { Length = MidLength };
-		_smaMid2 = new SimpleMovingAverage { Length = Mid2Length };
-		_smaSlow = new SimpleMovingAverage { Length = SlowLength };
-		_ema2 = new ExponentialMovingAverage { Length = 2 };
+		_smaFast = new SMA { Length = FastLength };
+		_smaMid = new SMA { Length = MidLength };
+		_smaMid2 = new SMA { Length = Mid2Length };
+		_smaSlow = new SMA { Length = SlowLength };
+		_ema2 = new EMA { Length = 2 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_smaFast, _smaMid, _smaMid2, _smaSlow, _ema2, ProcessCandle).Start();

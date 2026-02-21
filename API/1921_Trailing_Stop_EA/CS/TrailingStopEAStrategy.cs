@@ -41,7 +41,7 @@ public class TrailingStopEAStrategy : Strategy
 		_trailingPoints = Param(nameof(TrailingPoints), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Points", "Distance for the trailing stop in price steps", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 500, 50);
 	}
 
@@ -58,9 +58,9 @@ public class TrailingStopEAStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_trailDistance = TrailingPoints * (Security?.PriceStep ?? 1m);
 

@@ -54,7 +54,7 @@ public class MomentumCandleSignStrategy : Strategy
 	{
 		_momentumPeriod = Param(nameof(MomentumPeriod), 12)
 			.SetDisplay("Momentum Period", "Indicator period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(12).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame of candles", "General");
@@ -70,9 +70,9 @@ public class MomentumCandleSignStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_openMomentum.Length = MomentumPeriod;
 		_closeMomentum.Length = MomentumPeriod;
@@ -80,7 +80,7 @@ public class MomentumCandleSignStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -97,8 +97,8 @@ public class MomentumCandleSignStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var openMom = _openMomentum.Process(candle.OpenPrice, candle.OpenTime, true).ToDecimal();
-		var closeMom = _closeMomentum.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
+		var openMom = _openMomentum.Process(new DecimalIndicatorValue(_openMomentum, candle.OpenPrice, candle.OpenTime)).ToDecimal();
+		var closeMom = _closeMomentum.Process(new DecimalIndicatorValue(_closeMomentum, candle.ClosePrice, candle.OpenTime)).ToDecimal();
 
 		if (!_isFormed)
 		{

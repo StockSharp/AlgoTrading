@@ -57,61 +57,61 @@ public class FiveMinuteRsiCciStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Number of candles used to calculate RSI", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_fastSmmaPeriod = Param(nameof(FastSmmaPeriod), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMMA", "Length of the fast smoothed moving average applied to opens", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Length of the slow exponential moving average applied to opens", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_fastCciPeriod = Param(nameof(FastCciPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast CCI", "Length of the fast CCI calculated on typical price", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowCciPeriod = Param(nameof(SlowCciPeriod), 175)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow CCI", "Length of the slow CCI calculated on typical price", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bullishRsiLevel = Param(nameof(BullishRsiLevel), 55m)
 			.SetDisplay("Bullish RSI", "RSI threshold that must be crossed upward to validate buys", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_bearishRsiLevel = Param(nameof(BearishRsiLevel), 45m)
 			.SetDisplay("Bearish RSI", "RSI threshold that must be crossed downward to validate sells", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 60m)
 			.SetDisplay("Stop Loss (points)", "Fixed stop-loss distance expressed in MetaTrader points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
 			.SetDisplay("Take Profit (points)", "Fixed take-profit distance expressed in MetaTrader points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 20m)
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance expressed in MetaTrader points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_lotCoefficient = Param(nameof(LotCoefficient), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Coefficient", "Base coefficient used by the dynamic position sizing formula", "Money Management")
-			.SetCanOptimize(true);
+			;
 
 		_equityDivisor = Param(nameof(EquityDivisor), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Equity Divisor", "Divisor applied inside the square root for equity-based sizing", "Money Management")
-			.SetCanOptimize(true);
+			;
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 18m)
 			.SetDisplay("Max Spread (points)", "Maximum allowed bid-ask spread before opening a trade", "Filters")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -263,17 +263,17 @@ public class FiveMinuteRsiCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = CalculatePointValue();
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_fastSmma = new SmoothedMovingAverage { Length = FastSmmaPeriod, CandlePrice = CandlePrice.Open };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod, CandlePrice = CandlePrice.Open };
-		_fastCci = new CommodityChannelIndex { Length = FastCciPeriod, CandlePrice = CandlePrice.Typical };
-		_slowCci = new CommodityChannelIndex { Length = SlowCciPeriod, CandlePrice = CandlePrice.Typical };
+		_fastSmma = new SmoothedMovingAverage { Length = FastSmmaPeriod };
+		_slowEma = new EMA { Length = SlowEmaPeriod };
+		_fastCci = new CommodityChannelIndex { Length = FastCciPeriod };
+		_slowCci = new CommodityChannelIndex { Length = SlowCciPeriod };
 
 		SubscribeLevel1()?
 			.Bind(ProcessLevel1)

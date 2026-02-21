@@ -38,7 +38,7 @@ public class SimpleMultipleTimeFrameMovingAverageStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 5)
 			.SetDisplay("MA Length", "Moving average period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Short Time Frame", "First time frame", "General");
@@ -48,12 +48,12 @@ public class SimpleMultipleTimeFrameMovingAverageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var shortSma = new SimpleMovingAverage { Length = Length };
-		var longSma = new SimpleMovingAverage { Length = Length };
+		var shortSma = new SMA { Length = Length };
+		var longSma = new SMA { Length = Length };
 
 		SubscribeCandles(ShortCandleType)
 			.Bind(shortSma, ProcessShort)

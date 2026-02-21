@@ -62,24 +62,24 @@ public class StopHunterStrategy : Strategy
 		_zeroes = Param(nameof(Zeroes), 2)
 			.SetRange(1, 5)
 			.SetDisplay("Zero digits", "Number of decimal digits considered when searching for round levels", "Levels")
-			.SetCanOptimize(true);
+			;
 
 		_distancePoints = Param(nameof(DistancePoints), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Distance (points)", "Offset in points from the round price used for pending orders", "Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 150, 5);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Take profit (points)", "Hidden take-profit distance expressed in price points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 200, 5);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop loss (points)", "Hidden stop-loss distance expressed in price points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 200, 5);
 
 		_enableLongOrders = Param(nameof(EnableLongOrders), true)
@@ -91,7 +91,7 @@ public class StopHunterStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 5m)
 			.SetNotNegative()
 			.SetDisplay("Risk percent", "Percentage of capital converted into volume: volume = balance / 100000 * percent", "Money management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 15m, 1m);
 
 		_minVolume = Param(nameof(MinimumVolume), 0.1m)
@@ -221,9 +221,9 @@ public class StopHunterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 

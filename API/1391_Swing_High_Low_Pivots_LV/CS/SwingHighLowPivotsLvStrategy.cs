@@ -141,11 +141,11 @@ public class SwingHighLowPivotsLvStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = MaLength };
+		_ema = new EMA { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

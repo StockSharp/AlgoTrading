@@ -44,35 +44,35 @@ public class LivermoreSeykotaBreakoutStrategy : Strategy
 	{
 		_mainEmaLength = Param(nameof(MainEmaLength), 50)
 			.SetDisplay("Main EMA Length", "Primary EMA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_fastEmaLength = Param(nameof(FastEmaLength), 20)
 			.SetDisplay("Fast EMA Length", "Fast EMA for trend filter", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 200)
 			.SetDisplay("Slow EMA Length", "Slow EMA for trend filter", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_pivotLength = Param(nameof(PivotLength), 3)
 			.SetDisplay("Pivot Length", "Bars left/right for pivot", "General")
-			.SetCanOptimize(true);
+			;
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetDisplay("ATR Length", "ATR period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopAtrMultiplier = Param(nameof(StopAtrMultiplier), 3m)
 			.SetDisplay("Stop ATR Mult", "ATR multiplier for stop loss", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailAtrMultiplier = Param(nameof(TrailAtrMultiplier), 2m)
 			.SetDisplay("Trail ATR Mult", "ATR multiplier for trailing", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_volumeSmaLength = Param(nameof(VolumeSmaLength), 20)
 			.SetDisplay("Volume SMA Length", "Period for volume SMA", "Volume")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -141,15 +141,15 @@ public class LivermoreSeykotaBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var emaMain = new ExponentialMovingAverage { Length = MainEmaLength };
-		var emaFast = new ExponentialMovingAverage { Length = FastEmaLength };
-		var emaSlow = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var emaMain = new EMA { Length = MainEmaLength };
+		var emaFast = new EMA { Length = FastEmaLength };
+		var emaSlow = new EMA { Length = SlowEmaLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
-		_volumeSma = new SimpleMovingAverage { Length = VolumeSmaLength };
+		_volumeSma = new SMA { Length = VolumeSmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -176,7 +176,7 @@ public class LivermoreSeykotaBreakoutStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volumeAvg = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var volumeAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 		_candles.Add(candle);
 		var maxCount = PivotLength * 2 + 1;

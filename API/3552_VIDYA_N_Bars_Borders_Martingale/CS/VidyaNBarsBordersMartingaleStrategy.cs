@@ -51,19 +51,19 @@ public class VidyaNBarsBordersMartingaleStrategy : Strategy
 		_vidyaCmoPeriod = Param(nameof(VidyaCmoPeriod), 15)
 		.SetGreaterThanZero()
 		.SetDisplay("CMO Period", "Efficiency ratio period for VIDYA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 5);
 
 		_vidyaEmaPeriod = Param(nameof(VidyaEmaPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Period", "Smoothing period for VIDYA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "Average True Range period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_profitTarget = Param(nameof(ProfitTarget), 30m)
@@ -218,9 +218,9 @@ public class VidyaNBarsBordersMartingaleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 		if (_priceStep <= 0m)
@@ -461,7 +461,7 @@ public class VidyaNBarsBordersMartingaleStrategy : Strategy
 		if (Position == 0m)
 		return 0m;
 
-		var entry = PositionAvgPrice;
+		var entry = PositionPrice;
 		if (entry == 0m)
 		entry = _lastEntryPrice;
 

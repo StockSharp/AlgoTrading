@@ -129,10 +129,10 @@ public class OscillatorEvaluatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_stoch = new StochasticOscillator { Length = StochPeriod, KPeriod = 3, DPeriod = 3 };
+		_stoch = new StochasticOscillator { K = { Length = StochPeriod }, D = { Length = 3 } };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -154,7 +154,7 @@ public class OscillatorEvaluatorStrategy : Strategy
 			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
 		);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue stochValue)

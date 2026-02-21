@@ -145,7 +145,7 @@ IIndicatorValue atrValue)
 if (candle.State != CandleStates.Finished)
 return;
 
-var volumeAvg = _volumeSma.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+var volumeAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 if (!_volumeSma.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 return;
 

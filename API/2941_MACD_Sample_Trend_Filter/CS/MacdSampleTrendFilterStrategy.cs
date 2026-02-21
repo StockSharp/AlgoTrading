@@ -219,7 +219,7 @@ public class MacdSampleTrendFilterStrategy : Strategy
 			SignalMa = { Length = SignalPeriod }
 		};
 
-		_trendEma = new ExponentialMovingAverage { Length = TrendPeriod };
+		_trendEma = new EMA { Length = TrendPeriod };
 
 		_pipSize = CalculatePipSize();
 		_macdOpenThreshold = ConvertPipsToPrice(MacdOpenLevelPips);

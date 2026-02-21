@@ -76,16 +76,16 @@ public class PsarTraderTicksStrategy : Strategy
 	{
 		_step = Param(nameof(Step), 0.001m)
 			.SetDisplay("SAR Step", "Acceleration factor step for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_maximum = Param(nameof(Maximum), 0.2m)
 			.SetDisplay("SAR Maximum", "Maximum acceleration factor for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 50)
 			.SetDisplay("Take Profit (ticks)", "Take profit in ticks", "Risk")
-			.SetCanOptimize(true);
+			;
 		_stopLossTicks = Param(nameof(StopLossTicks), 50)
 			.SetDisplay("Stop Loss (ticks)", "Stop loss in ticks", "Risk")
-			.SetCanOptimize(true);
+			;
 		_startHour = Param(nameof(StartHour), 0)
 			.SetDisplay("Start Hour", "Hour of day to start trading", "General");
 		_endHour = Param(nameof(EndHour), 23)
@@ -109,9 +109,9 @@ public class PsarTraderTicksStrategy : Strategy
 		_isFirst = true;
 	}
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		// Create Parabolic SAR indicator
 		var psar = new ParabolicSar
 		{

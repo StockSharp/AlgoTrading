@@ -454,7 +454,7 @@ public class NtoQfStrategy : Strategy
 		.SetDisplay("%K Length", "Stochastic %K period", "Stochastic")
 		.SetGreaterThanZero();
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 		.SetDisplay("%D Length", "Stochastic %D period", "Stochastic")
 		.SetGreaterThanZero();
 
@@ -555,9 +555,9 @@ public class NtoQfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = GetPipSize();
 		_closeBuffer = new ValueBuffer<decimal>(GetRequiredCapacity(Math.Max(0, MaShift)));
@@ -647,8 +647,7 @@ public class NtoQfStrategy : Strategy
 		var buffer = CreateBuffer(_stochasticBuffers, timeframe, GetRequiredCapacity());
 
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochasticKPeriod,
+		{ K = { Length = StochasticKPeriod },
 			K = { Length = StochasticSlowing },
 			D = { Length = StochasticDPeriod },
 		};
@@ -1091,15 +1090,15 @@ public class NtoQfStrategy : Strategy
 		return minutes <= 0 ? CandleType : TimeSpan.FromMinutes(minutes).TimeFrame();
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverageIndicator()
+	private DecimalLengthIndicator CreateMovingAverageIndicator()
 	{
 		var indicator = MaMethod switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = MaPeriod },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = MaPeriod },
+			MovingAverageMethods.Simple => new SMA { Length = MaPeriod },
+			MovingAverageMethods.Exponential => new EMA { Length = MaPeriod },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = MaPeriod },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = MaPeriod },
-			_ => new SimpleMovingAverage { Length = MaPeriod },
+			_ => new SMA { Length = MaPeriod },
 		};
 
 		indicator.CandlePrice = ConvertAppliedPrices(MaAppliedPrices);

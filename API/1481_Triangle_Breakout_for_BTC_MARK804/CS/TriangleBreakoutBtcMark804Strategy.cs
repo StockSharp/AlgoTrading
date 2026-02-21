@@ -81,29 +81,29 @@ public class TriangleBreakoutBtcMark804Strategy : Strategy
 		_triangleLength = Param(nameof(TriangleLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Triangle Length", "Lookback for SMA lines", "General")
-			.SetCanOptimize(true);
+			;
 
 		_volumeSmaLength = Param(nameof(VolumeSmaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume SMA Length", "Lookback for volume average", "General")
-			.SetCanOptimize(true);
+			;
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
 			.SetDisplay("Volume Multiplier", "Volume spike multiplier", "General")
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplierSl = Param(nameof(AtrMultiplierSl), 1m)
 			.SetDisplay("ATR SL Multiplier", "Stop loss ATR multiplier", "General")
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplierTp = Param(nameof(AtrMultiplierTp), 1.5m)
 			.SetDisplay("ATR TP Multiplier", "Take profit ATR multiplier", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -131,17 +131,17 @@ public class TriangleBreakoutBtcMark804Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_upper = new SimpleMovingAverage { Length = TriangleLength };
-		_lower = new SimpleMovingAverage { Length = TriangleLength };
-		_volumeSma = new SimpleMovingAverage { Length = VolumeSmaLength };
+		_upper = new SMA { Length = TriangleLength };
+		_lower = new SMA { Length = TriangleLength };
+		_volumeSma = new SMA { Length = VolumeSmaLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -158,9 +158,9 @@ public class TriangleBreakoutBtcMark804Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var upperVal = _upper.Process(candle.HighPrice, candle.CloseTime, true);
-		var lowerVal = _lower.Process(candle.LowPrice, candle.CloseTime, true);
-		var volVal = _volumeSma.Process(candle.TotalVolume, candle.CloseTime, true);
+		var upperVal = _upper.Process(new DecimalIndicatorValue(_upper, candle.HighPrice, candle.CloseTime));
+		var lowerVal = _lower.Process(new DecimalIndicatorValue(_lower, candle.LowPrice, candle.CloseTime));
+		var volVal = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.CloseTime));
 		var atrVal = _atr.Process(candle);
 
 		if (!upperVal.IsFinal || !lowerVal.IsFinal || !volVal.IsFinal || !atrVal.IsFinal)

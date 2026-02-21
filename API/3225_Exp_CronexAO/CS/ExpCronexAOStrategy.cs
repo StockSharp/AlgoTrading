@@ -108,17 +108,17 @@ public class ExpCronexAOStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast Cronex smoothing period", "Cronex AO")
-			.SetCanOptimize(true);
+			;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow Cronex smoothing period", "Cronex AO")
-			.SetCanOptimize(true);
+			;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetGreaterOrEqualTo(1)
 			.SetDisplay("Signal Bar", "Bars back to evaluate cross", "Cronex AO")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 3, 1);
 
 		_buyOpenEnabled = Param(nameof(BuyOpenEnabled), true)
@@ -136,12 +136,12 @@ public class ExpCronexAOStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 2000)
 			.SetGreaterOrEqualToZero()
 			.SetDisplay("Take Profit", "Profit target in points", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 1000)
 			.SetGreaterOrEqualToZero()
 			.SetDisplay("Stop Loss", "Loss limit in points", "Protection")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -152,22 +152,22 @@ public class ExpCronexAOStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetHistory();
 
 		_awesomeOscillator = new AwesomeOscillator();
-		_fastAverage = new SimpleMovingAverage { Length = FastPeriod };
-		_slowAverage = new SimpleMovingAverage { Length = SlowPeriod };
+		_fastAverage = new SMA { Length = FastPeriod };
+		_slowAverage = new SMA { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(_awesomeOscillator, _fastAverage, _slowAverage, ProcessCronex)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCronex(ICandleMessage candle, decimal aoValue, decimal fastValue, decimal slowValue)

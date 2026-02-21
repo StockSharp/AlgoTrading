@@ -65,7 +65,7 @@ public class McGinleyDynamicImprovedStrategy : Strategy
 		_period = Param(nameof(Period), 14m)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "Calculation period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 30m, 5m);
 
 		_formula = Param(nameof(Formula), "Modern")
@@ -93,9 +93,9 @@ public class McGinleyDynamicImprovedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var k = Formula == "Modern" ? 0.6m : Formula == "Original" ? 1m : KCustom;
 		var md = new ImprovedMcGinleyDynamic
@@ -110,7 +110,7 @@ public class McGinleyDynamicImprovedStrategy : Strategy
 			K = k,
 			Exponent = Exponent
 		};
-		var ema = new ExponentialMovingAverage { Length = (int)Period };
+		var ema = new EMA { Length = (int)Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(md, ema, umd, ProcessCandle).Start();
@@ -143,7 +143,7 @@ public class McGinleyDynamicImprovedStrategy : Strategy
 			SellMarket(Volume + Math.Abs(Position));
 	}
 
-	private class ImprovedMcGinleyDynamic : Indicator<decimal>
+	private class ImprovedMcGinleyDynamic : BaseIndicator
 	{
 		public decimal Period { get; set; } = 14m;
 		public decimal K { get; set; } = 0.6m;
@@ -180,7 +180,7 @@ public class McGinleyDynamicImprovedStrategy : Strategy
 		}
 	}
 
-	private class UnconstrainedMcGinleyDynamic : Indicator<decimal>
+	private class UnconstrainedMcGinleyDynamic : BaseIndicator
 	{
 		public decimal Period { get; set; } = 14m;
 		public decimal K { get; set; } = 0.6m;

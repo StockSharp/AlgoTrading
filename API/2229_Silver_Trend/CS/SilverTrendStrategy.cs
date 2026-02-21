@@ -75,9 +75,9 @@ public class SilverTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = new SilverTrendSignalIndicator
 		{
@@ -119,7 +119,7 @@ public class SilverTrendStrategy : Strategy
 		}
 	}
 
-	private class SilverTrendSignalIndicator : Indicator<ICandleMessage>
+	private class SilverTrendSignalIndicator : BaseIndicator
 	{
 		public int Ssp { get; set; } = 9;
 		public int Risk { get; set; } = 3;

@@ -130,20 +130,18 @@ public class EmaSarPowerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage
+		var fastEma = new EMA
 		{
-			Length = FastLength,
-			CandlePrice = CandlePrice.Median,
+			Length = FastLength
 		};
 
-		var slowEma = new ExponentialMovingAverage
+		var slowEma = new EMA
 		{
-			Length = SlowLength,
-			CandlePrice = CandlePrice.Median,
+			Length = SlowLength
 		};
 
 		var sar = new ParabolicStopAndReverse

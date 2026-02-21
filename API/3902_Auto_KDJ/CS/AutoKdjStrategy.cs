@@ -156,31 +156,31 @@ public class AutoKdjStrategy : Strategy
 		_kdjPeriod = Param(nameof(KdjPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("KDJ Length", "Lookback for RSV calculation", "KDJ")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_smoothK = Param(nameof(SmoothK), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth %K", "Smoothing applied to %K", "KDJ")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_smoothD = Param(nameof(SmoothD), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth %D", "Smoothing applied to %D", "KDJ")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 15, 1);
 
 		_stopLossPips = Param(nameof(StopLossPips), 100)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 300, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 200)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Protective target distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 400, 10);
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
@@ -196,19 +196,19 @@ public class AutoKdjStrategy : Strategy
 		_maximumRisk = Param(nameof(MaximumRisk), 0.4m)
 			.SetNotNegative()
 			.SetDisplay("Maximum Risk", "Fraction of equity allocated per trade", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 1m, 0.1m);
 
 		_decreaseFactor = Param(nameof(DecreaseFactor), 0.3m)
 			.SetNotNegative()
 			.SetDisplay("Decrease Factor", "Volume reduction after losses", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 5m, 0.5m);
 
 		_leverage = Param(nameof(Leverage), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Leverage", "Account leverage for sizing", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 500, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -234,9 +234,9 @@ public class AutoKdjStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 
@@ -259,7 +259,7 @@ public class AutoKdjStrategy : Strategy
 		{
 			Length = KdjPeriod,
 			KPeriod = SmoothK,
-			DPeriod = SmoothD
+			D = { Length = SmoothD }
 		};
 
 		var subscription = SubscribeCandles(CandleType);

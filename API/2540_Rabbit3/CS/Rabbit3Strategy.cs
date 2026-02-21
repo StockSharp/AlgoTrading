@@ -204,9 +204,9 @@ public class Rabbit3Strategy : Strategy
 		_lastRealizedPnL = 0m;
 	}
 
-        protected override void OnStarted(DateTimeOffset time)
+        protected override void OnStarted2(DateTime time)
         {
-                base.OnStarted(time);
+                base.OnStarted2(time);
 
                 // Reset dynamic sizing state and expose the starting volume to UI.
                 _useBoost = false;
@@ -216,8 +216,8 @@ public class Rabbit3Strategy : Strategy
                 // Initialize indicators that will be bound to the candle feed.
                 _williams = new WilliamsR { Length = WilliamsPeriod };
                 _cci = new CommodityChannelIndex { Length = CciPeriod };
-                _fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-                _slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+                _fastEma = new EMA { Length = FastEmaPeriod };
+                _slowEma = new EMA { Length = SlowEmaPeriod };
 
                 // Subscribe to candles and bind indicators plus the processing callback.
                 var subscription = SubscribeCandles(CandleType);

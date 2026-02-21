@@ -75,12 +75,12 @@ public class ClassicVirtualTrailingStrategy : Strategy
 		_trailingStartPips = Param(nameof(TrailingStartPips), 30m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Start (pips)", "Profit in pips required before trailing activates", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailingGapPips = Param(nameof(TrailingGapPips), 30m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Gap (pips)", "Distance between price and the trailing level", "Risk Management")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <inheritdoc />
@@ -101,9 +101,9 @@ public class ClassicVirtualTrailingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 		{
@@ -119,7 +119,7 @@ public class ClassicVirtualTrailingStrategy : Strategy
 		.Bind(ProcessLevel1)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />

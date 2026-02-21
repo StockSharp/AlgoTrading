@@ -110,37 +110,37 @@ public class FibonacciTpSlStrategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit %", "Take profit percentage", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 10m, 1m);
 
 		_minBarsBetweenTrades = Param(nameof(MinBarsBetweenTrades), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Min Bars Between Trades", "Minimum bars between trades", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 5);
 
 		_lookback = Param(nameof(Lookback), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("Lookback", "Lookback for Fibonacci levels", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 150, 25);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "ATR calculation period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 28, 7);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "ATR multiplier for stop-loss", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 
 		_maxWeeklyReturn = Param(nameof(MaxWeeklyReturn), 0.15m)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Weekly Return", "Maximum weekly return before stopping trading", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 0.3m, 0.05m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -170,9 +170,9 @@ public class FibonacciTpSlStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = Lookback };
 		_lowest = new Lowest { Length = Lookback };
@@ -195,7 +195,7 @@ public class FibonacciTpSlStrategy : Strategy
 		return;
 
 		var calendar = CultureInfo.InvariantCulture.Calendar;
-		var week = calendar.GetWeekOfYear(candle.ServerTime.LocalDateTime, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+		var week = calendar.GetWeekOfYear(candle.ServerTime, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
 
 		if (week != _currentWeek)
 		{

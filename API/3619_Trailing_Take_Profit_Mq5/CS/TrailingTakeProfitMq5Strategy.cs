@@ -65,13 +65,13 @@ public class TrailingTakeProfitMq5Strategy : Strategy
 		_trailingStartPoints = Param(nameof(TrailingStartPoints), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Start (points)", "Price adverse move required to activate trailing", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 500m, 50m);
 
 		_trailingDistancePoints = Param(nameof(TrailingDistancePoints), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Distance (points)", "Maximum gap between price and take profit", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 500m, 50m);
 	}
 
@@ -96,9 +96,9 @@ public class TrailingTakeProfitMq5Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeLevel1()
 			.Bind(ProcessLevel1)
@@ -170,7 +170,7 @@ public class TrailingTakeProfitMq5Strategy : Strategy
 		if (referencePrice is null)
 		return;
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		if (entryPrice <= 0m)
 		return;
 
@@ -209,7 +209,7 @@ public class TrailingTakeProfitMq5Strategy : Strategy
 		if (referencePrice is null)
 		return;
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		if (entryPrice <= 0m)
 		return;
 

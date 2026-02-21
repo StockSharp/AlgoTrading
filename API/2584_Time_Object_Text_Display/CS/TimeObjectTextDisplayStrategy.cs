@@ -51,9 +51,9 @@ public class TimeObjectTextDisplayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Provide the same feedback as the MQL script before processing objects.
 		LogInfo("Starting text object time inspection.");

@@ -58,15 +58,15 @@ public class ColorCoppockStrategy : Strategy
 	{
 		_roc1Period = Param(nameof(Roc1Period), 14)
 		.SetDisplay("ROC1 Period", "First ROC calculation period", "Parameters")
-		.SetCanOptimize(true);
+		;
 		
 		_roc2Period = Param(nameof(Roc2Period), 10)
 		.SetDisplay("ROC2 Period", "Second ROC calculation period", "Parameters")
-		.SetCanOptimize(true);
+		;
 		
 		_smoothingPeriod = Param(nameof(SmoothingPeriod), 12)
 		.SetDisplay("Smoothing Period", "SMA period for ROC sum", "Parameters")
-		.SetCanOptimize(true);
+		;
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for processing", "General");
@@ -87,13 +87,13 @@ public class ColorCoppockStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_roc1 = new RateOfChange { Length = Roc1Period };
 		_roc2 = new RateOfChange { Length = Roc2Period };
-		_sma = new SimpleMovingAverage { Length = SmoothingPeriod };
+		_sma = new SMA { Length = SmoothingPeriod };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -117,9 +117,9 @@ public class ColorCoppockStrategy : Strategy
 		return;
 		
 		var price = candle.ClosePrice;
-		var roc1Value = _roc1.Process(price, candle.OpenTime, true).ToDecimal();
-		var roc2Value = _roc2.Process(price, candle.OpenTime, true).ToDecimal();
-		var coppock = _sma.Process(roc1Value + roc2Value, candle.OpenTime, true).ToDecimal();
+		var roc1Value = _roc1.Process(new DecimalIndicatorValue(_roc1, price, candle.OpenTime)).ToDecimal();
+		var roc2Value = _roc2.Process(new DecimalIndicatorValue(_roc2, price, candle.OpenTime)).ToDecimal();
+		var coppock = _sma.Process(new DecimalIndicatorValue(_sma, roc1Value + roc2Value, candle.OpenTime)).ToDecimal();
 		
 		if (!_isFormed)
 		{

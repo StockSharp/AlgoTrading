@@ -149,15 +149,15 @@ public class JkBullPAutoTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Cache pip size so the original point-based inputs map to price offsets.
 		_pipSize = GetPipSize();
 
 		// EMA replicates the smoothing that underlies the Bulls Power indicator.
-		_ema = new ExponentialMovingAverage
+		_ema = new EMA
 		{
 			Length = EmaPeriod
 		};
@@ -185,7 +185,7 @@ public class JkBullPAutoTraderStrategy : Strategy
 		}
 		else
 		{
-			StartProtection();
+			StartProtection(null, null);
 		}
 	}
 

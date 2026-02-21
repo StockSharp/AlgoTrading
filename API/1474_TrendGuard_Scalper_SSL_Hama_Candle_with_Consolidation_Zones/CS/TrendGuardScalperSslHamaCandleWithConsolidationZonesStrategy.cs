@@ -115,13 +115,13 @@ public class TrendGuardScalperSslHamaCandleWithConsolidationZonesStrategy : Stra
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ssl = new SimpleMovingAverage { Length = SslPeriod };
-		var hamaClose = new ExponentialMovingAverage { Length = 20 };
-		var hamaLine = new ExponentialMovingAverage { Length = 100 };
+		var ssl = new SMA { Length = SslPeriod };
+		var hamaClose = new EMA { Length = 20 };
+		var hamaLine = new EMA { Length = 100 };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		StartProtection(

@@ -97,7 +97,7 @@ public class RangeFollowerStrategy : Strategy
 		return
 		[
 			(Security, CandleType),
-			(Security, TimeSpan.FromDays(1).TimeFrame())
+			(Security, TimeSpan.FromMinutes(5).TimeFrame())
 		];
 	}
 
@@ -125,16 +125,16 @@ public class RangeFollowerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_dailyAtrIndicator = new AverageTrueRange
 		{
 			Length = DailyAtrPeriod
 		};
 
-		_dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		_dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		_dailySubscription
 			.Bind(_dailyAtrIndicator, ProcessDailyCandle)
 			.Start();
@@ -148,7 +148,7 @@ public class RangeFollowerStrategy : Strategy
 			.Bind(ProcessLevel1)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessDailyCandle(ICandleMessage candle, decimal atrValue)

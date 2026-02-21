@@ -85,17 +85,17 @@ public class LineOrderSingleEntryStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 20)
 			.SetDisplay("Stop Loss (pips)", "Distance to initial stop loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 30)
 			.SetDisplay("Take Profit (pips)", "Distance to take profit", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 50, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -118,14 +118,14 @@ public class LineOrderSingleEntryStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

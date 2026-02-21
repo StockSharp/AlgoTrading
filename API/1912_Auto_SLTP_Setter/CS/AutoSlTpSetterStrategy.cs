@@ -68,7 +68,7 @@ public class AutoSlTpSetterStrategy : Strategy
 	/// </summary>
 	public AutoSlTpSetterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "ATR time frame", "General");
 
 		_setStopLoss = Param(nameof(SetStopLoss), true)
@@ -79,36 +79,36 @@ public class AutoSlTpSetterStrategy : Strategy
 
 		_stopLossMethod = Param(nameof(StopLossMethod), 1)
 			.SetDisplay("Stop Loss Method", "1=Fixed pips  2=ATR multiple", "Stop Loss")
-			.SetCanOptimize(true);
+			;
 
 		_fixedStopLoss = Param(nameof(FixedStopLoss), 5m)
 			.SetDisplay("Fixed SL (pips)", "Fixed stop loss in pips", "Stop Loss")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossAtr = Param(nameof(StopLossAtr), 0.7m)
 			.SetDisplay("SL ATR Multiplier", "ATR multiplier for stop loss", "Stop Loss")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitMethod = Param(nameof(TakeProfitMethod), 1)
 			.SetDisplay("Take Profit Method", "1=Fixed pips  2=ATR multiple", "Take Profit")
-			.SetCanOptimize(true);
+			;
 
 		_fixedTakeProfit = Param(nameof(FixedTakeProfit), 10m)
 			.SetDisplay("Fixed TP (pips)", "Fixed take profit in pips", "Take Profit")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitAtr = Param(nameof(TakeProfitAtr), 1.8m)
 			.SetDisplay("TP ATR Multiplier", "ATR multiplier for take profit", "Take Profit")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 30)
 			.SetDisplay("ATR Period", "ATR calculation period", "ATR");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if ((SetStopLoss && StopLossMethod == 2) || (SetTakeProfit && TakeProfitMethod == 2))
 		{

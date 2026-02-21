@@ -84,17 +84,17 @@ public class PpoCloudStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast Period", "Fast EMA length", "PPO")
-		.SetCanOptimize(true);
+		;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow Period", "Slow EMA length", "PPO")
-		.SetCanOptimize(true);
+		;
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Period", "Signal EMA length", "PPO")
-		.SetCanOptimize(true);
+		;
 
 		_enableLong = Param(nameof(EnableLong), true)
 		.SetDisplay("Enable Long", "Allow long trades", "Trading");
@@ -117,14 +117,14 @@ public class PpoCloudStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ppo = new PPO
 		{
-			ShortPeriod = FastPeriod,
-			LongPeriod = SlowPeriod,
+			ShortMa = { Length = FastPeriod },
+			LongMa = { Length = SlowPeriod },
 			SignalPeriod = SignalPeriod
 		};
 
@@ -140,7 +140,7 @@ public class PpoCloudStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal ppoValue, decimal signalValue, decimal histogram)

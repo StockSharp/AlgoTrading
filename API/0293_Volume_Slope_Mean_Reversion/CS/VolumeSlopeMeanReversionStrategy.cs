@@ -89,25 +89,25 @@ public class VolumeSlopeMeanReversionStrategy : Strategy
 		_volumeMaPeriod = Param(nameof(VolumeMaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume MA Period", "Period for Volume Moving Average", "Indicator Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for calculating average and standard deviation of the slope", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation to determine entry threshold", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -139,11 +139,11 @@ public class VolumeSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 
 		// Initialize indicators
-		_volumeMa = new SimpleMovingAverage
+		_volumeMa = new SMA
 		{
 			Length = VolumeMaPeriod
 		};
@@ -169,7 +169,7 @@ public class VolumeSlopeMeanReversionStrategy : Strategy
 			new Unit(StopLossPercent, UnitTypes.Percent), 
 			new Unit(StopLossPercent, UnitTypes.Percent));
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -183,7 +183,7 @@ public class VolumeSlopeMeanReversionStrategy : Strategy
 			return;
 
 		// Process volume through SMA
-		var volumeIndicatorValue = _volumeMa.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished);
+		var volumeIndicatorValue = _volumeMa.Process(new DecimalIndicatorValue(_volumeMa, candle.TotalVolume, candle.ServerTime));
 		
 		// Skip if indicator is not formed yet
 		if (!_volumeMa.IsFormed)

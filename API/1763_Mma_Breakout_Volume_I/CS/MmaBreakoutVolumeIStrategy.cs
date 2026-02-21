@@ -59,12 +59,12 @@ public class MmaBreakoutVolumeIStrategy : Strategy
 	{
 		_slowPeriod = Param(nameof(SlowPeriod), 200)
 			.SetDisplay("Slow SMMA Period", "Period for long smoothed moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 50);
 
 		_exitPeriod = Param(nameof(ExitPeriod), 5)
 			.SetDisplay("Exit EMA Period", "Period for exit exponential moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -86,12 +86,12 @@ public class MmaBreakoutVolumeIStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var slowSmma = new SmoothedMovingAverage { Length = SlowPeriod };
-		var exitEma = new ExponentialMovingAverage { Length = ExitPeriod };
+		var exitEma = new EMA { Length = ExitPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -107,7 +107,7 @@ public class MmaBreakoutVolumeIStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		this.StartProtection();
+		this.StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal slowValue, decimal exitValue)

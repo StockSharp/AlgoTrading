@@ -244,9 +244,9 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 
@@ -274,8 +274,8 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 		var hasPrevCandle = _hasPrevCandle;
 		var hasPrevChaikin = _hasPrevChaikin;
 
-		var fastValue = _chaikinFast.Process(new DecimalIndicatorValue(_chaikinFast, adValue, candle.Time));
-		var slowValue = _chaikinSlow.Process(new DecimalIndicatorValue(_chaikinSlow, adValue, candle.Time));
+		var fastValue = _chaikinFast.Process(new DecimalIndicatorValue(_chaikinFast, adValue, candle.ServerTime));
+		var slowValue = _chaikinSlow.Process(new DecimalIndicatorValue(_chaikinSlow, adValue, candle.ServerTime));
 
 		if (!fastValue.IsFinal || !slowValue.IsFinal)
 		{
@@ -534,11 +534,11 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypeOptions.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeOptions.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypeOptions.Simple => new SMA { Length = length },
+			MovingAverageTypeOptions.Exponential => new EMA { Length = length },
 			MovingAverageTypeOptions.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypeOptions.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

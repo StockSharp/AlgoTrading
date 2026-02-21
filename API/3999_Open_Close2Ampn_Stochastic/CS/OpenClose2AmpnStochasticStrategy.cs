@@ -161,14 +161,13 @@ public class OpenClose2AmpnStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Build the Stochastic oscillator that mirrors the original (9,3,3) setup.
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			K = { Length = StochasticKLength },
 			D = { Length = StochasticDLength },
 		};
@@ -189,7 +188,7 @@ public class OpenClose2AmpnStochasticStrategy : Strategy
 		}
 
 		// Enable built-in protection helpers (stop orders, etc.).
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochasticValue)

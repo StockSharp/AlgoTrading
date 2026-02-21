@@ -39,10 +39,10 @@ public class ExpCronexChaikinStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _stopLoss;
 
-	private LengthIndicator<decimal> _chaikinFast = null!;
-	private LengthIndicator<decimal> _chaikinSlow = null!;
-	private LengthIndicator<decimal> _cronexFast = null!;
-	private LengthIndicator<decimal> _cronexSlow = null!;
+	private DecimalLengthIndicator _chaikinFast = null!;
+	private DecimalLengthIndicator _chaikinSlow = null!;
+	private DecimalLengthIndicator _cronexFast = null!;
+	private DecimalLengthIndicator _cronexSlow = null!;
 
 	private decimal _adValue;
 	private decimal[] _fastHistory = Array.Empty<decimal>();
@@ -209,12 +209,12 @@ public class ExpCronexChaikinStrategy : Strategy
 		_chaikinFastPeriod = Param(nameof(ChaikinFastPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Chaikin Fast", "Fast averaging period for Chaikin oscillator", "Chaikin")
-			.SetCanOptimize(true);
+			;
 
 		_chaikinSlowPeriod = Param(nameof(ChaikinSlowPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Chaikin Slow", "Slow averaging period for Chaikin oscillator", "Chaikin")
-			.SetCanOptimize(true);
+			;
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), CronexSmoothingMethods.Simple)
 			.SetDisplay("Cronex Method", "Smoothing algorithm applied to Chaikin values", "Cronex");
@@ -222,16 +222,16 @@ public class ExpCronexChaikinStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Smoothing", "Fast Cronex smoothing length", "Cronex")
-			.SetCanOptimize(true);
+			;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Smoothing", "Slow Cronex smoothing length", "Cronex")
-			.SetCanOptimize(true);
+			;
 
 		_phase = Param(nameof(Phase), 15)
 			.SetDisplay("Phase", "Phase parameter for Jurik-based smoothers", "Cronex")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-100, 100, 5);
 
 		_volumeType = Param(nameof(VolumeSource), CronexVolumeTypes.Tick)
@@ -240,7 +240,7 @@ public class ExpCronexChaikinStrategy : Strategy
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetGreaterOrEqualTo(0)
 			.SetDisplay("Signal Bar", "Number of completed bars back for signal evaluation", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 3, 1);
 
 		_buyOpenEnabled = Param(nameof(BuyOpenEnabled), true)
@@ -258,12 +258,12 @@ public class ExpCronexChaikinStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 2000)
 			.SetGreaterOrEqualToZero()
 			.SetDisplay("Take Profit", "Target distance in points", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 1000)
 			.SetGreaterOrEqualToZero()
 			.SetDisplay("Stop Loss", "Protective stop distance in points", "Protection")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -274,9 +274,9 @@ public class ExpCronexChaikinStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 
@@ -290,7 +290,7 @@ public class ExpCronexChaikinStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -449,41 +449,41 @@ public class ExpCronexChaikinStrategy : Strategy
 		return multiplier * volume;
 	}
 
-	private static LengthIndicator<decimal> CreateChaikinAverage(ChaikinAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateChaikinAverage(ChaikinAverageMethods method, int length)
 	{
 		var normalized = Math.Max(1, length);
 
 		return method switch
 		{
-			ChaikinAverageMethods.Simple => new SimpleMovingAverage { Length = normalized },
-			ChaikinAverageMethods.Exponential => new ExponentialMovingAverage { Length = normalized },
+			ChaikinAverageMethods.Simple => new SMA { Length = normalized },
+			ChaikinAverageMethods.Exponential => new EMA { Length = normalized },
 			ChaikinAverageMethods.Smoothed => new SmoothedMovingAverage { Length = normalized },
 			ChaikinAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = normalized },
-			_ => new ExponentialMovingAverage { Length = normalized },
+			_ => new EMA { Length = normalized },
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateCronexSmoother(CronexSmoothingMethods method, int length, int phase)
+	private static DecimalLengthIndicator CreateCronexSmoother(CronexSmoothingMethods method, int length, int phase)
 	{
 		var normalized = Math.Max(1, length);
 
 		return method switch
 		{
-			CronexSmoothingMethods.Simple => new SimpleMovingAverage { Length = normalized },
-			CronexSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = normalized },
+			CronexSmoothingMethods.Simple => new SMA { Length = normalized },
+			CronexSmoothingMethods.Exponential => new EMA { Length = normalized },
 			CronexSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = normalized },
 			CronexSmoothingMethods.LinearWeighted => new WeightedMovingAverage { Length = normalized },
 			CronexSmoothingMethods.Jjma => CreateJurik(normalized, phase),
 			CronexSmoothingMethods.JurX => CreateJurik(normalized, phase),
-			CronexSmoothingMethods.ParMa => new ExponentialMovingAverage { Length = normalized },
+			CronexSmoothingMethods.ParMa => new EMA { Length = normalized },
 			CronexSmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = normalized },
-			CronexSmoothingMethods.Vidya => new ExponentialMovingAverage { Length = normalized },
+			CronexSmoothingMethods.Vidya => new EMA { Length = normalized },
 			CronexSmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalized },
-			_ => new SimpleMovingAverage { Length = normalized },
+			_ => new SMA { Length = normalized },
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateJurik(int length, int phase)
+	private static DecimalLengthIndicator CreateJurik(int length, int phase)
 	{
 		var jurik = new JurikMovingAverage { Length = length };
 		var property = jurik.GetType().GetProperty("Phase", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);

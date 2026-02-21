@@ -65,13 +65,13 @@ public class Crossover2EmaStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Period", "Period of the fast EMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 30, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Period", "Period of the slow EMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 1);
 	}
 
@@ -92,23 +92,21 @@ public class Crossover2EmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (SlowPeriod <= FastPeriod)
 			throw new InvalidOperationException("Slow EMA period must be greater than fast EMA period.");
 
-		_fastEma = new ExponentialMovingAverage
+		_fastEma = new EMA
 		{
-			Length = FastPeriod,
-			CandlePrice = CandlePrice.Close,
+			Length = FastPeriod
 		};
 
-		_slowEma = new ExponentialMovingAverage
+		_slowEma = new EMA
 		{
-			Length = SlowPeriod,
-			CandlePrice = CandlePrice.Close,
+			Length = SlowPeriod
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -117,7 +115,7 @@ public class Crossover2EmaStrategy : Strategy
 			.Start();
 
 		// Enable built-in protective mechanisms once the strategy starts.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)

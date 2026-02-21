@@ -181,12 +181,12 @@ public class CompassLineStrategy : Strategy
 
 		_takeProfit = Param(nameof(TakeProfit), 0)
 			.SetDisplay("Take Profit", "Target distance in steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 		_stopLoss = Param(nameof(StopLoss), 0)
 			.SetDisplay("Stop Loss", "Protective distance in steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 400, 20);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -221,26 +221,26 @@ public class CompassLineStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var followBb = new BollingerBands { Length = FollowBbPeriod, Width = FollowBbDeviation };
 		var followAtr = new AverageTrueRange { Length = FollowAtrPeriod };
 
-		_compassAverage = new SimpleMovingAverage { Length = CompassPeriod };
-		_compassHigh = new Highest { Length = CompassPeriod, CandlePrice = CandlePrice.High };
-		_compassLow = new Lowest { Length = CompassPeriod, CandlePrice = CandlePrice.Low };
+		_compassAverage = new SMA { Length = CompassPeriod };
+		_compassHigh = new Highest { Length = CompassPeriod };
+		_compassLow = new Lowest { Length = CompassPeriod };
 		_smoothingLength = Math.Max(1, (int)Math.Round(CompassPeriod / 3m, MidpointRounding.AwayFromZero));
-		_compassSmooth1 = new SimpleMovingAverage { Length = _smoothingLength };
-		_compassSmooth2 = new SimpleMovingAverage { Length = _smoothingLength };
+		_compassSmooth1 = new SMA { Length = _smoothingLength };
+		_compassSmooth2 = new SMA { Length = _smoothingLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(followBb, followAtr, _compassAverage, _compassHigh, _compassLow, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -372,8 +372,8 @@ public class CompassLineStrategy : Strategy
 		_compassPrevBuffer = buffer;
 
 		var rawSignal = buffer > 0m ? 10m : -10m;
-		var smooth1 = _compassSmooth1.Process(rawSignal, candle.OpenTime, true).ToDecimal();
-		var smooth2 = _compassSmooth2.Process(smooth1, candle.OpenTime, true).ToDecimal();
+		var smooth1 = _compassSmooth1.Process(new DecimalIndicatorValue(_compassSmooth1, rawSignal, candle.OpenTime)).ToDecimal();
+		var smooth2 = _compassSmooth2.Process(new DecimalIndicatorValue(_compassSmooth2, smooth1, candle.OpenTime)).ToDecimal();
 
 		if (_compassSmooth2.IsFormed)
 		{

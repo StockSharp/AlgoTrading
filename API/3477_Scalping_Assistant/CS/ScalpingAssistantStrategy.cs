@@ -77,25 +77,25 @@ public class ScalpingAssistantStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
 			.SetNotNegative()
 			.SetDisplay("Stop-loss (points)", "Initial stop-loss distance in price steps.", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
 			.SetNotNegative()
 			.SetDisplay("Take-profit (points)", "Initial take-profit distance in price steps.", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 200m, 20m);
 
 		_breakEvenTriggerPoints = Param(nameof(BreakEvenTriggerPoints), 15m)
 			.SetNotNegative()
 			.SetDisplay("Break-even trigger (points)", "Profit in price steps required to move the stop to break-even.", "Break-even")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 50m, 5m);
 
 		_breakEvenOffsetPoints = Param(nameof(BreakEvenOffsetPoints), 5m)
 			.SetNotNegative()
 			.SetDisplay("Break-even offset (points)", "Extra distance added when the stop is shifted to break-even.", "Break-even")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 20m, 1m);
 	}
 
@@ -119,9 +119,9 @@ public class ScalpingAssistantStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security?.PriceStep is not decimal step || step <= 0m)
 			throw new InvalidOperationException("Security price step must be specified and positive.");

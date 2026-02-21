@@ -236,15 +236,15 @@ set => _direction.Value = value;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var vegasSma1 = new SimpleMovingAverage { Length = VegasWindow1 };
+		var vegasSma1 = new SMA { Length = VegasWindow1 };
 		var vegasStd1 = new StandardDeviation { Length = VegasWindow1 };
 		var atr1 = new AverageTrueRange { Length = AtrPeriod1 };
 
-				var vegasSma2 = new SimpleMovingAverage { Length = VegasWindow2 };
+				var vegasSma2 = new SMA { Length = VegasWindow2 };
 				var vegasStd2 = new StandardDeviation { Length = VegasWindow2 };
 				var atr2 = new AverageTrueRange { Length = AtrPeriod2 };
 				var atrTp = new AverageTrueRange { Length = AtrLengthTp };

@@ -104,31 +104,31 @@ public class TrendImpulseTesterStrategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA", "Fast EMA length", "General")
-		.SetCanOptimize(true);
+		;
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 200)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA", "Slow EMA length", "General")
-		.SetCanOptimize(true);
+		;
 
 		_adxLength = Param(nameof(AdxLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ADX Length", "ADX period", "General")
-		.SetCanOptimize(true);
+		;
 
 		_adxMin = Param(nameof(AdxMin), 18m)
 		.SetDisplay("ADX Min", "Minimal ADX for trend", "General")
-		.SetCanOptimize(true);
+		;
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Length", "RSI period", "General")
-		.SetCanOptimize(true);
+		;
 
 		_rsiUp = Param(nameof(RsiUp), 55)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Up", "RSI bullish threshold", "General")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -153,12 +153,12 @@ public class TrendImpulseTesterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_emaFast = new ExponentialMovingAverage { Length = FastEmaLength };
-		_emaSlow = new ExponentialMovingAverage { Length = SlowEmaLength };
+		_emaFast = new EMA { Length = FastEmaLength };
+		_emaSlow = new EMA { Length = SlowEmaLength };
 		_adx = new AverageDirectionalIndex { Length = AdxLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 

@@ -106,17 +106,17 @@ public class ScalpingByTradingConTotoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var size = Pivot + RightBars + 1;
 		_highBuffer = new decimal[size];
 		_lowBuffer = new decimal[size];
 		_barIndex = 0;
 
-		var slowEma = new ExponentialMovingAverage { Length = 100 };
-		var fastEma = new ExponentialMovingAverage { Length = 25 };
+		var slowEma = new EMA { Length = 100 };
+		var fastEma = new EMA { Length = 25 };
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(slowEma, fastEma, ProcessCandle)

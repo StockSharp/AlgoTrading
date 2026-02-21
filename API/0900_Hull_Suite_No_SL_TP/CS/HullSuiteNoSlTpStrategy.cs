@@ -72,7 +72,7 @@ public class HullSuiteNoSlTpStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 55)
 		.SetDisplay("Hull Length", "Period for Hull calculation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 5);
 		
 		_mode = Param(nameof(Mode), HullModes.Hma)
@@ -107,9 +107,9 @@ public class HullSuiteNoSlTpStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var subscription = SubscribeCandles(CandleType);
 		
@@ -121,9 +121,9 @@ public class HullSuiteNoSlTpStrategy : Strategy
 		break;
 		
 	case HullModes.Ehma:
-	_emaHalf = new ExponentialMovingAverage { Length = Math.Max(1, Length / 2) };
-	_emaFull = new ExponentialMovingAverage { Length = Length };
-	_emaFinal = new ExponentialMovingAverage { Length = (int)Math.Round(Math.Sqrt(Length)) };
+	_emaHalf = new EMA { Length = Math.Max(1, Length / 2) };
+	_emaFull = new EMA { Length = Length };
+	_emaFinal = new EMA { Length = (int)Math.Round(Math.Sqrt(Length)) };
 	subscription.BindEx(_emaHalf, _emaFull, ProcessEhma).Start();
 	break;
 	
@@ -149,7 +149,7 @@ if (area != null)
 	DrawOwnTrades(area);
 }
 
-StartProtection();
+StartProtection(null, null);
 }
 
 private void ProcessHma(ICandleMessage candle, decimal hull)
@@ -169,7 +169,7 @@ private void ProcessEhma(ICandleMessage candle, IIndicatorValue emaHalfValue, II
 	var emaFull = emaFullValue.ToDecimal();
 	var input = 2m * emaHalf - emaFull;
 	
-	var value = _emaFinal.Process(input, candle.ServerTime, true).ToDecimal();
+	var value = _emaFinal.Process(new DecimalIndicatorValue(_emaFinal, input, candle.ServerTime)).ToDecimal();
 	ProcessHull(candle, value);
 }
 
@@ -183,7 +183,7 @@ private void ProcessThma(ICandleMessage candle, IIndicatorValue wmaThirdValue, I
 	var wmaFull = wmaFullValue.ToDecimal();
 	var input = 3m * wmaThird - wmaHalf - wmaFull;
 	
-	var value = _wmaFinal.Process(input, candle.ServerTime, true).ToDecimal();
+	var value = _wmaFinal.Process(new DecimalIndicatorValue(_wmaFinal, input, candle.ServerTime)).ToDecimal();
 	ProcessHull(candle, value);
 }
 

@@ -135,7 +135,7 @@ public class T3MaMtc9Strategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period of the exponential moving averages", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 30, 1);
 
 		_maShift = Param(nameof(MaShift), 0)
@@ -156,7 +156,7 @@ public class T3MaMtc9Strategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 40m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (steps)", "Stop loss distance in price steps", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 120m, 10m);
 
 		_useTakeProfit = Param(nameof(UseTakeProfit), true)
@@ -165,7 +165,7 @@ public class T3MaMtc9Strategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 11m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (steps)", "Take profit distance in price steps", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 100m, 5m);
 
 		_allowMultiplePositions = Param(nameof(AllowMultiplePositions), true)
@@ -196,14 +196,14 @@ public class T3MaMtc9Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
-		_emaPrimary = new ExponentialMovingAverage { Length = MaPeriod };
-		_emaSmooth = new ExponentialMovingAverage { Length = MaPeriod };
+		_emaPrimary = new EMA { Length = MaPeriod };
+		_emaSmooth = new EMA { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

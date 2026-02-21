@@ -114,7 +114,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 
 	private RelativeStrengthIndex _rsi = null!;
 	private WilliamsR _williams = null!;
-	private LengthIndicator<decimal> _smoother;
+	private DecimalLengthIndicator _smoother;
 	private SimpleMovingAverage _deMaxSma = null!;
 	private SimpleMovingAverage _deMinSma = null!;
 
@@ -426,14 +426,14 @@ public class FractalWeightOscillatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = Period };
 		_williams = new WilliamsR { Length = Period };
-		_deMaxSma = new SimpleMovingAverage { Length = Period };
-		_deMinSma = new SimpleMovingAverage { Length = Period };
+		_deMaxSma = new SMA { Length = Period };
+		_deMinSma = new SMA { Length = Period };
 		_smoother = CreateSmoother(SmoothingMethod, SmoothingLength);
 
 		var subscription = SubscribeCandles(CandleType);
@@ -760,13 +760,13 @@ public class FractalWeightOscillatorStrategy : Strategy
 		return candle.TotalVolume;
 	}
 
-	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethods method, int length)
+	private static DecimalLengthIndicator CreateSmoother(SmoothingMethods method, int length)
 	{
 		return method switch
 		{
 			SmoothingMethods.None => null,
-			SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
-			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Sma => new SMA { Length = length },
+			SmoothingMethods.Ema => new EMA { Length = length },
 			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
 			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = length },
 			_ => new SmoothedMovingAverage { Length = length }

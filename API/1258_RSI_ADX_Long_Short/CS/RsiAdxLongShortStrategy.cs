@@ -69,17 +69,17 @@ public class RsiAdxLongShortStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Period for RSI calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_adxLength = Param(nameof(AdxLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Length", "Period for ADX calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_adxThreshold = Param(nameof(AdxThreshold), 14m)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Threshold", "Minimum ADX value to allow trades", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for the strategy", "General");
@@ -92,9 +92,9 @@ public class RsiAdxLongShortStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var adx = new AverageDirectionalIndex { Length = AdxLength };

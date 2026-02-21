@@ -16,7 +16,7 @@
 - **默认值**：
   - `TopN = 5`
   - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **过滤器**：
   - 分类: 动量
   - 方向: 做多

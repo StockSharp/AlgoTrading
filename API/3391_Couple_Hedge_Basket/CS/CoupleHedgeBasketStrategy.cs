@@ -361,7 +361,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 		_targetCloseProfit = Param(nameof(TargetCloseProfit), 100m)
 		.SetGreaterThanZero()
 		.SetDisplay("Profit Target", "Group profit required to close positions", "Exits")
-		.SetCanOptimize(true);
+		;
 
 		_delayCloseProfit = Param(nameof(DelayCloseProfit), 1)
 		.SetNotNegative()
@@ -384,12 +384,12 @@ public class CoupleHedgeBasketStrategy : Strategy
 		_riskFactor = Param(nameof(RiskFactor), 1.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk Factor", "Percentage of equity allocated to the first basket", "Position Sizing")
-		.SetCanOptimize(true);
+		;
 
 		_manualLotSize = Param(nameof(ManualLotSize), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Manual Lot", "Fixed volume when auto lot is disabled", "Position Sizing")
-		.SetCanOptimize(true);
+		;
 
 		_lotProgression = Param(nameof(LotProgression), LotProgressions.GeometricalLot)
 		.SetDisplay("Lot Progression", "How volume grows for additional baskets", "Position Sizing");
@@ -444,7 +444,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 		_stepOpenNext = Param(nameof(StepOpenNext), 100m)
 		.SetGreaterThanZero()
 		.SetDisplay("Step Open Next", "Initial loss level that triggers averaging", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_groupCount = Param(nameof(GroupCount), 3)
 			.SetRange(1, int.MaxValue)
@@ -496,9 +496,9 @@ public class CoupleHedgeBasketStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		foreach (var slot in _groups)
 		{

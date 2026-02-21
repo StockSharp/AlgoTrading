@@ -111,12 +111,12 @@ public class TradingToolsLibraryStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var shortMa = new SimpleMovingAverage { Length = ShortLength };
-		var longMa = new SimpleMovingAverage { Length = LongLength };
+		var shortMa = new SMA { Length = ShortLength };
+		var longMa = new SMA { Length = LongLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);

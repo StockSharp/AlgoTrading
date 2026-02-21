@@ -31,9 +31,9 @@ public class SpreadInfoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to order book updates to track best bid and ask prices.
 		SubscribeOrderBook()

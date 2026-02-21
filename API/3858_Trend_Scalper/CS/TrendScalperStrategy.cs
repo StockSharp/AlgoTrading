@@ -111,12 +111,12 @@ public class TrendScalperStrategy : Strategy
 	{
 		_fixedVolume = Param(nameof(FixedVolume), 0.1m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Fixed Volume", "Lots used when money management is disabled", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Stop Loss (points)", "Distance from entry to stop loss in price points", "Risk");
 
 		_moneyManagementMode = Param(nameof(MoneyManagementMode), 0)
@@ -124,7 +124,7 @@ public class TrendScalperStrategy : Strategy
 
 		_moneyManagementRisk = Param(nameof(MoneyManagementRisk), 40m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Risk Factor", "Risk multiplier used in the lot calculation", "Risk");
 
 		_fastLength = Param(nameof(FastLength), 6)
@@ -161,12 +161,12 @@ public class TrendScalperStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_fastEma = new EMA { Length = FastLength };
 		_slowSma = new SMA { Length = SlowLength };
-		_highest = new Highest { Length = BreakoutWindow, CandlePrice = CandlePrice.High };
-		_lowest = new Lowest { Length = BreakoutWindow, CandlePrice = CandlePrice.Low };
+		_highest = new Highest { Length = BreakoutWindow };
+		_lowest = new Lowest { Length = BreakoutWindow };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -187,7 +187,7 @@ public class TrendScalperStrategy : Strategy
 			StartProtection(stopLoss: new Unit(StopLossPoints * step, UnitTypes.Absolute));
 		}
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue, decimal highestValue, decimal lowestValue)

@@ -154,12 +154,12 @@ public class ChameleonStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Fast MA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowLength = Param(nameof(SlowLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow MA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
 			.SetDisplay("Use Stop Loss", "Enable stop loss", "Risk");
@@ -167,7 +167,7 @@ public class ChameleonStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
 			.SetDisplay("Use Trailing Stop", "Enable trailing stop", "Risk");
@@ -175,7 +175,7 @@ public class ChameleonStrategy : Strategy
 		_trailPercent = Param(nameof(TrailPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trail %", "Trailing stop percent", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useTakeProfit = Param(nameof(UseTakeProfit), false)
 			.SetDisplay("Use Take Profit", "Enable take profit", "Risk");
@@ -183,7 +183,7 @@ public class ChameleonStrategy : Strategy
 		_riskReward = Param(nameof(RiskReward), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk:Reward", "Risk to reward ratio", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), false)
 			.SetDisplay("Use Session", "Enable session filter", "General");
@@ -217,13 +217,13 @@ public class ChameleonStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
-		var fastMa = new SimpleMovingAverage { Length = FastLength };
-		var slowMa = new SimpleMovingAverage { Length = SlowLength };
+		var fastMa = new SMA { Length = FastLength };
+		var slowMa = new SMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -42,13 +42,13 @@ public class DualSupertrendMacdStrategy : Strategy
 						  .SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
 		_macdFast =
-			Param(nameof(MacdFast), 12).SetCanOptimize(true).SetDisplay("Fast Length", "MACD fast MA length", "MACD");
+			Param(nameof(MacdFast), 12).SetDisplay("Fast Length", "MACD fast MA length", "MACD");
 
 		_macdSlow =
-			Param(nameof(MacdSlow), 26).SetCanOptimize(true).SetDisplay("Slow Length", "MACD slow MA length", "MACD");
+			Param(nameof(MacdSlow), 26).SetDisplay("Slow Length", "MACD slow MA length", "MACD");
 
 		_macdSignal =
-			Param(nameof(MacdSignal), 9).SetCanOptimize(true).SetDisplay("Signal Length", "MACD signal length", "MACD");
+			Param(nameof(MacdSignal), 9).SetDisplay("Signal Length", "MACD signal length", "MACD");
 
 		_oscillatorMaType = Param(nameof(OscillatorMaType), MovingAverageTypes.Exponential)
 								.SetDisplay("Oscillator MA Type", "Type of MA for MACD fast/slow lines", "MACD");
@@ -57,19 +57,19 @@ public class DualSupertrendMacdStrategy : Strategy
 							.SetDisplay("Signal MA Type", "Type of MA for MACD signal line", "MACD");
 
 		_atrPeriod1 = Param(nameof(AtrPeriod1), 10)
-						  .SetCanOptimize(true)
+						  
 						  .SetDisplay("ATR Period 1", "ATR period for first Supertrend", "Supertrend");
 
 		_factor1 = Param(nameof(Factor1), 3.0m)
-					   .SetCanOptimize(true)
+					   
 					   .SetDisplay("Factor 1", "ATR multiplier for first Supertrend", "Supertrend");
 
 		_atrPeriod2 = Param(nameof(AtrPeriod2), 20)
-						  .SetCanOptimize(true)
+						  
 						  .SetDisplay("ATR Period 2", "ATR period for second Supertrend", "Supertrend");
 
 		_factor2 = Param(nameof(Factor2), 5.0m)
-					   .SetCanOptimize(true)
+					   
 					   .SetDisplay("Factor 2", "ATR multiplier for second Supertrend", "Supertrend");
 
 		_direction = Param(nameof(Direction), (Sides?)null)
@@ -246,12 +246,12 @@ public class DualSupertrendMacdStrategy : Strategy
 			BuyMarket(Math.Abs(Position));
 	}
 
-	private LengthIndicator<decimal> CreateMa(MovingAverageTypes type, int length)
+	private DecimalLengthIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length }
+			MovingAverageTypes.Simple => new SMA { Length = length },
+			_ => new EMA { Length = length }
 		};
 	}
 

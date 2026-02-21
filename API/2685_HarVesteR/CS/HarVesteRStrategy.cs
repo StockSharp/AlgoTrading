@@ -187,42 +187,42 @@ public class HarVesteRStrategy : Strategy
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast EMA", "Short EMA period for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlow = Param(nameof(MacdSlow), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow EMA", "Long EMA period for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal averaging period", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_macdLookback = Param(nameof(MacdLookback), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Lookback", "Bars to confirm MACD sign change", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_smaFastLength = Param(nameof(SmaFastLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "First moving average length", "Moving Averages")
-			.SetCanOptimize(true);
+			;
 
 		_smaSlowLength = Param(nameof(SmaSlowLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Second moving average length", "Moving Averages")
-			.SetCanOptimize(true);
+			;
 
 		_minIndentation = Param(nameof(MinIndentation), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Indentation", "Distance from moving averages in pips", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_stopLookback = Param(nameof(StopLookback), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Lookback", "Bars for stop loss calculation", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useAdx = Param(nameof(UseAdxFilter), false)
 			.SetDisplay("Use ADX", "Enable ADX trend filter", "ADX");
@@ -238,12 +238,12 @@ public class HarVesteRStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "ADX calculation length", "ADX")
-			.SetCanOptimize(true);
+			;
 
 		_halfCloseRatio = Param(nameof(HalfCloseRatio), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Half Close Ratio", "Multiplier applied to stop distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -284,11 +284,11 @@ public class HarVesteRStrategy : Strategy
 			SignalMa = { Length = MacdSignal }
 		};
 
-		_smaFast = new SimpleMovingAverage { Length = SmaFastLength };
-		_smaSlow = new SimpleMovingAverage { Length = SmaSlowLength };
+		_smaFast = new SMA { Length = SmaFastLength };
+		_smaSlow = new SMA { Length = SmaSlowLength };
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
-		_lowest = new Lowest { Length = StopLookback, CandlePrice = CandlePrice.Low };
-		_highest = new Highest { Length = StopLookback, CandlePrice = CandlePrice.High };
+		_lowest = new Lowest { Length = StopLookback };
+		_highest = new Highest { Length = StopLookback };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

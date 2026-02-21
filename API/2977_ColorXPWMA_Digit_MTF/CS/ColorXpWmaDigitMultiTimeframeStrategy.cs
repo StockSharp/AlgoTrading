@@ -133,9 +133,9 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		_pendingOrder = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializeProcessor(_timeframeA);
 		InitializeProcessor(_timeframeB);
@@ -804,20 +804,20 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		{
 			return settings.SmoothMethods switch
 			{
-				SmoothMethods.Sma => new SimpleMovingAverage { Length = settings.SmoothLength },
-				SmoothMethods.Ema => new ExponentialMovingAverage { Length = settings.SmoothLength },
+				SmoothMethods.Sma => new SMA { Length = settings.SmoothLength },
+				SmoothMethods.Ema => new EMA { Length = settings.SmoothLength },
 				SmoothMethods.Smma => new SmoothedMovingAverage { Length = settings.SmoothLength },
 				SmoothMethods.Lwma => new WeightedMovingAverage { Length = settings.SmoothLength },
 				SmoothMethods.Jjma => new JurikMovingAverage { Length = settings.SmoothLength },
 				SmoothMethods.T3 => new TillsonMovingAverage { Length = settings.SmoothLength },
 				SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = settings.SmoothLength },
 				SmoothMethods.Vidya => new VidyaIndicator { Length = settings.SmoothLength },
-				_ => new SimpleMovingAverage { Length = settings.SmoothLength }
+				_ => new SMA { Length = settings.SmoothLength }
 			};
 		}
 	}
 
-	private sealed class VidyaIndicator : Indicator<decimal>
+	private sealed class VidyaIndicator : BaseIndicator
 	{
 		public int Length { get; set; } = 10;
 		public int Momentum { get; set; } = 20;
@@ -841,7 +841,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		}
 	}
 
-	private sealed class TillsonMovingAverage : Indicator<decimal>
+	private sealed class TillsonMovingAverage : BaseIndicator
 	{
 		public int Length { get; set; } = 5;
 		public decimal VolumeFactor { get; set; } = 0.7m;

@@ -72,17 +72,17 @@ public Vector3Strategy()
 _fastLength = Param(nameof(FastLength), 10)
 .SetGreaterThanZero()
 .SetDisplay("Fast Length", "Fast moving average period", "General")
-.SetCanOptimize(true);
+;
 
 _middleLength = Param(nameof(MiddleLength), 50)
 .SetGreaterThanZero()
 .SetDisplay("Middle Length", "Middle moving average period", "General")
-.SetCanOptimize(true);
+;
 
 _slowLength = Param(nameof(SlowLength), 100)
 .SetGreaterThanZero()
 .SetDisplay("Slow Length", "Slow moving average period", "General")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Timeframe", "General");
@@ -105,13 +105,13 @@ _slowMa = default!;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-_fastMa = new SimpleMovingAverage { Length = FastLength };
-_middleMa = new SimpleMovingAverage { Length = MiddleLength };
-_slowMa = new SimpleMovingAverage { Length = SlowLength };
+_fastMa = new SMA { Length = FastLength };
+_middleMa = new SMA { Length = MiddleLength };
+_slowMa = new SMA { Length = SlowLength };
 
 var subscription = SubscribeCandles(CandleType);
 subscription.Bind(_fastMa, _middleMa, _slowMa, ProcessCandle).Start();

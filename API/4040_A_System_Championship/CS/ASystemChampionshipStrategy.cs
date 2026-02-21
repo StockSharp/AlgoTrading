@@ -78,37 +78,37 @@ public class ASystemChampionshipStrategy : Strategy
 		_takeFactor = Param(nameof(TakeFactor), 0.8m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Factor", "Multiplier applied to the primary candle range for the take-profit", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_trailFactor = Param(nameof(TrailFactor), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trail Factor", "Multiplier applied to the secondary candle range for trailing", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 20m, 0.5m);
 
 		_fallLimit = Param(nameof(FallLimit), 0.5m)
 			.SetNotNegative()
 			.SetDisplay("Fall Limit", "Fraction of the maximum profit that enables the retracement exit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.9m, 0.1m);
 
 		_fallFactor = Param(nameof(FallFactor), 0.4m)
 			.SetNotNegative()
 			.SetDisplay("Fall Factor", "Minimum progress toward the target before retracement exit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.9m, 0.1m);
 
 		_riskPerTrade = Param(nameof(RiskPerTrade), 0.02m)
 			.SetNotNegative()
 			.SetDisplay("Risk Per Trade", "Share of equity allocated to each position", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.005m, 0.05m, 0.005m);
 
 		_baseVolume = Param(nameof(BaseVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Fallback trade size used when risk sizing is not available", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_minStopDistance = Param(nameof(MinStopDistance), 0m)
@@ -282,9 +282,9 @@ public class ASystemChampionshipStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_maxEquity = Portfolio?.CurrentValue ?? 0m;
 		_equityStopLogged = false;
@@ -303,7 +303,7 @@ public class ASystemChampionshipStrategy : Strategy
 			.Bind(ProcessLevel1)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

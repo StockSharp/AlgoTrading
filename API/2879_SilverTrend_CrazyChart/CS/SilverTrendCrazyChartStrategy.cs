@@ -192,9 +192,9 @@ public class SilverTrendCrazyChartStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = new SilverTrendCrazyChartIndicator
 		{
@@ -338,7 +338,7 @@ public class SilverTrendCrazyChartStrategy : Strategy
 /// <summary>
 /// Indicator replicating the SilverTrend CrazyChart buffers.
 /// </summary>
-public class SilverTrendCrazyChartIndicator : BaseIndicator<decimal>
+public class SilverTrendCrazyChartIndicator : BaseIndicator
 {
 	private readonly Highest _highest = new();
 	private readonly Lowest _lowest = new();

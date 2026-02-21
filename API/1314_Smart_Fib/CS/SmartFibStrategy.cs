@@ -112,36 +112,36 @@ namespace StockSharp.Samples.Strategies;
 
 	_smaLength = Param(nameof(SmaLength), 50)
 	.SetDisplay("Entry SMA Length", "Length for entry SMA", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(20, 100, 5);
 
 	_fibSmaLength = Param(nameof(FibSmaLength), 8)
 	.SetDisplay("Fibonacci SMA Length", "Length for center SMA", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(5, 20, 1);
 
 	_atrLength = Param(nameof(AtrLength), 6)
 	.SetDisplay("ATR Length", "Length for ATR calculation", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(5, 20, 1);
 
 	_firstFactor = Param(nameof(FirstFactor), 1.618m)
 	.SetDisplay("First Factor", "Multiplier for first band", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(1m, 2m, 0.1m);
 
 	_secondFactor = Param(nameof(SecondFactor), 2.618m)
 	.SetDisplay("Second Factor", "Multiplier for second band", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(2m, 3.5m, 0.1m);
 
 	_strategyType = Param(nameof(StrategyType), "Buy & Sell")
 	.SetDisplay("Strategy Type", "Allowed trade directions", "Trading")
-	.SetOptions("Buy & Sell", "Long Only", "Short Only");
+	.SetOptimizeValues(new[] { "Buy & Sell", "Long Only", "Short Only" });
 
 	_exitMethod = Param(nameof(ExitMethod), "Low Risk")
 	.SetDisplay("Exit Method", "Exit bands preference", "Trading")
-	.SetOptions("Low Risk", "High Risk");
+	.SetOptimizeValues(new[] { "Low Risk", "High Risk" });
 	}
 
 	/// <inheritdoc />
@@ -159,13 +159,13 @@ namespace StockSharp.Samples.Strategies;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
-	var entrySma = new SimpleMovingAverage { Length = SmaLength };
+	var entrySma = new SMA { Length = SmaLength };
 	var atr = new AverageTrueRange { Length = AtrLength };
-	var fibSma = new SimpleMovingAverage { Length = FibSmaLength };
+	var fibSma = new SMA { Length = FibSmaLength };
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription

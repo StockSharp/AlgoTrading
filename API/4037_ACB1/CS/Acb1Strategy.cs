@@ -51,7 +51,7 @@ public class Acb1Strategy : Strategy
 	/// </summary>
 	public Acb1Strategy()
 	{
-		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Signal candles", "Time frame used to detect daily breakouts", "General");
 
 		_trailCandleType = Param(nameof(TrailCandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -180,9 +180,9 @@ public class Acb1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeLevel1()
 		.Bind(ProcessLevel1)

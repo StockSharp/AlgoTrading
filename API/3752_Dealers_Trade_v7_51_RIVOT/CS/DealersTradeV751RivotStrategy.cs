@@ -131,37 +131,37 @@ public class DealersTradeV751RivotStrategy : Strategy
 		_maxTrades = Param(nameof(MaxTrades), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Trades", "Maximum number of martingale entries", "Position Sizing")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_pipDistance = Param(nameof(PipDistance), 4m)
 		.SetGreaterThanZero()
 		.SetDisplay("Pip Distance", "Distance between averaged entries in pips", "Position Sizing")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 15m, 1m);
 
 		_takeProfit = Param(nameof(TakeProfit), 15m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 50m, 5m);
 
 		_stopLoss = Param(nameof(StopLoss), 90m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30m, 200m, 10m);
 
 		_trailingStop = Param(nameof(TrailingStop), 15m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Stop", "Trailing-stop distance in pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 40m, 5m);
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume Multiplier", "Multiplier applied after each new entry", "Position Sizing")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.1m, 3m, 0.1m);
 
 		_maxVolume = Param(nameof(MaxVolume), 5m)
@@ -171,7 +171,7 @@ public class DealersTradeV751RivotStrategy : Strategy
 		_gapThreshold = Param(nameof(GapThreshold), 7m)
 		.SetGreaterThanZero()
 		.SetDisplay("Gap Threshold", "Minimal pivot gap required to enable trading", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3m, 15m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -190,9 +190,9 @@ public class DealersTradeV751RivotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -146,9 +146,9 @@ public class ZigAndZagScalpelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 		_deviation = Math.Max(_priceStep, Math.Abs(DeviationPoints) * _priceStep);
@@ -188,7 +188,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		UpdateDailyCounter(candle.OpenTime.UtcDateTime);
+		UpdateDailyCounter(candle.OpenTime);
 
 		UpdateMajorTrend(majorValue);
 		UpdateMinorPivot(minorValue);

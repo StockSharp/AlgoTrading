@@ -88,27 +88,27 @@ public class DmiPowerMoveStrategy : Strategy
 	{
 		_dmiPeriod = Param(nameof(DmiPeriod), 14)
 			.SetDisplay("DMI Period", "Period for Directional Movement Index calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_diDifferenceThreshold = Param(nameof(DiDifferenceThreshold), 5m)
 			.SetDisplay("DI Difference Threshold", "Minimum difference between +DI and -DI for signal", "Trading parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 30m)
 			.SetDisplay("ADX Threshold", "Minimum ADX value to consider trend strong", "Trading parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 5);
 
 		_adxExitThreshold = Param(nameof(AdxExitThreshold), 25m)
 			.SetDisplay("ADX Exit Threshold", "ADX value below which to exit positions", "Exit parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 30, 5);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR to determine stop-loss distance", "Risk parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 3, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -122,9 +122,9 @@ public class DmiPowerMoveStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var dmi = new AverageDirectionalIndex { Length = DmiPeriod };

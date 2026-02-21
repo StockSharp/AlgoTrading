@@ -65,33 +65,33 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 		
 		_takeProfitPercent1 = Param(nameof(TakeProfitPercent1), 6.0m)
 		.SetDisplay("TP % Step 1", "Take profit percentage step 1", "Take Profit Settings")
-		.SetCanOptimize(true);
+		;
 		_takeProfitPercent2 = Param(nameof(TakeProfitPercent2), 12.0m)
 		.SetDisplay("TP % Step 2", "Take profit percentage step 2", "Take Profit Settings")
-		.SetCanOptimize(true);
+		;
 		_takeProfitPercent3 = Param(nameof(TakeProfitPercent3), 18.0m)
 		.SetDisplay("TP % Step 3", "Take profit percentage step 3", "Take Profit Settings")
-		.SetCanOptimize(true);
+		;
 		_takeProfitPercent4 = Param(nameof(TakeProfitPercent4), 50.0m)
 		.SetDisplay("TP % Step 4", "Take profit percentage step 4", "Take Profit Settings")
-		.SetCanOptimize(true);
+		;
 		
 		_takeProfitAmount1 = Param(nameof(TakeProfitAmount1), 12m)
 		.SetDisplay("TP Amount % Step 1", "Quantity percent step 1", "Take Profit Settings")
-		.SetCanOptimize(true);
+		;
 		_takeProfitAmount2 = Param(nameof(TakeProfitAmount2), 8m)
 		.SetDisplay("TP Amount % Step 2", "Quantity percent step 2", "Take Profit Settings")
-		.SetCanOptimize(true);
+		;
 		_takeProfitAmount3 = Param(nameof(TakeProfitAmount3), 4m)
 		.SetDisplay("TP Amount % Step 3", "Quantity percent step 3", "Take Profit Settings")
-		.SetCanOptimize(true);
+		;
 		_takeProfitAmount4 = Param(nameof(TakeProfitAmount4), 0m)
 		.SetDisplay("TP Amount % Step 4", "Quantity percent step 4", "Take Profit Settings")
-		.SetCanOptimize(true);
+		;
 		
 		_numberOfSteps = Param(nameof(NumberOfSteps), 3)
 		.SetDisplay("Number of Steps", "Number of take profit steps", "Take Profit Settings")
-		.SetCanOptimize(true);
+		;
 		
 _direction = Param(nameof(Direction), (Sides?)null)
 .SetDisplay("Trade Direction", "Trade direction (Long/Short/Both)", "Trade Direction");
@@ -99,18 +99,18 @@ _direction = Param(nameof(Direction), (Sides?)null)
 		_atrPeriod1 = Param(nameof(AtrPeriod1), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period 1", "ATR length for first Supertrend", "Supertrend Settings")
-		.SetCanOptimize(true);
+		;
 		_factor1 = Param(nameof(Factor1), 3.0m)
 		.SetDisplay("Factor 1", "Multiplier for first Supertrend", "Supertrend Settings")
-		.SetCanOptimize(true);
+		;
 		
 		_atrPeriod2 = Param(nameof(AtrPeriod2), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period 2", "ATR length for second Supertrend", "Supertrend Settings")
-		.SetCanOptimize(true);
+		;
 		_factor2 = Param(nameof(Factor2), 4.0m)
 		.SetDisplay("Factor 2", "Multiplier for second Supertrend", "Supertrend Settings")
-		.SetCanOptimize(true);
+		;
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -133,9 +133,9 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var atr1 = new AverageTrueRange { Length = AtrPeriod1 };
 		var atr2 = new AverageTrueRange { Length = AtrPeriod2 };

@@ -148,20 +148,20 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 	{
 		_maType = Param(nameof(MaType), MovingAverageTypes.SMA)
 			.SetDisplay("MA Type", "Moving average type", "General")
-			.SetCanOptimize(true);
+			;
 
 		_maLength = Param(nameof(MaLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetDisplay("Stop Loss", "Loss in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetDisplay("Take Profit", "Profit in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_openLong = Param(nameof(OpenLong), true)
 			.SetDisplay("Open Long", "Allow long entries", "General");
@@ -195,9 +195,9 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = CreateMovingAverage(MaType, MaLength);
 
@@ -212,7 +212,7 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
@@ -285,11 +285,11 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
-			MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.SMA => new SMA { Length = length },
+			MovingAverageTypes.EMA => new EMA { Length = length },
 			MovingAverageTypes.SMMA => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 }

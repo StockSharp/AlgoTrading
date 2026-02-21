@@ -92,25 +92,25 @@ public class ObvSlopeMeanReversionStrategy : Strategy
 		_obvSmaPeriod = Param(nameof(ObvSmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("OBV SMA Period", "Period for OBV SMA", "Indicator Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for calculating average and standard deviation of the slope", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation to determine entry threshold", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -140,11 +140,11 @@ public class ObvSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		// Initialize indicators
 		_obv = new OnBalanceVolume();
-		_obvSma = new SimpleMovingAverage
+		_obvSma = new SMA
 		{
 			Length = ObvSmaPeriod
 		};
@@ -171,7 +171,7 @@ public class ObvSlopeMeanReversionStrategy : Strategy
 			new Unit(StopLossPercent, UnitTypes.Percent), 
 			new Unit(StopLossPercent, UnitTypes.Percent));
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -185,10 +185,10 @@ public class ObvSlopeMeanReversionStrategy : Strategy
 			return;
 
 		// Process the candle with OBV indicator
-		var obvValue = _obv.Process(candle).ToDecimal();
+		var obvValue = _obv.Process(new DecimalIndicatorValue(_obv, candle).ToDecimal();
 		
 		// Process OBV through SMA
-		var obvSmaValue = _obvSma.Process(obvValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var obvSmaValue = _obvSma.Process(obvValue, candle.ServerTime)).ToDecimal();
 		
 		// Skip if OBV SMA is not formed yet
 		if (!_obvSma.IsFormed)

@@ -43,28 +43,28 @@ public class MawreezRsiDivergenceDetectorStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Period for RSI calculation", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_minDivLength = Param(nameof(MinDivLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Divergence Length", "Shortest lookback to check", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_maxDivLength = Param(nameof(MaxDivLength), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("Maximum Divergence Length", "Longest lookback to check", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 1);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceHistory = new decimal[MaxDivLength + 1];
 		_rsiHistory = new decimal[MaxDivLength + 1];

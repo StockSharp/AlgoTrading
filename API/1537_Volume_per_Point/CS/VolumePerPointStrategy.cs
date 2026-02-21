@@ -80,7 +80,7 @@ public VolumePerPointStrategy()
 {
 _rsiLength = Param(nameof(RsiLength), 14)
 .SetDisplay("RSI Length", "Period for RSI", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(10, 20, 2);
 
 _rsiHigh = Param(nameof(RsiHigh), 60)
@@ -111,9 +111,9 @@ _prevVolume = 0;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var rsi = new RelativeStrengthIndex { Length = RsiLength };
 

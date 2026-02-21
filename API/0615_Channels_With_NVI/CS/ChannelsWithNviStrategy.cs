@@ -92,29 +92,29 @@ public class ChannelsWithNviStrategy : Strategy
 	_channelLength = Param(nameof(ChannelLength), 20)
 	.SetGreaterThanZero()
 	.SetDisplay("Channel Length", "Period for channel calculation", "General")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(10, 50, 5);
 	_channelMultiplier = Param(nameof(ChannelMultiplier), 2m)
 	.SetGreaterThanZero()
 	.SetDisplay("Channel Multiplier", "Multiplier for channel width", "General")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(1m, 4m, 0.5m);
 	_nviEmaLength = Param(nameof(NviEmaLength), 200)
 	.SetGreaterThanZero()
 	.SetDisplay("NVI EMA Length", "Period for EMA of NVI", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(50, 300, 50);
 	_enableStopLoss = Param(nameof(EnableStopLoss), false)
 	.SetDisplay("Enable Stop Loss", "Use stop-loss protection", "Risk Management");
 	_stopLossPercent = Param(nameof(StopLossPercent), 0m)
 	.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk Management")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(1m, 10m, 1m);
 	_enableTakeProfit = Param(nameof(EnableTakeProfit), false)
 	.SetDisplay("Enable Take Profit", "Use take-profit protection", "Risk Management");
 	_takeProfitPercent = Param(nameof(TakeProfitPercent), 0m)
 	.SetDisplay("Take Profit %", "Take-profit percentage", "Risk Management")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(1m, 10m, 1m);
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 	.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -138,15 +138,15 @@ public class ChannelsWithNviStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 	
 	_channel = ChannelType == "KC"
 	? new KeltnerChannels { Length = ChannelLength, Multiplier = ChannelMultiplier }
 	: new BollingerBands { Length = ChannelLength, Width = ChannelMultiplier };
 	
-	_nviEma = new ExponentialMovingAverage { Length = NviEmaLength };
+	_nviEma = new EMA { Length = NviEmaLength };
 	
 	var subscription = SubscribeCandles(CandleType);
 	subscription
@@ -198,7 +198,7 @@ public class ChannelsWithNviStrategy : Strategy
 	{
 	_prevClose = candle.ClosePrice;
 	_prevVolume = candle.TotalVolume;
-	_nviEma.Process(new DecimalIndicatorValue(_nviEma, _nvi));
+	_nviEma.Process(new DecimalIndicatorValue(_nviEma, _nvi, candle.ServerTime));
 	return;
 	}
 	
@@ -208,7 +208,7 @@ public class ChannelsWithNviStrategy : Strategy
 	_nvi += change * _nvi;
 	}
 	
-	var emaVal = _nviEma.Process(new DecimalIndicatorValue(_nviEma, _nvi));
+	var emaVal = _nviEma.Process(new DecimalIndicatorValue(_nviEma, _nvi, candle.ServerTime));
 	if (!emaVal.IsFinal)
 	{
 	_prevClose = candle.ClosePrice;

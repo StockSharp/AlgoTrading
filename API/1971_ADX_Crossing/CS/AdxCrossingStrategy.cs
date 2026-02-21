@@ -111,7 +111,7 @@ public class AdxCrossingStrategy : Strategy
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 50)
 			.SetDisplay("ADX Period", "Period of ADX indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -152,9 +152,9 @@ public class AdxCrossingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 

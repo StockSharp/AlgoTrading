@@ -37,7 +37,7 @@ public class AtRandomStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Base order size for every random entry", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_closeBeforeReversal = Param(nameof(CloseBeforeReversal), true)
 			.SetDisplay("Close Before Reversal", "Whether the existing position must be closed before taking the next random signal", "Trading");
@@ -112,9 +112,9 @@ public class AtRandomStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TradeVolume <= 0)
 			throw new InvalidOperationException("TradeVolume must be greater than zero.");

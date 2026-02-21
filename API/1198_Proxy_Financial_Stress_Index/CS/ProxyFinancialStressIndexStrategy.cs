@@ -90,21 +90,21 @@ public class ProxyFinancialStressIndexStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 41)
 		.SetGreaterThanZero()
 		.SetDisplay("SMA Length", "Window for moving average", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_stdDevLength = Param(nameof(StdDevLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("StdDev Length", "Window for standard deviation", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_threshold = Param(nameof(Threshold), -0.8m)
 		.SetDisplay("Threshold", "Stress index entry level", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_holdingPeriod = Param(nameof(HoldingPeriod), 28)
 		.SetGreaterThanZero()
 		.SetDisplay("Holding Period", "Bars to hold position", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_vixWeight = Param(nameof(VixWeight), 0.4m)
 		.SetDisplay("VIX Weight", "Weight for VIX component", "Weights");
@@ -139,14 +139,14 @@ public class ProxyFinancialStressIndexStrategy : Strategy
 		_hygSecurity = Param(nameof(HygSecurity), new Security())
 		.SetDisplay("HYG Security", "Security for HYG ETF", "Securities");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for all securities", "Parameters");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 		throw new InvalidOperationException("Main security is not set.");
@@ -154,17 +154,17 @@ public class ProxyFinancialStressIndexStrategy : Strategy
 		if (VixSecurity == null || Us10ySecurity == null || DxySecurity == null || EurusdSecurity == null || HygSecurity == null)
 		throw new InvalidOperationException("Component securities are not set.");
 
-		_smaMain = new SimpleMovingAverage { Length = SmaLength };
+		_smaMain = new SMA { Length = SmaLength };
 		_stdMain = new StandardDeviation { Length = StdDevLength };
-		_smaVix = new SimpleMovingAverage { Length = SmaLength };
+		_smaVix = new SMA { Length = SmaLength };
 		_stdVix = new StandardDeviation { Length = StdDevLength };
-		_smaUs10y = new SimpleMovingAverage { Length = SmaLength };
+		_smaUs10y = new SMA { Length = SmaLength };
 		_stdUs10y = new StandardDeviation { Length = StdDevLength };
-		_smaDxy = new SimpleMovingAverage { Length = SmaLength };
+		_smaDxy = new SMA { Length = SmaLength };
 		_stdDxy = new StandardDeviation { Length = StdDevLength };
-		_smaEurusd = new SimpleMovingAverage { Length = SmaLength };
+		_smaEurusd = new SMA { Length = SmaLength };
 		_stdEurusd = new StandardDeviation { Length = StdDevLength };
-		_smaHyg = new SimpleMovingAverage { Length = SmaLength };
+		_smaHyg = new SMA { Length = SmaLength };
 		_stdHyg = new StandardDeviation { Length = StdDevLength };
 
 		SubscribeComponent(VixSecurity, _smaVix, _stdVix, v => { _vixNorm = v; _vixReady = true; });

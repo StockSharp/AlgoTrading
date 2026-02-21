@@ -62,13 +62,13 @@ public class BbSqueezeStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Period of Bollinger Bands", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_squeezeThreshold = Param(nameof(SqueezeThreshold), 0.05m)
 			.SetGreaterThanZero()
 			.SetDisplay("Squeeze Threshold", "Relative band width threshold", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -92,11 +92,11 @@ public class BbSqueezeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var bollinger = new BollingerBands
 		{

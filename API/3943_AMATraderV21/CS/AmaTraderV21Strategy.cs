@@ -277,9 +277,9 @@ public class AmaTraderV21Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_heiken = new HeikenAshiSmoothedCalculator(FirstMaMethod, SecondMaMethod, FirstMaPeriod, SecondMaPeriod);
 		_ama = new AmaSignalCalculator(AmaLength, AmaFastPeriod, AmaSlowPeriod, AmaPower);
@@ -297,7 +297,7 @@ public class AmaTraderV21Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -305,15 +305,15 @@ public class AmaTraderV21Strategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		var heiken = _heiken.Process(candle);
+		var heiken = _heiken.Process(new DecimalIndicatorValue(_heiken, candle);
 		if (heiken is null)
 		return;
 
-		var amaValue = _ama.Process(candle.ClosePrice, candle.CloseTime, true);
+		var amaValue = _ama.Process(candle.ClosePrice, candle.CloseTime));
 		if (!amaValue.HasValue)
 		return;
 
-		var rsiValue = _rsi.Process(candle.ClosePrice, candle.CloseTime, true).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.CloseTime)).ToDecimal();
 		if (!_rsi.IsFormed)
 		{
 			_previousPreviousRsi = _previousRsi;
@@ -519,10 +519,10 @@ public class AmaTraderV21Strategy : Strategy
 
 		public HeikenResult Process(ICandleMessage candle)
 		{
-			var openValue = _openMa.Process(candle.OpenPrice, candle.OpenTime, true);
-			var closeValue = _closeMa.Process(candle.ClosePrice, candle.OpenTime, true);
-			var highValue = _highMa.Process(candle.HighPrice, candle.OpenTime, true);
-			var lowValue = _lowMa.Process(candle.LowPrice, candle.OpenTime, true);
+			var openValue = _openMa.Process(new DecimalIndicatorValue(_openMa, candle.OpenPrice, candle.OpenTime));
+			var closeValue = _closeMa.Process(new DecimalIndicatorValue(_closeMa, candle.ClosePrice, candle.OpenTime));
+			var highValue = _highMa.Process(new DecimalIndicatorValue(_highMa, candle.HighPrice, candle.OpenTime));
+			var lowValue = _lowMa.Process(new DecimalIndicatorValue(_lowMa, candle.LowPrice, candle.OpenTime));
 
 			if (!_openMa.IsFormed || !_closeMa.IsFormed || !_highMa.IsFormed || !_lowMa.IsFormed)
 			return null;
@@ -544,10 +544,10 @@ public class AmaTraderV21Strategy : Strategy
 			var lowerSource = isBullish ? haLow : haHigh;
 			var upperSource = isBullish ? haHigh : haLow;
 
-			var bottom = _bottomSmooth.Process(lowerSource, candle.OpenTime, true).ToDecimal();
-			var top = _topSmooth.Process(upperSource, candle.OpenTime, true).ToDecimal();
-			var openSmoothed = _openSmooth.Process(haOpen, candle.OpenTime, true).ToDecimal();
-			var closeSmoothed = _closeSmooth.Process(haClose, candle.OpenTime, true).ToDecimal();
+			var bottom = _bottomSmooth.Process(new DecimalIndicatorValue(_bottomSmooth, lowerSource, candle.OpenTime)).ToDecimal();
+			var top = _topSmooth.Process(new DecimalIndicatorValue(_topSmooth, upperSource, candle.OpenTime)).ToDecimal();
+			var openSmoothed = _openSmooth.Process(new DecimalIndicatorValue(_openSmooth, haOpen, candle.OpenTime)).ToDecimal();
+			var closeSmoothed = _closeSmooth.Process(new DecimalIndicatorValue(_closeSmooth, haClose, candle.OpenTime)).ToDecimal();
 
 			if (!_bottomSmooth.IsFormed || !_topSmooth.IsFormed || !_openSmooth.IsFormed || !_closeSmooth.IsFormed)
 			return null;
@@ -570,11 +570,11 @@ public class AmaTraderV21Strategy : Strategy
 		{
 			return method switch
 			{
-				HeikenMaMethods.Simple => new SimpleMovingAverage { Length = length },
-				HeikenMaMethods.Exponential => new ExponentialMovingAverage { Length = length },
+				HeikenMaMethods.Simple => new SMA { Length = length },
+				HeikenMaMethods.Exponential => new EMA { Length = length },
 				HeikenMaMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 				HeikenMaMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-				_ => new SimpleMovingAverage { Length = length }
+				_ => new SMA { Length = length }
 			};
 		}
 	}

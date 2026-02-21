@@ -37,7 +37,7 @@ The strategy continuously monitors both instruments, keeps the positions balance
 | `RsiOverbought` | `decimal` | `70` | RSI threshold that allows short entries. |
 | `CorrelationLookback` | `int` | `60` | Number of daily deviation pairs used for the Pearson correlation. |
 | `CandleType` | `DataType` | `TimeSpan.FromHours(1).TimeFrame()` | Intraday candles for EMA/RSI calculations. |
-| `DailyCandleType` | `DataType` | `TimeSpan.FromDays(1).TimeFrame()` | Higher timeframe used to build the correlation statistics. |
+| `DailyCandleType` | `DataType` | `TimeSpan.FromMinutes(5).TimeFrame()` | Higher timeframe used to build the correlation statistics. |
 | `HedgeSecurity` | `Security` | `null` | Second instrument traded alongside the base symbol. Must be provided before starting the strategy. |
 
 > **Volume note:** the StockSharp `Volume` property controls the order size for both legs. The strategy automatically normalizes volumes to each instrument's `VolumeStep`, `VolumeMin`, and `VolumeMax` values and defaults to `0.1` if `Volume` is unset.

@@ -153,7 +153,7 @@ public class VortexOscillatorSystemMomentumStrategy : Strategy
 		_vortexLength = Param(nameof(VortexLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Vortex Length", "Number of candles used to compute the Vortex indicator.", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for Vortex oscillator calculations.", "General");
@@ -161,39 +161,39 @@ public class VortexOscillatorSystemMomentumStrategy : Strategy
 
 		_buyThreshold = Param(nameof(BuyThreshold), -0.75m)
 			.SetDisplay("Buy Threshold", "Oscillator value that enables long setups.", "Oscillator")
-			.SetCanOptimize(true);
+			;
 
 		_useBuyStopLoss = Param(nameof(UseBuyStopLoss), false)
 			.SetDisplay("Use Buy Stop-Loss", "Require the oscillator to stay above the long stop level before opening longs.", "Risk");
 
 		_buyStopLossLevel = Param(nameof(BuyStopLossLevel), -1m)
 			.SetDisplay("Buy Stop-Loss Level", "Oscillator level that closes long positions when enabled.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useBuyTakeProfit = Param(nameof(UseBuyTakeProfit), false)
 			.SetDisplay("Use Buy Take-Profit", "Enable oscillator based take-profit for long positions.", "Risk");
 
 		_buyTakeProfitLevel = Param(nameof(BuyTakeProfitLevel), 0m)
 			.SetDisplay("Buy Take-Profit Level", "Oscillator level that exits long positions when enabled.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_sellThreshold = Param(nameof(SellThreshold), 0.75m)
 			.SetDisplay("Sell Threshold", "Oscillator value that enables short setups.", "Oscillator")
-			.SetCanOptimize(true);
+			;
 
 		_useSellStopLoss = Param(nameof(UseSellStopLoss), false)
 			.SetDisplay("Use Sell Stop-Loss", "Require the oscillator to stay below the short stop level before opening shorts.", "Risk");
 
 		_sellStopLossLevel = Param(nameof(SellStopLossLevel), 1m)
 			.SetDisplay("Sell Stop-Loss Level", "Oscillator level that closes short positions when enabled.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useSellTakeProfit = Param(nameof(UseSellTakeProfit), false)
 			.SetDisplay("Use Sell Take-Profit", "Enable oscillator based take-profit for short positions.", "Risk");
 
 		_sellTakeProfitLevel = Param(nameof(SellTakeProfitLevel), 0m)
 			.SetDisplay("Sell Take-Profit Level", "Oscillator level that exits short positions when enabled.", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -213,9 +213,9 @@ public class VortexOscillatorSystemMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_vortex = new VortexIndicator
 		{

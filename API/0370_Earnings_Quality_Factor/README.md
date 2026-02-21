@@ -10,7 +10,7 @@ The **Earnings Quality Factor** strategy rebalances annually on July 1, going lo
 - **Stops**: No.
 - **Default Values**:
   - `MinTradeUsd = 100`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Fundamental
   - Direction: Both

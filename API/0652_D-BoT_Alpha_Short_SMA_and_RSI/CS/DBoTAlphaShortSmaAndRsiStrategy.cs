@@ -112,27 +112,27 @@ public class DBoTAlphaShortSmaAndRsiStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Simple moving average period", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation period", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_rsiEntry = Param(nameof(RsiEntry), 51m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Entry Level", "RSI level to enter short", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_rsiStop = Param(nameof(RsiStop), 54m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Stop Level", "RSI level to exit", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_rsiTakeProfit = Param(nameof(RsiTakeProfit), 32m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Take Profit Level", "RSI level to take profit", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -162,13 +162,13 @@ public class DBoTAlphaShortSmaAndRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		var sma = new SimpleMovingAverage { Length = SmaLength };
+		var sma = new SMA { Length = SmaLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);

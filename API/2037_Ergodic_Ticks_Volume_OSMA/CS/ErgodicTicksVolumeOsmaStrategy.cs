@@ -33,10 +33,10 @@ public class ErgodicTicksVolumeOsmaStrategy : Strategy
 
 	public ErgodicTicksVolumeOsmaStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 12).SetDisplay("Fast EMA").SetCanOptimize(true);
-		_slowLength = Param(nameof(SlowLength), 26).SetDisplay("Slow EMA").SetCanOptimize(true);
-		_signalLength = Param(nameof(SignalLength), 9).SetDisplay("Signal EMA").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame()).SetDisplay("Timeframe");
+		_fastLength = Param(nameof(FastLength), 12).SetDisplay("Fast EMA");
+		_slowLength = Param(nameof(SlowLength), 26).SetDisplay("Slow EMA");
+		_signalLength = Param(nameof(SignalLength), 9).SetDisplay("Signal EMA");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame()).SetDisplay("Timeframe", "Timeframe", "General");
 	}
 
 	/// <inheritdoc />

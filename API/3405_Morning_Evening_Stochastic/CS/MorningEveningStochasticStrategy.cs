@@ -128,45 +128,45 @@ public class MorningEveningStochasticStrategy : Strategy
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("%K Period", "Stochastic %K lookback period", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 36, 2);
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 8)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("%D Period", "Stochastic %D smoothing period", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 18, 1);
 
 		_stochasticSlowing = Param(nameof(StochasticSlowing), 29)
 			.SetGreaterThanZero()
 			.SetDisplay("Slowing", "Stochastic slowing value", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 40, 2);
 
 		_stochasticOverbought = Param(nameof(StochasticOverbought), 70m)
 			.SetDisplay("Overbought", "Stochastic %D threshold for short entries", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 5m);
 
 		_stochasticOversold = Param(nameof(StochasticOversold), 30m)
 			.SetDisplay("Oversold", "Stochastic %D threshold for long entries", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_patternAveragePeriod = Param(nameof(PatternAveragePeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Body Average", "Number of candles used for body average", "Candlestick Pattern")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 12, 1);
 
 		_shortExitLevel = Param(nameof(ShortExitLevel), 20m)
 			.SetDisplay("Short Exit %D", "Level that closes shorts when crossed upward", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_longExitLevel = Param(nameof(LongExitLevel), 80m)
 			.SetDisplay("Long Exit %D", "Level that closes longs when crossed downward", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 5m);
 	}
 
@@ -189,18 +189,18 @@ public class MorningEveningStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_stochastic = new StochasticOscillator
 		{
 			KPeriod = StochasticKPeriod,
-			DPeriod = StochasticDPeriod,
+			D = {  K = { Length = StochasticDPeriod } },
 			Smooth = StochasticSlowing,
 		};
 
-		_bodyAverage = new SimpleMovingAverage
+		_bodyAverage = new SMA
 		{
 			Length = PatternAveragePeriod,
 		};

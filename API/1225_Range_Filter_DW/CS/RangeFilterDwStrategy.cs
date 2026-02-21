@@ -48,13 +48,13 @@ public class RangeFilterDwStrategy : Strategy
 		_rangePeriod = Param(nameof(RangePeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Period", "ATR period for range calculation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_rangeMultiplier = Param(nameof(RangeMultiplier), 2.618m)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Multiplier", "Multiplier applied to ATR", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -73,9 +73,9 @@ public class RangeFilterDwStrategy : Strategy
 		_isInitialized = false;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new ATR { Length = RangePeriod };
 

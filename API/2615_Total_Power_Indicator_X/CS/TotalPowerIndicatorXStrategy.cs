@@ -178,12 +178,12 @@ public class TotalPowerIndicatorXStrategy : Strategy
 		_powerPeriod = Param(nameof(PowerPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Power Period", "EMA length used by Total Power", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 45)
 		.SetGreaterThanZero()
 		.SetDisplay("Lookback", "Samples counted for bull/bear strength", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)
@@ -238,9 +238,9 @@ public class TotalPowerIndicatorXStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_totalPower = new TotalPowerIndicator
 		{
@@ -436,7 +436,7 @@ public class TotalPowerIndicatorXStrategy : Strategy
 		_shortTakePrice = null;
 	}
 
-	private sealed class TotalPowerIndicator : Indicator<ICandleMessage>
+	private sealed class TotalPowerIndicator : BaseIndicator
 	{
 		private readonly Queue<int> _bullHistory = new();
 		private readonly Queue<int> _bearHistory = new();

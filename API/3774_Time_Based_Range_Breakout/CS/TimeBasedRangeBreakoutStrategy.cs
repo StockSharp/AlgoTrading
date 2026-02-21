@@ -162,7 +162,7 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 		_daysToCheck = Param(nameof(DaysToCheck), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("Days To Check", "Number of previous days used in averaging", "Averaging")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 15, 1);
 
 		_checkMode = Param(nameof(CheckMode), 1)
@@ -172,19 +172,19 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 		_profitFactor = Param(nameof(ProfitFactor), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Profit Factor", "Divisor applied to average range for take-profit", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 4m, 0.5m);
 
 		_lossFactor = Param(nameof(LossFactor), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Loss Factor", "Divisor applied to average range for stop-loss", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 4m, 0.5m);
 
 		_offsetFactor = Param(nameof(OffsetFactor), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Offset Factor", "Divisor applied to average range for breakout levels", "Entries")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 4m, 0.5m);
 
 		_closeMode = Param(nameof(CloseMode), 1)
@@ -194,7 +194,7 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 		_tradesPerDay = Param(nameof(TradesPerDay), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Trades Per Day", "Maximum entries allowed within one day", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 3, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -232,11 +232,11 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -72,13 +72,13 @@ public class VolatileActionStrategy : Strategy
 		_volatilityCoef = Param(nameof(VolatilityCoef), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volatility Coef", "ATR1 multiplier against base ATR", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 23)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Base ATR period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 1);
 
 		_stopCoef = Param(nameof(StopCoef), 0.6m)
@@ -110,9 +110,9 @@ public class VolatileActionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr1 = new AverageTrueRange { Length = 1 };
 		_atrBase = new AverageTrueRange { Length = AtrPeriod };
@@ -146,7 +146,7 @@ public class VolatileActionStrategy : Strategy
 			return;
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-		var jawVal = _jaw.Process(median);
+		var jawVal = _jaw.Process(new DecimalIndicatorValue(_jaw, median);
 		var teethVal = _teeth.Process(median);
 		var lipsVal = _lips.Process(median);
 
@@ -172,8 +172,8 @@ public class VolatileActionStrategy : Strategy
 
 		var atr1Val = _atr1.Process(candle);
 		var atrBaseVal = _atrBase.Process(candle);
-		var highestVal = _highest.Process(candle.HighPrice, candle.OpenTime, true);
-		var lowestVal = _lowest.Process(candle.LowPrice, candle.OpenTime, true);
+		var highestVal = _highest.Process(candle.HighPrice, candle.OpenTime));
+		var lowestVal = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime));
 
 		if (!atr1Val.IsFinal || !atrBaseVal.IsFinal || !highestVal.IsFinal || !lowestVal.IsFinal)
 			return;

@@ -219,9 +219,9 @@ public class RevelationsStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_vovixAvg = new SMA { Length = LocalWindow * 4 };
 		_spikeMax = new Highest { Length = LocalWindow };
@@ -245,11 +245,11 @@ public class RevelationsStrategy : Strategy
 		var voSpike = (atrFast - atrSlow) / (atrStd + 1m);
 		var absSpike = Math.Abs(voSpike);
 		
-		var vovixAvgVal = _vovixAvg.Process(absSpike, candle.ServerTime, true);
-		var spikeMaxVal = _spikeMax.Process(absSpike, candle.ServerTime, true);
-		var lowVal = _priceLow.Process(candle.LowPrice);
+		var vovixAvgVal = _vovixAvg.Process(new DecimalIndicatorValue(_vovixAvg, absSpike, candle.ServerTime));
+		var spikeMaxVal = _spikeMax.Process(new DecimalIndicatorValue(_spikeMax, absSpike, candle.ServerTime));
+		var lowVal = _priceLow.Process(new DecimalIndicatorValue(_priceLow, candle.LowPrice);
 		var highVal = _priceHigh.Process(candle.HighPrice);
-		var regimeVal = _regimeSum.Process(Math.Abs(_prevVoSpike) > SpikeThreshold ? 1m : 0m, candle.ServerTime, true);
+		var regimeVal = _regimeSum.Process(Math.Abs(_prevVoSpike) > SpikeThreshold ? 1m : 0m, candle.ServerTime));
 		
 		if (!vovixAvgVal.IsFinal || !spikeMaxVal.IsFinal || !lowVal.IsFinal || !highVal.IsFinal || !regimeVal.IsFinal)
 		{
@@ -290,16 +290,16 @@ public class RevelationsStrategy : Strategy
 	}
 else if (Position > 0)
 {
-	var tp = PositionAvgPrice * (1 + TakeProfitPercent / 100m);
-	var sl = PositionAvgPrice * (1 - StopPercent / 100m);
+	var tp = PositionPrice * (1 + TakeProfitPercent / 100m);
+	var sl = PositionPrice * (1 - StopPercent / 100m);
 	
 	if (candle.HighPrice >= tp || candle.LowPrice <= sl)
 	SellMarket(Position);
 }
 else if (Position < 0)
 {
-	var tp = PositionAvgPrice * (1 - TakeProfitPercent / 100m);
-	var sl = PositionAvgPrice * (1 + StopPercent / 100m);
+	var tp = PositionPrice * (1 - TakeProfitPercent / 100m);
+	var sl = PositionPrice * (1 + StopPercent / 100m);
 	
 	if (candle.LowPrice <= tp || candle.HighPrice >= sl)
 	BuyMarket(-Position);

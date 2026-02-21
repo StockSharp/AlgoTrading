@@ -60,17 +60,17 @@ public class RsiRftlStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Length of the RSI oscillator", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop loss distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
 			.SetNotNegative()
@@ -171,9 +171,9 @@ public class RsiRftlStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsiIndicator = new RelativeStrengthIndex
 		{
@@ -569,7 +569,7 @@ public class RsiRftlStrategy : Strategy
 /// <summary>
 /// Recursive filter trend line indicator reproducing the MT5 RFTL buffer.
 /// </summary>
-public sealed class RftlIndicator : BaseIndicator<decimal>
+public sealed class RftlIndicator : BaseIndicator
 {
 	private static readonly decimal[] Coefficients =
 	{

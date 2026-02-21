@@ -94,36 +94,36 @@ public class ColorSchaffRsiTrendCycleStrategy : Strategy
 		_fastRsi = Param(nameof(FastRsi), 23)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast RSI", "Fast RSI period", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 		_slowRsi = Param(nameof(SlowRsi), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow RSI", "Slow RSI period", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 70, 5);
 
 		_cycle = Param(nameof(Cycle), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Cycle", "Cycle length", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_highLevel = Param(nameof(HighLevel), 60)
 		.SetDisplay("High Level", "Upper level for STC", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40, 80, 5);
 
 		_lowLevel = Param(nameof(LowLevel), -60)
 		.SetDisplay("Low Level", "Lower level for STC", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(-80, -40, 5);
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stc = new SchaffRsiTrendCycle
 		{
@@ -137,7 +137,7 @@ public class ColorSchaffRsiTrendCycleStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(stc, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal color)
@@ -170,7 +170,7 @@ public class ColorSchaffRsiTrendCycleStrategy : Strategy
 		}
 	}
 
-	private class SchaffRsiTrendCycle : Indicator<decimal>
+	private class SchaffRsiTrendCycle : BaseIndicator
 	{
 		public int FastRsi { get; set; }
 		public int SlowRsi { get; set; }

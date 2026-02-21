@@ -337,9 +337,9 @@ public class PokerShowStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 		_ma = CreateMovingAverage(MaMethod, MaPeriod);
@@ -354,7 +354,7 @@ public class PokerShowStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -366,7 +366,7 @@ public class PokerShowStrategy : Strategy
 		return;
 
 		var price = GetPrice(candle);
-		var maValue = _ma!.Process(price, candle.OpenTime, true).ToDecimal();
+		var maValue = _ma!.Process(new DecimalIndicatorValue(_ma, price, candle.OpenTime)).ToDecimal();
 
 		_maHistory.Add(maValue);
 
@@ -515,11 +515,11 @@ public class PokerShowStrategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Sma => new SimpleMovingAverage { Length = period },
-			MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = period },
+			MovingAverageMethods.Sma => new SMA { Length = period },
+			MovingAverageMethods.Ema => new EMA { Length = period },
 			MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = period },
 			MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = period },
-			_ => new SimpleMovingAverage { Length = period }
+			_ => new SMA { Length = period }
 		};
 	}
 }

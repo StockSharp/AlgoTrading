@@ -92,34 +92,34 @@ public class ForexPairYieldMomentumStrategy : Strategy
 
 		_momentumLength = Param(nameof(MomentumLength), 26)
 			.SetDisplay("Momentum Length", "Period for yield spread average", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_bollingerLength = Param(nameof(BollingerLength), 24)
 			.SetDisplay("Bollinger Length", "Period for Bollinger Bands", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_bollingerStdDev = Param(nameof(BollingerStdDev), 1m)
 			.SetDisplay("Bollinger Std Dev", "StdDev multiplier for bands", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_holdPeriods = Param(nameof(HoldPeriods), 20)
 			.SetDisplay("Hold Periods", "Bars to hold a position", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_reverseLogic = Param(nameof(ReverseLogic), false)
 			.SetDisplay("Reverse Logic", "Invert long/short conditions", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_spreadSma = new SimpleMovingAverage { Length = MomentumLength };
-		_momentumSma = new SimpleMovingAverage { Length = BollingerLength };
+		_spreadSma = new SMA { Length = MomentumLength };
+		_momentumSma = new SMA { Length = BollingerLength };
 		_momentumStd = new StandardDeviation { Length = BollingerLength };
 
 		if (YieldASecurity != null)
@@ -137,7 +137,7 @@ public class ForexPairYieldMomentumStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessMain).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessYieldA(ICandleMessage candle)
@@ -165,18 +165,18 @@ public class ForexPairYieldMomentumStrategy : Strategy
 			return;
 
 		var spread = a - b;
-		var spreadValue = _spreadSma.Process(spread, candle.ServerTime, true);
+		var spreadValue = _spreadSma.Process(new DecimalIndicatorValue(_spreadSma, spread, candle.ServerTime));
 
 		if (!spreadValue.IsFinal || spreadValue.GetValue<decimal>() is not decimal spreadAvg)
 			return;
 
 		var momentum = spread - spreadAvg;
 
-		var middleVal = _momentumSma.Process(momentum, candle.ServerTime, true);
+		var middleVal = _momentumSma.Process(new DecimalIndicatorValue(_momentumSma, momentum, candle.ServerTime));
 		if (!middleVal.IsFinal || middleVal.GetValue<decimal>() is not decimal middle)
 			return;
 
-		var stdVal = (StandardDeviationValue)_momentumStd.Process(momentum, candle.ServerTime, true);
+		var stdVal = (StandardDeviationValue)_momentumStd.Process(new DecimalIndicatorValue(_momentumStd, momentum, candle.ServerTime));
 		if (!stdVal.IsFinal || stdVal.IndicatorValue is not decimal std)
 			return;
 

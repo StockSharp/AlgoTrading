@@ -99,19 +99,19 @@ public class MovingAverageCrossoverSpreadStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Length of the fast moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 100, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 84)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Length of the slow moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 2);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 60)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 5);
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 20)
@@ -144,12 +144,12 @@ public class MovingAverageCrossoverSpreadStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastMa = new ExponentialMovingAverage { Length = FastPeriod };
-		_slowMa = new ExponentialMovingAverage { Length = SlowPeriod };
+		_fastMa = new EMA { Length = FastPeriod };
+		_slowMa = new EMA { Length = SlowPeriod };
 
 		Volume = TradeVolume;
 
@@ -158,7 +158,7 @@ public class MovingAverageCrossoverSpreadStrategy : Strategy
 			.Bind(_fastMa, _slowMa, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

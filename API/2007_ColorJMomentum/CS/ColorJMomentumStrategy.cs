@@ -109,13 +109,13 @@ public class ColorJMomentumStrategy : Strategy
 		_momentumLength = Param(nameof(MomentumLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Length", "Period for momentum", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_jmaLength = Param(nameof(JmaLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("JMA Length", "Period for Jurik moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -124,7 +124,7 @@ public class ColorJMomentumStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_enableStopLoss = Param(nameof(EnableStopLoss), true)
@@ -133,7 +133,7 @@ public class ColorJMomentumStrategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_enableLong = Param(nameof(EnableLong), true)
@@ -144,9 +144,9 @@ public class ColorJMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var momentum = new Momentum { Length = MomentumLength };
 		var jma = new JurikMovingAverage { Length = JmaLength, Input = momentum };

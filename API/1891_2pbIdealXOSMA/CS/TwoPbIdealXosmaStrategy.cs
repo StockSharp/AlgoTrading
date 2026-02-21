@@ -118,19 +118,19 @@ public class TwoPbIdealXosmaStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast moving average period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow moving average period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 1);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal", "Signal line period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)

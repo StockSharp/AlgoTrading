@@ -89,47 +89,47 @@ public class TigerEmaAdxRsiStrategy : Strategy
 	{
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 21)
 			.SetDisplay("Fast EMA", "Fast EMA period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 89)
 			.SetDisplay("Slow EMA", "Slow EMA period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "ADX calculation period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 27m)
 			.SetDisplay("ADX Threshold", "Minimum ADX value", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI calculation period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_rsiUpper = Param(nameof(RsiUpper), 65m)
 			.SetDisplay("RSI Upper", "Upper RSI bound", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_rsiLower = Param(nameof(RsiLower), 35m)
 			.SetDisplay("RSI Lower", "Lower RSI bound", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_takeProfit = Param(nameof(TakeProfit), 0.0007m)
 			.SetDisplay("Take Profit", "Take profit distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0005m, 0.0015m, 0.0002m);
 
 		_stopLoss = Param(nameof(StopLoss), 0.05m)
 			.SetDisplay("Stop Loss", "Stop loss distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.02m, 0.1m, 0.01m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -137,14 +137,14 @@ public class TigerEmaAdxRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastMaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowMaPeriod };
+		var fastEma = new EMA { Length = FastMaPeriod };
+		var slowEma = new EMA { Length = SlowMaPeriod };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 

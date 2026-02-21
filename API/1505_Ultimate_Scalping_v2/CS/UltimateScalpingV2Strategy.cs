@@ -103,8 +103,8 @@ public DataType CandleType { get => _candleType.Value; set => _candleType.Value 
 
 public UltimateScalpingV2Strategy()
 {
-	_fastEmaLength = Param(nameof(FastEmaLength), 9).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA length", "Indicators").SetCanOptimize(true).SetOptimize(5, 15, 2);
-	_slowEmaLength = Param(nameof(SlowEmaLength), 21).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA length", "Indicators").SetCanOptimize(true).SetOptimize(15, 30, 3);
+	_fastEmaLength = Param(nameof(FastEmaLength), 9).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA length", "Indicators").SetOptimize(5, 15, 2);
+	_slowEmaLength = Param(nameof(SlowEmaLength), 21).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA length", "Indicators").SetOptimize(15, 30, 3);
 	_allowLongs = Param(nameof(AllowLongs), true).SetDisplay("Allow Longs", "Enable long trades", "Trading");
 	_allowShorts = Param(nameof(AllowShorts), true).SetDisplay("Allow Shorts", "Enable short trades", "Trading");
 	_usePriceAction = Param(nameof(UsePriceAction), false).SetDisplay("Use Price Action", "Require engulfing pattern", "Filters");
@@ -122,16 +122,16 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	return [(Security, CandleType)];
 }
 
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 	
-	var emaFast = new ExponentialMovingAverage { Length = FastEmaLength };
-	var emaSlow = new ExponentialMovingAverage { Length = SlowEmaLength };
+	var emaFast = new EMA { Length = FastEmaLength };
+	var emaSlow = new EMA { Length = SlowEmaLength };
 	var vwap = new VolumeWeightedMovingAverage();
 	var atr = new AverageTrueRange { Length = AtrLength };
 	
-	_volumeMa = new SimpleMovingAverage { Length = VolumeMaLength };
+	_volumeMa = new SMA { Length = VolumeMaLength };
 	
 	var subscription = SubscribeCandles(CandleType);
 	subscription.Bind(emaFast, emaSlow, vwap, atr, ProcessCandle).Start();

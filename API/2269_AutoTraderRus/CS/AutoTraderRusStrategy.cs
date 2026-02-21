@@ -79,25 +79,25 @@ public class AutoTraderRusStrategy : Strategy
 	{
 		_startHour = Param(nameof(StartHour), 9)
 			.SetRange(0, 23)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 23, 1)
 			.SetDisplay("Start Hour", "Session start hour", "Session");
 
 		_startMinute = Param(nameof(StartMinute), 30)
 			.SetRange(0, 59)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 59, 1)
 			.SetDisplay("Start Minute", "Session start minute", "Session");
 
 		_stopHour = Param(nameof(StopHour), 23)
 			.SetRange(0, 23)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 23, 1)
 			.SetDisplay("Stop Hour", "Session stop hour", "Session");
 
 		_stopMinute = Param(nameof(StopMinute), 30)
 			.SetRange(0, 59)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 59, 1)
 			.SetDisplay("Stop Minute", "Session stop minute", "Session");
 
@@ -112,11 +112,11 @@ public class AutoTraderRusStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)

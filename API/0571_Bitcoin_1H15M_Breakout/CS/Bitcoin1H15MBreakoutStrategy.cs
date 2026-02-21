@@ -76,20 +76,20 @@ public class Bitcoin1H15MBreakoutStrategy : Strategy
 		_stopLossBuffer = Param(nameof(StopLossBuffer), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("SL Buffer", "Stop loss buffer in price units", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 100m, 10m);
 
 		_riskRewardRatio = Param(nameof(RiskRewardRatio), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("RRR", "Risk-reward ratio", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var lowerSub = SubscribeCandles(LowerCandleType);
 		lowerSub.Bind(OnProcessLower).Start();

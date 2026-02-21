@@ -85,13 +85,13 @@ public class IctMasterSuiteTradingIqStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR calculation period", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_allowLong = Param(nameof(AllowLong), true)
@@ -124,9 +124,9 @@ public class IctMasterSuiteTradingIqStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new ATR { Length = AtrPeriod };
 

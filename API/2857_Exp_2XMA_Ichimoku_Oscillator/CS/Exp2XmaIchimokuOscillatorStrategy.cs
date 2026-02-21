@@ -53,32 +53,32 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 
 		_upPeriod1 = Param(nameof(UpPeriod1), 6)
 			.SetDisplay("Up Period #1", "Lookback for the first highest high", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 12, 1);
 
 		_downPeriod1 = Param(nameof(DownPeriod1), 6)
 			.SetDisplay("Down Period #1", "Lookback for the first lowest low", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 12, 1);
 
 		_upPeriod2 = Param(nameof(UpPeriod2), 9)
 			.SetDisplay("Up Period #2", "Lookback for the second highest high", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 1);
 
 		_downPeriod2 = Param(nameof(DownPeriod2), 9)
 			.SetDisplay("Down Period #2", "Lookback for the second lowest low", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 1);
 
 		_xLength1 = Param(nameof(XLength1), 25)
 			.SetDisplay("Smoothing Length #1", "Length of the first moving average", "Smoothing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_xLength2 = Param(nameof(XLength2), 80)
 			.SetDisplay("Smoothing Length #2", "Length of the second moving average", "Smoothing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 120, 5);
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -248,11 +248,11 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_upHighest1 = new Highest { Length = UpPeriod1 };
 		_downLowest1 = new Lowest { Length = DownPeriod1 };
@@ -283,7 +283,7 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 		return;
 
 		// Update highest and lowest price envelopes.
-		var highest1 = _upHighest1.Process(candle.HighPrice).ToDecimal();
+		var highest1 = _upHighest1.Process(new DecimalIndicatorValue(_upHighest1, candle.HighPrice).ToDecimal();
 		var lowest1 = _downLowest1.Process(candle.LowPrice).ToDecimal();
 		var highest2 = _upHighest2.Process(candle.HighPrice).ToDecimal();
 		var lowest2 = _downLowest2.Process(candle.LowPrice).ToDecimal();
@@ -298,8 +298,8 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 		var base1 = (highest1 + lowest1) / 2m;
 		var base2 = (highest2 + lowest2) / 2m;
 
-		var smooth1 = _smoother1.Process(base1, candle.CloseTime, true).ToDecimal();
-		var smooth2 = _smoother2.Process(base2, candle.CloseTime, true).ToDecimal();
+		var smooth1 = _smoother1.Process(base1, candle.CloseTime)).ToDecimal();
+		var smooth2 = _smoother2.Process(new DecimalIndicatorValue(_smoother2, base2, candle.CloseTime)).ToDecimal();
 
 		var oscillator = smooth1 - smooth2;
 
@@ -426,11 +426,11 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 	{
 		return method switch
 		{
-			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SMA { Length = length },
+			SmoothingMethods.Exponential => new EMA { Length = length },
 			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

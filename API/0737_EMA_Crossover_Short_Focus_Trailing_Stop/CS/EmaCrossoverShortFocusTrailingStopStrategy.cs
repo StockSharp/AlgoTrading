@@ -93,27 +93,27 @@ public class EmaCrossoverShortFocusTrailingStopStrategy : Strategy
 		_shortEmaLength = Param(nameof(ShortEmaLength), 13)
 			.SetRange(5, 50)
 			.SetDisplay("Short EMA", "Short EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_midEmaLength = Param(nameof(MidEmaLength), 25)
 			.SetRange(5, 50)
 			.SetDisplay("Mid EMA", "Middle EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_longEmaLength = Param(nameof(LongEmaLength), 33)
 			.SetRange(5, 100)
 			.SetDisplay("Long EMA", "Long EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_trailOffset = Param(nameof(TrailOffset), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Trail Offset", "Offset for trailing stop", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailDistance = Param(nameof(TrailDistance), 10m)
 			.SetRange(2m, 50m)
 			.SetDisplay("Trail Distance", "Distance from extreme", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -123,13 +123,13 @@ public class EmaCrossoverShortFocusTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var shortEma = new ExponentialMovingAverage { Length = ShortEmaLength };
-		var midEma = new ExponentialMovingAverage { Length = MidEmaLength };
-		var longEma = new ExponentialMovingAverage { Length = LongEmaLength };
+		var shortEma = new EMA { Length = ShortEmaLength };
+		var midEma = new EMA { Length = MidEmaLength };
+		var longEma = new EMA { Length = LongEmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -146,7 +146,7 @@ public class EmaCrossoverShortFocusTrailingStopStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal shortEma, decimal midEma, decimal longEma)

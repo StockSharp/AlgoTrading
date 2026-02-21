@@ -54,13 +54,13 @@ public class DskyzAdaptiveFuturesEliteStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 9)
 		.SetDisplay("Fast MA Length", "Period of the fast moving average", "MA Settings")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		
 		_slowLength = Param(nameof(SlowLength), 19)
 		.SetDisplay("Slow MA Length", "Period of the slow moving average", "MA Settings")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 1);
 		
 		_useRsi = Param(nameof(UseRsi), false)
@@ -119,9 +119,9 @@ public class DskyzAdaptiveFuturesEliteStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var fastMa = new SMA { Length = FastLength };
 		var slowMa = new SMA { Length = SlowLength };
@@ -166,7 +166,7 @@ public class DskyzAdaptiveFuturesEliteStrategy : Strategy
 		}
 		
 		var volumeOk = candle.TotalVolume >= MinimumVolume;
-		var hour = candle.OpenTime.LocalDateTime.Hour;
+		var hour = candle.OpenTime.Hour;
 		var timeOk = hour >= TradingStartHour && hour <= TradingEndHour;
 		var volatility = atrValue / candle.ClosePrice;
 		var volatilityOk = volatility <= VolatilityThreshold;

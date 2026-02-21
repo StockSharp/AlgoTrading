@@ -437,9 +437,9 @@ public class ExpColorX2MaX2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_trendMa1 = CreateMovingAverage(TrendMethod1, TrendLength1, TrendPhase1);
 		_trendMa2 = CreateMovingAverage(TrendMethod2, TrendLength2, TrendPhase2);
@@ -459,7 +459,7 @@ public class ExpColorX2MaX2Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessTrendCandle(ICandleMessage candle)
@@ -468,11 +468,11 @@ public class ExpColorX2MaX2Strategy : Strategy
 			return;
 
 		var price = GetAppliedPrice(candle, TrendPrice);
-		var ma1Value = _trendMa1.Process(price, candle.OpenTime, true);
+		var ma1Value = _trendMa1.Process(new DecimalIndicatorValue(_trendMa1, price, candle.OpenTime));
 		if (!_trendMa1.IsFormed)
 			return;
 
-		var ma2Value = _trendMa2.Process(ma1Value.ToDecimal(), candle.OpenTime, true);
+		var ma2Value = _trendMa2.Process(new DecimalIndicatorValue(_trendMa2, ma1Value.ToDecimal(), candle.OpenTime));
 		var trendValue = ma2Value.ToDecimal();
 
 		var color = 0;
@@ -513,11 +513,11 @@ public class ExpColorX2MaX2Strategy : Strategy
 		ApplyProtectiveExits(candle);
 
 		var price = GetAppliedPrice(candle, SignalPrice);
-		var ma1Value = _signalMa1.Process(price, candle.OpenTime, true);
+		var ma1Value = _signalMa1.Process(new DecimalIndicatorValue(_signalMa1, price, candle.OpenTime));
 		if (!_signalMa1.IsFormed)
 			return;
 
-		var ma2Value = _signalMa2.Process(ma1Value.ToDecimal(), candle.OpenTime, true);
+		var ma2Value = _signalMa2.Process(new DecimalIndicatorValue(_signalMa2, ma1Value.ToDecimal(), candle.OpenTime));
 		var signalValue = ma2Value.ToDecimal();
 
 		var color = 0;
@@ -647,8 +647,8 @@ public class ExpColorX2MaX2Strategy : Strategy
 	{
 		return method switch
 		{
-			SmoothMethods.Sma => new SimpleMovingAverage { Length = length },
-			SmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.Sma => new SMA { Length = length },
+			SmoothMethods.Ema => new EMA { Length = length },
 			SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
 			SmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
 			SmoothMethods.Jurik => CreateJurikMovingAverage(length, phase),

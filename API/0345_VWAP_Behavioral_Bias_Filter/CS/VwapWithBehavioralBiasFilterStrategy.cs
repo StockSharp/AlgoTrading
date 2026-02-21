@@ -83,19 +83,19 @@ public class VwapWithBehavioralBiasFilterStrategy : Strategy
 		_biasThreshold = Param(nameof(BiasThreshold), 0.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bias Threshold", "Threshold for behavioral bias", "Behavioral Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.3m, 0.7m, 0.1m);
 
 		_biasWindowSize = Param(nameof(BiasWindowSize), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Bias Window Size", "Window size for behavioral bias calculation", "Behavioral Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 		_stopLoss = Param(nameof(StopLoss), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (%)", "Stop Loss percentage from entry price", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -120,9 +120,9 @@ public class VwapWithBehavioralBiasFilterStrategy : Strategy
 		_vwap = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize VWAP indicator
 		_vwap = new();

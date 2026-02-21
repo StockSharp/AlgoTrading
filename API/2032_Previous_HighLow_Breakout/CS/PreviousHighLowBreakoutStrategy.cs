@@ -62,13 +62,13 @@ public class PreviousHighLowBreakoutStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in price points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 100m, 10m);
 
 		_takeProfit = Param(nameof(TakeProfit), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in price points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 2000m, 100m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -82,9 +82,9 @@ public class PreviousHighLowBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to candles and process them.
 		var subscription = SubscribeCandles(CandleType);

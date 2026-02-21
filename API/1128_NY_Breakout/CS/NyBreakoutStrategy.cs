@@ -53,7 +53,7 @@ public class NyBreakoutStrategy : Strategy
 		_rewardRisk = Param(nameof(RewardRisk), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Reward/Stop Ratio", "Take profit vs stop ratio", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -76,9 +76,9 @@ public class NyBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tickSize = Security.PriceStep ?? 1m;
 

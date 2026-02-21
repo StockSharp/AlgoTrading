@@ -161,7 +161,7 @@ public class CyberiaTraderStrategy : Strategy
 			SignalMa = { Length = MacdSignal }
 		};
 		
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
+		_ma = new SMA { Length = MaPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		

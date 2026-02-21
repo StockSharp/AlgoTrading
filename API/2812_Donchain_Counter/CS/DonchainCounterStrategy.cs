@@ -46,7 +46,7 @@ public class DonchainCounterStrategy : Strategy
 		_channelPeriod = Param(nameof(ChannelPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Donchian Period", "Lookback period for Donchian Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_bufferSteps = Param(nameof(BufferSteps), 50)
@@ -123,9 +123,9 @@ public class DonchainCounterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 		if (_priceStep <= 0m)

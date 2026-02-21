@@ -161,9 +161,9 @@ public class RollbackReboundStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Validate that trailing configuration matches the behaviour of the original expert.
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)

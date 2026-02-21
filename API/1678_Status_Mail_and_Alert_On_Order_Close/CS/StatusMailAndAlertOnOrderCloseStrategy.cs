@@ -100,9 +100,9 @@ public class StatusMailAndAlertOnOrderCloseStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -119,7 +119,7 @@ public class StatusMailAndAlertOnOrderCloseStrategy : Strategy
 		if (!SendReportEmail)
 			return;
 
-		var closeTime = candle.CloseTime.UtcDateTime;
+		var closeTime = candle.CloseTime;
 
 		if (closeTime.Minute != StatusEmailMinute)
 			return;

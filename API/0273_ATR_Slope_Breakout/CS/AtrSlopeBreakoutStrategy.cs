@@ -70,25 +70,25 @@ public class AtrSlopeBreakoutStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 			
 		_slopePeriod = Param(nameof(SlopePeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slope Period", "Period for slope average and standard deviation", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 			
 		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout", "Signal")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 			
 		_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss ATR Multiplier", "ATR multiplier for stop loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -115,13 +115,13 @@ public class AtrSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Initialize indicators
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_priceEma = new ExponentialMovingAverage { Length = 20 }; // For trend direction
+		_priceEma = new EMA { Length = 20 }; // For trend direction
 		_atrSlope = new LinearRegression { Length = 2 }; // For calculating slope
 		
 		
@@ -159,11 +159,11 @@ public class AtrSlopeBreakoutStrategy : Strategy
 		_lastAtr = atr;
 		
 		// Process price for trend direction
-		decimal emaValue = _priceEma.Process(candle).ToDecimal();
+		decimal emaValue = _priceEma.Process(new DecimalIndicatorValue(_priceEma, candle).ToDecimal();
 		bool priceAboveEma = candle.ClosePrice > emaValue;
 		
 		// Calculate ATR slope
-		var currentSlopeTyped = (LinearRegressionValue)_atrSlope.Process(atr, candle.ServerTime, candle.State == CandleStates.Finished);
+		var currentSlopeTyped = (LinearRegressionValue)_atrSlope.Process(atr, candle.ServerTime));
 
 		if (currentSlopeTyped.LinearReg is not decimal currentSlopeValue)
 			return; // Skip if we can't get the slope value

@@ -43,25 +43,25 @@ public class BreakoutStrategy : Strategy
 		_entryPeriod = Param(nameof(EntryPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Period", "Lookback bars for breakout detection", "Entry")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_entryShift = Param(nameof(EntryShift), 1)
 			.SetNotNegative()
 			.SetDisplay("Entry Shift", "Bars to delay the Donchian breakout levels", "Entry")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 3, 1);
 
 		_exitPeriod = Param(nameof(ExitPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Period", "Lookback bars for trailing exits", "Exit")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_exitShift = Param(nameof(ExitShift), 1)
 			.SetNotNegative()
 			.SetDisplay("Exit Shift", "Bars to delay the trailing channel", "Exit")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 3, 1);
 
 		_useMiddleLine = Param(nameof(UseMiddleLine), true)
@@ -70,7 +70,7 @@ public class BreakoutStrategy : Strategy
 		_riskPerTrade = Param(nameof(RiskPerTrade), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Per Trade", "Fraction of equity risked per trade", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.005m, 0.03m, 0.005m);
 	}
 
@@ -123,9 +123,9 @@ public class BreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Donchian channel components for entries and exits.
 		_entryHighest = new() { Length = EntryPeriod };
@@ -155,7 +155,7 @@ public class BreakoutStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(
@@ -179,14 +179,14 @@ public class BreakoutStrategy : Strategy
 
 		if (_entryHighShift != null)
 		{
-		entryUpper = _entryHighShift.Process(entryUpper, time, true).ToDecimal();
+		entryUpper = _entryHighShift.Process(new DecimalIndicatorValue(_entryHighShift, entryUpper, time)).ToDecimal();
 		if (!_entryHighShift.IsFormed)
 		return;
 		}
 
 		if (_entryLowShift != null)
 		{
-		entryLower = _entryLowShift.Process(entryLower, time, true).ToDecimal();
+		entryLower = _entryLowShift.Process(new DecimalIndicatorValue(_entryLowShift, entryLower, time)).ToDecimal();
 		if (!_entryLowShift.IsFormed)
 		return;
 		}
@@ -196,14 +196,14 @@ public class BreakoutStrategy : Strategy
 
 		if (_exitHighShift != null)
 		{
-		exitUpper = _exitHighShift.Process(exitUpper, time, true).ToDecimal();
+		exitUpper = _exitHighShift.Process(new DecimalIndicatorValue(_exitHighShift, exitUpper, time)).ToDecimal();
 		if (!_exitHighShift.IsFormed)
 		return;
 		}
 
 		if (_exitLowShift != null)
 		{
-		exitLower = _exitLowShift.Process(exitLower, time, true).ToDecimal();
+		exitLower = _exitLowShift.Process(new DecimalIndicatorValue(_exitLowShift, exitLower, time)).ToDecimal();
 		if (!_exitLowShift.IsFormed)
 		return;
 		}

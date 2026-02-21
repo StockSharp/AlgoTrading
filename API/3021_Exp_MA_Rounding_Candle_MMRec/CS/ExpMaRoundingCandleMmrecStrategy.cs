@@ -200,9 +200,9 @@ public class ExpMaRoundingCandleMmrecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -240,10 +240,10 @@ public class ExpMaRoundingCandleMmrecStrategy : Strategy
 		if (time == default)
 		time = candle.ServerTime;
 
-		var openValue = _openRounding.Process(candle.OpenPrice, time, roundingThreshold);
-		var highValue = _highRounding.Process(candle.HighPrice, time, roundingThreshold);
-		var lowValue = _lowRounding.Process(candle.LowPrice, time, roundingThreshold);
-		var closeValue = _closeRounding.Process(candle.ClosePrice, time, roundingThreshold);
+		var openValue = _openRounding.Process(new DecimalIndicatorValue(_openRounding, candle.OpenPrice, time.UtcDateTime));
+		var highValue = _highRounding.Process(new DecimalIndicatorValue(_highRounding, candle.HighPrice, time.UtcDateTime));
+		var lowValue = _lowRounding.Process(new DecimalIndicatorValue(_lowRounding, candle.LowPrice, time.UtcDateTime));
+		var closeValue = _closeRounding.Process(new DecimalIndicatorValue(_closeRounding, candle.ClosePrice, time.UtcDateTime));
 
 		if (!openValue.HasValue || !highValue.HasValue || !lowValue.HasValue || !closeValue.HasValue)
 		return;
@@ -340,15 +340,15 @@ public class ExpMaRoundingCandleMmrecStrategy : Strategy
 		return 1;
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage()
+	private DecimalLengthIndicator CreateMovingAverage()
 	{
 		return SmoothingMethod switch
 		{
-			MaSmoothingMethods.Simple => new SimpleMovingAverage { Length = MaLength },
-			MaSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = MaLength },
+			MaSmoothingMethods.Simple => new SMA { Length = MaLength },
+			MaSmoothingMethods.Exponential => new EMA { Length = MaLength },
 			MaSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = MaLength },
 			MaSmoothingMethods.Weighted => new WeightedMovingAverage { Length = MaLength },
-			_ => new SimpleMovingAverage { Length = MaLength },
+			_ => new SMA { Length = MaLength },
 		};
 	}
 
@@ -372,12 +372,12 @@ public class ExpMaRoundingCandleMmrecStrategy : Strategy
 
 	private sealed class MaRoundingCalculator
 	{
-		private readonly LengthIndicator<decimal> _ma;
+		private readonly DecimalLengthIndicator _ma;
 		private decimal? _previousOutput;
 		private decimal? _previousMa;
 		private decimal _previousDirection;
 
-		public MaRoundingCalculator(LengthIndicator<decimal> ma)
+		public MaRoundingCalculator(DecimalLengthIndicator ma)
 		{
 			_ma = ma ?? throw new ArgumentNullException(nameof(ma));
 		}
@@ -386,7 +386,7 @@ public class ExpMaRoundingCandleMmrecStrategy : Strategy
 
 		public decimal? Process(decimal price, DateTimeOffset time, decimal threshold)
 		{
-			var value = _ma.Process(new DecimalIndicatorValue(_ma, price, time));
+			var value = _ma.Process(new DecimalIndicatorValue(_ma, price, time.UtcDateTime));
 
 			if (!value.IsFinal)
 			return null;

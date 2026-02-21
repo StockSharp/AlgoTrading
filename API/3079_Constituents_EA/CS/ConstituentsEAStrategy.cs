@@ -65,7 +65,7 @@ public class ConstituentsEaStrategy : Strategy
 		_searchDepth = Param(nameof(SearchDepth), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Search Depth", "Number of completed candles used to find extremes", "Setup")
-			.SetCanOptimize(true);
+			;
 
 		_orderMode = Param(nameof(PendingOrderMode), OrderModes.Limit)
 			.SetDisplay("Order Type", "Pending order style (limit or stop)", "Setup");
@@ -196,9 +196,9 @@ public class ConstituentsEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValueAbsolute = ResolvePointValue();
 

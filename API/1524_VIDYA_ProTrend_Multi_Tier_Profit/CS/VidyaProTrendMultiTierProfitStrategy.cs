@@ -89,25 +89,25 @@ public VidyaProTrendMultiTierProfitStrategy()
 _fastVidyaLength = Param(nameof(FastVidyaLength), 10)
 .SetGreaterThanZero()
 .SetDisplay("Fast VIDYA Length", "Fast VIDYA period", "General")
-.SetCanOptimize(true);
+;
 
 _slowVidyaLength = Param(nameof(SlowVidyaLength), 30)
 .SetGreaterThanZero()
 .SetDisplay("Slow VIDYA Length", "Slow VIDYA period", "General")
-.SetCanOptimize(true);
+;
 
 _minSlopeThreshold = Param(nameof(MinSlopeThreshold), 0.05m)
 .SetDisplay("Slope Threshold", "Minimum slope", "General")
-.SetCanOptimize(true);
+;
 
 _bbLength = Param(nameof(BbLength), 20)
 .SetGreaterThanZero()
 .SetDisplay("BB Length", "Bollinger length", "Bollinger")
-.SetCanOptimize(true);
+;
 
 _bbMultiplier = Param(nameof(BbMultiplier), 1m)
 .SetDisplay("BB Multiplier", "Bollinger width", "Bollinger")
-.SetCanOptimize(true);
+;
 
 _useMultiStepTp = Param(nameof(UseMultiStepTp), true)
 .SetDisplay("Use Multi-Step TP", "Enable multi-tier TP", "Take Profit");
@@ -155,9 +155,9 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _cmoFast = new ChandeMomentumOscillator { Length = FastVidyaLength };
 _cmoSlow = new ChandeMomentumOscillator { Length = SlowVidyaLength };
@@ -167,7 +167,7 @@ _bollinger = new BollingerBands { Length = BbLength, Width = BbMultiplier };
 _atrTp = new AverageTrueRange { Length = AtrLengthTp };
 
 var sub = SubscribeCandles(CandleType);
-sub.WhenNew(ProcessCandle).Start();
+sub.Bind(ProcessCandle).Start();
 
 var area = CreateChartArea();
 if (area != null)

@@ -134,30 +134,30 @@ public class Ichimoku2005Strategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 100m, 10m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 60m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in points", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 200m, 20m);
 
 		_shift = Param(nameof(Shift), 1)
 		.SetNotNegative()
 		.SetDisplay("Shift", "Number of bars back to validate breakouts", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 3, 1);
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Fixed trade volume when MM is disabled", "Trading")
-		.SetCanOptimize(false);
+		;
 
 		_maximumRisk = Param(nameof(MaximumRisk), 10m)
 		.SetNotNegative()
 		.SetDisplay("Maximum Risk %", "Portfolio percent used when MM is enabled", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 20m, 1m);
 
 		_useMoneyManagement = Param(nameof(UseMoneyManagement), false)
@@ -166,19 +166,19 @@ public class Ichimoku2005Strategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Tenkan Period", "Tenkan-sen length", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 15, 1);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("Kijun Period", "Kijun-sen length", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 1);
 
 		_senkouBPeriod = Param(nameof(SenkouBPeriod), 52)
 		.SetGreaterThanZero()
 		.SetDisplay("Senkou Span B Period", "Senkou Span B length", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40, 70, 2);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -202,9 +202,9 @@ public class Ichimoku2005Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ichimoku = new Ichimoku
 		{

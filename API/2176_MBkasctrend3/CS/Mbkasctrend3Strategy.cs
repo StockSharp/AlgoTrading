@@ -45,9 +45,9 @@ public class Mbkasctrend3Strategy : Strategy
 	
 	public Mbkasctrend3Strategy()
 	{
-		_wpr1 = Param(nameof(WprLength1),9).SetGreaterThanZero().SetCanOptimize(true).SetDisplay("WPR Length 1","Period for the first WPR","Indicator");
-		_wpr2 = Param(nameof(WprLength2),33).SetGreaterThanZero().SetCanOptimize(true).SetDisplay("WPR Length 2","Period for the second WPR","Indicator");
-		_wpr3 = Param(nameof(WprLength3),77).SetGreaterThanZero().SetCanOptimize(true).SetDisplay("WPR Length 3","Period for the third WPR","Indicator");
+		_wpr1 = Param(nameof(WprLength1),9).SetGreaterThanZero().SetDisplay("WPR Length 1","Period for the first WPR","Indicator");
+		_wpr2 = Param(nameof(WprLength2),33).SetGreaterThanZero().SetDisplay("WPR Length 2","Period for the second WPR","Indicator");
+		_wpr3 = Param(nameof(WprLength3),77).SetGreaterThanZero().SetDisplay("WPR Length 3","Period for the third WPR","Indicator");
 		_swing = Param(nameof(Swing),3).SetDisplay("Swing","Swing adjustment","Indicator");
 		_avgSwing = Param(nameof(AverageSwing),-5).SetDisplay("Average Swing","Average swing adjustment","Indicator");
 		_w1 = Param(nameof(Weight1),1m).SetDisplay("Weight 1","Weight for WPR1","Indicator");
@@ -63,14 +63,14 @@ public class Mbkasctrend3Strategy : Strategy
 		return [(Security, CandleType)];
 	}
 	
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		var w1 = new WilliamsR { Length = WprLength1 };
 		var w2 = new WilliamsR { Length = WprLength2 };
 		var w3 = new WilliamsR { Length = WprLength3 };
 		SubscribeCandles(CandleType).Bind(w1, w2, w3, ProcessCandle).Start();
 		StartProtection(stopLoss: new Unit(StopLoss, UnitTypes.Absolute), takeProfit: new Unit(TakeProfit, UnitTypes.Absolute));
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, decimal v1, decimal v2, decimal v3)

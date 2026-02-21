@@ -86,24 +86,24 @@ public class BloodInTheStreetsStrategy : Strategy
 	    _lookbackPeriod = Param(nameof(LookbackPeriod), 50)
 	        .SetGreaterThanZero()
 	        .SetDisplay("Lookback Period", "Bars for peak high", "General")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(20, 100, 10);
 
 	    _stdDevLength = Param(nameof(StdDevLength), 50)
 	        .SetGreaterThanZero()
 	        .SetDisplay("Std Dev Length", "Bars for statistics", "General")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(20, 100, 10);
 
 	    _stdDevThreshold = Param(nameof(StdDevThreshold), -1m)
 	        .SetDisplay("Std Dev Threshold", "Multiplier for drawdown deviation", "General")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(-2m, 0m, 0.5m);
 
 	    _exitBars = Param(nameof(ExitBars), 35)
 	        .SetGreaterThanZero()
 	        .SetDisplay("Exit After Bars", "Bars to hold position", "General")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(10, 100, 5);
 
 	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -129,13 +129,13 @@ public class BloodInTheStreetsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 
 	    _highest = new Highest { Length = LookbackPeriod };
 	    _drawdownStdDev = new StandardDeviation { Length = StdDevLength };
-	    _drawdownSma = new SimpleMovingAverage { Length = StdDevLength };
+	    _drawdownSma = new SMA { Length = StdDevLength };
 
 	    var subscription = SubscribeCandles(CandleType);
 	    subscription

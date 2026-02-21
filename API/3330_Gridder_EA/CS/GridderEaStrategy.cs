@@ -54,25 +54,25 @@ public class GridderEaStrategy : Strategy
 		_initialVolume = Param(nameof(InitialVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Initial Volume", "Base volume for the first grid order", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 1m, 0.01m);
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.4m)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume Multiplier", "Factor applied to the previous order volume", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.1m);
 
 		_gridStepPips = Param(nameof(GridStepPips), 50m)
 		.SetGreaterThanZero()
 		.SetDisplay("Grid Step (pips)", "Base distance between consecutive entries", "Grid")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 150m, 10m);
 
 		_stepMultiplier = Param(nameof(StepMultiplier), 1.2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Step Multiplier", "Progression applied to the grid step", "Grid")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 2m, 0.1m);
 
 		_targetProfitPerLot = Param(nameof(TargetProfitPerLot), 15m)
@@ -271,11 +271,11 @@ public class GridderEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

@@ -31,17 +31,17 @@ public class XauusdSimple20Profit100LossStrategy : Strategy
 	public XauusdSimple20Profit100LossStrategy()
 	{
 		_profitTarget = Param<decimal>(nameof(ProfitTarget), 20m)
-			.SetDisplay("Profit Target")
-			.SetCanOptimize(true);
+			.SetDisplay("Profit Target", "Profit Target", "General")
+			;
 		_lossLimit = Param<decimal>(nameof(LossLimit), 100m)
-			.SetDisplay("Loss Limit")
-			.SetCanOptimize(true);
+			.SetDisplay("Loss Limit", "Loss Limit", "General")
+			;
 		_tradeCooldown = Param(nameof(TradeCooldown), TimeSpan.FromHours(12))
-			.SetDisplay("Trade Cooldown");
+			.SetDisplay("Trade Cooldown", "Trade Cooldown", "General");
 		_entryCooldown = Param(nameof(EntryCooldown), TimeSpan.FromMinutes(15))
-			.SetDisplay("Entry Cooldown");
+			.SetDisplay("Entry Cooldown", "Entry Cooldown", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type");
+			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	public decimal ProfitTarget { get => _profitTarget.Value; set => _profitTarget.Value = value; }
@@ -51,11 +51,11 @@ public class XauusdSimple20Profit100LossStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

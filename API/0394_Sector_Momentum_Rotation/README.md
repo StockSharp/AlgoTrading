@@ -9,7 +9,7 @@ The **Sector Momentum Rotation** strategy rotates capital among sector ETFs. At 
 - **Exit Criteria**: Rebalanced monthly when rankings change.
 - **Stops**: No explicit stop.
 - **Default Values**:
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Momentum
   - Direction: Long

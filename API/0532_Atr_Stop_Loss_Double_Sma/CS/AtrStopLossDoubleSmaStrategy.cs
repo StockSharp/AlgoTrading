@@ -97,13 +97,13 @@ public class AtrStopLossDoubleSmaStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 15)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast SMA", "Period of the fast SMA", "Moving Average")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 
 		_slowLength = Param(nameof(SlowLength), 45)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow SMA", "Period of the slow SMA", "Moving Average")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 90, 5);
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
@@ -112,13 +112,13 @@ public class AtrStopLossDoubleSmaStrategy : Strategy
 		_atrLength = Param(nameof(AtrLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Length", "ATR calculation length", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "ATR multiple for stop distance", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -143,12 +143,12 @@ public class AtrStopLossDoubleSmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastSma = new SimpleMovingAverage { Length = FastLength };
-		_slowSma = new SimpleMovingAverage { Length = SlowLength };
+		_fastSma = new SMA { Length = FastLength };
+		_slowSma = new SMA { Length = SlowLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);

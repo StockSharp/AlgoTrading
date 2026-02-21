@@ -97,19 +97,19 @@ public class ReflexOscillatorStrategy : Strategy
 		_reflexPeriod = Param(nameof(ReflexPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Reflex Period", "Reflex calculation period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_superSmootherPeriod = Param(nameof(SuperSmootherPeriod), 8m)
 			.SetGreaterThanZero()
 			.SetDisplay("Super Smoother Period", "Super smoother filter period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4m, 20m, 1m);
 
 		_postSmoothPeriod = Param(nameof(PostSmoothPeriod), 33m)
 			.SetGreaterThanZero()
 			.SetDisplay("Post Smooth Period", "EMA period for post smoothing", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 50m, 5m);
 
 		_upperLevel = Param(nameof(UpperLevel), 1m)
@@ -142,11 +142,11 @@ public class ReflexOscillatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

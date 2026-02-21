@@ -106,37 +106,37 @@ public class BbRsiStrategy : Strategy
 		_bbPeriod = Param(nameof(BbPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Period", "Bollinger Bands period", "Bollinger Bands")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_bbDeviation = Param(nameof(BbDeviation), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("BB Deviation", "Bollinger Bands deviation", "Bollinger Bands")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 2);
 
 		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 30m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Buy Level", "RSI threshold to enter long", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_rsiExitLevel = Param(nameof(RsiExitLevel), 70m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Exit Level", "RSI threshold to exit long", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_trailingStep = Param(nameof(TrailingStep), 1m)
 			.SetRange(0.1m, 20m)
 			.SetDisplay("Trailing Step %", "Trailing stop step percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 	}
 
@@ -156,16 +156,16 @@ public class BbRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bollingerBands = new BollingerBands { Length = BbPeriod, Width = BbDeviation };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_bollingerBands, _rsi, ProcessCandle)
+			.BindEx([_bollingerBands, _rsi], ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -178,10 +178,15 @@ public class BbRsiStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var bbValue = (BollingerBandsValue)values[0];
+		if (bbValue.UpBand is not decimal upperBand || bbValue.LowBand is not decimal lowerBand || bbValue.MovingAverage is not decimal middleBand)
+			return;
+		var rsiValue = values[1].ToDecimal();
 
 		var closePrice = candle.ClosePrice;
 

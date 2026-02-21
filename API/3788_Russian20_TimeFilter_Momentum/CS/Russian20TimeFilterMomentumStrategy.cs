@@ -119,13 +119,13 @@ public class Russian20TimeFilterMomentumStrategy : Strategy
 		_movingAverageLength = Param(nameof(MovingAverageLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Simple moving average lookback", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Momentum indicator lookback", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 12, 1);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 100m)
@@ -160,13 +160,13 @@ public class Russian20TimeFilterMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdatePipSettings();
 
-		_movingAverage = new SimpleMovingAverage
+		_movingAverage = new SMA
 		{
 			Length = MovingAverageLength,
 		};

@@ -51,7 +51,7 @@ public class TrailingStopPointsStrategy : Strategy
 	{
 		_trailingStop = Param(nameof(TrailingStop), 500m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Trailing Stop", "Distance from price to stop in points", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -73,9 +73,9 @@ public class TrailingStopPointsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_step = Security?.PriceStep ?? 1m;
 

@@ -125,29 +125,29 @@ public class RoBoostStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit distance in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 50m, 5m);
 
 		_stopLoss = Param(nameof(StopLoss), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation length", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_rsiUp = Param(nameof(RsiUp), 50)
 			.SetDisplay("RSI Up", "RSI threshold for longs", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(45, 70, 5);
 
 		_rsiDown = Param(nameof(RsiDown), 50)
 			.SetDisplay("RSI Down", "RSI threshold for shorts", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 55, 5);
 
 		_useTrailing = Param(nameof(UseTrailing), false)
@@ -184,11 +184,11 @@ public class RoBoostStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var rsi = new RSI { Length = RsiPeriod };
 

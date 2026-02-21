@@ -70,29 +70,29 @@ public class MovingAverageShiftStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for moving average calculations", "General")
-			.SetCanOptimize(true);
+			;
 
 		_movingPeriod = Param(nameof(MovingPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Moving Average Period", "Number of candles used in the moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_movingShift = Param(nameof(MovingShift), 6)
 			.SetDisplay("Moving Average Shift", "Offset applied to the moving average value in completed candles", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_baseVolume = Param(nameof(BaseVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Default volume for new orders", "Trading")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage
+		var sma = new SMA
 		{
 			Length = MovingPeriod
 		};

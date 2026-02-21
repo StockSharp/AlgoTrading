@@ -94,7 +94,7 @@ public class KillerSell20Strategy : Strategy
 				.SetGreaterThanZero()
 				.SetDisplay("Entry %K", "%K period for the entry Stochastic", "Indicators");
 
-		_stochasticEntryDPeriod = Param(nameof(StochasticEntryDPeriod), 1)
+		_stochasticEntryD = { Length = Param }(nameof(StochasticEntryDPeriod), 1)
 				.SetGreaterThanZero()
 				.SetDisplay("Entry %D", "%D period for the entry Stochastic", "Indicators");
 
@@ -109,7 +109,7 @@ public class KillerSell20Strategy : Strategy
 				.SetGreaterThanZero()
 				.SetDisplay("Exit %K", "%K period for the exit Stochastic", "Indicators");
 
-		_stochasticExitDPeriod = Param(nameof(StochasticExitDPeriod), 7)
+		_stochasticExitD = { Length = Param }(nameof(StochasticExitDPeriod), 7)
 				.SetGreaterThanZero()
 				.SetDisplay("Exit %D", "%D period for the exit Stochastic", "Indicators");
 
@@ -403,14 +403,14 @@ public class KillerSell20Strategy : Strategy
 		_stochasticEntry = new StochasticOscillator
 		{
 			KPeriod = StochasticEntryKPeriod,
-			DPeriod = StochasticEntryDPeriod,
+			D = { Length = StochasticEntryDPeriod },
 			Smooth = StochasticEntrySlow
 		};
 
 		_stochasticExit = new StochasticOscillator
 		{
 			KPeriod = StochasticExitKPeriod,
-			DPeriod = StochasticExitDPeriod,
+			D = { Length = StochasticExitDPeriod },
 			Smooth = StochasticExitSlow
 		};
 

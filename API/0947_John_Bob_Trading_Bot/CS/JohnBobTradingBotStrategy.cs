@@ -101,9 +101,9 @@ public class JohnBobTradingBotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = 14 };
 		_highest = new Highest { Length = 50 };
@@ -121,7 +121,7 @@ public class JohnBobTradingBotStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{

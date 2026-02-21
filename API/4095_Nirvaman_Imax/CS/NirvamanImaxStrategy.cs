@@ -220,16 +220,16 @@ public class NirvamanImaxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
 		_heikinAshi = new HeikinAshi();
-		_fastTrend = new ExponentialMovingAverage { Length = FastTrendLength };
-		_slowTrend = new ExponentialMovingAverage { Length = SlowTrendLength };
-		_filterEma = new ExponentialMovingAverage { Length = FilterLength };
+		_fastTrend = new EMA { Length = FastTrendLength };
+		_slowTrend = new EMA { Length = SlowTrendLength };
+		_filterEma = new EMA { Length = FilterLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(_heikinAshi, _fastTrend, _slowTrend, _filterEma, ProcessCandle).Start();
@@ -243,7 +243,7 @@ public class NirvamanImaxStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue heikinValue, IIndicatorValue fastValue, IIndicatorValue slowValue, IIndicatorValue filterValue)

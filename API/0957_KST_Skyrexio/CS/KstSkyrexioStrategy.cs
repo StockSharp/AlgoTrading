@@ -219,19 +219,19 @@ public class KstSkyrexioStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var roc1 = new RateOfChange { Length = RocLen1 };
-		var sma1 = new SimpleMovingAverage { Length = SmaLen1 };
+		var sma1 = new SMA { Length = SmaLen1 };
 		var roc2 = new RateOfChange { Length = RocLen2 };
-		var sma2 = new SimpleMovingAverage { Length = SmaLen2 };
+		var sma2 = new SMA { Length = SmaLen2 };
 		var roc3 = new RateOfChange { Length = RocLen3 };
-		var sma3 = new SimpleMovingAverage { Length = SmaLen3 };
+		var sma3 = new SMA { Length = SmaLen3 };
 		var roc4 = new RateOfChange { Length = RocLen4 };
-		var sma4 = new SimpleMovingAverage { Length = SmaLen4 };
-		var signal = new SimpleMovingAverage { Length = SignalLength };
+		var sma4 = new SMA { Length = SmaLen4 };
+		var signal = new SMA { Length = SignalLength };
 		var atr = new AverageTrueRange { Length = 14 };
 		var choppiness = new ChoppinessIndex { Length = ChopLength };
 		var jaw = new SmoothedMovingAverage { Length = 13 };
@@ -241,7 +241,7 @@ public class KstSkyrexioStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -305,15 +305,15 @@ public class KstSkyrexioStrategy : Strategy
 	{
 		return FilterMaType switch
 		{
-			MaTypes.SMA => new SimpleMovingAverage { Length = FilterMaLength },
-			MaTypes.EMA => new ExponentialMovingAverage { Length = FilterMaLength },
+			MaTypes.SMA => new SMA { Length = FilterMaLength },
+			MaTypes.EMA => new EMA { Length = FilterMaLength },
 			MaTypes.WMA => new WeightedMovingAverage { Length = FilterMaLength },
 			MaTypes.HMA => new HullMovingAverage { Length = FilterMaLength },
 			MaTypes.SMMA => new SmoothedMovingAverage { Length = FilterMaLength },
 			MaTypes.ALMA => new ArnaudLegouxMovingAverage { Length = FilterMaLength },
 			MaTypes.LSMA => new LinearRegression { Length = FilterMaLength },
 			MaTypes.VWMA => new VolumeWeightedMovingAverage { Length = FilterMaLength },
-			_ => new SimpleMovingAverage { Length = FilterMaLength }
+			_ => new SMA { Length = FilterMaLength }
 		};
 	}
 }

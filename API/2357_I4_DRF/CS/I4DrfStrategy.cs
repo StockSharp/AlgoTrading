@@ -77,9 +77,9 @@ public class I4DrfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = new I4Drf { Length = Period };
 
@@ -96,7 +96,7 @@ public class I4DrfStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal value)
@@ -178,7 +178,7 @@ public class I4DrfStrategy : Strategy
 		NotDirect
 	}
 
-	private class I4Drf : Indicator<ICandleMessage>
+	private class I4Drf : BaseIndicator
 	{
 		public int Length { get; set; } = 11;
 

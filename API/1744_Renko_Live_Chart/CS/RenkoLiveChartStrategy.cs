@@ -71,7 +71,7 @@ public class RenkoLiveChartStrategy : Strategy
 	    _brickSize = Param(nameof(BrickSize), 2.5m)
 	        .SetGreaterThanZero()
 	        .SetDisplay("Brick Size", "Renko brick size", "General")
-	        .SetCanOptimize(true);
+	        ;
 
 	    _brickOffset = Param(nameof(BrickOffset), 0)
 	        .SetDisplay("Brick Offset", "Offset in bricks", "General");
@@ -94,14 +94,14 @@ public class RenkoLiveChartStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 
 	    var subscription = SubscribeCandles(CandleType);
 	    subscription.Bind(ProcessCandle).Start();
 
-	    StartProtection();
+	    StartProtection(null, null);
 
 	    var area = CreateChartArea();
 	    if (area != null)

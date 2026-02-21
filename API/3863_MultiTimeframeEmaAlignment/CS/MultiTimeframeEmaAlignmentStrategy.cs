@@ -56,25 +56,25 @@ public class MultiTimeframeEmaAlignmentStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Default trade volume", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_fastLength = Param(nameof(FastLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_slowLength = Param(nameof(SlowLength), 64)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 80, 4);
 
 		_shiftDepth = Param(nameof(ShiftDepth), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Shift Depth", "Number of candles for slope checks", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 5, 1);
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
@@ -83,7 +83,7 @@ public class MultiTimeframeEmaAlignmentStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 75m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30m, 150m, 10m);
 
 		_useTakeProfit = Param(nameof(UseTakeProfit), true)
@@ -92,7 +92,7 @@ public class MultiTimeframeEmaAlignmentStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 200m, 10m);
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
@@ -101,7 +101,7 @@ public class MultiTimeframeEmaAlignmentStrategy : Strategy
 		_trailingStopPips = Param(nameof(TrailingStopPips), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 60m, 5m);
 
 		_m1CandleType = Param(nameof(M1CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -202,9 +202,9 @@ public class MultiTimeframeEmaAlignmentStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 		_priceStep = Security?.PriceStep ?? 0m;
@@ -216,12 +216,12 @@ public class MultiTimeframeEmaAlignmentStrategy : Strategy
 		var depth = Math.Max(ShiftDepth, 1);
 		var bufferLength = depth + 1;
 
-		_m1Fast = new ExponentialMovingAverage { Length = FastLength };
-		_m1Slow = new ExponentialMovingAverage { Length = SlowLength };
-		_m5Fast = new ExponentialMovingAverage { Length = FastLength };
-		_m5Slow = new ExponentialMovingAverage { Length = SlowLength };
-		_m30Fast = new ExponentialMovingAverage { Length = FastLength };
-		_m30Slow = new ExponentialMovingAverage { Length = SlowLength };
+		_m1Fast = new EMA { Length = FastLength };
+		_m1Slow = new EMA { Length = SlowLength };
+		_m5Fast = new EMA { Length = FastLength };
+		_m5Slow = new EMA { Length = SlowLength };
+		_m30Fast = new EMA { Length = FastLength };
+		_m30Slow = new EMA { Length = SlowLength };
 
 		_m1FastValues = new ValueBuffer(bufferLength);
 		_m1SlowValues = new ValueBuffer(bufferLength);
@@ -239,7 +239,7 @@ public class MultiTimeframeEmaAlignmentStrategy : Strategy
 		var m30Subscription = SubscribeCandles(M30CandleType);
 		m30Subscription.Bind(_m30Fast, _m30Slow, ProcessM30Candle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessM30Candle(ICandleMessage candle, decimal fastValue, decimal slowValue)

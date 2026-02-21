@@ -196,18 +196,18 @@ public class PipsoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Apply configured trading volume to base strategy.
 		Volume = TradeVolume;
 
 		// Prepare indicators that replicate the MQL Expert Advisor logic.
-		_sma = new SimpleMovingAverage { Length = MaLength };
+		_sma = new SMA { Length = MaLength };
 		_accumulationDistribution = new AccumulationDistributionLine();
-		_chaikinFast = new ExponentialMovingAverage { Length = ChaikinFastLength };
-		_chaikinSlow = new ExponentialMovingAverage { Length = ChaikinSlowLength };
+		_chaikinFast = new EMA { Length = ChaikinFastLength };
+		_chaikinSlow = new EMA { Length = ChaikinSlowLength };
 
 		// Subscribe to candle data and bind indicators.
 		var subscription = SubscribeCandles(CandleType);

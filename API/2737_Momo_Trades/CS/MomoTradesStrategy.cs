@@ -188,12 +188,12 @@ public class MomoTradesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_sma = new SMA { Length = SmaPeriod };
-		_macd = new MACD { ShortPeriod = MacdFast, LongPeriod = MacdSlow, SignalPeriod = MacdSignal };
+		_macd = new MACD { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow }, SignalPeriod = MacdSignal };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_sma, _macd, ProcessCandle).Start();
@@ -458,7 +458,7 @@ public class MomoTradesStrategy : Strategy
 
 	private bool ShouldCloseForDay(ICandleMessage candle)
 	{
-		var time = candle.CloseTime.UtcDateTime;
+		var time = candle.CloseTime;
 		var endHour = time.DayOfWeek == DayOfWeek.Friday ? 21 : 23;
 		return time.Hour >= endHour;
 	}

@@ -121,48 +121,48 @@ public class IchimokuByFarmerBtcStrategy : Strategy
 	{
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 10)
 			.SetDisplay("Conversion Line Period", "Tenkan-sen period", "Ichimoku")
-			.SetCanOptimize(true);
+			;
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 30)
 			.SetDisplay("Base Line Period", "Kijun-sen period", "Ichimoku")
-			.SetCanOptimize(true);
+			;
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 53)
 			.SetDisplay("Lagging Span Period", "Senkou Span B period", "Ichimoku")
-			.SetCanOptimize(true);
+			;
 
 		_useLongs = Param(nameof(UseLongs), true)
 			.SetDisplay("Enable Long Positions", "Allow opening long positions", "Trading")
-			.SetCanOptimize(false);
+			;
 
 		_smaLength = Param(nameof(SmaLength), 13)
 			.SetDisplay("HTF SMA Length", "Length of SMA on higher timeframe", "High Timeframe")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
-		_htfCandleType = Param(nameof(HtfCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_htfCandleType = Param(nameof(HtfCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("HTF Candle Type", "Higher timeframe for SMA", "High Timeframe");
 
 		_volumeLength = Param(nameof(VolumeLength), 20)
 			.SetDisplay("Volume MA Length", "Length for volume moving average", "Volume")
-			.SetCanOptimize(true);
+			;
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
 			.SetDisplay("Volume Multiplier", "Multiplier for volume filter", "Volume")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_volumeSma = new SimpleMovingAverage { Length = VolumeLength };
-		_htfSma = new SimpleMovingAverage { Length = SmaLength };
+		_volumeSma = new SMA { Length = VolumeLength };
+		_htfSma = new SMA { Length = SmaLength };
 
 		var ichimoku = new Ichimoku
 		{
@@ -205,7 +205,7 @@ public class IchimokuByFarmerBtcStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volumeValue = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true);
+		var volumeValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime));
 		if (!volumeValue.IsFinal || _htfSmaValue is not decimal htfSma)
 			return;
 

@@ -194,19 +194,19 @@ public class GandalfProStrategy : Strategy
 		_buyLength = Param(nameof(BuyLength), 24)
 			.SetGreaterThan(1)
 			.SetDisplay("Buy Length", "LWMA/SMA length for longs", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 1);
 
 		_buyPriceFactor = Param(nameof(BuyPriceFactor), 0.18m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Buy Price Factor", "Recursive smoothing weight for price", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.01m);
 
 		_buyTrendFactor = Param(nameof(BuyTrendFactor), 0.18m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Buy Trend Factor", "Recursive smoothing weight for trend", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.01m);
 
 		_buyStopLoss = Param(nameof(BuyStopLoss), 62)
@@ -223,19 +223,19 @@ public class GandalfProStrategy : Strategy
 		_sellLength = Param(nameof(SellLength), 24)
 			.SetGreaterThan(1)
 			.SetDisplay("Sell Length", "LWMA/SMA length for shorts", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 1);
 
 		_sellPriceFactor = Param(nameof(SellPriceFactor), 0.18m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Sell Price Factor", "Recursive smoothing weight for price", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.01m);
 
 		_sellTrendFactor = Param(nameof(SellTrendFactor), 0.18m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Sell Trend Factor", "Recursive smoothing weight for trend", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.01m);
 
 		_sellStopLoss = Param(nameof(SellStopLoss), 62)
@@ -287,9 +287,9 @@ public class GandalfProStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 
@@ -299,26 +299,22 @@ public class GandalfProStrategy : Strategy
 
 		_buyWeighted = new WeightedMovingAverage
 		{
-			Length = BuyLength,
-			CandlePrice = CandlePrice.Close
+			Length = BuyLength
 		};
 
-		_buySimple = new SimpleMovingAverage
+		_buySimple = new SMA
 		{
-			Length = BuyLength,
-			CandlePrice = CandlePrice.Close
+			Length = BuyLength
 		};
 
 		_sellWeighted = new WeightedMovingAverage
 		{
-			Length = SellLength,
-			CandlePrice = CandlePrice.Close
+			Length = SellLength
 		};
 
-		_sellSimple = new SimpleMovingAverage
+		_sellSimple = new SMA
 		{
-			Length = SellLength,
-			CandlePrice = CandlePrice.Close
+			Length = SellLength
 		};
 
 		var subscription = SubscribeCandles(CandleType);

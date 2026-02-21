@@ -145,39 +145,39 @@ public class TheMasterMind2Strategy : Strategy
 
 		_stochasticPeriod = Param(nameof(StochasticPeriod), 100)
 								.SetDisplay("Stochastic Period", "Period for Stochastic calculation", "Indicators")
-								.SetCanOptimize(true);
+								;
 
 		_stochasticK = Param(nameof(StochasticK), 3)
 						   .SetDisplay("Stochastic %K", "Smoothing of %K line", "Indicators")
-						   .SetCanOptimize(true);
+						   ;
 
 		_stochasticD = Param(nameof(StochasticD), 3)
 						   .SetDisplay("Stochastic %D", "Smoothing of %D line", "Indicators")
-						   .SetCanOptimize(true);
+						   ;
 
 		_wprPeriod = Param(nameof(WilliamsRPeriod), 100)
 						 .SetDisplay("Williams %R Period", "Period for Williams %R", "Indicators")
-						 .SetCanOptimize(true);
+						 ;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
 							  .SetDisplay("Stop Loss", "Initial stop loss in price points", "Risk")
-							  .SetCanOptimize(true);
+							  ;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
 								.SetDisplay("Take Profit", "Initial take profit in price points", "Risk")
-								.SetCanOptimize(true);
+								;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 50m)
 								  .SetDisplay("Trailing Stop", "Trailing stop distance in points", "Risk")
-								  .SetCanOptimize(true);
+								  ;
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 100m)
 								  .SetDisplay("Trailing Step", "Minimum move to adjust trailing stop", "Risk")
-								  .SetCanOptimize(true);
+								  ;
 
 		_breakEvenPoints = Param(nameof(BreakEvenPoints), 150m)
 							   .SetDisplay("Break Even", "Move stop to entry after profit", "Risk")
-							   .SetCanOptimize(true);
+							   ;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 						  .SetDisplay("Candle Type", "Type of candles", "General");
@@ -197,12 +197,12 @@ public class TheMasterMind2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stochastic =
-			new StochasticOscillator { Length = StochasticPeriod, KPeriod = StochasticK, DPeriod = StochasticD };
+			new StochasticOscillator { K = { Length = StochasticPeriod }, KPeriod = StochasticK, D = { Length = StochasticD } };
 
 		var williams = new WilliamsR { Length = WilliamsRPeriod };
 

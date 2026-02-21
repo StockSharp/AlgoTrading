@@ -82,7 +82,7 @@ public class GpfTcpPivotLimitStrategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 1m)
 		.SetDisplay("Base Volume", "Default order volume before risk adjustments.", "Trading")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_useDynamicVolume = Param(nameof(UseDynamicVolume), false)
 		.SetDisplay("Use Dynamic Volume", "Reduce volume after losing streaks.", "Risk");
@@ -90,12 +90,12 @@ public class GpfTcpPivotLimitStrategy : Strategy
 		_riskPercentage = Param(nameof(RiskPercentage), 0.02m)
 		.SetDisplay("Risk Percentage", "Reference risk per trade used to scale the base volume.", "Risk")
 		.SetNotNegative()
-		.SetCanOptimize(true);
+		;
 
 		_drawdownFactor = Param(nameof(DrawdownFactor), 3m)
 		.SetDisplay("Drawdown Factor", "Divisor applied when reducing the volume after consecutive losses.", "Risk")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_targetMode = Param(nameof(TargetMode), 1)
 		.SetDisplay("Target Mode", "Pivot combination preset replicated from the MT4 input (1-5).", "Logic")
@@ -104,7 +104,7 @@ public class GpfTcpPivotLimitStrategy : Strategy
 		_trailingPoints = Param(nameof(TrailingPoints), 30)
 		.SetDisplay("Trailing Points", "Trailing stop distance expressed in instrument points (0 disables).", "Risk")
 		.SetNotNegative()
-		.SetCanOptimize(true);
+		;
 
 		_closeAtSessionEnd = Param(nameof(CloseAtSessionEnd), false)
 		.SetDisplay("Close At 23:00", "Flatten the position at the end of the trading day.", "Risk");
@@ -222,9 +222,9 @@ public class GpfTcpPivotLimitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = BaseVolume;
 
@@ -255,7 +255,7 @@ public class GpfTcpPivotLimitStrategy : Strategy
 
 	private void UpdateDailyLevels(ICandleMessage candle)
 	{
-		var candleDay = candle.OpenTime.UtcDateTime.Date;
+		var candleDay = candle.OpenTime.Date;
 
 		if (_currentDay == null)
 		{
@@ -466,7 +466,7 @@ public class GpfTcpPivotLimitStrategy : Strategy
 
 		if (CloseAtSessionEnd)
 		{
-			var closeTime = candle.CloseTime.UtcDateTime.TimeOfDay;
+			var closeTime = candle.CloseTime.TimeOfDay;
 			if (closeTime >= new TimeSpan(23, 0, 0))
 			{
 				if (Position > 0m)

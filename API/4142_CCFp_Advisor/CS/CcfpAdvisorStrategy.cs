@@ -74,30 +74,30 @@ public class CcfpAdvisorStrategy : Strategy
 	{
 		_maType = Param(nameof(MaType), MovingAverageModes.Exponential)
 			.SetDisplay("MA Type", "Moving-average algorithm used for the currency strength calculation", "General")
-			.SetCanOptimize(true);
+			;
 
 		_priceMode = Param(nameof(PriceMode), CandlePrices.Close)
 			.SetDisplay("Applied Price", "Candle price used as the input for all moving averages", "General")
-			.SetCanOptimize(true);
+			;
 
 		_fastPeriod = Param(nameof(FastPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Base length of the fast composite moving average", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Base length of the slow composite moving average", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 200m)
 			.SetDisplay("Stop Loss (pips)", "Protective stop expressed in pips from the entry price", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Volume (lots) submitted for every market order", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to evaluate currency strength", "General");
@@ -265,9 +265,9 @@ public class CcfpAdvisorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Portfolio == null)
 			throw new InvalidOperationException("Portfolio is not assigned.");
@@ -306,7 +306,7 @@ public class CcfpAdvisorStrategy : Strategy
 			subscription.Bind(c => ProcessPair(pair.Symbol, c)).Start();
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessPair(string symbol, ICandleMessage candle)
@@ -748,7 +748,7 @@ public class CcfpAdvisorStrategy : Strategy
 
 	private static AggregatedMovingAverage CreateAggregatedAverage(MovingAverageModes type, int period, IReadOnlyList<int> multipliers)
 	{
-		var indicators = new List<LengthIndicator<decimal>>(multipliers.Count);
+		var indicators = new List<DecimalLengthIndicator>(multipliers.Count);
 		for (var i = 0; i < multipliers.Count; i++)
 		{
 			var length = period * multipliers[i];
@@ -758,14 +758,14 @@ public class CcfpAdvisorStrategy : Strategy
 		return new AggregatedMovingAverage(indicators);
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageModes type, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageModes type, int length)
 	{
-		LengthIndicator<decimal> indicator = type switch
+		DecimalLengthIndicator indicator = type switch
 		{
-			MovingAverageModes.Exponential => new ExponentialMovingAverage(),
+			MovingAverageModes.Exponential => new EMA(),
 			MovingAverageModes.Smoothed => new SmoothedMovingAverage(),
 			MovingAverageModes.Weighted => new WeightedMovingAverage(),
-			_ => new SimpleMovingAverage(),
+			_ => new SMA(),
 		};
 
 		indicator.Length = length;
@@ -821,9 +821,9 @@ public class CcfpAdvisorStrategy : Strategy
 
 	private sealed class AggregatedMovingAverage
 	{
-		private readonly List<LengthIndicator<decimal>> _indicators;
+		private readonly List<DecimalLengthIndicator> _indicators;
 
-		public AggregatedMovingAverage(List<LengthIndicator<decimal>> indicators)
+		public AggregatedMovingAverage(List<DecimalLengthIndicator> indicators)
 		{
 			_indicators = indicators;
 		}
@@ -833,7 +833,7 @@ public class CcfpAdvisorStrategy : Strategy
 			decimal sum = 0m;
 			for (var i = 0; i < _indicators.Count; i++)
 			{
-				var indicatorValue = _indicators[i].Process(value, time, true);
+				var indicatorValue = _indicators[i].Process(new DecimalIndicatorValue(_indicators[i], value, time.UtcDateTime));
 				if (!indicatorValue.IsFinal)
 					return null;
 

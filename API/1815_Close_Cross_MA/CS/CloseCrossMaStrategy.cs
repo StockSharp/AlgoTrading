@@ -49,20 +49,20 @@ public class CloseCrossMaStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Length of the moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for incoming candles", "Parameters")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage
+		var sma = new SMA
 		{
 			Length = MaPeriod
 		};

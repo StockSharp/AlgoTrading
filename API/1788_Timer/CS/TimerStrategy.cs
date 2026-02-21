@@ -144,33 +144,33 @@ public class TimerStrategy : Strategy
 		_waitSeconds = Param(nameof(WaitSeconds), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Wait Seconds", "Seconds before levels are recalculated", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_pipDistance = Param(nameof(PipDistance), 0m)
 			.SetDisplay("Pip Distance", "Additional distance in points", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 50m, 5m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_takeProfit = Param(nameof(TakeProfit), 150m)
 			.SetDisplay("Take Profit", "Take profit in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 300m, 50m);
 
 		_stopLoss = Param(nameof(StopLoss), 20m)
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_trailingStop = Param(nameof(TrailingStop), 10m)
 			.SetDisplay("Trailing Stop", "Trailing stop in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 50m, 5m);
 
 		_volume = Param(nameof(TradeVolume), 1m)
@@ -206,9 +206,9 @@ public class TimerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 

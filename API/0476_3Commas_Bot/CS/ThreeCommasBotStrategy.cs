@@ -179,10 +179,10 @@ public class ThreeCommasBotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var fastMa = new EMA { Length = MaLength1 };
 		var slowMa = new EMA { Length = MaLength2 };

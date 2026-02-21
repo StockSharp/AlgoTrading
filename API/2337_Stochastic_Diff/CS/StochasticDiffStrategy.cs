@@ -102,7 +102,7 @@ public class StochasticDiffStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type for analysis", "General")
-		.SetCanOptimize(false);
+		;
 		
 		_kPeriod = Param(nameof(KPeriod), 5)
 		.SetDisplay("%K Period", "Stochastic %K period", "Stochastic");
@@ -118,26 +118,25 @@ public class StochasticDiffStrategy : Strategy
 		
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 		.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-		.SetCanOptimize(false);
+		;
 		
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 		.SetDisplay("Take Profit %", "Take profit percentage", "Risk")
-		.SetCanOptimize(false);
+		;
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_stochastic = new StochasticOscillator
-		{
-			Length = KPeriod,
+		{ K = { Length = KPeriod },
 			K = { Length = Slowing },
 			D = { Length = DPeriod }
 		};
 		
-		_smoothing = new ExponentialMovingAverage { Length = SmoothingLength };
+		_smoothing = new EMA { Length = SmoothingLength };
 		
 		StartProtection(
 		takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),

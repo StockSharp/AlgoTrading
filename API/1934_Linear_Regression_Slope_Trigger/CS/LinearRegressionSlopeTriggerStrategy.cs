@@ -104,13 +104,13 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 		_slopeLength = Param(nameof(SlopeLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Slope Length", "Period for linear regression slope", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 
 		_triggerShift = Param(nameof(TriggerShift), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Trigger Shift", "Bars to shift for trigger line", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 5, 1);
 
 		_enableLong = Param(nameof(EnableLong), true)
@@ -122,13 +122,13 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit %", "Take-profit percentage", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 10m, 1m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -150,9 +150,9 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_slopeIndicator = new LinearRegression { Length = SlopeLength };
 
@@ -178,7 +178,7 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var typed = (LinearRegressionValue)_slopeIndicator.Process(candle.ClosePrice, candle.ServerTime, true);
+		var typed = (LinearRegressionValue)_slopeIndicator.Process(new DecimalIndicatorValue(_slopeIndicator, candle.ClosePrice, candle.ServerTime));
 		if (!typed.IsFinal || typed.LinearReg is not decimal slope)
 			return;
 

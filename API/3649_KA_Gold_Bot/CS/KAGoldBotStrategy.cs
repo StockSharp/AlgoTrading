@@ -323,14 +323,14 @@ public class KAGoldBotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
-		_keltnerEma = new ExponentialMovingAverage { Length = KeltnerPeriod };
-		_rangeAverage = new SimpleMovingAverage { Length = KeltnerPeriod };
+		_fastEma = new EMA { Length = FastEmaPeriod };
+		_slowEma = new EMA { Length = SlowEmaPeriod };
+		_keltnerEma = new EMA { Length = KeltnerPeriod };
+		_rangeAverage = new SMA { Length = KeltnerPeriod };
 
 		var step = Security?.PriceStep ?? 0.0001m;
 		var decimals = Security?.Decimals ?? 0;

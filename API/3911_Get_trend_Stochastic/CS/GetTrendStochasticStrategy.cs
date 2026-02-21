@@ -207,36 +207,32 @@ public class GetTrendStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
 		// Configure smoothed moving averages that replicate the MT4 setup.
 		var maM15 = new SmoothedMovingAverage
 		{
-			Length = M15MaPeriod,
-			CandlePrice = CandlePrice.Median,
+			Length = M15MaPeriod
 		};
 
 		var maH1 = new SmoothedMovingAverage
 		{
-			Length = H1MaPeriod,
-			CandlePrice = CandlePrice.Median,
+			Length = H1MaPeriod
 		};
 
 		// The MT4 version uses two stochastic oscillators with different base lengths.
 		var stochFast = new StochasticOscillator
-		{
-			Length = FastStochasticPeriod,
+		{ K = { Length = FastStochasticPeriod },
 			K = { Length = 3 },
 			D = { Length = 3 },
 		};
 
 		var stochSlow = new StochasticOscillator
-		{
-			Length = SlowStochasticPeriod,
+		{ K = { Length = SlowStochasticPeriod },
 			K = { Length = 3 },
 			D = { Length = 3 },
 		};

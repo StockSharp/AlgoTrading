@@ -53,7 +53,7 @@ public class ExpertAdcPlStochStrategy : Strategy
 			.SetDisplay("%K Smoothing", "Smoothing length applied to the %K line", "Stochastic")
 			.SetGreaterOrEqual(1);
 
-		_stochDPeriod = Param(nameof(StochasticDPeriod), 13)
+		_stochD = { Length = Param }(nameof(StochasticDPeriod), 13)
 			.SetDisplay("%D Smoothing", "Smoothing length applied to the %D line", "Stochastic")
 			.SetGreaterOrEqual(1);
 
@@ -178,13 +178,12 @@ public class ExpertAdcPlStochStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = Math.Max(1, StochasticLength),
+		{ K = { Length = Math }.Max(1, StochasticLength),
 			Smooth = Math.Max(1, StochasticSlow),
 			K = { Length = Math.Max(1, StochasticKPeriod) },
 			D = { Length = Math.Max(1, StochasticDPeriod) },

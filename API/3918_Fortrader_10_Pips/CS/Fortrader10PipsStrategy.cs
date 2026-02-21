@@ -103,12 +103,12 @@ public class Fortrader10PipsStrategy : Strategy
 		_takeProfitBuy = Param(nameof(TakeProfitBuy), 10m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit Buy", "Take profit distance for long positions (points)", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossBuy = Param(nameof(StopLossBuy), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss Buy", "Stop loss distance for long positions (points)", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopBuy = Param(nameof(TrailingStopBuy), 50m)
 			.SetNotNegative()
@@ -117,12 +117,12 @@ public class Fortrader10PipsStrategy : Strategy
 		_takeProfitSell = Param(nameof(TakeProfitSell), 10m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit Sell", "Take profit distance for short positions (points)", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossSell = Param(nameof(StopLossSell), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss Sell", "Stop loss distance for short positions (points)", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopSell = Param(nameof(TrailingStopSell), 50m)
 			.SetNotNegative()
@@ -151,9 +151,9 @@ public class Fortrader10PipsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 
@@ -161,7 +161,7 @@ public class Fortrader10PipsStrategy : Strategy
 			.Bind(ProcessLevel1)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		// Immediately open both directions to replicate the original hedging behavior.
 		BuyMarket(Volume);

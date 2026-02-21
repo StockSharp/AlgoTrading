@@ -39,7 +39,7 @@ public class BreakevenV3Strategy : Strategy
 		_deltaPoints = Param(nameof(DeltaPoints), 100)
 		.SetNotNegative()
 		.SetDisplay("Delta (points)", "Offset in MetaTrader points applied around the break-even price.", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 300, 10);
 
 		_enableLogging = Param(nameof(EnableLogging), true)
@@ -83,9 +83,9 @@ public class BreakevenV3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = CalculatePointSize();
 

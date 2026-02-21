@@ -50,13 +50,13 @@ public class ESmartTrailingStrategy : Strategy
 		_trailingStop = Param(nameof(TrailingStop), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop (pips)", "Distance between price and trailing stop", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 5m);
 
 		_trailingStep = Param(nameof(TrailingStep), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Step (pips)", "Minimum movement before advancing the stop", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 20m, 1m);
 	}
 
@@ -76,9 +76,9 @@ public class ESmartTrailingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeTicks()
 			.Bind(ProcessTrade)
@@ -118,7 +118,7 @@ public class ESmartTrailingStrategy : Strategy
 
 	private void ProcessLong(decimal price, decimal stopDistance, decimal stepDistance)
 	{
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 
 		if (price >= entryPrice)
 		{
@@ -148,7 +148,7 @@ public class ESmartTrailingStrategy : Strategy
 
 	private void ProcessShort(decimal price, decimal stopDistance, decimal stepDistance)
 	{
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 
 		if (price <= entryPrice)
 		{

@@ -120,34 +120,34 @@ public class TrendCollectorStrategy : Strategy {
 		_fastMaLength = Param(nameof(FastMaLength), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA Length", "Fast EMA length", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_slowMaLength = Param(nameof(SlowMaLength), 204)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA Length", "Slow EMA length", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticPeriod = Param(nameof(StochasticPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic Period", "Stochastic period", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticUpper = Param(nameof(StochasticUpper), 80m)
 		.SetDisplay("Stochastic Upper", "Upper stochastic level", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticLower = Param(nameof(StochasticLower), 20m)
 		.SetDisplay("Stochastic Lower", "Lower stochastic level", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "ATR period", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_atrLimit = Param(nameof(AtrLimit), 2m)
 		.SetDisplay("ATR Limit", "Maximum ATR value", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_startHour = Param(nameof(StartHour), 5)
 		.SetDisplay("Start Hour", "Trading start hour", "Time");
@@ -175,14 +175,14 @@ public class TrendCollectorStrategy : Strategy {
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
-		base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_fastMa = new ExponentialMovingAverage { Length = FastMaLength };
-		_slowMa = new ExponentialMovingAverage { Length = SlowMaLength };
-		_stochastic = new StochasticOscillator { Length = StochasticPeriod };
+		_fastMa = new EMA { Length = FastMaLength };
+		_slowMa = new EMA { Length = SlowMaLength };
+		_stochastic = new StochasticOscillator { K = { Length = StochasticPeriod } };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

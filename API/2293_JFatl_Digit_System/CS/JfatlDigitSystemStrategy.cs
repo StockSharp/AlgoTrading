@@ -89,12 +89,12 @@ public class JfatlDigitSystemStrategy : Strategy
 		_jmaLength = Param(nameof(JmaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("JMA Length", "JMA period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_jmaPhase = Param(nameof(JmaPhase), -100)
 			.SetDisplay("JMA Phase", "JMA phase", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-100, 100, 20);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -103,7 +103,7 @@ public class JfatlDigitSystemStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_enableStopLoss = Param(nameof(EnableStopLoss), true)
@@ -112,14 +112,14 @@ public class JfatlDigitSystemStrategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var jma = new JurikMovingAverage
 		{

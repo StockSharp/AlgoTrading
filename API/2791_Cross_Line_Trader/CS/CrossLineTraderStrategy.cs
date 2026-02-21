@@ -198,7 +198,7 @@ public class CrossLineTraderStrategy : Strategy
 		_lineDefinitions = Param(nameof(LineDefinitions),
 			"TrendLine|Trend|Buy|1.1000|0.0005|8|false;HorizontalSell|Horizontal|Sell|1.1050|0|0|true;VerticalImpulse|Vertical|Buy|0|0|1|false")
 			.SetDisplay("Line Definitions", "Encoded collection of synthetic lines", "Lines")
-			.SetCanOptimize(false);
+			;
 
 		_stopLossOffset = Param(nameof(StopLossOffset), 0m)
 			.SetDisplay("Stop Loss Offset", "Price distance for protective exit", "Risk")
@@ -226,9 +226,9 @@ public class CrossLineTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_lines = ParseLineDefinitions(LineDefinitions);
 		_previousOpen = null;

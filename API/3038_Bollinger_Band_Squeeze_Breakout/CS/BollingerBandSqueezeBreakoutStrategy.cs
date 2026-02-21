@@ -206,24 +206,24 @@ public class BollingerBandSqueezeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastWma = new WeightedMovingAverage { Length = FastMaLength };
 		_slowWma = new WeightedMovingAverage { Length = SlowMaLength };
 
 		_baseMacd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = 12,
-			LongPeriod = 26,
+			ShortMa = { Length = 12 },
+			LongMa = { Length = 26 },
 			SignalPeriod = 9
 		};
 
 		_monthlyMacd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = 12,
-			LongPeriod = 26,
+			ShortMa = { Length = 12 },
+			LongMa = { Length = 26 },
 			SignalPeriod = 9
 		};
 
@@ -256,7 +256,7 @@ public class BollingerBandSqueezeBreakoutStrategy : Strategy
 		.BindEx(_monthlyMacd, ProcessMonthlyMacd)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -470,7 +470,7 @@ public class BollingerBandSqueezeBreakoutStrategy : Strategy
 			5 => TimeSpan.FromMinutes(30).TimeFrame(),
 			15 => TimeSpan.FromHours(1).TimeFrame(),
 			30 => TimeSpan.FromHours(4).TimeFrame(),
-			60 => TimeSpan.FromDays(1).TimeFrame(),
+			60 => TimeSpan.FromMinutes(5).TimeFrame(),
 			240 => TimeSpan.FromDays(7).TimeFrame(),
 			1440 => TimeSpan.FromDays(30).TimeFrame(),
 			10080 => TimeSpan.FromDays(30).TimeFrame(),

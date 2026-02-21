@@ -136,33 +136,33 @@ public class AbeBeStochStrategy : Strategy
 		_stochasticPeriodK = Param(nameof(StochasticPeriodK), 47)
 			.SetGreaterThanZero()
 			.SetDisplay("%K Period", "Lookback period for stochastic %K", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticPeriodD = Param(nameof(StochasticPeriodD), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("%D Period", "Smoothing period for stochastic %D", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticPeriodSlow = Param(nameof(StochasticPeriodSlow), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Slowing", "Additional smoothing applied to %K", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_entryOversoldLevel = Param(nameof(EntryOversoldLevel), 30m)
 			.SetDisplay("Oversold Threshold", "Maximum %D value for bullish entries", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_entryOverboughtLevel = Param(nameof(EntryOverboughtLevel), 70m)
 			.SetDisplay("Overbought Threshold", "Minimum %D value for bearish entries", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_exitLowerLevel = Param(nameof(ExitLowerLevel), 20m)
 			.SetDisplay("Lower Exit Level", "%D level that closes shorts on upward crosses", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_exitUpperLevel = Param(nameof(ExitUpperLevel), 80m)
 			.SetDisplay("Upper Exit Level", "%D level that closes longs on downward crosses", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
 			.SetNotNegative()
@@ -189,13 +189,12 @@ public class AbeBeStochStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticPeriodK,
+		{ K = { Length = StochasticPeriodK },
 			K = { Length = StochasticPeriodSlow },
 			D = { Length = StochasticPeriodD },
 		};
@@ -228,7 +227,7 @@ public class AbeBeStochStrategy : Strategy
 		}
 		else
 		{
-			StartProtection();
+			StartProtection(null, null);
 		}
 
 		var area = CreateChartArea();

@@ -32,13 +32,11 @@ public class ForexCurrencyPowerStrategy : Strategy
 			Security = security;
 			HighIndicator = new Highest
 			{
-				Length = lookback,
-				CandlePrice = CandlePrice.High
+				Length = lookback
 			};
 			LowIndicator = new Lowest
 			{
-				Length = lookback,
-				CandlePrice = CandlePrice.Low
+				Length = lookback
 			};
 		}
 
@@ -101,17 +99,17 @@ public class ForexCurrencyPowerStrategy : Strategy
 
 		_lookback = Param(nameof(Lookback), 5)
 		.SetDisplay("Lookback", "Number of candles used for high/low range", "Currency Power")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_entryThreshold = Param(nameof(EntryThreshold), 15m)
 		.SetDisplay("Entry Threshold", "Minimum power difference to enter a position", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 30m, 5m);
 
 		_exitThreshold = Param(nameof(ExitThreshold), 5m)
 		.SetDisplay("Exit Threshold", "Difference below which the position is closed", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 15m, 1m);
 
 		_baseCurrency = Param(nameof(BaseCurrency), "EUR")
@@ -335,11 +333,11 @@ public class ForexCurrencyPowerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		InitializeCurrencyStates();
 

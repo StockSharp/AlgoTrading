@@ -127,12 +127,12 @@ public class ZigAndZagTraderStrategy : Strategy
 		_trendDepth = Param(nameof(TrendDepth), 3)
 			.SetDisplay("Trend Depth", "Lookback for the long-term ZigZag", "ZigZag")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_exitDepth = Param(nameof(ExitDepth), 3)
 			.SetDisplay("Exit Depth", "Lookback for the short-term swing ZigZag", "ZigZag")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_maxOrders = Param(nameof(MaxOrders), 1)
 			.SetDisplay("Max Orders", "Maximum simultaneous positions", "Trading")
@@ -177,9 +177,9 @@ public class ZigAndZagTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = Security?.PriceStep ?? 0.0001m;
 		_volumeStep = Security?.VolumeStep ?? 1m;

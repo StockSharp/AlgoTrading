@@ -58,19 +58,19 @@ public class SmoothedMaDirectionalStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
 			.SetDisplay("Stop Loss Points", "Protective stop distance in price steps", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 300m, 10m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
 			.SetDisplay("Take Profit Points", "Profit target distance in price steps", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 300m, 10m);
 
 		_maPeriod = Param(nameof(MaPeriod), 12)
 			.SetDisplay("MA Period", "Number of bars for the smoothed moving average", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 100, 5);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -94,9 +94,9 @@ public class SmoothedMaDirectionalStrategy : Strategy
 		_movingAverage = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Align the strategy volume with the configured trade size
 		Volume = TradeVolume;

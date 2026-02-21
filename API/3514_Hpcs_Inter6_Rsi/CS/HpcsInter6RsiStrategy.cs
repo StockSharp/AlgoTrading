@@ -98,29 +98,29 @@ public class HpcsInter6RsiStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Lookback period for RSI", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_upperLevel = Param(nameof(UpperLevel), 70m)
 			.SetDisplay("Upper RSI", "Upper RSI level for shorts", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 5m);
 
 		_lowerLevel = Param(nameof(LowerLevel), 30m)
 			.SetDisplay("Lower RSI", "Lower RSI level for longs", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume for entries", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_offsetInPips = Param(nameof(OffsetInPips), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Offset (pips)", "Target and stop distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 30m, 5m);
 	}
 
@@ -143,9 +143,9 @@ public class HpcsInter6RsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex
 		{

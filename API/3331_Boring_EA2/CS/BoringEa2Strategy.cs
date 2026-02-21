@@ -77,28 +77,28 @@ public class BoringEa2Strategy : Strategy
 	{
 		_shortMaLength = Param(nameof(ShortMaLength), 3)
 			.SetDisplay("Short SMA Length", "Length for the 3-period SMA", "Moving Averages")
-			.SetCanOptimize(true);
+			;
 
 		_mediumMaLength = Param(nameof(MediumMaLength), 20)
 			.SetDisplay("Medium SMA Length", "Length for the 20-period SMA", "Moving Averages")
-			.SetCanOptimize(true);
+			;
 
 		_longMaLength = Param(nameof(LongMaLength), 150)
 			.SetDisplay("Long SMA Length", "Length for the 150-period SMA", "Moving Averages")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for SMA calculations", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var shortSma = new SimpleMovingAverage { Length = ShortMaLength };
-		var mediumSma = new SimpleMovingAverage { Length = MediumMaLength };
-		var longSma = new SimpleMovingAverage { Length = LongMaLength };
+		var shortSma = new SMA { Length = ShortMaLength };
+		var mediumSma = new SMA { Length = MediumMaLength };
+		var longSma = new SMA { Length = LongMaLength };
 
 		SubscribeCandles(CandleType)
 			.Bind(shortSma, mediumSma, longSma, ProcessCandle)

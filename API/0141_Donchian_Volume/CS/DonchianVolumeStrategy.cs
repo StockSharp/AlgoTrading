@@ -81,25 +81,25 @@ public class DonchianVolumeStrategy : Strategy
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Donchian Period", "Period of the Donchian Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_volumePeriod = Param(nameof(VolumePeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Period", "Period for volume averaging", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Multiplier", "Multiplier for average volume to confirm breakout", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 2.0m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -120,9 +120,9 @@ public class DonchianVolumeStrategy : Strategy
 		_averageVolume = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		// Create indicators
 		var donchianHigh = new Highest
 		{
@@ -134,7 +134,7 @@ public class DonchianVolumeStrategy : Strategy
 			Length = DonchianPeriod
 		};
 
-		var volumeAverage = new SimpleMovingAverage
+		var volumeAverage = new SMA
 		{
 			Length = VolumePeriod
 		};

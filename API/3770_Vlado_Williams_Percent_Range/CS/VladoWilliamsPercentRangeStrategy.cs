@@ -41,19 +41,19 @@ public class VladoWilliamsPercentRangeStrategy : Strategy
 		_wprLength = Param(nameof(WprLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Lookback period for Williams %R", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_wprLevel = Param(nameof(WprLevel), -50m)
 			.SetDisplay("Williams %R Level", "Threshold that flips the bias", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_useRiskMoneyManagement = Param(nameof(UseRiskMoneyManagement), false)
 			.SetDisplay("Risk Money Management", "Recalculate volume from equity before entries", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_maximumRiskPercent = Param(nameof(MaximumRiskPercent), 10m)
 			.SetDisplay("Maximum Risk Percent", "Equity percentage used when sizing orders", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -112,9 +112,9 @@ public class VladoWilliamsPercentRangeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_williamsR = new WilliamsR
 		{

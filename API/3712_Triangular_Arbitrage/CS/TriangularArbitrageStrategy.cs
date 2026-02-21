@@ -64,19 +64,19 @@ public class TriangularArbitrageStrategy : Strategy
 		_lotSizeParam = Param(nameof(LotSize), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Lot Size", "Volume submitted for every order", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 1m, 0.01m);
 
 		_profitTargetParam = Param(nameof(ProfitTarget), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Profit Target", "Profit in account currency that closes the basket", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 50m, 5m);
 
 		_thresholdParam = Param(nameof(Threshold), 0.0001m)
 		.SetGreaterThanZero()
 		.SetDisplay("Threshold", "Relative difference between implied and direct price", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.00005m, 0.001m, 0.00005m);
 
 		_minimumBalanceParam = Param(nameof(MinimumBalance), 1000m)
@@ -186,9 +186,9 @@ public class TriangularArbitrageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_realizedSnapshot = PnLManager?.RealizedPnL ?? _realizedSnapshot;
 

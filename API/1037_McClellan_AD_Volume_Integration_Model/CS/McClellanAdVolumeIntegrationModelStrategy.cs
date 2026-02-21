@@ -86,18 +86,18 @@ public class McClellanAdVolumeIntegrationModelStrategy : Strategy
 		_emaShortLength = Param(nameof(EmaShortLength), 19)
 			.SetGreaterThanZero()
 			.SetDisplay("Short EMA Length", "EMA period for short term", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 1);
 
 		_emaLongLength = Param(nameof(EmaLongLength), 38)
 			.SetGreaterThanZero()
 			.SetDisplay("Long EMA Length", "EMA period for long term", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 1);
 
 		_oscThresholdLong = Param(nameof(OscThresholdLong), -96m)
 			.SetDisplay("Long Entry Threshold", "Oscillator level for long entry", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-150m, -50m, 5m);
 
 		_exitPeriods = Param(nameof(ExitPeriods), 13)
@@ -128,12 +128,12 @@ public class McClellanAdVolumeIntegrationModelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_emaShort = new ExponentialMovingAverage { Length = EmaShortLength };
-		_emaLong = new ExponentialMovingAverage { Length = EmaLongLength };
+		_emaShort = new EMA { Length = EmaShortLength };
+		_emaLong = new EMA { Length = EmaLongLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -159,8 +159,8 @@ public class McClellanAdVolumeIntegrationModelStrategy : Strategy
 		var volumeLine = candle.TotalVolume == 0 ? 1m : candle.TotalVolume;
 		var weightedAdLine = adLine * volumeLine;
 
-		var shortVal = _emaShort.Process(weightedAdLine, candle.OpenTime, true).ToDecimal();
-		var longVal = _emaLong.Process(weightedAdLine, candle.OpenTime, true).ToDecimal();
+		var shortVal = _emaShort.Process(new DecimalIndicatorValue(_emaShort, weightedAdLine, candle.OpenTime)).ToDecimal();
+		var longVal = _emaLong.Process(new DecimalIndicatorValue(_emaLong, weightedAdLine, candle.OpenTime)).ToDecimal();
 		var oscillator = shortVal - longVal;
 
 		if (!IsFormedAndOnlineAndAllowTrading())

@@ -125,9 +125,9 @@ public class GoRiskManagedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_openMa = CreateMovingAverage(MaType, MaPeriod);
 		_highMa = CreateMovingAverage(MaType, MaPeriod);
@@ -148,7 +148,7 @@ public class GoRiskManagedStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal open, decimal high, decimal low, decimal close)
@@ -232,13 +232,13 @@ public class GoRiskManagedStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
-			MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.SMA => new SMA { Length = length },
+			MovingAverageTypes.EMA => new EMA { Length = length },
 			MovingAverageTypes.DEMA => new DoubleExponentialMovingAverage { Length = length },
 			MovingAverageTypes.TEMA => new TripleExponentialMovingAverage { Length = length },
 			MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
 			MovingAverageTypes.VWMA => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 }

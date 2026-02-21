@@ -88,17 +88,17 @@ public class HeatmapMacdStrategy : Strategy
                 _fastLength = Param(nameof(FastLength), 9)
                         .SetGreaterThanZero()
                         .SetDisplay("Fast Length", "Fast EMA length", "MACD")
-                        .SetCanOptimize(true);
+                        ;
 
                 _slowLength = Param(nameof(SlowLength), 26)
                         .SetGreaterThanZero()
                         .SetDisplay("Slow Length", "Slow EMA length", "MACD")
-                        .SetCanOptimize(true);
+                        ;
 
                 _signalLength = Param(nameof(SignalLength), 9)
                         .SetGreaterThanZero()
                         .SetDisplay("Signal Length", "Signal MA length", "MACD")
-                        .SetCanOptimize(true);
+                        ;
 
                 _timeFrame1 = Param(nameof(TimeFrame1), TimeSpan.FromMinutes(60).TimeFrame())
                         .SetDisplay("TimeFrame1", "First timeframe", "Timeframes");
@@ -129,9 +129,9 @@ public class HeatmapMacdStrategy : Strategy
                 _prevBearCount = 0;
         }
 
-        protected override void OnStarted(DateTimeOffset time)
+        protected override void OnStarted2(DateTime time)
         {
-                base.OnStarted(time);
+                base.OnStarted2(time);
 
                 var macd1 = CreateMacd();
                 var macd2 = CreateMacd();
@@ -159,7 +159,7 @@ public class HeatmapMacdStrategy : Strategy
                         DrawOwnTrades(area);
                 }
 
-                StartProtection();
+                StartProtection(null, null);
         }
 
         private void ProcessTf1(ICandleMessage candle, IIndicatorValue value)
@@ -273,10 +273,10 @@ public class HeatmapMacdStrategy : Strategy
                 {
                         Macd =
                         {
-                                ShortMa = new ExponentialMovingAverage { Length = FastLength },
-                                LongMa = new ExponentialMovingAverage { Length = SlowLength }
+                                ShortMa = new EMA { Length = FastLength },
+                                LongMa = new EMA { Length = SlowLength }
                         },
-                        SignalMa = new ExponentialMovingAverage { Length = SignalLength }
+                        SignalMa = new EMA { Length = SignalLength }
                 };
         }
 }

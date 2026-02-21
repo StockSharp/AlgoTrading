@@ -71,9 +71,9 @@ public class Roc2VgStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ind1 = CreateIndicator(RocType1, RocPeriod1);
 		var ind2 = CreateIndicator(RocType2, RocPeriod2);

@@ -231,13 +231,13 @@ public class StatEuclideanMetricStrategy : Strategy
 		_buyThreshold = Param(nameof(BuyThreshold), 0.6m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Buy Threshold", "Minimum probability required for longs", "Classifier")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.3m, 0.9m, 0.1m);
 
 		_sellThreshold = Param(nameof(SellThreshold), 0.6m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Sell Threshold", "Minimum probability required for shorts", "Classifier")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.3m, 0.9m, 0.1m);
 
 		_allowInverseEntries = Param(nameof(AllowInverseEntries), true)
@@ -246,13 +246,13 @@ public class StatEuclideanMetricStrategy : Strategy
 		_inverseBuyThreshold = Param(nameof(InverseBuyThreshold), 0.3m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Inverse Buy Threshold", "Maximum probability to open a short instead of a long", "Classifier")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.5m, 0.1m);
 
 		_inverseSellThreshold = Param(nameof(InverseSellThreshold), 0.3m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Inverse Sell Threshold", "Maximum probability to open a long instead of a short", "Classifier")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.5m, 0.1m);
 
 		_fastLength = Param(nameof(FastLength), 12)
@@ -287,7 +287,7 @@ public class StatEuclideanMetricStrategy : Strategy
 		_neighborCount = Param(nameof(NeighborCount), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Neighbors", "Number of nearest neighbours", "Classifier")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_featureCount = Param(nameof(FeatureCount), 5)
@@ -325,18 +325,18 @@ public class StatEuclideanMetricStrategy : Strategy
 		{
 			Macd =
 			{
-				ShortMa = { Length = FastLength, CandlePrice = CandlePrice.Typical },
-				LongMa = { Length = SlowLength, CandlePrice = CandlePrice.Typical },
+				ShortMa = { Length = FastLength },
+				LongMa = { Length = SlowLength },
 			},
-			SignalMa = { Length = SignalLength, CandlePrice = CandlePrice.Typical }
+			SignalMa = { Length = SignalLength }
 		};
 
-		_ma2 = new SimpleMovingAverage { Length = 2, CandlePrice = CandlePrice.Typical };
-		_ma21 = new SimpleMovingAverage { Length = 21, CandlePrice = CandlePrice.Typical };
-		_ma55 = new SimpleMovingAverage { Length = 55, CandlePrice = CandlePrice.Typical };
-		_ma89 = new SimpleMovingAverage { Length = 89, CandlePrice = CandlePrice.Typical };
-		_ma144 = new SimpleMovingAverage { Length = 144, CandlePrice = CandlePrice.Typical };
-		_ma233 = new SimpleMovingAverage { Length = 233, CandlePrice = CandlePrice.Typical };
+		_ma2 = new SMA { Length = 2 };
+		_ma21 = new SMA { Length = 21 };
+		_ma55 = new SMA { Length = 55 };
+		_ma89 = new SMA { Length = 89 };
+		_ma144 = new SMA { Length = 144 };
+		_ma233 = new SMA { Length = 233 };
 
 		_buyDataset = LoadDataset(BuyDatasetPath, "Buy");
 		_sellDataset = LoadDataset(SellDatasetPath, "Sell");

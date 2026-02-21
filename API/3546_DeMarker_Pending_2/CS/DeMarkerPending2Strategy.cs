@@ -380,9 +380,9 @@ public class DeMarkerPending2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -474,7 +474,7 @@ public class DeMarkerPending2Strategy : Strategy
 
 	private void TryPlacePending(Sides side, ICandleMessage candle)
 	{
-		var openTime = candle.OpenTime.UtcDateTime;
+		var openTime = candle.OpenTime;
 
 		if (side == Sides.Buy && _lastBuySignalTime == openTime)
 		return;
@@ -787,7 +787,7 @@ public class DeMarkerPending2Strategy : Strategy
 
 		var start = new TimeSpan(StartHour, StartMinute, 0);
 		var end = new TimeSpan(EndHour, EndMinute, 0);
-		var current = time.LocalDateTime.TimeOfDay;
+		var current = time.TimeOfDay;
 
 		if (end < start)
 		return current >= start || current <= end;

@@ -150,14 +150,12 @@ public class TripleTopTripleBottomStrategy : Strategy
 
 		_fastMa = new WeightedMovingAverage
 		{
-			Length = FastMaPeriod,
-			CandlePrice = CandlePrice.Typical
+			Length = FastMaPeriod
 		};
 
 		_slowMa = new WeightedMovingAverage
 		{
-			Length = SlowMaPeriod,
-			CandlePrice = CandlePrice.Typical
+			Length = SlowMaPeriod
 		};
 
 		_momentum = new Momentum

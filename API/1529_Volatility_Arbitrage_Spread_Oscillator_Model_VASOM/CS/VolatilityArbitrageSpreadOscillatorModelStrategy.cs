@@ -109,9 +109,9 @@ public class VolatilityArbitrageSpreadOscillatorModelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
@@ -157,7 +157,7 @@ public class VolatilityArbitrageSpreadOscillatorModelStrategy : Strategy
 			return;
 
 		var spread = _frontClose - _secondClose;
-		var rsiValue = _rsi.Process(spread, candle.OpenTime, true).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, spread, candle.OpenTime)).ToDecimal();
 
 		if (!_rsi.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 			return;

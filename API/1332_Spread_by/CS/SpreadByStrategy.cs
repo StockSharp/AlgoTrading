@@ -46,7 +46,7 @@ public class SpreadByStrategy : Strategy
 		_length = Param(nameof(Length), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Calculation period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -59,11 +59,11 @@ public class SpreadByStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = Length };
+		var sma = new SMA { Length = Length };
 		var std = new StandardDeviation { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);

@@ -267,14 +267,14 @@ public class PivotEma3Rlhv4Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = Security?.PriceStep ?? 0.0001m;
 
-		_emaOpen = new ExponentialMovingAverage { Length = 3 };
-		_emaClose = new ExponentialMovingAverage { Length = 3 };
+		_emaOpen = new EMA { Length = 3 };
+		_emaClose = new EMA { Length = 3 };
 		_atr1 = new AverageTrueRange { Length = 1 };
 		_atr4 = new AverageTrueRange { Length = 4 };
 		_atr8 = new AverageTrueRange { Length = 8 };
@@ -284,10 +284,10 @@ public class PivotEma3Rlhv4Strategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		dailySubscription.Bind(ProcessDailyCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -326,7 +326,7 @@ public class PivotEma3Rlhv4Strategy : Strategy
 		var atr4Value = _atr4.Process(new CandleIndicatorValue(_atr4, candle));
 		var atr8Value = _atr8.Process(new CandleIndicatorValue(_atr8, candle));
 		var atr12Value = _atr12.Process(new CandleIndicatorValue(_atr12, candle));
-		var atr24Value = _atr24.Process(new CandleIndicatorValue(_atr24, candle));
+		var atr24Value = _atr24.Process(new DecimalIndicatorValue(_atr24, new CandleIndicatorValue(_atr24, candle));
 
 		if (!emaOpenValue.IsFinal || !emaCloseValue.IsFinal || !atr1Value.IsFinal || !atr4Value.IsFinal || !atr8Value.IsFinal || !atr12Value.IsFinal || !atr24Value.IsFinal)
 			return;
@@ -404,7 +404,7 @@ public class PivotEma3Rlhv4Strategy : Strategy
 				if (volume > 0)
 				{
 					BuyMarket(volume);
-					InitializePositionState(candle.ClosePrice, true);
+					InitializePositionState(candle.ClosePrice));
 				}
 			}
 			else if (sellSignal && Position >= 0)

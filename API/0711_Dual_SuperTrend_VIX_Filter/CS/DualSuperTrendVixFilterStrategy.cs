@@ -168,9 +168,9 @@ public class DualSuperTrendVixFilterStrategy : Strategy
 		_vixClose = _vixMean = _vixStdValue = _vixTrend = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_st1 = new SuperTrend { Length = StLength1, Multiplier = StMultiplier1 };
 		_st2 = new SuperTrend { Length = StLength2, Multiplier = StMultiplier2 };
@@ -182,9 +182,9 @@ public class DualSuperTrendVixFilterStrategy : Strategy
 
 		if (UseVixFilter)
 		{
-			_vixSma = new SimpleMovingAverage { Length = VixLookback };
+			_vixSma = new SMA { Length = VixLookback };
 			_vixStd = new StandardDeviation { Length = VixLookback };
-			_vixEma = new ExponentialMovingAverage { Length = VixTrendPeriod };
+			_vixEma = new EMA { Length = VixTrendPeriod };
 
 			var vixSubscription = SubscribeCandles(CandleType, security: VixSecurity);
 			vixSubscription

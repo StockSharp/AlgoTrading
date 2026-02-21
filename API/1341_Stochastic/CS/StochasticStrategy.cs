@@ -89,29 +89,29 @@ public class StochasticStrategy : Strategy
 		_length = Param(nameof(Length), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Stoch Length", "Base period for Stochastic", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_smoothK = Param(nameof(SmoothK), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth %K", "%K smoothing period", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_smoothD = Param(nameof(SmoothD), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth %D", "%D smoothing period", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_overbought = Param(nameof(Overbought), 50m)
 			.SetDisplay("Overbought Level", "Upper threshold", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 80m, 5m);
 
 		_oversold = Param(nameof(Oversold), 50m)
 			.SetDisplay("Oversold Level", "Lower threshold", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 50m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -132,13 +132,12 @@ public class StochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stochastic = new StochasticOscillator
-		{
-			Length = Length,
+		{ K = { Length = Length },
 			K = { Length = SmoothK },
 			D = { Length = SmoothD },
 		};

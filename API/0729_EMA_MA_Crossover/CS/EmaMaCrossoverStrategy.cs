@@ -62,13 +62,13 @@ public class EmaMaCrossoverStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Period of the simple moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_emaLength = Param(nameof(EmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Period of the exponential moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -91,9 +91,9 @@ public class EmaMaCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = new SMA { Length = MaLength };
 		_ema = new EMA { Length = EmaLength };
@@ -117,8 +117,8 @@ public class EmaMaCrossoverStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var maValue = _ma.Process(candle.ClosePrice, candle.ServerTime, true).ToDecimal();
-		var emaValue = _ema.Process(maValue, candle.ServerTime, true).ToDecimal();
+		var maValue = _ma.Process(new DecimalIndicatorValue(_ma, candle.ClosePrice, candle.ServerTime)).ToDecimal();
+		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, maValue, candle.ServerTime)).ToDecimal();
 
 		var pos = emaValue < maValue ? 1 : emaValue > maValue ? -1 : _previousPos;
 

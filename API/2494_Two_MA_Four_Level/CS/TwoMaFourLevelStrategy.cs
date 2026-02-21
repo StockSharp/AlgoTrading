@@ -48,13 +48,13 @@ public class TwoMaFourLevelStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Period of the fast smoothed MA", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 150, 5);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 130)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Period of the slow smoothed MA", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60, 300, 5);
 
 		_mostTopLevel = Param(nameof(MostTopLevel), 500)
@@ -100,9 +100,9 @@ public class TwoMaFourLevelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (FastPeriod >= SlowPeriod)
 		{
@@ -135,7 +135,7 @@ public class TwoMaFourLevelStrategy : Strategy
 			stopLoss: new Unit(StopLossPips * pip, UnitTypes.Absolute));
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.ForEach(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

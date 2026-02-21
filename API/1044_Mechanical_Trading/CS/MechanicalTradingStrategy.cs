@@ -77,13 +77,13 @@ public class MechanicalTradingStrategy : Strategy
 		_profitTarget = Param(nameof(ProfitTarget), 0.4m)
 			.SetNotNegative()
 			.SetDisplay("Profit Target (%)", "Take profit percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_stopLoss = Param(nameof(StopLoss), 0.2m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (%)", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_tradeHour = Param(nameof(TradeHour), 16)
@@ -104,9 +104,9 @@ public class MechanicalTradingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(
 			takeProfit: new Unit(ProfitTarget, UnitTypes.Percent),

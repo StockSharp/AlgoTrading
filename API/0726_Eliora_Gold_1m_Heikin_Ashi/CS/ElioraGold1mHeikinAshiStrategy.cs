@@ -106,12 +106,12 @@ public class ElioraGold1mHeikinAshiStrategy : Strategy
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "ATR calculation period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 1);
 
 		_cooldownBars = Param(nameof(CooldownBars), 5)
 			.SetDisplay("Cooldown Bars", "Minimum bars between trades", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_bodyAtrMultiplier = Param(nameof(BodyAtrMultiplier), 0.4m)
@@ -145,12 +145,12 @@ public class ElioraGold1mHeikinAshiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_sma = new SimpleMovingAverage { Length = 20 };
+		_sma = new SMA { Length = 20 };
 		_lowest = new Lowest { Length = 5 };
 		_highest = new Highest { Length = 5 };
 
@@ -166,7 +166,7 @@ public class ElioraGold1mHeikinAshiStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue)
@@ -198,7 +198,7 @@ public class ElioraGold1mHeikinAshiStrategy : Strategy
 			haLow = Math.Min(Math.Min(candle.LowPrice, haOpen), haClose);
 		}
 
-		var smaValue = _sma.Process(haClose, candle.ServerTime, true);
+		var smaValue = _sma.Process(new DecimalIndicatorValue(_sma, haClose, candle.ServerTime));
 		if (!smaValue.IsFinal)
 		{
 			_prevHaOpen = haOpen;
@@ -210,8 +210,8 @@ public class ElioraGold1mHeikinAshiStrategy : Strategy
 
 		var trendMa = smaValue.ToDecimal();
 
-		var lowVal = _lowest.Process(haLow, candle.ServerTime, true);
-		var highVal = _highest.Process(haHigh, candle.ServerTime, true);
+		var lowVal = _lowest.Process(new DecimalIndicatorValue(_lowest, haLow, candle.ServerTime));
+		var highVal = _highest.Process(new DecimalIndicatorValue(_highest, haHigh, candle.ServerTime));
 
 		if (!lowVal.IsFinal || !highVal.IsFinal)
 		{

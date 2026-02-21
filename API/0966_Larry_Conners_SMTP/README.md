@@ -13,7 +13,7 @@ A long-only strategy that buys after a 10-bar low when the current bar has the l
 - **Stops**: Yes.
 - **Default Values**:
   - `TickSize` = 0.01
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame().
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame().
 - **Filters**:
   - Category: Reversal
   - Direction: Long

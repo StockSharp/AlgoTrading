@@ -129,7 +129,7 @@ public class CenterOfGravityCandleStrategy : Strategy
 	{
 		_moneyManagement = Param(nameof(MoneyManagement), 0.1m)
 		.SetDisplay("Money Management", "Fraction of capital used for volume calculation (negative = fixed lot)", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_marginMode = Param(nameof(MarginMode), CenterOfGravityMarginModes.Lot)
@@ -161,13 +161,13 @@ public class CenterOfGravityCandleStrategy : Strategy
 		_period = Param(nameof(Period), 10)
 		.SetDisplay("Center of Gravity Period", "Base period of the indicator", "Indicator")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 
 		_smoothPeriod = Param(nameof(SmoothPeriod), 3)
 		.SetDisplay("Smoothing Period", "Length of the post-processing moving average", "Indicator")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_maMethod = Param(nameof(MaMethod), CenterOfGravityMaMethods.Simple)
@@ -316,9 +316,9 @@ public class CenterOfGravityCandleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_point = Security?.PriceStep ?? 1m;
 		if (_point <= 0m)
@@ -514,10 +514,10 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 	private WeightedMovingAverage _highLwma;
 	private WeightedMovingAverage _lowLwma;
 	private WeightedMovingAverage _closeLwma;
-	private LengthIndicator<decimal> _openSmooth;
-	private LengthIndicator<decimal> _highSmooth;
-	private LengthIndicator<decimal> _lowSmooth;
-	private LengthIndicator<decimal> _closeSmooth;
+	private DecimalLengthIndicator _openSmooth;
+	private DecimalLengthIndicator _highSmooth;
+	private DecimalLengthIndicator _lowSmooth;
+	private DecimalLengthIndicator _closeSmooth;
 	private CenterOfGravityMaMethods _currentMethod;
 	private int _currentSmoothLength;
 
@@ -555,14 +555,14 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 		var time = candle.CloseTime;
 		var point = Point > 0m ? Point : 1m;
 
-		var openSmaVal = _openSma!.Process(candle.OpenPrice, time, true);
-		var openLwmaVal = _openLwma!.Process(candle.OpenPrice, time, true);
-		var highSmaVal = _highSma!.Process(candle.HighPrice, time, true);
-		var highLwmaVal = _highLwma!.Process(candle.HighPrice, time, true);
-		var lowSmaVal = _lowSma!.Process(candle.LowPrice, time, true);
-		var lowLwmaVal = _lowLwma!.Process(candle.LowPrice, time, true);
-		var closeSmaVal = _closeSma!.Process(candle.ClosePrice, time, true);
-		var closeLwmaVal = _closeLwma!.Process(candle.ClosePrice, time, true);
+		var openSmaVal = _openSma!.Process(new DecimalIndicatorValue(_openSma, candle.OpenPrice, time));
+		var openLwmaVal = _openLwma!.Process(new DecimalIndicatorValue(_openLwma, candle.OpenPrice, time));
+		var highSmaVal = _highSma!.Process(new DecimalIndicatorValue(_highSma, candle.HighPrice, time));
+		var highLwmaVal = _highLwma!.Process(new DecimalIndicatorValue(_highLwma, candle.HighPrice, time));
+		var lowSmaVal = _lowSma!.Process(new DecimalIndicatorValue(_lowSma, candle.LowPrice, time));
+		var lowLwmaVal = _lowLwma!.Process(new DecimalIndicatorValue(_lowLwma, candle.LowPrice, time));
+		var closeSmaVal = _closeSma!.Process(new DecimalIndicatorValue(_closeSma, candle.ClosePrice, time));
+		var closeLwmaVal = _closeLwma!.Process(new DecimalIndicatorValue(_closeLwma, candle.ClosePrice, time));
 
 		if (!_openSma.IsFormed || !_openLwma.IsFormed || !_highSma.IsFormed || !_highLwma.IsFormed || !_lowSma.IsFormed || !_lowLwma.IsFormed || !_closeSma.IsFormed || !_closeLwma.IsFormed)
 			return new CenterOfGravityCandleValue(this, input, 0m, 0m, 0m, 0m, CenterOfGravityCandleColors.Neutral, false);
@@ -572,10 +572,10 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 		var lowProduct = lowSmaVal.GetValue<decimal>() * lowLwmaVal.GetValue<decimal>() / point;
 		var closeProduct = closeSmaVal.GetValue<decimal>() * closeLwmaVal.GetValue<decimal>() / point;
 
-		var openSmoothVal = _openSmooth!.Process(openProduct, time, true);
-		var highSmoothVal = _highSmooth!.Process(highProduct, time, true);
-		var lowSmoothVal = _lowSmooth!.Process(lowProduct, time, true);
-		var closeSmoothVal = _closeSmooth!.Process(closeProduct, time, true);
+		var openSmoothVal = _openSmooth!.Process(new DecimalIndicatorValue(_openSmooth, openProduct, time));
+		var highSmoothVal = _highSmooth!.Process(new DecimalIndicatorValue(_highSmooth, highProduct, time));
+		var lowSmoothVal = _lowSmooth!.Process(new DecimalIndicatorValue(_lowSmooth, lowProduct, time));
+		var closeSmoothVal = _closeSmooth!.Process(new DecimalIndicatorValue(_closeSmooth, closeProduct, time));
 
 		if (!_openSmooth.IsFormed || !_highSmooth.IsFormed || !_lowSmooth.IsFormed || !_closeSmooth.IsFormed)
 			return new CenterOfGravityCandleValue(this, input, 0m, 0m, 0m, 0m, CenterOfGravityCandleColors.Neutral, false);
@@ -620,10 +620,10 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 		var length = Math.Max(1, Length);
 		var smoothLength = Math.Max(1, SmoothLength);
 
-		_openSma ??= new SimpleMovingAverage();
-		_highSma ??= new SimpleMovingAverage();
-		_lowSma ??= new SimpleMovingAverage();
-		_closeSma ??= new SimpleMovingAverage();
+		_openSma ??= new SMA();
+		_highSma ??= new SMA();
+		_lowSma ??= new SMA();
+		_closeSma ??= new SMA();
 		_openLwma ??= new WeightedMovingAverage();
 		_highLwma ??= new WeightedMovingAverage();
 		_lowLwma ??= new WeightedMovingAverage();
@@ -656,14 +656,14 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 		}
 	}
 
-	private LengthIndicator<decimal> CreateSmoothingIndicator()
+	private DecimalLengthIndicator CreateSmoothingIndicator()
 	{
 		return Method switch
 		{
-			CenterOfGravityMaMethods.Exponential => new ExponentialMovingAverage { Length = SmoothLength },
+			CenterOfGravityMaMethods.Exponential => new EMA { Length = SmoothLength },
 			CenterOfGravityMaMethods.Smoothed => new SmoothedMovingAverage { Length = SmoothLength },
 			CenterOfGravityMaMethods.LinearWeighted => new WeightedMovingAverage { Length = SmoothLength },
-			_ => new SimpleMovingAverage { Length = SmoothLength },
+			_ => new SMA { Length = SmoothLength },
 		};
 	}
 }

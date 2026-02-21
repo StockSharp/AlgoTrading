@@ -81,17 +81,17 @@ public class BreakthroughBbStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Simple moving average length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_bandsPeriod = Param(nameof(BandsPeriod), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("Bands Period", "Bollinger Bands lookback", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_deviation = Param(nameof(Deviation), 1.6m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation", "Bollinger Bands width in deviations", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -124,11 +124,11 @@ public class BreakthroughBbStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = MaPeriod };
+		_sma = new SMA { Length = MaPeriod };
 		_bollingerBands = new BollingerBands
 		{
 			Length = BandsPeriod,

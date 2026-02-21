@@ -98,31 +98,31 @@ public class WilliamsAlligatorAtrStrategy : Strategy
 		_jawLength = Param(nameof(JawLength), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Jaw Length", "Alligator jaw period", "Alligator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 1);
 
 		_teethLength = Param(nameof(TeethLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Teeth Length", "Alligator teeth period", "Alligator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_lipsLength = Param(nameof(LipsLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Lips Length", "Alligator lips period", "Alligator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for stop-loss", "ATR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 1);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop-loss", "ATR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -146,9 +146,9 @@ public class WilliamsAlligatorAtrStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_jaw = new SmoothedMovingAverage { Length = JawLength };
 		_teeth = new SmoothedMovingAverage { Length = TeethLength };

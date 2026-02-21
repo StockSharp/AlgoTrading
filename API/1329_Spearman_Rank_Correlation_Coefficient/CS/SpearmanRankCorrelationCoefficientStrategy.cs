@@ -94,9 +94,9 @@ public class SpearmanRankCorrelationCoefficientStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security1 == null)
 			throw new InvalidOperationException("First security is not specified.");
@@ -123,7 +123,7 @@ public class SpearmanRankCorrelationCoefficientStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessSecurity1Candle(ICandleMessage candle)

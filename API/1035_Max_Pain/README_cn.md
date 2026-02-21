@@ -20,7 +20,7 @@
   - `VixThreshold` = 44。
   - `HoldPeriods` = 8。
   - `CandleType` = TimeSpan.FromMinutes(1).TimeFrame().
-  - `VixCandleType` = TimeSpan.FromDays(1).TimeFrame().
+  - `VixCandleType` = TimeSpan.FromMinutes(5).TimeFrame().
 - **筛选**：
   - 类型: 突破
   - 方向: 仅多头

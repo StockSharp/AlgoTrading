@@ -86,25 +86,25 @@ public class LeManTrendStrategy : Strategy
 		_min = Param(nameof(Min), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Period", "Minimum lookback for highs/lows", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 25, 1);
 
 		_midle = Param(nameof(Midle), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Middle Period", "Middle lookback for highs/lows", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 1);
 
 		_max = Param(nameof(Max), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Period", "Maximum lookback for highs/lows", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 1);
 
 		_periodEma = Param(nameof(PeriodEma), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Smoothing period for bulls/bears", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_useLong = Param(nameof(UseLong), true)
@@ -129,9 +129,9 @@ public class LeManTrendStrategy : Strategy
 		_prevBears = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highMin = new Highest { Length = Min };
 		_highMidle = new Highest { Length = Midle };
@@ -139,8 +139,8 @@ public class LeManTrendStrategy : Strategy
 		_lowMin = new Lowest { Length = Min };
 		_lowMidle = new Lowest { Length = Midle };
 		_lowMax = new Lowest { Length = Max };
-		_bulls = new ExponentialMovingAverage { Length = PeriodEma };
-		_bears = new ExponentialMovingAverage { Length = PeriodEma };
+		_bulls = new EMA { Length = PeriodEma };
+		_bears = new EMA { Length = PeriodEma };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_highMin, _highMidle, _highMax, _lowMin, _lowMidle, _lowMax, ProcessCandle).Start();

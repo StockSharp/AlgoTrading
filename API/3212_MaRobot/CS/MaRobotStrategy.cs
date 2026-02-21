@@ -180,16 +180,16 @@ public class MaRobotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = Security?.PriceStep ?? 0m;
 
-		_fastMa = new SimpleMovingAverage { Length = FastPeriod };
-		_slowMa = new SimpleMovingAverage { Length = SlowPeriod };
-		_lowestLow = new Lowest { Length = BackClose, CandlePrice = CandlePrice.Low };
-		_highestHigh = new Highest { Length = BackClose, CandlePrice = CandlePrice.High };
+		_fastMa = new SMA { Length = FastPeriod };
+		_slowMa = new SMA { Length = SlowPeriod };
+		_lowestLow = new Lowest { Length = BackClose };
+		_highestHigh = new Highest { Length = BackClose };
 
 		_dailyAdx = new AverageDirectionalIndex { Length = DailyAdxPeriod };
 		_dailyRsi = new RelativeStrengthIndex { Length = DailyRsiPeriod };
@@ -199,7 +199,7 @@ public class MaRobotStrategy : Strategy
 			.Bind(_fastMa, _slowMa, _lowestLow, _highestHigh, ProcessMainCandle)
 			.Start();
 
-		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		dailySubscription
 			.Bind(_dailyAdx, _dailyRsi, ProcessDailyCandle)
 			.Start();

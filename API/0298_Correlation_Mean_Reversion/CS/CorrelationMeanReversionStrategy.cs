@@ -116,22 +116,22 @@ public class CorrelationMeanReversionStrategy : Strategy
 		_correlationPeriod = Param(nameof(CorrelationPeriod), 20)
 			.SetRange(10, 100)
 			.SetDisplay("Correlation Period", "Period for correlation calculation", "Parameters")
-			.SetCanOptimize(true);
+			;
 			
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetRange(10, 100)
 			.SetDisplay("Lookback Period", "Period for moving average and standard deviation calculation", "Parameters")
-			.SetCanOptimize(true);
+			;
 			
 		_deviationThreshold = Param(nameof(DeviationThreshold), 2.0m)
 			.SetRange(1.0m, 3.0m)
 			.SetDisplay("Deviation Threshold", "Threshold in standard deviations for entry signals", "Parameters")
-			.SetCanOptimize(true);
+			;
 			
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetRange(0.5m, 5.0m)
 			.SetDisplay("Stop Loss", "Stop loss percentage from entry price", "Parameters")
-			.SetCanOptimize(true);
+			;
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "Parameters");
@@ -163,9 +163,9 @@ public class CorrelationMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 
 		if (Security1 == null)
@@ -175,7 +175,7 @@ public class CorrelationMeanReversionStrategy : Strategy
 			throw new InvalidOperationException("Second security is not specified.");
 		
 		// Initialize indicators
-		_correlationSma = new SimpleMovingAverage { Length = LookbackPeriod };
+		_correlationSma = new SMA { Length = LookbackPeriod };
 		_correlationStdDev = new StandardDeviation { Length = LookbackPeriod };
 		
 		// Subscribe to candles for both securities
@@ -263,8 +263,8 @@ public class CorrelationMeanReversionStrategy : Strategy
 		_currentCorrelation = CalculateCorrelationCoefficient([.. _security1Prices], [.. _security2Prices]);
 		
 		// Process indicators
-		_averageCorrelation = _correlationSma.Process(_currentCorrelation, time, isFinal).ToDecimal();
-		_correlationStdDeviation = _correlationStdDev.Process(_currentCorrelation, time, isFinal).ToDecimal();
+		_averageCorrelation = _correlationSma.Process(new DecimalIndicatorValue(_correlationSma, _currentCorrelation, time.UtcDateTime)).ToDecimal();
+		_correlationStdDeviation = _correlationStdDev.Process(new DecimalIndicatorValue(_correlationStdDev, _currentCorrelation, time.UtcDateTime)).ToDecimal();
 
 		if (_correlationStdDeviation == 0)
 			return;

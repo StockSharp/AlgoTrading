@@ -94,14 +94,14 @@ public class ZScore2Strategy : Strategy
 		_prevHighest = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var haEma = new ExponentialMovingAverage { Length = HaEmaLength };
-		var scoreSma = new SimpleMovingAverage { Length = ScoreLength };
+		var haEma = new EMA { Length = HaEmaLength };
+		var scoreSma = new SMA { Length = ScoreLength };
 		var scoreSd = new StandardDeviation { Length = ScoreLength };
-		var scoreEma = new ExponentialMovingAverage { Length = ScoreEmaLength };
+		var scoreEma = new EMA { Length = ScoreEmaLength };
 		var highest = new Highest { Length = RangeWindow };
 		var lowest = new Lowest { Length = RangeWindow };
 
@@ -132,13 +132,13 @@ public class ZScore2Strategy : Strategy
 					_prevHaClose = haClose;
 				}
 
-				var emaHa = haEma.Process(haClose, candle.ServerTime, true).ToDecimal();
-				var mean = scoreSma.Process(emaHa, candle.ServerTime, true).ToDecimal();
-				var sd = scoreSd.Process(emaHa, candle.ServerTime, true).ToDecimal();
+				var emaHa = haEma.Process(new DecimalIndicatorValue(haEma, haClose, candle.ServerTime)).ToDecimal();
+				var mean = scoreSma.Process(new DecimalIndicatorValue(scoreSma, emaHa, candle.ServerTime)).ToDecimal();
+				var sd = scoreSd.Process(new DecimalIndicatorValue(scoreSd, emaHa, candle.ServerTime)).ToDecimal();
 				var score = sd == 0m ? 0m : (emaHa - mean) / sd;
-				var emaScoreVal = scoreEma.Process(score, candle.ServerTime, true).ToDecimal();
-				var high = highest.Process(emaScoreVal, candle.ServerTime, true).ToDecimal();
-				var low = lowest.Process(emaScoreVal, candle.ServerTime, true).ToDecimal();
+				var emaScoreVal = scoreEma.Process(new DecimalIndicatorValue(scoreEma, score, candle.ServerTime)).ToDecimal();
+				var high = highest.Process(new DecimalIndicatorValue(highest, emaScoreVal, candle.ServerTime)).ToDecimal();
+				var low = lowest.Process(new DecimalIndicatorValue(lowest, emaScoreVal, candle.ServerTime)).ToDecimal();
 				var middle = (high + low) / 2m;
 
 				if (!haEma.IsFormed || !scoreSma.IsFormed || !scoreSd.IsFormed || !highest.IsFormed || !lowest.IsFormed)

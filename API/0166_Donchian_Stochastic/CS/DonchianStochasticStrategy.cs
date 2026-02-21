@@ -92,25 +92,25 @@ public class DonchianStochasticStrategy : Strategy
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Donchian Period", "Donchian Channel lookback period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Stochastic oscillator period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_stochK = Param(nameof(StochK), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "Stochastic %K period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_stochD = Param(nameof(StochD), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Stochastic %D period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -119,7 +119,7 @@ public class DonchianStochasticStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 	}
 
@@ -139,9 +139,9 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	}
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 		// Create indicators
 		_donchian = new DonchianChannels

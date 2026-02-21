@@ -74,19 +74,19 @@ public class RomanDirectionFlipStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order volume", "Quantity for every market order", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 46)
 			.SetGreaterThanZero()
 			.SetDisplay("Take profit (steps)", "Number of price steps required to take profit", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 5);
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 31)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop loss (steps)", "Number of price steps allowed against the position", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 5);
 
 		_startWithBuy = Param(nameof(StartWithBuy), true)
@@ -106,9 +106,9 @@ public class RomanDirectionFlipStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_nextTradeBuy = StartWithBuy;
 		_orderPending = false;

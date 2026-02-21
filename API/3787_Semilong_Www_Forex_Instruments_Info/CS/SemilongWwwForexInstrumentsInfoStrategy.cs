@@ -216,9 +216,9 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_shiftCloseOne = new Shift { Length = Math.Max(0, ShiftOne) };
 		_shiftCloseTwo = new Shift { Length = Math.Max(0, ShiftOne + ShiftTwo) };
@@ -236,8 +236,8 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var shiftedOneValue = _shiftCloseOne.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
-		var shiftedTwoValue = _shiftCloseTwo.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
+		var shiftedOneValue = _shiftCloseOne.Process(new DecimalIndicatorValue(_shiftCloseOne, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var shiftedTwoValue = _shiftCloseTwo.Process(new DecimalIndicatorValue(_shiftCloseTwo, candle.ClosePrice, candle.OpenTime)).ToDecimal();
 
 		if (!_shiftCloseOne.IsFormed || !_shiftCloseTwo.IsFormed)
 			return;

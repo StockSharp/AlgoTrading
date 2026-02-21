@@ -117,47 +117,47 @@ public Maybeawo222Strategy()
 {
 _movingPeriod = Param(nameof(MovingPeriod), 14)
 .SetDisplay("MA Period", "Simple moving average period", "Indicators")
-.SetCanOptimize(true);
+;
 
 _movingShift = Param(nameof(MovingShift), 0)
 .SetDisplay("MA Shift", "Number of completed candles used as shift", "Indicators")
-.SetCanOptimize(true);
+;
 
 _stopLossPips = Param(nameof(StopLossPips), 100m)
 .SetDisplay("Stop Loss (pips)", "Fixed stop-loss distance in pips", "Risk")
-.SetCanOptimize(true);
+;
 
 _takeProfitPips = Param(nameof(TakeProfitPips), 800m)
 .SetDisplay("Take Profit (pips)", "Fixed take-profit distance in pips", "Risk")
-.SetCanOptimize(true);
+;
 
 _breakevenPips1 = Param(nameof(BreakevenPips1), 180m)
 .SetDisplay("Breakeven Trigger 1 (pips)", "Profit distance that triggers the first stop adjustment", "Risk")
-.SetCanOptimize(true);
+;
 
 _breakevenPips2 = Param(nameof(BreakevenPips2), 500m)
 .SetDisplay("Breakeven Trigger 2 (pips)", "Profit distance that triggers the second stop adjustment", "Risk")
-.SetCanOptimize(true);
+;
 
 _desiredBreakevenDistancePips1 = Param(nameof(DesiredBreakevenDistancePips1), 60m)
 .SetDisplay("Breakeven Stop 1 (pips)", "Stop distance applied when the first breakeven is triggered", "Risk")
-.SetCanOptimize(true);
+;
 
 _desiredBreakevenDistancePips2 = Param(nameof(DesiredBreakevenDistancePips2), 350m)
 .SetDisplay("Breakeven Stop 2 (pips)", "Stop distance applied when the second breakeven is triggered", "Risk")
-.SetCanOptimize(true);
+;
 
 _startHour = Param(nameof(StartHour), 3)
 .SetDisplay("Start Hour", "Trading window start hour (0-23)", "Schedule")
-.SetCanOptimize(true);
+;
 
 _endHour = Param(nameof(EndHour), 22)
 .SetDisplay("End Hour", "Trading window end hour (0-23)", "Schedule")
-.SetCanOptimize(true);
+;
 
 _orderVolume = Param(nameof(OrderVolume), 0.5m)
 .SetDisplay("Order Volume", "Base market order volume", "Trading")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 .SetDisplay("Candle Type", "Primary candle series", "General");
@@ -185,14 +185,14 @@ _breakevenLevel2Reached = false;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _pipSize = CalculatePipSize();
 Volume = OrderVolume;
 
-var sma = new SimpleMovingAverage { Length = MovingPeriod };
+var sma = new SMA { Length = MovingPeriod };
 
 var subscription = SubscribeCandles(CandleType);
 subscription.Bind(sma, ProcessCandle).Start();

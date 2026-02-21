@@ -128,19 +128,19 @@ public class WaddahAttarTrendStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Fast EMA period for MACD", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_slowLength = Param(nameof(SlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length", "Slow EMA period for MACD", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 1);
 
 		_maLength = Param(nameof(MaLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Smoothing moving average period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -153,13 +153,13 @@ public class WaddahAttarTrendStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -182,9 +182,9 @@ public class WaddahAttarTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_colors = new decimal[SignalBar + 2];
 		_bufferIndex = 0;

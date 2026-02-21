@@ -81,22 +81,22 @@ public class OsfCountertrendStrategy : Strategy
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetRange(2, 200)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("RSI Period", "RSI length used in oscillator", "General");
 
 		_volumePerPoint = Param(nameof(VolumePerPoint), 0.01m)
 		.SetRange(0.001m, 1m)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Volume per Point", "Order volume per RSI point from 50", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150m)
 		.SetRange(0m, 1000m)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Take Profit", "Distance to take profit in points", "Risk");
 
 		_cooldownBars = Param(nameof(CooldownBars), 5)
 		.SetRange(0, 50)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Cooldown Bars", "Finished candles to wait after trading", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -120,9 +120,9 @@ public class OsfCountertrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex
 		{

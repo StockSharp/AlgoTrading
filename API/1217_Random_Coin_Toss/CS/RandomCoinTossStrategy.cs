@@ -41,25 +41,25 @@ public class RandomCoinTossStrategy : Strategy
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_slMultiplier = Param(nameof(SlMultiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("SL Multiplier", "Stop loss = ATR * multiplier", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_tpMultiplier = Param(nameof(TpMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("TP Multiplier", "Take profit = ATR * multiplier", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_entryFrequency = Param(nameof(EntryFrequency), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Frequency", "Number of bars between coin tosses", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -82,9 +82,9 @@ public class RandomCoinTossStrategy : Strategy
 		_takeProfit = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrLength };
 
@@ -94,7 +94,7 @@ public class RandomCoinTossStrategy : Strategy
 			.Bind(_atr, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

@@ -80,17 +80,17 @@ public class ZScoreVolumeFilterStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetRange(10, 50)
 			.SetDisplay("Lookback Period", "Period for calculating moving averages and standard deviation", "Parameters")
-			.SetCanOptimize(true);
+			;
 			
 		_zScoreThreshold = Param(nameof(ZScoreThreshold), 2.0m)
 			.SetRange(1.0m, 3.0m)
 			.SetDisplay("Z-Score Threshold", "Z-Score threshold for entry signals", "Parameters")
-			.SetCanOptimize(true);
+			;
 			
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetRange(0.5m, 5.0m)
 			.SetDisplay("Stop Loss", "Stop loss percentage from entry price", "Parameters")
-			.SetCanOptimize(true);
+			;
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "Parameters");
@@ -114,18 +114,18 @@ public class ZScoreVolumeFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		if (Security == null)
 			throw new InvalidOperationException("Security is not specified.");
 
 
 		// Initialize indicators
-		_priceSma = new SimpleMovingAverage { Length = LookbackPeriod };
+		_priceSma = new SMA { Length = LookbackPeriod };
 		_priceStdDev = new StandardDeviation { Length = LookbackPeriod };
-		_volumeSma = new SimpleMovingAverage { Length = LookbackPeriod };
+		_volumeSma = new SMA { Length = LookbackPeriod };
 		
 		// Set up candle subscription
 		var subscription = SubscribeCandles(CandleType);
@@ -162,9 +162,9 @@ public class ZScoreVolumeFilterStrategy : Strategy
 		_currentVolume = candle.TotalVolume;
 		
 		// Process indicators
-		_averagePrice = _priceSma.Process(_currentPrice, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-		_priceStdDeviation = _priceStdDev.Process(_currentPrice, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-		_averageVolume = _volumeSma.Process(_currentVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		_averagePrice = _priceSma.Process(new DecimalIndicatorValue(_priceSma, _currentPrice, candle.ServerTime)).ToDecimal();
+		_priceStdDeviation = _priceStdDev.Process(new DecimalIndicatorValue(_priceStdDev, _currentPrice, candle.ServerTime)).ToDecimal();
+		_averageVolume = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, _currentVolume, candle.ServerTime)).ToDecimal();
 		
 		// Check trading signals
 		CheckSignal();

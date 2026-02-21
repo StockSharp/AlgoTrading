@@ -79,9 +79,9 @@ public class ZeroLagVolatilityBreakoutEmaTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		_bollinger = new BollingerBands { Length = EmaLength, Width = StdMultiplier };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -89,7 +89,7 @@ public class ZeroLagVolatilityBreakoutEmaTrendStrategy : Strategy
 			.Bind(_ema, ProcessCandle)
 			.Start();
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
@@ -104,7 +104,7 @@ public class ZeroLagVolatilityBreakoutEmaTrendStrategy : Strategy
 		var lJumper = Math.Min(candle.ClosePrice, emaValue);
 		var dif = lJumper == 0 ? 0 : (hJumper / lJumper) - 1m;
 
-		var bbVal = (BollingerBandsValue)_bollinger.Process(dif, candle.CloseTime, true);
+		var bbVal = (BollingerBandsValue)_bollinger.Process(new DecimalIndicatorValue(_bollinger, dif, candle.CloseTime));
 		if (bbVal.UpBand is not decimal bbu || bbVal.MovingAverage is not decimal bbm)
 			return;
 

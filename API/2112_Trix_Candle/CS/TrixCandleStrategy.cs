@@ -68,7 +68,7 @@ public class TrixCandleStrategy : Strategy
 	{
 		_trixPeriod = Param(nameof(TrixPeriod), 14)
 			.SetDisplay("TRIX Period", "Period for triple exponential smoothing", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for processing", "General");
@@ -100,9 +100,9 @@ public class TrixCandleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_openTema = new TripleExponentialMovingAverage { Length = TrixPeriod };
 		_closeTema = new TripleExponentialMovingAverage { Length = TrixPeriod };
@@ -111,7 +111,7 @@ public class TrixCandleStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

@@ -76,19 +76,19 @@ public class ErgodicTicksVolumeIndicatorStrategy : Strategy
 		_shortLength = Param(nameof(ShortLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Short Length", "Fast smoothing length", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_longLength = Param(nameof(LongLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Long Length", "Slow smoothing length", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_signalLength = Param(nameof(SignalLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Length", "EMA length for signal line", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 15, 1);
 	}
 
@@ -107,9 +107,9 @@ public class ErgodicTicksVolumeIndicatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tsi = new TrueStrengthIndex
 		{
@@ -117,7 +117,7 @@ public class ErgodicTicksVolumeIndicatorStrategy : Strategy
 				LongLength = LongLength
 		};
 
-		_signal = new ExponentialMovingAverage { Length = SignalLength };
+		_signal = new EMA { Length = SignalLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

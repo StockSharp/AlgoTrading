@@ -79,22 +79,22 @@ public class PropFirmBusinessSimulatorStrategy : Strategy
 	{
 		_maPeriod = Param(nameof(MaPeriod), 20)
 		.SetDisplay("MA Period", "Moving average period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 		.SetDisplay("ATR Period", "ATR period for channel width", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_multiplier = Param(nameof(Multiplier), 2m)
 		.SetDisplay("Multiplier", "ATR multiplier", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 
 		_riskPerTrade = Param(nameof(RiskPerTrade), 1m)
 		.SetDisplay("Risk %", "Risk per trade as percent of equity", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -116,11 +116,11 @@ public class PropFirmBusinessSimulatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = MaPeriod };
+		_ema = new EMA { Length = MaPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

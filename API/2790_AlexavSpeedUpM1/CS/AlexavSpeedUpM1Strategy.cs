@@ -109,27 +109,27 @@ public class AlexavSpeedUpM1Strategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 30)
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 100, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 90)
 		.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 180, 30);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10)
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 		.SetDisplay("Trailing Step (pips)", "Price movement required to move the trailing stop", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 5);
 
 		_minimumBodySizePips = Param(nameof(MinimumBodySizePips), 100)
 		.SetDisplay("Minimum Body (pips)", "Minimum candle body size to trigger entries", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 200, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -150,9 +150,9 @@ public class AlexavSpeedUpM1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips == 0)
 			throw new InvalidOperationException("Trailing step must be greater than zero when trailing stop is enabled.");

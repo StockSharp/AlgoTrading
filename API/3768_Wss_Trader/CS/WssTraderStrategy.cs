@@ -59,7 +59,7 @@ public class WssTraderStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Working Candle", "Primary candle type for trading logic.", "General");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Daily Candle", "Daily candle type used for pivot calculation.", "General");
 
 		_startHour = Param(nameof(StartHour), 8)
@@ -185,9 +185,9 @@ public class WssTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 		if (_priceStep <= 0m)
@@ -199,7 +199,7 @@ public class WssTraderStrategy : Strategy
 		var dailySubscription = SubscribeCandles(DailyCandleType);
 		dailySubscription.Bind(ProcessDailyCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

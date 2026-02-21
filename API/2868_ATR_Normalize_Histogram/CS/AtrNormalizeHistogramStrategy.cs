@@ -77,33 +77,33 @@ public class AtrNormalizeHistogramStrategy : Strategy
 
 		_firstSmoothingMethod = Param(nameof(FirstSmoothingMethod), AtrNormalizeSmoothingMethods.Simple)
 			.SetDisplay("Diff Smoothing", "Smoother for close-low difference", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_firstLength = Param(nameof(FirstLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Diff Length", "Length for difference smoothing", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_secondSmoothingMethod = Param(nameof(SecondSmoothingMethod), AtrNormalizeSmoothingMethods.Simple)
 			.SetDisplay("Range Smoothing", "Smoother for true range", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_secondLength = Param(nameof(SecondLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Length", "Length for range smoothing", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_highLevel = Param(nameof(HighLevel), 60m)
 			.SetDisplay("High Level", "Upper histogram threshold", "Levels")
-			.SetCanOptimize(true);
+			;
 
 		_middleLevel = Param(nameof(MiddleLevel), 50m)
 			.SetDisplay("Middle Level", "Neutral histogram threshold", "Levels")
-			.SetCanOptimize(true);
+			;
 
 		_lowLevel = Param(nameof(LowLevel), 40m)
 			.SetDisplay("Low Level", "Lower histogram threshold", "Levels")
-			.SetCanOptimize(true);
+			;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetGreaterThanZero()
@@ -133,9 +133,9 @@ public class AtrNormalizeHistogramStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_diffSmoother = CreateSmoother(FirstSmoothingMethod, FirstLength);
 		_rangeSmoother = CreateSmoother(SecondSmoothingMethod, SecondLength);
@@ -150,7 +150,7 @@ public class AtrNormalizeHistogramStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -323,11 +323,11 @@ public class AtrNormalizeHistogramStrategy : Strategy
 
 		return method switch
 		{
-		AtrNormalizeSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+		AtrNormalizeSmoothingMethods.Exponential => new EMA { Length = length },
 		AtrNormalizeSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 		AtrNormalizeSmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
 		AtrNormalizeSmoothingMethods.Jurik => new JurikMovingAverage { Length = length },
-		_ => new SimpleMovingAverage { Length = length },
+		_ => new SMA { Length = length },
 		};
 	}
 }

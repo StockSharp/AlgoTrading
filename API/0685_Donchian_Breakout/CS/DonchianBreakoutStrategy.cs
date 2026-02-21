@@ -50,31 +50,31 @@ public class DonchianBreakoutStrategy : Strategy
 
 		_entryLength = Param(nameof(EntryLength), 20)
 			.SetDisplay("Donchian Entry Length", "Length for entry Donchian channel", "Donchian")
-			.SetCanOptimize(true);
+			;
 
 		_exitLength = Param(nameof(ExitLength), 10)
 			.SetDisplay("Donchian Exit Length", "Length for exit Donchian channel", "Donchian")
-			.SetCanOptimize(true);
+			;
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetDisplay("ATR Length", "ATR period", "ATR")
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 			.SetDisplay("ATR Stop Multiplier", "Stop loss ATR multiplier", "ATR")
-			.SetCanOptimize(true);
+			;
 
 		_emaLength = Param(nameof(EmaLength), 50)
 			.SetDisplay("EMA Length", "EMA trend filter period", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_volumeSmaLength = Param(nameof(VolumeSmaLength), 20)
 			.SetDisplay("Volume SMA Length", "Volume SMA period", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_atrSmaLength = Param(nameof(AtrSmaLength), 20)
 			.SetDisplay("ATR SMA Length", "ATR SMA period", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_enableLongs = Param(nameof(EnableLongs), true)
 			.SetDisplay("Enable Longs", "Allow long trades", "Filters");
@@ -168,17 +168,17 @@ public class DonchianBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_entryDonchian = new DonchianChannels { Length = EntryLength };
 		_exitDonchian = new DonchianChannels { Length = ExitLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		_rsi = new RelativeStrengthIndex { Length = 14 };
-		_volumeSma = new SimpleMovingAverage { Length = VolumeSmaLength };
-		_atrSma = new SimpleMovingAverage { Length = AtrSmaLength };
+		_volumeSma = new SMA { Length = VolumeSmaLength };
+		_atrSma = new SMA { Length = AtrSmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -210,15 +210,15 @@ public class DonchianBreakoutStrategy : Strategy
 		var entryBands = (DonchianChannelsValue)entryValue;
 		var exitBands = (DonchianChannelsValue)exitValue;
 
-		if (entryBands.UpBand is not decimal entryHigh || entryBands.LowBand is not decimal entryLow || exitBands.UpBand is not decimal exitHigh || exitBands.LowBand is not decimal exitLow)
+		if (entryBands.UpperBand is not decimal entryHigh || entryBands.LowerBand is not decimal entryLow || exitBands.UpperBand is not decimal exitHigh || exitBands.LowerBand is not decimal exitLow)
 			return;
 
 		var atr = atrValue.ToDecimal();
 		var ema = emaValue.ToDecimal();
 		var rsi = rsiValue.ToDecimal();
 
-		var atrSma = _atrSma.Process(atr, candle.ServerTime, true).ToDecimal();
-		var volSma = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var atrSma = _atrSma.Process(new DecimalIndicatorValue(_atrSma, atr, candle.ServerTime)).ToDecimal();
+		var volSma = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 		var volatilityPass = !UseVolatilityFilter || atr > atrSma;
 		var volumePass = !UseVolumeFilter || candle.TotalVolume > volSma;

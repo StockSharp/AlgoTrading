@@ -96,13 +96,13 @@ public class TripleEmaCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma1 = new SimpleMovingAverage { Length = Sma1Period };
-		_sma2 = new SimpleMovingAverage { Length = Sma2Period };
-		_sma3 = new SimpleMovingAverage { Length = Sma3Period };
+		_sma1 = new SMA { Length = Sma1Period };
+		_sma2 = new SMA { Length = Sma2Period };
+		_sma3 = new SMA { Length = Sma3Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

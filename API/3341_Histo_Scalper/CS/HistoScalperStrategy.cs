@@ -623,7 +623,7 @@ public class HistoScalperStrategy : Strategy
 			Length = PeriodIndicator2
 		};
 
-		_atrAverage = new SimpleMovingAverage
+		_atrAverage = new SMA
 		{
 			Length = AtrAveragePeriod
 		};
@@ -662,8 +662,7 @@ public class HistoScalperStrategy : Strategy
 		};
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = KPeriod,
+		{ K = { Length = KPeriod },
 			K = { Length = Slowing },
 			D = { Length = DPeriod }
 		};

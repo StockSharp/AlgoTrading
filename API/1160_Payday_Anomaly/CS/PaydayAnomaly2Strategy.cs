@@ -79,21 +79,21 @@ public class PaydayAnomaly2Strategy : Strategy
 	{
 		_trade1st = Param(nameof(Trade1st), true)
 			.SetDisplay("Trade 1st", "Trade on the 1st day", "General")
-			.SetCanOptimize(true);
+			;
 
 		_trade2nd = Param(nameof(Trade2nd), true)
 			.SetDisplay("Trade 2nd", "Trade on the 2nd day", "General")
-			.SetCanOptimize(true);
+			;
 
 		_trade16th = Param(nameof(Trade16th), true)
 			.SetDisplay("Trade 16th", "Trade on the 16th day", "General")
-			.SetCanOptimize(true);
+			;
 
 		_trade31st = Param(nameof(Trade31st), true)
 			.SetDisplay("Trade 31st", "Trade on the 31st day", "General")
-			.SetCanOptimize(true);
+			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -111,10 +111,10 @@ public class PaydayAnomaly2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

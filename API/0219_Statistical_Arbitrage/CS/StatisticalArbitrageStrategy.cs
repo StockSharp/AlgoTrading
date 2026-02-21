@@ -76,13 +76,13 @@ public class StatisticalArbitrageStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for calculating moving averages", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 			
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop-loss %", "Stop-loss as percentage of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -117,9 +117,9 @@ public class StatisticalArbitrageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (SecondSecurity == null)
 			throw new InvalidOperationException("Second security is not specified.");
@@ -243,7 +243,7 @@ public class StatisticalArbitrageStrategy : Strategy
 		_lastSecondPrice = candle.ClosePrice;
 	
 		// Process through MA indicator and store last value
-		var maValue = _secondMA.Process(candle.ClosePrice, candle.ServerTime, candle.State == CandleStates.Finished);
+		var maValue = _secondMA.Process(new DecimalIndicatorValue(_secondMA, candle.ClosePrice, candle.ServerTime));
 		_secondMAValue = maValue.ToDecimal();
 	}
 }

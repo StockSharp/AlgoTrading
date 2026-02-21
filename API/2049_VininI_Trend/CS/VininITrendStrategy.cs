@@ -80,7 +80,7 @@ public class VininITrendStrategy : Strategy
 	{
 		_period = Param(nameof(Period), 20)
 			.SetDisplay("CCI Period", "Period for the CCI indicator", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_upLevel = Param(nameof(UpLevel), 10)
@@ -110,9 +110,9 @@ public class VininITrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cci = new CommodityChannelIndex { Length = Period };
 

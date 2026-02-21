@@ -59,7 +59,7 @@ public class PosNegDiCrossoverStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Length of the Average Directional Index", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 50, 1);
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), true)
@@ -202,9 +202,9 @@ public class PosNegDiCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetCycle();
 

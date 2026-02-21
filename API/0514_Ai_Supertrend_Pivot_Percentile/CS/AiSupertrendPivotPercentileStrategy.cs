@@ -96,53 +96,53 @@ public class AiSupertrendPivotPercentileStrategy : Strategy
 		_length1 = Param(nameof(Length1), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ST1 Length", "First Supertrend ATR length", "Supertrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_factor1 = Param(nameof(Factor1), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("ST1 Factor", "First Supertrend multiplier", "Supertrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_length2 = Param(nameof(Length2), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("ST2 Length", "Second Supertrend ATR length", "Supertrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 10);
 
 		_factor2 = Param(nameof(Factor2), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("ST2 Factor", "Second Supertrend multiplier", "Supertrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 6m, 1m);
 
 		_adxLength = Param(nameof(AdxLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Length", "ADX calculation period", "Trend Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Threshold", "Minimum ADX for trading", "Trend Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_pivotLength = Param(nameof(PivotLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Pivot Length", "Length for Williams %R", "Pivot Percentile")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_tpPercent = Param(nameof(TpPercent), 2m)
 			.SetDisplay("TP Percent", "Take profit in percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_slPercent = Param(nameof(SlPercent), 1m)
 			.SetDisplay("SL Percent", "Stop loss in percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 	}
 
@@ -151,9 +151,9 @@ public class AiSupertrendPivotPercentileStrategy : Strategy
 	=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_supertrend1 = new SuperTrend { Length = Length1, Multiplier = Factor1 };
 	_supertrend2 = new SuperTrend { Length = Length2, Multiplier = Factor2 };

@@ -117,17 +117,17 @@ public class FuturesEngulfingCandleSizeStrategy : Strategy
 		_candleSizeThresholdTicks = Param(nameof(CandleSizeThresholdTicks), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Ticks", "Candle range threshold", "General")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit Ticks", "Take profit distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss Ticks", "Stop loss distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_startHour = Param(nameof(StartHour), 7)
 			.SetRange(0, 23)
@@ -163,9 +163,9 @@ public class FuturesEngulfingCandleSizeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var tick = Security?.PriceStep ?? 1m;
 		_candleSizeThreshold = CandleSizeThresholdTicks * tick;

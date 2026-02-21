@@ -109,36 +109,36 @@ public class FiboIsarStrategy : Strategy
 	{
 		_stepFast = Param(nameof(StepFast), 0.02m)
 			.SetDisplay("Fast SAR Step", "Acceleration step for fast SAR", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maxFast = Param(nameof(MaximumFast), 0.2m)
 			.SetDisplay("Fast SAR Max", "Maximum acceleration for fast SAR", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stepSlow = Param(nameof(StepSlow), 0.01m)
 			.SetDisplay("Slow SAR Step", "Acceleration step for slow SAR", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maxSlow = Param(nameof(MaximumSlow), 0.1m)
 			.SetDisplay("Slow SAR Max", "Maximum acceleration for slow SAR", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_countBarSearch = Param(nameof(CountBarSearch), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Count Bar Search", "Lookback for extremes", "General")
-			.SetCanOptimize(true);
+			;
 
 		_indentStopLoss = Param(nameof(IndentStopLoss), 30)
 			.SetDisplay("Indent Stop Loss", "Stop loss offset in pips", "General")
-			.SetCanOptimize(true);
+			;
 
 		_fiboEntranceLevel = Param(nameof(FiboEntranceLevel), 50m)
 			.SetDisplay("Fibo Entry", "Fibonacci entry level percentage", "Fibonacci")
-			.SetCanOptimize(true);
+			;
 
 		_fiboProfitLevel = Param(nameof(FiboProfitLevel), 161m)
 			.SetDisplay("Fibo Profit", "Fibonacci profit level percentage", "Fibonacci")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -169,11 +169,11 @@ public class FiboIsarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_fastSar = new ParabolicSar { Acceleration = StepFast, AccelerationMax = MaximumFast };
 		_slowSar = new ParabolicSar { Acceleration = StepSlow, AccelerationMax = MaximumSlow };
@@ -188,7 +188,7 @@ public class FiboIsarStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var hour = candle.CloseTime.LocalDateTime.Hour;
+		var hour = candle.CloseTime.Hour;
 		if (UseTimeFilter && (hour < StartHour || hour > StopHour))
 		{
 			CancelPendingOrder();

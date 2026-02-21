@@ -213,9 +213,9 @@ public class FiveMaMultiTimeframeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Prepare indicators for every timeframe before subscribing.
 		_primarySma = CreateSmaSet();
@@ -263,7 +263,7 @@ public class FiveMaMultiTimeframeStrategy : Strategy
 				ProcessTertiary)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 		// Activate default position protection helper.
 	}
 
@@ -271,11 +271,11 @@ public class FiveMaMultiTimeframeStrategy : Strategy
 	{
 		return new[]
 		{
-			new SimpleMovingAverage { Length = FirstPeriod },
-			new SimpleMovingAverage { Length = SecondPeriod },
-			new SimpleMovingAverage { Length = ThirdPeriod },
-			new SimpleMovingAverage { Length = FourthPeriod },
-			new SimpleMovingAverage { Length = FifthPeriod }
+			new SMA { Length = FirstPeriod },
+			new SMA { Length = SecondPeriod },
+			new SMA { Length = ThirdPeriod },
+			new SMA { Length = FourthPeriod },
+			new SMA { Length = FifthPeriod }
 		};
 	}
 

@@ -191,35 +191,35 @@ public class EmaWmaRsiStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period for the exponential moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 2);
 
 		_wmaPeriod = Param(nameof(WmaPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("WMA Period", "Period for the weighted moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 30, 2);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period for the RSI filter", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 30, 2);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
 			.SetDisplay("Stop Loss (points)", "Distance from entry expressed in MetaTrader points", "Risk")
 			.SetRange(0m, 5000m)
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
 			.SetDisplay("Take Profit (points)", "Profit target expressed in MetaTrader points", "Risk")
 			.SetRange(0m, 5000m)
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 70m)
 			.SetDisplay("Trailing Stop (points)", "Fixed trailing distance; zero enables adaptive trailing", "Risk")
 			.SetRange(0m, 5000m)
-			.SetCanOptimize(true);
+			;
 
 		_closeOppositePositions = Param(nameof(CloseOppositePositions), false)
 			.SetDisplay("Close Counter Trades", "Close the opposite position before entering", "Execution");
@@ -227,12 +227,12 @@ public class EmaWmaRsiStrategy : Strategy
 		_fixedVolume = Param(nameof(FixedVolume), 0.1m)
 			.SetDisplay("Fixed Volume", "Absolute volume used for market orders", "Execution")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_riskPercent = Param(nameof(RiskPercent), 10m)
 			.SetDisplay("Risk %", "Percentage of equity used when sizing trades dynamically", "Execution")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_trailingMode = Param(nameof(TrailingMode), TrailingSources.CandleExtremes)
 			.SetDisplay("Trailing Source", "Price source used when adaptive trailing is enabled", "Risk");
@@ -286,9 +286,9 @@ public class EmaWmaRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = Security?.Step ?? Security?.PriceStep ?? 0m;
 		if (_pointSize <= 0m)
@@ -298,7 +298,7 @@ public class EmaWmaRsiStrategy : Strategy
 
 		_stepPrice = Security?.StepPrice ?? 0m;
 
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_ema = new EMA { Length = EmaPeriod };
 		_wma = new WeightedMovingAverage { Length = WmaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 

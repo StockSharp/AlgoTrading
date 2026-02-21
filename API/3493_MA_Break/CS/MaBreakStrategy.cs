@@ -67,88 +67,88 @@ public class MaBreakStrategy : Strategy
 
 		_fastMa1Period = Param(nameof(FastMa1Period), 20)
 			.SetDisplay("Fast MA 1", "Fast moving average period used for the first trend filter", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_slowMa1Period = Param(nameof(SlowMa1Period), 30)
 			.SetDisplay("Slow MA 1", "Slow moving average period used for the first trend filter", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_fastMa2Period = Param(nameof(FastMa2Period), 30)
 			.SetDisplay("Fast MA 2", "Fast moving average period used for the secondary trend filter", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_slowMa2Period = Param(nameof(SlowMa2Period), 50)
 			.SetDisplay("Slow MA 2", "Slow moving average period used for the secondary trend filter", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_openFilterPeriod = Param(nameof(OpenFilterPeriod), 30)
 			.SetDisplay("Open Filter MA", "Moving average period used to compare the previous open price", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_pullbackPeriod = Param(nameof(PullbackMaPeriod), 20)
 			.SetDisplay("Pullback MA", "Moving average period used to validate the pullback wick", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_quietBarsCount = Param(nameof(QuietBarsCount), 2)
 			.SetDisplay("Quiet Bars", "Number of calm candles used to measure the breakout impulse", "Impulse")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_quietBarsMinRange = Param(nameof(QuietBarsMinRange), 0m)
 			.SetDisplay("Quiet Range (pips)", "Minimal range in pips required across the quiet candles", "Impulse")
-			.SetCanOptimize(true)
+			
 			.SetNotNegative();
 
 		_impulseStrength = Param(nameof(ImpulseStrength), 1.1m)
 			.SetDisplay("Impulse Multiplier", "Breakout candle size multiplier relative to the quiet range", "Impulse")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_bullUpperWickPercent = Param(nameof(BullUpperWickPercent), 100m)
 			.SetDisplay("Bull Upper Wick %", "Maximum upper wick of the bullish impulse candle in percent of the range", "Pattern")
-			.SetCanOptimize(true)
+			
 			.SetNotNegative();
 
 		_bullLowerWickPercent = Param(nameof(BullLowerWickPercent), 0m)
 			.SetDisplay("Bull Lower Wick %", "Minimum lower wick of the bullish impulse candle in percent of the range", "Pattern")
-			.SetCanOptimize(true)
+			
 			.SetNotNegative();
 
 		_bearUpperWickPercent = Param(nameof(BearUpperWickPercent), 0m)
 			.SetDisplay("Bear Upper Wick %", "Minimum upper wick of the bearish impulse candle in percent of the range", "Pattern")
-			.SetCanOptimize(true)
+			
 			.SetNotNegative();
 
 		_bearLowerWickPercent = Param(nameof(BearLowerWickPercent), 100m)
 			.SetDisplay("Bear Lower Wick %", "Maximum lower wick of the bearish impulse candle in percent of the range", "Pattern")
-			.SetCanOptimize(true)
+			
 			.SetNotNegative();
 
 		_candleMinSize = Param(nameof(CandleMinSize), 0m)
 			.SetDisplay("Min Candle Size (pips)", "Minimal total range in pips required for the impulse candle", "Pattern")
-			.SetCanOptimize(true)
+			
 			.SetNotNegative();
 
 		_candleMaxSize = Param(nameof(CandleMaxSize), 100m)
 			.SetDisplay("Max Candle Size (pips)", "Maximum total range in pips allowed for the impulse candle", "Pattern")
-			.SetCanOptimize(true)
+			
 			.SetNotNegative();
 
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetDisplay("Stop-Loss (pips)", "Protective stop distance in pips", "Orders")
-			.SetCanOptimize(true)
+			
 			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
 			.SetDisplay("Take-Profit (pips)", "Profit target distance in pips", "Orders")
-			.SetCanOptimize(true)
+			
 			.SetNotNegative();
 
 		_enableLong = Param(nameof(EnableLong), true)
@@ -352,20 +352,20 @@ public class MaBreakStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? PriceStepFallback;
 		if (_priceStep <= 0m)
 			_priceStep = PriceStepFallback;
 
-		_fastMa1 = new ExponentialMovingAverage { Length = FastMa1Period };
-		_slowMa1 = new ExponentialMovingAverage { Length = SlowMa1Period };
-		_fastMa2 = new ExponentialMovingAverage { Length = FastMa2Period };
-		_slowMa2 = new ExponentialMovingAverage { Length = SlowMa2Period };
-		_openFilterMa = new ExponentialMovingAverage { Length = OpenFilterPeriod };
-		_pullbackMa = new ExponentialMovingAverage { Length = PullbackMaPeriod };
+		_fastMa1 = new EMA { Length = FastMa1Period };
+		_slowMa1 = new EMA { Length = SlowMa1Period };
+		_fastMa2 = new EMA { Length = FastMa2Period };
+		_slowMa2 = new EMA { Length = SlowMa2Period };
+		_openFilterMa = new EMA { Length = OpenFilterPeriod };
+		_pullbackMa = new EMA { Length = PullbackMaPeriod };
 
 		_history.Clear();
 		ResetLongState();
@@ -376,7 +376,7 @@ public class MaBreakStrategy : Strategy
 		.Bind(_fastMa1, _slowMa1, _fastMa2, _slowMa2, _openFilterMa, _pullbackMa, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle,

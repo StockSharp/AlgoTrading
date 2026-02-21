@@ -73,12 +73,12 @@ public class HullMaReversalStrategy : Strategy
 		_hmaPeriod = Param(nameof(HmaPeriod), 9)
 			.SetDisplay("HMA Period", "Period for Hull Moving Average", "Indicator Settings")
 			.SetRange(5, 20)
-			.SetCanOptimize(true);
+			;
 			
 		_atrMultiplier = Param(nameof(AtrMultiplier), new Unit(2, UnitTypes.Absolute))
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR stop-loss", "Risk Management")
 			.SetRange(1.5m, 3.0m)
-			.SetCanOptimize(true);
+			;
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -86,7 +86,7 @@ public class HullMaReversalStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2.0m, 0.5m);
 	}
 
@@ -105,9 +105,9 @@ public class HullMaReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = 14 };
 

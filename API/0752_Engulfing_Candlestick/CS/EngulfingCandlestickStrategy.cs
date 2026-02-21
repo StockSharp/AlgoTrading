@@ -94,7 +94,7 @@ public class EngulfingCandlestickStrategy : Strategy
 		_holdPeriods = Param(nameof(HoldPeriods), 17)
 			.SetRange(1, 50)
 			.SetDisplay("Hold Periods", "Bars to hold open position", "General")
-			.SetCanOptimize(true);
+			;
 
 		_pattern = Param(nameof(Pattern), PatternTypes.Bullish)
 			.SetDisplay("Pattern", "Engulfing pattern type", "General");
@@ -119,9 +119,9 @@ public class EngulfingCandlestickStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

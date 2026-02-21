@@ -192,49 +192,49 @@ public EnhancedRangeFilterAtrTpSlStrategy()
 _period = Param(nameof(Period), 100)
 .SetGreaterThanZero()
 .SetDisplay("Sampling Period", "Range filter sampling period", "Range Filter")
-.SetCanOptimize(true)
+
 .SetOptimize(50, 200, 25);
 
 _multiplier = Param(nameof(Multiplier), 3m)
 .SetGreaterThanZero()
 .SetDisplay("Range Multiplier", "Range multiplier", "Range Filter")
-.SetCanOptimize(true)
+
 .SetOptimize(1m, 5m, 1m);
 
 _atrLength = Param(nameof(AtrLength), 14)
 .SetGreaterThanZero()
 .SetDisplay("ATR Length", "ATR calculation period", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(7, 28, 7);
 
 _rsiLength = Param(nameof(RsiLength), 14)
 .SetGreaterThanZero()
 .SetDisplay("RSI Length", "RSI period", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(7, 28, 7);
 
 _rsiOverbought = Param(nameof(RsiOverbought), 65)
 .SetGreaterThanZero()
 .SetDisplay("RSI Overbought", "Overbought level", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(60, 80, 5);
 
 _rsiOversold = Param(nameof(RsiOversold), 35)
 .SetGreaterThanZero()
 .SetDisplay("RSI Oversold", "Oversold level", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(20, 40, 5);
 
 _emaFastLength = Param(nameof(EmaFastLength), 9)
 .SetGreaterThanZero()
 .SetDisplay("Fast EMA", "Fast EMA length", "Trend")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 20, 5);
 
 _emaSlowLength = Param(nameof(EmaSlowLength), 21)
 .SetGreaterThanZero()
 .SetDisplay("Slow EMA", "Slow EMA length", "Trend")
-.SetCanOptimize(true)
+
 .SetOptimize(20, 50, 5);
 
 _volumeFilter = Param(nameof(VolumeFilter), true)
@@ -243,25 +243,25 @@ _volumeFilter = Param(nameof(VolumeFilter), true)
 _riskReward = Param(nameof(RiskReward), 2m)
 .SetGreaterThanZero()
 .SetDisplay("Risk/Reward", "Risk reward ratio", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(1m, 3m, 0.5m);
 
 _rangingThreshold = Param(nameof(RangingThreshold), 0.5m)
 .SetGreaterThanZero()
 .SetDisplay("Ranging Threshold", "ATR ratio threshold", "Filters")
-.SetCanOptimize(true)
+
 .SetOptimize(0.3m, 0.8m, 0.1m);
 
 _atrMultiplierSl = Param(nameof(AtrMultiplierSl), 1.5m)
 .SetGreaterThanZero()
 .SetDisplay("ATR SL Mult", "ATR multiplier for stop loss", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(1m, 3m, 0.5m);
 
 _atrMultiplierTp = Param(nameof(AtrMultiplierTp), 3m)
 .SetGreaterThanZero()
 .SetDisplay("ATR TP Mult", "ATR multiplier for take profit", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(1m, 4m, 0.5m);
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -290,20 +290,20 @@ _takeProfit = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-_emaFast = new ExponentialMovingAverage { Length = EmaFastLength };
-_emaSlow = new ExponentialMovingAverage { Length = EmaSlowLength };
+_emaFast = new EMA { Length = EmaFastLength };
+_emaSlow = new EMA { Length = EmaSlowLength };
 _atr = new AverageTrueRange { Length = AtrLength };
 _rsi = new RelativeStrengthIndex { Length = RsiLength };
-_volumeSma = new SimpleMovingAverage { Length = 20 };
+_volumeSma = new SMA { Length = 20 };
 _highest = new Highest { Length = 14 };
 _lowest = new Lowest { Length = 14 };
 
-_avrng = new ExponentialMovingAverage { Length = Period };
-_smooth = new ExponentialMovingAverage { Length = Period * 2 - 1 };
+_avrng = new EMA { Length = Period };
+_smooth = new EMA { Length = Period * 2 - 1 };
 
 var subscription = SubscribeCandles(CandleType);
 subscription

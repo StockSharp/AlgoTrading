@@ -53,7 +53,7 @@ public class VrsVegasReversalStrategy : Strategy
 	_spikePercent = Param(nameof(SpikePercent), 0.025m)
 	    .SetGreaterThanZero()
 	    .SetDisplay("Spike %", "Spike percentage threshold", "Reversal")
-	    .SetCanOptimize(true)
+	    
 	    .SetOptimize(0.01m, 0.05m, 0.005m);
 
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -76,9 +76,9 @@ public class VrsVegasReversalStrategy : Strategy
     }
 
     /// <inheritdoc />
-    protected override void OnStarted(DateTimeOffset time)
+    protected override void OnStarted2(DateTime time)
     {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription

@@ -106,48 +106,48 @@ public class Twenty200ExpertStrategy : Strategy
 		_shift1 = Param(nameof(Shift1), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Shift 1", "Shift of first bar", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_shift2 = Param(nameof(Shift2), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Shift 2", "Shift of second bar", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_deltaLong = Param(nameof(DeltaLong), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Delta Long", "Price difference for long in points", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_deltaShort = Param(nameof(DeltaShort), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Delta Short", "Price difference for short in points", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitLong = Param(nameof(TakeProfitLong), 390)
 			.SetDisplay("Take Profit Long", "Take profit for long in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossLong = Param(nameof(StopLossLong), 1470)
 			.SetDisplay("Stop Loss Long", "Stop loss for long in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitShort = Param(nameof(TakeProfitShort), 320)
 			.SetDisplay("Take Profit Short", "Take profit for short in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossShort = Param(nameof(StopLossShort), 2670)
 			.SetDisplay("Stop Loss Short", "Stop loss for short in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_tradeHour = Param(nameof(TradeHour), 14)
 			.SetRange(0, 23)
 			.SetDisplay("Trade Hour", "Hour to open positions", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_maxOpenTime = Param(nameof(MaxOpenTime), 504)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Open Time", "Maximum position time in hours", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_volume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
@@ -173,9 +173,9 @@ public class Twenty200ExpertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

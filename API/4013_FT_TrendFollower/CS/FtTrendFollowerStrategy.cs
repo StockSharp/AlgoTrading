@@ -323,7 +323,7 @@ public class FtTrendFollowerStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		yield return (Security, CandleType);
-		yield return (Security, TimeSpan.FromDays(1).TimeFrame());
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
@@ -362,16 +362,16 @@ public class FtTrendFollowerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ValidateParameters();
 
 		_gmmaIndicators = BuildGmmaIndicators();
 		_gmmaPreviousValues = new decimal?[_gmmaIndicators.Length];
-		_emaFast = new ExponentialMovingAverage { Length = FastSignalLength };
-		_emaSlow = new ExponentialMovingAverage { Length = SlowSignalLength };
+		_emaFast = new EMA { Length = FastSignalLength };
+		_emaSlow = new EMA { Length = SlowSignalLength };
 		_laguerre = new AdaptiveLaguerreFilter { Gamma = LaguerreGamma };
 		_macd = new MovingAverageConvergenceDivergence
 		{
@@ -380,8 +380,8 @@ public class FtTrendFollowerStrategy : Strategy
 			SignalMa = { Length = 5 }
 		};
 		_hma = new HullMovingAverage { Length = HmaPeriod };
-		_channelHigh = new SimpleMovingAverage { Length = ChannelPeriod, CandlePrice = CandlePrice.High };
-		_channelLow = new SimpleMovingAverage { Length = ChannelPeriod, CandlePrice = CandlePrice.Low };
+		_channelHigh = new SMA { Length = ChannelPeriod };
+		_channelLow = new SMA { Length = ChannelPeriod };
 
 	var primaryIndicators = new List<IIndicator>(_gmmaIndicators.Length + 7);
 		primaryIndicators.AddRange(_gmmaIndicators);
@@ -398,7 +398,7 @@ public class FtTrendFollowerStrategy : Strategy
 			.BindEx(primaryIndicators, ProcessCandle)
 			.Start();
 
-		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		dailySubscription
 			.Bind(ProcessDailyCandle)
 			.Start();
@@ -893,10 +893,10 @@ ProcessExitModules(candle, channelHigh, channelLow);
 			periods.Add(period);
 		}
 
-		var indicators = new ExponentialMovingAverage[periods.Count];
+		var indicators = new EMA[periods.Count];
 		for (var i = 0; i < periods.Count; i++)
 		{
-			indicators[i] = new ExponentialMovingAverage { Length = periods[i] };
+			indicators[i] = new EMA { Length = periods[i] };
 		}
 
 		return indicators;

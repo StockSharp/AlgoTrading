@@ -51,43 +51,43 @@ public class EarlyOpenTrendStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Market order size used for entries", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_orderType = Param(nameof(OrderType), 0)
 			.SetDisplay("Order Type", "0 = long & short, 1 = long only, 2 = short only", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_rangeFilterPips = Param(nameof(RangeFilterPips), 1)
 			.SetNotNegative()
 			.SetDisplay("Range Filter (pips)", "Minimum wick size from the daily open", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Optional take-profit distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 1000)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Optional stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_startHour = Param(nameof(StartHour), 7)
 			.SetDisplay("Session Start Hour", "Hour of day (local exchange time) when entries become valid", "Session")
-			.SetCanOptimize(true);
+			;
 
 		_endHour = Param(nameof(EndHour), 18)
 			.SetDisplay("Session End Hour", "Hour of day (local exchange time) when new entries stop", "Session")
-			.SetCanOptimize(true);
+			;
 
 		_closingHour = Param(nameof(ClosingHour), 20)
 			.SetDisplay("Forced Close Hour", "Hour of day to flatten positions", "Session")
-			.SetCanOptimize(true);
+			;
 
 		_holdingHours = Param(nameof(HoldingHours), 0)
 			.SetNotNegative()
 			.SetDisplay("Holding Limit (hours)", "Maximum holding time before forcing an exit", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_summerTimeStartDay = Param(nameof(SummerTimeStartDay), 87)
 			.SetDisplay("DST Start Day", "Day of year when the summer offset becomes active", "Session");
@@ -228,9 +228,9 @@ public class EarlyOpenTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Pre-calculate the pip size to convert pip-based parameters into absolute prices.
 		_pipSize = CalculatePipSize();

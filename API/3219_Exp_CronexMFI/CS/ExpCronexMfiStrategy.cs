@@ -32,8 +32,8 @@ public class ExpCronexMfiStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private MoneyFlowIndex _mfi = null!;
-	private LengthIndicator<decimal> _fastSmoother = null!;
-	private LengthIndicator<decimal> _slowSmoother = null!;
+	private DecimalLengthIndicator _fastSmoother = null!;
+	private DecimalLengthIndicator _slowSmoother = null!;
 	private readonly List<(decimal fast, decimal slow)> _history = new();
 
 	/// <summary>
@@ -190,24 +190,24 @@ public class ExpCronexMfiStrategy : Strategy
 		_mfiPeriod = Param(nameof(MfiPeriod), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("MFI Period", "Length of the Money Flow Index", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Smoothing", "Period of the fast Cronex line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Smoothing", "Period of the slow Cronex line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_signalShift = Param(nameof(SignalShift), 1)
 			.SetDisplay("Signal Shift", "Number of finished candles to wait before acting", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 3, 1);
 
 		_smoothing = Param(nameof(Smoothing), SmoothingMethods.Simple)
@@ -243,9 +243,9 @@ public class ExpCronexMfiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_mfi = new MoneyFlowIndex { Length = MfiPeriod };
 		_fastSmoother = CreateSmoother(Smoothing, FastPeriod);
@@ -277,7 +277,7 @@ public class ExpCronexMfiStrategy : Strategy
 		}
 
 		// Enable built-in protection once at start to manage unexpected positions.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal mfiValue)
@@ -354,12 +354,12 @@ public class ExpCronexMfiStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethods method, int length)
+	private static DecimalLengthIndicator CreateSmoother(SmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SMA { Length = length },
+			SmoothingMethods.Exponential => new EMA { Length = length },
 			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
 			SmoothingMethods.DoubleExponential => new DoubleExponentialMovingAverage { Length = length },
@@ -368,7 +368,7 @@ public class ExpCronexMfiStrategy : Strategy
 			SmoothingMethods.ZeroLagExponential => new ZeroLagExponentialMovingAverage { Length = length },
 			SmoothingMethods.ArnaudLegoux => new ArnaudLegouxMovingAverage { Length = length },
 			SmoothingMethods.KaufmanAdaptive => new KaufmanAdaptiveMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 }

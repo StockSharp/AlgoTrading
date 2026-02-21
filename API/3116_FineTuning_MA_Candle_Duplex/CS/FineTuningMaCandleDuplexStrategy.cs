@@ -311,7 +311,7 @@ public class FineTuningMaCandleDuplexStrategy : Strategy
 		_longLength = Param(nameof(LongLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Long Length", "FineTuningMA length for long signals", "Long stream")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_longRank1 = Param(nameof(LongRank1), 2m)
@@ -361,7 +361,7 @@ public class FineTuningMaCandleDuplexStrategy : Strategy
 		_shortLength = Param(nameof(ShortLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Short Length", "FineTuningMA length for short signals", "Short stream")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_shortRank1 = Param(nameof(ShortRank1), 2m)
@@ -438,9 +438,9 @@ public class FineTuningMaCandleDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_longIndicator = new FineTuningMaCandleIndicator
 		{
@@ -592,7 +592,7 @@ public class FineTuningMaCandleDuplexStrategy : Strategy
 		}
 	}
 
-	private sealed class FineTuningMaCandleIndicator : Indicator<ICandleMessage>
+	private sealed class FineTuningMaCandleIndicator : BaseIndicator
 	{
 		public int Length { get; set; } = 10;
 		public decimal Rank1 { get; set; } = 2m;

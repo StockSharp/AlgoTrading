@@ -70,9 +70,9 @@ public class TemaObosPakunStrategy : Strategy
 		_tp = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ema1.Length = TemaLength;
 		_ema2.Length = TemaLength;

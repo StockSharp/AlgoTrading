@@ -176,13 +176,13 @@ public class AdvancedEaPanelStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Stop loss distance in price steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 150m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take profit distance in price steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 300m, 20m);
 
 		_volatilityPeriod = Param(nameof(VolatilityPeriod), 14)
@@ -258,9 +258,9 @@ public class AdvancedEaPanelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = Security?.PriceStep ?? 0.0001m;
 
@@ -282,11 +282,11 @@ public class AdvancedEaPanelStrategy : Strategy
 		{
 			var index = i;
 			var candleType = PanelTimeFrames[index].TimeFrame();
-			var ema3 = new ExponentialMovingAverage { Length = 3 };
-			var ema6 = new ExponentialMovingAverage { Length = 6 };
-			var ema9 = new ExponentialMovingAverage { Length = 9 };
-			var sma50 = new SimpleMovingAverage { Length = 50 };
-			var sma200 = new SimpleMovingAverage { Length = 200 };
+			var ema3 = new EMA { Length = 3 };
+			var ema6 = new EMA { Length = 6 };
+			var ema9 = new EMA { Length = 9 };
+			var sma50 = new SMA { Length = 50 };
+			var sma200 = new SMA { Length = 200 };
 			var cci14 = new CommodityChannelIndex { Length = 14 };
 			var rsi21 = new RelativeStrengthIndex { Length = 21 };
 

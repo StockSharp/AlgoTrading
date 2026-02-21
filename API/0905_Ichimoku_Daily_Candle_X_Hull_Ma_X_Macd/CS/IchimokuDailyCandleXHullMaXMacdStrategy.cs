@@ -119,7 +119,7 @@ public class IchimokuDailyCandleXHullMaXMacdStrategy : Strategy
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
+		=> [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
@@ -131,9 +131,9 @@ public class IchimokuDailyCandleXHullMaXMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_hma = new HullMovingAverage { Length = HmaPeriod, CandlePrice = PriceSource };
 		_macdFast = new HullMovingAverage { Length = MacdFastLength, CandlePrice = PriceSource };
@@ -151,7 +151,7 @@ public class IchimokuDailyCandleXHullMaXMacdStrategy : Strategy
 			.BindEx(_hma, _macdFast, _macdSlow, _ichimoku, ProcessCandle)
 			.Start();
 
-		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		dailySubscription
 			.Bind(ProcessDaily)
 			.Start();
@@ -184,7 +184,7 @@ public class IchimokuDailyCandleXHullMaXMacdStrategy : Strategy
 		var fast = fastValue.ToDecimal();
 		var slow = slowValue.ToDecimal();
 		var macdLine = fast - slow;
-		var signal = _macdSignal.Process(macdLine, candle.OpenTime, true).ToDecimal();
+		var signal = _macdSignal.Process(new DecimalIndicatorValue(_macdSignal, macdLine, candle.OpenTime)).ToDecimal();
 
 		var ichimokuTyped = (IchimokuValue)ichimokuValue;
 		if (ichimokuTyped.SenkouA is not decimal lead1 || ichimokuTyped.SenkouB is not decimal lead2)

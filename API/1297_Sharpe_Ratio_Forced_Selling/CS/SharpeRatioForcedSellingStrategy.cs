@@ -106,7 +106,7 @@ public class SharpeRatioForcedSellingStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Periods Per Year", "Trading periods per year", "Parameters");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 	
@@ -129,11 +129,11 @@ public class SharpeRatioForcedSellingStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_avgExcessReturn = new SimpleMovingAverage { Length = Length };
+		_avgExcessReturn = new SMA { Length = Length };
 		_stdDevExcessReturn = new StandardDeviation { Length = Length };
 		
 		_riskFreePerPeriod = (decimal)Math.Pow((double)(1m + RiskFreeRateAnnual), 1d / PeriodsPerYear) - 1m;
@@ -141,7 +141,7 @@ public class SharpeRatioForcedSellingStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle)
@@ -163,8 +163,8 @@ public class SharpeRatioForcedSellingStrategy : Strategy
 		
 		var excess = ret - _riskFreePerPeriod;
 		
-		var avg = _avgExcessReturn.Process(excess, candle.OpenTime, true).ToDecimal();
-		var std = _stdDevExcessReturn.Process(excess, candle.OpenTime, true).ToDecimal();
+		var avg = _avgExcessReturn.Process(new DecimalIndicatorValue(_avgExcessReturn, excess, candle.OpenTime)).ToDecimal();
+		var std = _stdDevExcessReturn.Process(new DecimalIndicatorValue(_stdDevExcessReturn, excess, candle.OpenTime)).ToDecimal();
 		
 		if (!_avgExcessReturn.IsFormed || !_stdDevExcessReturn.IsFormed || std == 0m || !IsFormedAndOnlineAndAllowTrading()) return;
 		

@@ -117,7 +117,7 @@ public class AlexavD1ProfitGbpUsdStrategy : Strategy
 		_rsiLowerLimit = Param(nameof(RsiLowerLimit), 25m)
 		.SetDisplay("RSI Lower Limit", "Minimum RSI required for shorts", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe", "General");
 	}
 
@@ -244,9 +244,9 @@ public class AlexavD1ProfitGbpUsdStrategy : Strategy
 		ResetShortState();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -284,7 +284,7 @@ public class AlexavD1ProfitGbpUsdStrategy : Strategy
 		_macdPrev2 = _macdPrev1;
 		_macdPrev1 = macdCurrent;
 
-		var emaValue = _emaOnHigh.Process(candle.HighPrice, candle.OpenTime, true);
+		var emaValue = _emaOnHigh.Process(new DecimalIndicatorValue(_emaOnHigh, candle.HighPrice, candle.OpenTime));
 		if (!emaValue.IsFinal || macd1 is null || macd2 is null)
 		return;
 

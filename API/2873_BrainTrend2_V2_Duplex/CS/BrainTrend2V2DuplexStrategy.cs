@@ -298,7 +298,7 @@ public class BrainTrend2V2DuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		// Initialize indicator instances for both long and short signal streams.
 		_longIndicator = new BrainTrend2V2Indicator
@@ -328,9 +328,9 @@ public class BrainTrend2V2DuplexStrategy : Strategy
 			.Start();
 
 		// Enable built-in position protection helpers.
-		StartProtection();
+		StartProtection(null, null);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 private void ProcessLongSignal(ICandleMessage candle, IIndicatorValue indicatorValue)
@@ -585,7 +585,7 @@ return 1m;
 /// <summary>
 /// BrainTrend2 V2 indicator implementation used by the duplex strategy.
 /// </summary>
-public class BrainTrend2V2Indicator : BaseIndicator<decimal>
+public class BrainTrend2V2Indicator : BaseIndicator
 {
 	public decimal Dartp { get; set; } = 7m;
 	public decimal Cecf { get; set; } = 0.7m;

@@ -103,31 +103,31 @@ public class FiveEightMaCrossStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Length of the EMA calculated on closing prices", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_slowLength = Param(nameof(SlowLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length", "Length of the EMA calculated on opening prices", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 40m)
 			.SetDisplay("Take Profit (points)", "Take profit distance expressed in price points", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
 			.SetDisplay("Stop Loss (points)", "Stop loss distance expressed in price points", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 100m, 10m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance expressed in price points", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 100m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -157,12 +157,12 @@ public class FiveEightMaCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
-	_fastMa = new ExponentialMovingAverage { Length = FastLength };
-	_slowMa = new ExponentialMovingAverage { Length = SlowLength };
+	_fastMa = new EMA { Length = FastLength };
+	_slowMa = new EMA { Length = SlowLength };
 
 	_pointValue = CalculatePointValue();
 
@@ -206,8 +206,8 @@ public class FiveEightMaCrossStrategy : Strategy
 	return;
 
 	// Feed indicators with the corresponding price source.
-	var fastValue = _fastMa.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
-	var slowValue = _slowMa.Process(candle.OpenPrice, candle.OpenTime, true).ToDecimal();
+	var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+	var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, candle.OpenPrice, candle.OpenTime)).ToDecimal();
 
 	if (!_fastMa.IsFormed || !_slowMa.IsFormed)
 	{

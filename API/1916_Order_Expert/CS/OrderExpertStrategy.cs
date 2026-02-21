@@ -95,13 +95,13 @@ public class OrderExpertStrategy : Strategy
 		_takeProfitPip = Param(nameof(TakeProfitPip), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Distance to take profit in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 200m, 10m);
 
 		_stopLossPip = Param(nameof(StopLossPip), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Distance to stop loss in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_enableTrailingStop = Param(nameof(EnableTrailingStop), true)
@@ -136,11 +136,11 @@ public class OrderExpertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_pipValue = Security.PriceStep ?? 1m;
 

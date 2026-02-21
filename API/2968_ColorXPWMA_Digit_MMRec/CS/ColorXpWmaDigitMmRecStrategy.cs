@@ -183,11 +183,11 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 		_indicatorPeriod = Param(nameof(IndicatorPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Indicator Period", "Number of bars for PWMA", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_indicatorPower = Param(nameof(IndicatorPower), 2.00001m)
 			.SetDisplay("Power", "Exponent applied to weights", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethods.Sma)
 			.SetDisplay("Smoothing Method", "Moving average applied to PWMA", "Indicator");
@@ -195,23 +195,23 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 		_smoothingLength = Param(nameof(SmoothingLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Length", "Length for the smoothing average", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_smoothingPhase = Param(nameof(SmoothingPhase), 15)
 			.SetDisplay("Smoothing Phase", "Phase parameter for some smoothers", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for the indicator", "Indicator");
 
 		_roundingDigits = Param(nameof(RoundingDigits), 2)
 			.SetDisplay("Rounding Digits", "Digits for rounding the indicator", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Shift used to read colors", "Logic")
-			.SetCanOptimize(true);
+			;
 
 		_enableBuyEntries = Param(nameof(EnableBuyEntries), true)
 			.SetDisplay("Enable Buy Entries", "Allow opening long positions", "Permissions");
@@ -454,9 +454,9 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = new ColorXpWmaDigitIndicator
 		{
@@ -692,7 +692,7 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 /// <summary>
 /// ColorXPWMA Digit indicator producing both value and color buffers.
 /// </summary>
-public class ColorXpWmaDigitIndicator : BaseIndicator<decimal>
+public class ColorXpWmaDigitIndicator : BaseIndicator
 {
 	private readonly Queue<decimal> _prices = new();
 	private decimal[] _weights = Array.Empty<decimal>();
@@ -836,17 +836,17 @@ public class ColorXpWmaDigitIndicator : BaseIndicator<decimal>
 
 		_smoother = Method switch
 		{
-			SmoothMethods.Sma => new SimpleMovingAverage { Length = SmoothingLength },
-			SmoothMethods.Ema => new ExponentialMovingAverage { Length = SmoothingLength },
+			SmoothMethods.Sma => new SMA { Length = SmoothingLength },
+			SmoothMethods.Ema => new EMA { Length = SmoothingLength },
 			SmoothMethods.Smma => new SmoothedMovingAverage { Length = SmoothingLength },
 			SmoothMethods.Lwma => new WeightedMovingAverage { Length = SmoothingLength },
 			SmoothMethods.Jjma => new JurikMovingAverage { Length = SmoothingLength },
 			SmoothMethods.JurX => new JurikMovingAverage { Length = SmoothingLength },
-			SmoothMethods.ParMa => new ExponentialMovingAverage { Length = SmoothingLength },
+			SmoothMethods.ParMa => new EMA { Length = SmoothingLength },
 			SmoothMethods.T3 => new TripleExponentialMovingAverage { Length = SmoothingLength },
-			SmoothMethods.Vidya => new ExponentialMovingAverage { Length = SmoothingLength },
+			SmoothMethods.Vidya => new EMA { Length = SmoothingLength },
 			SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = SmoothingLength },
-			_ => new SimpleMovingAverage { Length = SmoothingLength },
+			_ => new SMA { Length = SmoothingLength },
 		};
 	}
 

@@ -9,7 +9,7 @@ The **Skewness Commodity** strategy ranks commodity futures by the skewness of t
 - **Exit Criteria**: Periodic rebalance.
 - **Stops**: No explicit stop.
 - **Default Values**:
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Statistical
   - Direction: Both

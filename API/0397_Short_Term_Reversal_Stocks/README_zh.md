@@ -11,7 +11,7 @@
 - **出场条件**：持有几天或排名更新时平仓。
 - **止损**：可采用基于波动率的止损。
 - **默认值**：
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **筛选**：
   - 分类：均值回归
   - 方向：双向

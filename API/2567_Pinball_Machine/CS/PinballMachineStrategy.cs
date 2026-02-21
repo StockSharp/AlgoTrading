@@ -73,17 +73,17 @@ public class PinballMachineStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 1m)
 			.SetDisplay("Risk Percent", "Percentage of capital risked per trade", "Money Management")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_minOffsetPoints = Param(nameof(MinOffsetPoints), 10)
 			.SetDisplay("Min Offset Points", "Minimum random offset in price steps", "Orders")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_maxOffsetPoints = Param(nameof(MaxOffsetPoints), 100)
 			.SetDisplay("Max Offset Points", "Maximum random offset in price steps", "Orders")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe that triggers the lottery", "Data");
@@ -103,9 +103,9 @@ public class PinballMachineStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

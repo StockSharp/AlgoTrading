@@ -62,12 +62,12 @@ public class HorizontalRayStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Fast SMA length", "General")
-			.SetCanOptimize(true);
+			;
 
 		_slowLength = Param(nameof(SlowLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow SMA length", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
@@ -80,12 +80,12 @@ public class HorizontalRayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fast = new SimpleMovingAverage { Length = FastLength };
-		_slow = new SimpleMovingAverage { Length = SlowLength };
+		_fast = new SMA { Length = FastLength };
+		_slow = new SMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

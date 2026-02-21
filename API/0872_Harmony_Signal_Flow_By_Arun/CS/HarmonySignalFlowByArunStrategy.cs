@@ -26,31 +26,31 @@ public class HarmonySignalFlowByArunStrategy : Strategy {
 		_rsiPeriod =
 			Param(nameof(RsiPeriod), 5)
 				.SetDisplay("RSI Period", "RSI period length", "Parameters")
-				.SetCanOptimize(true);
+				;
 		_lThr = Param(nameof(LowerThreshold), 30m)
 					.SetDisplay("Lower Threshold", "RSI lower threshold",
 								"Parameters")
-					.SetCanOptimize(true);
+					;
 		_uThr = Param(nameof(UpperThreshold), 70m)
 					.SetDisplay("Upper Threshold", "RSI upper threshold",
 								"Parameters")
-					.SetCanOptimize(true);
+					;
 		_bSl = Param(nameof(BuyStopLoss), 100m)
 				   .SetDisplay("Buy Stop-Loss", "Stop-loss for long positions",
 							   "Risk")
-				   .SetCanOptimize(true);
+				   ;
 		_bTg =
 			Param(nameof(BuyTarget), 150m)
 				.SetDisplay("Buy Target", "Target for long positions", "Risk")
-				.SetCanOptimize(true);
+				;
 		_sSl = Param(nameof(SellStopLoss), 100m)
 				   .SetDisplay("Sell Stop-Loss",
 							   "Stop-loss for short positions", "Risk")
-				   .SetCanOptimize(true);
+				   ;
 		_sTg =
 			Param(nameof(SellTarget), 150m)
 				.SetDisplay("Sell Target", "Target for short positions", "Risk")
-				.SetCanOptimize(true);
+				;
 		_candleType =
 			Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 				.SetDisplay("Candle Type",
@@ -101,8 +101,8 @@ public class HarmonySignalFlowByArunStrategy : Strategy {
 		_price = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time) {
-		base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+		base.OnStarted2(time);
 		_rsi.Length = RsiPeriod;
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(_rsi, Process).Start();
@@ -117,7 +117,7 @@ public class HarmonySignalFlowByArunStrategy : Strategy {
 	private void Process(ICandleMessage c, decimal r) {
 		if (c.State != CandleStates.Finished)
 			return;
-		var t = c.CloseTime.LocalDateTime;
+		var t = c.CloseTime;
 		if (t.Hour == 15 && t.Minute == 25) {
 			if (Position > 0)
 				SellMarket(Position);

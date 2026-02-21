@@ -112,17 +112,17 @@ public class EmaPullbackSpeedStrategy : Strategy
 	_maxLength = Param(nameof(MaxLength), 50)
 	.SetRange(10, 200)
 	.SetDisplay("Maximum Length", "Maximum dynamic EMA length", "Dynamic EMA")
-	.SetCanOptimize(true);
+	;
 
 	_accelMultiplier = Param(nameof(AccelMultiplier), 3m)
 	.SetRange(1m, 10m)
 	.SetDisplay("Accel Multiplier", "Accelerator multiplier", "Dynamic EMA")
-	.SetCanOptimize(true);
+	;
 
 	_returnThreshold = Param(nameof(ReturnThreshold), 5m)
 	.SetRange(0.5m, 20m)
 	.SetDisplay("Pullback Threshold %", "Pullback distance", "Dynamic EMA")
-	.SetCanOptimize(true);
+	;
 
 	_atrLength = Param(nameof(AtrLength), 14)
 	.SetRange(5, 50)
@@ -131,30 +131,30 @@ public class EmaPullbackSpeedStrategy : Strategy
 	_atrMultiplier = Param(nameof(AtrMultiplier), 4m)
 	.SetRange(1m, 10m)
 	.SetDisplay("ATR Multiplier", "ATR stop-loss multiplier", "Risk Management")
-	.SetCanOptimize(true);
+	;
 
 	_fixedTpPct = Param(nameof(FixedTpPct), 1.5m)
 	.SetRange(0.5m, 10m)
 	.SetDisplay("Fixed TP %", "Take profit percent", "Risk Management")
-	.SetCanOptimize(true);
+	;
 
 	_shortEmaLength = Param(nameof(ShortEmaLength), 21)
 	.SetRange(5, 100)
 	.SetDisplay("Short EMA Length", "Fast EMA length", "EMA Filter")
-	.SetCanOptimize(true);
+	;
 
 	_longEmaLength = Param(nameof(LongEmaLength), 50)
 	.SetRange(10, 200)
 	.SetDisplay("Long EMA Length", "Slow EMA length", "EMA Filter")
-	.SetCanOptimize(true);
+	;
 
 	_longSpeedMin = Param(nameof(LongSpeedMin), 1000m)
 	.SetDisplay("Long Speed Min", "Minimum speed for long", "Speed")
-	.SetCanOptimize(true);
+	;
 
 	_shortSpeedMax = Param(nameof(ShortSpeedMax), -1000m)
 	.SetDisplay("Short Speed Max", "Maximum speed for short", "Speed")
-	.SetCanOptimize(true);
+	;
 	}
 
 	/// <inheritdoc />
@@ -180,12 +180,12 @@ public class EmaPullbackSpeedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
-	_emaShort = new ExponentialMovingAverage { Length = ShortEmaLength };
-	_emaLong = new ExponentialMovingAverage { Length = LongEmaLength };
+	_emaShort = new EMA { Length = ShortEmaLength };
+	_emaLong = new EMA { Length = LongEmaLength };
 	_atr = new AverageTrueRange { Length = AtrLength };
 	_maxAbsDiff = new Highest { Length = 200 };
 	_maxDeltaDiff = new Highest { Length = 200 };

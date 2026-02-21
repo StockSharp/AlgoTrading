@@ -94,11 +94,11 @@ public class EurusdV20Strategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		var sma = new SMA { Length = MaLength };
 		var atr = new Atr { Length = AtrLength };

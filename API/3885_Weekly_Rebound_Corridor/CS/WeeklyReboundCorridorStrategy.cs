@@ -108,19 +108,19 @@ public class WeeklyReboundCorridorStrategy : Strategy
 		_additionalBuyTakeProfitPoints = Param(nameof(AdditionalBuyTakeProfitPoints), 3m)
 		.SetNotNegative()
 		.SetDisplay("Buy Bonus Take Profit", "Additional points added to long take profits", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 10m, 0.5m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit", "Take-profit size in points", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 30m, 5m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 49m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss", "Stop-loss size in points", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 80m, 5m);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -130,12 +130,12 @@ public class WeeklyReboundCorridorStrategy : Strategy
 		_corridorPoints = Param(nameof(CorridorPoints), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Corridor", "Required gap between the previous close and the historical open", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 25m, 1m);
 
 		_tradeDayOfWeek = Param(nameof(TradeDayOfWeek), 5)
 		.SetDisplay("Trade Day", "Day of week when the setup is active (0=Sunday)", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 6, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -165,9 +165,9 @@ public class WeeklyReboundCorridorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_openShiftBuffer = new ShiftBuffer(24);
 
@@ -189,7 +189,7 @@ public class WeeklyReboundCorridorStrategy : Strategy
 		return;
 
 		var currentClose = candle.ClosePrice;
-		var localTime = ConvertToLocalTime(candle.OpenTime.UtcDateTime);
+		var localTime = ConvertToLocalTime(candle.OpenTime);
 
 		HandleActivePosition(candle, localTime);
 

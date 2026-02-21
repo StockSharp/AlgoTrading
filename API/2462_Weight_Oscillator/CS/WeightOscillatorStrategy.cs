@@ -145,10 +145,10 @@ public class WeightOscillatorStrategy : Strategy
     }
 
     /// <inheritdoc />
-    protected override void OnStarted(DateTimeOffset time)
+    protected override void OnStarted2(DateTime time)
     {
-        base.OnStarted(time);
-        StartProtection();
+        base.OnStarted2(time);
+        StartProtection(null, null);
 
         _oscillator.RsiPeriod = RsiPeriod;
         _oscillator.RsiWeight = RsiWeight;
@@ -216,7 +216,7 @@ public class WeightOscillatorStrategy : Strategy
 /// Custom indicator combining RSI, MFI, Williams %R and DeMarker into
 /// a single weighted oscillator smoothed by SMA.
 /// </summary>
-public class WeightOscillator : Indicator<decimal>
+public class WeightOscillator : BaseIndicator
 {
     public int RsiPeriod { get; set; } = 14;
     public decimal RsiWeight { get; set; } = 1m;

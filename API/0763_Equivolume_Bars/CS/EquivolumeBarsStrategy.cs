@@ -66,13 +66,13 @@ public class EquivolumeBarsStrategy : Strategy
 		_lookback = Param(nameof(Lookback), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Volume lookback period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 120, 20);
 
 		_volumeThreshold = Param(nameof(VolumeThreshold), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Threshold", "Ratio threshold for high volume", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.2m, 0.05m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -95,14 +95,14 @@ public class EquivolumeBarsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_volumeSma = new SimpleMovingAverage { Length = Lookback };
+		_volumeSma = new SMA { Length = Lookback };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.ForEach(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

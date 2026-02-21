@@ -57,13 +57,13 @@ public class LuckyCodeStrategy : Strategy
 		_shiftPoints = Param(nameof(ShiftPoints), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Shift points", "Minimum bid/ask jump required to trigger entries", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_limitPoints = Param(nameof(LimitPoints), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Limit points", "Maximum number of points allowed against the position", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 100, 5);
 	}
 
@@ -81,9 +81,9 @@ public class LuckyCodeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_shiftThreshold = CalculatePriceOffset(ShiftPoints);
 		_limitThreshold = CalculatePriceOffset(LimitPoints);

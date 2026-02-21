@@ -216,9 +216,9 @@ protected override void OnReseted()
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_priceStep = Security?.PriceStep ?? 0.0001m;
 	var decimals = Security?.Decimals ?? 4;
@@ -228,14 +228,14 @@ protected override void OnStarted(DateTimeOffset time)
 
 	_riskThreshold = InitialDeposit * (100m - RiskPercent) / 100m;
 
-	_m1Sma5 = new SimpleMovingAverage { Length = 5 };
-	_m1Sma8 = new SimpleMovingAverage { Length = 8 };
-	_m1Sma13 = new SimpleMovingAverage { Length = 13 };
-	_m1Sma60 = new SimpleMovingAverage { Length = 60 };
-	_m15Sma4 = new SimpleMovingAverage { Length = 4 };
-	_m15Sma5 = new SimpleMovingAverage { Length = 5 };
-	_m15Sma8 = new SimpleMovingAverage { Length = 8 };
-	_h1Sma24 = new SimpleMovingAverage { Length = 24 };
+	_m1Sma5 = new SMA { Length = 5 };
+	_m1Sma8 = new SMA { Length = 8 };
+	_m1Sma13 = new SMA { Length = 13 };
+	_m1Sma60 = new SMA { Length = 60 };
+	_m15Sma4 = new SMA { Length = 4 };
+	_m15Sma5 = new SMA { Length = 5 };
+	_m15Sma8 = new SMA { Length = 8 };
+	_h1Sma24 = new SMA { Length = 24 };
 
 	var m1Subscription = SubscribeCandles(M1CandleType);
 	m1Subscription.Bind(ProcessM1).Start();
@@ -578,7 +578,7 @@ private void HandleActivePosition(ICandleMessage candle, bool riskExceeded)
 			_longBarsSinceEntry++;
 		}
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		var collapseM1 = candle.ClosePrice <= candle.OpenPrice - 10m * _pipSize;
 		var collapsePrev =
 		_longEntryTime.HasValue && candle.OpenTime - _longEntryTime.Value > TimeSpan.FromMinutes(1) &&
@@ -615,7 +615,7 @@ private void HandleActivePosition(ICandleMessage candle, bool riskExceeded)
 			_shortBarsSinceEntry++;
 		}
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		var collapseM1 = candle.ClosePrice >= candle.OpenPrice + 10m * _pipSize;
 		var collapsePrev =
 		_shortEntryTime.HasValue && candle.OpenTime - _shortEntryTime.Value > TimeSpan.FromMinutes(1) &&
@@ -681,7 +681,7 @@ private static bool IsBetween(decimal value, ICandleMessage candle)
 
 private void ProcessSma(SimpleMovingAverage sma, ref RollingValues values, decimal input, DateTimeOffset time)
 {
-	var indicatorValue = sma.Process(new DecimalIndicatorValue(sma, input, time));
+	var indicatorValue = sma.Process(new DecimalIndicatorValue(sma, input, time.UtcDateTime));
 	if (!indicatorValue.IsFinal || indicatorValue is not DecimalIndicatorValue decimalValue)
 	return;
 

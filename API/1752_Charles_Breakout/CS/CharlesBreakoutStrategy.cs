@@ -131,14 +131,14 @@ public class CharlesBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(new Unit(TakeProfit, UnitTypes.Percent), new Unit(StopLoss, UnitTypes.Percent));
 
-		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
+		var fastEma = new EMA { Length = FastPeriod };
+		var slowEma = new EMA { Length = SlowPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -162,7 +162,7 @@ public class CharlesBreakoutStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		var date = candle.OpenTime.UtcDateTime.Date;
+		var date = candle.OpenTime.Date;
 		if (date != _currentDate)
 		{
 		_currentDate = date;

@@ -69,17 +69,17 @@ public class TmaBreakoutStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 30)
 			.SetDisplay("TMA Length", "Period for the Triangular Moving Average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 10);
 
 		_upLevel = Param(nameof(UpLevel), 300m)
 			.SetDisplay("Upper Level", "Offset above TMA in price units", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 500m, 100m);
 
 		_downLevel = Param(nameof(DownLevel), 300m)
 			.SetDisplay("Lower Level", "Offset below TMA in price units", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 500m, 100m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -100,9 +100,9 @@ public class TmaBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var tma = new TriangularMovingAverage { Length = Length };
 

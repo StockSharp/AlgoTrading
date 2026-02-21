@@ -37,22 +37,22 @@ public class LongOnlyMtfEmaCloudStrategy : Strategy
 		_shortLength = Param(nameof(ShortLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Short EMA Length", "Period of the short EMA", "EMA Cloud Settings")
-			.SetCanOptimize(true);
+			;
 
 		_longLength = Param(nameof(LongLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Long EMA Length", "Period of the long EMA", "EMA Cloud Settings")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for EMAs", "General");
@@ -77,19 +77,19 @@ public class LongOnlyMtfEmaCloudStrategy : Strategy
 		_isInitialized = false;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_shortEma = new ExponentialMovingAverage { Length = ShortLength };
-		_longEma = new ExponentialMovingAverage { Length = LongLength };
+		_shortEma = new EMA { Length = ShortLength };
+		_longEma = new EMA { Length = LongLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(_shortEma, _longEma, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

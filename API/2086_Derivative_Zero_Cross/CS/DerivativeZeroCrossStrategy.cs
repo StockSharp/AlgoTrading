@@ -176,9 +176,9 @@ public class DerivativeZeroCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_momentum = new Momentum { Length = DerivativePeriod };
 
@@ -209,7 +209,7 @@ public class DerivativeZeroCrossStrategy : Strategy
 			return;
 
 		var price = GetPrice(candle);
-		var momentumValue = _momentum.Process(price, candle.OpenTime, true).ToDecimal();
+		var momentumValue = _momentum.Process(new DecimalIndicatorValue(_momentum, price, candle.OpenTime)).ToDecimal();
 
 		var derivative = momentumValue / DerivativePeriod * 100m;
 

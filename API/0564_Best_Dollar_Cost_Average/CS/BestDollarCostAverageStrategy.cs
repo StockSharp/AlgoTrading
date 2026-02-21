@@ -89,7 +89,7 @@ public class BestDollarCostAverageStrategy : Strategy
 	/// </summary>
 	public BestDollarCostAverageStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_amountInvested = Param(nameof(AmountInvested), 100m)
@@ -113,9 +113,9 @@ public class BestDollarCostAverageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_nextBuyTime = StartDate;
 

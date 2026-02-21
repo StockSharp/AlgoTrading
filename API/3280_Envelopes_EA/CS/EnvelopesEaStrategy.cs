@@ -85,25 +85,25 @@ public class EnvelopesEaStrategy : Strategy
 		_envelopePeriod = Param(nameof(EnvelopePeriod), 50)
 			.SetDisplay("Envelope Period", "EMA length used for the envelope", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 150, 5);
 
 		_upperDeviationPercent = Param(nameof(UpperDeviationPercent), 0.5m)
 			.SetDisplay("Upper Deviation %", "Percent width of the upper band", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 2m, 0.1m);
 
 		_lowerDeviationPercent = Param(nameof(LowerDeviationPercent), 0.5m)
 			.SetDisplay("Lower Deviation %", "Percent width of the lower band", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 2m, 0.1m);
 
 		_entryOffsetPoints = Param(nameof(EntryOffsetPoints), 100m)
 			.SetDisplay("Entry Offset (points)", "Extra distance from the band before entering", "Trading")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -128,11 +128,11 @@ public class EnvelopesEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage
+		_ema = new EMA
 		{
 			Length = EnvelopePeriod
 		};

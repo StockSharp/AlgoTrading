@@ -30,12 +30,12 @@ public class BollingerChannelReboundStrategy : Strategy
 		_length = Param(nameof(Length), 20)
 			.SetDisplay("Length", "Period for Bollinger Bands", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_bufferFactor = Param(nameof(BufferFactor), 0.2m)
 			.SetDisplay("Buffer Factor", "Stop-loss buffer factor", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
@@ -61,11 +61,11 @@ public class BollingerChannelReboundStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var bands = new BollingerBands
 		{

@@ -172,13 +172,13 @@ public class NRatioSignStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfitPercent), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 1m);
 
 		_stopLoss = Param(nameof(StopLossPercent), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 1m);
 	}
 
@@ -197,13 +197,13 @@ public class NRatioSignStrategy : Strategy
 	_nrtr = 0m;
 	_nratioPrev = 50m;
 	_trend = 1;
-	_ema = new ExponentialMovingAverage { Length = Length };
+	_ema = new EMA { Length = Length };
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription

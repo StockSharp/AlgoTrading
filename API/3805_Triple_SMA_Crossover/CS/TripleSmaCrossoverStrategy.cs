@@ -92,30 +92,30 @@ public class TripleSmaCrossoverStrategy : Strategy
 		_fastSmaLength = Param(nameof(FastSmaLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA Length", "Fast SMA period (SMA1)", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_mediumSmaLength = Param(nameof(MediumSmaLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Medium SMA Length", "Medium SMA period (SMA2)", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 1);
 
 		_slowSmaLength = Param(nameof(SlowSmaLength), 29)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA Length", "Slow SMA period (SMA3)", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 1);
 
 		_smaSpreadSteps = Param(nameof(SmaSpreadSteps), 0)
 			.SetDisplay("SMA Spread Steps", "Required SMA separation in price steps", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 5, 1);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume for entries", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 	}
 
@@ -133,17 +133,17 @@ public class TripleSmaCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 
-		StartProtection();
+		StartProtection(null, null);
 
-		var fastSma = new SimpleMovingAverage { Length = FastSmaLength };
-		var mediumSma = new SimpleMovingAverage { Length = MediumSmaLength };
-		var slowSma = new SimpleMovingAverage { Length = SlowSmaLength };
+		var fastSma = new SMA { Length = FastSmaLength };
+		var mediumSma = new SMA { Length = MediumSmaLength };
+		var slowSma = new SMA { Length = SlowSmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

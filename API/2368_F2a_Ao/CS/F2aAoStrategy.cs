@@ -80,23 +80,23 @@ public class F2aAoStrategy : Strategy
 	{
 		_indicatorTimeFrame = Param(nameof(IndicatorTimeFrame), TimeSpan.FromHours(12))
 		.SetDisplay("AO TimeFrame", "Time frame for oscillator", "General")
-		.SetCanOptimize(true);
+		;
 		
 		_trendTimeFrame = Param(nameof(TrendTimeFrame), TimeSpan.FromDays(1))
 		.SetDisplay("Trend TimeFrame", "Time frame for trend candle", "General")
-		.SetCanOptimize(true);
+		;
 		
 		_fastPeriod = Param(nameof(FastPeriod), 13)
 		.SetDisplay("AO Fast", "Fast period for Awesome Oscillator", "Awesome Oscillator")
-		.SetCanOptimize(true);
+		;
 		
 		_slowPeriod = Param(nameof(SlowPeriod), 144)
 		.SetDisplay("AO Slow", "Slow period for Awesome Oscillator", "Awesome Oscillator")
-		.SetCanOptimize(true);
+		;
 		
 		_filterLength = Param(nameof(FilterLength), 3)
 		.SetDisplay("Filter", "SMA length for AO filter", "Awesome Oscillator")
-		.SetCanOptimize(true);
+		;
 	}
 	
 	/// <inheritdoc />
@@ -113,19 +113,19 @@ public class F2aAoStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		var ao = new AwesomeOscillator
 		{
-			ShortPeriod = FastPeriod,
-			LongPeriod = SlowPeriod
+			ShortMa = { Length = FastPeriod },
+			LongMa = { Length = SlowPeriod }
 		};
 		
-		var filter = new SimpleMovingAverage { Length = FilterLength };
+		var filter = new SMA { Length = FilterLength };
 		
 		var aoSubscription = SubscribeCandles(IndicatorTimeFrame);
 		aoSubscription.Bind(ao, filter, ProcessOscillator).Start();

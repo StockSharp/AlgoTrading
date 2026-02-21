@@ -154,27 +154,27 @@ public class Elderv30aug05vStrategy : Strategy
 
 		_longStopLoss = Param(nameof(LongStopLoss), 17m)
 		.SetDisplay("Long Stop Loss", "Stop-loss for long trades in points", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_shortStopLoss = Param(nameof(ShortStopLoss), 46m)
 		.SetDisplay("Short Stop Loss", "Stop-loss for short trades in points", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_longTrailingStop = Param(nameof(LongTrailingStop), 18m)
 		.SetDisplay("Long Trailing Stop", "Trailing stop distance for long trades", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_shortTrailingStop = Param(nameof(ShortTrailingStop), 22m)
 		.SetDisplay("Short Trailing Stop", "Trailing stop distance for short trades", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_longStochasticThreshold = Param(nameof(LongStochasticThreshold), 36m)
 		.SetDisplay("Long Stochastic Threshold", "Maximum stochastic %K value for long trades", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_shortStochasticThreshold = Param(nameof(ShortStochasticThreshold), 66m)
 		.SetDisplay("Short Stochastic Threshold", "Minimum stochastic %K value for short trades", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_baseCandleType = Param(nameof(BaseCandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Base Candle Type", "Primary candle series for trade management", "Data");
@@ -187,51 +187,51 @@ public class Elderv30aug05vStrategy : Strategy
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 13)
 		.SetDisplay("Primary MACD Fast", "Fast EMA length for the primary MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 30)
 		.SetDisplay("Primary MACD Slow", "Slow EMA length for the primary MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 		.SetDisplay("Primary MACD Signal", "Signal EMA length for the primary MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_altMacdFastPeriod = Param(nameof(AltMacdFastPeriod), 14)
 		.SetDisplay("Secondary MACD Fast", "Fast EMA length for the secondary MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_altMacdSlowPeriod = Param(nameof(AltMacdSlowPeriod), 56)
 		.SetDisplay("Secondary MACD Slow", "Slow EMA length for the secondary MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_altMacdSignalPeriod = Param(nameof(AltMacdSignalPeriod), 9)
 		.SetDisplay("Secondary MACD Signal", "Signal EMA length for the secondary MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticFastKPeriod = Param(nameof(StochasticFastKPeriod), 2)
 		.SetDisplay("Fast Stochastic %K", "%K length for the fast stochastic", "Indicators")
-		.SetCanOptimize(true);
+		;
 
-		_stochasticFastDPeriod = Param(nameof(StochasticFastDPeriod), 3)
+		_stochasticFastD = { Length = Param }(nameof(StochasticFastDPeriod), 3)
 		.SetDisplay("Fast Stochastic %D", "%D length for the fast stochastic", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticFastSmooth = Param(nameof(StochasticFastSmooth), 3)
 		.SetDisplay("Fast Stochastic Smooth", "Smoothing for the fast stochastic", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticSlowKPeriod = Param(nameof(StochasticSlowKPeriod), 1)
 		.SetDisplay("Slow Stochastic %K", "%K length for the slow stochastic", "Indicators")
-		.SetCanOptimize(true);
+		;
 
-		_stochasticSlowDPeriod = Param(nameof(StochasticSlowDPeriod), 3)
+		_stochasticSlowD = { Length = Param }(nameof(StochasticSlowDPeriod), 3)
 		.SetDisplay("Slow Stochastic %D", "%D length for the slow stochastic", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticSlowSmooth = Param(nameof(StochasticSlowSmooth), 3)
 		.SetDisplay("Slow Stochastic Smooth", "Smoothing for the slow stochastic", "Indicators")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>
@@ -375,9 +375,9 @@ public class Elderv30aug05vStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = GetPriceStep();
 
@@ -634,7 +634,7 @@ public class Elderv30aug05vStrategy : Strategy
 		return new StochasticOscillator
 		{
 			KPeriod = k,
-			DPeriod = d,
+			D = {  K = { Length = d } },
 			Smooth = smooth
 		};
 	}

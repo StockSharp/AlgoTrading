@@ -198,7 +198,7 @@ public class ExpSarTmPlusStrategy : Strategy
 	{
 		_moneyManagement = Param(nameof(MoneyManagement), 0.1m)
 			.SetDisplay("Money Management", "Portion of the base volume used per entry", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 1m, 0.05m);
 
 		_moneyManagementMode = Param(nameof(ManagementMode), MoneyManagementModes.Lot)
@@ -206,13 +206,13 @@ public class ExpSarTmPlusStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetDisplay("Stop Loss (points)", "Stop loss distance measured in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 3000, 100)
 			.SetNotNegative();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 			.SetDisplay("Take Profit (points)", "Take profit distance measured in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 5000, 100)
 			.SetNotNegative();
 
@@ -237,7 +237,7 @@ public class ExpSarTmPlusStrategy : Strategy
 
 		_holdingMinutes = Param(nameof(HoldingMinutes), 240)
 			.SetDisplay("Holding Minutes", "Maximum position holding time in minutes", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60, 720, 60)
 			.SetNotNegative();
 
@@ -246,13 +246,13 @@ public class ExpSarTmPlusStrategy : Strategy
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
 			.SetDisplay("SAR Step", "Acceleration step for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.1m, 0.01m)
 			.SetGreaterThanZero();
 
 		_sarMaximum = Param(nameof(SarMaximum), 0.2m)
 			.SetDisplay("SAR Maximum", "Maximum acceleration for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m)
 			.SetGreaterThanZero();
 
@@ -277,11 +277,11 @@ public class ExpSarTmPlusStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 		InitializeBuffers();
 
 		var parabolicSar = new ParabolicSar

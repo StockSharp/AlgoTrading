@@ -245,14 +245,14 @@ public class ForexProfitSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Prepare indicators that mimic the original MetaTrader setup.
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		_mediumEma = new ExponentialMovingAverage { Length = MediumEmaLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		_fastEma = new EMA { Length = FastEmaLength };
+		_mediumEma = new EMA { Length = MediumEmaLength };
+		_slowEma = new EMA { Length = SlowEmaLength };
 		_parabolicSar = new ParabolicSar
 		{
 			Acceleration = SarStep,
@@ -287,9 +287,9 @@ public class ForexProfitSystemStrategy : Strategy
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
 
 		// Update EMA values on the closed bar.
-		var fastValue = _fastEma.Process(medianPrice, candle.OpenTime, true).ToDecimal();
-		var mediumValue = _mediumEma.Process(medianPrice, candle.OpenTime, true).ToDecimal();
-		var slowValue = _slowEma.Process(medianPrice, candle.OpenTime, true).ToDecimal();
+		var fastValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, medianPrice, candle.OpenTime)).ToDecimal();
+		var mediumValue = _mediumEma.Process(new DecimalIndicatorValue(_mediumEma, medianPrice, candle.OpenTime)).ToDecimal();
+		var slowValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, medianPrice, candle.OpenTime)).ToDecimal();
 
 		if (!_fastEma.IsFormed || !_mediumEma.IsFormed || !_slowEma.IsFormed)
 		{

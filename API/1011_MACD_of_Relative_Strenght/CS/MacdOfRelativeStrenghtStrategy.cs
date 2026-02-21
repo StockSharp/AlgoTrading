@@ -87,31 +87,31 @@ public class MacdOfRelativeStrenghtStrategy : Strategy
 		_rsLength = Param(nameof(RsLength), 300)
 			.SetGreaterThanZero()
 			.SetDisplay("RS Length", "Relative strength length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 500, 100);
 
 		_fastLength = Param(nameof(FastLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "MACD fast EMA length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_slowLength = Param(nameof(SlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "MACD slow EMA length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_signalLength = Param(nameof(SignalLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "MACD signal smoothing", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 8m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Max risk per trade", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 10m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -157,7 +157,7 @@ public class MacdOfRelativeStrenghtStrategy : Strategy
 
 				var rs = candle.ClosePrice / highestValue;
 
-				var macdValue = macd.Process(rs, candle.CloseTime, true);
+				var macdValue = macd.Process(new DecimalIndicatorValue(macd, rs, candle.CloseTime));
 				var typed = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 
 				if (typed.Macd is not decimal macdLine ||

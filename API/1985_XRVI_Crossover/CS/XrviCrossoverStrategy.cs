@@ -62,12 +62,12 @@ public class XrviCrossoverStrategy : Strategy
 		_rviLength = Param(nameof(RviLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Length", "Length for XRVI", "General")
-			.SetCanOptimize(true);
+			;
 
 		_signalLength = Param(nameof(SignalLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "Length for signal line", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -91,17 +91,17 @@ public class XrviCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rvi = new RelativeVigorIndex { Length = RviLength };
-		_signal = new SimpleMovingAverage { Length = SignalLength };
+		_signal = new SMA { Length = SignalLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(_rvi, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

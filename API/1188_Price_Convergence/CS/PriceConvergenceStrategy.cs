@@ -91,9 +91,9 @@ _downSum = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 if (!FullHistory)
 {
@@ -144,9 +144,9 @@ probDown = _downSum / _totalSum * 100m;
 }
 else
 {
-var totalAvg = (DecimalIndicatorValue)_totalSma.Process(ohlc4, candle.OpenTime, true);
-var upAvg = (DecimalIndicatorValue)_upSma.Process(candle.ClosePrice >= candle.OpenPrice ? ohlc4 : 0m, candle.OpenTime, true);
-var downAvg = (DecimalIndicatorValue)_downSma.Process(candle.ClosePrice <= candle.OpenPrice ? ohlc4 : 0m, candle.OpenTime, true);
+var totalAvg = (DecimalIndicatorValue)_totalSma.Process(new DecimalIndicatorValue(_totalSma, ohlc4, candle.OpenTime));
+var upAvg = (DecimalIndicatorValue)_upSma.Process(new DecimalIndicatorValue(_upSma, candle.ClosePrice >= candle.OpenPrice ? ohlc4 : 0m, candle.OpenTime));
+var downAvg = (DecimalIndicatorValue)_downSma.Process(new DecimalIndicatorValue(_downSma, candle.ClosePrice <= candle.OpenPrice ? ohlc4 : 0m, candle.OpenTime));
 
 if (!_totalSma.IsFormed)
 return;

@@ -79,22 +79,22 @@ public class HullMaCciStrategy : Strategy
 		_hullPeriod = Param(nameof(HullPeriod), 9)
 			.SetRange(5, 20)
 			.SetDisplay("Hull MA Period", "Period for Hull Moving Average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetRange(10, 50)
 			.SetDisplay("CCI Period", "Period for CCI indicator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetRange(7, 28)
 			.SetDisplay("ATR Period", "ATR period for stop-loss calculation", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetRange(1m, 4m)
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -115,9 +115,9 @@ public class HullMaCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		var hullMA = new HullMovingAverage { Length = HullPeriod };

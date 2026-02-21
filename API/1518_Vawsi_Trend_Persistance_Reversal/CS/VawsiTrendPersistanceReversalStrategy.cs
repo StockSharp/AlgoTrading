@@ -90,7 +90,7 @@ public class VawsiTrendPersistanceReversalStrategy : Strategy
 		_slTp = Param(nameof(SlTp), 5m)
 			.SetDisplay("SL/TP", "Stop loss and take profit percent", "Risk Management")
 			.SetRange(1m, 10m)
-			.SetCanOptimize(true);
+			;
 
 		_rsiWeight = Param(nameof(RsiWeight), 100m)
 			.SetDisplay("RSI Weight", "Weight of RSI component", "Weights")
@@ -121,7 +121,7 @@ public class VawsiTrendPersistanceReversalStrategy : Strategy
 
 		_rsi = new RelativeStrengthIndex { Length = CycleLength };
 		_atr = new AverageTrueRange { Length = CycleLength };
-		_trendSma = new SimpleMovingAverage { Length = Smoothing };
+		_trendSma = new SMA { Length = Smoothing };
 	}
 
 	/// <inheritdoc />
@@ -137,7 +137,7 @@ public class VawsiTrendPersistanceReversalStrategy : Strategy
 
 		_rsi = new RelativeStrengthIndex { Length = CycleLength };
 		_atr = new AverageTrueRange { Length = CycleLength };
-		_trendSma = new SimpleMovingAverage { Length = Smoothing };
+		_trendSma = new SMA { Length = Smoothing };
 		_thresh = 0m;
 		_prevHaClose = 0m;
 		_direction = 1;
@@ -147,9 +147,9 @@ public class VawsiTrendPersistanceReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(
 			takeProfit: new Unit(SlTp, UnitTypes.Percent),
@@ -197,7 +197,7 @@ public class VawsiTrendPersistanceReversalStrategy : Strategy
 		var trendUp = Math.Abs(haClose - _highestSinceCross);
 		var trendDown = Math.Abs(haClose - _lowestSinceCross);
 		var trend = Math.Max(trendUp, trendDown);
-		var trendSmoothed = _trendSma.Process(trend, candle.ServerTime, true).ToDecimal();
+		var trendSmoothed = _trendSma.Process(new DecimalIndicatorValue(_trendSma, trend, candle.ServerTime)).ToDecimal();
 		var ce = trendSmoothed <= 0m ? 0m : 1m / trendSmoothed;
 
 		var rsiWeight = RsiWeight / 100m;

@@ -134,9 +134,9 @@ public class MacdEnhancedMtfWithStopLossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var timeFrame = CandleType.GetTimeFrame();
 		_htfType = GetHigherTimeFrame(timeFrame);
@@ -258,7 +258,7 @@ public class MacdEnhancedMtfWithStopLossStrategy : Strategy
 		if (tf == TimeSpan.FromMinutes(60) || tf == TimeSpan.FromMinutes(120) || tf == TimeSpan.FromMinutes(180))
 			return TimeSpan.FromMinutes(240).TimeFrame();
 		if (tf == TimeSpan.FromMinutes(240))
-			return TimeSpan.FromDays(1).TimeFrame();
+			return TimeSpan.FromMinutes(5).TimeFrame();
 		if (tf == TimeSpan.FromDays(1))
 			return TimeSpan.FromDays(7).TimeFrame();
 		return TimeSpan.FromDays(7).TimeFrame();

@@ -53,7 +53,7 @@ public class RandomBiasTraderStrategy : Strategy
 		_rewardRiskRatio = Param(nameof(RewardRiskRatio), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Reward/Risk", "Reward to risk ratio used for take profit calculation.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 
 		_lossMode = Param(nameof(LossType), LossModes.Pip)
@@ -62,19 +62,19 @@ public class RandomBiasTraderStrategy : Strategy
 		_lossAtrMultiplier = Param(nameof(LossAtrMultiplier), 5m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "Multiplier applied to ATR(10) for stop distance.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 10m, 1m);
 
 		_lossPipDistance = Param(nameof(LossPipDistance), 20m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (pips)", "Fixed stop distance expressed in pips.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 50m, 5m);
 
 		_riskPercentPerTrade = Param(nameof(RiskPercentPerTrade), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk %", "Portfolio percentage risked per trade.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5m, 0.5m);
 
 		_useBreakeven = Param(nameof(UseBreakeven), true)
@@ -83,7 +83,7 @@ public class RandomBiasTraderStrategy : Strategy
 		_breakevenDistancePips = Param(nameof(BreakevenDistancePips), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Breakeven Trigger (pips)", "Profit in pips required before breakeven activates.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 30m, 5m);
 
 		_useMaxMargin = Param(nameof(UseMaxMargin), true)
@@ -195,9 +195,9 @@ public class RandomBiasTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_random = new Random(Environment.TickCount);
 		_pipSize = DetectPipSize();

@@ -48,43 +48,43 @@ public class GoldTradeSetupStrategy : Strategy
 		_amaLength = Param(nameof(AmaLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("AMA Length", "Lookback period for AMA", "AMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_fastLength = Param(nameof(FastLength), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Fast EMA period for AMA", "AMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_slowLength = Param(nameof(SlowLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow EMA period for AMA", "AMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period for SuperTrend", "SuperTrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_factor = Param(nameof(Factor), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Factor", "Multiplier for SuperTrend", "SuperTrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_targetMultiplier = Param(nameof(TargetMultiplier), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Target Mult", "Multiplier for target level", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_riskMultiplier = Param(nameof(RiskMultiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Mult", "Multiplier for stop level", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -111,9 +111,9 @@ public class GoldTradeSetupStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ama = new KaufmanAdaptiveMovingAverage
 		{

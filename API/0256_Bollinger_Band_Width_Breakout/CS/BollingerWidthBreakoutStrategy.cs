@@ -95,25 +95,25 @@ public class BollingerWidthBreakoutStrategy : Strategy
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Length", "Period of the Bollinger Bands indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 			
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 		
 		_avgPeriod = Param(nameof(AvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Average Period", "Period for Bollinger width average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 		
 		_multiplier = Param(nameof(Multiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -122,7 +122,7 @@ public class BollingerWidthBreakoutStrategy : Strategy
 		_stopMultiplier = Param(nameof(StopMultiplier), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Multiplier", "ATR multiplier for stop-loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 	}
 	
@@ -141,9 +141,9 @@ public class BollingerWidthBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 
 		// Create indicators
@@ -153,7 +153,7 @@ public class BollingerWidthBreakoutStrategy : Strategy
 			Width = BollingerDeviation
 		};
 		
-		_widthAverage = new SimpleMovingAverage { Length = AvgPeriod };
+		_widthAverage = new SMA { Length = AvgPeriod };
 		_atr = new AverageTrueRange { Length = BollingerLength };
 		
 		// Create subscription
@@ -202,7 +202,7 @@ public class BollingerWidthBreakoutStrategy : Strategy
 		var lastWidth = upperBand - lowerBand;
 
 		// Process width through average
-		var widthAvgValue = _widthAverage.Process(lastWidth, candle.ServerTime, candle.State == CandleStates.Finished);
+		var widthAvgValue = _widthAverage.Process(new DecimalIndicatorValue(_widthAverage, lastWidth, candle.ServerTime));
 		var avgWidth = widthAvgValue.ToDecimal();
 		
 		// Calculate width standard deviation (simplified approach)

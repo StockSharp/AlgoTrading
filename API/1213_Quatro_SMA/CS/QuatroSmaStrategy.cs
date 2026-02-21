@@ -248,9 +248,9 @@ public class QuatroSmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var sma1 = new SMA { Length = Sma1Length };
 		var sma2 = new SMA { Length = Sma2Length };
@@ -279,7 +279,7 @@ public class QuatroSmaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volumeMa = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var volumeMa = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

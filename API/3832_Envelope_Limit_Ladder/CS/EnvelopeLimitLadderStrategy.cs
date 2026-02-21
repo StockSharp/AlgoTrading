@@ -237,11 +237,11 @@ public class EnvelopeLimitLadderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_envelopeMa = CreateMovingAverage();
 
@@ -419,11 +419,11 @@ public class EnvelopeLimitLadderStrategy : Strategy
 	{
 		return MaMethod switch
 		{
-			EnvelopeMaMethods.Sma => new SimpleMovingAverage { Length = EnvelopePeriod },
-			EnvelopeMaMethods.Ema => new ExponentialMovingAverage { Length = EnvelopePeriod },
+			EnvelopeMaMethods.Sma => new SMA { Length = EnvelopePeriod },
+			EnvelopeMaMethods.Ema => new EMA { Length = EnvelopePeriod },
 			EnvelopeMaMethods.Smma => new SmoothedMovingAverage { Length = EnvelopePeriod },
 			EnvelopeMaMethods.Lwma => new WeightedMovingAverage { Length = EnvelopePeriod },
-			_ => new SimpleMovingAverage { Length = EnvelopePeriod }
+			_ => new SMA { Length = EnvelopePeriod }
 		};
 	}
 

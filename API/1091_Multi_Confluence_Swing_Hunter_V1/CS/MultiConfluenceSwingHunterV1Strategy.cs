@@ -105,8 +105,8 @@ public class MultiConfluenceSwingHunterV1Strategy : Strategy
 
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFast,
-			LongPeriod = MacdSlow,
+			ShortMa = { Length = MacdFast },
+			LongMa = { Length = MacdSlow },
 			SignalPeriod = MacdSignal
 		};
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };

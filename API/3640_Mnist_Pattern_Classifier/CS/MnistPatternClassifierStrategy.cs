@@ -86,7 +86,7 @@ public class MnistPatternClassifierStrategy : Strategy
 	{
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 28)
 		.SetRange(10, 200)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Lookback", "Number of candles converted into the pattern grid", "Pattern");
 
 		_targetClass = Param(nameof(TargetClass), 1)
@@ -121,11 +121,11 @@ public class MnistPatternClassifierStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_rsi = new RelativeStrengthIndex
 		{

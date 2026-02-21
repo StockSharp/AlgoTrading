@@ -211,9 +211,9 @@ public class CashMachine5minLegacyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 
@@ -223,8 +223,7 @@ public class CashMachine5minLegacyStrategy : Strategy
 		};
 
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			K = { Length = StochasticK },
 			D = { Length = StochasticD },
 		};

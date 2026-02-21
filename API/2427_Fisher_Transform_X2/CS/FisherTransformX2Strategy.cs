@@ -111,12 +111,12 @@ public class FisherTransformX2Strategy : Strategy
 	{
 		_trendLength = Param(nameof(TrendLength), 10)
 			.SetDisplay("Trend Length", "Fisher length for trend timeframe", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_signalLength = Param(nameof(SignalLength), 10)
 			.SetDisplay("Signal Length", "Fisher length for signal timeframe", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(6).TimeFrame())
@@ -169,9 +169,9 @@ public class FisherTransformX2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(new Unit(TakeProfit, UnitTypes.Point), new Unit(StopLoss, UnitTypes.Point));
 

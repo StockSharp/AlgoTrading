@@ -103,27 +103,27 @@ public class MorningEveningMfiStrategy : Strategy
 		_mfiPeriod = Param(nameof(MfiPeriod), 49)
 			.SetNotLess(2)
 			.SetDisplay("MFI Period", "Length of the Money Flow Index", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 80, 5);
 
 		_bullishMfiThreshold = Param(nameof(BullishMfiThreshold), 40m)
 			.SetDisplay("Bullish MFI", "Threshold that confirms Morning Star entries", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 50m, 5m);
 
 		_bearishMfiThreshold = Param(nameof(BearishMfiThreshold), 60m)
 			.SetDisplay("Bearish MFI", "Threshold that confirms Evening Star entries", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 80m, 5m);
 
 		_upperExitLevel = Param(nameof(UpperExitLevel), 70m)
 			.SetDisplay("Upper Exit", "MFI level used to close overbought positions", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_lowerExitLevel = Param(nameof(LowerExitLevel), 30m)
 			.SetDisplay("Lower Exit", "MFI level used to close oversold positions", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_tolerance = Param(nameof(Tolerance), 0.0000001m)
@@ -149,9 +149,9 @@ public class MorningEveningMfiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 

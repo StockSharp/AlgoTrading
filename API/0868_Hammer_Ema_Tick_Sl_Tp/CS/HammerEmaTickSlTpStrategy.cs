@@ -73,7 +73,7 @@ public class HammerEmaTickSlTpStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 1)
@@ -103,9 +103,9 @@ public class HammerEmaTickSlTpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var tick = Security?.PriceStep ?? 1m;
 		_stopLossDistance = StopLossTicks * tick;
@@ -115,7 +115,7 @@ public class HammerEmaTickSlTpStrategy : Strategy
 			takeProfit: new Unit(_takeProfitDistance, UnitTypes.Absolute),
 			stopLoss: new Unit(_stopLossDistance, UnitTypes.Absolute));
 
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new EMA { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ema, ProcessCandle).Start();

@@ -162,17 +162,17 @@ public class DualMacdStrategy : Strategy
 		_macd1FastLength = Param(nameof(Macd1FastLength), 34)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD1 Fast Length", "Fast length for MACD1", "MACD1")
-		.SetCanOptimize(true);
+		;
 
 		_macd1SlowLength = Param(nameof(Macd1SlowLength), 144)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD1 Slow Length", "Slow length for MACD1", "MACD1")
-		.SetCanOptimize(true);
+		;
 
 		_macd1SignalLength = Param(nameof(Macd1SignalLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD1 Signal Length", "Signal length for MACD1", "MACD1")
-		.SetCanOptimize(true);
+		;
 
 		_macd1UseSmaPrice = Param(nameof(Macd1UseSmaPrice), false)
 		.SetDisplay("MACD1 Use SMA Price", "Use SMA for MACD1 price averages", "MACD1");
@@ -183,17 +183,17 @@ public class DualMacdStrategy : Strategy
 		_macd2FastLength = Param(nameof(Macd2FastLength), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD2 Fast Length", "Fast length for MACD2", "MACD2")
-		.SetCanOptimize(true);
+		;
 
 		_macd2SlowLength = Param(nameof(Macd2SlowLength), 200)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD2 Slow Length", "Slow length for MACD2", "MACD2")
-		.SetCanOptimize(true);
+		;
 
 		_macd2SignalLength = Param(nameof(Macd2SignalLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD2 Signal Length", "Signal length for MACD2", "MACD2")
-		.SetCanOptimize(true);
+		;
 
 		_macd2UseSmaPrice = Param(nameof(Macd2UseSmaPrice), false)
 		.SetDisplay("MACD2 Use SMA Price", "Use SMA for MACD2 price averages", "MACD2");
@@ -204,12 +204,12 @@ public class DualMacdStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 1.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");

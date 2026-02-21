@@ -190,9 +190,9 @@ public class ColorZerolagHlrStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_smoothConst = (Smoothing - 1m) / Smoothing;
 
@@ -212,7 +212,7 @@ public class ColorZerolagHlrStrategy : Strategy
 			.Bind(_high1, _low1, _high2, _low2, _high3, _low3, _high4, _low4, _high5, _low5, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal high1, decimal low1, decimal high2, decimal low2, decimal high3, decimal low3, decimal high4, decimal low4, decimal high5, decimal low5)

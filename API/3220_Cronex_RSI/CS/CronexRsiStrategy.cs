@@ -33,8 +33,8 @@ public class CronexRsiStrategy : Strategy
 	private readonly StrategyParam<bool> _enableShortExit;
 
 	private RelativeStrengthIndex _rsi = null!;
-	private LengthIndicator<decimal> _fastSmoothing = null!;
-	private LengthIndicator<decimal> _slowSmoothing = null!;
+	private DecimalLengthIndicator _fastSmoothing = null!;
+	private DecimalLengthIndicator _slowSmoothing = null!;
 
 	private decimal?[] _fastHistory = Array.Empty<decimal?>();
 	private decimal?[] _slowHistory = Array.Empty<decimal?>();
@@ -155,17 +155,17 @@ public class CronexRsiStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Lookback period for the RSI calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "First smoothing period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Second smoothing period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_signalShift = Param(nameof(SignalShift), 1)
 			.SetNotNegative()
@@ -183,7 +183,7 @@ public class CronexRsiStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetNotNegative()
 			.SetDisplay("Trade Volume", "Volume used for new entries", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)
 			.SetDisplay("Enable Long Entry", "Allow opening long positions", "Trading");
@@ -214,9 +214,9 @@ public class CronexRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex
 		{
@@ -394,15 +394,15 @@ public class CronexRsiStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateSmoothingIndicator(CronexSmoothingMethods method, int length)
+	private static DecimalLengthIndicator CreateSmoothingIndicator(CronexSmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			CronexSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			CronexSmoothingMethods.Exponential => new EMA { Length = length },
 			CronexSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			CronexSmoothingMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			CronexSmoothingMethods.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

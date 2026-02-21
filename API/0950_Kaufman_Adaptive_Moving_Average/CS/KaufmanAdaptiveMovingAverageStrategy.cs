@@ -51,31 +51,31 @@ public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 		_length = Param(nameof(Length), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "KAMA lookback period", "KAMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_fast = Param(nameof(Fast), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast period", "Fast EMA length for KAMA", "KAMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_slow = Param(nameof(Slow), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow period", "Slow EMA length for KAMA", "KAMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_risingPeriod = Param(nameof(RisingPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Rising period", "Bars for KAMA rising condition", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_fallingPeriod = Param(nameof(FallingPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Falling period", "Bars for KAMA falling condition", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_orderDirection = Param(nameof(OrderDirection), TradeSides.Long)
@@ -103,9 +103,9 @@ public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var kama = new KaufmanAdaptiveMovingAverage
 		{

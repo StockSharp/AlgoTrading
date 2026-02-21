@@ -56,18 +56,18 @@ public class BlauCMomentumStrategy : Strategy
 	{
 		_moneyManagement = Param(nameof(MoneyManagement), 0.1m)
 			.SetDisplay("Money Management", "Fraction of capital used to size positions (negative value = fixed volume)", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_marginMode = Param(nameof(MarginMode), MarginModes.FreeMarginShare)
 			.SetDisplay("Margin Mode", "Interpretation of money management parameter", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetDisplay("Stop Loss", "Stop loss distance in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 			.SetDisplay("Take Profit", "Take profit distance in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_slippagePoints = Param(nameof(SlippagePoints), 10)
 			.SetDisplay("Max Slippage", "Maximum slippage allowed in points", "Trading");
@@ -92,27 +92,27 @@ public class BlauCMomentumStrategy : Strategy
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethods.Exponential)
 			.SetDisplay("Smoothing Method", "Smoothing method applied to the momentum", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_momentumLength = Param(nameof(MomentumLength), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Length", "Depth of raw momentum calculation", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_firstSmoothLength = Param(nameof(FirstSmoothLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("First Smooth", "Length of the first smoothing stage", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_secondSmoothLength = Param(nameof(SecondSmoothLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Second Smooth", "Length of the second smoothing stage", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_thirdSmoothLength = Param(nameof(ThirdSmoothLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Third Smooth", "Length of the third smoothing stage", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_phase = Param(nameof(Phase), 15)
 			.SetDisplay("Phase", "Phase parameter used by Jurik-style moving averages", "Indicator");
@@ -125,7 +125,7 @@ public class BlauCMomentumStrategy : Strategy
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Bar index used for generating entry signals", "Logic")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -326,9 +326,9 @@ public class BlauCMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicatorHistory.Clear();
 		_momentum = new BlauMomentumCalculator(
@@ -741,9 +741,9 @@ public class BlauCMomentumStrategy : Strategy
 		private readonly AppliedPrices _price2;
 
 		private readonly Queue<decimal> _priceBuffer = new();
-		private readonly LengthIndicator<decimal> _ma1;
-		private readonly LengthIndicator<decimal> _ma2;
-		private readonly LengthIndicator<decimal> _ma3;
+		private readonly DecimalLengthIndicator _ma1;
+		private readonly DecimalLengthIndicator _ma2;
+		private readonly DecimalLengthIndicator _ma3;
 
 		public BlauMomentumCalculator(
 		SmoothMethods method,
@@ -785,9 +785,9 @@ public class BlauCMomentumStrategy : Strategy
 			var momentum = value1 - reference;
 			var time = candle.OpenTime;
 
-			var smooth1 = _ma1.Process(momentum, time, true).ToDecimal();
-			var smooth2 = _ma2.Process(smooth1, time, true).ToDecimal();
-			var smooth3 = _ma3.Process(smooth2, time, true).ToDecimal();
+			var smooth1 = _ma1.Process(new DecimalIndicatorValue(_ma1, momentum, time)).ToDecimal();
+			var smooth2 = _ma2.Process(new DecimalIndicatorValue(_ma2, smooth1, time)).ToDecimal();
+			var smooth3 = _ma3.Process(new DecimalIndicatorValue(_ma3, smooth2, time)).ToDecimal();
 
 			if (!_ma3.IsFormed)
 				return null;
@@ -803,18 +803,18 @@ public class BlauCMomentumStrategy : Strategy
 			_ma3.Reset();
 		}
 
-		private static LengthIndicator<decimal> CreateMovingAverage(SmoothMethods method, int length, int phase)
+		private static DecimalLengthIndicator CreateMovingAverage(SmoothMethods method, int length, int phase)
 		{
 			return method switch
 			{
-				SmoothMethods.Simple => new SimpleMovingAverage { Length = length },
-				SmoothMethods.Exponential => new ExponentialMovingAverage { Length = length },
+				SmoothMethods.Simple => new SMA { Length = length },
+				SmoothMethods.Exponential => new EMA { Length = length },
 				SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 				SmoothMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 				SmoothMethods.Jurik => new JurikMovingAverage { Length = length, Phase = phase },
 				SmoothMethods.TripleExponential => new TripleExponentialMovingAverage { Length = length },
 				SmoothMethods.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
-				_ => new ExponentialMovingAverage { Length = length }
+				_ => new EMA { Length = length }
 			};
 		}
 

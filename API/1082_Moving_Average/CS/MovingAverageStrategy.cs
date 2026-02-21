@@ -144,13 +144,13 @@ public class MovingAverageStrategy : Strategy
 		_shortLength = Param(nameof(ShortLength), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Short MA Length", "Length of short moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 50, 1);
 
 		_longLength = Param(nameof(LongLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Long MA Length", "Length of long moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 100, 5);
 
 		_priceType = Param(nameof(PriceType), PriceTypes.Typical)
@@ -179,9 +179,9 @@ public class MovingAverageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = CreateMovingAverage(MaType, ShortLength);
 		_slowMa = CreateMovingAverage(MaType, LongLength);
@@ -198,7 +198,7 @@ public class MovingAverageStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -210,8 +210,8 @@ public class MovingAverageStrategy : Strategy
 			return;
 
 		var price = GetPrice(candle);
-		var fast = _fastMa!.Process(price, candle.OpenTime, true).ToDecimal();
-		var slow = _slowMa!.Process(price, candle.OpenTime, true).ToDecimal();
+		var fast = _fastMa!.Process(new DecimalIndicatorValue(_fastMa, price, candle.OpenTime)).ToDecimal();
+		var slow = _slowMa!.Process(new DecimalIndicatorValue(_slowMa, price, candle.OpenTime)).ToDecimal();
 
 		if (!_isInitialized)
 		{
@@ -251,13 +251,13 @@ public class MovingAverageStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverages.SMA => new SimpleMovingAverage { Length = length },
-			MovingAverages.EMA => new ExponentialMovingAverage { Length = length },
+			MovingAverages.SMA => new SMA { Length = length },
+			MovingAverages.EMA => new EMA { Length = length },
 			MovingAverages.DEMA => new DoubleExponentialMovingAverage { Length = length },
 			MovingAverages.TEMA => new TripleExponentialMovingAverage { Length = length },
 			MovingAverages.WMA => new WeightedMovingAverage { Length = length },
 			MovingAverages.VWMA => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 }

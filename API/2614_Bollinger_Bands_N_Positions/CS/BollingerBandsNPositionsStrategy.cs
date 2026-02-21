@@ -173,9 +173,9 @@ public class BollingerBandsNPositionsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 		throw new InvalidOperationException("Trailing step must be greater than zero when trailing stop is enabled.");

@@ -54,21 +54,21 @@ public class MartiniMartingaleStrategy : Strategy
 	{
 		_step = Param(nameof(Step), 10m)
 			.SetDisplay("Step", "Price step size", "General")
-			.SetCanOptimize(true);
+			;
 		_profitClose = Param(nameof(ProfitClose), 1m)
 			.SetDisplay("Profit Close", "Close positions when profit reached", "General")
-			.SetCanOptimize(true);
+			;
 		_initialVolume = Param(nameof(InitialVolume), 1m)
 			.SetDisplay("Initial Volume", "Initial trade volume", "General")
-			.SetCanOptimize(true);
+			;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "General");
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		ResetState();
 		
@@ -155,7 +155,7 @@ public class MartiniMartingaleStrategy : Strategy
 		if (Position == 0)
 		return 0m;
 		
-		var entry = PositionAvgPrice;
+		var entry = PositionPrice;
 		var dir = Math.Sign(Position);
 		return dir > 0
 		? (currentPrice - entry) * Math.Abs(Position)

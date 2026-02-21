@@ -13,7 +13,7 @@ This strategy scans sector indices and logs sigma spikes based on return volatil
   - `LookbackPeriod` = 20.
   - `ReturnPeriod` = 20.
   - `SigmaThreshold` = 2.
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame().
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame().
 - **Filters**:
   - Category: Indicator
   - Direction: None

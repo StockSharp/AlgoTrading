@@ -118,12 +118,12 @@ public class IuBiggerThanRangeStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 22)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Length for range calculation", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_riskToReward = Param(nameof(RiskToReward), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk To Reward", "Risk to reward ratio", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossMethod = Param(nameof(StopLoss), StopLossMethods.PreviousHighLow)
 			.SetDisplay("Stop Loss Method", "Stop loss calculation method", "Risk Management");
@@ -131,17 +131,17 @@ public class IuBiggerThanRangeStrategy : Strategy
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR indicator length", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_atrFactor = Param(nameof(AtrFactor), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Factor", "ATR multiplier", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_swingLength = Param(nameof(SwingLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Swing Length", "Swing high/low lookback", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -172,9 +172,9 @@ public class IuBiggerThanRangeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rangeHigh = new Highest { Length = LookbackPeriod };
 		_rangeLow = new Lowest { Length = LookbackPeriod };

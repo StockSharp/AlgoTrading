@@ -65,13 +65,13 @@ public class FourBarMomentumReversalStrategy : Strategy
 		_buyThreshold = Param(nameof(BuyThreshold), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy Threshold", "Consecutive closes below reference to trigger buy", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_lookback = Param(nameof(Lookback), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Number of bars to compare", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_startTime = Param(nameof(StartTime), new DateTimeOffset(2014, 1, 1, 0, 0, 0, TimeSpan.Zero))
@@ -82,9 +82,9 @@ public class FourBarMomentumReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_shift = new Shift { Length = Lookback };
 

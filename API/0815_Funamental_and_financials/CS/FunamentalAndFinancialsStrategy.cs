@@ -47,17 +47,17 @@ public class FunamentalAndFinancialsStrategy : Strategy
 	{
 		_output = Param(nameof(Output), "Per Share")
 			.SetDisplay("Output", "Output type", "General")
-			.SetCanOptimize(true);
+			;
 
 		_period = Param(nameof(Period), "FQ")
 			.SetDisplay("Period", "Reporting period", "General")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// TODO integrate fundamental data requests and logging
 	}

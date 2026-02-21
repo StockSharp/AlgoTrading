@@ -133,9 +133,9 @@ public class SurefirethingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips == 0)
 			throw new InvalidOperationException("Trailing is not possible: the parameter 'Trailing Step' is zero!");
@@ -145,7 +145,7 @@ public class SurefirethingStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <summary>

@@ -155,31 +155,31 @@ public class VectorStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 3)
 				.SetGreaterThanZero()
 				.SetDisplay("Fast MA", "Fast smoothed moving average period", "Indicators")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(3, 15, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 7)
 				.SetGreaterThanZero()
 				.SetDisplay("Slow MA", "Slow smoothed moving average period", "Indicators")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(5, 25, 1);
 
 		_maShift = Param(nameof(MaShift), 8)
 				.SetNotNegative()
 				.SetDisplay("MA Shift", "Additional warm-up bars before signals", "Indicators")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(0, 20, 1);
 
 		_profitPercent = Param(nameof(ProfitPercent), 0.5m)
 				.SetNotNegative()
 				.SetDisplay("Equity Take Profit %", "Close all trades when floating profit reaches this percent", "Risk Management")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(0.2m, 2m, 0.2m);
 
 		_lossPercent = Param(nameof(LossPercent), 30m)
 				.SetNotNegative()
 				.SetDisplay("Equity Stop Loss %", "Close all trades when floating loss reaches this percent", "Risk Management")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(5m, 50m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -191,7 +191,7 @@ public class VectorStrategy : Strategy
 		_rangePeriod = Param(nameof(RangePeriod), 50)
 				.SetGreaterThanZero()
 				.SetDisplay("Range Period", "Number of range candles in the average", "General")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(20, 80, 5);
 
 		_eurUsdSecurity = Param<Security>(nameof(EurUsdSecurity))
@@ -243,9 +243,9 @@ public class VectorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var eur = EurUsdSecurity ?? Security ?? throw new InvalidOperationException("EURUSD security is not specified.");
 		var gbp = GbpUsdSecurity ?? throw new InvalidOperationException("GBPUSD security is not specified.");
@@ -280,7 +280,7 @@ public class VectorStrategy : Strategy
 			}
 		}
 
-		_rangeAverage = new SimpleMovingAverage { Length = RangePeriod };
+		_rangeAverage = new SMA { Length = RangePeriod };
 
 		SubscribeCandles(RangeCandleType, security: eur)
 				.Bind(ProcessRangeCandle)
@@ -288,7 +288,7 @@ public class VectorStrategy : Strategy
 
 		_initialBalance = Portfolio?.CurrentValue ?? 0m;
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />

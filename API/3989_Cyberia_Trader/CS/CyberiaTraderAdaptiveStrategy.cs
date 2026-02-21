@@ -430,7 +430,7 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 		_previousValuePeriod = _currentValuePeriod;
 		_currentValuesPeriodCount = Math.Max(1, _currentValuePeriod * HistoryMultiplier);
 
-		_ema = new ExponentialMovingAverage { Length = MaPeriod };
+		_ema = new EMA { Length = MaPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =

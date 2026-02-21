@@ -82,22 +82,22 @@ public class HullTrendOsmaStrategy : Strategy
 	{
 		_hullPeriod = Param(nameof(HullPeriod), 20)
 		.SetDisplay("Hull Period", "Period for Hull Moving Average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 		
 		_signalPeriod = Param(nameof(SignalPeriod), 5)
 		.SetDisplay("Signal Period", "Period for smoothing applied to the oscillator", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 15, 2);
 		
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 		.SetDisplay("Take Profit", "Take profit distance in price units", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1000m, 3000m, 500m);
 		
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 		.SetDisplay("Stop Loss", "Stop loss distance in price units", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(500m, 2000m, 500m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -119,12 +119,12 @@ public class HullTrendOsmaStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var hma = new HullMovingAverage { Length = HullPeriod };
-		var signal = new SimpleMovingAverage { Length = SignalPeriod };
+		var signal = new SMA { Length = SignalPeriod };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription

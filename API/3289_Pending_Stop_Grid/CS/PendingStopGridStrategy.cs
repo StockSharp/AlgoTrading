@@ -110,27 +110,27 @@ public class PendingStopGridStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance for each order", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 10m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance for each order", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Volume of the first pending order", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_numberOfTrades = Param(nameof(NumberOfTrades), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Orders Per Side", "How many buy stop and sell stop orders to keep", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_distancePips = Param(nameof(DistancePips), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Distance (pips)", "Offset of each pending order from the market price", "Trading")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -156,9 +156,9 @@ public class PendingStopGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = GetPipSize();
 		ResizeOrderBuffers();
@@ -167,7 +167,7 @@ public class PendingStopGridStrategy : Strategy
 			.Bind(ProcessLevel1)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />

@@ -29,7 +29,7 @@ public class AboveBelowMaStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _tradeVolume;
 
-	private LengthIndicator<decimal> _ma;
+	private DecimalLengthIndicator _ma;
 	private readonly Queue<decimal> _maValues = new();
 	private decimal? _currentMa;
 	private decimal? _previousMa;
@@ -106,7 +106,7 @@ public class AboveBelowMaStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Length of the moving average", "Moving Average")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 60, 1);
 
 		_maShift = Param(nameof(MaShift), 0)
@@ -150,9 +150,9 @@ public class AboveBelowMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = CreateMovingAverage(MaMethod, MaPeriod);
 
@@ -178,7 +178,7 @@ public class AboveBelowMaStrategy : Strategy
 
 		var isFinished = candle.State == CandleStates.Finished;
 		var price = GetAppliedPrice(candle);
-		var maValue = indicator.Process(price, candle.OpenTime, isFinished).ToNullableDecimal();
+		var maValue = indicator.Process(new DecimalIndicatorValue(indicator, price, candle.OpenTime)).ToNullableDecimal();
 
 		if (!isFinished || maValue == null)
 			return;
@@ -341,15 +341,15 @@ public class AboveBelowMaStrategy : Strategy
 		return selected;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 

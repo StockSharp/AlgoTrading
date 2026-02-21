@@ -89,7 +89,7 @@ public class IGapStrategy : Strategy
 		_gapSize = Param(nameof(GapSize), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Gap Size", "Gap in price steps required to trigger signal", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for gap detection", "General");
@@ -121,9 +121,9 @@ public class IGapStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

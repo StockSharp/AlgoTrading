@@ -82,23 +82,23 @@ public class ChandeMomentumOscillatorStrategy : Strategy
 		_cmoPeriod = Param(nameof(CmoPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("CMO Period", "Period for Chande Momentum Oscillator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_lowerThreshold = Param(nameof(LowerThreshold), -50m)
 			.SetDisplay("Lower Threshold", "Enter long when CMO is below", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-70m, -30m, 5m);
 
 		_upperThreshold = Param(nameof(UpperThreshold), 50m)
 			.SetDisplay("Upper Threshold", "Exit long when CMO is above", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30m, 70m, 5m);
 
 		_maxBarsInPosition = Param(nameof(MaxBarsInPosition), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Bars In Position", "Exit after specified number of bars", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -120,9 +120,9 @@ public class ChandeMomentumOscillatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cmo = new ChandeMomentumOscillator { Length = CmoPeriod };
 

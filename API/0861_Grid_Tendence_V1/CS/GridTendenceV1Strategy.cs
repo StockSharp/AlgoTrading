@@ -49,7 +49,7 @@ public class GridTendenceV1Strategy : Strategy
 		_percent = Param(nameof(Percent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Percent", "Profit percentage for grid step", "Common")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -70,11 +70,11 @@ public class GridTendenceV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

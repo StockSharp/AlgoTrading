@@ -65,13 +65,13 @@ public class XTraderStrategy : Strategy
 		_ma1Period = Param(nameof(Ma1Period), 16)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1 Period", "Period of the first moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_ma2Period = Param(nameof(Ma2Period), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("MA2 Period", "Period of the second moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150m)
@@ -100,12 +100,12 @@ public class XTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ma1 = new SimpleMovingAverage { Length = Ma1Period };
-		_ma2 = new SimpleMovingAverage { Length = Ma2Period };
+		_ma1 = new SMA { Length = Ma1Period };
+		_ma2 = new SMA { Length = Ma2Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

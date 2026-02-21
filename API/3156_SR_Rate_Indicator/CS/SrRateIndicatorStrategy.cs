@@ -160,7 +160,7 @@ public class SrRateIndicatorStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Volume applied to every trade", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1m, 0.1m);
 
 		_enableLongEntries = Param(nameof(EnableLongEntries), true)
@@ -178,13 +178,13 @@ public class SrRateIndicatorStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop loss distance in price points", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(200, 2000, 200);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in price points", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(400, 4000, 200);
 
 		_slippagePoints = Param(nameof(SlippagePoints), 10)
@@ -197,23 +197,23 @@ public class SrRateIndicatorStrategy : Strategy
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetNotNegative()
 		.SetDisplay("Signal Bar", "How many closed bars to offset the signal", "Logic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 3, 1);
 
 		_windowSize = Param(nameof(WindowSize), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Window Size", "Number of bars used in SR Rate normalization", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 2);
 
 		_highLevel = Param(nameof(HighLevel), 20m)
 		.SetDisplay("High Level", "Upper level that triggers long entries", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 5m);
 
 		_lowLevel = Param(nameof(LowLevel), -20m)
 		.SetDisplay("Low Level", "Lower level that triggers short entries", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(-40m, -10m, 5m);
 	}
 
@@ -224,9 +224,9 @@ public class SrRateIndicatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 		_colorHistory.Clear();

@@ -79,17 +79,17 @@ public class SuperTrendAiOscillatorStrategy : Strategy
 		_atrLength = Param(nameof(AtrLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation period", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_factor = Param(nameof(Factor), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Factor", "ATR multiplier", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_riskReward = Param(nameof(RiskReward), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk-Reward", "Risk to reward ratio", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
@@ -119,14 +119,13 @@ public class SuperTrendAiOscillatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_stochastic = new StochasticOscillator
-		{
-			Length = 13,
+		{ K = { Length = 13 },
 			K = { Length = 5 },
 			D = { Length = 3 }
 		};
@@ -136,7 +135,7 @@ public class SuperTrendAiOscillatorStrategy : Strategy
 			.BindEx(_atr, _stochastic, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

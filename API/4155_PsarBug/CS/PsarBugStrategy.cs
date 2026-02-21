@@ -37,31 +37,31 @@ public class PsarBugStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume expressed in lots", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 1m, 0.05m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 40)
 			.SetDisplay("Stop Loss Points", "Stop-loss distance expressed in price steps", "Risk")
 			.SetRange(0, 10000)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 120, 10);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 70)
 			.SetDisplay("Take Profit Points", "Take-profit distance expressed in price steps", "Risk")
 			.SetRange(0, 10000)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 10);
 
 		_sarAccelerationStep = Param(nameof(SarAccelerationStep), 0.02m)
 			.SetDisplay("SAR Step", "Initial acceleration factor for Parabolic SAR", "Indicator")
 			.SetRange(0.01m, 0.1m)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_sarAccelerationMax = Param(nameof(SarAccelerationMax), 0.2m)
 			.SetDisplay("SAR Max", "Maximum acceleration factor for Parabolic SAR", "Indicator")
 			.SetRange(0.1m, 0.5m)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.4m, 0.05m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -145,9 +145,9 @@ public class PsarBugStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = _tradeVolume.Value;
 

@@ -176,31 +176,31 @@ public class AdaptiveTraderProStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Length of the RSI indicator", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 20, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "Length of the ATR indicator", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 21, 1);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "Multiplier applied to ATR for stops", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_trailingStopMultiplier = Param(nameof(TrailingStopMultiplier), 1.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Stop Multiplier", "ATR multiplier for trailing stop", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2.5m, 0.5m);
 
 		_trailingTakeProfitMultiplier = Param(nameof(TrailingTakeProfitMultiplier), 2.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing TP Multiplier", "ATR multiplier for partial profit", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_trendPeriod = Param(nameof(TrendPeriod), 20)
@@ -249,9 +249,9 @@ public class AdaptiveTraderProStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetTradeState();
 

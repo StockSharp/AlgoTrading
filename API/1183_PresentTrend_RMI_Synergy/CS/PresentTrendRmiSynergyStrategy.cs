@@ -78,19 +78,19 @@ set => _direction.Value = value;
 	{
 		_rmiPeriod = Param(nameof(RmiPeriod), 21)
 			.SetDisplay("RMI Length", "Period for RMI calculation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5)
 			.SetGreaterThanZero();
 
 		_superTrendLength = Param(nameof(SuperTrendLength), 5)
 			.SetDisplay("SuperTrend Length", "Length for trend MA and ATR", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 14, 1)
 			.SetGreaterThanZero();
 
 		_superTrendMultiplier = Param(nameof(SuperTrendMultiplier), 4m)
 			.SetDisplay("SuperTrend Multiplier", "ATR multiplier for trailing stop", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 6m, 0.5m)
 			.SetGreaterThanZero();
 
@@ -115,14 +115,14 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var rsi = new RelativeStrengthIndex { Length = RmiPeriod };
 		var atr = new AverageTrueRange { Length = SuperTrendLength };
-		var sma = new SimpleMovingAverage { Length = SuperTrendLength };
+		var sma = new SMA { Length = SuperTrendLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

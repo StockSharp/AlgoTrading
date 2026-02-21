@@ -50,7 +50,7 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("DeMarker Period", "Length of the base DeMarker oscillator", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_volumeSource = Param(nameof(VolumeSources), VolumeSources.Tick)
 		.SetDisplay("Volume Source", "Volume stream used in calculations", "Indicator");
@@ -73,7 +73,7 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 		_smoothingLength = Param(nameof(SmoothingLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Smoothing Length", "Periods for smoothing both series", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_smoothingPhase = Param(nameof(SmoothingPhase), 15)
 		.SetDisplay("Smoothing Phase", "Compatibility placeholder for JJMA-style modes", "Indicator");
@@ -243,9 +243,9 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (SignalBar != 1)
 		{
@@ -398,7 +398,7 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 	/// <summary>
 	/// Custom indicator replicating XDeMarker_Histogram_Vol_Direct.
 	/// </summary>
-	public class XDeMarkerHistogramVolDirectIndicator : BaseIndicator<decimal>
+	public class XDeMarkerHistogramVolDirectIndicator : BaseIndicator
 	{
 		private readonly Queue<decimal> _deMax = new();
 		private readonly Queue<decimal> _deMin = new();
@@ -595,8 +595,8 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 		{
 			return method switch
 			{
-				SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
-				SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+				SmoothingMethods.Sma => new SMA { Length = length },
+				SmoothingMethods.Ema => new EMA { Length = length },
 				SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
 				SmoothingMethods.Wma => new WeightedMovingAverage { Length = length },
 				_ => throw new ArgumentOutOfRangeException(nameof(method), method, null)

@@ -64,12 +64,12 @@ public class FancyBollingerBandsStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "Bollinger Bands period", "Bollinger")
-			.SetCanOptimize(true);
+			;
 
 		_deviation = Param(nameof(Deviation), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation", "Standard deviation multiplier", "Bollinger")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -93,10 +93,10 @@ public class FancyBollingerBandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		_bands = new BollingerBands
 		{

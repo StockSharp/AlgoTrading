@@ -175,7 +175,7 @@ public class ExpDemaRangeChannelTmPlusStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Double EMA base period", "Channel")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 50, 1);
 
 		_shift = Param(nameof(Shift), 3)
@@ -212,13 +212,13 @@ public class ExpDemaRangeChannelTmPlusStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop-loss distance in price points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 3000m, 100m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take-profit distance in price points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(200m, 4000m, 100m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -245,9 +245,9 @@ public class ExpDemaRangeChannelTmPlusStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highDema = new DoubleExponentialMovingAverage { Length = MaPeriod };
 		_lowDema = new DoubleExponentialMovingAverage { Length = MaPeriod };
@@ -301,8 +301,8 @@ public class ExpDemaRangeChannelTmPlusStrategy : Strategy
 		var step = Security?.PriceStep ?? 1m;
 		var priceShift = PriceShiftPoints * step;
 
-		var highValue = _highDema.Process(candle.HighPrice, candle.CloseTime, true).ToDecimal();
-		var lowValue = _lowDema.Process(candle.LowPrice, candle.CloseTime, true).ToDecimal();
+		var highValue = _highDema.Process(new DecimalIndicatorValue(_highDema, candle.HighPrice, candle.CloseTime)).ToDecimal();
+		var lowValue = _lowDema.Process(new DecimalIndicatorValue(_lowDema, candle.LowPrice, candle.CloseTime)).ToDecimal();
 
 		var upperLine = highValue + priceShift;
 		var lowerLine = lowValue - priceShift;

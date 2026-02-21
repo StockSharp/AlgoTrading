@@ -47,7 +47,7 @@ public class RevolutionVolatilityBandsWithRangeContractionSignalVIIStrategy : St
 		_length = Param(nameof(Length), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "EMA period length", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -67,9 +67,9 @@ public class RevolutionVolatilityBandsWithRangeContractionSignalVIIStrategy : St
 		_fallingCount = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_emaClose.Length = Length;
 		_emaAbs.Length = Length;

@@ -62,11 +62,11 @@ public class CloseCrossKijunSenStrategy : Strategy
 		_kijunPeriod = Param(nameof(KijunPeriod), 50)
 			.SetDisplay("Kijun Period", "Period for Kijun-sen calculation", "Parameters")
 			.SetRange(10, 100)
-			.SetCanOptimize(true);
+			;
 
 		_pointsToCross = Param(nameof(PointsToCross), 0m)
 			.SetDisplay("Offset (points)", "Number of points added to Kijun-sen", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "Parameters");
@@ -88,9 +88,9 @@ public class CloseCrossKijunSenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ichimoku = new Ichimoku
 		{

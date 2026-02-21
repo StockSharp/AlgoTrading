@@ -199,9 +199,9 @@ public class CmoDuplexStrategy : Strategy
 		_shortValues.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_longCmo = new ChandeMomentumOscillator { Length = LongCmoPeriod };
 		_shortCmo = new ChandeMomentumOscillator { Length = ShortCmoPeriod };
@@ -220,7 +220,7 @@ public class CmoDuplexStrategy : Strategy
 			shortSubscription.Bind(_shortCmo, ProcessShortCandle).Start();
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessLongCandle(ICandleMessage candle, decimal cmoValue)

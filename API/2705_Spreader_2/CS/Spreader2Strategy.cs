@@ -110,19 +110,19 @@ public class Spreader2Strategy : Strategy
 		_primaryVolumeParam = Param(nameof(PrimaryVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Primary Volume", "Order volume for the primary symbol", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_targetProfitParam = Param(nameof(TargetProfit), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Target Profit", "Total profit target for the pair position", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 200m, 20m);
 
 		_shiftParam = Param(nameof(ShiftLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Shift Length", "Number of bars between comparison points", "Logic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 10);
 
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -131,7 +131,7 @@ public class Spreader2Strategy : Strategy
 		_dayBarsParam = Param(nameof(DayBars), 1440)
 			.SetGreaterThanZero()
 			.SetDisplay("Day Bars", "Number of intraday bars used for rolling statistics", "Data")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -163,9 +163,9 @@ public class Spreader2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (SecondSecurity == null)
 			throw new InvalidOperationException("Second security is not specified.");

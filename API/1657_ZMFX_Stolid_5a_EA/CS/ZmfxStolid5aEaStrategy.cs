@@ -58,17 +58,16 @@ public class ZmfxStolid5aEaStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_rsi = new RelativeStrengthIndex { Length = 11 };
 		_rsi15 = new RelativeStrengthIndex { Length = 11 };
 		_emaFast = new SmoothedMovingAverage { Length = 50 };
 		_emaSlow = new SmoothedMovingAverage { Length = 100 };
 		_stoch4h = new StochasticOscillator
-		{
-			Length = 30,
+		{ K = { Length = 30 },
 			K = { Length = 3 },
 			D = { Length = 3 },
 		};

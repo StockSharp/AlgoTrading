@@ -202,9 +202,9 @@ public class ElliottsQuadraticMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_st1 = new SuperTrend { Length = AtrLength1, Multiplier = Multiplier1 };
 		_st2 = new SuperTrend { Length = AtrLength2, Multiplier = Multiplier2 };

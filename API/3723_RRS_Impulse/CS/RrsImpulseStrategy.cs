@@ -106,12 +106,12 @@ public class RrsImpulseStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 200)
 		.SetDisplay("Stop Loss", "Stop loss distance in pips", "Risk")
 		.SetRange(0, 5000)
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
 		.SetDisplay("Take Profit", "Take profit distance in pips", "Risk")
 		.SetRange(0, 5000)
-		.SetCanOptimize(true);
+		;
 
 		_trailingStartPips = Param(nameof(TrailingStartPips), 50)
 		.SetDisplay("Trailing Start", "Profit in pips required to arm trailing", "Risk")
@@ -146,7 +146,7 @@ public class RrsImpulseStrategy : Strategy
 		.SetDisplay("Stochastic %K", "%K period", "Stochastic")
 		.SetGreaterThanZero();
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 		.SetDisplay("Stochastic %D", "%D period", "Stochastic")
 		.SetGreaterThanZero();
 
@@ -364,9 +364,9 @@ public class RrsImpulseStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = NormalizeVolume(TradeVolume);
 
@@ -393,8 +393,7 @@ public class RrsImpulseStrategy : Strategy
 			{
 				Rsi = new RelativeStrengthIndex { Length = Math.Max(1, RsiPeriod) },
 				Stochastic = new StochasticOscillator
-				{
-					Length = Math.Max(1, StochasticKPeriod),
+				{ K = { Length = Math }.Max(1, StochasticKPeriod),
 					K = { Length = Math.Max(1, StochasticSlowing) },
 					D = { Length = Math.Max(1, StochasticDPeriod) }
 				},

@@ -425,9 +425,9 @@ public class WamiCloudX2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var trendIndicator = CreateWami(
 		TrendPeriod1,
@@ -782,10 +782,10 @@ public class WamiIndicator : BaseIndicator<WamiValue>
 	{
 		return method switch
 		{
-			MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Ema => new EMA { Length = length },
 			MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 }

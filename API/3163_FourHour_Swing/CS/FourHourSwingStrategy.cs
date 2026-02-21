@@ -102,7 +102,7 @@ public class FourHourSwingStrategy : Strategy
 			.SetDisplay("Stochastic %K", "Main period of the stochastic oscillator", "Indicators")
 			.SetGreaterThanZero();
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 5)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 5)
 			.SetDisplay("Stochastic %D", "Signal period of the stochastic oscillator", "Indicators")
 			.SetGreaterThanZero();
 
@@ -259,9 +259,9 @@ public class FourHourSwingStrategy : Strategy
 		set => _useMacdExit.Value = value;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -273,20 +273,19 @@ public class FourHourSwingStrategy : Strategy
 		if (_tickSize == 0.00001m || _tickSize == 0.001m)
 			_pipSize = _tickSize * 10m;
 
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		_mediumEma = new ExponentialMovingAverage { Length = MediumEmaPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_fastEma = new EMA { Length = FastEmaPeriod };
+		_mediumEma = new EMA { Length = MediumEmaPeriod };
+		_slowEma = new EMA { Length = SlowEmaPeriod };
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticKPeriod,
+		{ K = { Length = StochasticKPeriod },
 			K = { Length = StochasticSmoothPeriod },
 			D = { Length = StochasticDPeriod }
 		};
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = 12,
-			LongPeriod = 26,
+			ShortMa = { Length = 12 },
+			LongMa = { Length = 26 },
 			SignalPeriod = 9
 		};
 
@@ -536,7 +535,7 @@ public class FourHourSwingStrategy : Strategy
 			return;
 
 		_activeSide = Sides.Buy;
-		_entryPrice = PositionAvgPrice;
+		_entryPrice = PositionPrice;
 		_stopPrice = StopLossPips > 0m ? _entryPrice - GetPipDistance(StopLossPips) : null;
 		_takeProfitPrice = TakeProfitPips > 0m ? _entryPrice + GetPipDistance(TakeProfitPips) : null;
 		_highestSinceEntry = candle.HighPrice;
@@ -550,7 +549,7 @@ public class FourHourSwingStrategy : Strategy
 			return;
 
 		_activeSide = Sides.Sell;
-		_entryPrice = PositionAvgPrice;
+		_entryPrice = PositionPrice;
 		_stopPrice = StopLossPips > 0m ? _entryPrice + GetPipDistance(StopLossPips) : null;
 		_takeProfitPrice = TakeProfitPips > 0m ? _entryPrice - GetPipDistance(TakeProfitPips) : null;
 		_highestSinceEntry = candle.HighPrice;

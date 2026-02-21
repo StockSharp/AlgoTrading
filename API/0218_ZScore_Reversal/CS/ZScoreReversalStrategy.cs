@@ -75,19 +75,19 @@ public class ZScoreReversalStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for calculating mean and standard deviation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 			
 		_zScoreThreshold = Param(nameof(ZScoreThreshold), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Z-Score Threshold", "Z-Score threshold for entry signals", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 			
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop-loss %", "Stop-loss as percentage of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
@@ -111,9 +111,9 @@ public class ZScoreReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 // Initialize indicators
 		_ma = new() { Length = LookbackPeriod };

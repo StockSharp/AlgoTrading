@@ -79,12 +79,12 @@ public class RelativeVolumeAtTimeStrategy : Strategy
 		_period = Param(nameof(Period), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Lookback", "Number of candles for average volume", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_threshold = Param(nameof(Threshold), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Relative Volume Threshold", "Relative volume trigger level", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -105,11 +105,11 @@ public class RelativeVolumeAtTimeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_volumeSma = new SimpleMovingAverage { Length = Period };
+		_volumeSma = new SMA { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

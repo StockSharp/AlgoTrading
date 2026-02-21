@@ -118,43 +118,43 @@ public class QuantumSentimentFluxBeginnersStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Length of the fast EMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_slowLength = Param(nameof(SlowLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length", "Length of the slow EMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_atrLength = Param(nameof(AtrLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "Period for ATR", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop distance", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.1m);
 
 		_maStrengthThreshold = Param(nameof(MaStrengthThreshold), 0.18m)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Strength", "ATR weighted EMA difference", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.3m, 0.01m);
 
 		_cooldownBars = Param(nameof(CooldownBars), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown Bars", "Bars to wait after trade", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 5, 1);
 
 		_quantity = Param(nameof(Quantity), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Quantity", "Contracts per trade", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 	}
 
@@ -175,9 +175,9 @@ public class QuantumSentimentFluxBeginnersStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastEma = new() { Length = FastLength };
 		_slowEma = new() { Length = SlowLength };
@@ -188,7 +188,7 @@ public class QuantumSentimentFluxBeginnersStrategy : Strategy
 			.Bind(_fastEma, _slowEma, _atr, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atr)

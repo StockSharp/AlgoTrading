@@ -81,17 +81,17 @@ public class DeMarkLinesStrategy : Strategy
 		_pivotDepth = Param(nameof(PivotDepth), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Pivot depth", "Number of bars confirming a swing high/low", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_minBarsBetweenPivots = Param(nameof(MinBarsBetweenPivots), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum bars between pivots", "Prevents overlapping trendline anchors", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_breakoutBuffer = Param(nameof(BreakoutBuffer), 2m)
 			.SetNotLessThanZero()
 			.SetDisplay("Breakout buffer (pips)", "Extra distance beyond the trendline before entering", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle type", "Primary timeframe for the analysis", "Data");
@@ -122,9 +122,9 @@ public class DeMarkLinesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_windowSize = Math.Max(3, PivotDepth * 2 + 1);
 		_highBuffer = new decimal[_windowSize];
@@ -144,7 +144,7 @@ public class DeMarkLinesStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

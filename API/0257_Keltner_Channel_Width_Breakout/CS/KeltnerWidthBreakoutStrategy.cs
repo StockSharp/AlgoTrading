@@ -114,31 +114,31 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 		_emaPeriod = Param(nameof(EMAPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period of EMA for Keltner Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 			
 		_atrPeriod = Param(nameof(ATRPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period of ATR for Keltner Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 		
 		_atrMultiplier = Param(nameof(ATRMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR in Keltner Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 		
 		_avgPeriod = Param(nameof(AvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Average Period", "Period for Keltner width average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 		
 		_multiplier = Param(nameof(Multiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -147,7 +147,7 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 		_stopMultiplier = Param(nameof(StopMultiplier), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Multiplier", "ATR multiplier for stop-loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 	}
 	
@@ -170,15 +170,15 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 
 		// Create indicators
-		_ema = new ExponentialMovingAverage { Length = EMAPeriod };
+		_ema = new EMA { Length = EMAPeriod };
 		_atr = new AverageTrueRange { Length = ATRPeriod };
-		_widthAverage = new SimpleMovingAverage { Length = AvgPeriod };
+		_widthAverage = new SMA { Length = AvgPeriod };
 		
 		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
@@ -217,7 +217,7 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 			return;
 		
 		// Process candle through EMA and ATR
-		var emaValue = _ema.Process(candle);
+		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle);
 		var atrValue = _atr.Process(candle);
 		
 		_currentEma = emaValue.ToDecimal();
@@ -231,7 +231,7 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 		var width = upperBand - lowerBand;
 		
 		// Process width through average
-		var widthAvgValue = _widthAverage.Process(width, candle.ServerTime, candle.State == CandleStates.Finished);
+		var widthAvgValue = _widthAverage.Process(width, candle.ServerTime));
 		var avgWidth = widthAvgValue.ToDecimal();
 		
 		// For first values, just save and skip

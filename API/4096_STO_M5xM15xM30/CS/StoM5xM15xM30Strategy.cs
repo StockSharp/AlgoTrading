@@ -277,9 +277,9 @@ public class StoM5xM15xM30Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Align the strategy volume with the user parameter before any orders are generated.
 		Volume = TradeVolume;
@@ -518,8 +518,7 @@ public class StoM5xM15xM30Strategy : Strategy
 	{
 		// Configure the oscillator with matching smoothing constants from the MT4 script.
 		return new StochasticOscillator
-		{
-			Length = kLength,
+		{ K = { Length = kLength },
 			K = { Length = SlowingPeriod },
 			D = { Length = SignalPeriod },
 		};

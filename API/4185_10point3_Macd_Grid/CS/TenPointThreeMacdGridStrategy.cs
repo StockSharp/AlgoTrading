@@ -76,19 +76,19 @@ public class TenPointThreeMacdGridStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 45m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Profit target for each position leg", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 90m, 5m);
 
 		_initialStopPips = Param(nameof(InitialStopPips), 0m)
 		.SetNotNegative()
 		.SetDisplay("Initial Stop (pips)", "Base stop distance expanded by remaining grid slots", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 200m, 20m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 45m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance activated after sufficient profit", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 90m, 5m);
 
 		_maxTrades = Param(nameof(MaxTrades), 10)
@@ -98,13 +98,13 @@ public class TenPointThreeMacdGridStrategy : Strategy
 		_lotMultiplier = Param(nameof(LotMultiplier), 2m)
 		.SetGreaterThanOrEqual(1m)
 		.SetDisplay("Lot Multiplier", "Scaling factor applied to each additional grid entry", "Money Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.25m);
 
 		_gridStepPips = Param(nameof(GridStepPips), 30m)
 		.SetGreaterThanZero()
 		.SetDisplay("Grid Step (pips)", "Distance between consecutive martingale entries", "Money Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 80m, 5m);
 
 		_ordersToProtect = Param(nameof(OrdersToProtect), 5)
@@ -121,7 +121,7 @@ public class TenPointThreeMacdGridStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 0.5m)
 		.SetNotNegative()
 		.SetDisplay("Risk %", "Percentage of equity used when money management is enabled", "Money Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 5m, 0.1m);
 
 		_reverseSignal = Param(nameof(ReverseSignal), false)
@@ -130,25 +130,25 @@ public class TenPointThreeMacdGridStrategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA", "Fast EMA length for MACD", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA", "Slow EMA length for MACD", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 1);
 
 		_signalLength = Param(nameof(SignalLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal SMA", "Signal line length for MACD", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 15, 1);
 
 		_signalShift = Param(nameof(SignalShift), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Shift", "Number of closed bars back used for the MACD signal", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 3, 1);
 
 		_tradingRangePips = Param(nameof(TradingRangePips), 0m)

@@ -46,43 +46,43 @@ public class MacdPatternTraderDoubleTopStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA", "Fast moving average length used by MACD", "MACD")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 15, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA", "Slow moving average length used by MACD", "MACD")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 1);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal EMA", "Signal smoothing period for MACD", "MACD")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 9, 1);
 
 		_triggerLevel = Param(nameof(TriggerLevel), 0.0045m)
 		.SetNotNegative()
 		.SetDisplay("Trigger Level", "Absolute MACD level that arms the pattern logic", "MACD")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.001m, 0.01m, 0.0005m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 100m)
 		.SetNotNegative()
 		.SetDisplay("Stop-Loss (pips)", "Stop-loss distance expressed in pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50m, 200m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 300m)
 		.SetNotNegative()
 		.SetDisplay("Take-Profit (pips)", "Take-profit distance expressed in pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(150m, 500m, 10m);
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trade Volume", "Order volume used for new entries", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 1m, 0.05m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())

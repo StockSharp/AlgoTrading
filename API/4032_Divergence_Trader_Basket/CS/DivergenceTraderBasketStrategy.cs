@@ -65,12 +65,12 @@ public class DivergenceTraderBasketStrategy : Strategy
 		_lotSize = Param(nameof(LotSize), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Size", "Trading volume for new positions.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_fastPeriod = Param(nameof(FastPeriod), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA Period", "Length of the fast simple moving average.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_fastPriceType = Param(nameof(FastPriceType), CandlePrices.Open)
 			.SetDisplay("Fast SMA Price", "Applied price for the fast moving average.", "Indicators");
@@ -78,18 +78,18 @@ public class DivergenceTraderBasketStrategy : Strategy
 		_slowPeriod = Param(nameof(SlowPeriod), 88)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA Period", "Length of the slow simple moving average.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowPriceType = Param(nameof(SlowPriceType), CandlePrices.Open)
 			.SetDisplay("Slow SMA Price", "Applied price for the slow moving average.", "Indicators");
 
 		_buyThreshold = Param(nameof(BuyThreshold), 0.0011m)
 			.SetDisplay("Buy Threshold", "Minimum divergence value required before buying.", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_stayOutThreshold = Param(nameof(StayOutThreshold), 0.0079m)
 			.SetDisplay("Stay-Out Threshold", "Upper divergence limit that disables new entries.", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
 			.SetDisplay("Take Profit (pips)", "Distance in pips used to secure profits.", "Risk");
@@ -244,20 +244,20 @@ public class DivergenceTraderBasketStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetTradeTracking();
 		_pipSize = CalculatePipSize();
 
-		_fastMa = new SimpleMovingAverage
+		_fastMa = new SMA
 		{
 			Length = FastPeriod,
 			CandlePrice = FastPriceType
 		};
 
-		_slowMa = new SimpleMovingAverage
+		_slowMa = new SMA
 		{
 			Length = SlowPeriod,
 			CandlePrice = SlowPriceType
@@ -543,7 +543,7 @@ public class DivergenceTraderBasketStrategy : Strategy
 	{
 		var start = Math.Min(Math.Max(StartHour, 0), 24);
 		var stop = Math.Min(Math.Max(StopHour, 0), 24);
-		var hour = time.LocalDateTime.Hour;
+		var hour = time.Hour;
 
 		if (start == stop)
 			return true;

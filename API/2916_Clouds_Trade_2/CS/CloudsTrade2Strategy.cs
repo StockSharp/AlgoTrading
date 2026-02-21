@@ -228,15 +228,14 @@ public class CloudsTrade2Strategy : Strategy
 		_lastEntryDate = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = KPeriod,
+		{ K = { Length = KPeriod },
 			K = { Length = SlowingPeriod },
 			D = { Length = DPeriod }
 		};

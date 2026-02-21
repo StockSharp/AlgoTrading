@@ -60,12 +60,12 @@ public class ThreeDWavePmStrategy : Strategy
 	{
 		_startPeriod = Param(nameof(StartPeriod), 20)
 			.SetDisplay("Starting Period", "Initial period for Wave-PM", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 100, 5);
 
 		_periodOffset = Param(nameof(PeriodOffset), 20)
 			.SetDisplay("Period Offset", "Offset between consecutive periods", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -89,9 +89,9 @@ public class ThreeDWavePmStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_deviations = new StandardDeviation[30];
 		_smas = new SMA[30];
@@ -117,7 +117,7 @@ public class ThreeDWavePmStrategy : Strategy
 		{
 			var devValue = _deviations[i].Process(candle).ToDecimal();
 			var devSquare = devValue * devValue;
-			var smaValue = _smas[i].Process(devSquare, candle.ServerTime, true).ToDecimal();
+			var smaValue = _smas[i].Process(new DecimalIndicatorValue(_smas[i], devSquare, candle.ServerTime)).ToDecimal();
 			var temp = (decimal)Math.Sqrt((double)smaValue);
 			temp = temp != 0 ? devValue / temp : 0m;
 

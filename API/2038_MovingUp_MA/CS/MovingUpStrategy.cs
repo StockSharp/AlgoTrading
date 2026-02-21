@@ -123,13 +123,13 @@ public class MovingUpStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA", "Fast MA period", "MA")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 		
 		_slowLength = Param(nameof(SlowLength), 21)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA", "Slow MA period", "MA")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 60, 5);
 		
 		_useTakeProfit = Param(nameof(UseTakeProfit), true)
@@ -138,7 +138,7 @@ public class MovingUpStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 500m)
 		.SetGreaterThanZero()
 		.SetDisplay("TP", "Take profit distance", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 1000m, 100m);
 		
 		_useStopLoss = Param(nameof(UseStopLoss), true)
@@ -147,7 +147,7 @@ public class MovingUpStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 250m)
 		.SetGreaterThanZero()
 		.SetDisplay("SL", "Stop loss distance", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50m, 500m, 50m);
 		
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
@@ -156,7 +156,7 @@ public class MovingUpStrategy : Strategy
 		_trailingStop = Param(nameof(TrailingStop), 250m)
 		.SetGreaterThanZero()
 		.SetDisplay("TS", "Trailing stop distance", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50m, 500m, 50m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -180,9 +180,9 @@ public class MovingUpStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var fastMa = new SMA { Length = FastLength };
 		var slowMa = new SMA { Length = SlowLength };

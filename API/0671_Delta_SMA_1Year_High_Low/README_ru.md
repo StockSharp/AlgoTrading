@@ -10,7 +10,7 @@
 - **Стопы**: нет.
 - **Значения по умолчанию**:
   - `DeltaSmaLength = 14`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Фильтры**:
   - Категория: Volume
   - Направление: Лонг

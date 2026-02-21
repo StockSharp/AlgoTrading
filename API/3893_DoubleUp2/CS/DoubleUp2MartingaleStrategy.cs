@@ -130,55 +130,55 @@ public class DoubleUp2MartingaleStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Lookback for the Commodity Channel Index", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 20, 1);
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 33)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 1);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal smoothing period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 15, 1);
 
 		_threshold = Param(nameof(Threshold), 230m)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Threshold", "Absolute level required from both indicators", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 400m, 10m);
 
 		_exitDistancePoints = Param(nameof(ExitDistancePoints), 120)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Distance", "Required profit in points before closing", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 300, 10);
 
 		_balanceDivisor = Param(nameof(BalanceDivisor), 50001m)
 			.SetGreaterThanZero()
 			.SetDisplay("Balance Divisor", "Divisor used to derive base volume from equity", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10000m, 100000m, 5000m);
 
 		_minimumVolume = Param(nameof(MinimumVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Volume", "Lower bound for calculated trade volume", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 1m, 0.01m);
 
 		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Martingale Multiplier", "Volume multiplier applied after losses", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

@@ -13,7 +13,7 @@ month.
 - **Default Values**:
   - `WindowDays = 252`
   - `Deciles = 10`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
   - `MinTradeUsd = 100`
 - **Filters**:
   - Category: Factor

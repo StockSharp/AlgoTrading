@@ -11,7 +11,7 @@
 - **默认值**：
   - `LookbackDays = 5`
   - `HoldingDays = 3`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **筛选**：
   - 类别：事件驱动
   - 方向：双向

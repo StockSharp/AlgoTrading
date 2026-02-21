@@ -97,12 +97,12 @@ public class MoneyManagerStrategy : Strategy
 		_profitPercent = Param(nameof(ProfitPercent), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit %", "Balance percentage added to the profit threshold", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_lossPercent = Param(nameof(LossPercent), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Loss %", "Balance percentage tolerated before closing", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_lotCommission = Param(nameof(LotCommission), 7m)
 			.SetGreaterThanOrEqualsZero()
@@ -132,9 +132,9 @@ public class MoneyManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("Security must be assigned before starting the strategy.");

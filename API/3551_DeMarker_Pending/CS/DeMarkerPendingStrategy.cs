@@ -68,19 +68,19 @@ public class DeMarkerPendingStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150m)
 		.SetDisplay("Stop Loss (points)", "Distance from entry price to stop loss in points.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 460m)
 		.SetDisplay("Take Profit (points)", "Distance from entry price to take profit in points.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_pendingIndentPoints = Param(nameof(PendingIndentPoints), 5m)
 		.SetDisplay("Pending Indent", "Offset in points between market price and pending order.", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_pendingExpirationMinutes = Param(nameof(PendingExpirationMinutes), 600)
 		.SetDisplay("Pending Expiration", "Lifetime of pending orders in minutes (0 disables expiration).", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_pendingMode = Param(nameof(Mode), PendingModes.Stop)
 		.SetDisplay("Pending Mode", "Choose stop or limit pending orders.", "Trading");
@@ -94,15 +94,15 @@ public class DeMarkerPendingStrategy : Strategy
 		_demarkerPeriod = Param(nameof(DemarkerPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("DeMarker Period", "Averaging period for DeMarker indicator.", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_demarkerUpper = Param(nameof(DemarkerUpperLevel), 0.7m)
 		.SetDisplay("Upper Level", "DeMarker value that triggers sell setup.", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_demarkerLower = Param(nameof(DemarkerLowerLevel), 0.3m)
 		.SetDisplay("Lower Level", "DeMarker value that triggers buy setup.", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for signal evaluation.", "General");
@@ -251,9 +251,9 @@ public class DeMarkerPendingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 		_deMarker = new DeMarker { Length = DemarkerPeriod };

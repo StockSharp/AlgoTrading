@@ -67,22 +67,22 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		_longVolatilityPeriod = Param(nameof(LongVolatilityPeriod), 10)
 			.SetRange(1, 500)
 			.SetDisplay("Long Volatility Period", "Lookback period for the volatility calculation", "Long Side")
-			.SetCanOptimize(true);
+			;
 
 		_shortVolatilityPeriod = Param(nameof(ShortVolatilityPeriod), 10)
 			.SetRange(1, 500)
 			.SetDisplay("Short Volatility Period", "Lookback period for the volatility calculation", "Short Side")
-			.SetCanOptimize(true);
+			;
 
 		_longSensitivity = Param(nameof(LongSensitivity), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Sensitivity", "Multiplier applied to volatility for long bricks", "Long Side")
-			.SetCanOptimize(true);
+			;
 
 		_shortSensitivity = Param(nameof(ShortSensitivity), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Sensitivity", "Multiplier applied to volatility for short bricks", "Short Side")
-			.SetCanOptimize(true);
+			;
 
 		_longPriceMode = Param(nameof(LongPriceMode), AdaptiveRenkoPriceModes.Close)
 			.SetDisplay("Long Price Mode", "Price source used when building long bricks", "Long Side");
@@ -356,9 +356,9 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_longProcessor.Reset();
 		_shortProcessor.Reset();
@@ -397,7 +397,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 
 		var step = GetPriceStep();
 		var volatility = volatilityValue.ToDecimal();
-		var snapshot = _longProcessor.Process(candle, volatility, LongSensitivity, LongMinimumBrickPoints, LongPriceMode, LongSignalBarOffset, step);
+		var snapshot = _longProcessor.Process(new DecimalIndicatorValue(_longProcessor, candle, volatility));
 
 		if (snapshot == null)
 			return;
@@ -432,7 +432,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 
 		var step = GetPriceStep();
 		var volatility = volatilityValue.ToDecimal();
-		var snapshot = _shortProcessor.Process(candle, volatility, ShortSensitivity, ShortMinimumBrickPoints, ShortPriceMode, ShortSignalBarOffset, step);
+		var snapshot = _shortProcessor.Process(new DecimalIndicatorValue(_shortProcessor, candle, volatility));
 
 		if (snapshot == null)
 			return;
@@ -772,7 +772,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 			if (candle.CloseTime != default)
 				return candle.CloseTime;
 
-			return candle.Time;
+			return candle.ServerTime;
 		}
 	}
 

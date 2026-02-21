@@ -98,7 +98,7 @@ public class AscvStrategy : Strategy
 		.SetDisplay("Stochastic %K", "Main period of the stochastic oscillator", "Oscillator")
 		.SetGreaterThanZero();
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 		.SetDisplay("Stochastic %D", "Signal period of the stochastic oscillator", "Oscillator")
 		.SetGreaterThanZero();
 
@@ -260,17 +260,17 @@ public class AscvStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastMa = new SimpleMovingAverage { Length = FastMaLength };
-		_slowMa = new SimpleMovingAverage { Length = SlowMaLength };
+		_fastMa = new SMA { Length = FastMaLength };
+		_slowMa = new SMA { Length = SlowMaLength };
 		_stdDev = new StandardDeviation { Length = StdDevLength };
 		_stochastic = new StochasticOscillator
 		{
 			KPeriod = StochasticKPeriod,
-			DPeriod = StochasticDPeriod,
+			D = {  K = { Length = StochasticDPeriod } },
 			Slowing = StochasticSlowing
 		};
 
@@ -279,7 +279,7 @@ public class AscvStrategy : Strategy
 		.BindEx([_fastMa, _slowMa, _stdDev, _stochastic], ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

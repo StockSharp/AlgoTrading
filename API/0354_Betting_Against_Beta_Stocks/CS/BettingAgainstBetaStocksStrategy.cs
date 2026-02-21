@@ -96,7 +96,7 @@ public class BettingAgainstBetaStocksStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Deciles", "Number of buckets for sorting", "Parameters");
 
-		_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 
 		_minUsd = Param(nameof(MinTradeUsd), 100m)
@@ -125,7 +125,7 @@ public class BettingAgainstBetaStocksStrategy : Strategy
 		_lastDay = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe is empty");
@@ -133,7 +133,7 @@ public class BettingAgainstBetaStocksStrategy : Strategy
 		if (Security == null)
 			throw new InvalidOperationException("Benchmark not set");
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		foreach (var (sec, dt) in GetWorkingSecurities())
 		{

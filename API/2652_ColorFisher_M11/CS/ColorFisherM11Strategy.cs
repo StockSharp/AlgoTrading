@@ -225,9 +225,9 @@ public class ColorFisherM11Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_colorFisher = new ColorFisherM11Indicator
 		{
@@ -323,7 +323,7 @@ public class ColorFisherM11Strategy : Strategy
 		return _colorHistory[index];
 	}
 
-	private sealed class ColorFisherM11Indicator : Indicator<ICandleMessage>
+	private sealed class ColorFisherM11Indicator : BaseIndicator
 	{
 		public int RangePeriods { get; set; } = 10;
 		public decimal PriceSmoothing { get; set; } = 0.3m;

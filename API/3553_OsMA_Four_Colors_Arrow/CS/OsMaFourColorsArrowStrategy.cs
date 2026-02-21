@@ -93,15 +93,15 @@ public class OsMaFourColorsArrowStrategy : Strategy
 
 		_trailingActivatePips = Param(nameof(TrailingActivatePips), 70)
 		.SetDisplay("Trailing Activate", "Profit in pips required before trailing starts", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 250)
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance expressed in pips", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 50)
 		.SetDisplay("Trailing Step (pips)", "Minimal profit increase before the stop is tightened", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_maxPositions = Param(nameof(MaxPositions), 5)
 		.SetDisplay("Max Positions", "Maximum number of aggregated position units", "Trading")
@@ -356,9 +356,9 @@ public class OsMaFourColorsArrowStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ValidateTrailingParameters();
 

@@ -92,27 +92,27 @@ public class StochasticRsiCrossStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetRange(7, 30)
 			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetRange(5, 30)
 			.SetDisplay("Stochastic Period", "Period for Stochastic", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_kPeriod = Param(nameof(KPeriod), 3)
 			.SetRange(1, 10)
 			.SetDisplay("K Period", "Period for %K line", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetRange(1, 10)
 			.SetDisplay("D Period", "Period for %D line", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -136,9 +136,9 @@ public class StochasticRsiCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create a StochRsi indicator
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };

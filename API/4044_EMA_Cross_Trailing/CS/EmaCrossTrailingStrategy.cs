@@ -38,37 +38,37 @@ public class EmaCrossTrailingStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take profit (pips)", "Distance in pips used for the protective take profit.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 200m, 5m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop loss (pips)", "Distance in pips used for the protective stop loss.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 300m, 10m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Trailing stop (pips)", "Trailing distance in pips. Zero disables the trailing behaviour.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 10m);
 
 		_orderVolume = Param(nameof(OrderVolume), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order volume", "Base order size expressed in lots.", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 10m, 0.1m);
 
 		_fastEmaLength = Param(nameof(FastEmaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Length of the fast exponential moving average.", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 30, 1);
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Length of the slow exponential moving average.", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -140,9 +140,9 @@ public class EmaCrossTrailingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = Security?.PriceStep ?? 1m;
 		if (_pointValue <= 0m)

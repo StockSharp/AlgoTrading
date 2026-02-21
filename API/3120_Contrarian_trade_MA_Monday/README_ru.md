@@ -38,7 +38,7 @@
 | `MaShift` | `int` | `0` | Сдвиг скользящей средней вперёд (в барах). |
 | `MaMethod` | `MovingAverageMethod` | `LinearWeighted` | Метод сглаживания (`Simple`, `Exponential`, `Smoothed`, `LinearWeighted`). |
 | `AppliedPrice` | `AppliedPriceType` | `Weighted` | Источник цены для скользящей (`Close`, `Open`, `High`, `Low`, `Median`, `Typical`, `Weighted`). |
-| `TradeCandleType` | `DataType` | `TimeSpan.FromDays(1).TimeFrame()` | Таймфрейм, по которому принимаются решения и ведётся контроль стопа. |
+| `TradeCandleType` | `DataType` | `TimeSpan.FromMinutes(5).TimeFrame()` | Таймфрейм, по которому принимаются решения и ведётся контроль стопа. |
 | `MaCandleType` | `DataType` | `TimeSpan.FromDays(7).TimeFrame()` | Старший таймфрейм для расчёта экстремумов и MA. |
 
 ## Примечания

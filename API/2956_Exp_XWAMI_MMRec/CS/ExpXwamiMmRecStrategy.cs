@@ -135,11 +135,11 @@ public class ExpXwamiMmRecStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Source timeframe for the indicator", "General")
-		.SetCanOptimize(true);
+		;
 
 		_period = Param(nameof(Period), 1)
 		.SetDisplay("Momentum Shift", "Distance between the compared prices", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_method1 = Param(nameof(Method1), SmoothMethods.T3)
 		.SetDisplay("Smoothing 1", "First smoothing method", "Indicator");
@@ -475,9 +475,9 @@ public class ExpXwamiMmRecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 
@@ -498,7 +498,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -716,17 +716,17 @@ public class ExpXwamiMmRecStrategy : Strategy
 
 		return method switch
 		{
-			SmoothMethods.Sma => new IndicatorWrapper(new SimpleMovingAverage { Length = normalizedLength }),
-			SmoothMethods.Ema => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
+			SmoothMethods.Sma => new IndicatorWrapper(new SMA { Length = normalizedLength }),
+			SmoothMethods.Ema => new IndicatorWrapper(new EMA { Length = normalizedLength }),
 			SmoothMethods.Smma => new IndicatorWrapper(new SmoothedMovingAverage { Length = normalizedLength }),
 			SmoothMethods.Lwma => new IndicatorWrapper(new WeightedMovingAverage { Length = normalizedLength }),
 			SmoothMethods.Jjma => new IndicatorWrapper(new JurikMovingAverage { Length = normalizedLength, Phase = phase }),
 			SmoothMethods.JurX => new IndicatorWrapper(new JurikMovingAverage { Length = normalizedLength, Phase = phase }),
-			SmoothMethods.ParMa => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
+			SmoothMethods.ParMa => new IndicatorWrapper(new EMA { Length = normalizedLength }),
 			SmoothMethods.T3 => new TillsonT3Filter(normalizedLength, phase),
-			SmoothMethods.Vidya => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
+			SmoothMethods.Vidya => new IndicatorWrapper(new EMA { Length = normalizedLength }),
 			SmoothMethods.Ama => new IndicatorWrapper(new KaufmanAdaptiveMovingAverage { Length = normalizedLength }),
-			_ => new IndicatorWrapper(new SimpleMovingAverage { Length = normalizedLength })
+			_ => new IndicatorWrapper(new SMA { Length = normalizedLength })
 		};
 	}
 
@@ -783,7 +783,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 
 		public decimal Process(decimal value, DateTimeOffset time)
 		{
-			return _indicator.Process(value, time, true).ToDecimal();
+			return _indicator.Process(new DecimalIndicatorValue(_indicator, value, time.UtcDateTime)).ToDecimal();
 		}
 	}
 

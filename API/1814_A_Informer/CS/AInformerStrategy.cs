@@ -43,11 +43,11 @@ public class AInformerStrategy : Strategy
 	{
 		_stopLoss = Param(nameof(StopLoss), 300m)
 			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 1000m)
 			.SetDisplay("Take Profit", "Take profit distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -57,9 +57,9 @@ public class AInformerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Enable position protection with take profit and stop loss.
 		StartProtection(

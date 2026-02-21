@@ -95,7 +95,7 @@ public class BettingAgainstBetaStrategy : Strategy
 			.SetDisplay("Deciles", "Number of deciles", "General")
 			.SetGreaterThanZero();
 
-		_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle time frame", "General");
 
 		_minUsd = Param(nameof(MinTradeUsd), 100m)
@@ -124,7 +124,7 @@ public class BettingAgainstBetaStrategy : Strategy
 		_lastDay = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Security == null)
 			throw new InvalidOperationException("Benchmark not set");
@@ -132,7 +132,7 @@ public class BettingAgainstBetaStrategy : Strategy
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe is empty");
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		foreach (var (sec, dt) in GetWorkingSecurities())
 		{
 			_wins[sec] = new RollingWindow<decimal>(WindowDays + 1);

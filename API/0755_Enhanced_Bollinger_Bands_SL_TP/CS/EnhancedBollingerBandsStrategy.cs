@@ -111,12 +111,12 @@ public class EnhancedBollingerBandsStrategy : Strategy
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Length", "Period for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Multiplier", "Standard deviation multiplier", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_enableLong = Param(nameof(EnableLong), true)
 			.SetDisplay("Enable Long", "Allow long positions", "General");
@@ -154,9 +154,9 @@ public class EnhancedBollingerBandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bollinger = new BollingerBands
 		{
@@ -166,7 +166,7 @@ public class EnhancedBollingerBandsStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bollinger, ProcessCandle)
+			.BindEx(bollinger, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -182,13 +182,19 @@ public class EnhancedBollingerBandsStrategy : Strategy
 			stopLoss: new Unit(StopLossPips * PipValue, UnitTypes.Absolute));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
+
+		if (bollingerValue is not BollingerBandsValue bb)
+			return;
+
+		var upper = bb.UpBand;
+		var lower = bb.LowBand;
 
 		if (_prevClose.HasValue && _prevUpper.HasValue && _prevLower.HasValue)
 		{

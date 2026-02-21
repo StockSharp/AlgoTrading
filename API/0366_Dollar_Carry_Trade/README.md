@@ -10,7 +10,7 @@ The **Dollar Carry Trade** strategy ranks USD currency pairs by interest-rate di
 - **Stops**: No explicit stop.
 - **Default Values**:
   - `K = 3`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Fundamental
   - Direction: Both

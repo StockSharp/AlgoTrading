@@ -108,23 +108,23 @@ public class EesHedgerStrategy : Strategy
 	{
 		_hedgeVolume = Param(nameof(HedgeVolume), 0.1m)
 		.SetDisplay("Hedge Volume", "Volume used for hedge orders", "General")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance per hedge", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 		.SetDisplay("Take Profit (pips)", "Take-profit distance per hedge", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 25)
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 		.SetDisplay("Trailing Step (pips)", "Minimum trailing stop increment", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_originalOrderComment = Param(nameof(OriginalOrderComment), string.Empty)
 		.SetDisplay("Original Comment", "Orders with this comment will be mirrored", "Filters");
@@ -148,9 +148,9 @@ public class EesHedgerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
 		{

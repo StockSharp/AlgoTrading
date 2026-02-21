@@ -105,19 +105,19 @@ public class BackKickStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Volume of each hedged leg", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 2m, 0.1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 140)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 400, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -156,9 +156,9 @@ public class BackKickStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -166,7 +166,7 @@ public class BackKickStrategy : Strategy
 		_stopLossOffset = StopLossPips > 0 ? StopLossPips * _pipValue : 0m;
 		_takeProfitOffset = TakeProfitPips > 0 ? TakeProfitPips * _pipValue : 0m;
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var candleSubscription = SubscribeCandles(CandleType);
 		candleSubscription

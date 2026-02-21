@@ -48,12 +48,12 @@ public class TrainingSimulatorStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 30m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance in MetaTrader points applied above the entry price.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Distance in MetaTrader points applied below the entry price.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_upperStopPrice = Param(nameof(UpperStopPrice), 0m)
 			.SetNotNegative()
@@ -188,9 +188,9 @@ public class TrainingSimulatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = CalculatePointSize();
 

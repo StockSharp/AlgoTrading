@@ -212,47 +212,47 @@ public class NeuralNetworkAtrStrategy : Strategy
 		_maxRiskPerTrade = Param(nameof(MaxRiskPerTrade), 1.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Risk %", "Maximum risk per trade as percentage of equity", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5.0m, 0.5m);
 
 		_dailyLossLimit = Param(nameof(DailyLossLimit), 5.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Daily Loss %", "Maximum permitted daily drawdown", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2.0m, 10.0m, 1.0m);
 
 		_totalLossLimit = Param(nameof(TotalLossLimit), 10.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Total Loss %", "Maximum permitted total drawdown", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5.0m, 20.0m, 1.0m);
 
 		_dailyProfitTarget = Param(nameof(DailyProfitTarget), 1.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Daily Profit %", "Target daily profit before penalty is avoided", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3.0m, 0.5m);
 
 		_initialLearningRate = Param(nameof(InitialLearningRate), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Learning Rate", "Scaling factor for neural output", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.005m, 0.05m, 0.005m);
 
 		_hiddenLayerSize = Param(nameof(HiddenLayerSize), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Hidden Layer", "Number of neurons in hidden layer", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 9, 2);
 
 		_buyThreshold = Param(nameof(BuyThreshold), 0.6m)
 		.SetDisplay("Buy Threshold", "Prediction level to open long trades", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.55m, 0.75m, 0.05m);
 
 		_sellThreshold = Param(nameof(SellThreshold), 0.4m)
 		.SetDisplay("Sell Threshold", "Prediction level to open short trades", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.25m, 0.45m, 0.05m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -261,31 +261,31 @@ public class NeuralNetworkAtrStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "Period of Average True Range indicator", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 2);
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 20m)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Spread", "Maximum allowed spread in points", "Execution")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 40m, 5m);
 
 		_riskRewardRatio = Param(nameof(RiskRewardRatio), 2.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk Reward", "Take profit multiple of stop distance", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_fallbackStopLossPoints = Param(nameof(FallbackStopLossPoints), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Fallback Stop", "Stop distance when ATR is not formed", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 100, 10);
 
 		_inputSize = Param(nameof(InputSize), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Input Size", "Number of features processed by the neural layer", "Neural Network")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 9, 2);
 
 		_minimumLearningRate = Param(nameof(MinimumLearningRate), 0.0001m)
@@ -325,9 +325,9 @@ public class NeuralNetworkAtrStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_learningRate = InitialLearningRate;
 	InitializeNetwork();

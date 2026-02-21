@@ -44,10 +44,10 @@ public class SmoothingAverageStrategy : Strategy
 	{
 		_maPeriod = Param(nameof(MaPeriod), 200)
 			.SetDisplay("MA Period", "Moving average period", "MA")
-			.SetCanOptimize(true);
+			;
 		_smoothing = Param(nameof(Smoothing), 1400m)
 			.SetDisplay("Smoothing", "Price offset from moving average", "General")
-			.SetCanOptimize(true);
+			;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
@@ -57,12 +57,12 @@ public class SmoothingAverageStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// create moving average indicator
-		var sma = new SimpleMovingAverage { Length = MaPeriod };
+		var sma = new SMA { Length = MaPeriod };
 
 		// subscribe to candles
 		var subscription = SubscribeCandles(CandleType);

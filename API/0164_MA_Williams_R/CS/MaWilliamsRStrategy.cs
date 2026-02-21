@@ -140,18 +140,18 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	}
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 		// Create indicators
-		LengthIndicator<decimal> ma;
+		DecimalLengthIndicator ma;
 		
 		// Create MA based on selected type
 		switch (MaType)
 		{
 			case MovingAverageTypes.Exponential:
-				ma = new ExponentialMovingAverage { Length = MaPeriod };
+				ma = new EMA { Length = MaPeriod };
 				break;
 			case MovingAverageTypes.Weighted:
 				ma = new WeightedMovingAverage { Length = MaPeriod };
@@ -164,7 +164,7 @@ protected override void OnStarted(DateTimeOffset time)
 				break;
 			case MovingAverageTypes.Simple:
 			default:
-				ma = new SimpleMovingAverage { Length = MaPeriod };
+				ma = new SMA { Length = MaPeriod };
 				break;
 		}
 		

@@ -207,11 +207,11 @@ public class BtfdStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_volumeSma = new SimpleMovingAverage { Length = VolumeLength };
+		_volumeSma = new SMA { Length = VolumeLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		
 		var subscription = SubscribeCandles(CandleType);

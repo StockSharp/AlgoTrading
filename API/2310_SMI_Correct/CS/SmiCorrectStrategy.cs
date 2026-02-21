@@ -88,9 +88,9 @@ public class SmiCorrectStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_stochastic = new StochasticOscillator
 		{
@@ -98,7 +98,7 @@ public class SmiCorrectStrategy : Strategy
 			D = { Length = 1 }
 		};
 
-		_signal = new SimpleMovingAverage { Length = SignalLength };
+		_signal = new SMA { Length = SignalLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

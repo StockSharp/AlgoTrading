@@ -43,25 +43,25 @@ public class PendulumStrategy : Strategy
 		_stepSize = Param(nameof(StepSize), 0.001m)
 			.SetDisplay("Grid Step", "Distance between consecutive grid levels", "Strategy")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0005m, 0.01m, 0.0005m);
 
 		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetDisplay("Multiplier", "Scaling applied to volume and extended targets", "Strategy")
 			.SetGreaterThan(1m)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.2m, 3m, 0.1m);
 
 		_maxLayers = Param(nameof(MaxLayers), 3)
 			.SetDisplay("Max Layers", "Maximum number of martingale layers", "Risk")
 			.SetGreaterThan(1)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 5, 1);
 
 		_baseVolume = Param(nameof(BaseVolume), 1m)
 			.SetDisplay("Base Volume", "Initial trade volume for the first layer", "Trading")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -136,9 +136,9 @@ public class PendulumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -152,7 +152,7 @@ public class PendulumStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

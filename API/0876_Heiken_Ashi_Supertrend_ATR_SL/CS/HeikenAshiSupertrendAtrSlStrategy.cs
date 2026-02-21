@@ -122,13 +122,13 @@ public class HeikenAshiSupertrendAtrSlStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for Supertrend and stops", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 14, 1);
 
 		_atrFactor = Param(nameof(AtrFactor), 3m)
 			.SetRange(0.5m, 10m)
 			.SetDisplay("Supertrend Factor", "Multiplier for Supertrend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_useBreakEven = Param(nameof(UseBreakEven), false)
@@ -137,7 +137,7 @@ public class HeikenAshiSupertrendAtrSlStrategy : Strategy
 		_breakEvenAtrMultiplier = Param(nameof(BreakEvenAtrMultiplier), 1m)
 			.SetRange(0.1m, 10m)
 			.SetDisplay("Break Even ATR Mult", "Move stop to entry after ATR move", "Stops")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_useHardStop = Param(nameof(UseHardStop), false)
@@ -146,7 +146,7 @@ public class HeikenAshiSupertrendAtrSlStrategy : Strategy
 		_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 2m)
 			.SetRange(0.1m, 10m)
 			.SetDisplay("Stop Loss ATR Mult", "ATR multiplier for initial stop", "Stops")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -173,9 +173,9 @@ public class HeikenAshiSupertrendAtrSlStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_supertrend = new() { Length = AtrPeriod, Multiplier = AtrFactor };
 		_atr = new() { Length = AtrPeriod };

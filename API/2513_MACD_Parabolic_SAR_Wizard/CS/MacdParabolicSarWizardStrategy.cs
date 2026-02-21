@@ -152,47 +152,47 @@ public class MacdParabolicSarWizardStrategy : Strategy
 	{
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 		.SetDisplay("MACD Fast", "Fast EMA period for MACD", "MACD")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 24)
 		.SetDisplay("MACD Slow", "Slow EMA period for MACD", "MACD")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 		.SetDisplay("MACD Signal", "Signal SMA period for MACD", "MACD")
-		.SetCanOptimize(true);
+		;
 
 		_macdWeight = Param(nameof(MacdWeight), 0.9m)
 		.SetDisplay("MACD Weight", "Relative weight of MACD in scoring", "Scoring")
-		.SetCanOptimize(true);
+		;
 
 		_sarWeight = Param(nameof(SarWeight), 0.1m)
 		.SetDisplay("SAR Weight", "Relative weight of SAR in scoring", "Scoring")
-		.SetCanOptimize(true);
+		;
 
 		_openThreshold = Param(nameof(OpenThreshold), 20m)
 		.SetDisplay("Open Threshold", "Score required to open trades", "Scoring")
-		.SetCanOptimize(true);
+		;
 
 		_closeThreshold = Param(nameof(CloseThreshold), 100m)
 		.SetDisplay("Close Threshold", "Score required to exit trades", "Scoring")
-		.SetCanOptimize(true);
+		;
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
 		.SetDisplay("SAR Step", "Acceleration factor for Parabolic SAR", "Parabolic SAR")
-		.SetCanOptimize(true);
+		;
 
 		_sarMax = Param(nameof(SarMax), 0.2m)
 		.SetDisplay("SAR Max", "Maximum acceleration for Parabolic SAR", "Parabolic SAR")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 		.SetDisplay("Stop Loss (pts)", "Stop-loss distance in points", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 115m)
 		.SetDisplay("Take Profit (pts)", "Take-profit distance in points", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle source", "General");

@@ -74,121 +74,121 @@ public class ComboRightPerceptronStrategy : Strategy
 		_takeProfit1 = Param(nameof(TakeProfit1), 50m)
 		.SetDisplay("Take Profit 1", "Profit target in points for the base CCI signal", "Risk Management")
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 200m, 10m);
 
 		_stopLoss1 = Param(nameof(StopLoss1), 50m)
 		.SetDisplay("Stop Loss 1", "Stop distance in points for the base CCI signal", "Risk Management")
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 200m, 10m);
 
 		_cciPeriod = Param(nameof(CciPeriod), 10)
 		.SetDisplay("CCI Period", "Period of the Commodity Channel Index filter", "Indicators")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_x12 = Param(nameof(X12), 100)
 		.SetDisplay("X12", "Weight applied to the first perceptron difference #1", "Perceptrons")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 5);
 
 		_x22 = Param(nameof(X22), 100)
 		.SetDisplay("X22", "Weight applied to the first perceptron difference #2", "Perceptrons")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 5);
 
 		_x32 = Param(nameof(X32), 100)
 		.SetDisplay("X32", "Weight applied to the first perceptron difference #3", "Perceptrons")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 5);
 
 		_x42 = Param(nameof(X42), 100)
 		.SetDisplay("X42", "Weight applied to the first perceptron difference #4", "Perceptrons")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 5);
 
 		_takeProfit2 = Param(nameof(TakeProfit2), 50m)
 		.SetDisplay("Take Profit 2", "Profit target in points for the bearish perceptron", "Risk Management")
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 200m, 10m);
 
 		_stopLoss2 = Param(nameof(StopLoss2), 50m)
 		.SetDisplay("Stop Loss 2", "Stop distance in points for the bearish perceptron", "Risk Management")
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 200m, 10m);
 
 		_perceptron1Period = Param(nameof(Perceptron1Period), 20)
 		.SetDisplay("Perceptron 1 Period", "Stride (bars) between samples for the bearish perceptron", "Perceptrons")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 1);
 
 		_x13 = Param(nameof(X13), 100)
 		.SetDisplay("X13", "Weight applied to the second perceptron difference #1", "Perceptrons")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 5);
 
 		_x23 = Param(nameof(X23), 100)
 		.SetDisplay("X23", "Weight applied to the second perceptron difference #2", "Perceptrons")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 5);
 
 		_x33 = Param(nameof(X33), 100)
 		.SetDisplay("X33", "Weight applied to the second perceptron difference #3", "Perceptrons")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 5);
 
 		_x43 = Param(nameof(X43), 100)
 		.SetDisplay("X43", "Weight applied to the second perceptron difference #4", "Perceptrons")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 5);
 
 		_takeProfit3 = Param(nameof(TakeProfit3), 50m)
 		.SetDisplay("Take Profit 3", "Profit target in points for the bullish perceptron", "Risk Management")
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 200m, 10m);
 
 		_stopLoss3 = Param(nameof(StopLoss3), 50m)
 		.SetDisplay("Stop Loss 3", "Stop distance in points for the bullish perceptron", "Risk Management")
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 200m, 10m);
 
 		_perceptron2Period = Param(nameof(Perceptron2Period), 20)
 		.SetDisplay("Perceptron 2 Period", "Stride (bars) between samples for the bullish perceptron", "Perceptrons")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 1);
 
 		_x14 = Param(nameof(X14), 100)
 		.SetDisplay("X14", "Weight applied to the confirmation perceptron difference #1", "Perceptrons")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 5);
 
 		_x24 = Param(nameof(X24), 100)
 		.SetDisplay("X24", "Weight applied to the confirmation perceptron difference #2", "Perceptrons")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 5);
 
 		_x34 = Param(nameof(X34), 100)
 		.SetDisplay("X34", "Weight applied to the confirmation perceptron difference #3", "Perceptrons")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 5);
 
 		_x44 = Param(nameof(X44), 100)
 		.SetDisplay("X44", "Weight applied to the confirmation perceptron difference #4", "Perceptrons")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 5);
 
 		_perceptron3Period = Param(nameof(Perceptron3Period), 20)
 		.SetDisplay("Perceptron 3 Period", "Stride (bars) between samples for the confirmation perceptron", "Perceptrons")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 1);
 
 		_passMode = Param(nameof(PassMode), 1)
@@ -447,9 +447,9 @@ public class ComboRightPerceptronStrategy : Strategy
 	}
 
 /// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_perceptron1W1 = X12 - 100m;
 		_perceptron1W2 = X22 - 100m;

@@ -74,19 +74,19 @@ public class RangeFilterAtrTpSlStrategy : Strategy
 		_length = Param(nameof(RangeFilterLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("RF Length", "Range filter length", "Range Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 		
 		_multiplier = Param(nameof(RangeFilterMultiplier), 1.5m)
 		.SetRange(0.1m, 5m)
 		.SetDisplay("RF Multiplier", "StdDev multiplier", "Range Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.1m);
 		
 		_atrLength = Param(nameof(AtrLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Length", "ATR period", "ATR")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 28, 1);
 		
 		_tpMultiplier = Param(nameof(TakeProfitMultiplier), 1.5m)
@@ -118,11 +118,11 @@ public class RangeFilterAtrTpSlStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		var sma = new SimpleMovingAverage { Length = RangeFilterLength };
+		var sma = new SMA { Length = RangeFilterLength };
 		var stdDev = new StandardDeviation { Length = RangeFilterLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 		

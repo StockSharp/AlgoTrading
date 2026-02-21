@@ -67,17 +67,17 @@ public class AdxDiStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetRange(7, 30)
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
 			.SetRange(15m, 35m)
 			.SetDisplay("ADX Threshold", "ADX level to confirm trend", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetRange(1m, 5m)
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR stop loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -90,9 +90,9 @@ public class AdxDiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create ADX Indicator
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };

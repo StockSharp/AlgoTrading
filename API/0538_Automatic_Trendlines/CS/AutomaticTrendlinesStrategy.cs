@@ -85,9 +85,9 @@ public class AutomaticTrendlinesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)
@@ -120,10 +120,10 @@ public class AutomaticTrendlinesStrategy : Strategy
 				if (i == pivotIndex)
 					continue;
 
-				if (_candles[i].High >= pivotCandle.High)
+				if (_candles[i].HighPrice >= pivotCandle.HighPrice)
 					isHigh = false;
 
-				if (_candles[i].Low <= pivotCandle.Low)
+				if (_candles[i].LowPrice <= pivotCandle.LowPrice)
 					isLow = false;
 			}
 
@@ -134,7 +134,7 @@ public class AutomaticTrendlinesStrategy : Strategy
 				_resX2 = _resX1;
 				_resY2 = _resY1;
 				_resX1 = pivotBarIndex;
-				_resY1 = pivotCandle.High;
+				_resY1 = pivotCandle.HighPrice;
 			}
 
 			if (isLow)
@@ -142,7 +142,7 @@ public class AutomaticTrendlinesStrategy : Strategy
 				_supX2 = _supX1;
 				_supY2 = _supY1;
 				_supX1 = pivotBarIndex;
-				_supY1 = pivotCandle.Low;
+				_supY1 = pivotCandle.LowPrice;
 			}
 		}
 

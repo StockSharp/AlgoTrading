@@ -164,9 +164,9 @@ public class AutotradePendingStopsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = _orderVolume.Value;
 
@@ -271,7 +271,7 @@ public class AutotradePendingStopsStrategy : Strategy
 		var stabilizationLimit = StabilizationTicks * _tickSize;
 		var prevBodySize = Math.Abs(_prevClose - _prevOpen);
 		var currentVolume = Math.Abs(Position);
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 
 		if (currentVolume <= 0 || entryPrice == 0)
 		return;

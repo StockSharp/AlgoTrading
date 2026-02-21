@@ -173,15 +173,15 @@ public class AdaptiveFibonacciPullbackStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_st1 = new SuperTrend { Length = AtrPeriod, Multiplier = Factor1 };
 		_st2 = new SuperTrend { Length = AtrPeriod, Multiplier = Factor2 };
 		_st3 = new SuperTrend { Length = AtrPeriod, Multiplier = Factor3 };
-		_stSmooth = new ExponentialMovingAverage { Length = SmoothLength };
-		_amaMid = new ExponentialMovingAverage { Length = AmaLength };
+		_stSmooth = new EMA { Length = SmoothLength };
+		_amaMid = new EMA { Length = AmaLength };
 		_atr = new AverageTrueRange { Length = AmaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
@@ -220,7 +220,7 @@ public class AdaptiveFibonacciPullbackStrategy : Strategy
 			return;
 
 		var avg = (st1 + st2 + st3) / 3m;
-		var smooth = _stSmooth.Process(avg, candle.ServerTime, true).ToDecimal();
+		var smooth = _stSmooth.Process(new DecimalIndicatorValue(_stSmooth, avg, candle.ServerTime)).ToDecimal();
 
 		if (_isFirst)
 		{

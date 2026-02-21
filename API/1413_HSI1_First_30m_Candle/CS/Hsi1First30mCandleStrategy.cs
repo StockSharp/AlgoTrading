@@ -79,9 +79,9 @@ public class Hsi1First30mCandleStrategy : Strategy
 		_takePrice = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(ProcessCandle).Start();

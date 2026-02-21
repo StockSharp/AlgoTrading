@@ -36,16 +36,16 @@ public class FirebirdMaEnvelopeExhaustionStrategy : Strategy
 
 	public FirebirdMaEnvelopeExhaustionStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type");
-		_maLength = Param(nameof(MaLength), 10).SetDisplay("MA Length");
-		_percent = Param(nameof(Percent), 0.3m).SetDisplay("Percent Envelope");
-		_tradeOnFriday = Param(nameof(TradeOnFriday), true).SetDisplay("Trade On Friday");
-		_useHighLow = Param(nameof(UseHighLow), false).SetDisplay("Use High/Low Source");
-		_pipStep = Param(nameof(PipStep), 30).SetDisplay("Pip Step");
-		_increasementPower = Param(nameof(IncreasementPower), 0m).SetDisplay("Increasement Power");
-		_takeProfit = Param(nameof(TakeProfit), 30m).SetDisplay("Take Profit (pips)");
-		_stopLoss = Param(nameof(StopLoss), 200m).SetDisplay("Stop Loss (pips)");
-		_volume = Param(nameof(Volume), 1m).SetDisplay("Trade Volume");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
+		_maLength = Param(nameof(MaLength), 10).SetDisplay("MA Length", "MA Length", "General");
+		_percent = Param(nameof(Percent), 0.3m).SetDisplay("Percent Envelope", "Percent Envelope", "General");
+		_tradeOnFriday = Param(nameof(TradeOnFriday), true).SetDisplay("Trade On Friday", "Trade On Friday", "General");
+		_useHighLow = Param(nameof(UseHighLow), false).SetDisplay("Use High/Low Source", "Use High/Low Source", "General");
+		_pipStep = Param(nameof(PipStep), 30).SetDisplay("Pip Step", "Pip Step", "General");
+		_increasementPower = Param(nameof(IncreasementPower), 0m).SetDisplay("Increasement Power", "Increasement Power", "General");
+		_takeProfit = Param(nameof(TakeProfit), 30m).SetDisplay("Take Profit (pips)", "Take Profit (pips)", "General");
+		_stopLoss = Param(nameof(StopLoss), 200m).SetDisplay("Stop Loss (pips)", "Stop Loss (pips)", "General");
+		_volume = Param(nameof(Volume), 1m).SetDisplay("Trade Volume", "Trade Volume", "General");
 	}
 
 	public DataType CandleType
@@ -109,9 +109,9 @@ public class FirebirdMaEnvelopeExhaustionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_sma = new() { Length = MaLength };
 
@@ -122,7 +122,7 @@ public class FirebirdMaEnvelopeExhaustionStrategy : Strategy
 		.WhenCandlesFinished(ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -132,7 +132,7 @@ public class FirebirdMaEnvelopeExhaustionStrategy : Strategy
 		if (point == 0m)
 		return;
 
-		var time = candle.CloseTime.UtcDateTime;
+		var time = candle.CloseTime;
 
 		if (!TradeOnFriday && time.DayOfWeek == DayOfWeek.Friday)
 		return;

@@ -43,7 +43,7 @@ public class PeakVolumeCounterStrategy : Strategy
 		_volumeThreshold = Param(nameof(VolumeThreshold), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Threshold", "Sum of trade volume that triggers a peak alert", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 	}
 
@@ -59,9 +59,9 @@ public class PeakVolumeCounterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Ensure counters are clean before receiving the first trade.
 		ResetState();

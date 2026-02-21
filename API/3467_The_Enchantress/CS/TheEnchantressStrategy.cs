@@ -43,44 +43,44 @@ public class TheEnchantressStrategy : Strategy
 	{
 		_patternLength = Param(nameof(PatternLength), 7)
 			.SetGreaterThanZero()
-			.SetDisplay("Pattern Length")
-			.SetCanOptimize(true);
+			.SetDisplay("Pattern Length", "Pattern Length", "General")
+			;
 
 		_lotSize = Param(nameof(LotSize), 0.01m)
 			.SetNotNegative()
-			.SetDisplay("Lot Size")
-			.SetCanOptimize(true);
+			.SetDisplay("Lot Size", "Lot Size", "General")
+			;
 
 		_useRiskMoneyManagement = Param(nameof(UseRiskMoneyManagement), true)
-			.SetDisplay("Use Risk Money Management");
+			.SetDisplay("Use Risk Money Management", "Use Risk Money Management", "General");
 
 		_riskPercent = Param(nameof(RiskPercent), 15m)
 			.SetNotNegative()
-			.SetDisplay("Risk Percent")
-			.SetCanOptimize(true);
+			.SetDisplay("Risk Percent", "Risk Percent", "General")
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 60m)
 			.SetNotNegative()
-			.SetDisplay("Stop Loss (pips)")
-			.SetCanOptimize(true);
+			.SetDisplay("Stop Loss (pips)", "Stop Loss (pips)", "General")
+			;
 
 		_virtualStopLoss = Param(nameof(VirtualStopLoss), 55m)
 			.SetNotNegative()
-			.SetDisplay("Virtual Stop Loss (pips)")
-			.SetCanOptimize(true);
+			.SetDisplay("Virtual Stop Loss (pips)", "Virtual Stop Loss (pips)", "General")
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 19m)
 			.SetNotNegative()
-			.SetDisplay("Take Profit (pips)")
-			.SetCanOptimize(true);
+			.SetDisplay("Take Profit (pips)", "Take Profit (pips)", "General")
+			;
 
 		_virtualTakeProfit = Param(nameof(VirtualTakeProfit), 25m)
 			.SetNotNegative()
-			.SetDisplay("Virtual Take Profit (pips)")
-			.SetCanOptimize(true);
+			.SetDisplay("Virtual Take Profit (pips)", "Virtual Take Profit (pips)", "General")
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type");
+			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <summary>
@@ -165,11 +165,11 @@ public class TheEnchantressStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

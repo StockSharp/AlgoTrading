@@ -31,7 +31,7 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 	private readonly StrategyParam<decimal> _momentumReference;
 
 	private Momentum _momentumIndicator = null!;
-	private LengthIndicator<decimal> _momentumAverage = null!;
+	private DecimalLengthIndicator _momentumAverage = null!;
 	private decimal? _previousMomentum;
 	private decimal? _previousAverage;
 	private DateTimeOffset? _lastSignalBar;
@@ -146,13 +146,13 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Lookback for the momentum indicator", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 5);
 
 		_momentumMaPeriod = Param(nameof(MomentumMovingAveragePeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum MA", "Period of the moving average applied to momentum", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 30, 3);
 
 		_momentumMaType = Param(nameof(MomentumMovingAverageTypes), MomentumMovingAverageTypes.Smoothed)
@@ -199,9 +199,9 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_momentumIndicator = new Momentum
 		{
@@ -361,12 +361,12 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MomentumMovingAverageTypes type, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MomentumMovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MomentumMovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-			MomentumMovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MomentumMovingAverageTypes.Simple => new SMA { Length = length },
+			MomentumMovingAverageTypes.Exponential => new EMA { Length = length },
 			MomentumMovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MomentumMovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type), type, null)

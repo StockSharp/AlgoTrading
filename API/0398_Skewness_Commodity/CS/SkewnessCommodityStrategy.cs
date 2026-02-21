@@ -108,7 +108,7 @@ public class SkewnessCommodityStrategy : Strategy
 		_minUsd = Param(nameof(MinTradeUsd), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "Parameters");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -126,9 +126,9 @@ public class SkewnessCommodityStrategy : Strategy
 		_weight.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Futures == null || !Futures.Any())
 			throw new InvalidOperationException("Futures set is empty");

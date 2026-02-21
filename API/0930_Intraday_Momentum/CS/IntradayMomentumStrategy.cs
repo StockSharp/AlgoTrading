@@ -111,43 +111,43 @@ public class IntradayMomentumStrategy : Strategy
 		_emaFastLength = Param(nameof(EmaFastLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Period for fast EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_emaSlowLength = Param(nameof(EmaSlowLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length", "Period for slow EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 1);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 1);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
 			.SetRange(0, 100)
 			.SetDisplay("RSI Overbought", "Overbought level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60, 90, 5);
 
 		_rsiOversold = Param(nameof(RsiOversold), 30)
 			.SetRange(0, 100)
 			.SetDisplay("RSI Oversold", "Oversold level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_stopLossPerc = Param(nameof(StopLossPerc), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_takeProfitPerc = Param(nameof(TakeProfitPerc), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 0.5m);
 
 		_startHour = Param(nameof(StartHour), 9)
@@ -190,12 +190,12 @@ public class IntradayMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_emaFast = new ExponentialMovingAverage { Length = EmaFastLength };
-		_emaSlow = new ExponentialMovingAverage { Length = EmaSlowLength };
+		_emaFast = new EMA { Length = EmaFastLength };
+		_emaSlow = new EMA { Length = EmaSlowLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_vwap = new VWAP();
 
@@ -204,7 +204,7 @@ public class IntradayMomentumStrategy : Strategy
 			.Bind(_emaFast, _emaSlow, _rsi, _vwap, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaFast, decimal emaSlow, decimal rsi, decimal vwap)

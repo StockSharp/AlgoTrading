@@ -49,13 +49,13 @@ public SimpleFxCrossoverStrategy()
 		_shortPeriod = Param(nameof(ShortPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Short MA Period", "Length of the fast moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 150, 5);
 
 		_longPeriod = Param(nameof(LongPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Long MA Period", "Length of the slow moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 400, 10);
 
 
@@ -134,12 +134,12 @@ public SimpleFxCrossoverStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_shortMa = new SimpleMovingAverage { Length = ShortPeriod };
-		_longMa = new SimpleMovingAverage { Length = LongPeriod };
+		_shortMa = new SMA { Length = ShortPeriod };
+		_longMa = new SMA { Length = LongPeriod };
 
 		var stopLossUnit = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Step) : null;
 		var takeProfitUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Step) : null;

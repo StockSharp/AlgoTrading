@@ -164,9 +164,9 @@ public class ColorMetroStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_prevMPlus = null;
 	_prevMMinus = null;
@@ -241,7 +241,7 @@ public class ColorMetroStrategy : Strategy
 /// <summary>
 /// ColorMETRO indicator producing fast and slow lines based on RSI.
 /// </summary>
-public class ColorMetroIndicator : BaseIndicator<decimal>
+public class ColorMetroIndicator : BaseIndicator
 {
 	public int RsiPeriod { get; set; } = 7;
 	public int FastStep { get; set; } = 5;

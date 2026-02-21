@@ -102,9 +102,9 @@ public class DigitalFilterT01Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var indicator = new DigitalFt01Indicator { HalfChannel = HalfChannel };
 
@@ -169,7 +169,7 @@ public class DigitalFilterT01Strategy : Strategy
 /// <summary>
 /// DigitalF-T01 indicator producing digital filter and trigger values.
 /// </summary>
-public class DigitalFt01Indicator : BaseIndicator<decimal>
+public class DigitalFt01Indicator : BaseIndicator
 {
 	private static readonly decimal[] _coeffs = new decimal[]
 	{

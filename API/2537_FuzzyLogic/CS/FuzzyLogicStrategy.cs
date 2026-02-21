@@ -148,12 +148,12 @@ public class FuzzyLogicStrategy : Strategy
 		_buyThreshold = Param(nameof(BuyThreshold), 0.25m)
 		.SetDisplay("Buy Threshold", "Decision level for long entries", "Trading")
 		.SetRange(0.1m, 0.5m)
-		.SetCanOptimize(true);
+		;
 
 		_sellThreshold = Param(nameof(SellThreshold), 0.75m)
 		.SetDisplay("Sell Threshold", "Decision level for short entries", "Trading")
 		.SetRange(0.5m, 0.9m)
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 60m)
 		.SetDisplay("Stop Loss (points)", "Protective stop distance in price steps", "Risk");
@@ -166,15 +166,15 @@ public class FuzzyLogicStrategy : Strategy
 
 		_williamsPeriod = Param(nameof(WilliamsPeriod), 14)
 		.SetDisplay("Williams %R Period", "Lookback for Williams %R", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetDisplay("RSI Period", "Lookback for RSI", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 14)
 		.SetDisplay("DeMarker Period", "Lookback for DeMarker", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		Volume = 1;
 	}
@@ -216,9 +216,9 @@ public class FuzzyLogicStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_williamsIndicator = new WilliamsR { Length = WilliamsPeriod };
 		_rsiIndicator = new RelativeStrengthIndex { Length = RsiPeriod };

@@ -85,25 +85,25 @@ public class PChannelSystemStrategy : Strategy
 		_period = Param(nameof(Period), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Period", "Channel calculation period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 
 		_shift = Param(nameof(Shift), 2)
 		.SetNotNegative()
 		.SetDisplay("Shift", "Bars shift for channel", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 5, 1);
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop loss distance in price", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 2000m, 100m);
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in price", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(200m, 4000m, 200m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -128,11 +128,11 @@ public class PChannelSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var highest = new Highest { Length = Period };
 		var lowest = new Lowest { Length = Period };

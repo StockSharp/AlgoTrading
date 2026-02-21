@@ -32,7 +32,7 @@ public PostEarningsAnnouncementDriftStrategy()
 {
 _holding = Param(nameof(HoldingPeriod), 8).SetGreaterThanZero().SetDisplay("Holding Bars", "Bars to hold position", "General");
 _surprise = Param(nameof(SurpriseThreshold), 3m).SetDisplay("Surprise %", "Earnings surprise threshold", "General");
-_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
 }
 
 /// <inheritdoc />
@@ -47,9 +47,9 @@ _barsInTrade = 0;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 SubscribeCandles(CandleType).Bind(Process).Start();
 }
 

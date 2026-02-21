@@ -265,13 +265,13 @@ _hasBestAsk = false;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _pipSize = GetPipSize();
-_fastMa = new SimpleMovingAverage { Length = FastMaLength };
-_slowMa = new SimpleMovingAverage { Length = SlowMaLength };
+_fastMa = new SMA { Length = FastMaLength };
+_slowMa = new SMA { Length = SlowMaLength };
 _searchDirection = 1;
 _barIndex = -1;
 
@@ -388,7 +388,7 @@ var currentPosition = Position;
 if (currentPosition == 0m)
 return false;
 
-var entryPrice = PositionAvgPrice;
+var entryPrice = PositionPrice;
 if (entryPrice == 0m)
 return false;
 

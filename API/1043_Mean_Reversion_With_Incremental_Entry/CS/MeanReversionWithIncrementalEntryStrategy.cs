@@ -70,19 +70,19 @@ public class MeanReversionWithIncrementalEntryStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_initialPercent = Param(nameof(InitialPercent), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Percent", "Percent from MA for first entry", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_percentStep = Param(nameof(PercentStep), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Percent Step", "Additional order percent step", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -104,9 +104,9 @@ public class MeanReversionWithIncrementalEntryStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var sma = new SMA { Length = MaLength };
 		var subscription = SubscribeCandles(CandleType);

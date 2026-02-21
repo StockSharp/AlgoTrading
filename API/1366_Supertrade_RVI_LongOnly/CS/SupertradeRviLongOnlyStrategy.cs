@@ -98,18 +98,18 @@ public class SupertradeRviLongOnlyStrategy : Strategy
 		_rviLength = Param(nameof(RviLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Length", "StdDev lookback", "RVI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_emaLength = Param(nameof(EmaLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA smoothing", "RVI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_rviThreshold = Param(nameof(RviThreshold), 20m)
 			.SetDisplay("RVI Threshold", "Level for long entries", "RVI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 30m, 1m);
 
 		_riskPercent = Param(nameof(RiskPercent), 1m)
@@ -130,16 +130,16 @@ public class SupertradeRviLongOnlyStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_stdDev = new StandardDeviation { Length = RviLength };
-		_upperEma = new ExponentialMovingAverage { Length = EmaLength };
-		_lowerEma = new ExponentialMovingAverage { Length = EmaLength };
+		_upperEma = new EMA { Length = EmaLength };
+		_lowerEma = new EMA { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -158,7 +158,7 @@ public class SupertradeRviLongOnlyStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var stdDevValue = _stdDev.Process(candle.ClosePrice, candle.ServerTime, true).ToDecimal();
+		var stdDevValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, candle.ClosePrice, candle.ServerTime)).ToDecimal();
 
 		if (!_hasPrevClose)
 		{
@@ -170,8 +170,8 @@ public class SupertradeRviLongOnlyStrategy : Strategy
 		var change = candle.ClosePrice - _prevClose;
 		_prevClose = candle.ClosePrice;
 
-		var upper = _upperEma.Process(change <= 0 ? 0m : stdDevValue, candle.ServerTime, true).ToDecimal();
-		var lower = _lowerEma.Process(change > 0 ? 0m : stdDevValue, candle.ServerTime, true).ToDecimal();
+		var upper = _upperEma.Process(new DecimalIndicatorValue(_upperEma, change <= 0 ? 0m : stdDevValue, candle.ServerTime)).ToDecimal();
+		var lower = _lowerEma.Process(new DecimalIndicatorValue(_lowerEma, change > 0 ? 0m : stdDevValue, candle.ServerTime)).ToDecimal();
 
 		if (!_stdDev.IsFormed || !_upperEma.IsFormed || !_lowerEma.IsFormed)
 			return;

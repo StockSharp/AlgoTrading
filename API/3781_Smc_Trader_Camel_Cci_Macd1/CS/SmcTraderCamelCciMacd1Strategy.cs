@@ -50,37 +50,37 @@ public class SmcTraderCamelCciMacd1Strategy : Strategy
 		_camelLength = Param(nameof(CamelLength), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Camel EMA Length", "Period for exponential moving averages of highs and lows", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 80, 2);
 
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Commodity Channel Index period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast Period", "Short EMA length for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 1);
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow Period", "Long EMA length for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(16, 40, 2);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal Period", "Signal line smoothing period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 18, 1);
 
 		_cciThreshold = Param(nameof(CciThreshold), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Threshold", "Absolute CCI level required for entries", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 160m, 10m);
 	}
 
@@ -154,16 +154,14 @@ public class SmcTraderCamelCciMacd1Strategy : Strategy
 
 		_timeFrame = CandleType.Arg as TimeSpan?;
 
-		_camelHighEma = new ExponentialMovingAverage
+		_camelHighEma = new EMA
 		{
-			Length = CamelLength,
-			CandlePrice = CandlePrice.High
+			Length = CamelLength
 		};
 
-		_camelLowEma = new ExponentialMovingAverage
+		_camelLowEma = new EMA
 		{
-			Length = CamelLength,
-			CandlePrice = CandlePrice.Low
+			Length = CamelLength
 		};
 
 		_cci = new CommodityChannelIndex
@@ -173,8 +171,8 @@ public class SmcTraderCamelCciMacd1Strategy : Strategy
 
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 

@@ -96,27 +96,27 @@ public class IchimokuCloudWidthMeanReversionStrategy : Strategy
 	{
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetDisplay("Tenkan Period", "Tenkan-sen (Conversion Line) period", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetDisplay("Kijun Period", "Kijun-sen (Base Line) period", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 			.SetDisplay("Senkou Span B Period", "Senkou Span B (Leading Span B) period", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 80, 4);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation of cloud width", "Mean Reversion")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
 			.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Mean Reversion")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -140,9 +140,9 @@ public class IchimokuCloudWidthMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_ichimoku = new Ichimoku
@@ -152,7 +152,7 @@ public class IchimokuCloudWidthMeanReversionStrategy : Strategy
 			SenkouB = { Length = SenkouSpanBPeriod }
 		};
 		
-		_cloudWidthAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_cloudWidthAverage = new SMA { Length = LookbackPeriod };
 		_cloudWidthStdDev = new StandardDeviation { Length = LookbackPeriod };
 		
 		// Reset stored values
@@ -208,8 +208,8 @@ public class IchimokuCloudWidthMeanReversionStrategy : Strategy
 		_currentCloudWidth = Math.Abs(senkouA - senkouB);
 		
 		// Calculate average and standard deviation of cloud width
-		var cloudWidthAverage = _cloudWidthAverage.Process(_currentCloudWidth, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-		var cloudWidthStdDev = _cloudWidthStdDev.Process(_currentCloudWidth, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var cloudWidthAverage = _cloudWidthAverage.Process(new DecimalIndicatorValue(_cloudWidthAverage, _currentCloudWidth, candle.ServerTime)).ToDecimal();
+		var cloudWidthStdDev = _cloudWidthStdDev.Process(new DecimalIndicatorValue(_cloudWidthStdDev, _currentCloudWidth, candle.ServerTime)).ToDecimal();
 		
 		// Skip the first value
 		if (_prevCloudWidth == 0)

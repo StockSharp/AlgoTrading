@@ -66,7 +66,7 @@ private readonly Queue<decimal> _closes = new();
 		_lookback = Param(nameof(Lookback), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Bars", "Fixed lookback size", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 50);
 
 		_useSmartLookback = Param(nameof(UseSmartLookback), true)
@@ -75,7 +75,7 @@ private readonly Queue<decimal> _closes = new();
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Channel width", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_useStandardDeviation = Param(nameof(UseStandardDeviation), false)
@@ -84,7 +84,7 @@ private readonly Queue<decimal> _closes = new();
 		_maxBars = Param(nameof(MaxBars), 3000)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Bars", "Maximum stored closes", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1000, 5000, 500);
 	}
 
@@ -102,9 +102,9 @@ private readonly Queue<decimal> _closes = new();
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

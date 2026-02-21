@@ -66,11 +66,11 @@ public class LuxClaraEmaVwapStrategy : Strategy
 	{
 		_fastEmaLength = Param(nameof(FastEmaLength), 8)
 			.SetDisplay("Fast EMA Length", "Length of fast EMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 50)
 			.SetDisplay("Slow EMA Length", "Length of slow EMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_startTime = Param(nameof(StartTime), new TimeSpan(7, 30, 0))
 			.SetDisplay("Start Time", "Start of trading session", "Time Filter");
@@ -102,9 +102,9 @@ public class LuxClaraEmaVwapStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastEma = new() { Length = FastEmaLength };
 		_slowEma = new() { Length = SlowEmaLength };

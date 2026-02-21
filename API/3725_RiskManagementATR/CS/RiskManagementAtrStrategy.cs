@@ -118,9 +118,9 @@ public class RiskManagementAtrStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = Volume > 0m ? Volume : 1m; // Provide a default lot size when no risk-based sizing is used
 
@@ -133,12 +133,12 @@ public class RiskManagementAtrStrategy : Strategy
 			Length = AtrPeriod
 		};
 
-		_fastMovingAverage = new SimpleMovingAverage
+		_fastMovingAverage = new SMA
 		{
 			Length = FastMaPeriod
 		};
 
-		_slowMovingAverage = new SimpleMovingAverage
+		_slowMovingAverage = new SMA
 		{
 			Length = SlowMaPeriod
 		};

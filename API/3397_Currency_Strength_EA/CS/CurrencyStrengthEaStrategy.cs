@@ -69,7 +69,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 		_numberOfCandles = Param(nameof(NumberOfCandles), 55)
 		.SetGreaterThanZero()
 		.SetDisplay("Lookback", "Number of candles in the strength window", "Currency Strength")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 120, 5);
 
 		_applySmoothing = Param(nameof(ApplySmoothing), true)
@@ -80,12 +80,12 @@ public class CurrencyStrengthEaStrategy : Strategy
 
 		_upperLimit = Param(nameof(UpperLimit), 7.2m)
 		.SetDisplay("Upper Limit", "Strength level that defines a strong currency", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(6.0m, 8.5m, 0.1m);
 
 		_lowerLimit = Param(nameof(LowerLimit), 3.3m)
 		.SetDisplay("Lower Limit", "Strength level that defines a weak currency", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2.5m, 4.5m, 0.1m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
@@ -322,9 +322,9 @@ public class CurrencyStrengthEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializeCurrencies();
 		InitializePairs();
@@ -480,7 +480,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 
 		return TriangularWeighting
 		? new IndicatorSmoother(new WeightedMovingAverage { Length = NumberOfCandles })
-		: new IndicatorSmoother(new SimpleMovingAverage { Length = NumberOfCandles });
+		: new IndicatorSmoother(new SMA { Length = NumberOfCandles });
 	}
 
 	private IEnumerable<(string Symbol, string BaseCurrency, string QuoteCurrency)> ParsePairs()
@@ -702,7 +702,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 
 		public decimal? Process(decimal value, DateTimeOffset time)
 		{
-			var indicatorValue = _indicator.Process(new DecimalIndicatorValue(_indicator, value, time));
+			var indicatorValue = _indicator.Process(new DecimalIndicatorValue(_indicator, value, time.UtcDateTime));
 			return indicatorValue.IsFinal ? indicatorValue.ToNullableDecimal() : null;
 		}
 	}

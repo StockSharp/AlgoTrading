@@ -42,39 +42,39 @@ public class OrderNotifyStrategy : Strategy
 	{
 		_sendEmails = Param(nameof(SendEmails), false)
 			.SetDisplay("Send Emails", "Enable SMTP email notifications", "Notifications")
-			.SetCanOptimize(false);
+			;
 
 		_smtpHost = Param(nameof(SmtpHost), string.Empty)
 			.SetDisplay("SMTP Host", "Hostname of the SMTP server", "Notifications")
-			.SetCanOptimize(false);
+			;
 
 		_smtpPort = Param(nameof(SmtpPort), 25)
 			.SetDisplay("SMTP Port", "Port of the SMTP server", "Notifications")
-			.SetCanOptimize(false);
+			;
 
 		_smtpUseSsl = Param(nameof(SmtpUseSsl), true)
 			.SetDisplay("Use SSL", "Use SSL/TLS for SMTP connection", "Notifications")
-			.SetCanOptimize(false);
+			;
 
 		_smtpUser = Param(nameof(SmtpUser), string.Empty)
 			.SetDisplay("SMTP User", "Login for SMTP server", "Notifications")
-			.SetCanOptimize(false);
+			;
 
 		_smtpPassword = Param(nameof(SmtpPassword), string.Empty)
 			.SetDisplay("SMTP Password", "Password for SMTP server", "Notifications")
-			.SetCanOptimize(false);
+			;
 
 		_emailFrom = Param(nameof(EmailFrom), string.Empty)
 			.SetDisplay("Email From", "Sender email address", "Notifications")
-			.SetCanOptimize(false);
+			;
 
 		_emailTo = Param(nameof(EmailTo), string.Empty)
 			.SetDisplay("Email To", "Recipient email address", "Notifications")
-			.SetCanOptimize(false);
+			;
 
 		_subjectPrefix = Param(nameof(SubjectPrefix), "Order Notify: ")
 			.SetDisplay("Subject Prefix", "Prefix appended to notification subjects", "Notifications")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <summary>
@@ -159,9 +159,9 @@ public class OrderNotifyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_currentPosition = Position;
 		_averagePrice = 0m;

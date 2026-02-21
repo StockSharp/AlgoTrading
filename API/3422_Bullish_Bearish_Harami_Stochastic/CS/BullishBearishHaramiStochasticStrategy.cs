@@ -54,7 +54,7 @@ public class BullishBearishHaramiStochasticStrategy : Strategy
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 47)
 			.SetDisplay("%K Period", "Lookback for stochastic %K", "Stochastic");
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 9)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 9)
 			.SetDisplay("%D Period", "Smoothing for stochastic %D", "Stochastic");
 
 		_stochasticSlowing = Param(nameof(StochasticSlowing), 13)
@@ -177,19 +177,18 @@ public class BullishBearishHaramiStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = Math.Max(StochasticKPeriod, 1),
+		{ K = { Length = Math }.Max(StochasticKPeriod, 1),
 			K = { Length = Math.Max(StochasticSlowing, 1) },
 			D = { Length = Math.Max(StochasticDPeriod, 1) }
 		};
 
-		_closeAverage = new SimpleMovingAverage { Length = Math.Max(MovingAveragePeriod, 1) };
-		_bodyAverage = new SimpleMovingAverage { Length = Math.Max(MovingAveragePeriod, 1) };
+		_closeAverage = new SMA { Length = Math.Max(MovingAveragePeriod, 1) };
+		_bodyAverage = new SMA { Length = Math.Max(MovingAveragePeriod, 1) };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -222,7 +221,7 @@ public class BullishBearishHaramiStochasticStrategy : Strategy
 		if (stoch.D is not decimal signalValue)
 			return;
 
-		_stochastic.Length = Math.Max(StochasticKPeriod, 1);
+		_stochastic.K.Length = Math.Max(StochasticKPeriod, 1);
 		_stochastic.K.Length = Math.Max(StochasticSlowing, 1);
 		_stochastic.D.Length = Math.Max(StochasticDPeriod, 1);
 

@@ -11,7 +11,7 @@
 - **止损**：无。
 - **默认值**:
   - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **过滤器**:
   - 分类: 基本面
   - 方向: 双向

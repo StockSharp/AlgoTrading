@@ -93,12 +93,12 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 		_numBars = Param(nameof(NumBars), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Bars Shift", "Number of previous candles inspected to locate reference levels.", "Levels")
-		.SetCanOptimize(true);
+		;
 
 		_maPeriod = Param(nameof(MaPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Period", "Length of the EMA trend filter applied to close prices.", "Trend")
-		.SetCanOptimize(true);
+		;
 
 		_timeFrame = Param(nameof(TimeFrame), TimeSpan.FromMinutes(1))
 		.SetDisplay("Time Frame", "Primary candle time frame processed by the strategy.", "Data");
@@ -106,18 +106,18 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 		_daysBackForHigh = Param(nameof(DaysBackForHigh), 1)
 		.SetNotNegative()
 		.SetDisplay("Days Back (High)", "Daily candle index that provides the swing high for Fibonacci levels.", "Fibonacci")
-		.SetCanOptimize(true);
+		;
 
 		_daysBackForLow = Param(nameof(DaysBackForLow), 1)
 		.SetNotNegative()
 		.SetDisplay("Days Back (Low)", "Daily candle index that provides the swing low for Fibonacci levels.", "Fibonacci")
-		.SetCanOptimize(true);
+		;
 
 
 		_trailingBuffer = Param(nameof(TrailingBuffer), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Buffer", "Pip buffer subtracted from trailing thresholds", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		ResetInternalState();
 	}
@@ -185,9 +185,9 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetInternalState();
 
@@ -195,7 +195,7 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 		if (_pipSize <= 0m)
 		_pipSize = 1m;
 
-		_ema = new ExponentialMovingAverage
+		_ema = new EMA
 		{
 			Length = MaPeriod
 		};

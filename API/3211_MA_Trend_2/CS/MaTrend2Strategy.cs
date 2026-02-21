@@ -253,9 +253,9 @@ public class MaTrend2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdatePipSize();
 
@@ -283,7 +283,7 @@ public class MaTrend2Strategy : Strategy
 		}
 		else
 		{
-			StartProtection();
+			StartProtection(null, null);
 		}
 	}
 
@@ -540,15 +540,15 @@ public class MaTrend2Strategy : Strategy
 		return digits;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length, CandlePrices price)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length, CandlePrices price)
 	{
-		LengthIndicator<decimal> indicator = method switch
+		DecimalLengthIndicator indicator = method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage(),
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage(),
+			MovingAverageMethods.Simple => new SMA(),
+			MovingAverageMethods.Exponential => new EMA(),
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage(),
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage(),
-			_ => new SimpleMovingAverage(),
+			_ => new SMA(),
 		};
 
 		indicator.Length = length;

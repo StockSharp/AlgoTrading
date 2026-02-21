@@ -110,12 +110,12 @@ public class TrailingTakeProfitExampleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastSma = new SimpleMovingAverage { Length = FastLength };
-		var slowSma = new SimpleMovingAverage { Length = SlowLength };
+		var fastSma = new SMA { Length = FastLength };
+		var slowSma = new SMA { Length = SlowLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);

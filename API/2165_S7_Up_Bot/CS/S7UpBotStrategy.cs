@@ -142,12 +142,12 @@ public class S7UpBotStrategy : Strategy
 		}
 		
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnStarted2(DateTime time)
 		{
-			base.OnStarted(time);
+			base.OnStarted2(time);
 			
 			Volume = OrderVolume;
-			StartProtection();
+			StartProtection(null, null);
 			
 			var subscription = SubscribeCandles(CandleType);
 			subscription

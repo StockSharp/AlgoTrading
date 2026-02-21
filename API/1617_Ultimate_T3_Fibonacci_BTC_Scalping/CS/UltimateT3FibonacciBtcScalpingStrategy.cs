@@ -71,9 +71,9 @@ public class UltimateT3FibonacciBtcScalpingStrategy : Strategy
 	    return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 
 	    var t3 = new EMA { Length = T3Length };
 	    var t3Fibo = new EMA { Length = T3FiboLength };

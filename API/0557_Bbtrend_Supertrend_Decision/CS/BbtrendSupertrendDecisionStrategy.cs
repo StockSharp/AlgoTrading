@@ -147,13 +147,13 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 		_shortBbLength = Param(nameof(ShortBbLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Short BB Length", "Short Bollinger Bands length", "BBTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 		
 		_longBbLength = Param(nameof(LongBbLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Long BB Length", "Long Bollinger Bands length", "BBTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 100, 5);
 		
 		_stdDev = Param(nameof(StdDev), 2m)
@@ -163,19 +163,19 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 		_supertrendLength = Param(nameof(SupertrendLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("ST Length", "SuperTrend ATR period", "SuperTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 7m)
 		.SetGreaterThanZero()
 		.SetDisplay("ST Factor", "SuperTrend multiplier", "SuperTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 10m, 1m);
 		
 		_tradeDirection = Param(nameof(TradeDirection), (Sides?)null)
 		.SetDisplay("Direction", "Allowed trading direction", "Trading");
 		
-		_tpSlCondition = Param(nameof(TpSlCondition), Strategies.TpSlModes.None)
+		_tpSlCondition = Param(nameof(TpSlCondition), TpSlModes.None)
 		.SetDisplay("TP/SL Mode", "Protection mode", "Risk");
 		
 		_takeProfitPerc = Param(nameof(TakeProfitPerc), 30m)
@@ -197,16 +197,16 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var shortBb = new BollingerBands { Length = ShortBbLength, Width = StdDev };
 		var longBb = new BollingerBands { Length = LongBbLength, Width = StdDev };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(shortBb, longBb, ProcessCandle)
+		.BindEx([shortBb, longBb], ProcessCandle)
 		.Start();
 		
 		var area = CreateChartArea();
@@ -228,13 +228,18 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 		StartProtection(tp, sl);
 	}
 	
-	private void ProcessCandle(ICandleMessage candle,
-	decimal shortMiddle, decimal shortUpper, decimal shortLower,
-	decimal longMiddle, decimal longUpper, decimal longLower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
-		
+
+		var shortBbValue = (BollingerBandsValue)values[0];
+		var longBbValue = (BollingerBandsValue)values[1];
+		if (shortBbValue.UpBand is not decimal shortUpper || shortBbValue.LowBand is not decimal shortLower || shortBbValue.MovingAverage is not decimal shortMiddle)
+			return;
+		if (longBbValue.UpBand is not decimal longUpper || longBbValue.LowBand is not decimal longLower)
+			return;
+
 		var bbTrend = (Math.Abs(shortLower - longLower) - Math.Abs(shortUpper - longUpper)) / shortMiddle * 100m;
 		
 		if (_previousBbTrend is null)

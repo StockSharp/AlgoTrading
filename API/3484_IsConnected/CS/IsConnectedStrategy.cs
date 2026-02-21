@@ -49,9 +49,9 @@ public class IsConnectedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Ensure the connector is available before accessing its state.
 		if (Connector == null)

@@ -52,7 +52,7 @@ public class BalanceOfPowerStrategy : Strategy
 		_threshold = Param(nameof(Threshold), 0.8m)
 			.SetRange(0.1m, 5.0m)
 			.SetDisplay("BOP Threshold", "Balance of Power entry threshold", "Balance of Power")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -70,9 +70,9 @@ public class BalanceOfPowerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

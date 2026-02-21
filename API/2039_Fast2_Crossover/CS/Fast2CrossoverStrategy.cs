@@ -61,14 +61,14 @@ public class Fast2CrossoverStrategy : Strategy
 	public Fast2CrossoverStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame());
-		_fastLength = Param(nameof(FastLength), 3).SetDisplay("Fast length").SetCanOptimize(true);
-		_slowLength = Param(nameof(SlowLength), 9).SetDisplay("Slow length").SetCanOptimize(true);
+		_fastLength = Param(nameof(FastLength), 3).SetDisplay("Fast length", "Fast length", "General");
+		_slowLength = Param(nameof(SlowLength), 9).SetDisplay("Slow length", "Slow length", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fast = new WeightedMovingAverage { Length = FastLength };
 		_slow = new WeightedMovingAverage { Length = SlowLength };
@@ -76,7 +76,7 @@ public class Fast2CrossoverStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

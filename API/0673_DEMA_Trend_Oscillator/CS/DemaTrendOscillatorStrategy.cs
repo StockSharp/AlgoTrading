@@ -109,32 +109,32 @@ public class DemaTrendOscillatorStrategy : Strategy
 	{
 		_demaPeriod = Param(nameof(DemaPeriod), 40)
 		.SetDisplay("DEMA Period", "Period for double EMA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 80, 5);
 		
 		_baseLength = Param(nameof(BaseLength), 20)
 		.SetDisplay("Base Length", "Length for base SMA and deviation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 		
 		_longThreshold = Param(nameof(LongThreshold), 55m)
 		.SetDisplay("Long Threshold", "Normalized value for long entries", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50m, 60m, 5m);
 		
 		_shortThreshold = Param(nameof(ShortThreshold), 45m)
 		.SetDisplay("Short Threshold", "Normalized value for short entries", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40m, 50m, 5m);
 		
 		_riskReward = Param(nameof(RiskReward), 1.5m)
 		.SetDisplay("Risk Reward", "Risk-reward ratio", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 		
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 		.SetDisplay("ATR Multiplier", "ATR multiplier for trailing stop", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -167,13 +167,13 @@ public class DemaTrendOscillatorStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_ema1 = new ExponentialMovingAverage { Length = DemaPeriod };
-		_ema2 = new ExponentialMovingAverage { Length = DemaPeriod };
-		_baseSma = new SimpleMovingAverage { Length = BaseLength };
+		_ema1 = new EMA { Length = DemaPeriod };
+		_ema2 = new EMA { Length = DemaPeriod };
+		_baseSma = new SMA { Length = BaseLength };
 		_sd = new StandardDeviation { Length = BaseLength };
 		_atr = new AverageTrueRange { Length = 14 };
 		
@@ -199,11 +199,11 @@ public class DemaTrendOscillatorStrategy : Strategy
 		return;
 		
 		var ema1Value = _ema1!.Process(candle).ToDecimal();
-		var ema2Value = _ema2!.Process(ema1Value, candle.ServerTime, true).ToDecimal();
+		var ema2Value = _ema2!.Process(new DecimalIndicatorValue(_ema2, ema1Value, candle.ServerTime)).ToDecimal();
 		var dema = 2m * ema1Value - ema2Value;
 		
-		var baseValue = _baseSma!.Process(dema, candle.ServerTime, true).ToDecimal();
-		var sdValue = _sd!.Process(dema, candle.ServerTime, true).ToDecimal() * 2m;
+		var baseValue = _baseSma!.Process(new DecimalIndicatorValue(_baseSma, dema, candle.ServerTime)).ToDecimal();
+		var sdValue = _sd!.Process(new DecimalIndicatorValue(_sd, dema, candle.ServerTime)).ToDecimal() * 2m;
 		var upperSd = baseValue + sdValue;
 		var lowerSd = baseValue - sdValue;
 		var normBase = upperSd != lowerSd ? 100m * (dema - lowerSd) / (upperSd - lowerSd) : 0m;

@@ -97,19 +97,19 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 		_bullsPeriod = Param(nameof(BullsPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Bulls Power Period", "Length for Bulls Power indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 350m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pts)", "Take profit distance in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 600m, 50m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pts)", "Stop loss distance in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 300m, 25m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 100m)
@@ -142,9 +142,9 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPoints > 0m && TrailingStopPoints <= TrailingStepPoints)
 		{
@@ -172,7 +172,7 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 			.Bind(_bullsPower, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -251,7 +251,7 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 		if (Position > 0)
 		{
 			// Update trailing stop for long positions when profit exceeds the trigger distance.
-			var profit = candle.ClosePrice - PositionAvgPrice;
+			var profit = candle.ClosePrice - PositionPrice;
 			if (profit <= trailingDistance)
 				return;
 
@@ -262,7 +262,7 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 		else
 		{
 			// Update trailing stop for short positions when profit exceeds the trigger distance.
-			var profit = PositionAvgPrice - candle.ClosePrice;
+			var profit = PositionPrice - candle.ClosePrice;
 			if (profit <= trailingDistance)
 				return;
 

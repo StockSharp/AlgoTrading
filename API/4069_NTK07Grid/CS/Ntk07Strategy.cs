@@ -104,17 +104,17 @@ public class Ntk07Strategy : Strategy
 		_netStepPips = Param(nameof(NetStepPips), 23)
 		.SetGreaterThanZero()
 		.SetDisplay("Net Step (pips)", "Distance between grid levels", "Entries")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 115)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 300)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take profit distance", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 75)
 		.SetNotNegative()
@@ -123,7 +123,7 @@ public class Ntk07Strategy : Strategy
 		_multiplier = Param(nameof(Multiplier), 1.7m)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume Multiplier", "Multiplier applied to each additional grid level", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailProfit = Param(nameof(TrailProfit), true)
 		.SetDisplay("Trail Profit", "Extend take-profit while trailing", "Risk");
@@ -134,7 +134,7 @@ public class Ntk07Strategy : Strategy
 		_initialLot = Param(nameof(InitialLot), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Initial Lot", "Base order volume", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_lotLimit = Param(nameof(LotLimit), 7m)
 		.SetGreaterThanZero()
@@ -143,7 +143,7 @@ public class Ntk07Strategy : Strategy
 		_maxTrades = Param(nameof(MaxTrades), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Trades", "Maximum grid depth", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_percentRisk = Param(nameof(PercentRisk), 10m)
 		.SetNotNegative()
@@ -454,9 +454,9 @@ public class Ntk07Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = ResolvePipSize();
 		_calculatedBaseVolume = Math.Max(InitialLot, 0m);
@@ -552,8 +552,8 @@ public class Ntk07Strategy : Strategy
 		_highest.Length = Math.Max(ChannelPeriod, 1);
 		_lowest.Length = Math.Max(ChannelPeriod, 1);
 
-		var highValue = _highest.Process(candle.HighPrice, candle.OpenTime, true);
-		var lowValue = _lowest.Process(candle.LowPrice, candle.OpenTime, true);
+		var highValue = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime));
+		var lowValue = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime));
 
 		if (!highValue.IsFinal || !lowValue.IsFinal)
 		{

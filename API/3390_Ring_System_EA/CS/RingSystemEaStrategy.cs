@@ -425,9 +425,9 @@ public class RingSystemEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Portfolio == null)
 			throw new InvalidOperationException(LocalizedStrings.Str3616);
@@ -435,7 +435,7 @@ public class RingSystemEaStrategy : Strategy
 		if (SecurityProvider == null)
 			throw new InvalidOperationException("Security provider is required to resolve currency pairs.");
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_groups.Clear();
 		_allSecurities.Clear();

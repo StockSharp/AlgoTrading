@@ -100,32 +100,32 @@ public class ParabolicSarMacdTrendZoneStrategy : Strategy
 	{
 		_sarStart = Param(nameof(SarStart), 0.02m)
 			.SetDisplay("SAR Start", "Initial acceleration factor for SAR", "Parabolic SAR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_sarIncrement = Param(nameof(SarIncrement), 0.02m)
 			.SetDisplay("SAR Step", "Increment step for SAR", "Parabolic SAR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_sarMax = Param(nameof(SarMax), 0.2m)
 			.SetDisplay("SAR Max", "Maximum acceleration factor for SAR", "Parabolic SAR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.4m, 0.1m);
 
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetDisplay("MACD Fast", "Fast EMA length for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 2);
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 			.SetDisplay("MACD Slow", "Slow EMA length for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetDisplay("MACD Signal", "Signal smoothing length for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

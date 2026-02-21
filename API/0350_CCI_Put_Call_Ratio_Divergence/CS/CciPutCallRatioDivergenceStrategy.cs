@@ -63,12 +63,12 @@ public class CciPutCallRatioDivergenceStrategy : Strategy
 	{
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 		.SetRange(10, 50)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("CCI Period", "Period for CCI calculation", "Indicators");
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 		.SetRange(1m, 5m)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop loss", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -96,9 +96,9 @@ public class CciPutCallRatioDivergenceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_cci = new CommodityChannelIndex

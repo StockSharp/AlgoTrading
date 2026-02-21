@@ -72,24 +72,24 @@ public class MultiCurrencyTemplateStrategy : Strategy
 	{
 		_orderMethod = Param(nameof(OrderMethod), OrderMethodTypes.BuyAndSell)
 			.SetDisplay("Order Method", "Choose whether the strategy trades long, short or both directions.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(Lots), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume (lots)", "Base order volume used for the first market entry.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.10m, 0.01m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in MetaTrader pips.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Initial profit target distance in MetaTrader pips.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 25);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 15)
@@ -106,13 +106,13 @@ public class MultiCurrencyTemplateStrategy : Strategy
 		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 1.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Multiplier", "Multiplier applied to the next averaging order volume.", "Martingale")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.1m, 2.0m, 0.1m);
 
 		_martingaleStepPoints = Param(nameof(MartingaleStepPoints), 150)
 			.SetNotNegative()
 			.SetDisplay("Step (pts)", "Distance in MetaTrader points before placing the next averaging order.", "Martingale")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 250, 25);
 
 		_enableTakeProfitAverage = Param(nameof(EnableTakeProfitAverage), true)
@@ -250,9 +250,9 @@ public class MultiCurrencyTemplateStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Determine pip size using security metadata.
 		_pipSize = CalculatePipSize();
@@ -274,7 +274,7 @@ public class MultiCurrencyTemplateStrategy : Strategy
 			.Start();
 
 		// Activate protective block so risk controls remain engaged.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastEma, decimal slowEma)

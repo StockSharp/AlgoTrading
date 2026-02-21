@@ -72,25 +72,25 @@ public class DominanceTagcloudStrategy : Strategy
 	{
 		_moveBoxes = Param(nameof(MoveBoxes), true)
 			.SetDisplay("Moving boxes?", "Randomly move boxes", "Visualization")
-			.SetCanOptimize(false);
+			;
 
 		_labelAtSide = Param(nameof(LabelAtSide), true)
 			.SetDisplay("Label at the side", "Place labels at chart side", "Visualization")
-			.SetCanOptimize(false);
+			;
 
 		_minCoordinate = Param(nameof(MinCoordinate), 100)
 			.SetDisplay("Min Coordinate", "Minimum random coordinate", "Visualization")
-			.SetCanOptimize(false);
+			;
 
 		_maxCoordinate = Param(nameof(MaxCoordinate), 500)
 			.SetDisplay("Max Coordinate", "Maximum random coordinate", "Visualization")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		FillDominance();
 
@@ -110,7 +110,7 @@ public class DominanceTagcloudStrategy : Strategy
 
 			rectangles.Add(rect);
 
-			this.Log().Info(rect.Text);
+			this.AddInfoLog(rect.Text);
 		}
 	}
 

@@ -182,23 +182,21 @@ public class MicuRobertEmaCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tpOffset = TakeProfitPips * (Security?.PriceStep ?? 1m) * 10m;
 		_slOffset = StopLossPips * (Security?.PriceStep ?? 1m) * 10m;
 
 		var fastMa = new ZeroLagExponentialMovingAverage
 		{
-			Length = FastLength,
-			CandlePrice = CandlePrice.Open,
+			Length = FastLength
 		};
 
 		var slowMa = new ZeroLagExponentialMovingAverage
 		{
-			Length = SlowLength,
-			CandlePrice = CandlePrice.Open,
+			Length = SlowLength
 		};
 
 		var subscription = SubscribeCandles(CandleType);

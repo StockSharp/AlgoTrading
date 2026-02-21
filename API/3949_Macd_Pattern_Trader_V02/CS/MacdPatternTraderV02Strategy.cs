@@ -322,15 +322,15 @@ public class MacdPatternTraderV02Strategy : Strategy
 
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = FastEmaPeriod,
-			LongPeriod = SlowEmaPeriod,
+			ShortMa = { Length = FastEmaPeriod },
+			LongMa = { Length = SlowEmaPeriod },
 			SignalPeriod = 1
 		};
 
-		_ema1 = new ExponentialMovingAverage { Length = Ema1Period };
-		_ema2 = new ExponentialMovingAverage { Length = Ema2Period };
-		_sma = new SimpleMovingAverage { Length = SmaPeriod };
-		_ema3 = new ExponentialMovingAverage { Length = Ema3Period };
+		_ema1 = new EMA { Length = Ema1Period };
+		_ema2 = new EMA { Length = Ema2Period };
+		_sma = new SMA { Length = SmaPeriod };
+		_ema3 = new EMA { Length = Ema3Period };
 
 		var subscription = SubscribeCandles(CandleType);
 

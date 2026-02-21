@@ -59,17 +59,17 @@ public class StochasticMartingaleGridStrategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Initial order volume", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Distance to the take profit target for each entry", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance applied per entry", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_maxOrders = Param(nameof(MaxOrders), 7)
 			.SetGreaterThanZero()
@@ -78,30 +78,30 @@ public class StochasticMartingaleGridStrategy : Strategy
 		_stepPips = Param(nameof(StepPips), 7m)
 			.SetGreaterThanZero()
 			.SetDisplay("Step (pips)", "Adverse move required before adding a new entry", "Martingale")
-			.SetCanOptimize(true);
+			;
 
 		_kPeriod = Param(nameof(KPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("%K Period", "Stochastic %K lookback length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("%D Period", "Stochastic %D smoothing length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowing = Param(nameof(Slowing), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Slowing", "Additional smoothing applied to %K", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_zoneBuy = Param(nameof(ZoneBuy), 30m)
 			.SetDisplay("Buy Zone", "Upper limit that allows long setups when %K is above %D", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_zoneSell = Param(nameof(ZoneSell), 70m)
 			.SetDisplay("Sell Zone", "Lower limit that allows short setups when %K is below %D", "Indicators")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -224,15 +224,14 @@ public class StochasticMartingaleGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = KPeriod,
+		{ K = { Length = KPeriod },
 			K = { Length = Slowing },
 			D = { Length = DPeriod }
 		};
@@ -250,7 +249,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochasticValue)

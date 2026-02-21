@@ -74,15 +74,15 @@ public class ColorXtrixHistogramStrategy : Strategy
 	{
 		_trixLength = Param(nameof(TrixLength), 5)
 			.SetDisplay("TRIX Length", "Length for base triple EMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_smoothLength = Param(nameof(SmoothLength), 5)
 			.SetDisplay("Smooth Length", "Length for additional smoothing", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 1)
 			.SetDisplay("Momentum Period", "Period for rate of change", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -101,13 +101,13 @@ public class ColorXtrixHistogramStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tripleEma = new TripleExponentialMovingAverage { Length = TrixLength };
 		_roc = new RateOfChange { Length = MomentumPeriod };
-		_smoother = new ExponentialMovingAverage { Length = SmoothLength };
+		_smoother = new EMA { Length = SmoothLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -119,7 +119,7 @@ public class ColorXtrixHistogramStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

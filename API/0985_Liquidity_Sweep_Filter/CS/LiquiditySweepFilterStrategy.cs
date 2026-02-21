@@ -86,24 +86,24 @@ public class LiquiditySweepFilterStrategy : Strategy
 		_length = Param(nameof(Length), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Base period", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Band width multiplier", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_majorSweepThreshold = Param(nameof(MajorSweepThreshold), 50m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Major Sweep Threshold", "Normalized volume threshold", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(25m, 75m, 5m);
 
 		_tradeMode = Param(nameof(TradeMode), "Long Only")
 			.SetDisplay("Trade Mode", "Allowed trade directions", "Trading")
-			.SetOptions("Long & Short", "Long Only", "Short Only");
+			.SetOptimizeValues(new[] { "Long & Short", "Long Only", "Short Only" });
 	}
 
 	/// <inheritdoc />
@@ -113,9 +113,9 @@ public class LiquiditySweepFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bands = new BollingerBands { Length = Length, Width = Multiplier };
 		_highestVolume = new Highest { Length = (int)(Length * Multiplier) };
@@ -133,7 +133,7 @@ public class LiquiditySweepFilterStrategy : Strategy
 			DrawIndicator(area, _bands);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal highestVol, decimal lowestVol)

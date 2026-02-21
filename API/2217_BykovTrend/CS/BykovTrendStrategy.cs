@@ -60,13 +60,13 @@ public class BykovTrendStrategy : Strategy
 		_risk = Param(nameof(Risk), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk", "Risk parameter from original indicator", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_ssp = Param(nameof(Ssp), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("SSP", "Williams %R period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -80,9 +80,9 @@ public class BykovTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var wpr = new WilliamsR { Length = Ssp };
 		var subscription = SubscribeCandles(CandleType);

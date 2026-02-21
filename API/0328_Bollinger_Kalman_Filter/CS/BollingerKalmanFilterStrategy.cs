@@ -82,25 +82,25 @@ public class BollingerKalmanFilterStrategy : Strategy
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Length", "Length of the Bollinger Bands", "Bollinger Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Bollinger Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 2.5m, 0.5m);
 
 		_kalmanQ = Param(nameof(KalmanQ), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Kalman Q", "Process noise for Kalman Filter", "Kalman Filter Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.1m, 0.01m);
 
 		_kalmanR = Param(nameof(KalmanR), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Kalman R", "Measurement noise for Kalman Filter", "Kalman Filter Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 1.0m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -126,9 +126,9 @@ public class BollingerKalmanFilterStrategy : Strategy
 
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var bollinger = new BollingerBands

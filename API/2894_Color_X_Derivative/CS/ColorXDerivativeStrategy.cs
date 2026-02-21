@@ -218,9 +218,9 @@ public class ColorXDerivativeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -396,7 +396,7 @@ public class ColorXDerivativeStrategy : Strategy
 		Demark,
 	}
 
-	private sealed class ColorXDerivativeIndicator : Indicator<ICandleMessage>
+	private sealed class ColorXDerivativeIndicator : BaseIndicator
 	{
 		private readonly Queue<decimal> _priceBuffer = new();
 		private readonly List<int> _colors = new();

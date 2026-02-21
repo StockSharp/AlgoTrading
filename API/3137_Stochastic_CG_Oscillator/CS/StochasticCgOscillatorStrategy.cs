@@ -49,7 +49,7 @@ public class StochasticCgOscillatorStrategy : Strategy
 		_length = Param(nameof(Length), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Oscillator Length", "Number of bars in the Stochastic CG calculation", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 25, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -212,9 +212,9 @@ public class StochasticCgOscillatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_oscillator = new StochasticCgOscillatorIndicator
 		{
@@ -422,7 +422,7 @@ public class StochasticCgOscillatorStrategy : Strategy
 	/// <summary>
 	/// Stochastic Center of Gravity oscillator with trigger line output.
 	/// </summary>
-	public sealed class StochasticCgOscillatorIndicator : BaseIndicator<decimal>
+	public sealed class StochasticCgOscillatorIndicator : BaseIndicator
 	{
 		private readonly List<decimal> _medianPrices = new();
 		private readonly List<decimal> _cgValues = new();

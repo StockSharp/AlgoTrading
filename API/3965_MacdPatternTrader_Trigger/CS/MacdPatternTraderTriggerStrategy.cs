@@ -154,25 +154,25 @@ public class MacdPatternTraderTriggerStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume for entries", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.3m, 0.05m);
 
 		_fastPeriod = Param(nameof(FastPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA length for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 18, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA length for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 15, 1);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal EMA", "Signal EMA length for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_bullishTrigger = Param(nameof(BullishTrigger), 0.0015m)
@@ -194,13 +194,13 @@ public class MacdPatternTraderTriggerStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 200m, 25m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 300m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 400m, 50m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -244,8 +244,8 @@ public class MacdPatternTraderTriggerStrategy : Strategy
 
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = FastPeriod,
-			LongPeriod = SlowPeriod,
+			ShortMa = { Length = FastPeriod },
+			LongMa = { Length = SlowPeriod },
 			SignalPeriod = SignalPeriod
 		};
 

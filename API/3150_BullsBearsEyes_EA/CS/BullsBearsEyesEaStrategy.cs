@@ -145,32 +145,32 @@ public class BullsBearsEyesEaStrategy : Strategy
 		_period = Param(nameof(Period), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "Indicator averaging period", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_gamma = Param(nameof(Gamma), 0.6m)
 			.SetRange(0.1m, 1m)
 			.SetDisplay("Gamma", "Smoothing factor (0-1)", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 150m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 25m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimal advance before trailing", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useTimeControl = Param(nameof(UseTimeControl), true)
 			.SetDisplay("Use Time Control", "Enable trading hours filter", "Session");
@@ -207,9 +207,9 @@ public class BullsBearsEyesEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (StartHour < 0 || StartHour > 23)
 			throw new InvalidOperationException("StartHour must be between 0 and 23.");

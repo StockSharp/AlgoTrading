@@ -72,16 +72,16 @@ public class UpGapWithDelayStrategy : Strategy
 	{
 		_gapThreshold = Param(nameof(GapThreshold), 1m)
 			.SetDisplay("Gap Threshold (%)", "Minimum gap size", "General")
-			.SetCanOptimize(true);
+			;
 
 		_delayPeriods = Param(nameof(DelayPeriods), 0)
 			.SetDisplay("Delay Periods", "Bars to wait", "General")
-			.SetCanOptimize(true);
+			;
 
 		_holdingPeriods = Param(nameof(HoldingPeriods), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Holding Periods", "Bars to hold", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -104,12 +104,12 @@ public class UpGapWithDelayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

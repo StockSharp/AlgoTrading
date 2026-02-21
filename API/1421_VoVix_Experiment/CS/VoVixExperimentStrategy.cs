@@ -132,13 +132,13 @@ public class VoVixExperimentStrategy : Strategy
 		_prevZ = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastAtr = new AverageTrueRange { Length = FastAtrLength };
 		var slowAtr = new AverageTrueRange { Length = SlowAtrLength };
-		var zMa = new SimpleMovingAverage { Length = ZScoreWindow };
+		var zMa = new SMA { Length = ZScoreWindow };
 		var zSd = new StandardDeviation { Length = ZScoreWindow };
 		var localMax = new Highest { Length = LocalMaxWindow };
 
@@ -154,10 +154,10 @@ public class VoVixExperimentStrategy : Strategy
 					return;
 
 				var voVix = slow == 0m ? 0m : fast / slow;
-				var maVal = zMa.Process(voVix, candle.ServerTime, true).ToDecimal();
-				var sdVal = zSd.Process(voVix, candle.ServerTime, true).ToDecimal();
+				var maVal = zMa.Process(new DecimalIndicatorValue(zMa, voVix, candle.ServerTime)).ToDecimal();
+				var sdVal = zSd.Process(new DecimalIndicatorValue(zSd, voVix, candle.ServerTime)).ToDecimal();
 				var z = sdVal == 0m ? 0m : (voVix - maVal) / sdVal;
-				var maxVal = localMax.Process(voVix, candle.ServerTime, true).ToDecimal();
+				var maxVal = localMax.Process(new DecimalIndicatorValue(localMax, voVix, candle.ServerTime)).ToDecimal();
 
 				if (!zMa.IsFormed || !zSd.IsFormed || !localMax.IsFormed)
 				{

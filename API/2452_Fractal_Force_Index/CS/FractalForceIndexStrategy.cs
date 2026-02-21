@@ -136,7 +136,7 @@ public class FractalForceIndexStrategy : Strategy
 		_period = Param(nameof(Period), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Period", "EMA length for force index", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 
 		_highLevel = Param(nameof(HighLevel), 0m)
@@ -182,11 +182,11 @@ public class FractalForceIndexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = Period };
+		_ema = new EMA { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

@@ -70,19 +70,19 @@ public class AveragedStochWprStrategy : Strategy
 		_stochPeriod = Param(nameof(StochPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Period for Stochastic oscillator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_wprPeriod = Param(nameof(WprPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Period for Williams %R", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Percentage based stop loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -96,9 +96,9 @@ public class AveragedStochWprStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stoch = new Stochastic { Length = StochPeriod };
 		var wpr = new WilliamsR { Length = WprPeriod };

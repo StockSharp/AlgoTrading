@@ -53,32 +53,32 @@ public class TwoPendingOrders2Strategy : Strategy
 	{
 		_stopLossPoints = Param(nameof(StopLossPoints), 150m)
 		.SetDisplay("Stop Loss (points)", "Distance to the protective stop in points.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 460m)
 		.SetDisplay("Take Profit (points)", "Distance to the target in points.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_maxPositions = Param(nameof(MaxPositions), 5)
 		.SetDisplay("Max Positions", "Maximum number of simultaneously active positions and pending orders.", "General")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_minStepPoints = Param(nameof(MinStepPoints), 150m)
 		.SetDisplay("Min Step (points)", "Minimum spacing between existing trades and new pending orders.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingActivatePoints = Param(nameof(TrailingActivatePoints), 70m)
 		.SetDisplay("Trailing Activation (points)", "Profit required before the trailing stop starts moving.", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 250m)
 		.SetDisplay("Trailing Stop (points)", "Distance of the trailing stop once it is activated.", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 50m)
 		.SetDisplay("Trailing Step (points)", "Minimum increment to move the trailing stop.", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_tradeMode = Param(nameof(TradeMode), TradeModes.BuySell)
 		.SetDisplay("Trade Mode", "Allowed trade direction for new pending orders.", "General");
@@ -88,15 +88,15 @@ public class TwoPendingOrders2Strategy : Strategy
 
 		_pendingExpirationMinutes = Param(nameof(PendingExpirationMinutes), 600)
 		.SetDisplay("Pending Expiration (min)", "Life time of pending orders in minutes (0 disables expiration).", "General")
-		.SetCanOptimize(true);
+		;
 
 		_pendingIndentPoints = Param(nameof(PendingIndentPoints), 150m)
 		.SetDisplay("Pending Indent (points)", "Offset from the current market price for new pending orders.", "General")
-		.SetCanOptimize(true);
+		;
 
 		_pendingMaxSpreadPoints = Param(nameof(PendingMaxSpreadPoints), 120m)
 		.SetDisplay("Max Spread (points)", "Maximum allowed spread between bid and ask to place pending orders.", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_onlyOnePosition = Param(nameof(OnlyOnePosition), false)
 		.SetDisplay("Only One Position", "Restrict the strategy to a single open position at a time.", "Risk");
@@ -104,7 +104,7 @@ public class TwoPendingOrders2Strategy : Strategy
 		_reverseLevels = Param(nameof(ReverseLevels), false)
 		.SetDisplay("Reverse Levels", "Swap the direction of the pending orders.", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Signal Candles", "Time frame used to refresh pending orders and manage exits.", "General");
 
 		ResetState();
@@ -246,9 +246,9 @@ public class TwoPendingOrders2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = DeterminePipSize();
 		ResetState();

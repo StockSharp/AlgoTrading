@@ -82,12 +82,12 @@ public class ThreeNeuralNetworksStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 		.SetRange(0m, 10000m)
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetRange(0m, 10000m)
 		.SetDisplay("Take Profit (pips)", "Target profit distance in pips", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15m)
 		.SetRange(0m, 10000m)
@@ -103,12 +103,12 @@ public class ThreeNeuralNetworksStrategy : Strategy
 		_volumeOrRisk = Param(nameof(VolumeOrRisk), 1m)
 		.SetRange(0m, 1000m)
 		.SetDisplay("Lot or Risk", "Lot size for FixedLot or risk percent for RiskPercent", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_h1Period = Param(nameof(H1Period), 2)
 		.SetRange(1, 500)
 		.SetDisplay("H1 MA Period", "Smoothed moving average period on the H1 timeframe", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_h1Shift = Param(nameof(H1Shift), 5)
 		.SetRange(0, 100)
@@ -117,7 +117,7 @@ public class ThreeNeuralNetworksStrategy : Strategy
 		_h4Period = Param(nameof(H4Period), 2)
 		.SetRange(1, 500)
 		.SetDisplay("H4 MA Period", "Smoothed moving average period on the H4 timeframe", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_h4Shift = Param(nameof(H4Shift), 5)
 		.SetRange(0, 100)
@@ -126,7 +126,7 @@ public class ThreeNeuralNetworksStrategy : Strategy
 		_d1Period = Param(nameof(D1Period), 2)
 		.SetRange(1, 500)
 		.SetDisplay("D1 MA Period", "Smoothed moving average period on the D1 timeframe", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_d1Shift = Param(nameof(D1Shift), 5)
 		.SetRange(0, 100)
@@ -370,7 +370,7 @@ public class ThreeNeuralNetworksStrategy : Strategy
 
 		yield return (security, TimeSpan.FromHours(1).TimeFrame());
 		yield return (security, TimeSpan.FromHours(4).TimeFrame());
-		yield return (security, TimeSpan.FromDays(1).TimeFrame());
+		yield return (security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
@@ -392,29 +392,26 @@ public class ThreeNeuralNetworksStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 		_previousPosition = Position;
 
 		_h1Ma = new SmoothedMovingAverage
 		{
-			Length = Math.Max(1, H1Period),
-			CandlePrice = CandlePrice.Median,
+			Length = Math.Max(1, H1Period)
 		};
 
 		_h4Ma = new SmoothedMovingAverage
 		{
-			Length = Math.Max(1, H4Period),
-			CandlePrice = CandlePrice.Median,
+			Length = Math.Max(1, H4Period)
 		};
 
 		_d1Ma = new SmoothedMovingAverage
 		{
-			Length = Math.Max(1, D1Period),
-			CandlePrice = CandlePrice.Median,
+			Length = Math.Max(1, D1Period)
 		};
 
 		SubscribeCandles(TimeSpan.FromHours(1).TimeFrame())
@@ -425,11 +422,11 @@ public class ThreeNeuralNetworksStrategy : Strategy
 		.Bind(_h4Ma, ProcessH4Candle)
 		.Start();
 
-		SubscribeCandles(TimeSpan.FromDays(1).TimeFrame())
+		SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame())
 		.Bind(_d1Ma, ProcessD1Candle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />

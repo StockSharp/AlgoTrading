@@ -121,42 +121,42 @@ public class BbRsiTrailingStopStrategy : Strategy
 	{
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 25)
 			.SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetDisplay("Bollinger Deviation", "Deviation multiplier", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 60m)
 			.SetDisplay("RSI Overbought", "Overbought level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 80m, 5m);
 
 		_rsiOversold = Param(nameof(RsiOversold), 33m)
 			.SetDisplay("RSI Oversold", "Oversold level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 			.SetDisplay("Stop Loss Points", "Initial stop loss in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 100m, 10m);
 
 		_trailOffsetPoints = Param(nameof(TrailOffsetPoints), 99m)
 			.SetDisplay("Trail Offset Points", "Profit to activate trailing stop", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 150m, 10m);
 
 		_trailStopPoints = Param(nameof(TrailStopPoints), 40m)
 			.SetDisplay("Trail Stop Points", "Trailing stop distance", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 80m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -180,9 +180,9 @@ public class BbRsiTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bollinger = new BollingerBands
 		{

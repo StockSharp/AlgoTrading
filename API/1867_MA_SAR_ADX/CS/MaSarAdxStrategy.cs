@@ -62,13 +62,13 @@ public class MaSarAdxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		var sma = new SimpleMovingAverage { Length = MaPeriod };
+		var sma = new SMA { Length = MaPeriod };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		var sar = new ParabolicSar
 		{

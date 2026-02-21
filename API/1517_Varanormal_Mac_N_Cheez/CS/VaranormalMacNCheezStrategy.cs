@@ -71,19 +71,19 @@ public class VaranormalMacNCheezStrategy : Strategy
 	{
 		_fastLength = Param(nameof(FastLength), 9)
 		.SetDisplay("Fast MA Length", "Fast moving average period", "Parameters")
-		.SetCanOptimize(true);
+		;
 		_slowLength = Param(nameof(SlowLength), 21)
 		.SetDisplay("Slow MA Length", "Slow moving average period", "Parameters")
-		.SetCanOptimize(true);
+		;
 		_dailyTarget = Param(nameof(DailyTarget), 200m)
 		.SetDisplay("Daily Profit Target", "Close positions when profit reaches this value (0 to disable)", "Risk")
-		.SetCanOptimize(true);
+		;
 		_stopLossAmount = Param(nameof(StopLossAmount), 100m)
 		.SetDisplay("Stop Loss Amount", "Fixed stop loss distance", "Risk")
-		.SetCanOptimize(true);
+		;
 		_trailOffset = Param(nameof(TrailOffset), 20m)
 		.SetDisplay("Trailing Stop Offset", "Distance for trailing stop", "Risk")
-		.SetCanOptimize(true);
+		;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 		
@@ -98,9 +98,9 @@ public class VaranormalMacNCheezStrategy : Strategy
 	}
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 	
 	_fastMa = new SMA { Length = FastLength };
 	_slowMa = new SMA { Length = SlowLength };

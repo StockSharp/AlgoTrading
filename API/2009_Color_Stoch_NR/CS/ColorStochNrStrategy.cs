@@ -83,25 +83,25 @@ public class ColorStochNrStrategy : Strategy
 		_kPeriod = Param(nameof(KPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("K Period", "Length for %K line", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("D Period", "Length for %D line", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -124,9 +124,9 @@ public class ColorStochNrStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stochastic = new StochasticOscillator
 		{

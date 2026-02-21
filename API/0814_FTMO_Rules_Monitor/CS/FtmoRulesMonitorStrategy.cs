@@ -101,17 +101,17 @@ public class FtmoRulesMonitorStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 1m)
 						   .SetRange(0.1m, 10m)
 						   .SetDisplay("Risk Percent", "Risk percent per trade", "Strategy")
-						   .SetCanOptimize(true);
+						   ;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 						 .SetRange(5, 50)
 						 .SetDisplay("ATR Period", "ATR calculation period", "Indicators")
-						 .SetCanOptimize(true);
+						 ;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 							 .SetRange(0.5m, 5m)
 							 .SetDisplay("ATR Multiplier", "ATR multiplier for stop calculation", "Strategy")
-							 .SetCanOptimize(true);
+							 ;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 						  .SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -139,9 +139,9 @@ public class FtmoRulesMonitorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 

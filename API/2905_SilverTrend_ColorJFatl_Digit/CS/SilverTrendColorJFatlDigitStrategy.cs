@@ -87,17 +87,17 @@ public class SilverTrendColorJFatlDigitStrategy : Strategy
 		_silverTrendLength = Param(nameof(SilverTrendLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("SilverTrend Length", "Lookback window for SilverTrend channel calculation", "SilverTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_silverTrendRisk = Param(nameof(SilverTrendRisk), 3)
 		.SetDisplay("SilverTrend Risk", "Risk modifier used inside the SilverTrend thresholds", "SilverTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 20, 1);
 
 		_silverTrendSignalBar = Param(nameof(SilverTrendSignalBar), 1)
 		.SetDisplay("SilverTrend Signal Bar", "Delay in bars before acting on a SilverTrend color change", "SilverTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 3, 1);
 
 		_colorJfatlCandleType = Param(nameof(ColorJfatlCandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -106,12 +106,12 @@ public class SilverTrendColorJFatlDigitStrategy : Strategy
 		_jmaLength = Param(nameof(JmaLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("JMA Length", "Length of the Jurik moving average", "ColorJFatl")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 30, 1);
 
 		_jmaSignalBar = Param(nameof(JmaSignalBar), 1)
 		.SetDisplay("JMA Signal Bar", "Delay in bars before acting on Jurik slope flips", "ColorJFatl")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 3, 1);
 
 		_jmaPriceType = Param(nameof(JmaPriceType), AppliedPrices.Close)
@@ -119,7 +119,7 @@ public class SilverTrendColorJFatlDigitStrategy : Strategy
 
 		_jmaRoundDigits = Param(nameof(JmaRoundDigits), 2)
 		.SetDisplay("JMA Rounding", "Number of digits used to emulate the original indicator rounding", "ColorJFatl")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 5, 1);
 	}
 
@@ -211,9 +211,9 @@ public class SilverTrendColorJFatlDigitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_silverTrendHighest = new Highest { Length = SilverTrendLength + 1 };
 		_silverTrendLowest = new Lowest { Length = SilverTrendLength + 1 };
@@ -291,7 +291,7 @@ public class SilverTrendColorJFatlDigitStrategy : Strategy
 		return;
 
 		var price = GetAppliedPrice(candle, JmaPriceType);
-		var jmaValue = _jma.Process(price, candle.CloseTime, true).ToDecimal();
+		var jmaValue = _jma.Process(new DecimalIndicatorValue(_jma, price, candle.CloseTime)).ToDecimal();
 
 		if (!_jma.IsFormed)
 		{

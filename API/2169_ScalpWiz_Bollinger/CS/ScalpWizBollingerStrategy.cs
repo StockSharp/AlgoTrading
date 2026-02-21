@@ -54,13 +54,13 @@ public class ScalpWizBollingerStrategy : Strategy
 		_bandsPeriod = Param(nameof(BandsPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Bands Period", "Number of candles for Bollinger calculation", "Bollinger")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 5);
 		
 		_bandsDeviation = Param(nameof(BandsDeviation), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bands Deviation", "Standard deviation multiplier", "Bollinger")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 		
 		_level1Pips = Param(nameof(Level1Pips), 100m)
@@ -110,9 +110,9 @@ public class ScalpWizBollingerStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var bollinger = new BollingerBands
 		{

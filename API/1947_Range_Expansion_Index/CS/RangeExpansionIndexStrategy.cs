@@ -72,15 +72,15 @@ public class RangeExpansionIndexStrategy : Strategy
 		_reiPeriod = Param(nameof(ReiPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("REI Period", "Length of REI indicator", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_upLevel = Param(nameof(UpLevel), 60m)
 			.SetDisplay("Up Level", "Upper threshold", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_downLevel = Param(nameof(DownLevel), -60m)
 			.SetDisplay("Down Level", "Lower threshold", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
@@ -101,9 +101,9 @@ public class RangeExpansionIndexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rei = new RangeExpansionIndex { Length = ReiPeriod };
 
@@ -143,7 +143,7 @@ public class RangeExpansionIndexStrategy : Strategy
 		_prevRei = reiValue;
 	}
 
-	private class RangeExpansionIndex : Indicator<ICandleMessage>
+	private class RangeExpansionIndex : BaseIndicator
 	{
 		public int Length { get; set; } = 8;
 

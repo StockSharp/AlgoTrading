@@ -86,9 +86,9 @@ public class HeikenAshiSupertrendAdxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var supertrend = new SuperTrend { Length = AtrPeriod, Multiplier = SupertrendMultiplier };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };

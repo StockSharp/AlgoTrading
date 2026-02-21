@@ -86,13 +86,13 @@ public class PinbarReversal2Strategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA", "Fast moving average length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA", "Slow moving average length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40, 150, 5);
 
 		_momentumLength = Param(nameof(MomentumLength), 14)
@@ -101,7 +101,7 @@ public class PinbarReversal2Strategy : Strategy
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.1m)
 		.SetDisplay("Momentum Threshold", "Minimum momentum for confirmation", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
@@ -118,22 +118,22 @@ public class PinbarReversal2Strategy : Strategy
 
 		_bodyToRangeRatio = Param(nameof(BodyToRangeRatio), 0.3m)
 		.SetDisplay("Body Ratio", "Maximum body size relative to range", "Pattern")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 0.5m, 0.05m);
 
 		_wickRatio = Param(nameof(WickRatio), 0.6m)
 		.SetDisplay("Wick Ratio", "Minimum dominant wick size", "Pattern")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.4m, 0.8m, 0.05m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 		.SetDisplay("Stop Loss %", "Protective stop in percent", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5m, 0.5m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
 		.SetDisplay("Take Profit %", "Target profit in percent", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 8m, 0.5m);
 
 		_breakEvenTriggerPercent = Param(nameof(BreakEvenTriggerPercent), 1.5m)
@@ -347,8 +347,8 @@ public class PinbarReversal2Strategy : Strategy
 		base.OnStarted(time);
 
 		// Create primary timeframe indicators.
-		_fastMa = new ExponentialMovingAverage { Length = FastMaLength };
-		_slowMa = new ExponentialMovingAverage { Length = SlowMaLength };
+		_fastMa = new EMA { Length = FastMaLength };
+		_slowMa = new EMA { Length = SlowMaLength };
 
 		// Subscribe to primary candles.
 		var primarySubscription = SubscribeCandles(CandleType);

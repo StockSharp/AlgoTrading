@@ -91,7 +91,7 @@ public class CurrencyMomentumFactorStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Top/Bottom K", "Number of currencies long/short", "Parameters");
 
-		_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
 		_minUsd = Param(nameof(MinTradeUsd), 100m)
@@ -117,9 +117,9 @@ public class CurrencyMomentumFactorStrategy : Strategy
 		_lastDay = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe must not be empty.");

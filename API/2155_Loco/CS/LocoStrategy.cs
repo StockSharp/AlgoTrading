@@ -43,7 +43,7 @@ public class LocoStrategy : Strategy
 		
 		_length = Param(nameof(Length), 1)
 			.SetDisplay("Length", "Lookback length", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 		
 		_priceType = Param(nameof(PriceType), AppliedPrice.Close)
@@ -84,9 +84,9 @@ public class LocoStrategy : Strategy
 		_prevColor = -1;
 	}
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var loco = new LocoIndicator
 		{

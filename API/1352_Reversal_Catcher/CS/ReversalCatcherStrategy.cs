@@ -141,37 +141,37 @@ public class ReversalCatcherStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 1.5m)
 			.SetRange(1m, 4m)
 			.SetDisplay("Bollinger Deviation", "Standard deviation for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "Trends")
-			.SetCanOptimize(true);
+			;
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "Trends")
-			.SetCanOptimize(true);
+			;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "Momentum")
-			.SetCanOptimize(true);
+			;
 
 		_overbought = Param(nameof(Overbought), 70m)
 			.SetRange(50m, 90m)
 			.SetDisplay("Overbought", "RSI overbought level", "Momentum")
-			.SetCanOptimize(true);
+			;
 
 		_oversold = Param(nameof(Oversold), 30m)
 			.SetRange(10m, 50m)
 			.SetDisplay("Oversold", "RSI oversold level", "Momentum")
-			.SetCanOptimize(true);
+			;
 
 		_endOfDay = Param(nameof(EndOfDay), 1500)
 			.SetDisplay("End Of Day", "Close all positions after HHMM", "Trade settings");
@@ -208,12 +208,12 @@ public class ReversalCatcherStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_emaFast = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		_emaSlow = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_emaFast = new EMA { Length = FastEmaPeriod };
+		_emaSlow = new EMA { Length = SlowEmaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerDeviation };
 

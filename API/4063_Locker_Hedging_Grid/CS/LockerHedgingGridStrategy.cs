@@ -46,19 +46,19 @@ public LockerHedgingGridStrategy()
 	{
 		_needProfitRatio = Param(nameof(NeedProfitRatio), 0.001m)
 			.SetDisplay("Profit Ratio", "Fraction of equity required before closing all trades", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_initialVolume = Param(nameof(InitialVolume), 0.5m)
 			.SetDisplay("Initial Volume", "Volume of the very first market buy", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_stepVolume = Param(nameof(StepVolume), 0.2m)
 			.SetDisplay("Step Volume", "Volume used for every rescue order", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_stepPoints = Param(nameof(StepPoints), 50)
 			.SetDisplay("Step Points", "Distance in points that must be covered before adding a new order", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_enableRescue = Param(nameof(EnableRescue), true)
 			.SetDisplay("Enable Rescue", "Allow the strategy to average when loss exceeds the threshold", "Risk");
@@ -110,9 +110,9 @@ public LockerHedgingGridStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdatePipSize();
 

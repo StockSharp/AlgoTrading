@@ -76,17 +76,17 @@ public class SunilBbBlastHeikinAshiStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 19)
 			.SetRange(10, 50)
 			.SetDisplay("Bollinger Period", "Length for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m)
 			.SetRange(1m, 3m)
 			.SetDisplay("Bollinger Multiplier", "Deviation multiplier for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_riskReward = Param(nameof(RiskRewardRatio), 1m)
 			.SetRange(0.5m, 3m)
 			.SetDisplay("Risk/Reward", "Risk to reward ratio", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -120,9 +120,9 @@ public class SunilBbBlastHeikinAshiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bollinger = new BollingerBands
 		{
@@ -149,7 +149,7 @@ public class SunilBbBlastHeikinAshiStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var time = candle.OpenTime.LocalDateTime.TimeOfDay;
+		var time = candle.OpenTime.TimeOfDay;
 		if (time < SessionBegin || time > SessionEnd)
 		{
 			if (Position > 0)

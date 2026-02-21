@@ -51,17 +51,17 @@ public class KeltnerChannelByKevinDaveyStrategy : Strategy
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 10)
 			.SetDisplay("EMA Period", "Period for Exponential Moving Average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "Period for Average True Range", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.6m)
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR to form channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -75,11 +75,11 @@ public class KeltnerChannelByKevinDaveyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

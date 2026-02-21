@@ -129,38 +129,38 @@ public class EmaWmaContrarianStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA length calculated on candle open prices", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 2);
 
 		_wmaPeriod = Param(nameof(WmaPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("WMA Period", "WMA length calculated on candle open prices", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 40, 2);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 			.SetDisplay("Stop Loss (points)", "Stop-loss distance expressed in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 150m, 10m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 			.SetDisplay("Take Profit (points)", "Take-profit distance expressed in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 50m)
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance expressed in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 150m, 10m);
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 10m)
 			.SetDisplay("Trailing Step (points)", "Minimal favorable move before the trailing stop is advanced", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 50m, 5m);
 
 		_riskPercent = Param(nameof(RiskPercent), 10m)
 			.SetDisplay("Risk Percent", "Portfolio percentage risked per trade", "Position Sizing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 20m, 2m);
 
 		_baseVolume = Param(nameof(BaseVolume), 1m)
@@ -191,9 +191,9 @@ public class EmaWmaContrarianStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Validate trailing configuration to match original expert advisor behaviour.
 		if (TrailingStopPoints > 0 && TrailingStepPoints <= 0)
@@ -203,7 +203,7 @@ public class EmaWmaContrarianStrategy : Strategy
 			return;
 		}
 
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_ema = new EMA { Length = EmaPeriod };
 		_wma = new WeightedMovingAverage { Length = WmaPeriod };
 
 		// Subscribe to candles and connect indicators.

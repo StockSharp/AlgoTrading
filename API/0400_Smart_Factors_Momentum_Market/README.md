@@ -9,7 +9,7 @@ The **Smart Factors Momentum Market** strategy blends multiple equity factors wi
 - **Exit Criteria**: Exit when factor momentum or market trend turns negative.
 - **Stops**: No explicit stop.
 - **Default Values**:
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Momentum
   - Direction: Long

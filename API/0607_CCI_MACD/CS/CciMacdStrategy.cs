@@ -32,7 +32,7 @@ public class CciMacdStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _endTime;
 
 	private CommodityChannelIndex _cci = null!;
-	private MovingAverageConvergenceDivergence _macd = null!;
+	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 	private ExponentialMovingAverage _ema125 = null!;
 	private ExponentialMovingAverage _ema750 = null!;
 	private AverageTrueRange _atr = null!;
@@ -160,14 +160,17 @@ public class CciMacdStrategy : Strategy
 		base.OnStarted(time);
 
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
-		_macd = new MovingAverageConvergenceDivergence
+		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			Fast = MacdFastLength,
-			Slow = MacdSlowLength,
-			Signal = MacdSignalLength
+			Macd =
+			{
+				ShortMa = { Length = MacdFastLength },
+				LongMa = { Length = MacdSlowLength },
+			},
+			SignalMa = { Length = MacdSignalLength }
 		};
-		_ema125 = new ExponentialMovingAverage { Length = Ema125Period };
-		_ema750 = new ExponentialMovingAverage { Length = Ema750Period };
+		_ema125 = new EMA { Length = Ema125Period };
+		_ema750 = new EMA { Length = Ema750Period };
 		_atr = new AverageTrueRange { Length = Ema750Period, Type = MovingAverageType.Exponential };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -200,7 +203,7 @@ public class CciMacdStrategy : Strategy
 		if (!_macd.IsFormed || !_ema125.IsFormed || !_ema750.IsFormed || !_atr.IsFormed || !_cci.IsFormed)
 			return;
 
-		var macd = (MovingAverageConvergenceDivergenceValue)macdValue;
+		var macd = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 		var macdLine = macd.Macd;
 
 		var cciCrossAbove = _initialized && _prevCci <= 0m && cciValue > 0m;

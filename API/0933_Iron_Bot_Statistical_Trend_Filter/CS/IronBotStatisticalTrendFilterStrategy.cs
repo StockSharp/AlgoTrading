@@ -213,14 +213,14 @@ public class IronBotStatisticalTrendFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
-	StartProtection();
+	base.OnStarted2(time);
+	StartProtection(null, null);
 
-	_sma = new SimpleMovingAverage { Length = ZLength };
+	_sma = new SMA { Length = ZLength };
 	_std = new StandardDeviation { Length = ZLength };
-	_ema = new ExponentialMovingAverage { Length = EmaLength };
+	_ema = new EMA { Length = EmaLength };
 	_highest = new Highest { Length = AnalysisWindow };
 	_lowest = new Lowest { Length = AnalysisWindow };
 

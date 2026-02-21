@@ -14,7 +14,7 @@
 - **Значения по умолчанию**:
   - `StartYear` = 2023.
   - `EndYear` = 2025.
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame().
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame().
 - **Фильтры**:
   - Категория: Сезонность
   - Направление: Лонг

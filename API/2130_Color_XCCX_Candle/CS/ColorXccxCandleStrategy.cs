@@ -71,7 +71,7 @@ public class ColorXccxCandleStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Length of the moving averages", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -80,13 +80,13 @@ public class ColorXccxCandleStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss as percent of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit as percent of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 6m, 1m);
 	}
 
@@ -105,12 +105,12 @@ public class ColorXccxCandleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var openSma = new SimpleMovingAverage { Length = SmaLength, CandlePrice = CandlePrice.Open };
-		var closeSma = new SimpleMovingAverage { Length = SmaLength, CandlePrice = CandlePrice.Close };
+		var openSma = new SMA { Length = SmaLength };
+		var closeSma = new SMA { Length = SmaLength };
 
 		StartProtection(
 			takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),

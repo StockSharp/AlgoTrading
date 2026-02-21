@@ -111,13 +111,13 @@ public class TimeTraderStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 0.2m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (%)", "Take profit percentage", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1m, 0.1m);
 		
 		_stopLoss = Param(nameof(StopLoss), 0.2m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (%)", "Stop loss percentage", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1m, 0.1m);
 		
 		_tradeHour = Param(nameof(TradeHour), 0)
@@ -159,9 +159,9 @@ public class TimeTraderStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		StartProtection(
 		takeProfit: new Unit(TakeProfit, UnitTypes.Percent),

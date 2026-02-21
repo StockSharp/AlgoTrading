@@ -70,25 +70,25 @@ public class WedgePatternStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast LWMA", "Length of the fast linear weighted MA", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 20, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow LWMA", "Length of the slow linear weighted MA", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40, 150, 5);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Period", "Lookback used for the momentum filter", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 1);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Threshold", "Minimum distance from the neutral momentum level", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1.5m, 0.1m);
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
@@ -110,13 +110,13 @@ public class WedgePatternStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 80, 5);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 150, 5);
 
 		_useBreakeven = Param(nameof(UseBreakeven), true)
@@ -363,14 +363,12 @@ public class WedgePatternStrategy : Strategy
 
 		_fastMa = new WeightedMovingAverage
 		{
-			Length = FastMaPeriod,
-			CandlePrice = CandlePrice.Typical
+			Length = FastMaPeriod
 		};
 
 		_slowMa = new WeightedMovingAverage
 		{
-			Length = SlowMaPeriod,
-			CandlePrice = CandlePrice.Typical
+			Length = SlowMaPeriod
 		};
 
 		_momentum = new Momentum
@@ -704,7 +702,7 @@ public class WedgePatternStrategy : Strategy
 			if (i == centerLocal)
 			continue;
 
-			if (_candles[i].High >= candidate.High)
+			if (_candles[i].HighPrice >= candidate.High)
 			{
 				isHigh = false;
 				break;
@@ -720,7 +718,7 @@ public class WedgePatternStrategy : Strategy
 			if (i == centerLocal)
 			continue;
 
-			if (_candles[i].Low <= candidate.Low)
+			if (_candles[i].LowPrice <= candidate.Low)
 			{
 				isLow = false;
 				break;

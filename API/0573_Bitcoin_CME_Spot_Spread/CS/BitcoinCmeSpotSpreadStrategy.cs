@@ -229,7 +229,7 @@ public class BitcoinCmeSpotSpreadStrategy : Strategy
 		_useRisk = Param(nameof(UseRiskManagement), true)
 			.SetDisplay("Use Risk", "Enable take profits", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Data");
 	}
 
@@ -258,13 +258,13 @@ public class BitcoinCmeSpotSpreadStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Cme == null || Spot == null)
 			throw new InvalidOperationException("Cme and Spot must be set.");
 
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		_bb = new BollingerBands
 		{

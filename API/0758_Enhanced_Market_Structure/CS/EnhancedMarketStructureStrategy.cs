@@ -246,22 +246,17 @@ public class EnhancedMarketStructureStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_highest = new Highest { Length = StructurePeriod };
 		_lowest = new Lowest { Length = StructurePeriod };
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Fast = MacdFast,
-			Slow = MacdSlow,
-			Signal = MacdSignal
-		};
-		_volumeSma = new SimpleMovingAverage { Length = VolumeLength };
+		_ema = new EMA { Length = EmaLength };
+		_macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow } }, SignalMa = { Length = MacdSignal } };
+		_volumeSma = new SMA { Length = VolumeLength };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -281,7 +276,7 @@ public class EnhancedMarketStructureStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		var volumeAvg = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var volumeAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 		
 		if (!IsFormedAndOnlineAndAllowTrading() || !_highest.IsFormed || !_lowest.IsFormed || !_atr.IsFormed || !_rsi.IsFormed || !_ema.IsFormed || !_macd.IsFormed || (UseVolumeFilter && !_volumeSma.IsFormed))
 		return;

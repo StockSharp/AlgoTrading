@@ -68,25 +68,25 @@ public class CciSlopeBreakoutStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Period for CCI calculation", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 			
 		_slopePeriod = Param(nameof(SlopePeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slope Period", "Period for slope average and standard deviation", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 			
 		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout", "Signal")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 			
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -112,9 +112,9 @@ public class CciSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Initialize indicators
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
@@ -151,7 +151,7 @@ public class CciSlopeBreakoutStrategy : Strategy
 			return;
 		
 		// Calculate CCI slope
-		var currentSlopeTyped = (LinearRegressionValue)_cciSlope.Process(cciValue, candle.ServerTime, candle.State == CandleStates.Finished);
+		var currentSlopeTyped = (LinearRegressionValue)_cciSlope.Process(new DecimalIndicatorValue(_cciSlope, cciValue, candle.ServerTime));
 
 		if (currentSlopeTyped.LinearReg is not decimal currentSlopeValue)
 			return;

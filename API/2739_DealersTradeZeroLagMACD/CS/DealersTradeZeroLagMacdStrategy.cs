@@ -289,26 +289,26 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 	{
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
 		.SetDisplay("Base Volume", "Initial order volume", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_riskPercent = Param(nameof(RiskPercent), 5m)
 		.SetDisplay("Risk Percent", "Risk per trade when base volume is zero", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_maxPositions = Param(nameof(MaxPositions), 5)
 		.SetDisplay("Max Positions", "Maximum simultaneous entries", "Risk")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_intervalPips = Param(nameof(IntervalPips), 15)
 		.SetDisplay("Interval (pips)", "Base spacing between entries", "Grid")
 		.SetNotNegative()
-		.SetCanOptimize(true);
+		;
 
 		_intervalCoefficient = Param(nameof(IntervalCoefficient), 1.2m)
 		.SetDisplay("Interval Coefficient", "Spacing multiplier for additional entries", "Grid")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 0)
 		.SetDisplay("Stop Loss (pips)", "Distance to protective stop", "Risk")
@@ -317,7 +317,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 		.SetDisplay("Take Profit (pips)", "Base take profit distance", "Risk")
 		.SetNotNegative()
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0)
 		.SetDisplay("Trailing Stop (pips)", "Trailing distance", "Risk")
@@ -330,7 +330,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 		_takeProfitCoefficient = Param(nameof(TakeProfitCoefficient), 1.2m)
 		.SetDisplay("TP Coefficient", "Take profit multiplier per entry", "Risk")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_secureProfit = Param(nameof(SecureProfit), 300m)
 		.SetDisplay("Secure Profit", "Cumulative profit to trigger protection", "Risk")
@@ -349,17 +349,17 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 14)
 		.SetDisplay("Fast Length", "Fast ZLEMA length", "Indicators")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_slowLength = Param(nameof(SlowLength), 26)
 		.SetDisplay("Slow Length", "Slow ZLEMA length", "Indicators")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_signalLength = Param(nameof(SignalLength), 9)
 		.SetDisplay("Signal Length", "Signal smoothing length", "Indicators")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_maxVolume = Param(nameof(MaxVolume), 5m)
 		.SetDisplay("Max Volume", "Maximum volume per entry", "Trading")
@@ -368,7 +368,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 		_lotMultiplier = Param(nameof(LotMultiplier), 1.6m)
 		.SetDisplay("Lot Multiplier", "Multiplier applied to each new entry", "Trading")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_minimumBalance = Param(nameof(MinimumBalance), 1000m)
 		.SetDisplay("Minimum Balance", "Stop trading below this balance", "Risk")
@@ -400,7 +400,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_fastZlema = new ZeroLagExponentialMovingAverage { Length = FastLength };
 		_slowZlema = new ZeroLagExponentialMovingAverage { Length = SlowLength };
@@ -425,7 +425,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
@@ -444,7 +444,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 		}
 
 		var macd = fast - slow;
-		_signalZlema.Process(macd, candle.CloseTime, true);
+		_signalZlema.Process(new DecimalIndicatorValue(_signalZlema, macd, candle.CloseTime));
 
 		if (!_fastZlema.IsFormed || !_slowZlema.IsFormed || !_signalZlema.IsFormed)
 			{

@@ -937,7 +937,7 @@ public class OneMinuteScalperStrategy : Strategy
 		if (Position == 0)
 			return 0m;
 
-		var entry = PositionAvgPrice;
+		var entry = PositionPrice;
 		if (entry == 0m)
 			return 0m;
 

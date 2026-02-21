@@ -107,12 +107,12 @@ public class ChandelierExitWith200EmaFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		_highestClose = new Highest { Length = AtrPeriod };
 		_highestHigh = new Highest { Length = AtrPeriod };
 		_lowestClose = new Lowest { Length = AtrPeriod };
@@ -132,7 +132,7 @@ public class ChandelierExitWith200EmaFilterStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal atr)

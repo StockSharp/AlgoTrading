@@ -90,7 +90,7 @@ public class MTrendLineStrategy : Strategy
 		_regressionLength = Param(nameof(RegressionLength), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("Regression Length", "Number of candles included in the linear regression.", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(12, 48, 12);
 
 		_pointValue = Param(nameof(PointValue), 0m)
@@ -299,9 +299,9 @@ public class MTrendLineStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 	// Align helper methods (Buy/Sell helpers) with the configured trade volume.

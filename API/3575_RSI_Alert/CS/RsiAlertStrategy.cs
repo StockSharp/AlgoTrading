@@ -84,20 +84,20 @@ public class RsiAlertStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Order size used for market trades", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Number of bars for RSI calculation", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 80m)
 			.SetDisplay("Overbought Level", "RSI threshold that triggers short signals", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 20m)
 			.SetDisplay("Oversold Level", "RSI threshold that triggers long signals", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles that feed the RSI", "General");
@@ -120,9 +120,9 @@ public class RsiAlertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume; // Ensure the strategy uses the configured volume on each start.
 

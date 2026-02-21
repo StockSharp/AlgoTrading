@@ -56,7 +56,7 @@ public class VixFuturesBasisStrategy : Strategy
 	{
 		_basisThreshold = Param(nameof(BasisThreshold), 0.1m)
 			.SetDisplay("Basis Threshold", "Contango/backwardation threshold", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_indexSecurity = Param<Security>(nameof(IndexSecurity))
@@ -67,7 +67,7 @@ public class VixFuturesBasisStrategy : Strategy
 			.SetDisplay("Second Future", "Next VIX future security", "Data")
 			.SetRequired();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -80,9 +80,9 @@ public class VixFuturesBasisStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var mainSub = SubscribeCandles(CandleType);
 		mainSub.Bind(ProcessMainCandle).Start();

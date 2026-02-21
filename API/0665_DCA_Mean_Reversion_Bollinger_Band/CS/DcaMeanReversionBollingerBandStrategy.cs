@@ -81,9 +81,9 @@ public class DcaMeanReversionBollingerBandStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var bollinger = new BollingerBands
 		{
@@ -93,7 +93,7 @@ public class DcaMeanReversionBollingerBandStrategy : Strategy
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(bollinger, ProcessCandle)
+		.BindEx(bollinger, ProcessCandle)
 		.Start();
 		
 		var area = CreateChartArea();
@@ -105,11 +105,15 @@ public class DcaMeanReversionBollingerBandStrategy : Strategy
 		}
 	}
 	
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
-		
+
+		var bb = (BollingerBandsValue)bollingerValue;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal middle)
+			return;
+
 		if (!_initialized)
 		{
 			_prevClose = candle.ClosePrice;
@@ -118,7 +122,7 @@ public class DcaMeanReversionBollingerBandStrategy : Strategy
 			_initialized = true;
 			return;
 		}
-		
+
 		bool buyConditionBb = _prevClose >= _prevLower && candle.ClosePrice < lower;
 		bool isFirstDay = candle.OpenTime.Month != _prevMonth && candle.OpenTime.Day == 1;
 		

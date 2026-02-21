@@ -90,25 +90,25 @@ public class SupertrendDistanceBreakoutStrategy : Strategy
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Period", "Period for Supertrend indicator", "Indicator Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Multiplier", "Multiplier for Supertrend indicator", "Indicator Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for statistical calculations", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -135,7 +135,7 @@ public class SupertrendDistanceBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_atr = new AverageTrueRange { Length = SupertrendPeriod };
 		_supertrend = new SuperTrend { Length = SupertrendPeriod, Multiplier = SupertrendMultiplier };
@@ -161,7 +161,7 @@ public class SupertrendDistanceBreakoutStrategy : Strategy
 			stopLoss: new Unit(2, UnitTypes.Percent) // 2% stop-loss
 		);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal supertrendPrice)

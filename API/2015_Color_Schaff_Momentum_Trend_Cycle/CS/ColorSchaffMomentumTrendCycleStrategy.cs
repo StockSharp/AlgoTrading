@@ -110,9 +110,9 @@ public class ColorSchaffMomentumTrendCycleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// create momentum indicators using selected lengths
 		_fastMomentum = new Momentum { Length = FastMomentum };
@@ -129,8 +129,8 @@ public class ColorSchaffMomentumTrendCycleStrategy : Strategy
 			return;
 
 		var price = candle.ClosePrice;
-		var fast = _fastMomentum.Process(price, candle.OpenTime, true).ToDecimal();
-		var slow = _slowMomentum.Process(price, candle.OpenTime, true).ToDecimal();
+		var fast = _fastMomentum.Process(new DecimalIndicatorValue(_fastMomentum, price, candle.OpenTime)).ToDecimal();
+		var slow = _slowMomentum.Process(new DecimalIndicatorValue(_slowMomentum, price, candle.OpenTime)).ToDecimal();
 		var macd = fast - slow;
 
 		// store MACD and keep limited history

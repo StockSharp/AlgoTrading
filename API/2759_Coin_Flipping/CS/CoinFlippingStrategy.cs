@@ -73,19 +73,19 @@ public class CoinFlippingStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk %", "Portfolio percentage allocated per trade", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Target distance expressed in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_stopLossPips = Param(nameof(StopLossPips), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -111,9 +111,9 @@ public class CoinFlippingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Seed the pseudo-random generator similarly to the MQL expert.
 		_random = new Random(Environment.TickCount);

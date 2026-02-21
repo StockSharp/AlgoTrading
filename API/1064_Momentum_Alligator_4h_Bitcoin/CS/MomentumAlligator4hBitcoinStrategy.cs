@@ -108,7 +108,7 @@ public class MomentumAlligator4hBitcoinStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
+		return [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
 	}
 
 	/// <inheritdoc />
@@ -132,9 +132,9 @@ public class MomentumAlligator4hBitcoinStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_jawSmma = new SmoothedMovingAverage { Length = 13 };
 
@@ -142,14 +142,14 @@ public class MomentumAlligator4hBitcoinStrategy : Strategy
 		_teeth1DSmma = new SmoothedMovingAverage { Length = 8 };
 		_lips1DSmma = new SmoothedMovingAverage { Length = 5 };
 
-		_ao = new AwesomeOscillator { ShortPeriod = 5, LongPeriod = 34 };
-		_aoSma = new SimpleMovingAverage { Length = 5 };
+		_ao = new AwesomeOscillator { ShortMa = { Length = 5 }, LongMa = { Length = 34 } };
+		_aoSma = new SMA { Length = 5 };
 
 		SubscribeCandles(CandleType)
 			.BindEx(_ao, ProcessCandle)
 			.Start();
 
-		SubscribeCandles(TimeSpan.FromDays(1).TimeFrame())
+		SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame())
 			.Bind(ProcessDaily)
 			.Start();
 	}

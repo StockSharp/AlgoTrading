@@ -148,9 +148,9 @@ public class RefinedSmaEmaCrossoverWithIchimokuAnd200SmaFilterStrategy : Strateg
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_ichimoku = new Ichimoku
 		{
@@ -159,9 +159,9 @@ public class RefinedSmaEmaCrossoverWithIchimokuAnd200SmaFilterStrategy : Strateg
 			SenkouB = { Length = SenkouSpanBPeriod }
 		};
 		
-		_sma = new SimpleMovingAverage { Length = SmaLength };
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
-		_sma200 = new SimpleMovingAverage { Length = Sma200Length };
+		_sma = new SMA { Length = SmaLength };
+		_ema = new EMA { Length = EmaLength };
+		_sma200 = new SMA { Length = Sma200Length };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -191,9 +191,9 @@ public class RefinedSmaEmaCrossoverWithIchimokuAnd200SmaFilterStrategy : Strateg
 		return;
 		
 		var close = candle.ClosePrice;
-		var sma = _sma.Process(close, candle.ServerTime, true).ToDecimal();
-		var ema = _ema.Process(close, candle.ServerTime, true).ToDecimal();
-		var sma200 = _sma200.Process(close, candle.ServerTime, true).ToDecimal();
+		var sma = _sma.Process(new DecimalIndicatorValue(_sma, close, candle.ServerTime)).ToDecimal();
+		var ema = _ema.Process(new DecimalIndicatorValue(_ema, close, candle.ServerTime)).ToDecimal();
+		var sma200 = _sma200.Process(new DecimalIndicatorValue(_sma200, close, candle.ServerTime)).ToDecimal();
 		
 		if (!_isInitialized)
 		{

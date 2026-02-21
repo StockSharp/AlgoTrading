@@ -113,9 +113,9 @@ public class ForecastOscillatorStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_linReg = new LinearRegression { Length = Length };
 		
@@ -135,7 +135,7 @@ public class ForecastOscillatorStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle)
@@ -144,7 +144,7 @@ public class ForecastOscillatorStrategy : Strategy
 		return;
 		
 		var price = candle.ClosePrice;
-		var lrValue = (LinearRegressionValue)_linReg.Process(price, candle.OpenTime, true);
+		var lrValue = (LinearRegressionValue)_linReg.Process(new DecimalIndicatorValue(_linReg, price, candle.OpenTime));
 		var wt = lrValue.LinearReg;
 		
 		if (wt is null)

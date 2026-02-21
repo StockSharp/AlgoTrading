@@ -84,22 +84,22 @@ public class SlimeMoldRsiStrategy : Strategy
 	{
 		_weight1 = Param(nameof(Weight1), -100m)
 			.SetDisplay("Weight 1", "Weight applied to the 12-period RSI input", "Perceptron")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-200m, 200m, 10m);
 
 		_weight2 = Param(nameof(Weight2), -100m)
 			.SetDisplay("Weight 2", "Weight applied to the 36-period RSI input", "Perceptron")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-200m, 200m, 10m);
 
 		_weight3 = Param(nameof(Weight3), -100m)
 			.SetDisplay("Weight 3", "Weight applied to the 108-period RSI input", "Perceptron")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-200m, 200m, 10m);
 
 		_weight4 = Param(nameof(Weight4), -100m)
 			.SetDisplay("Weight 4", "Weight applied to the 324-period RSI input", "Perceptron")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-200m, 200m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -126,9 +126,9 @@ public class SlimeMoldRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create RSI indicators for each horizon used by the original perceptron.
 		_rsi12 = new RelativeStrengthIndex { Length = 12 };
@@ -153,10 +153,10 @@ public class SlimeMoldRsiStrategy : Strategy
 		// Median price replicates PRICE_MEDIAN used in the original script.
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var rsi12Value = _rsi12.Process(medianPrice, candle.ServerTime, true).ToDecimal();
-		var rsi36Value = _rsi36.Process(medianPrice, candle.ServerTime, true).ToDecimal();
-		var rsi108Value = _rsi108.Process(medianPrice, candle.ServerTime, true).ToDecimal();
-		var rsi324Value = _rsi324.Process(medianPrice, candle.ServerTime, true).ToDecimal();
+		var rsi12Value = _rsi12.Process(new DecimalIndicatorValue(_rsi12, medianPrice, candle.ServerTime)).ToDecimal();
+		var rsi36Value = _rsi36.Process(new DecimalIndicatorValue(_rsi36, medianPrice, candle.ServerTime)).ToDecimal();
+		var rsi108Value = _rsi108.Process(new DecimalIndicatorValue(_rsi108, medianPrice, candle.ServerTime)).ToDecimal();
+		var rsi324Value = _rsi324.Process(new DecimalIndicatorValue(_rsi324, medianPrice, candle.ServerTime)).ToDecimal();
 
 		// Wait until every RSI is fully formed before evaluating signals.
 		if (!_rsi12.IsFormed || !_rsi36.IsFormed || !_rsi108.IsFormed || !_rsi324.IsFormed)

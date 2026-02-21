@@ -167,19 +167,19 @@ public class RsiCrossoverEaStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Number of bars used for RSI", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 28, 2);
 
 		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 30m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Buy Level", "Cross above this level opens longs", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_rsiSellLevel = Param(nameof(RsiSellLevel), 70m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Sell Level", "Cross below this level opens shorts", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_enableLong = Param(nameof(EnableLong), true)
@@ -194,19 +194,19 @@ public class RsiCrossoverEaStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 0m)
 			.SetRange(0m, 1000m)
 			.SetDisplay("Stop Loss", "Distance from entry for stop loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 20m);
 
 		_takeProfit = Param(nameof(TakeProfit), 0m)
 			.SetRange(0m, 1000m)
 			.SetDisplay("Take Profit", "Distance from entry for take profit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 20m);
 
 		_trailingStop = Param(nameof(TrailingStop), 0m)
 			.SetRange(0m, 1000m)
 			.SetDisplay("Trailing Stop", "Trailing distance after price moves", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 20m);
 
 		_useAutoVolume = Param(nameof(UseAutoVolume), true)
@@ -237,9 +237,9 @@ public class RsiCrossoverEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex
 		{
@@ -251,7 +251,7 @@ public class RsiCrossoverEaStrategy : Strategy
 			.Bind(_rsi, Process)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void Process(ICandleMessage candle, decimal rsiValue)

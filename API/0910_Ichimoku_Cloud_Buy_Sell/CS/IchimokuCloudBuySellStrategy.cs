@@ -130,31 +130,31 @@ public class IchimokuCloudBuySellStrategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Tenkan Period", "Tenkan-sen periods", "Ichimoku Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 11, 1);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Kijun Period", "Kijun-sen periods", "Ichimoku Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 30, 2);
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 			.SetGreaterThanZero()
 			.SetDisplay("Senkou Span B Period", "Senkou Span B periods", "Ichimoku Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 60, 4);
 
 		_emaPeriod = Param(nameof(EmaPeriod), 44)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA length for exit", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 5);
 
 		_avgVolumeLength = Param(nameof(AvgVolumeLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Average Volume Length", "Length for average volume filter", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
@@ -163,7 +163,7 @@ public class IchimokuCloudBuySellStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_requireAboveEma = Param(nameof(RequireAboveEma), true)
@@ -190,9 +190,9 @@ public class IchimokuCloudBuySellStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ichimoku = new Ichimoku
 		{
@@ -202,7 +202,7 @@ public class IchimokuCloudBuySellStrategy : Strategy
 		};
 
 		var ema = new EMA { Length = EmaPeriod };
-		var volumeMa = new SimpleMovingAverage { Length = AvgVolumeLength };
+		var volumeMa = new SMA { Length = AvgVolumeLength };
 
 		var subscription = SubscribeCandles(CandleType);
 

@@ -68,7 +68,7 @@ public class MacdCrossAudusdD1Strategy : Strategy
 			.SetDisplay("Reward Ratio", "Take profit multiple of stop loss", "Risk")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -87,9 +87,9 @@ public class MacdCrossAudusdD1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = (Security?.PriceStep ?? 0.0001m) * 10m;
 
@@ -129,7 +129,7 @@ public class MacdCrossAudusdD1Strategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var hour = candle.OpenTime.LocalDateTime.Hour;
+		var hour = candle.OpenTime.Hour;
 		if (hour <= 5 || hour >= 15)
 			return;
 

@@ -42,22 +42,22 @@ public class GoldPullbackStrategy : Strategy
 		_emaFastLength = Param(nameof(EmaFastLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Fast", "Fast EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_emaSlowLength = Param(nameof(EmaSlowLength), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Slow", "Slow EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_emaPullbackLength = Param(nameof(EmaPullbackLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Pullback", "Pullback EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slOffset = Param(nameof(SlOffset), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("SL Offset", "Offset for stop calculation", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy", "General");
@@ -79,22 +79,22 @@ public class GoldPullbackStrategy : Strategy
 		_shortStop = _shortTake = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_emaFast = new ExponentialMovingAverage { Length = EmaFastLength };
-		_emaSlow = new ExponentialMovingAverage { Length = EmaSlowLength };
-		_emaPullback = new ExponentialMovingAverage { Length = EmaPullbackLength };
+		_emaFast = new EMA { Length = EmaFastLength };
+		_emaSlow = new EMA { Length = EmaSlowLength };
+		_emaPullback = new EMA { Length = EmaPullbackLength };
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = 5,
-			LongPeriod = 34,
+			ShortMa = { Length = 5 },
+			LongMa = { Length = 34 },
 			SignalPeriod = 5
 		};
 		_rsi = new RelativeStrengthIndex { Length = 13 };
-		_tdiMa = new SimpleMovingAverage { Length = 2 };
-		_tdiSignal = new SimpleMovingAverage { Length = 7 };
+		_tdiMa = new SMA { Length = 2 };
+		_tdiSignal = new SMA { Length = 7 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_emaFast, _emaSlow, _emaPullback, _macd, _rsi, ProcessCandle).Start();

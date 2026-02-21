@@ -104,9 +104,9 @@ public class RBasedTemplateStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
@@ -114,7 +114,7 @@ public class RBasedTemplateStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(rsi, atr, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

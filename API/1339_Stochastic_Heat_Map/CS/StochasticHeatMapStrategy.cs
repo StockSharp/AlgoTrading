@@ -122,22 +122,22 @@ public class StochasticHeatMapStrategy : Strategy
 		_increment = Param(nameof(Increment), 10)
 			.SetDisplay("Increment", "Period increment between Stochastic calculations", "Parameters")
 			.SetRange(5, 20)
-			.SetCanOptimize(true);
+			;
 
 		_smoothFast = Param(nameof(SmoothFast), 2)
 			.SetDisplay("Smooth Fast", "Smoothing length for individual Stochastics", "Parameters")
 			.SetRange(1, 5)
-			.SetCanOptimize(true);
+			;
 
 		_smoothSlow = Param(nameof(SmoothSlow), 21)
 			.SetDisplay("Smooth Slow", "Smoothing length for signal line", "Parameters")
 			.SetRange(10, 50)
-			.SetCanOptimize(true);
+			;
 
 		_plotNumber = Param(nameof(PlotNumber), 28)
 			.SetDisplay("Plot Number", "Number of Stochastic calculations to average", "Parameters")
 			.SetRange(5, 28)
-			.SetCanOptimize(true);
+			;
 
 		_useWaves = Param(nameof(UseWaves), false)
 			.SetDisplay("Waves", "Increase smoothing for each Stochastic", "Parameters");
@@ -165,9 +165,9 @@ public class StochasticHeatMapStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var heatMap = new StochasticHeatMapIndicator
 		{
@@ -226,7 +226,7 @@ public class StochasticHeatMapStrategy : Strategy
 /// <summary>
 /// Custom indicator calculating Stochastic Heat Map.
 /// </summary>
-public class StochasticHeatMapIndicator : BaseIndicator<decimal>
+public class StochasticHeatMapIndicator : BaseIndicator
 {
 	public int Increment { get; set; } = 10;
 	public int SmoothFast { get; set; } = 2;
@@ -259,9 +259,9 @@ public class StochasticHeatMapIndicator : BaseIndicator<decimal>
 
 				IIndicator ma = MaTypes switch
 				{
-					MaTypes.SMA => new SimpleMovingAverage { Length = smooth },
+					MaTypes.SMA => new SMA { Length = smooth },
 					MaTypes.WMA => new WeightedMovingAverage { Length = smooth },
-					_ => new ExponentialMovingAverage { Length = smooth },
+					_ => new EMA { Length = smooth },
 				};
 
 				_items.Add((stoch, ma));
@@ -269,9 +269,9 @@ public class StochasticHeatMapIndicator : BaseIndicator<decimal>
 
 			_slowMa = MaTypes switch
 			{
-				MaTypes.SMA => new SimpleMovingAverage { Length = SmoothSlow },
+				MaTypes.SMA => new SMA { Length = SmoothSlow },
 				MaTypes.WMA => new WeightedMovingAverage { Length = SmoothSlow },
-				_ => new ExponentialMovingAverage { Length = SmoothSlow },
+				_ => new EMA { Length = SmoothSlow },
 			};
 		}
 

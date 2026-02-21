@@ -54,8 +54,8 @@ public class FiveEightMaCrossProtectStrategy : Strategy
 	private readonly Queue<decimal> _fastValues = new();
 	private readonly Queue<decimal> _slowValues = new();
 
-	private LengthIndicator<decimal> _fastMa;
-	private LengthIndicator<decimal> _slowMa;
+	private DecimalLengthIndicator _fastMa;
+	private DecimalLengthIndicator _slowMa;
 
 	private decimal _pipSize;
 	private decimal _takeProfitDistance;
@@ -80,28 +80,28 @@ public class FiveEightMaCrossProtectStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetDisplay("Trade Volume", "Order volume for new positions", "Trading")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 40m)
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetDisplay("Fast Period", "Period of the fast moving average", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_fastShift = Param(nameof(FastShift), -1)
 			.SetDisplay("Fast Shift", "Bars to offset the fast moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_fastMethod = Param(nameof(FastMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("Fast Method", "Smoothing method for the fast moving average", "Indicators");
@@ -112,11 +112,11 @@ public class FiveEightMaCrossProtectStrategy : Strategy
 		_slowPeriod = Param(nameof(SlowPeriod), 8)
 			.SetDisplay("Slow Period", "Period of the slow moving average", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_slowShift = Param(nameof(SlowShift), 0)
 			.SetDisplay("Slow Shift", "Bars to offset the slow moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("Slow Method", "Smoothing method for the slow moving average", "Indicators");
@@ -278,9 +278,9 @@ public class FiveEightMaCrossProtectStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -579,15 +579,15 @@ public class FiveEightMaCrossProtectStrategy : Strategy
 		return pips * _pipSize;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period, AppliedPrices price)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int period, AppliedPrices price)
 	{
-		LengthIndicator<decimal> indicator = method switch
+		DecimalLengthIndicator indicator = method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage(),
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage(),
+			MovingAverageMethods.Simple => new SMA(),
+			MovingAverageMethods.Exponential => new EMA(),
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage(),
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage(),
-			_ => new SimpleMovingAverage(),
+			_ => new SMA(),
 		};
 
 		indicator.Length = Math.Max(1, period);

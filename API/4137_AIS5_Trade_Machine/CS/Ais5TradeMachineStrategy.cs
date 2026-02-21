@@ -129,37 +129,37 @@ public class Ais5TradeMachineStrategy : Strategy
 		_volumeLookback = Param(nameof(VolumeLookback), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume Lookback", "Number of candles used for average volume", "Volume")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 10);
 
 		_strongVolumeMultiplier = Param(nameof(StrongVolumeMultiplier), 1.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Strong Volume Mult", "Multiplier above average volume that marks strong zones", "Volume")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_weakVolumeDivider = Param(nameof(WeakVolumeDivider), 2.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Weak Volume Divider", "Divider below average volume that marks weak zones", "Volume")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.5m, 4.0m, 0.5m);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 3.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "Multiplier applied to ATR for stop distance", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_zoneBasePoints = Param(nameof(ZoneBasePoints), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Zone Base Points", "Initial offset from the zone level in points", "Zones")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 150, 10);
 
 		_zoneStepPoints = Param(nameof(ZoneStepPoints), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("Zone Step Points", "Additional breakout buffer in points", "Zones")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 300, 20);
 	}
 
@@ -194,9 +194,9 @@ public class Ais5TradeMachineStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = GetPriceStep();
 

@@ -40,36 +40,36 @@ public class MultiOrdersStrategy : Strategy
 		_buyOrdersCount = Param(nameof(BuyOrdersCount), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy orders", "Number of market buy orders submitted by a manual batch trigger.", "Orders")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_sellOrdersCount = Param(nameof(SellOrdersCount), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Sell orders", "Number of market sell orders submitted by a manual batch trigger.", "Orders")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_riskPercentage = Param(nameof(RiskPercentage), 1m)
 			.SetDisplay("Risk percentage", "Portfolio percentage used to derive the default trade volume.", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 5m, 0.5m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop loss (points)", "Distance from entry for the protective stop, expressed in price steps.", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 500, 50);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
 			.SetGreaterThanZero()
 			.SetDisplay("Take profit (points)", "Target distance from entry expressed in price steps.", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 800, 50);
 
 		_slippagePoints = Param(nameof(SlippagePoints), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Slippage (points)", "Maximum spread (in price steps) tolerated before automatic entries can trigger.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_baseVolume = Param(nameof(BaseVolume), 1m)
@@ -152,9 +152,9 @@ public class MultiOrdersStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_lastBid = null;
 		_lastAsk = null;

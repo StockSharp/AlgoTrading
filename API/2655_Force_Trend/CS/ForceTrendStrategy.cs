@@ -45,27 +45,27 @@ public class ForceTrendStrategy : Strategy
 		_length = Param(nameof(Length), 13)
 			.SetDisplay("Length", "ForceTrend lookback length", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Number of finished bars to shift the signal", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)
 			.SetDisplay("Enable Long Entry", "Allow opening long positions", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_enableShortEntry = Param(nameof(EnableShortEntry), true)
 			.SetDisplay("Enable Short Entry", "Allow opening short positions", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_enableLongExit = Param(nameof(EnableLongExit), true)
 			.SetDisplay("Enable Long Exit", "Allow closing long positions", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_enableShortExit = Param(nameof(EnableShortExit), true)
 			.SetDisplay("Enable Short Exit", "Allow closing short positions", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for ForceTrend calculations", "General");
@@ -141,9 +141,9 @@ public class ForceTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_previousForceValue = 0m;
 		_previousIndicatorValue = 0m;

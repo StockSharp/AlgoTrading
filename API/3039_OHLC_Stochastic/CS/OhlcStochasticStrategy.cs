@@ -116,43 +116,43 @@ public class OhlcStochasticStrategy : Strategy
 		_kPeriod = Param(nameof(KPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("%K Period", "Number of bars for %K", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("%D Period", "Smoothing period for %D", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 10, 1);
 
 		_slowing = Param(nameof(Slowing), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Slowing", "Final smoothing for %K", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_levelUp = Param(nameof(LevelUp), 70m)
 		.SetNotNegative()
 		.SetDisplay("Overbought", "Trigger level for shorts", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60m, 90m, 5m);
 
 		_levelDown = Param(nameof(LevelDown), 30m)
 		.SetNotNegative()
 		.SetDisplay("Oversold", "Trigger level for longs", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 5m);
 
 		_trailingStopSteps = Param(nameof(TrailingStopSteps), 5m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop Steps", "Stop distance in price steps", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 20m, 1m);
 
 		_trailingStepSteps = Param(nameof(TrailingStepSteps), 2m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Step Steps", "Minimal progress before trailing", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 10m, 1m);
 	}
 
@@ -171,14 +171,14 @@ public class OhlcStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stochastic = new StochasticOscillator
 		{
 			KPeriod = KPeriod,
-			DPeriod = DPeriod,
+			D = {  K = { Length = DPeriod } },
 			Slowing = Slowing
 		};
 
@@ -188,7 +188,7 @@ public class OhlcStochasticStrategy : Strategy
 		.BindEx(stochastic, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

@@ -87,9 +87,9 @@ public class CloseProfitEndOfWeekStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_isCryptoAsset = Security?.Type == SecurityTypes.CryptoCurrency;
 

@@ -71,7 +71,7 @@ public class PfeExtremesStrategy : Strategy
 		_pfePeriod = Param(nameof(PfePeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("PFE Period", "Number of bars for PFE calculation", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_upLevel = Param(nameof(UpLevel), 0.5m)
@@ -98,9 +98,9 @@ public class PfeExtremesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var pfe = new PolarizedFractalEfficiency { Length = PfePeriod };
 

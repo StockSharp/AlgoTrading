@@ -70,13 +70,13 @@ public class ColorBbCandlesStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Period", "Length of Bollinger Bands", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 200, 25);
 		
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Deviation", "Width of Bollinger Bands", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -98,9 +98,9 @@ public class ColorBbCandlesStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var bollinger = new BollingerBands
 		{

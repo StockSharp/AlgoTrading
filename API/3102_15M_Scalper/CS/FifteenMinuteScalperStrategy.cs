@@ -469,11 +469,11 @@ public class FifteenMinuteScalperStrategy : Strategy
 
 		Volume = AlignVolume(BaseVolume);
 
-		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod, CandlePrice = CandlePrice.Typical };
-		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod, CandlePrice = CandlePrice.Typical };
+		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 		_momentumIndicator = new Momentum { Length = MomentumPeriod };
 		_sar = new ParabolicStopAndReverse { Step = 0.02m, MaxStep = 0.2m };
-		_stochastic = new StochasticOscillator { KPeriod = 5, DPeriod = 3, Smooth = 3 };
+		_stochastic = new StochasticOscillator {, D = { Length = 3 }, Smooth = 3 };
 		_macd = new MovingAverageConvergenceDivergence
 		{
 			FastLength = MacdFastLength,

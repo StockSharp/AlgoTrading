@@ -47,14 +47,14 @@ public class OvernightPositioningEmaStrategy : Strategy
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		SetupMarket();
 		var ema = new EMA { Length = EmaLength };
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(ema, Process).Start();
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void SetupMarket()

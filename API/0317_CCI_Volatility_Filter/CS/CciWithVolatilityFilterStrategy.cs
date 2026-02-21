@@ -80,23 +80,23 @@ public class CciWithVolatilityFilterStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Period for CCI calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_cciOversold = Param(nameof(CciOversold), -100m)
 			.SetDisplay("CCI Oversold", "CCI oversold level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-150, -50, 25);
 
 		_cciOverbought = Param(nameof(CciOverbought), 100m)
 			.SetDisplay("CCI Overbought", "CCI overbought level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 25);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -119,14 +119,14 @@ public class CciWithVolatilityFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_atrSma = new SimpleMovingAverage { Length = AtrPeriod };
+		_atrSma = new SMA { Length = AtrPeriod };
 
 		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
@@ -135,7 +135,7 @@ public class CciWithVolatilityFilterStrategy : Strategy
 			.Bind(_cci, _atr, (candle, cciValue, atrValue) =>
 			{
 				// Calculate ATR average
-				var atrAvg = _atrSma.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+				var atrAvg = _atrSma.Process(new DecimalIndicatorValue(_atrSma, atrValue, candle.ServerTime)).ToDecimal();
 
 				// Process the strategy logic
 				ProcessStrategy(candle, cciValue, atrValue, atrAvg);

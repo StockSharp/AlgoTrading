@@ -57,19 +57,19 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 
 		_fixedVolume = Param(nameof(OrderVolume), 0.01m)
 		.SetDisplay("Fixed Volume", "Volume used when money management is disabled", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 300m)
 		.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 900m)
 		.SetDisplay("Take Profit", "Take profit distance in points (0 disables)", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 200m)
 		.SetDisplay("Trailing Stop", "Trailing stop distance in points (0 disables)", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_expiryMinutes = Param(nameof(ExpiryMinutes), 1440)
 		.SetDisplay("Expiry (min)", "Minutes after release to cancel pending orders", "Orders")
@@ -80,15 +80,15 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 
 		_riskPercent = Param(nameof(RiskPercent), 3m)
 		.SetDisplay("Risk %", "Percentage of portfolio risked per trade", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_buyDistancePoints = Param(nameof(BuyDistancePoints), 400m)
 		.SetDisplay("Buy Distance", "Distance above ask for buy stop (points)", "Orders")
-		.SetCanOptimize(true);
+		;
 
 		_sellDistancePoints = Param(nameof(SellDistancePoints), 400m)
 		.SetDisplay("Sell Distance", "Distance below bid for sell stop (points)", "Orders")
-		.SetCanOptimize(true);
+		;
 
 		_leadMinutes = Param(nameof(LeadMinutes), 5)
 		.SetDisplay("Lead Minutes", "Minutes before release to place orders", "Schedule")
@@ -240,9 +240,9 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tickSize = Security?.PriceStep ?? 0.0001m;
 

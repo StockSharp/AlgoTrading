@@ -104,7 +104,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 		_priceMaLength = Param(nameof(PriceMaLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Price MA Length", "Period of the price moving average", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 10);
 
 		_priceMaPhase = Param(nameof(PriceMaPhase), 15)
@@ -116,7 +116,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 		_rangeMaLength = Param(nameof(RangeMaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Range MA Length", "Period applied to the price range", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_rangeMaPhase = Param(nameof(RangeMaPhase), 100)
@@ -380,9 +380,9 @@ public class ExpIKlPriceVolStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_calculator = new KlPriceVolCalculator(
 			PriceMaMethod,
@@ -700,10 +700,10 @@ public class ExpIKlPriceVolStrategy : Strategy
 
 	private sealed class KlPriceVolCalculator
 	{
-		private readonly LengthIndicator<decimal> _priceMa;
-		private readonly LengthIndicator<decimal> _rangeMa;
-		private readonly LengthIndicator<decimal> _valueSmoother;
-		private readonly LengthIndicator<decimal> _volumeSmoother;
+		private readonly DecimalLengthIndicator _priceMa;
+		private readonly DecimalLengthIndicator _rangeMa;
+		private readonly DecimalLengthIndicator _valueSmoother;
+		private readonly DecimalLengthIndicator _volumeSmoother;
 		private readonly AppliedPrices _appliedPrice;
 		private readonly AppliedVolumes _volumeType;
 		private readonly decimal _highLevel2;
@@ -754,12 +754,12 @@ public class ExpIKlPriceVolStrategy : Strategy
 		{
 			var time = candle.CloseTime ?? candle.OpenTime;
 			var price = GetAppliedPrice(candle, _appliedPrice);
-			var priceValue = _priceMa.Process(price, time, true).ToNullableDecimal();
+			var priceValue = _priceMa.Process(new DecimalIndicatorValue(_priceMa, price, time.UtcDateTime)).ToNullableDecimal();
 			if (priceValue is null)
 				return null;
 
 			var range = candle.HighPrice - candle.LowPrice;
-			var rangeValue = _rangeMa.Process(range, time, true).ToNullableDecimal();
+			var rangeValue = _rangeMa.Process(new DecimalIndicatorValue(_rangeMa, range, time.UtcDateTime)).ToNullableDecimal();
 			if (rangeValue is null || rangeValue.Value == 0m)
 				return null;
 
@@ -769,8 +769,8 @@ public class ExpIKlPriceVolStrategy : Strategy
 			var volume = GetVolume(candle);
 			var scaled = oscillator * volume;
 
-			var smoothedValue = _valueSmoother.Process(scaled, time, true).ToNullableDecimal();
-			var smoothedVolume = _volumeSmoother.Process(volume, time, true).ToNullableDecimal();
+			var smoothedValue = _valueSmoother.Process(new DecimalIndicatorValue(_valueSmoother, scaled, time.UtcDateTime)).ToNullableDecimal();
+			var smoothedVolume = _volumeSmoother.Process(new DecimalIndicatorValue(_volumeSmoother, volume, time.UtcDateTime)).ToNullableDecimal();
 
 			if (smoothedValue is null || smoothedVolume is null)
 				return null;
@@ -811,14 +811,14 @@ public class ExpIKlPriceVolStrategy : Strategy
 			};
 		}
 
-		private static LengthIndicator<decimal> CreateSmoother(SmoothMethods method, int length, int phase)
+		private static DecimalLengthIndicator CreateSmoother(SmoothMethods method, int length, int phase)
 		{
 			switch (method)
 			{
 				case SmoothMethods.Sma:
-					return new SimpleMovingAverage { Length = length };
+					return new SMA { Length = length };
 				case SmoothMethods.Ema:
-					return new ExponentialMovingAverage { Length = length };
+					return new EMA { Length = length };
 				case SmoothMethods.Smma:
 					return new SmoothedMovingAverage { Length = length };
 				case SmoothMethods.Lwma:
@@ -828,19 +828,19 @@ public class ExpIKlPriceVolStrategy : Strategy
 				case SmoothMethods.JurX:
 					return CreateJurik(length, phase);
 				case SmoothMethods.ParMa:
-					return new ExponentialMovingAverage { Length = length };
+					return new EMA { Length = length };
 				case SmoothMethods.T3:
 					return new TripleExponentialMovingAverage { Length = length };
 				case SmoothMethods.Vidya:
-					return new ExponentialMovingAverage { Length = length };
+					return new EMA { Length = length };
 				case SmoothMethods.Ama:
 					return new KaufmanAdaptiveMovingAverage { Length = length };
 				default:
-					return new SimpleMovingAverage { Length = length };
+					return new SMA { Length = length };
 			}
 		}
 
-		private static LengthIndicator<decimal> CreateJurik(int length, int phase)
+		private static DecimalLengthIndicator CreateJurik(int length, int phase)
 		{
 			var jurik = new JurikMovingAverage { Length = length };
 			var property = jurik.GetType().GetProperty("Phase", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);

@@ -86,9 +86,9 @@ public class DekidakaAshiCandlesVolumeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_volumeEma.Length = VolumeSmooth;
 
@@ -113,7 +113,7 @@ public class DekidakaAshiCandlesVolumeStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var value = _volumeEma.Process(new DecimalIndicatorValue(_volumeEma, candle.TotalVolume));
+		var value = _volumeEma.Process(new DecimalIndicatorValue(_volumeEma, candle.TotalVolume, candle.ServerTime));
 		if (!value.IsFinal)
 			return;
 

@@ -78,12 +78,12 @@ public class DecEmaStrategy : Strategy
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 3)
 			.SetDisplay("Base EMA Period", "Length for initial EMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_length = Param(nameof(Length), 15)
 			.SetDisplay("Smoothing Length", "Smoothing length for DecEMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
@@ -103,11 +103,11 @@ public class DecEmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var decema = new DecemaIndicator
 		{
@@ -175,7 +175,7 @@ public class DecEmaStrategy : Strategy
 		_prev = current;
 	}
 
-	private class DecemaIndicator : LengthIndicator<decimal>
+	private class DecemaIndicator : DecimalLengthIndicator
 	{
 		public int EmaPeriod { get; set; } = 3;
 

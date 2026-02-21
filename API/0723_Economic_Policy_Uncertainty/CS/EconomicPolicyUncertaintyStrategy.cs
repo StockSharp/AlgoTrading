@@ -71,20 +71,20 @@ public class EconomicPolicyUncertaintyStrategy : Strategy
 	{
 		_threshold = Param(nameof(Threshold), 187m)
 			.SetDisplay("Threshold", "Dynamic threshold", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(150m, 250m, 10m);
 
 		_smaLength = Param(nameof(SmaLength), 2)
 			.SetDisplay("SMA Length", "SMA calculation length", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_exitPeriods = Param(nameof(ExitPeriods), 10)
 			.SetDisplay("Exit Periods", "Exit after specified bars", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "Data");
 	}
 
@@ -104,11 +104,11 @@ public class EconomicPolicyUncertaintyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = SmaLength };
+		var sma = new SMA { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

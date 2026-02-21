@@ -79,15 +79,15 @@ public class ETurboFxStrategy : Strategy
 		_barsCount = Param(nameof(BarsCount), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Bars Count", "Number of consecutive candles", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 700)
 			.SetDisplay("Stop Loss (points)", "Stop loss in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 1200)
 			.SetDisplay("Take Profit (points)", "Take profit in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -113,9 +113,9 @@ public class ETurboFxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var step = Security.PriceStep ?? 1m;
 		StartProtection(

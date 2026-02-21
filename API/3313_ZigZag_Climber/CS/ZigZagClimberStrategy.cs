@@ -73,19 +73,19 @@ public class ZigZagClimberStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trade Volume", "Fixed volume used for both hedged entries", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 1m, 0.01m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 99.9m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop-Loss (pips)", "Protective stop in MetaTrader pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 300m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take-Profit (pips)", "Target in MetaTrader pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 300m, 10m);
 	}
 
@@ -105,9 +105,9 @@ public class ZigZagClimberStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 		_pipMultiplier = CalculatePipMultiplier();
@@ -117,7 +117,7 @@ public class ZigZagClimberStrategy : Strategy
 		.Bind(ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

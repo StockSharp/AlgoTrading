@@ -124,29 +124,29 @@ _useAtr = Param(nameof(UseAtr), true)
 
 _atrLength = Param(nameof(AtrLength), 14)
 .SetDisplay("ATR Length", "ATR period", "General")
-.SetCanOptimize(true);
+;
 
 _useEmaAtr = Param(nameof(UseEmaAtr), false)
 .SetDisplay("Use EMA ATR", "Use EMA for ATR MA", "General");
 
 _atrMaLength = Param(nameof(AtrMaLength), 20)
 .SetDisplay("ATR MA Length", "ATR moving average length", "General")
-.SetCanOptimize(true);
+;
 
 _useAdx = Param(nameof(UseAdx), true)
 .SetDisplay("Use ADX", "Use ADX condition", "General");
 
 _adxLength = Param(nameof(AdxLength), 14)
 .SetDisplay("ADX Length", "ADX period", "General")
-.SetCanOptimize(true);
+;
 
 _adxLimit = Param(nameof(AdxLimit), 25m)
 .SetDisplay("ADX Limit", "Sideways ADX limit", "General")
-.SetCanOptimize(true);
+;
 
 _smoothFactor = Param(nameof(SmoothFactor), 3)
 .SetDisplay("Smooth", "Smoothing factor", "General")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
@@ -167,14 +167,14 @@ _trendSma = null!;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var atr = new AverageTrueRange { Length = AtrLength };
-_atrMa = UseEmaAtr ? new ExponentialMovingAverage { Length = AtrMaLength } : new SimpleMovingAverage { Length = AtrMaLength };
+_atrMa = UseEmaAtr ? new EMA { Length = AtrMaLength } : new SMA { Length = AtrMaLength };
 var adx = new AverageDirectionalIndex { Length = AdxLength };
-_trendSma = new SimpleMovingAverage { Length = SmoothFactor };
+_trendSma = new SMA { Length = SmoothFactor };
 
 var subscription = SubscribeCandles(CandleType);
 subscription

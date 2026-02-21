@@ -221,9 +221,9 @@ _exitRequestActive = false;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 if (TrailingStop > 0m && TrailingStep <= 0m)
 throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");
@@ -237,15 +237,15 @@ if (BreakevenProfit <= Breakeven)
 throw new InvalidOperationException("Breakeven profit must exceed breakeven distance.");
 }
 
-_highest = new Highest { Length = MaxSearch, CandlePrice = CandlePrice.High };
-_lowest = new Lowest { Length = MaxSearch, CandlePrice = CandlePrice.Low };
+_highest = new Highest { Length = MaxSearch };
+_lowest = new Lowest { Length = MaxSearch };
 
 var subscription = SubscribeCandles(CandleType);
 subscription
 .Bind(_highest, _lowest, ProcessCandle)
 .Start();
 
-StartProtection();
+StartProtection(null, null);
 }
 
 private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue)

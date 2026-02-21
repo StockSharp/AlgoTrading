@@ -97,25 +97,25 @@ public class VolatilityAdjustedMomentumStrategy : Strategy
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Period for Momentum indicator", "Indicator Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for Average True Range indicator", "Indicator Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for statistics calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 			
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
@@ -143,7 +143,7 @@ public class VolatilityAdjustedMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
@@ -172,7 +172,7 @@ public class VolatilityAdjustedMomentumStrategy : Strategy
 			isStopTrailing: true
 		);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal momentumValue, decimal atrValue)

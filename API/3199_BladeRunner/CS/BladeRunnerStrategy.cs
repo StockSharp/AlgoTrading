@@ -73,27 +73,27 @@ public class BladeRunnerStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 			.SetRange(3, 60)
 			.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average.", "Trend")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 			.SetRange(20, 200)
 			.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average.", "Trend")
-			.SetCanOptimize(true);
+			;
 
 		_filterMaPeriod = Param(nameof(FilterMaPeriod), 20)
 			.SetRange(5, 100)
 			.SetDisplay("Filter LWMA", "Moving average used by the fractal validation rules.", "Trend")
-			.SetCanOptimize(true);
+			;
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetRange(5, 50)
 			.SetDisplay("Momentum Period", "Averaging length for the momentum oscillator.", "Momentum")
-			.SetCanOptimize(true);
+			;
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 			.SetNotNegative()
 			.SetDisplay("Momentum Threshold", "Minimum absolute deviation from 100 required for entries.", "Momentum")
-			.SetCanOptimize(true);
+			;
 
 		_fractalLookback = Param(nameof(FractalLookback), 200)
 			.SetRange(20, 400)
@@ -102,7 +102,7 @@ public class BladeRunnerStrategy : Strategy
 		_maxTrades = Param(nameof(MaxTrades), 3)
 			.SetRange(1, 10)
 			.SetDisplay("Max Trades", "Maximum number of scale-in orders per direction.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetNotNegative()
@@ -111,12 +111,12 @@ public class BladeRunnerStrategy : Strategy
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (steps)", "Protective take-profit distance expressed in price steps.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 20)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (steps)", "Protective stop-loss distance expressed in price steps.", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -241,16 +241,15 @@ public class BladeRunnerStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod, CandlePrice = CandlePrice.Typical };
-		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod, CandlePrice = CandlePrice.Typical };
-		_filterMa = new WeightedMovingAverage { Length = FilterMaPeriod, CandlePrice = CandlePrice.Typical };
+		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
+		_filterMa = new WeightedMovingAverage { Length = FilterMaPeriod };
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergence
 		{
 			ShortLength = 12,
 			LongLength = 26,
-			SignalLength = 9,
-			CandlePrice = CandlePrice.Typical,
+			SignalLength = 9
 		};
 
 		var primarySubscription = SubscribeCandles(CandleType);

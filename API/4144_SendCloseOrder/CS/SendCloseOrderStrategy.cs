@@ -129,7 +129,7 @@ public class SendCloseOrderStrategy : Strategy
 		_maxOrders = Param(nameof(MaxOrders), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Orders", "Maximum stacked entries allowed at the same time.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
@@ -278,9 +278,9 @@ public class SendCloseOrderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 

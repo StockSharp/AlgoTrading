@@ -38,7 +38,7 @@
 | `MaShift` | `int` | `0` | 移动平均向前平移的根数。 |
 | `MaMethod` | `MovingAverageMethod` | `LinearWeighted` | 移动平均算法（`Simple`、`Exponential`、`Smoothed`、`LinearWeighted`）。 |
 | `AppliedPrice` | `AppliedPriceType` | `Weighted` | 移动平均的输入价格（`Close`、`Open`、`High`、`Low`、`Median`、`Typical`、`Weighted`）。 |
-| `TradeCandleType` | `DataType` | `TimeSpan.FromDays(1).TimeFrame()` | 触发交易与止损检查的主周期。 |
+| `TradeCandleType` | `DataType` | `TimeSpan.FromMinutes(5).TimeFrame()` | 触发交易与止损检查的主周期。 |
 | `MaCandleType` | `DataType` | `TimeSpan.FromDays(7).TimeFrame()` | 为极值与均线提供数据的高周期。 |
 
 ## 说明

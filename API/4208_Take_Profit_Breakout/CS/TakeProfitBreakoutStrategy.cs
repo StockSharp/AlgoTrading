@@ -233,9 +233,9 @@ protected override void OnReseted()
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_initialBalance = (Portfolio?.BeginValue ?? Portfolio?.CurrentValue) ?? 0m;
 	_averageEntryPrice = 0m;

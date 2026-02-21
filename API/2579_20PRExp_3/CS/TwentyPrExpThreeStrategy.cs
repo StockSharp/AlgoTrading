@@ -130,23 +130,23 @@ public class TwentyPrExpThreeStrategy : Strategy
 	{
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20m)
 			.SetDisplay("Take Profit (pts)", "Target distance in points", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 10m)
 			.SetDisplay("Trailing Stop (pts)", "Trailing stop distance", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 10m)
 			.SetDisplay("Trailing Step (pts)", "Minimum advance before moving trailing stop", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_riskPercent = Param(nameof(RiskPercent), 5m)
 			.SetDisplay("Risk %", "Portfolio percentage to risk per trade", "Position Sizing")
-			.SetCanOptimize(true);
+			;
 
 		_gapPoints = Param(nameof(GapPoints), 50m)
 			.SetDisplay("Range Filter (pts)", "Minimum daily range in points", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_sessionStartHour = Param(nameof(SessionStartHour), 7)
 			.SetDisplay("Session Start Hour", "Hour after which breakout trades are enabled", "Filters");
@@ -184,9 +184,9 @@ public class TwentyPrExpThreeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Parabolic SAR parameters mirror the original expert advisor values.
 		var parabolicSar = new ParabolicSar
@@ -213,7 +213,7 @@ public class TwentyPrExpThreeStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessVolumeCandle(ICandleMessage candle)

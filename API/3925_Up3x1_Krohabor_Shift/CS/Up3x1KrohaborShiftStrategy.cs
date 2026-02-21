@@ -104,9 +104,9 @@ public class Up3x1KrohaborShiftStrategy : Strategy
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnStarted2(DateTime time)
 		{
-				base.OnStarted(time);
+				base.OnStarted2(time);
 
 				_priceStep = Security?.Step ?? 0.0001m;
 				ResetPositionState();
@@ -115,9 +115,9 @@ public class Up3x1KrohaborShiftStrategy : Strategy
 				_mediumHistory.Clear();
 				_slowHistory.Clear();
 
-				var fastMa = new SimpleMovingAverage { Length = FastPeriod };
-				var mediumMa = new SimpleMovingAverage { Length = MediumPeriod };
-				var slowMa = new SimpleMovingAverage { Length = SlowPeriod };
+				var fastMa = new SMA { Length = FastPeriod };
+				var mediumMa = new SMA { Length = MediumPeriod };
+				var slowMa = new SMA { Length = SlowPeriod };
 
 				var subscription = SubscribeCandles(CandleType);
 				subscription
@@ -134,7 +134,7 @@ public class Up3x1KrohaborShiftStrategy : Strategy
 						DrawOwnTrades(area);
 				}
 
-				StartProtection();
+				StartProtection(null, null);
 		}
 
 		private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal mediumValue, decimal slowValue)

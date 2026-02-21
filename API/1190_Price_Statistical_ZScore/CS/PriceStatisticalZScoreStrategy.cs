@@ -93,22 +93,22 @@ public class PriceStatisticalZScoreStrategy : Strategy
 	{
 		_zScoreBasePeriod = Param(nameof(ZScoreBasePeriod), 3)
 			.SetDisplay("Z-Score Base Period", "Base period for Z-Score calculation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_shortSmoothPeriod = Param(nameof(ShortSmoothPeriod), 3)
 			.SetDisplay("Short-Term Smoothing", "Period for short-term Z-Score smoothing", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_longSmoothPeriod = Param(nameof(LongSmoothPeriod), 5)
 			.SetDisplay("Long-Term Smoothing", "Period for long-term Z-Score smoothing", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 15, 1);
 
 		_gapBars = Param(nameof(GapBars), 5)
 			.SetDisplay("Signal Gap", "Minimum bars between identical signals", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -132,14 +132,14 @@ public class PriceStatisticalZScoreStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_mean = new SimpleMovingAverage { Length = ZScoreBasePeriod };
+		_mean = new SMA { Length = ZScoreBasePeriod };
 		_stdDev = new StandardDeviation { Length = ZScoreBasePeriod };
-		_shortSmooth = new SimpleMovingAverage { Length = ShortSmoothPeriod };
-		_longSmooth = new SimpleMovingAverage { Length = LongSmoothPeriod };
+		_shortSmooth = new SMA { Length = ShortSmoothPeriod };
+		_longSmooth = new SMA { Length = LongSmoothPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -168,8 +168,8 @@ public class PriceStatisticalZScoreStrategy : Strategy
 		_barIndex++;
 
 		var zRaw = (candle.ClosePrice - meanValue) / stdValue;
-		var zShort = _shortSmooth.Process(zRaw, candle.ServerTime, true).ToDecimal();
-		var zLong = _longSmooth.Process(zRaw, candle.ServerTime, true).ToDecimal();
+		var zShort = _shortSmooth.Process(new DecimalIndicatorValue(_shortSmooth, zRaw, candle.ServerTime)).ToDecimal();
+		var zLong = _longSmooth.Process(new DecimalIndicatorValue(_longSmooth, zRaw, candle.ServerTime)).ToDecimal();
 
 		if (!_longSmooth.IsFormed)
 		{

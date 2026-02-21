@@ -19,9 +19,9 @@ namespace StockSharp.Samples.Strategies;
 public class MathSpecialFunctionsConvolve1DStrategy : Strategy
 {
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var random = new Random();
 		var signal = new decimal[20];

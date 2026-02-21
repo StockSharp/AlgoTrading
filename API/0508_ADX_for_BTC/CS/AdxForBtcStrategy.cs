@@ -37,13 +37,13 @@ public class AdxForBtcStrategy : Strategy
 		_entryLevel = Param(nameof(EntryLevel), 14m)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Level", "ADX threshold for entry", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 30m, 5m);
 
 		_exitLevel = Param(nameof(ExitLevel), 45m)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Level", "ADX threshold for exit", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 60m, 5m);
 
 		_smaFilter = Param(nameof(SmaFilter), true)
@@ -52,7 +52,7 @@ public class AdxForBtcStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Length for fast SMA", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 50);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -71,13 +71,13 @@ public class AdxForBtcStrategy : Strategy
 		_prevAdx = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var adx = new AverageDirectionalIndex { Length = 14 };
-		var smaFast = new SimpleMovingAverage { Length = SmaLength };
-		var smaSlow = new SimpleMovingAverage { Length = SmaLength * 5 };
+		var smaFast = new SMA { Length = SmaLength };
+		var smaSlow = new SMA { Length = SmaLength * 5 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

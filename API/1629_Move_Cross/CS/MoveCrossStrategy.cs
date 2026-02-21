@@ -59,13 +59,13 @@ public class MoveCrossStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Profit target in points", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 		_stopLoss = Param(nameof(StopLoss), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Loss limit in points", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 400, 20);
 	}
 
@@ -75,7 +75,7 @@ public class MoveCrossStrategy : Strategy
 		return new[]
 		{
 			(Security, TimeSpan.FromHours(1).TimeFrame()),
-			(Security, TimeSpan.FromDays(1).TimeFrame())
+			(Security, TimeSpan.FromMinutes(5).TimeFrame())
 		};
 	}
 
@@ -91,22 +91,22 @@ public class MoveCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastH1 = new SimpleMovingAverage { Length = 2 };
-		_slowH1 = new SimpleMovingAverage { Length = 24 };
-		_fastD1 = new SimpleMovingAverage { Length = 2 };
-		_slowD1 = new SimpleMovingAverage { Length = 24 };
+		_fastH1 = new SMA { Length = 2 };
+		_slowH1 = new SMA { Length = 24 };
+		_fastD1 = new SMA { Length = 2 };
+		_slowD1 = new SMA { Length = 24 };
 
 		var h1 = SubscribeCandles(TimeSpan.FromHours(1).TimeFrame());
 		h1.Bind(_fastH1, _slowH1, ProcessH1).Start();
 
-		var d1 = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var d1 = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		d1.Bind(_fastD1, _slowD1, ProcessD1).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

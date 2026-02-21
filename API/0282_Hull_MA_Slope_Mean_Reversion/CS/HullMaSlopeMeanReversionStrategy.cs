@@ -100,27 +100,27 @@ public class HullMaSlopeMeanReversionStrategy : Strategy
 	{
 		_hullPeriod = Param(nameof(HullPeriod), 9)
 			.SetDisplay("Hull MA Period", "Hull Moving Average period", "Hull MA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation of slope", "Mean Reversion")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
 			.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Mean Reversion")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "ATR period for stop loss calculation", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop loss calculation", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -147,14 +147,14 @@ public class HullMaSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_hullMa = new HullMovingAverage { Length = HullPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_slopeAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_slopeAverage = new SMA { Length = LookbackPeriod };
 		_slopeStdDev = new StandardDeviation { Length = LookbackPeriod };
 		
 		// Reset stored values
@@ -203,8 +203,8 @@ public class HullMaSlopeMeanReversionStrategy : Strategy
 		_currentSlope = (_currentHullMa - _prevHullMa) / _prevHullMa * 100; // As percentage
 		
 		// Calculate average and standard deviation of slope
-		var slopeAverage = _slopeAverage.Process(_currentSlope, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-		var slopeStdDev = _slopeStdDev.Process(_currentSlope, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var slopeAverage = _slopeAverage.Process(new DecimalIndicatorValue(_slopeAverage, _currentSlope, candle.ServerTime)).ToDecimal();
+		var slopeStdDev = _slopeStdDev.Process(new DecimalIndicatorValue(_slopeStdDev, _currentSlope, candle.ServerTime)).ToDecimal();
 		
 		// Skip until we have enough slope data
 		if (_prevSlope == 0)

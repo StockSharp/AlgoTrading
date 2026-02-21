@@ -56,13 +56,13 @@ public class SimplisticAutomaticGrowthModelsStrategy : Strategy
 
 		_length = Param(nameof(Length), 10)
 			.SetDisplay("Length", "Lookback length for bands", "Indicators")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = Length };
 		_lowest = new Lowest { Length = Length };

@@ -62,12 +62,12 @@ public class SecurityRevisitedStrategy : Strategy
 		return [(Security, CandleType), (Security, HigherTimeframe)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var higher = SubscribeCandles(HigherTimeframe);
-		higher.WhenNew(ProcessHigher).Start();
+		higher.Bind(ProcessHigher).Start();
 
 		var main = SubscribeCandles(CandleType);
 		main.Bind(ProcessMain).Start();
@@ -79,7 +79,7 @@ public class SecurityRevisitedStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessHigher(ICandleMessage candle)

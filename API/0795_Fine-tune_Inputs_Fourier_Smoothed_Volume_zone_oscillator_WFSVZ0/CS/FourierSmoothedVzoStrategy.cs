@@ -86,16 +86,16 @@ public class FourierSmoothedVzoStrategy : Strategy
 	_vzoLength = Param(nameof(VzoLength), 2)
 	.SetGreaterThanZero()
 	.SetDisplay("VZO Length", "Length for VZO EMA", "Indicators")
-	.SetCanOptimize(true);
+	;
 	
 	_smoothLength = Param(nameof(SmoothLength), 2)
 	.SetGreaterThanZero()
 	.SetDisplay("Smooth Length", "Length for smoothing", "Indicators")
-	.SetCanOptimize(true);
+	;
 	
 	_threshold = Param(nameof(Threshold), 0m)
 	.SetDisplay("Threshold", "VZO threshold", "General")
-	.SetCanOptimize(true);
+	;
 	
 	_closeAll = Param(nameof(CloseAllPositions), true)
 	.SetDisplay("Close All", "Close position when no signal", "General");
@@ -124,9 +124,9 @@ public class FourierSmoothedVzoStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 	
 	SubscribeCandles(CandleType)
 	.Bind(ProcessCandle)

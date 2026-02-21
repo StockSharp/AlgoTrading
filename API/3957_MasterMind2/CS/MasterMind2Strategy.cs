@@ -148,39 +148,39 @@ _tradeVolume = Param(nameof(TradeVolume), 0.1m)
 
 _stochasticPeriod = Param(nameof(StochasticPeriod), 100)
 .SetDisplay("Stochastic Period", "Period for the Stochastic Oscillator", "Indicators")
-.SetCanOptimize(true);
+;
 
 _stochasticK = Param(nameof(StochasticK), 3)
 .SetDisplay("Stochastic %K", "Smoothing length for %K", "Indicators")
-.SetCanOptimize(true);
+;
 
 _stochasticD = Param(nameof(StochasticD), 3)
 .SetDisplay("Stochastic %D", "Smoothing length for %D", "Indicators")
-.SetCanOptimize(true);
+;
 
 _williamsPeriod = Param(nameof(WilliamsPeriod), 100)
 .SetDisplay("Williams %R Period", "Lookback for Williams %R", "Indicators")
-.SetCanOptimize(true);
+;
 
 _stopLossPoints = Param(nameof(StopLossPoints), 2000m)
 .SetDisplay("Stop Loss", "Stop loss distance in price points", "Risk")
-.SetCanOptimize(true);
+;
 
 _takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
 .SetDisplay("Take Profit", "Take profit distance in price points", "Risk")
-.SetCanOptimize(true);
+;
 
 _trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
 .SetDisplay("Trailing Stop", "Trailing stop distance in price points", "Risk")
-.SetCanOptimize(true);
+;
 
 _trailingStepPoints = Param(nameof(TrailingStepPoints), 1m)
 .SetDisplay("Trailing Step", "Minimum improvement to trail stop", "Risk")
-.SetCanOptimize(true);
+;
 
 _breakEvenPoints = Param(nameof(BreakEvenPoints), 0m)
 .SetDisplay("Break Even", "Distance to move stop to break-even", "Risk")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 .SetDisplay("Candle Type", "Candle type used for calculations", "General");
@@ -200,15 +200,14 @@ ResetStops();
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var stochastic = new StochasticOscillator
-{
-Length = StochasticPeriod,
+{ K = { Length = StochasticPeriod },
 KPeriod = StochasticK,
-DPeriod = StochasticD
+D = { Length = StochasticD }
 };
 
 var williams = new WilliamsR

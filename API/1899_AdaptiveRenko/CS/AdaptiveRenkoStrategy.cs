@@ -59,19 +59,19 @@ public class AdaptiveRenkoStrategy : Strategy
 		_volatilityPeriod = Param(nameof(VolatilityPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Volatility Period", "ATR calculation period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_multiplier = Param(nameof(Multiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "ATR multiplier", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_minBrick = Param(nameof(MinBrickSize), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Brick", "Minimum brick size", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -84,9 +84,9 @@ public class AdaptiveRenkoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr.Length = VolatilityPeriod;
 
@@ -102,7 +102,7 @@ public class AdaptiveRenkoStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal atr)

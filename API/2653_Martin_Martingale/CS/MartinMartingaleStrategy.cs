@@ -81,17 +81,17 @@ public class MartinMartingaleStrategy : Strategy
 		_stepPoints = Param(nameof(StepPoints), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Step (points)", "Distance multiplier for reversals", "General")
-			.SetCanOptimize(true);
+			;
 
 		_entryOffsetPoints = Param(nameof(EntryOffsetPoints), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Offset (points)", "Offset for initial stop orders", "General")
-			.SetCanOptimize(true);
+			;
 
 		_profitTarget = Param(nameof(ProfitTarget), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Target", "Total profit to close all positions", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for price monitoring", "Data");
@@ -114,9 +114,9 @@ public class MartinMartingaleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdateStepSettings();
 

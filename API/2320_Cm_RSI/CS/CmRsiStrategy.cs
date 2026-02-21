@@ -72,33 +72,33 @@ public class CmRsiStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 1);
 
 		_buyLevel = Param(nameof(BuyLevel), 30m)
 			.SetDisplay("Buy Level", "RSI level to enter long", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_sellLevel = Param(nameof(SellLevel), 70m)
 			.SetDisplay("Sell Level", "RSI level to enter short", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 5m);
 
 		_takeProfit = Param(nameof(TakeProfit), 200)
 			.SetDisplay("Take Profit", "Take profit in price points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 400, 50);
 
 		_stopLoss = Param(nameof(StopLoss), 100)
 			.SetDisplay("Stop Loss", "Stop loss in price points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 50);
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume of each trade", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -112,9 +112,9 @@ public class CmRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Set trade volume from parameter
 		Volume = OrderVolume;

@@ -38,37 +38,37 @@ public class MacdZeroFilterTakeProfitStrategy : Strategy
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast Period", "Fast EMA period used by MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 20, 2);
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow Period", "Slow EMA period used by MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal Period", "Signal smoothing period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 15, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 300)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (points)", "Take profit distance expressed in price points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 600, 50);
 
 		_volumePerTrade = Param(nameof(VolumePerTrade), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Number of lots to trade on each entry", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_minimumCapitalPerVolume = Param(nameof(MinimumCapitalPerVolume), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Capital per Volume", "Minimum portfolio value required per traded lot", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 5000m, 500m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

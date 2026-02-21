@@ -148,13 +148,13 @@ public class ColorJjrsxTrendStrategy : Strategy
 		_jurxPeriod = Param(nameof(JurxPeriod), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("JurX Period", "Length of the RSI approximation", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 30, 2);
 
 		_jmaPeriod = Param(nameof(JmaPeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("JMA Period", "Length of Jurik smoothing", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 20, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -205,9 +205,9 @@ public class ColorJjrsxTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = JurxPeriod };
 		_jma = new JurikMovingAverage { Length = JmaPeriod };

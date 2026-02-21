@@ -103,9 +103,9 @@ public class ZZFiboTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var highest = new Highest { Length = ZigZagDepth };
 		var lowest = new Lowest { Length = ZigZagDepth };
@@ -127,7 +127,7 @@ public class ZZFiboTraderStrategy : Strategy
 		if (StopLoss > 0)
 			StartProtection(stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
 		else
-			StartProtection();
+			StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)

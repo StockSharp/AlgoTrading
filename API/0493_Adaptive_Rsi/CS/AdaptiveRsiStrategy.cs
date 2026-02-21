@@ -28,7 +28,7 @@ public class AdaptiveRsiStrategy : Strategy
 
 		_length = Param(nameof(Length), 14)
 			.SetDisplay("RSI Length", "RSI period", "Parameters")
-			.SetCanOptimize(true);
+			;
 	}
 
 	public DataType CandleType
@@ -53,9 +53,9 @@ public class AdaptiveRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = Length };
 

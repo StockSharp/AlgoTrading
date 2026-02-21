@@ -47,13 +47,13 @@ public class MultiTimeFrameCandlesWithVolumeInfo3DStrategy : Strategy
 	/// </summary>
 	public MultiTimeFrameCandlesWithVolumeInfo3DStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Higher time frame", "General");
 
 		_candleCount = Param(nameof(CandleCount), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Candle Count", "Number of HTF candles", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 10, 2);
 	}
 
@@ -71,9 +71,9 @@ public class MultiTimeFrameCandlesWithVolumeInfo3DStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

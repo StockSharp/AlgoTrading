@@ -75,16 +75,16 @@ public class DynamicVolatilityDifferentialModelStrategy : Strategy
 		_length = Param(nameof(Length), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("HV Period", "Periods for Historical Volatility", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_stdevMultiplier = Param(nameof(StdevMultiplier), 7.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("StdDev Multiplier", "Multiplier for dynamic thresholds", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_volatilitySecurity = Param(nameof(VolatilitySecurity), new Security { Id = "TVC:VIX" })
@@ -114,9 +114,9 @@ public class DynamicVolatilityDifferentialModelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (VolatilitySecurity == null)
 			throw new InvalidOperationException("Volatility security is not specified.");
@@ -165,7 +165,7 @@ public class DynamicVolatilityDifferentialModelStrategy : Strategy
 		}
 
 		var logReturn = (decimal)Math.Log((double)(candle.ClosePrice / _prevClose));
-		var hvValue = _logReturnStd.Process(logReturn, candle.OpenTime, true);
+		var hvValue = _logReturnStd.Process(new DecimalIndicatorValue(_logReturnStd, logReturn, candle.OpenTime));
 
 		if (!_logReturnStd.IsFormed)
 		{
@@ -175,7 +175,7 @@ public class DynamicVolatilityDifferentialModelStrategy : Strategy
 
 		var historicalVol = hvValue.ToDecimal() * (decimal)Math.Sqrt(252) * 100m;
 		var spread = _volIndexClose - historicalVol;
-		var spreadStdVal = _spreadStd.Process(spread, candle.OpenTime, true);
+		var spreadStdVal = _spreadStd.Process(new DecimalIndicatorValue(_spreadStd, spread, candle.OpenTime));
 
 		if (!_spreadStd.IsFormed)
 		{

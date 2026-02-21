@@ -124,37 +124,37 @@ public class WilliamsPercentDirectionalIndexStrategy : Strategy
 		_williamsPeriod = Param(nameof(WilliamsPeriod), 42)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Look-back period for Williams %R", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_directionalPeriod = Param(nameof(DirectionalPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Directional Period", "Length of the directional index", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_moneyFlowPeriod = Param(nameof(MoneyFlowPeriod), 19)
 			.SetGreaterThanZero()
 			.SetDisplay("MFI Period", "Money Flow Index period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_moneyFlowLevel = Param(nameof(MoneyFlowLevel), 79m)
 			.SetRange(50m, 90m)
 			.SetDisplay("MFI Level", "Overbought threshold for MFI", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 22)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "%K period of the stochastic oscillator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 16)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 16)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "%D period of the stochastic oscillator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticSmoothing = Param(nameof(StochasticSmoothing), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Smoothing", "Slowing period for the stochastic oscillator", "Indicators")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -164,9 +164,9 @@ public class WilliamsPercentDirectionalIndexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_williams = new WilliamsR { Length = WilliamsPeriod };
 		_directional = new AverageDirectionalIndex { Length = DirectionalPeriod };
@@ -174,7 +174,7 @@ public class WilliamsPercentDirectionalIndexStrategy : Strategy
 		_stochastic = new StochasticOscillator
 		{
 			KPeriod = StochasticKPeriod,
-			DPeriod = StochasticDPeriod,
+			D = {  K = { Length = StochasticDPeriod } },
 			Smooth = StochasticSmoothing,
 		};
 

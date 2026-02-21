@@ -68,68 +68,68 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance from entry to the profit target in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance from entry to the protective stop in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance maintained once the trade is in profit", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional progress required before trailing stop is advanced", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_maPeriod = Param(nameof(MaPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Number of bars used in the moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 10);
 
 		_maShift = Param(nameof(MaShift), 0)
 			.SetNotNegative()
 			.SetDisplay("MA Shift", "Forward shift applied to the moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 5, 1);
 
 		_maMethod = Param(nameof(MaMethod), MaIndicators.LinearWeighted)
 			.SetDisplay("MA Method", "Moving average calculation method", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maAppliedPrice = Param(nameof(MaAppliedPrice), AppliedPrices.Weighted)
 			.SetDisplay("MA Price", "Price source for moving average input", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast EMA", "Length of the fast EMA in MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 2);
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow EMA", "Length of the slow EMA in MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(18, 40, 2);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal line smoothing period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_macdAppliedPrice = Param(nameof(MacdAppliedPrice), AppliedPrices.Weighted)
 			.SetDisplay("MACD Price", "Price source fed into MACD", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for calculations", "Data")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <summary>
@@ -269,9 +269,9 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 
@@ -359,7 +359,7 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 		var exitTriggered = ManageOpenPosition(candle);
 
 		var maInput = GetAppliedPrice(candle, MaAppliedPrice);
-		var maValue = _maIndicator.Process(maInput, candle.OpenTime, true);
+		var maValue = _maIndicator.Process(new DecimalIndicatorValue(_maIndicator, maInput, candle.OpenTime));
 		if (maValue.IsFinal)
 		{
 			var maDecimal = maValue.ToDecimal();
@@ -367,7 +367,7 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 		}
 
 		var macdInput = GetAppliedPrice(candle, MacdAppliedPrice);
-		var macdRaw = _macdIndicator.Process(macdInput, candle.OpenTime, true);
+		var macdRaw = _macdIndicator.Process(new DecimalIndicatorValue(_macdIndicator, macdInput, candle.OpenTime));
 		if (macdRaw is MovingAverageConvergenceDivergenceValue macdValue && macdValue.Macd is decimal macdLine)
 		{
 			UpdateMacdSeries(macdLine);
@@ -711,8 +711,8 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 		var length = Math.Max(1, period);
 		return method switch
 		{
-			MaIndicators.Simple => new SimpleMovingAverage { Length = length },
-			MaIndicators.Exponential => new ExponentialMovingAverage { Length = length },
+			MaIndicators.Simple => new SMA { Length = length },
+			MaIndicators.Exponential => new EMA { Length = length },
 			MaIndicators.Smoothed => new SmoothedMovingAverage { Length = length },
 			MaIndicators.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new WeightedMovingAverage { Length = length }

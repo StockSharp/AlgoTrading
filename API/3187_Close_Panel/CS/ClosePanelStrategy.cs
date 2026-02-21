@@ -33,12 +33,12 @@ public class ClosePanelStrategy : Strategy
 	{
 		_lossThreshold = Param(nameof(LossThreshold), 30m)
 			.SetDisplay("Loss Threshold", "Absolute loss (in money) that forces a position to close", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_profitThreshold = Param(nameof(ProfitThreshold), 90m)
 			.SetDisplay("Profit Threshold", "Floating profit (in money) required to secure gains", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 400m, 20m);
 
 		_closeLossEnabled = Param(nameof(CloseLossEnabled), false)
@@ -103,9 +103,9 @@ public class ClosePanelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (CloseAllOnStart)
 		{

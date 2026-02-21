@@ -124,13 +124,13 @@ public class EmaCrossoverSignalStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast Period", "Length of the fast EMA", "EMA")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 20, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow Period", "Length of the slow EMA", "EMA")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_allowBuyOpen = Param(nameof(AllowBuyOpen), true)
@@ -164,13 +164,13 @@ public class EmaCrossoverSignalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tickSize = Security.PriceStep ?? 1m;
-		_fastEma = new ExponentialMovingAverage { Length = FastPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
+		_fastEma = new EMA { Length = FastPeriod };
+		_slowEma = new EMA { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

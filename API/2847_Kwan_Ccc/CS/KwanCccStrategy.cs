@@ -57,19 +57,19 @@ public class KwanCccStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Base order size used for entries", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5m, 0.5m);
 
 		_fastPeriod = Param(nameof(FastPeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Chaikin Fast Period", "Fast moving average length for Chaikin oscillator", "Chaikin")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 20, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Chaikin Slow Period", "Slow moving average length for Chaikin oscillator", "Chaikin")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_chaikinMethod = Param(nameof(ChaikinMethod), ChaikinMovingAverageMethods.LinearWeighted)
@@ -78,13 +78,13 @@ public class KwanCccStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI Period", "Commodity Channel Index length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 2);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Period", "Momentum indicator length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), KwanCccSmoothingMethods.Jurik)
@@ -93,7 +93,7 @@ public class KwanCccStrategy : Strategy
 		_smoothingLength = Param(nameof(SmoothingLength), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("Smoothing Length", "Number of bars used by the smoothing filter", "Smoothing")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 30, 1);
 
 		_smoothingPhase = Param(nameof(SmoothingPhase), 100)
@@ -117,12 +117,12 @@ public class KwanCccStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 		.SetDisplay("Stop Loss Points", "Protective stop in price steps (0 disables)", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 2000m, 100m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 		.SetDisplay("Take Profit Points", "Protective target in price steps (0 disables)", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 4000m, 100m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -298,9 +298,9 @@ public class KwanCccStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize core indicators mirrored from the original expert.
 		_adLine = new AccumulationDistributionLine();
@@ -433,9 +433,9 @@ public class KwanCccStrategy : Strategy
 		switch (SmoothingMethod)
 		{
 			case KwanCccSmoothingMethods.Simple:
-			return (new SimpleMovingAverage { Length = SmoothingLength }, null, null);
+			return (new SMA { Length = SmoothingLength }, null, null);
 			case KwanCccSmoothingMethods.Exponential:
-			return (new ExponentialMovingAverage { Length = SmoothingLength }, null, null);
+			return (new EMA { Length = SmoothingLength }, null, null);
 			case KwanCccSmoothingMethods.Smoothed:
 			return (new SmoothedMovingAverage { Length = SmoothingLength }, null, null);
 			case KwanCccSmoothingMethods.LinearWeighted:
@@ -464,13 +464,13 @@ public class KwanCccStrategy : Strategy
 	{
 		if (_smoothingIndicator != null)
 		{
-			var result = _smoothingIndicator.Process(new DecimalIndicatorValue(_smoothingIndicator, value, time));
+			var result = _smoothingIndicator.Process(new DecimalIndicatorValue(_smoothingIndicator, value, time.UtcDateTime));
 			return result.IsFinal ? result.GetValue<decimal>() : null;
 		}
 
 		if (_vidyaCmo != null)
 		{
-			var cmoResult = _vidyaCmo.Process(new DecimalIndicatorValue(_vidyaCmo, value, time));
+			var cmoResult = _vidyaCmo.Process(new DecimalIndicatorValue(_vidyaCmo, value, time.UtcDateTime));
 			if (!cmoResult.IsFinal)
 			return null;
 
@@ -509,11 +509,11 @@ public class KwanCccStrategy : Strategy
 	{
 		return ChaikinMethod switch
 		{
-			ChaikinMovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			ChaikinMovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			ChaikinMovingAverageMethods.Simple => new SMA { Length = length },
+			ChaikinMovingAverageMethods.Exponential => new EMA { Length = length },
 			ChaikinMovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			ChaikinMovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 

@@ -30,11 +30,11 @@ public class SymbolSyncStrategy : Strategy
 		_chartLimit = Param(nameof(ChartLimit), 10)
 			.SetNotNegative()
 			.SetDisplay("Chart limit", "Maximum number of linked strategies that can be synchronized.", "General")
-			.SetCanOptimize(false);
+			;
 
 		_syncSecurityId = Param(nameof(SyncSecurityId), string.Empty)
 			.SetDisplay("Sync security ID", "Identifier of the security propagated to linked strategies.", "General")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <summary>
@@ -56,9 +56,9 @@ public class SymbolSyncStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_initialSecurity = Security;
 

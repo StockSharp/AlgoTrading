@@ -65,14 +65,14 @@ public class HeikenAshiEngulfStrategy : Strategy
 	private readonly StrategyParam<string> _alertTitle;
 	private readonly StrategyParam<bool> _sendNotification;
 
-	private LengthIndicator<decimal> _buyBaselineMa;
-	private LengthIndicator<decimal> _buyFastMa;
-	private LengthIndicator<decimal> _buySlowMa;
+	private DecimalLengthIndicator _buyBaselineMa;
+	private DecimalLengthIndicator _buyFastMa;
+	private DecimalLengthIndicator _buySlowMa;
 	private RelativeStrengthIndex _buyPrimaryRsi;
 	private RelativeStrengthIndex _buySecondaryRsi;
-	private LengthIndicator<decimal> _sellBaselineMa;
-	private LengthIndicator<decimal> _sellFastMa;
-	private LengthIndicator<decimal> _sellSlowMa;
+	private DecimalLengthIndicator _sellBaselineMa;
+	private DecimalLengthIndicator _sellFastMa;
+	private DecimalLengthIndicator _sellSlowMa;
 	private RelativeStrengthIndex _sellPrimaryRsi;
 	private RelativeStrengthIndex _sellSecondaryRsi;
 
@@ -394,25 +394,25 @@ public class HeikenAshiEngulfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_buyBaselineMa = CreateMovingAverage(BuyBaselineMethod, BuyBaselinePeriod);
 		_buyFastMa = CreateMovingAverage(BuyFastMethod, BuyFastPeriod);
 		_buySlowMa = CreateMovingAverage(BuySlowMethod, BuySlowPeriod);
-		_buyPrimaryRsi = new RelativeStrengthIndex { Length = BuyPrimaryRsiPeriod, CandlePrice = CandlePrice.Close };
-		_buySecondaryRsi = new RelativeStrengthIndex { Length = BuySecondaryRsiPeriod, CandlePrice = CandlePrice.Close };
+		_buyPrimaryRsi = new RelativeStrengthIndex { Length = BuyPrimaryRsiPeriod };
+		_buySecondaryRsi = new RelativeStrengthIndex { Length = BuySecondaryRsiPeriod };
 
 		_sellBaselineMa = CreateMovingAverage(SellBaselineMethod, SellBaselinePeriod);
 		_sellFastMa = CreateMovingAverage(SellFastMethod, SellFastPeriod);
 		_sellSlowMa = CreateMovingAverage(SellSlowMethod, SellSlowPeriod);
-		_sellPrimaryRsi = new RelativeStrengthIndex { Length = SellPrimaryRsiPeriod, CandlePrice = CandlePrice.Close };
-		_sellSecondaryRsi = new RelativeStrengthIndex { Length = SellSecondaryRsiPeriod, CandlePrice = CandlePrice.Close };
+		_sellPrimaryRsi = new RelativeStrengthIndex { Length = SellPrimaryRsiPeriod };
+		_sellSecondaryRsi = new RelativeStrengthIndex { Length = SellSecondaryRsiPeriod };
 
 		_pipSize = CalculatePipSize();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		SubscribeCandles(CandleType)
 		.Bind(ProcessCandle)
@@ -723,15 +723,15 @@ public class HeikenAshiEngulfStrategy : Strategy
 		return step * multiplier;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int period)
+	private static DecimalLengthIndicator CreateMovingAverage(MaMethods method, int period)
 	{
 		return method switch
 		{
-			MaMethods.Simple => new SimpleMovingAverage { Length = period, CandlePrice = CandlePrice.Close },
-			MaMethods.Exponential => new ExponentialMovingAverage { Length = period, CandlePrice = CandlePrice.Close },
-			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period, CandlePrice = CandlePrice.Close },
-			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = period, CandlePrice = CandlePrice.Close },
-			_ => new ExponentialMovingAverage { Length = period, CandlePrice = CandlePrice.Close }
+			MaMethods.Simple => new SMA { Length = period },
+			MaMethods.Exponential => new EMA { Length = period },
+			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
+			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
+			_ => new EMA { Length = period }
 		};
 	}
 

@@ -88,9 +88,9 @@ public class LunchBreakFadeStrategy : Strategy
 		_twoCandlesBackClose = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		// Set up stop loss protection
 		StartProtection(
 			new Unit(0), // No take profit

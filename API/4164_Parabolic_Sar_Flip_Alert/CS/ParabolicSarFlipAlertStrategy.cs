@@ -38,13 +38,13 @@ public class ParabolicSarFlipAlertStrategy : Strategy
 		_sarAccelerationStep = Param(nameof(SarAccelerationStep), 0.02m)
 			.SetDisplay("SAR Step", "Initial acceleration factor for Parabolic SAR.", "Indicator")
 			.SetRange(0.01m, 0.2m)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.2m, 0.01m);
 
 		_sarAccelerationMax = Param(nameof(SarAccelerationMax), 0.2m)
 			.SetDisplay("SAR Max", "Maximum acceleration factor for Parabolic SAR.", "Indicator")
 			.SetRange(0.05m, 0.6m)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.6m, 0.05m);
 
 		_enableAutoTrading = Param(nameof(EnableAutoTrading), false)
@@ -122,9 +122,9 @@ public class ParabolicSarFlipAlertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume; // Keep helper order methods synchronized with the configured trade size.
 

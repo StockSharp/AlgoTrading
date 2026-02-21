@@ -107,7 +107,7 @@ public class RenkoLiveChartGeneratorStrategy : Strategy
 		_brickSizeSteps = Param(nameof(BrickSizeSteps), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Brick Size", "Renko brick height in price steps", "Renko")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_brickOffsetSteps = Param(nameof(BrickOffsetSteps), 0)
@@ -152,9 +152,9 @@ public class RenkoLiveChartGeneratorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var step = Security?.PriceStep ?? 0m;
 		if (step <= 0m)

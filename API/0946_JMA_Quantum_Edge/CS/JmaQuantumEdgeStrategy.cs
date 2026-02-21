@@ -101,13 +101,13 @@ public class JmaQuantumEdgeStrategy : Strategy
 		_jmaLength = Param(nameof(JmaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("JMA Length", "Period for main JMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_higherJmaLength = Param(nameof(HigherJmaLength), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Higher JMA Length", "Period for higher timeframe JMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -119,7 +119,7 @@ public class JmaQuantumEdgeStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_enableStopLoss = Param(nameof(EnableStopLoss), true)
@@ -128,14 +128,14 @@ public class JmaQuantumEdgeStrategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var jma = new JurikMovingAverage { Length = JmaLength };
 		var higherJma = new JurikMovingAverage { Length = HigherJmaLength };

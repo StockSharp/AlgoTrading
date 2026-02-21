@@ -39,8 +39,8 @@ public class SvDailyBreakoutStrategy : Strategy
 	private readonly StrategyParam<AppliedPrices> _slowAppliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _fastMa;
-	private LengthIndicator<decimal> _slowMa;
+	private DecimalLengthIndicator _fastMa;
+	private DecimalLengthIndicator _slowMa;
 
 	private readonly List<decimal> _fastMaValues = new();
 	private readonly List<decimal> _slowMaValues = new();
@@ -326,9 +326,9 @@ public class SvDailyBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security is null)
 			throw new InvalidOperationException("Security must be assigned before starting the strategy.");
@@ -354,7 +354,7 @@ public class SvDailyBreakoutStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -472,10 +472,10 @@ public class SvDailyBreakoutStrategy : Strategy
 		}
 	}
 
-	private decimal? ProcessMovingAverage(LengthIndicator<decimal> indicator, AppliedPrices priceMode, List<decimal> buffer, int shift, ICandleMessage candle)
+	private decimal? ProcessMovingAverage(DecimalLengthIndicator indicator, AppliedPrices priceMode, List<decimal> buffer, int shift, ICandleMessage candle)
 	{
 		var price = GetAppliedPrice(candle, priceMode);
-		var result = indicator.Process(price, candle.OpenTime, true);
+		var result = indicator.Process(new DecimalIndicatorValue(indicator, price, candle.OpenTime));
 
 		if (!result.IsFormed)
 			return null;
@@ -692,15 +692,15 @@ public class SvDailyBreakoutStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Sma => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Sma => new SMA { Length = length },
+			MovingAverageMethods.Ema => new EMA { Length = length },
 			MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

@@ -92,7 +92,7 @@ public class SuperWoodiesCciStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "CCI lookback length", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -126,9 +126,9 @@ public class SuperWoodiesCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 
@@ -137,7 +137,7 @@ public class SuperWoodiesCciStrategy : Strategy
 			.Bind(_cci, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

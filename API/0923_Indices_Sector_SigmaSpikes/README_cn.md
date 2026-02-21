@@ -13,7 +13,7 @@
   - `LookbackPeriod` = 20。
   - `ReturnPeriod` = 20。
   - `SigmaThreshold` = 2。
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame()。
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()。
 - **筛选**：
   - 类别：Indicator
   - 方向：无

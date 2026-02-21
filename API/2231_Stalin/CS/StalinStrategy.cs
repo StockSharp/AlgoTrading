@@ -93,28 +93,28 @@ public class StalinStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_slowLength = Param(nameof(SlowLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 50, 1);
 
 		_rsiLength = Param(nameof(RsiLength), 17)
 			.SetDisplay("RSI Length", "RSI period (0 to disable)", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 30, 1);
 
 		_confirm = Param(nameof(Confirm), 0m)
 			.SetDisplay("Confirm", "Price confirmation in points", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 100m, 10m);
 
 		_flat = Param(nameof(Flat), 0m)
 			.SetDisplay("Flat", "Minimum distance between signals", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 100m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -139,11 +139,11 @@ public class StalinStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var fastMa = new EMA { Length = FastLength };
 		var slowMa = new EMA { Length = SlowLength };

@@ -39,7 +39,7 @@ public class AdaptiveCyberCycleStrategy : Strategy
 	{
 		_alpha = Param(nameof(Alpha), 0.07m)
 			.SetDisplay("Alpha", "Indicator ratio", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.2m, 0.01m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -55,9 +55,9 @@ public class AdaptiveCyberCycleStrategy : Strategy
 	private decimal? _prevCycle;
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var acc = new AdaptiveCyberCycleIndicator { Alpha = Alpha };
 
@@ -72,7 +72,7 @@ public class AdaptiveCyberCycleStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal cycle)
@@ -102,7 +102,7 @@ public class AdaptiveCyberCycleStrategy : Strategy
 /// Adaptive Cyber Cycle indicator calculating a smoothed price cycle.
 /// The trigger line is the previous cycle value.
 /// </summary>
-public class AdaptiveCyberCycleIndicator : Indicator<decimal>
+public class AdaptiveCyberCycleIndicator : BaseIndicator
 {
 	/// <summary>
 	/// Indicator ratio controlling responsiveness.

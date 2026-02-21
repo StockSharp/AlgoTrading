@@ -143,27 +143,27 @@ public class EaTrixStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 150m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStop = Param(nameof(TrailingStop), 10m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStep = Param(nameof(TrailingStep), 1m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Minimal trailing step", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_breakEven = Param(nameof(BreakEven), 2m)
 			.SetNotNegative()
 			.SetDisplay("Break Even", "Break-even trigger distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_tradeOnCloseBar = Param(nameof(TradeOnCloseBar), true)
 			.SetDisplay("Trade On Close", "Confirm signals on closed bars", "General");
@@ -171,12 +171,12 @@ public class EaTrixStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("TRIX EMA", "TRIX EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_signalPeriod = Param(nameof(SignalPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal EMA", "Signal EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
@@ -203,19 +203,19 @@ public class EaTrixStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_trixEma1 = new ExponentialMovingAverage { Length = EmaPeriod };
-		_trixEma2 = new ExponentialMovingAverage { Length = EmaPeriod };
-		_trixEma3 = new ExponentialMovingAverage { Length = EmaPeriod };
+		_trixEma1 = new EMA { Length = EmaPeriod };
+		_trixEma2 = new EMA { Length = EmaPeriod };
+		_trixEma3 = new EMA { Length = EmaPeriod };
 
-		_signalEma1 = new ExponentialMovingAverage { Length = SignalPeriod };
-		_signalEma2 = new ExponentialMovingAverage { Length = SignalPeriod };
-		_signalEma3 = new ExponentialMovingAverage { Length = SignalPeriod };
+		_signalEma1 = new EMA { Length = SignalPeriod };
+		_signalEma2 = new EMA { Length = SignalPeriod };
+		_signalEma3 = new EMA { Length = SignalPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

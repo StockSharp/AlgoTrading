@@ -72,10 +72,10 @@ public class EaMovingAverageStrategy : Strategy
 	private readonly StrategyParam<bool> _considerPriceLastOut;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _buyOpenMa;
-	private LengthIndicator<decimal> _buyCloseMa;
-	private LengthIndicator<decimal> _sellOpenMa;
-	private LengthIndicator<decimal> _sellCloseMa;
+	private DecimalLengthIndicator _buyOpenMa;
+	private DecimalLengthIndicator _buyCloseMa;
+	private DecimalLengthIndicator _sellOpenMa;
+	private DecimalLengthIndicator _sellCloseMa;
 
 	private readonly Queue<decimal> _buyOpenBuffer = new();
 	private readonly Queue<decimal> _buyCloseBuffer = new();
@@ -104,7 +104,7 @@ public class EaMovingAverageStrategy : Strategy
 		_buyOpenPeriod = Param(nameof(BuyOpenPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy Open MA Period", "Moving average period for buy entries", "Buy Entry")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 80, 5);
 
 		_buyOpenShift = Param(nameof(BuyOpenShift), 3)
@@ -120,7 +120,7 @@ public class EaMovingAverageStrategy : Strategy
 		_buyClosePeriod = Param(nameof(BuyClosePeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy Close MA Period", "Moving average period for buy exits", "Buy Exit")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 5);
 
 		_buyCloseShift = Param(nameof(BuyCloseShift), 3)
@@ -136,7 +136,7 @@ public class EaMovingAverageStrategy : Strategy
 		_sellOpenPeriod = Param(nameof(SellOpenPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Sell Open MA Period", "Moving average period for sell entries", "Sell Entry")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 80, 5);
 
 		_sellOpenShift = Param(nameof(SellOpenShift), 0)
@@ -152,7 +152,7 @@ public class EaMovingAverageStrategy : Strategy
 		_sellClosePeriod = Param(nameof(SellClosePeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Sell Close MA Period", "Moving average period for sell exits", "Sell Exit")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 80, 5);
 
 		_sellCloseShift = Param(nameof(SellCloseShift), 2)
@@ -400,9 +400,9 @@ public class EaMovingAverageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_buyOpenMa = CreateMovingAverage(BuyOpenMethod, BuyOpenPeriod);
 		_buyCloseMa = CreateMovingAverage(BuyCloseMethod, BuyClosePeriod);
@@ -512,12 +512,12 @@ public class EaMovingAverageStrategy : Strategy
 			: _lastExitPrice <= price;
 	}
 
-	private decimal? ProcessMovingAverage(LengthIndicator<decimal> indicator, Queue<decimal> buffer, int shift, decimal price, ICandleMessage candle)
+	private decimal? ProcessMovingAverage(DecimalLengthIndicator indicator, Queue<decimal> buffer, int shift, decimal price, ICandleMessage candle)
 	{
 		if (indicator == null)
 			return null;
 
-		var value = indicator.Process(price, candle.OpenTime, true);
+		var value = indicator.Process(new DecimalIndicatorValue(indicator, price, candle.OpenTime));
 
 		if (!indicator.IsFormed)
 			return null;
@@ -600,15 +600,15 @@ public class EaMovingAverageStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MaMethods method, int length)
 	{
 		return method switch
 		{
-			MaMethods.Simple => new SimpleMovingAverage { Length = length },
-			MaMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MaMethods.Simple => new SMA { Length = length },
+			MaMethods.Exponential => new EMA { Length = length },
 			MaMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

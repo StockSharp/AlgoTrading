@@ -250,9 +250,9 @@ public class MasterExitPlanStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_equityTarget = CalculateNextEquityTarget();
 		TimerInterval = TimeSpan.FromSeconds(1);
@@ -260,7 +260,7 @@ public class MasterExitPlanStrategy : Strategy
 		var subscription = SubscribeCandles(TimeSpan.FromMinutes(1).TimeFrame());
 		subscription.Bind(ProcessMinuteCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />
@@ -343,7 +343,7 @@ public class MasterExitPlanStrategy : Strategy
 		if (position > 0m)
 		{
 			var staticStop = EnableStopLoss && StopLossPoints > 0m
-				? PositionAvgPrice - StopLossPoints * point
+				? PositionPrice - StopLossPoints * point
 				: (decimal?)null;
 
 			var dynamicStop = EnableDynamicStopLoss && _lastMinuteOpen is decimal open
@@ -360,7 +360,7 @@ public class MasterExitPlanStrategy : Strategy
 		else if (position < 0m)
 		{
 			var staticStop = EnableStopLoss && StopLossPoints > 0m
-				? PositionAvgPrice + StopLossPoints * point
+				? PositionPrice + StopLossPoints * point
 				: (decimal?)null;
 
 			var dynamicStop = EnableDynamicStopLoss && _lastMinuteOpen is decimal open
@@ -389,7 +389,7 @@ public class MasterExitPlanStrategy : Strategy
 		if (position > 0m)
 		{
 			var staticStop = EnableHiddenStopLoss && HiddenStopLossPoints > 0m
-				? PositionAvgPrice - HiddenStopLossPoints * point
+				? PositionPrice - HiddenStopLossPoints * point
 				: (decimal?)null;
 
 			var dynamicStop = EnableHiddenDynamicStopLoss && _lastMinuteOpen is decimal open
@@ -406,7 +406,7 @@ public class MasterExitPlanStrategy : Strategy
 		else if (position < 0m)
 		{
 			var staticStop = EnableHiddenStopLoss && HiddenStopLossPoints > 0m
-				? PositionAvgPrice + HiddenStopLossPoints * point
+				? PositionPrice + HiddenStopLossPoints * point
 				: (decimal?)null;
 
 			var dynamicStop = EnableHiddenDynamicStopLoss && _lastMinuteOpen is decimal open
@@ -446,7 +446,7 @@ public class MasterExitPlanStrategy : Strategy
 
 		if (position > 0m)
 		{
-			var entry = PositionAvgPrice;
+			var entry = PositionPrice;
 			var requiredMove = (TrailingStopPoints + SureProfitPoints + spreadPoints) * point;
 			if (bid <= 0m || entry <= 0m || bid - entry <= requiredMove)
 				return;
@@ -467,7 +467,7 @@ public class MasterExitPlanStrategy : Strategy
 		}
 		else if (position < 0m)
 		{
-			var entry = PositionAvgPrice;
+			var entry = PositionPrice;
 			var requiredMove = (TrailingStopPoints + SureProfitPoints + spreadPoints) * point;
 			if (ask <= 0m || entry <= 0m || entry - ask <= requiredMove)
 				return;
@@ -611,7 +611,7 @@ public class MasterExitPlanStrategy : Strategy
 		if (priceStep <= 0m || stepPrice <= 0m)
 			return 0m;
 
-		var diff = price - PositionAvgPrice;
+		var diff = price - PositionPrice;
 		var steps = diff / priceStep;
 		return steps * stepPrice * Position;
 	}

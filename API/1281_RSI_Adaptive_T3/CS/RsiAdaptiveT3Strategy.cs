@@ -58,7 +58,7 @@ public class RsiAdaptiveT3Strategy : Strategy
 		_volumeFactor = Param(nameof(VolumeFactor), 0.7m)
 			.SetDisplay("Volume Factor", "T3 volume factor", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Data");
 	}
 
@@ -69,9 +69,9 @@ public class RsiAdaptiveT3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
@@ -80,7 +80,7 @@ public class RsiAdaptiveT3Strategy : Strategy
 			.BindEx(_rsi, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue)

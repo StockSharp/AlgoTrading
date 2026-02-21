@@ -56,7 +56,7 @@ public VolumeWeightedMaCandleStrategy()
 _vwmaPeriod = Param(nameof(VwmaPeriod), 12)
 .SetGreaterThanZero()
 .SetDisplay("VWMA Period", "Period for volume weighted moving averages", "Parameters")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 30, 5);
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -70,20 +70,18 @@ return [(Security, CandleType)];
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _openVwma = new VolumeWeightedMovingAverage
 {
-Length = VwmaPeriod,
-CandlePrice = CandlePrice.Open
+Length = VwmaPeriod
 };
 
 _closeVwma = new VolumeWeightedMovingAverage
 {
-Length = VwmaPeriod,
-CandlePrice = CandlePrice.Close
+Length = VwmaPeriod
 };
 
 var subscription = SubscribeCandles(CandleType);

@@ -69,19 +69,19 @@ public class VqzlZScoreStrategy : Strategy
 	_priceSmoothing = Param(nameof(PriceSmoothing), 15)
 	    .SetGreaterThanZero()
 	    .SetDisplay("Price Smoothing", "Length of smoothing moving average", "ZScore")
-	    .SetCanOptimize(true)
+	    
 	    .SetOptimize(5, 50, 5);
 
 	_zLength = Param(nameof(ZLength), 100)
 	    .SetGreaterThanZero()
 	    .SetDisplay("Z Length", "Lookback for standard deviation", "ZScore")
-	    .SetCanOptimize(true)
+	    
 	    .SetOptimize(50, 200, 10);
 
 	_threshold = Param(nameof(Threshold), 1.64m)
 	    .SetGreaterThanZero()
 	    .SetDisplay("Z Threshold", "Z-score threshold", "ZScore")
-	    .SetCanOptimize(true)
+	    
 	    .SetOptimize(1m, 3m, 0.5m);
 
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -101,9 +101,9 @@ public class VqzlZScoreStrategy : Strategy
     }
 
     /// <inheritdoc />
-    protected override void OnStarted(DateTimeOffset time)
+    protected override void OnStarted2(DateTime time)
     {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	var ma = new SMA { Length = PriceSmoothing };
 	var dev = new StandardDeviation { Length = ZLength };

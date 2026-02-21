@@ -92,21 +92,21 @@ public class VolumeExhaustionStrategy : Strategy
 		_volumePeriod = Param(nameof(VolumePeriod), 20)
 			.SetDisplay("Volume Average Period", "Period for volume average calculation", "Volume Settings")
 			.SetRange(5, 50)
-			.SetCanOptimize(true);
+			;
 			
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2.0m)
 			.SetDisplay("Volume Multiplier", "Multiplier to determine volume spike", "Volume Settings")
 			.SetRange(1.5m, 3.0m)
-			.SetCanOptimize(true);
+			;
 			
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetDisplay("MA Period", "Period for moving average", "Trend Settings")
 			.SetRange(10, 50)
-			.SetCanOptimize(true);
+			;
 			
 		_atrMultiplier = Param(nameof(AtrMultiplier), new Unit(2, UnitTypes.Absolute))
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR stop-loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -114,7 +114,7 @@ public class VolumeExhaustionStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2.0m, 0.5m);
 	}
 
@@ -132,13 +132,13 @@ public class VolumeExhaustionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
+		_ma = new SMA { Length = MaPeriod };
 		_atr = new AverageTrueRange { Length = 14 };
-		_volumeAvg = new SimpleMovingAverage { Length = VolumePeriod };
+		_volumeAvg = new SMA { Length = VolumePeriod };
 
 		// Create subscription
 		var subscription = SubscribeCandles(CandleType);

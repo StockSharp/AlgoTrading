@@ -154,9 +154,9 @@ public class FractalRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var indicator = new FractalRsi
 		{
@@ -237,7 +237,7 @@ public class FractalRsiStrategy : Strategy
 		Against
 	}
 
-	private class FractalRsi : Indicator<decimal>
+	private class FractalRsi : BaseIndicator
 	{
 		public int Period { get; set; } = 30;
 		public int NormalSpeed { get; set; } = 30;

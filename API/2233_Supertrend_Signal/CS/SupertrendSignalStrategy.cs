@@ -82,9 +82,9 @@ public class SupertrendSignalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var st = new SuperTrend { Length = AtrPeriod, Multiplier = Multiplier };
 		var subscription = SubscribeCandles(CandleType);
@@ -100,7 +100,7 @@ public class SupertrendSignalStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stValue)

@@ -30,11 +30,11 @@ public class Iu4BarUpStrategy : Strategy
 	{
 		_supertrendLength = Param(nameof(SupertrendLength), 14)
 			.SetDisplay("SuperTrend ATR Period", "ATR period for SuperTrend", "General")
-			.SetCanOptimize(true);
+			;
 
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 1m)
 			.SetDisplay("SuperTrend ATR Factor", "ATR factor for SuperTrend", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -73,9 +73,9 @@ public class Iu4BarUpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var supertrend = new SuperTrend
 		{

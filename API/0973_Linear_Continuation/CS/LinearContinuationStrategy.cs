@@ -91,19 +91,19 @@ public class LinearContinuationStrategy : Strategy
 		_ma1Period = Param(nameof(Ma1Period), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1 Period", "Period for MA1", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 10);
 
 		_ma2Period = Param(nameof(Ma2Period), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("MA2 Period", "Period for MA2", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(25, 200, 5);
 
 		_ma3Period = Param(nameof(Ma3Period), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("MA3 Period", "Period for MA3", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_aggressiveMode = Param(nameof(AggressiveMode), true)
@@ -120,9 +120,9 @@ public class LinearContinuationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ma1 = CreateMa(MaType, Ma1Period);
 		var ma2 = CreateMa(MaType, Ma2Period);
@@ -165,8 +165,8 @@ public class LinearContinuationStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SMA { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
 		};
 	}

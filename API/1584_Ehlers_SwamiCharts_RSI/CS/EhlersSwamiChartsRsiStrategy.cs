@@ -73,9 +73,9 @@ public class EhlersSwamiChartsRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var list = new List<RelativeStrengthIndex>();
 		for (var i = 2; i <= 48; i++)

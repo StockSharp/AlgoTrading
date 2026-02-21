@@ -175,13 +175,13 @@ public class IlanImaStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Averaging period of the moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 5);
 
 		_maShift = Param(nameof(MaShift), 5)
 			.SetNotNegative()
 			.SetDisplay("MA Shift", "Forward shift of the moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 10, 1);
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Weighted)
@@ -209,19 +209,19 @@ public class IlanImaStrategy : Strategy
 		_startVolume = Param(nameof(StartVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Start Volume", "Base lot size for the first order", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_gridStepPips = Param(nameof(GridStepPips), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Grid Step", "Distance between averaging orders in pips", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 120m, 10m);
 
 		_lotExponent = Param(nameof(LotExponent), 1.6m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Exponent", "Multiplier for subsequent orders", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.1m, 2.5m, 0.1m);
 
 		_profitMinimum = Param(nameof(ProfitMinimum), 15m)
@@ -255,11 +255,11 @@ public class IlanImaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var movingAverage = CreateMovingAverage(MaMethod, MaPeriod);
 		movingAverage.CandlePrice = PriceMode;
@@ -587,12 +587,12 @@ public class IlanImaStrategy : Strategy
 		return point.Value;
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			_ => new WeightedMovingAverage { Length = length },
 		};

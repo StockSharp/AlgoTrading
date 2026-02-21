@@ -65,7 +65,7 @@ public class XbugFreeV4Strategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 19)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Moving average length", "Parameters")
-		.SetCanOptimize(true);
+		;
 		
 		_stopPoints = Param(nameof(StopPoints), 270)
 		.SetDisplay("Stop Points", "Distance for take profit and stop loss", "Risk");
@@ -95,14 +95,13 @@ public class XbugFreeV4Strategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		var sma = new SimpleMovingAverage
+		var sma = new SMA
 		{
-			Length = MaPeriod,
-			CandlePrice = CandlePrice.Median,
+			Length = MaPeriod
 		};
 		
 		var subscription = SubscribeCandles(CandleType);
@@ -110,7 +109,7 @@ public class XbugFreeV4Strategy : Strategy
 		.Bind(sma, ProcessCandle)
 		.Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue)

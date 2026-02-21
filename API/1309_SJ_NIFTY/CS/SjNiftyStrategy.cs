@@ -209,14 +209,14 @@ public class SjNiftyStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var supertrend = new SuperTrend { Length = AtrLength, Multiplier = AtrMultiplier };
 		var vwap = new VolumeWeightedMovingAverage();
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new EMA { Length = EmaLength };
 		var kc = new KeltnerChannels { Length = KcLength, Multiplier = KcMultiplier };
 		
 		var subscription = SubscribeCandles(CandleType);

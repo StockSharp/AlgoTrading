@@ -48,19 +48,19 @@ public class HedgerDrawdownStrategy : Strategy
 		_drawdownOpenPips = Param(nameof(DrawdownOpenPips), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Open Hedge (pips)", "Drawdown in pips that opens the hedge", "Hedging")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 150, 10);
 
 		_drawdownClosePips = Param(nameof(DrawdownClosePips), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Close Hedge (pips)", "Drawdown in pips that closes the hedge", "Hedging")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 120, 5);
 
 		_initialVolume = Param(nameof(InitialVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Volume of the seed trade", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 1m, 0.01m);
 
 		_startWithLong = Param(nameof(StartWithLong), true)
@@ -146,9 +146,9 @@ public class HedgerDrawdownStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		RecalculateDistances();
 

@@ -89,19 +89,19 @@ public class NyOrbCpStrategy : Strategy
 	{
 		_minRangePoints = Param(nameof(MinRangePoints), 60m)
 		.SetDisplay("Minimum NY Range (points)", string.Empty, "Strategy Parameters")
-		.SetCanOptimize(true);
+		;
 		
 		_riskReward = Param(nameof(RiskReward), 3m)
 		.SetDisplay("Risk/Reward Ratio", string.Empty, "Strategy Parameters")
-		.SetCanOptimize(true);
+		;
 		
 		_maxTradesPerSession = Param(nameof(MaxTradesPerSession), 3)
 		.SetDisplay("Max Trades per Session", string.Empty, "Strategy Parameters")
-		.SetCanOptimize(true);
+		;
 		
 		_maxDailyLoss = Param(nameof(MaxDailyLoss), -1000m)
 		.SetDisplay("Max Daily Loss", string.Empty, "Strategy Parameters")
-		.SetCanOptimize(true);
+		;
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", string.Empty, "Strategy Parameters");
@@ -130,13 +130,13 @@ public class NyOrbCpStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_ema = new ExponentialMovingAverage { Length = 200 };
+		_ema = new EMA { Length = 200 };
 		_vwap = new VolumeWeightedMovingAverage();
-		_volumeSma = new SimpleMovingAverage { Length = 20 };
+		_volumeSma = new SMA { Length = 20 };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -182,7 +182,7 @@ public class NyOrbCpStrategy : Strategy
 		if (nyRangeEnd && !_nyRangeDone && _nyHigh != null && _nyLow != null)
 		_nyRangeDone = true;
 		
-		var volumeAvg = _volumeSma.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+		var volumeAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 		if (!_volumeSma.IsFormed || _nyHigh is null || _nyLow is null)
 		return;
 		

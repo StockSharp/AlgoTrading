@@ -56,19 +56,19 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 _fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 .SetGreaterThanZero()
 .SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average.", "Trend")
-.SetCanOptimize(true)
+
 .SetOptimize(3, 30, 1);
 
 _slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 .SetGreaterThanZero()
 .SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average.", "Trend")
-.SetCanOptimize(true)
+
 .SetOptimize(20, 150, 5);
 
 _momentumPeriod = Param(nameof(MomentumPeriod), 14)
 .SetGreaterThanZero()
 .SetDisplay("Momentum Period", "Number of bars for the momentum oscillator.", "Momentum")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 30, 1);
 
 _momentumSampleSize = Param(nameof(MomentumSampleSize), 3)
@@ -78,18 +78,18 @@ _momentumSampleSize = Param(nameof(MomentumSampleSize), 3)
 _momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 .SetGreaterThanZero()
 .SetDisplay("Momentum Threshold", "Minimal deviation from the neutral 100 level.", "Momentum")
-.SetCanOptimize(true)
+
 .SetOptimize(0.1m, 2m, 0.1m);
 
 _channelLength = Param(nameof(ChannelLength), 50)
 .SetGreaterThanZero()
 .SetDisplay("Channel Length", "Bars for the linear regression slope filter.", "Channel")
-.SetCanOptimize(true)
+
 .SetOptimize(20, 120, 5);
 
 _slopeThreshold = Param(nameof(SlopeThreshold), 0.0m)
 .SetDisplay("Slope Threshold", "Minimal slope value to confirm the channel direction.", "Channel")
-.SetCanOptimize(true)
+
 .SetOptimize(-0.01m, 0.01m, 0.001m);
 
 _macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
@@ -107,19 +107,19 @@ _macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 _takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 .SetGreaterThanZero()
 .SetDisplay("Take Profit %", "Protective take profit distance in percent.", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(0.5m, 5m, 0.5m);
 
 _stopLossPercent = Param(nameof(StopLossPercent), 1m)
 .SetGreaterThanZero()
 .SetDisplay("Stop Loss %", "Protective stop loss distance in percent.", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(0.5m, 5m, 0.5m);
 
 _equityRiskPercent = Param(nameof(EquityRiskPercent), 3m)
 .SetGreaterThanZero()
 .SetDisplay("Equity Risk %", "Maximum equity drawdown before flattening.", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(1m, 10m, 1m);
 }
 
@@ -270,14 +270,12 @@ base.OnStarted(time);
 
 _fastMa = new WeightedMovingAverage
 {
-Length = FastMaPeriod,
-CandlePrice = CandlePrice.Typical
+Length = FastMaPeriod
 };
 
 _slowMa = new WeightedMovingAverage
 {
-Length = SlowMaPeriod,
-CandlePrice = CandlePrice.Typical
+Length = SlowMaPeriod
 };
 
 _momentum = new Momentum

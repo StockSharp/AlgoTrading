@@ -58,43 +58,43 @@ public class TunnelMethodEmaStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Period of the fast EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 30, 2);
 
 		_mediumLength = Param(nameof(MediumLength), 144)
 			.SetGreaterThanZero()
 			.SetDisplay("Medium EMA Length", "Period of the medium EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(72, 200, 8);
 
 		_slowLength = Param(nameof(SlowLength), 169)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length", "Period of the slow EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(120, 220, 5);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 25m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 60m, 5m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 230m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Profit target distance expressed in price points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 400m, 20m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 35m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Distance maintained by the trailing stop", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 80m, 5m);
 
 		_trailingTriggerPoints = Param(nameof(TrailingTriggerPoints), 20m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Trigger (points)", "Profit required before the trailing stop activates", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 60m, 5m);
 	}
 
@@ -188,9 +188,9 @@ public class TunnelMethodEmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = GetPointValue();
 		_stopLossDistance = StopLossPoints * _pointValue;

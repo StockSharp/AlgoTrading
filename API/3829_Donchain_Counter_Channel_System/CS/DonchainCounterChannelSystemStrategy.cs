@@ -45,13 +45,13 @@ public class DonchainCounterChannelSystemStrategy : Strategy
 		_channelPeriod = Param(nameof(ChannelPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Donchian Period", "Lookback period for the Donchian channel", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 5);
 
 		_tradeCooldown = Param(nameof(TradeCooldown), TimeSpan.FromDays(1))
 		.SetDisplay("Trade Cooldown", "Minimum waiting time between entries", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candle series used for Donchian calculations", "General");
 	}
 
@@ -109,9 +109,9 @@ public class DonchainCounterChannelSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 		if (_priceStep <= 0m)

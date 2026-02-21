@@ -79,24 +79,24 @@ public class MaSarAdxBindStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Length of the trend moving average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 200, 10);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ADX Period", "Length of the Average Directional Index", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 28, 1);
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
 		.SetRange(0.005m, 0.2m)
 		.SetDisplay("SAR Step", "Acceleration step for Parabolic SAR", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_sarMax = Param(nameof(SarMax), 0.1m)
 		.SetRange(0.05m, 1m)
 		.SetDisplay("SAR Maximum", "Maximum acceleration for Parabolic SAR", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -110,12 +110,12 @@ public class MaSarAdxBindStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Instantiate indicators used in the original MetaTrader script.
-		var movingAverage = new SimpleMovingAverage
+		var movingAverage = new SMA
 		{
 			Length = MaPeriod
 		};

@@ -79,7 +79,7 @@ public class GradientTrendFilterStrategy : Strategy
 		_length = Param(nameof(Length), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Smoothing length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_tradeLong = Param(nameof(TradeLong), true)
@@ -106,14 +106,14 @@ public class GradientTrendFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

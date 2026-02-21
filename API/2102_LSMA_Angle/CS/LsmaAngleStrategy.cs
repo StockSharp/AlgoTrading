@@ -65,23 +65,23 @@ public class LsmaAngleStrategy : Strategy
 	_lsmaPeriod = Param(nameof(LsmaPeriod), 25)
 		.SetGreaterThanZero()
 		.SetDisplay("LSMA Period", "LSMA calculation length", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 
 	_angleThreshold = Param(nameof(AngleThreshold), 15m)
 		.SetGreaterThanZero()
 		.SetDisplay("Angle Threshold", "Threshold for LSMA angle", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 30m, 5m);
 
 	_startShift = Param(nameof(StartShift), 4)
 		.SetDisplay("Start Shift", "Bar shift for angle start", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 8, 1);
 
 	_endShift = Param(nameof(EndShift), 0)
 		.SetDisplay("End Shift", "Bar shift for angle end", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 4, 1);
 
 	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -100,9 +100,9 @@ public class LsmaAngleStrategy : Strategy
 	_shift = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	if (StartShift <= EndShift)
 		throw new InvalidOperationException("StartShift must be greater than EndShift.");

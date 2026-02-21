@@ -116,13 +116,13 @@ public class VqEaStrategy : Strategy
 		_lengthParam = Param(nameof(Length), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Length", "Base smoothing period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_smoothingParam = Param(nameof(Smoothing), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Smoothing", "Additional smoothing period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_filterPointsParam = Param(nameof(FilterPoints), 5)
@@ -171,13 +171,13 @@ public class VqEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Prepare moving averages that approximate the Volatility Quality line.
-		_baseAverage = new SimpleMovingAverage { Length = Length };
-		_smoothingAverage = Smoothing > 1 ? new SimpleMovingAverage { Length = Smoothing } : null;
+		_baseAverage = new SMA { Length = Length };
+		_smoothingAverage = Smoothing > 1 ? new SMA { Length = Smoothing } : null;
 
 		// Convert point-based distances to absolute prices using the instrument price step.
 		_point = Security?.PriceStep ?? 0m;
@@ -201,7 +201,7 @@ public class VqEaStrategy : Strategy
 		}
 		else
 		{
-			StartProtection();
+			StartProtection(null, null);
 		}
 
 		var subscription = SubscribeCandles(CandleType);
@@ -229,7 +229,7 @@ public class VqEaStrategy : Strategy
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var baseValue = _baseAverage.Process(median, candle.OpenTime, true);
+		var baseValue = _baseAverage.Process(new DecimalIndicatorValue(_baseAverage, median, candle.OpenTime));
 		if (!_baseAverage.IsFormed)
 		return;
 
@@ -237,7 +237,7 @@ public class VqEaStrategy : Strategy
 
 		if (_smoothingAverage != null)
 		{
-			var smoothingValue = _smoothingAverage.Process(smoothed, candle.OpenTime, true);
+			var smoothingValue = _smoothingAverage.Process(new DecimalIndicatorValue(_smoothingAverage, smoothed, candle.OpenTime));
 			if (!_smoothingAverage.IsFormed)
 			return;
 

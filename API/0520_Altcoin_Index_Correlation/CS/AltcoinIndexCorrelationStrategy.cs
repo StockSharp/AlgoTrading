@@ -110,22 +110,22 @@ public class AltcoinIndexCorrelationStrategy : Strategy
 	{
 		_fastEmaLen = Param(nameof(FastEmaLength), 47)
 			.SetDisplay("Fast EMA", "Fast EMA length", "EMA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_slowEmaLen = Param(nameof(SlowEmaLength), 50)
 			.SetDisplay("Slow EMA", "Slow EMA length", "EMA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_indexFastEmaLen = Param(nameof(IndexFastEmaLength), 47)
 			.SetDisplay("Index Fast EMA", "Fast EMA length for index", "Index Reference")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_indexSlowEmaLen = Param(nameof(IndexSlowEmaLength), 50)
 			.SetDisplay("Index Slow EMA", "Slow EMA length for index", "Index Reference")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_skipIndex = Param(nameof(SkipIndexReference), false)
@@ -159,15 +159,15 @@ public class AltcoinIndexCorrelationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var fastEma = new EMA { Length = FastEmaLength };
+		var slowEma = new EMA { Length = SlowEmaLength };
 
-		var indexFastEma = new ExponentialMovingAverage { Length = IndexFastEmaLength };
-		var indexSlowEma = new ExponentialMovingAverage { Length = IndexSlowEmaLength };
+		var indexFastEma = new EMA { Length = IndexFastEmaLength };
+		var indexSlowEma = new EMA { Length = IndexSlowEmaLength };
 
 		var mainSub = SubscribeCandles(CandleType);
 		mainSub

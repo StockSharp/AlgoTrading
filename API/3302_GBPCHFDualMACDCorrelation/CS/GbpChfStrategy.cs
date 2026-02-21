@@ -198,26 +198,26 @@ public class GbpChfStrategy : Strategy
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 70)
 			.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 120, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 45)
 			.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 90, 5);
 
 		_trailingFrequencySeconds = Param(nameof(TrailingFrequencySeconds), 10)
 			.SetDisplay("Trailing Frequency", "Trailing refresh interval in seconds", "Risk")
-			.SetCanOptimize(false);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 100, 10);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetDisplay("Trailing Step", "Minimum pip increase before trailing moves", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
@@ -233,11 +233,11 @@ public class GbpChfStrategy : Strategy
 			.SetDisplay("Trade Volume", "Order volume when opening trades", "General")
 			.SetGreaterThanZero();
 
-		_macdShortPeriod = Param(nameof(MacdShortPeriod), 12)
+		_macdShortMa = { Length = Param }(nameof(MacdShortPeriod), 12)
 			.SetDisplay("MACD Fast", "Fast EMA length for MACD", "Indicator")
 			.SetGreaterThanZero();
 
-		_macdLongPeriod = Param(nameof(MacdLongPeriod), 26)
+		_macdLongMa = { Length = Param }(nameof(MacdLongPeriod), 26)
 			.SetDisplay("MACD Slow", "Slow EMA length for MACD", "Indicator")
 			.SetGreaterThanZero();
 
@@ -293,9 +293,9 @@ public class GbpChfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("Trading security is not specified.");
@@ -314,15 +314,15 @@ public class GbpChfStrategy : Strategy
 
 		_gbpUsdMacd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdShortPeriod,
-			LongPeriod = MacdLongPeriod,
+			ShortMa = { Length = MacdShortPeriod },
+			LongMa = { Length = MacdLongPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 
 		_usdChfMacd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdShortPeriod,
-			LongPeriod = MacdLongPeriod,
+			ShortMa = { Length = MacdShortPeriod },
+			LongMa = { Length = MacdLongPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 

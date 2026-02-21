@@ -177,11 +177,11 @@ public class MacdFixedPsarStrategy : Strategy
 	{
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 200m)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in pips", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in pips", "Risk");
 
 		_trailingMode = Param(nameof(TrailMode), TrailingModes.FixedPsar)
@@ -246,9 +246,9 @@ public class MacdFixedPsarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_hasPrevValues = false;
 		_prevMacd = 0m;
@@ -272,7 +272,7 @@ public class MacdFixedPsarStrategy : Strategy
 			SignalMa = { Length = 9 }
 		};
 
-		_trendEma = new ExponentialMovingAverage { Length = TrendPeriod };
+		_trendEma = new EMA { Length = TrendPeriod };
 
 		_longEntryPrice = null;
 		_shortEntryPrice = null;
@@ -285,7 +285,7 @@ public class MacdFixedPsarStrategy : Strategy
 		_longPsarStep = PsarStep;
 		_shortPsarStep = PsarStep;
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

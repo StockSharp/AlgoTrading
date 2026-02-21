@@ -69,13 +69,13 @@ public class RobotDanuStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast ZigZag Length", "Lookback for fast ZigZag", "ZigZag")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 5);
 
 		_slowLength = Param(nameof(SlowLength), 56)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow ZigZag Length", "Lookback for slow ZigZag", "ZigZag")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 120, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -103,9 +103,9 @@ public class RobotDanuStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastHigh = new Highest { Length = FastLength };
 		var fastLow = new Lowest { Length = FastLength };

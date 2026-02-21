@@ -183,28 +183,25 @@ public class Up3x1DynamicSizingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = BaseVolume;
 
-		_fastEma = new ExponentialMovingAverage
+		_fastEma = new EMA
 		{
-			Length = FastPeriod,
-			CandlePrice = CandlePrice.Close
+			Length = FastPeriod
 		};
 
-		_mediumEma = new ExponentialMovingAverage
+		_mediumEma = new EMA
 		{
-			Length = MediumPeriod,
-			CandlePrice = CandlePrice.Close
+			Length = MediumPeriod
 		};
 
-		_slowEma = new ExponentialMovingAverage
+		_slowEma = new EMA
 		{
-			Length = SlowPeriod,
-			CandlePrice = CandlePrice.Close
+			Length = SlowPeriod
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -213,7 +210,7 @@ public class Up3x1DynamicSizingStrategy : Strategy
 			.Bind(_fastEma, _mediumEma, _slowEma, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal mediumValue, decimal slowValue)

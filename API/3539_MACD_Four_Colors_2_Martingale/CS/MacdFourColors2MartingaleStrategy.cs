@@ -120,37 +120,37 @@ public class MacdFourColors2MartingaleStrategy : Strategy
 
 		_initialVolume = Param(nameof(InitialVolume), 1m)
 			.SetDisplay("Initial Volume", "Volume of the first order in a martingale cycle", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_lotCoefficient = Param(nameof(LotCoefficient), 2m)
 			.SetDisplay("Lot Coefficient", "Multiplier applied after a losing position", "Money management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_maxDrawdown = Param(nameof(MaxDrawdown), 50m)
 			.SetDisplay("Max Drawdown", "Negative floating PnL that forces liquidation", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 200m, 20m);
 
 		_targetProfit = Param(nameof(TargetProfit), 150m)
 			.SetDisplay("Target Profit", "Positive floating PnL that locks profits", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 400m, 25m);
 
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 12)
 			.SetDisplay("Fast EMA Period", "Length of the fast EMA in MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 2);
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
 			.SetDisplay("Slow EMA Period", "Length of the slow EMA in MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(18, 40, 2);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetDisplay("Signal Period", "Length of the signal EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 	}
 
@@ -392,7 +392,7 @@ public class MacdFourColors2MartingaleStrategy : Strategy
 		if (priceStep <= 0m || stepPrice <= 0m || Position == 0)
 			return 0m;
 
-		var diff = price - PositionAvgPrice;
+		var diff = price - PositionPrice;
 		var steps = diff / priceStep;
 		return steps * stepPrice * Position;
 	}

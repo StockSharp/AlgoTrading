@@ -61,12 +61,12 @@ public class ParabolicSarReversalStrategy : Strategy
 		_initialAcceleration = Param(nameof(InitialAcceleration), 0.02m)
 			.SetDisplay("Initial Acceleration", "Initial acceleration factor for Parabolic SAR", "SAR Settings")
 			.SetRange(0.01m, 0.05m)
-			.SetCanOptimize(true);
+			;
 			
 		_maxAcceleration = Param(nameof(MaxAcceleration), 0.2m)
 			.SetDisplay("Max Acceleration", "Maximum acceleration factor for Parabolic SAR", "SAR Settings")
 			.SetRange(0.1m, 0.3m)
-			.SetCanOptimize(true);
+			;
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -86,9 +86,9 @@ public class ParabolicSarReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 
 		// Create Parabolic SAR indicator

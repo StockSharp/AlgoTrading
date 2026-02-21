@@ -218,7 +218,7 @@ public class IntradayComboHHStrategy : Strategy
 		_stochKPeriod = Param(nameof(StochKPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stoch K", "K period", "Stoch RSI");
-		_stochDPeriod = Param(nameof(StochDPeriod), 3)
+		_stochD = { Length = Param }(nameof(StochDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stoch D", "D period", "Stoch RSI");
 		_stochOverbought = Param(nameof(StochOverbought), 0.8m)

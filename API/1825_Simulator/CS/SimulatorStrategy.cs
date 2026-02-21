@@ -82,12 +82,12 @@ public SimulatorStrategy()
 {
 _fastPeriod = Param(nameof(FastPeriod), 13)
 .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 30, 1);
 
 _slowPeriod = Param(nameof(SlowPeriod), 50)
 .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(20, 200, 5);
 
 _stopLoss = Param(nameof(StopLoss), 0.005m)
@@ -101,12 +101,12 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
-var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
+var fastEma = new EMA { Length = FastPeriod };
+var slowEma = new EMA { Length = SlowPeriod };
 
 var subscription = SubscribeCandles(CandleType);
 subscription

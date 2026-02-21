@@ -79,25 +79,25 @@ public class MacdVwapStrategy : Strategy
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast Period", "Fast EMA period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 2);
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow Period", "Slow EMA period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 30, 2);
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal Period", "Signal line period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 12, 1);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

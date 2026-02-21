@@ -93,24 +93,24 @@ public class DynamicTicksOscillatorModelStrategy : Strategy
 		_rocLength = Param(nameof(RocLength), 5)
 			.SetRange(1, 100)
 			.SetDisplay("Down Ticks ROC Length", "Lookback period for ROC calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_volatilityLookback = Param(nameof(VolatilityLookback), 24)
 			.SetRange(1, 100)
 			.SetDisplay("Down Ticks Volatility Lookback", "Lookback period for standard deviation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_entryStdDevMultiplier = Param(nameof(EntryStdDevMultiplier), 1.6m)
 			.SetRange(0.1m, 5m)
 			.SetDisplay("Entry Standard Deviation Multiplier", "Multiplier for long entry threshold", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_exitStdDevMultiplier = Param(nameof(ExitStdDevMultiplier), 1.4m)
 			.SetRange(0.1m, 5m)
 			.SetDisplay("Exit Standard Deviation Multiplier", "Multiplier for exit threshold", "Indicators")
-			.SetCanOptimize(true);
+			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for down ticks data", "General");
 	}
 
@@ -133,9 +133,9 @@ public class DynamicTicksOscillatorModelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (DownTicksSecurity == null)
 			throw new InvalidOperationException("Down ticks security is not specified.");
@@ -163,7 +163,7 @@ public class DynamicTicksOscillatorModelStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var stdDevValue = _stdDev.Process(rocValue, candle.ServerTime, true).ToDecimal();
+		var stdDevValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, rocValue, candle.ServerTime)).ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

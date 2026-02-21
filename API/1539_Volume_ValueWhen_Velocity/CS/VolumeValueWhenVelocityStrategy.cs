@@ -129,14 +129,14 @@ _barsSinceCross = int.MaxValue;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var rsi = new RelativeStrengthIndex { Length = RsiLength };
 var atrShort = new AverageTrueRange { Length = AtrSmall };
 var atrLong = new AverageTrueRange { Length = AtrBig };
-var sma = new SimpleMovingAverage { Length = 13 };
+var sma = new SMA { Length = 13 };
 
 var subscription = SubscribeCandles(CandleType);
 subscription

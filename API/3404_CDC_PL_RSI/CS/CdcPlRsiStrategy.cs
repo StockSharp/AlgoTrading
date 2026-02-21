@@ -71,13 +71,13 @@ public class CdcPlRsiStrategy : Strategy
 	        _rsiPeriod = Param(nameof(RsiPeriod), 20)
 	                .SetGreaterThanZero()
 	                .SetDisplay("RSI Period", "Number of bars for RSI calculation", "Indicators")
-	                .SetCanOptimize(true)
+	                
 	                .SetOptimize(10, 40, 5);
 
 	        _bodyAveragePeriod = Param(nameof(BodyAveragePeriod), 14)
 	                .SetGreaterThanZero()
 	                .SetDisplay("Body Average", "Period for candle body average and close trend", "Indicators")
-	                .SetCanOptimize(true)
+	                
 	                .SetOptimize(10, 30, 5);
 
 	        _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -102,21 +102,21 @@ public class CdcPlRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	        base.OnStarted(time);
+	        base.OnStarted2(time);
 
 	        _rsi = new RelativeStrengthIndex
 	        {
 	                Length = RsiPeriod
 	        };
 
-	        _bodyAverage = new SimpleMovingAverage
+	        _bodyAverage = new SMA
 	        {
 	                Length = BodyAveragePeriod
 	        };
 
-	        _closeAverage = new SimpleMovingAverage
+	        _closeAverage = new SMA
 	        {
 	                Length = BodyAveragePeriod
 	        };
@@ -135,7 +135,7 @@ public class CdcPlRsiStrategy : Strategy
 	                DrawOwnTrades(area);
 	        }
 
-	        StartProtection();
+	        StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal currentRsi)

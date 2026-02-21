@@ -1129,11 +1129,11 @@ public class LotSizeScalingStrategy : Strategy
 	public LotSizeScalingStrategy()
 	{
 		_minimumBalance = Param(nameof(MinimumBalance), 20m)
-			.SetDisplay("Minimum balance for scaling")
-			.SetCanOptimize(false);
+			.SetDisplay("Minimum balance for scaling", "Minimum balance for scaling", "General")
+			;
 		_minimumVolume = Param(nameof(MinimumVolume), 0.01m)
-			.SetDisplay("Starting volume")
-			.SetCanOptimize(false);
+			.SetDisplay("Starting volume", "Starting volume", "General")
+			;
 		SetDisplay("Lot Size Scaling Strategy");
 	}
 
@@ -1152,11 +1152,11 @@ public class LotSizeScalingStrategy : Strategy
 	public decimal RecommendedVolume { get; private set; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 		UpdateRecommendedVolume();
 	}
 

@@ -82,9 +82,9 @@ public class CciComaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
@@ -96,8 +96,8 @@ public class CciComaStrategy : Strategy
 
 		for (var i = 0; i < _timeframes.Length; i++)
 		{
-			var fast = new SimpleMovingAverage { Length = 1 };
-			var slow = new SimpleMovingAverage { Length = 2 };
+			var fast = new SMA { Length = 1 };
+			var slow = new SMA { Length = 2 };
 			var index = i;
 
 			SubscribeCandles(_timeframes[i].TimeFrame())

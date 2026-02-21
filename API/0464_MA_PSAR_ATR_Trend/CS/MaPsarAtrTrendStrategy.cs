@@ -178,7 +178,7 @@ public class MaPsarAtrTrendStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return UsePsarFilter
-			? [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())]
+			? [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())]
 			: [(Security, CandleType)];
 	}
 
@@ -192,9 +192,9 @@ public class MaPsarAtrTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastMa = CreateMa(FastMaType, FastMaPeriod);
 		var slowMa = CreateMa(SlowMaType, SlowMaPeriod);
@@ -213,7 +213,7 @@ public class MaPsarAtrTrendStrategy : Strategy
 				AccelerationMax = SarMaxStep
 			};
 
-			var dailySub = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+			var dailySub = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 			dailySub
 				.Bind(psar, ProcessDailySar)
 				.Start();
@@ -233,11 +233,11 @@ public class MaPsarAtrTrendStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.Hull => new HullMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

@@ -49,19 +49,19 @@ public class MeanReversionProStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Length of the fast moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_slowLength = Param(nameof(SlowLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Length of the slow moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 200, 50);
 
 		_tradingMode = Param(nameof(Mode), TradingModes.LongOnly)
 			.SetDisplay("Trading Direction", "Allowed trading direction", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "Parameters");
 	}
 
@@ -70,9 +70,9 @@ public class MeanReversionProStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastSma = new SMA { Length = FastLength };
 		var slowSma = new SMA { Length = SlowLength };
@@ -83,7 +83,7 @@ public class MeanReversionProStrategy : Strategy
 			.Bind(fastSma, slowSma, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

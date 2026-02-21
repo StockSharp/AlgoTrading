@@ -188,32 +188,32 @@ public class RsiMacdLongOnlyStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 						 .SetGreaterThanZero()
 						 .SetDisplay("RSI Length", "Period for RSI", "RSI")
-						 .SetCanOptimize(true);
+						 ;
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
 						   .SetRange(0, 50)
 						   .SetDisplay("RSI Oversold", "Oversold threshold", "RSI")
-						   .SetCanOptimize(true);
+						   ;
 
 		_rsiMidline = Param(nameof(RsiMidline), 50m)
 						  .SetRange(0, 100)
 						  .SetDisplay("RSI Midline", "Midline level", "RSI")
-						  .SetCanOptimize(true);
+						  ;
 
 		_fastLength = Param(nameof(FastLength), 12)
 						  .SetGreaterThanZero()
 						  .SetDisplay("MACD Fast", "Fast EMA period", "MACD")
-						  .SetCanOptimize(true);
+						  ;
 
 		_slowLength = Param(nameof(SlowLength), 26)
 						  .SetGreaterThanZero()
 						  .SetDisplay("MACD Slow", "Slow EMA period", "MACD")
-						  .SetCanOptimize(true);
+						  ;
 
 		_signalLength = Param(nameof(SignalLength), 9)
 							.SetGreaterThanZero()
 							.SetDisplay("MACD Signal", "Signal line period", "MACD")
-							.SetCanOptimize(true);
+							;
 
 		_requireAboveZero =
 			Param(nameof(RequireAboveZero), false).SetDisplay("Require MACD > 0", "Trend filter", "MACD");
@@ -224,7 +224,7 @@ public class RsiMacdLongOnlyStrategy : Strategy
 		_oversoldWindowBars = Param(nameof(OversoldWindowBars), 10)
 								  .SetGreaterThanZero()
 								  .SetDisplay("Oversold Window", "Bars after RSI oversold", "Signals")
-								  .SetCanOptimize(true);
+								  ;
 
 		_useEmaTrend =
 			Param(nameof(UseEmaTrend), false).SetDisplay("Use EMA Trend", "Only long when price above EMA", "Signals");
@@ -232,17 +232,17 @@ public class RsiMacdLongOnlyStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 200)
 						 .SetGreaterThanZero()
 						 .SetDisplay("EMA Length", "EMA period for trend", "Signals")
-						 .SetCanOptimize(true);
+						 ;
 
 		_useTpSl = Param(nameof(UseTpSl), true).SetDisplay("Use TP/SL", "Enable take profit and stop loss", "Risk");
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 11.5m)
 								 .SetDisplay("Take Profit %", "Take profit percent", "Risk")
-								 .SetCanOptimize(true);
+								 ;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.5m)
 							   .SetDisplay("Stop Loss %", "Stop loss percent", "Risk")
-							   .SetCanOptimize(true);
+							   ;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 						  .SetDisplay("Candle Type", "Type of candles", "General");
@@ -276,7 +276,7 @@ public class RsiMacdLongOnlyStrategy : Strategy
 																	   LongMa = { Length = SlowLength },
 																   },
 															   SignalMa = { Length = SignalLength } };
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(_rsi, _macd, _ema, ProcessCandle).Start();

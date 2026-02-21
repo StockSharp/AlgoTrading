@@ -367,35 +367,35 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 		_longFastLength = Param(nameof(LongFastLength), 23)
 		.SetGreaterThanZero()
 		.SetDisplay("Long Fast Length", "Fast Jurik length", "Long")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 
 		_longSlowLength = Param(nameof(LongSlowLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Long Slow Length", "Slow Jurik length", "Long")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 120, 5);
 
 		_longSmoothLength = Param(nameof(LongSmoothLength), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Long Jurik Smoothing", "Smoothing length for the JCCX approximation", "Long")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 20, 1);
 
 		_longPhase = Param(nameof(LongPhase), 100)
 		.SetDisplay("Long Phase", "Phase control translated into smoothing factor", "Long")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 10);
 
 		_longCycle = Param(nameof(LongCycle), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Long Cycle", "Cycle length for stochastic transforms", "Long")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_longSignalBar = Param(nameof(LongSignalBar), 1)
 		.SetDisplay("Long Signal Bar", "Delay in bars before evaluating long signals", "Long")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 3, 1);
 
 		_longAppliedPrice = Param(nameof(LongAppliedPrice), AppliedPrices.Close)
@@ -414,17 +414,17 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 		_longLossTrigger = Param(nameof(LongLossTrigger), 3)
 		.SetNotNegative()
 		.SetDisplay("Long Loss Trigger", "Losses required to shrink long size", "Long")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 5, 1);
 
 		_longSmallVolume = Param(nameof(LongSmallVolume), 0.01m)
 		.SetDisplay("Long Small Volume", "Reduced long volume", "Long")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_longNormalVolume = Param(nameof(LongNormalVolume), 0.1m)
 		.SetDisplay("Long Normal Volume", "Default long volume", "Long")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_longStopLoss = Param(nameof(LongStopLoss), 1000m)
@@ -441,35 +441,35 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 		_shortFastLength = Param(nameof(ShortFastLength), 23)
 		.SetGreaterThanZero()
 		.SetDisplay("Short Fast Length", "Fast Jurik length", "Short")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 
 		_shortSlowLength = Param(nameof(ShortSlowLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Short Slow Length", "Slow Jurik length", "Short")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 120, 5);
 
 		_shortSmoothLength = Param(nameof(ShortSmoothLength), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Short Jurik Smoothing", "Smoothing length for the JCCX approximation", "Short")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 20, 1);
 
 		_shortPhase = Param(nameof(ShortPhase), 100)
 		.SetDisplay("Short Phase", "Phase control translated into smoothing factor", "Short")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 200, 10);
 
 		_shortCycle = Param(nameof(ShortCycle), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Short Cycle", "Cycle length for stochastic transforms", "Short")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
 		.SetDisplay("Short Signal Bar", "Delay in bars before evaluating short signals", "Short")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 3, 1);
 
 		_shortAppliedPrice = Param(nameof(ShortAppliedPrice), AppliedPrices.Close)
@@ -488,17 +488,17 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 		_shortLossTrigger = Param(nameof(ShortLossTrigger), 3)
 		.SetNotNegative()
 		.SetDisplay("Short Loss Trigger", "Losses required to shrink short size", "Short")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 5, 1);
 
 		_shortSmallVolume = Param(nameof(ShortSmallVolume), 0.01m)
 		.SetDisplay("Short Small Volume", "Reduced short volume", "Short")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_shortNormalVolume = Param(nameof(ShortNormalVolume), 0.1m)
 		.SetDisplay("Short Normal Volume", "Default short volume", "Short")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_shortStopLoss = Param(nameof(ShortStopLoss), 1000m)
@@ -544,9 +544,9 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 		throw new InvalidOperationException("Security is not specified.");
@@ -953,8 +953,8 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 
 			var macd = fast.Value - slow.Value;
 
-			var macdHighValue = _macdHigh.Process(new DecimalIndicatorValue(_macdHigh, macd, time));
-			var macdLowValue = _macdLow.Process(new DecimalIndicatorValue(_macdLow, macd, time));
+			var macdHighValue = _macdHigh.Process(new DecimalIndicatorValue(_macdHigh, macd, time.UtcDateTime));
+			var macdLowValue = _macdLow.Process(new DecimalIndicatorValue(_macdLow, macd, time.UtcDateTime));
 
 			if (!_macdHigh.IsFormed || !_macdLow.IsFormed)
 			return null;
@@ -975,8 +975,8 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 
 			_previousSt = st;
 
-			var stHighValue = _stHigh.Process(new DecimalIndicatorValue(_stHigh, st, time));
-			var stLowValue = _stLow.Process(new DecimalIndicatorValue(_stLow, st, time));
+			var stHighValue = _stHigh.Process(new DecimalIndicatorValue(_stHigh, st, time.UtcDateTime));
+			var stLowValue = _stLow.Process(new DecimalIndicatorValue(_stLow, st, time.UtcDateTime));
 
 			if (!_stHigh.IsFormed || !_stLow.IsFormed)
 			return null;
@@ -1028,7 +1028,7 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 
 		public decimal? Process(decimal price, DateTimeOffset time)
 		{
-			var jmaValue = _jma.Process(new DecimalIndicatorValue(_jma, price, time));
+			var jmaValue = _jma.Process(new DecimalIndicatorValue(_jma, price, time.UtcDateTime));
 			if (!_jma.IsFormed)
 			return null;
 
@@ -1036,8 +1036,8 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 			var up = price - jma;
 			var down = Math.Abs(up);
 
-			var upValue = _upSmooth.Process(new DecimalIndicatorValue(_upSmooth, up, time));
-			var downValue = _downSmooth.Process(new DecimalIndicatorValue(_downSmooth, down, time));
+			var upValue = _upSmooth.Process(new DecimalIndicatorValue(_upSmooth, up, time.UtcDateTime));
+			var downValue = _downSmooth.Process(new DecimalIndicatorValue(_downSmooth, down, time.UtcDateTime));
 
 			if (!_upSmooth.IsFormed || !_downSmooth.IsFormed)
 			return null;

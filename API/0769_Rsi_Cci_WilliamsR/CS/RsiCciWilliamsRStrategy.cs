@@ -153,51 +153,51 @@ public class RsiCciWilliamsRStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period for RSI", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Period for CCI", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_williamsPeriod = Param(nameof(WilliamsPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Period for Williams %R", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiOversold = Param(nameof(RsiOversold), 25m)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "Thresholds")
-			.SetCanOptimize(true);
+			;
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 75m)
 			.SetDisplay("RSI Overbought", "RSI overbought level", "Thresholds")
-			.SetCanOptimize(true);
+			;
 
 		_cciOversold = Param(nameof(CciOversold), -130m)
 			.SetDisplay("CCI Oversold", "CCI oversold level", "Thresholds")
-			.SetCanOptimize(true);
+			;
 
 		_cciOverbought = Param(nameof(CciOverbought), 130m)
 			.SetDisplay("CCI Overbought", "CCI overbought level", "Thresholds")
-			.SetCanOptimize(true);
+			;
 
 		_williamsOversold = Param(nameof(WilliamsOversold), -85m)
 			.SetDisplay("Williams %R Oversold", "Williams %R oversold level", "Thresholds")
-			.SetCanOptimize(true);
+			;
 
 		_williamsOverbought = Param(nameof(WilliamsOverbought), -15m)
 			.SetDisplay("Williams %R Overbought", "Williams %R overbought level", "Thresholds")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPct = Param(nameof(TakeProfitPct), 1.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPct = Param(nameof(StopLossPct), 0.45m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(45).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -220,9 +220,9 @@ public class RsiCciWilliamsRStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };

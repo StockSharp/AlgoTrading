@@ -94,31 +94,31 @@ public class ExpXmaRangeBandsStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "EMA period for channel center", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
 		_rangeLength = Param(nameof(RangeLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period for channel width", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_deviation = Param(nameof(Deviation), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation", "ATR multiplier for channel width", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 2000m, 500m);
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1000m, 4000m, 500m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -143,12 +143,12 @@ public class ExpXmaRangeBandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		var ema = new ExponentialMovingAverage { Length = MaLength };
+		var ema = new EMA { Length = MaLength };
 		var atr = new AverageTrueRange { Length = RangeLength };
 
 		// Subscribe to candles and bind indicators

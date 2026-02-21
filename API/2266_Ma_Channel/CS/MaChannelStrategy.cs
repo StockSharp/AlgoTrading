@@ -32,13 +32,13 @@ public class MaChannelStrategy : Strategy
 		_length = Param(nameof(Length), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Moving average period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_offset = Param(nameof(Offset), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Offset", "Price offset from the average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 20m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -52,13 +52,13 @@ public class MaChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create moving averages for channel boundaries
-		var maHigh = new ExponentialMovingAverage { Length = Length };
-		var maLow = new ExponentialMovingAverage { Length = Length };
+		var maHigh = new EMA { Length = Length };
+		var maLow = new EMA { Length = Length };
 
 		// Trend state: +1 for uptrend, -1 for downtrend
 		var trend = 0;

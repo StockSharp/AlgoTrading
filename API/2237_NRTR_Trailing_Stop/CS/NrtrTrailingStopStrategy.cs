@@ -84,7 +84,7 @@ public class NrtrTrailingStopStrategy : Strategy
 		_length = Param(nameof(Length), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("NRTR Length", "Number of bars for average range", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_digitsShift = Param(nameof(DigitsShift), 0)
@@ -93,13 +93,13 @@ public class NrtrTrailingStopStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pts)", "Take profit level in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 3000m, 500m);
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pts)", "Stop loss level in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 3000m, 500m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -123,9 +123,9 @@ public class NrtrTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = Length };
 		var subscription = SubscribeCandles(CandleType);

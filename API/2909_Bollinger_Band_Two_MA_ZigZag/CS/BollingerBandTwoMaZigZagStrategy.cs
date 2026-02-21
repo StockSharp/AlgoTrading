@@ -239,54 +239,54 @@ public class BollingerBandTwoMaZigZagStrategy : Strategy
 		_firstVolume = Param(nameof(FirstVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("First Volume", "Volume with take profit", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_secondVolume = Param(nameof(SecondVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Second Volume", "Runner volume", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 50m)
 			.SetDisplay("Take Profit %", "Percent of stop distance for TP", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_spacingFromPivot = Param(nameof(SpacingFromPivot), 10m)
 			.SetDisplay("Pivot Offset (pts)", "Extra points beyond swing", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useStopLossProtection = Param(nameof(UseStopLossProtection), true)
 			.SetDisplay("Use Break-even Move", "Enable stop pull-up", "Risk");
 
 		_stopLossFromPoints = Param(nameof(StopLossFromPoints), 80m)
 			.SetDisplay("Break-even Offset (pts)", "Points locked after trigger", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossLevelPoints = Param(nameof(StopLossLevelPoints), 10m)
 			.SetDisplay("Break-even Threshold (pts)", "Extra profit before moving stop", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 80m)
 			.SetDisplay("Trailing Stop (pts)", "Trailing distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 120m)
 			.SetDisplay("Trailing Step (pts)", "Minimum move before trailing", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Bars for Bollinger Bands", "Bollinger")
-			.SetCanOptimize(true);
+			;
 
 		_bollingerWidth = Param(nameof(BollingerWidth), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Width", "Deviation multiplier", "Bollinger")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Base Candle", "Primary timeframe", "General");
 
-		_ma1CandleType = Param(nameof(Ma1CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_ma1CandleType = Param(nameof(Ma1CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("MA1 Candle", "Higher timeframe for MA1", "General");
 
 		_ma2CandleType = Param(nameof(Ma2CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -295,26 +295,26 @@ public class BollingerBandTwoMaZigZagStrategy : Strategy
 		_ma1Period = Param(nameof(Ma1Period), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1 Period", "Bars for first MA", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_ma2Period = Param(nameof(Ma2Period), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA2 Period", "Bars for second MA", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_zigZagDepth = Param(nameof(ZigZagDepth), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("ZigZag Depth", "Lookback for pivots", "ZigZag")
-			.SetCanOptimize(true);
+			;
 
 		_zigZagDeviation = Param(nameof(ZigZagDeviation), 5m)
 			.SetDisplay("ZigZag Deviation (pts)", "Minimum pivot distance", "ZigZag")
-			.SetCanOptimize(true);
+			;
 
 		_zigZagBackstep = Param(nameof(ZigZagBackstep), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("ZigZag Backstep", "Bars between pivots", "ZigZag")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -357,11 +357,11 @@ public class BollingerBandTwoMaZigZagStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var bollinger = new BollingerBands
 		{
@@ -375,11 +375,11 @@ public class BollingerBandTwoMaZigZagStrategy : Strategy
 		var mainSubscription = SubscribeCandles(CandleType);
 		mainSubscription.Bind(bollinger, highest, lowest, ProcessMain).Start();
 
-		var ma1 = new SimpleMovingAverage { Length = Ma1Period };
+		var ma1 = new SMA { Length = Ma1Period };
 		var ma1Subscription = SubscribeCandles(Ma1CandleType);
 		ma1Subscription.Bind(ma1, ProcessMa1).Start();
 
-		var ma2 = new SimpleMovingAverage { Length = Ma2Period };
+		var ma2 = new SMA { Length = Ma2Period };
 		var ma2Subscription = SubscribeCandles(Ma2CandleType);
 		ma2Subscription.Bind(ma2, ProcessMa2).Start();
 	}

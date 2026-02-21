@@ -105,12 +105,12 @@ public class TrendConfirmationStrategy : Strategy
 		_isFirst = true;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_supertrend = new() { Length = AtrPeriod, Multiplier = Factor };
-		_macd = new() { ShortPeriod = FastLength, LongPeriod = SlowLength, SignalPeriod = SignalLength };
+		_macd = new() { ShortMa = { Length = FastLength }, LongMa = { Length = SlowLength }, SignalPeriod = SignalLength };
 		_vwap = new VolumeWeightedMovingAverage();
 
 		var subscription = SubscribeCandles(CandleType);

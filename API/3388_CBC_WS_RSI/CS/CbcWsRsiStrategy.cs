@@ -120,37 +120,37 @@ public class CbcWsRsiStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 37)
 			.SetRange(5, 100)
 			.SetDisplay("RSI Period", "Number of candles for RSI calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_longConfirmationLevel = Param(nameof(LongConfirmationLevel), 40m)
 			.SetRange(10m, 60m)
 			.SetDisplay("Long Confirmation", "Maximum RSI value to approve long entries", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_shortConfirmationLevel = Param(nameof(ShortConfirmationLevel), 60m)
 			.SetRange(40m, 90m)
 			.SetDisplay("Short Confirmation", "Minimum RSI value to approve short entries", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_lowerExitLevel = Param(nameof(LowerExitLevel), 30m)
 			.SetRange(10m, 50m)
 			.SetDisplay("Lower Exit", "RSI level used for closing short trades", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_upperExitLevel = Param(nameof(UpperExitLevel), 70m)
 			.SetRange(50m, 90m)
 			.SetDisplay("Upper Exit", "RSI level used for closing long trades", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetRange(0m, 10m)
 			.SetDisplay("Stop Loss %", "Stop-loss level in percent", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetRange(0m, 20m)
 			.SetDisplay("Take Profit %", "Take-profit level in percent", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -171,9 +171,9 @@ public class CbcWsRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 

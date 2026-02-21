@@ -96,9 +96,9 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_psar = new ParabolicSar
@@ -111,7 +111,7 @@ _direction = Param(nameof(Direction), (Sides?)null)
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_rsi, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

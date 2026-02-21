@@ -82,7 +82,7 @@ public class DaytradingESWickLengthStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average length", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_maType = Param(nameof(MaType), MovingAverageTypes.VolumeWeighted)
@@ -90,13 +90,13 @@ public class DaytradingESWickLengthStrategy : Strategy
 
 		_maOffset = Param(nameof(MaOffset), 10m)
 			.SetDisplay("MA Offset", "Offset added to MA", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 20m, 5m);
 
 		_holdPeriods = Param(nameof(HoldPeriods), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Hold Periods", "Bars to hold a position", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -118,9 +118,9 @@ public class DaytradingESWickLengthStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = CreateMa(MaType, MaLength);
 
@@ -177,11 +177,11 @@ public class DaytradingESWickLengthStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SMA { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

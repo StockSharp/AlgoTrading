@@ -59,12 +59,12 @@ public class MovingRegressionStrategy : Strategy
 		_degree = Param(nameof(Degree), 2)
 		.SetRange(0, 5)
 		.SetDisplay("Degree", "Polynomial degree", "General")
-		.SetCanOptimize(true);
+		;
 
 		_window = Param(nameof(Window), 18)
 		.SetRange(2, 100)
 		.SetDisplay("Window", "Regression window length", "General")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -84,9 +84,9 @@ public class MovingRegressionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

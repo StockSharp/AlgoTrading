@@ -87,45 +87,45 @@ public class SmartGridScalpingPullbackStrategy : Strategy
 		_atrLength = Param(nameof(AtrLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_gridFactor = Param(nameof(GridFactor), 0.35m)
 			.SetGreaterThanZero()
 			.SetDisplay("Grid Factor", "Spacing factor for grid levels", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.05m);
 
 		_profitTarget = Param(nameof(ProfitTarget), 0.004m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Target", "Desired profit target", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.01m, 0.001m);
 
 		_noTradeZone = Param(nameof(NoTradeZone), 0.003m)
 			.SetGreaterThanZero()
 			.SetDisplay("No-Trade Zone", "Minimum candle range to allow trades", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.01m, 0.001m);
 
 		_shortLevel = Param(nameof(ShortLevel), 5)
 			.SetDisplay("Short Level", "Grid index for short", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 14, 1);
 
 		_longLevel = Param(nameof(LongLevel), 5)
 			.SetDisplay("Long Level", "Grid index for long", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 14, 1);
 
 		_minRsiShort = Param(nameof(MinRsiShort), 70)
 			.SetDisplay("Min RSI Short", "Minimum RSI for short entries", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 90, 5);
 
 		_maxRsiLong = Param(nameof(MaxRsiLong), 30)
 			.SetDisplay("Max RSI Long", "Maximum RSI for long entries", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -150,9 +150,9 @@ public class SmartGridScalpingPullbackStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var rsi = new RelativeStrengthIndex { Length = 14 };

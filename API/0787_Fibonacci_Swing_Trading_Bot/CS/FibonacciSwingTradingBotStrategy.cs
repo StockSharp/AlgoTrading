@@ -91,29 +91,29 @@ public class FibonacciSwingTradingBotStrategy : Strategy
 		_swingLength = Param(nameof(SwingLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Swing Length", "Donchian lookback length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_fiboLevel1 = Param(nameof(FiboLevel1), 0.618m)
 			.SetDisplay("Fibonacci Level 1", "First retracement level", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 0.8m, 0.01m);
 
 		_fiboLevel2 = Param(nameof(FiboLevel2), 0.786m)
 			.SetDisplay("Fibonacci Level 2", "Second retracement level", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.7m, 0.9m, 0.01m);
 
 		_riskRewardRatio = Param(nameof(RiskRewardRatio), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk/Reward Ratio", "Target ratio between profit and loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percent from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -135,11 +135,11 @@ public class FibonacciSwingTradingBotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var donchian = new DonchianChannels { Length = SwingLength };
 

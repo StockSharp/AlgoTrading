@@ -104,15 +104,15 @@ public class BjorgumDoubleTapStrategy : Strategy
 
 		_pivotTolerance = Param(nameof(PivotTolerance), 15m)
 							  .SetDisplay("Pivot Tolerance %", "Allowed percent difference between pivots", "Pattern")
-							  .SetCanOptimize(true);
+							  ;
 
 		_targetFib = Param(nameof(TargetFib), 100m)
 						 .SetDisplay("Target Fib %", "Target extension percentage", "Risk Management")
-						 .SetCanOptimize(true);
+						 ;
 
 		_stopFib = Param(nameof(StopLossFib), 0m)
 					   .SetDisplay("Stop Fib %", "Stop loss extension percentage", "Risk Management")
-					   .SetCanOptimize(true);
+					   ;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 						  .SetDisplay("Candle Type", "Time frame for analysis", "General");
@@ -143,9 +143,9 @@ public class BjorgumDoubleTapStrategy : Strategy
 		_targetPrice = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = PivotLength };
 		_lowest = new Lowest { Length = PivotLength };

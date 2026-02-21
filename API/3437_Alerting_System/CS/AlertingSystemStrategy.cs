@@ -72,9 +72,9 @@ public class AlertingSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to bid/ask updates to mirror the original OnTick loop.
 		SubscribeLevel1()

@@ -116,12 +116,12 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 _bbSmaPeriod = Param(nameof(BbSmaPeriod), 20)
 .SetGreaterThanZero()
 .SetDisplay("BB SMA Period", "Bollinger Bands SMA period", "Bollinger Bands")
-.SetCanOptimize(true)
+
 .SetOptimize(10, 30, 5);
 
 _bbStdDevMult = Param(nameof(BbStdDevMult), 2.5m)
 .SetDisplay("BB StdDev Mult", "Bollinger Bands standard deviation multiplier", "Bollinger Bands")
-.SetCanOptimize(true)
+
 .SetOptimize(1m, 4m, 0.5m);
 
 _aoFast = Param(nameof(AoFast), 5)
@@ -162,23 +162,23 @@ return [(Security, CandleType)];
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _bollingerBands = new BollingerBands { Length = BbSmaPeriod, Width = BbStdDevMult };
-_smaClose = new SimpleMovingAverage { Length = SmaPeriod };
-_aoFastSma = new SimpleMovingAverage { Length = AoFast };
-_aoSlowSma = new SimpleMovingAverage { Length = AoSlow };
-_acSma = new SimpleMovingAverage { Length = AcFast };
-_jawSma = new SimpleMovingAverage { Length = JawLength };
+_smaClose = new SMA { Length = SmaPeriod };
+_aoFastSma = new SMA { Length = AoFast };
+_aoSlowSma = new SMA { Length = AoSlow };
+_acSma = new SMA { Length = AcFast };
+_jawSma = new SMA { Length = JawLength };
 
-_bbUpperUpSma = new SimpleMovingAverage { Length = BayesPeriod };
-_bbUpperDownSma = new SimpleMovingAverage { Length = BayesPeriod };
-_bbBasisUpSma = new SimpleMovingAverage { Length = BayesPeriod };
-_bbBasisDownSma = new SimpleMovingAverage { Length = BayesPeriod };
-_smaUpSma = new SimpleMovingAverage { Length = BayesPeriod };
-_smaDownSma = new SimpleMovingAverage { Length = BayesPeriod };
+_bbUpperUpSma = new SMA { Length = BayesPeriod };
+_bbUpperDownSma = new SMA { Length = BayesPeriod };
+_bbBasisUpSma = new SMA { Length = BayesPeriod };
+_bbBasisDownSma = new SMA { Length = BayesPeriod };
+_smaUpSma = new SMA { Length = BayesPeriod };
+_smaDownSma = new SMA { Length = BayesPeriod };
 
 var subscription = SubscribeCandles(CandleType);
 subscription
@@ -215,7 +215,7 @@ var aoSlow = aoSlowValue.GetValue<decimal>();
 var jaw = jawValue.GetValue<decimal>();
 
 var ao = aoFast - aoSlow;
-var aoSmaValue = _acSma.Process(ao, candle.ServerTime, true);
+var aoSmaValue = _acSma.Process(new DecimalIndicatorValue(_acSma, ao, candle.ServerTime));
 if (!aoSmaValue.IsFormed)
 return;
 
@@ -230,12 +230,12 @@ var acAoColorIndex = acAoIsBullish ? 1 : acAoIsBearish ? -1 : 0;
 var pricesAreMovingAwayUpFromAlligator = candle.ClosePrice > jaw && candle.OpenPrice > jaw;
 var pricesAreMovingAwayDownFromAlligator = candle.ClosePrice < jaw && candle.OpenPrice < jaw;
 
-var probBbUpperUp = _bbUpperUpSma.Process(candle.ClosePrice > bbUpper ? 1m : 0m, candle.ServerTime, true).GetValue<decimal>();
-var probBbUpperDown = _bbUpperDownSma.Process(candle.ClosePrice < bbUpper ? 1m : 0m, candle.ServerTime, true).GetValue<decimal>();
-var probBbBasisUp = _bbBasisUpSma.Process(candle.ClosePrice > bbBasis ? 1m : 0m, candle.ServerTime, true).GetValue<decimal>();
-var probBbBasisDown = _bbBasisDownSma.Process(candle.ClosePrice < bbBasis ? 1m : 0m, candle.ServerTime, true).GetValue<decimal>();
-var probSmaUp = _smaUpSma.Process(candle.ClosePrice > smaClose ? 1m : 0m, candle.ServerTime, true).GetValue<decimal>();
-var probSmaDown = _smaDownSma.Process(candle.ClosePrice < smaClose ? 1m : 0m, candle.ServerTime, true).GetValue<decimal>();
+var probBbUpperUp = _bbUpperUpSma.Process(new DecimalIndicatorValue(_bbUpperUpSma, candle.ClosePrice > bbUpper ? 1m : 0m, candle.ServerTime)).GetValue<decimal>();
+var probBbUpperDown = _bbUpperDownSma.Process(new DecimalIndicatorValue(_bbUpperDownSma, candle.ClosePrice < bbUpper ? 1m : 0m, candle.ServerTime)).GetValue<decimal>();
+var probBbBasisUp = _bbBasisUpSma.Process(new DecimalIndicatorValue(_bbBasisUpSma, candle.ClosePrice > bbBasis ? 1m : 0m, candle.ServerTime)).GetValue<decimal>();
+var probBbBasisDown = _bbBasisDownSma.Process(new DecimalIndicatorValue(_bbBasisDownSma, candle.ClosePrice < bbBasis ? 1m : 0m, candle.ServerTime)).GetValue<decimal>();
+var probSmaUp = _smaUpSma.Process(new DecimalIndicatorValue(_smaUpSma, candle.ClosePrice > smaClose ? 1m : 0m, candle.ServerTime)).GetValue<decimal>();
+var probSmaDown = _smaDownSma.Process(new DecimalIndicatorValue(_smaDownSma, candle.ClosePrice < smaClose ? 1m : 0m, candle.ServerTime)).GetValue<decimal>();
 
 if (!_bbUpperUpSma.IsFormed || !_bbUpperDownSma.IsFormed ||
 !_bbBasisUpSma.IsFormed || !_bbBasisDownSma.IsFormed ||

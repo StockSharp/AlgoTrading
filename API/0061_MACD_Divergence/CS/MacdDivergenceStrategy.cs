@@ -96,22 +96,22 @@ public class MacdDivergenceStrategy : Strategy
 		_fastMacdPeriod = Param(nameof(FastMacdPeriod), 12)
 			.SetRange(5, 20)
 			.SetDisplay("Fast MACD Period", "Fast EMA period for MACD", "Indicator Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_slowMacdPeriod = Param(nameof(SlowMacdPeriod), 26)
 			.SetRange(15, 40)
 			.SetDisplay("Slow MACD Period", "Slow EMA period for MACD", "Indicator Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetRange(5, 15)
 			.SetDisplay("Signal Period", "Signal line period for MACD", "Indicator Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_divergencePeriod = Param(nameof(DivergencePeriod), 5)
 			.SetRange(3, 10)
 			.SetDisplay("Divergence Period", "Number of bars to look back for divergence", "Signal Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -119,7 +119,7 @@ public class MacdDivergenceStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetRange(0.5m, 5.0m)
 			.SetDisplay("Stop Loss %", "Percentage-based stop loss from entry", "Risk Management")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />

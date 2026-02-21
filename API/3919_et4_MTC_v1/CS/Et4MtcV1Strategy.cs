@@ -38,18 +38,18 @@ public class Et4MtcV1Strategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 150m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Target profit in points", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 500m, 10m);
 
 		_lots = Param(nameof(Lots), -10m)
 			.SetDisplay("Lots", "Fixed lot size or negative value for balance-based calculation", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-20m, 20m, 1m);
 
 		_stopLoss = Param(nameof(StopLoss), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Protective stop in points", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_enableLogging = Param(nameof(EnableLogging), false)
@@ -138,16 +138,16 @@ public class Et4MtcV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = CalculateVolume();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

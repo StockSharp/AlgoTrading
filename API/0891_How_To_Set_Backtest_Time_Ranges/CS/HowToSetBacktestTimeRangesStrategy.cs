@@ -88,13 +88,13 @@ public class HowToSetBacktestTimeRangesStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("FastMA Length", "Period of the fast moving average", "MA Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 
 		_slowLength = Param(nameof(SlowLength), 28)
 		.SetGreaterThanZero()
 		.SetDisplay("SlowMA Length", "Period of the slow moving average", "MA Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 
 		_fromDate = Param(nameof(FromDate), new DateTime(2021, 1, 1))
@@ -126,9 +126,9 @@ public class HowToSetBacktestTimeRangesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastMa = new SMA { Length = FastLength };
 		var slowMa = new SMA { Length = SlowLength };

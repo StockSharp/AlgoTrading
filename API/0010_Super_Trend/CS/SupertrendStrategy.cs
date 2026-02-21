@@ -61,12 +61,12 @@ public class SupertrendStrategy : Strategy
 	{
 		_period = Param(nameof(Period), 10)
 			.SetDisplay("Period", "Period for Supertrend calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 2);
 
 		_multiplier = Param(nameof(Multiplier), 3.0m)
 			.SetDisplay("Multiplier", "Multiplier for Supertrend calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2.0m, 4.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -89,9 +89,9 @@ public class SupertrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create custom supertrend indicator
 		// Since StockSharp doesn't have a built-in Supertrend indicator,

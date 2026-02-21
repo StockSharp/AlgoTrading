@@ -121,22 +121,22 @@ public class ExpCyclePeriodStrategy : Strategy
 
 		_alpha = Param(nameof(Alpha), 0.07m)
 			.SetDisplay("Alpha", "Alpha for CyclePeriod", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.2m, 0.01m);
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Indicator shift", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 3, 1);
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetDisplay("Take Profit", "Take profit in price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 5000m, 500m);
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetDisplay("Stop Loss", "Stop loss in price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 5000m, 500m);
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
@@ -159,9 +159,9 @@ public class ExpCyclePeriodStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Enable risk management with take profit and stop loss
 		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));

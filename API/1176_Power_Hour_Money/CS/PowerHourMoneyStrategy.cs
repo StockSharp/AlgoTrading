@@ -141,7 +141,7 @@ public class PowerHourMoneyStrategy : Strategy
 		{
 			(Security, CandleType),
 			(Security, TimeSpan.FromHours(1).TimeFrame()),
-			(Security, TimeSpan.FromDays(1).TimeFrame()),
+			(Security, TimeSpan.FromMinutes(5).TimeFrame()),
 			(Security, TimeSpan.FromDays(7).TimeFrame()),
 			(Security, TimeSpan.FromDays(30).TimeFrame())
 		};
@@ -158,10 +158,10 @@ public class PowerHourMoneyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		SubscribeCandles(TimeSpan.FromHours(1).TimeFrame())
 			.Bind(c =>
@@ -173,7 +173,7 @@ public class PowerHourMoneyStrategy : Strategy
 			})
 			.Start();
 
-		SubscribeCandles(TimeSpan.FromDays(1).TimeFrame())
+		SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame())
 			.Bind(c =>
 			{
 				if (c.State != CandleStates.Finished)

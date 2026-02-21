@@ -60,8 +60,8 @@ public class FarhadHillVersion2Strategy : Strategy
 	private readonly StrategyParam<MovingAverageModes> _maMode;
 	private readonly StrategyParam<AppliedPriceModes> _maPrice;
 
-	private LengthIndicator<decimal> _fastMa;
-	private LengthIndicator<decimal> _slowMa;
+	private DecimalLengthIndicator _fastMa;
+	private DecimalLengthIndicator _slowMa;
 	private LinearRegression _fastLsma;
 	private LinearRegression _slowLsma;
 	private StochasticOscillator _stochastic = null!;
@@ -267,8 +267,7 @@ public class FarhadHillVersion2Strategy : Strategy
 		_slowMa = CreateMovingAverage(MaMode, SlowMaPeriod, out _slowLsma);
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticK,
+		{ K = { Length = StochasticK },
 			K = { Length = StochasticK },
 			D = { Length = StochasticD },
 			Slowing = StochasticSlowing
@@ -276,8 +275,7 @@ public class FarhadHillVersion2Strategy : Strategy
 
 		_momentum = new Momentum
 		{
-			Length = MomentumPeriod,
-			CandlePrice = CandlePrice.Open
+			Length = MomentumPeriod
 		};
 
 		_macd = new MovingAverageConvergenceDivergenceSignal
@@ -407,7 +405,7 @@ public class FarhadHillVersion2Strategy : Strategy
 		return true;
 	}
 
-	private bool TryProcessIndicator(LengthIndicator<decimal> ma, LinearRegression lsma, decimal price, ICandleMessage candle, bool isFinal, out decimal value)
+	private bool TryProcessIndicator(DecimalLengthIndicator ma, LinearRegression lsma, decimal price, ICandleMessage candle, bool isFinal, out decimal value)
 	{
 		value = 0m;
 		IIndicatorValue result = null;
@@ -415,13 +413,13 @@ public class FarhadHillVersion2Strategy : Strategy
 		// Linear regression acts as the "Least Squares Moving Average" option in MT4.
 		if (lsma != null)
 		{
-			result = lsma.Process(price, candle.OpenTime, isFinal);
+			result = lsma.Process(new DecimalIndicatorValue(lsma, price, candle.OpenTime));
 			if (!lsma.IsFormed)
 				return false;
 		}
 		else if (ma != null)
 		{
-			result = ma.Process(price, candle.OpenTime, isFinal);
+			result = ma.Process(new DecimalIndicatorValue(ma, price, candle.OpenTime));
 			if (!ma.IsFormed)
 				return false;
 		}
@@ -883,17 +881,17 @@ public class FarhadHillVersion2Strategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageModes mode, int length, out LinearRegression lsma)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageModes mode, int length, out LinearRegression lsma)
 	{
 		lsma = null;
 		return mode switch
 		{
-			MovingAverageModes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageModes.Simple => new SMA { Length = length },
+			MovingAverageModes.Exponential => new EMA { Length = length },
 			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageModes.LinearWeighted => new WeightedMovingAverage { Length = length },
 			MovingAverageModes.LeastSquares => lsma = new LinearRegression { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

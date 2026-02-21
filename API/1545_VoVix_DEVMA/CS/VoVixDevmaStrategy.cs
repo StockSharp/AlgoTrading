@@ -113,19 +113,19 @@ public class VoVixDevmaStrategy : Strategy
 		_devLookback = Param(nameof(DevLookback), 59)
 			.SetRange(15, 100)
 			.SetDisplay("Deviation Lookback", "Lookback for deviation calculation", "DEVMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 10);
 
 		_fastLength = Param(nameof(FastLength), 20)
 			.SetRange(10, 50)
 			.SetDisplay("Fast Length", "Fast DEVMA and ATR length", "DEVMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_slowLength = Param(nameof(SlowLength), 60)
 			.SetRange(30, 100)
 			.SetDisplay("Slow Length", "Slow DEVMA and ATR length", "DEVMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 100, 10);
 
 		_useAtrStops = Param(nameof(UseAtrStops), true)
@@ -134,13 +134,13 @@ public class VoVixDevmaStrategy : Strategy
 		_atrStopMultiplier = Param(nameof(AtrStopMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR SL Mult", "ATR stop-loss multiplier", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_atrProfitMultiplier = Param(nameof(AtrProfitMultiplier), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR TP Mult", "ATR take-profit multiplier", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 6m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -166,16 +166,16 @@ public class VoVixDevmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atrFast = new AverageTrueRange { Length = FastLength };
 		_atrSlow = new AverageTrueRange { Length = SlowLength };
 		_atrFastStd = new StandardDeviation { Length = DevLookback };
 		_srcStd = new StandardDeviation { Length = DevLookback };
-		_fastDevMa = new SimpleMovingAverage { Length = FastLength };
-		_slowDevMa = new SimpleMovingAverage { Length = SlowLength };
+		_fastDevMa = new SMA { Length = FastLength };
+		_slowDevMa = new SMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -191,7 +191,7 @@ public class VoVixDevmaStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal atrFastValue, decimal atrSlowValue, decimal atrFastStdValue)

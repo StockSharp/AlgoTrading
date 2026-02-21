@@ -74,17 +74,17 @@ public class AddOnTrailingStopStrategy : Strategy
 	{
 		_enableTrailing = Param(nameof(EnableTrailing), true)
 			.SetDisplay("Enable Trailing", "Toggle trailing stop logic.", "Trailing")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStartPips = Param(nameof(TrailingStartPips), 15m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Start (pips)", "Profit distance in pips required before trailing activates.", "Trailing")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Extra profit in pips required before moving the stop again.", "Trailing")
-			.SetCanOptimize(true);
+			;
 
 		_magicNumber = Param(nameof(MagicNumber), 0)
 			.SetDisplay("Magic Number", "Identifier preserved for compatibility with the MQL version.", "General");
@@ -111,9 +111,9 @@ public class AddOnTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("Security is not specified.");

@@ -106,28 +106,28 @@ public class FiveMinRsiQualifiedStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Number of candles used for RSI", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_qualificationLength = Param(nameof(QualificationLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Qualification Length", "Consecutive candles required for a qualified signal", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_upperThreshold = Param(nameof(UpperThreshold), 55m)
 			.SetDisplay("Upper Threshold", "RSI level that triggers short setups", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_lowerThreshold = Param(nameof(LowerThreshold), 45m)
 			.SetDisplay("Lower Threshold", "RSI level that triggers long setups", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 21m)
 			.SetDisplay("Trailing Stop (points)", "Distance in MetaTrader points used for trailing stops", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_initialStopPoints = Param(nameof(InitialStopPoints), 11m)
 			.SetDisplay("Initial Stop (points)", "Initial protective stop distance in MetaTrader points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for RSI evaluation", "General");
@@ -147,13 +147,13 @@ public class FiveMinRsiQualifiedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi.Length = RsiPeriod;
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -78,7 +78,7 @@ public class AbcWsCciStrategy : Strategy
 			.SetDisplay("Candle Type", "Time frame used for calculations", "General");
 
 		_cciIndicator = new CommodityChannelIndex();
-		_bodyAverage = new SimpleMovingAverage();
+		_bodyAverage = new SMA();
 	}
 
 	/// <inheritdoc />
@@ -88,9 +88,9 @@ public class AbcWsCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cciIndicator.Length = CciPeriod;
 		_bodyAverage.Length = BodyAveragePeriod;
@@ -201,7 +201,7 @@ public class AbcWsCciStrategy : Strategy
 
 	private static decimal MidPoint(CandleSnapshot candle)
 	{
-		return (candle.High + candle.Low) / 2m;
+		return (candle.HighPrice + candle.LowPrice) / 2m;
 	}
 
 	private readonly record struct CandleSnapshot(decimal Open, decimal High, decimal Low, decimal Close);

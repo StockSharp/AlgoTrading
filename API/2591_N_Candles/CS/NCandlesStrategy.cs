@@ -51,7 +51,7 @@ public class NCandlesStrategy : Strategy
 		_consecutiveCandles = Param(nameof(ConsecutiveCandles), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Consecutive Candles", "Number of identical candles required", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 6, 1);
 
 
@@ -75,9 +75,9 @@ public class NCandlesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

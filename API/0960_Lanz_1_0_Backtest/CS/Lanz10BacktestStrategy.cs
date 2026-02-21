@@ -58,7 +58,7 @@ public class Lanz10BacktestStrategy : Strategy
 
 		_riskPercent = Param(nameof(RiskPercent), 1m)
 			.SetDisplay("Risk %", "Risk percent per trade", "Money")
-			.SetCanOptimize(true);
+			;
 
 		_epOffsetFraction = Param(nameof(EpOffsetFraction), 0m)
 			.SetDisplay("EP Offset", "Entry price offset fraction", "Risk")
@@ -101,9 +101,9 @@ public class Lanz10BacktestStrategy : Strategy
 		_entryOrder = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = (Security?.PriceStep ?? 1m) * 10m;
 
@@ -123,8 +123,8 @@ public class Lanz10BacktestStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var nyOpen = TimeZoneInfo.ConvertTime(candle.OpenTime.UtcDateTime, _nyZone);
-		var nyClose = TimeZoneInfo.ConvertTime(candle.CloseTime.UtcDateTime, _nyZone);
+		var nyOpen = TimeZoneInfo.ConvertTime(candle.OpenTime, _nyZone);
+		var nyClose = TimeZoneInfo.ConvertTime(candle.CloseTime, _nyZone);
 
 		var is0800 = nyOpen.Hour == 8 && nyOpen.Minute == 0;
 		if (is0800)

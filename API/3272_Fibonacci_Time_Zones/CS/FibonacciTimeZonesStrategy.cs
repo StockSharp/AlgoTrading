@@ -303,9 +303,9 @@ public class FibonacciTimeZonesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var step = Security?.PriceStep ?? 0m;
 		if (step <= 0m)
@@ -602,7 +602,7 @@ public class FibonacciTimeZonesStrategy : Strategy
 		if (Position == 0)
 		return 0m;
 
-		var entry = PositionAvgPrice;
+		var entry = PositionPrice;
 		if (entry == 0m)
 		return 0m;
 
@@ -627,7 +627,7 @@ public class FibonacciTimeZonesStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		_lastEntryPrice = PositionAvgPrice;
+		_lastEntryPrice = PositionPrice;
 
 		if (Position == 0)
 		{

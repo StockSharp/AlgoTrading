@@ -56,22 +56,22 @@ public class LockerStrategy : Strategy
 		_profitTargetPercent = Param(nameof(ProfitTargetPercent), 0.001m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit %", "Target profit percent of balance", "General")
-			.SetCanOptimize(true);
+			;
 
 		_startVolume = Param(nameof(StartVolume), 0.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Start Volume", "Initial trade volume", "General")
-			.SetCanOptimize(true);
+			;
 
 		_stepVolume = Param(nameof(StepVolume), 0.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Step Volume", "Volume for subsequent trades", "General")
-			.SetCanOptimize(true);
+			;
 
 		_stepPoints = Param(nameof(StepPoints), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Step Points", "Number of price steps between new trades", "General")
-			.SetCanOptimize(true);
+			;
 
 		_enableAutomation = Param(nameof(EnableAutomation), true)
 			.SetDisplay("Enable Automation", "Allow the strategy to place trades", "General");
@@ -82,7 +82,7 @@ public class LockerStrategy : Strategy
 		_maxOpenPositions = Param(nameof(MaxOpenPositions), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Open Positions", "Maximum number of hedged legs allowed", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -97,9 +97,9 @@ public class LockerStrategy : Strategy
 		_lastEntrySide = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		SubscribeCandles(CandleType).Bind(Process).Start();
 	}
 

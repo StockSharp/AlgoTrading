@@ -76,16 +76,16 @@ public class StochasticDynamicVolatilityBandModelStrategy : Strategy
 		_length = Param(nameof(Length), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Band Length", "Period for bands", "General")
-			.SetCanOptimize(true);
+			;
 
 		_multiplier = Param(nameof(Multiplier), 1.67m)
 			.SetDisplay("Multiplier", "Standard deviation multiplier", "General")
-			.SetCanOptimize(true);
+			;
 
 		_exitBars = Param(nameof(ExitBars), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit After Bars", "Bars to hold position", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -112,9 +112,9 @@ public class StochasticDynamicVolatilityBandModelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bands = new BollingerBands
 		{

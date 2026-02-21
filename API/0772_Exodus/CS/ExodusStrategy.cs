@@ -84,8 +84,8 @@ public class ExodusStrategy : Strategy
 
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_adx = new AverageDirectionalIndex { Length = AdxLength };
-		_volumeSma = new SimpleMovingAverage { Length = VwmoVolume };
-		_vwmoSma = new SimpleMovingAverage { Length = VwmoSmooth };
+		_volumeSma = new SMA { Length = VwmoVolume };
+		_vwmoSma = new SMA { Length = VwmoSmooth };
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -99,9 +99,9 @@ public class ExodusStrategy : Strategy
 		_prevClose = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr.Length = AtrLength;
 		_adx.Length = AdxLength;
@@ -124,10 +124,10 @@ public class ExodusStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var avgVol = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var avgVol = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 		var priceMom = _prevClose == 0m ? 0m : candle.ClosePrice - _prevClose;
 		var volWeight = avgVol == 0m ? 0m : candle.TotalVolume / avgVol;
-		var vwmo = _vwmoSma.Process(priceMom * volWeight, candle.ServerTime, true).ToDecimal();
+		var vwmo = _vwmoSma.Process(new DecimalIndicatorValue(_vwmoSma, priceMom * volWeight, candle.ServerTime)).ToDecimal();
 
 		_prevClose = candle.ClosePrice;
 

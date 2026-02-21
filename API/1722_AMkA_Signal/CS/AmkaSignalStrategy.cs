@@ -75,25 +75,25 @@ public class AmkaSignalStrategy : Strategy
 		_length = Param(nameof(Length), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("KAMA Length", "Lookback period for the adaptive moving average", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_fast = Param(nameof(Fast), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast smoothing constant period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_slow = Param(nameof(Slow), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow smoothing constant period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 1.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation filter", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2.0m, 0.5m);
 
 		_takeProfit = Param(nameof(TakeProfit), new Unit(2, UnitTypes.Percent))
@@ -121,9 +121,9 @@ public class AmkaSignalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var kama = new KaufmanAdaptiveMovingAverage
 		{
@@ -163,7 +163,7 @@ public class AmkaSignalStrategy : Strategy
 		var delta = kamaValue - _prevKama;
 		_prevKama = kamaValue;
 
-		var stdValue = _stdDev.Process(delta, candle.OpenTime, true).ToDecimal();
+		var stdValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, delta, candle.OpenTime)).ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading() || !_stdDev.IsFormed)
 			return;

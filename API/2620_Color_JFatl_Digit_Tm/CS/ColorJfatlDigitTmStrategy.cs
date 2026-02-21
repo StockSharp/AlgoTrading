@@ -262,7 +262,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Trade volume per position", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_enableTimeFilter = Param(nameof(EnableTimeFilter), true)
@@ -306,7 +306,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 		_jmaLength = Param(nameof(JmaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("JMA Length", "Period for Jurik moving average", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 30, 1);
 
 		_jmaPhase = Param(nameof(JmaPhase), -100)
@@ -343,9 +343,9 @@ public class ColorJfatlDigitTmStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 		ConfigureJma();

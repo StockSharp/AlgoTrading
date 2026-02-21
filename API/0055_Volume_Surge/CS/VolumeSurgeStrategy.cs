@@ -71,19 +71,19 @@ public class VolumeSurgeStrategy : Strategy
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Average Period", "Period for Average Volume calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_volumeSurgeMultiplier = Param(nameof(VolumeSurgeMultiplier), 2.0m)
 			.SetRange(1.0m, decimal.MaxValue)
 			.SetDisplay("Volume Surge Multiplier", "Minimum volume increase multiplier to generate signal", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -104,14 +104,14 @@ public class VolumeSurgeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 			// Create indicators
-			var ma = new SimpleMovingAverage { Length = MAPeriod };
+			var ma = new SMA { Length = MAPeriod };
 
-			_volumeMA = new SimpleMovingAverage { Length = VolumeAvgPeriod };
+			_volumeMA = new SMA { Length = VolumeAvgPeriod };
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
@@ -139,7 +139,7 @@ public class VolumeSurgeStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
-		var volumeMAValue = _volumeMA.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var volumeMAValue = _volumeMA.Process(new DecimalIndicatorValue(_volumeMA, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())

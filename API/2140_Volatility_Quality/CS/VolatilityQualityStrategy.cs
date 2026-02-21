@@ -51,7 +51,7 @@ public class VolatilityQualityStrategy : Strategy
 		_lengthParam = Param(nameof(Length), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Smoothing period for median price", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -75,12 +75,12 @@ public class VolatilityQualityStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicator for smoothed median price
-		_sma = new SimpleMovingAverage { Length = Length };
+		_sma = new SMA { Length = Length };
 
 		// Subscribe to candle series and bind indicator
 		var subscription = SubscribeCandles(CandleType);

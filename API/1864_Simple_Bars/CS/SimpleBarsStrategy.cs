@@ -74,9 +74,9 @@ public class SimpleBarsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var lowest = new Lowest { Length = Period };
 		var highest = new Highest { Length = Period };

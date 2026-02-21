@@ -56,12 +56,12 @@ public class GbpChfCorrelationStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 90)
 		.SetDisplay("Stop Loss (pips)", "Stop loss distance expressed in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 150, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 45)
 		.SetDisplay("Take Profit (pips)", "Take profit distance expressed in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 120, 5);
 
 		_onlyOnePosition = Param(nameof(OnlyOnePosition), true)
@@ -84,11 +84,11 @@ public class GbpChfCorrelationStrategy : Strategy
 
 		_gbpUsdSymbol = Param(nameof(GbpUsdSymbol), "GBPUSD")
 		.SetDisplay("GBPUSD Symbol", "Identifier of the GBPUSD instrument", "Data")
-		.SetCanOptimize(false);
+		;
 
 		_usdChfSymbol = Param(nameof(UsdChfSymbol), "USDCHF")
 		.SetDisplay("USDCHF Symbol", "Identifier of the USDCHF instrument", "Data")
-		.SetCanOptimize(false);
+		;
 	}
 
 
@@ -217,9 +217,9 @@ public class GbpChfCorrelationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var tradedSecurity = Security ?? throw new InvalidOperationException("Security is not configured.");
 

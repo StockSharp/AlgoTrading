@@ -116,32 +116,32 @@ public CoinFlipMartingaleStrategy()
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 15m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop activation distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Trailing step distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_baseVolume = Param(nameof(BaseVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Initial trade volume", "Money Management")
-			.SetCanOptimize(true);
+			;
 
 		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 1.8m)
 			.SetGreaterThanOrEqualTo(1m)
 			.SetDisplay("Martingale Mult", "Multiplier applied after stop loss", "Money Management")
-			.SetCanOptimize(true);
+			;
 
 		_maxVolume = Param(nameof(MaxVolume), 5m)
 			.SetGreaterThanZero()
@@ -173,9 +173,9 @@ public CoinFlipMartingaleStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_random = new Random(Environment.TickCount ^ GetHashCode());
 
@@ -191,7 +191,7 @@ public CoinFlipMartingaleStrategy()
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

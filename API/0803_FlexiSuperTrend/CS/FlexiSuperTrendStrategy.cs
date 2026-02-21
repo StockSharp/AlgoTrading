@@ -93,19 +93,19 @@ public class FlexiSuperTrendStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for SuperTrend", "SuperTrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 15, 2);
 
 		_atrFactor = Param(nameof(AtrFactor), 3m)
 			.SetRange(0.5m, 10m)
 			.SetDisplay("ATR Factor", "ATR factor for SuperTrend", "SuperTrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_smaLength = Param(nameof(SmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Length of deviation smoothing", "Oscillator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_showLong = Param(nameof(ShowLong), true)
@@ -116,9 +116,9 @@ public class FlexiSuperTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_superTrend = new() { Length = AtrPeriod, Multiplier = AtrFactor };
 		_sma = new() { Length = SmaLength };

@@ -167,19 +167,19 @@ public class CciSupportResistanceStrategy : Strategy
 		_cciLength = Param(nameof(CciLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI Length", "CCI calculation length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 10);
 
 		_leftPivot = Param(nameof(LeftPivot), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Left Pivot", "Bars to the left", "Support")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 10);
 
 		_rightPivot = Param(nameof(RightPivot), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Right Pivot", "Bars to the right", "Support")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 10);
 
 		_buffer = Param(nameof(Buffer), 10m)
@@ -230,15 +230,15 @@ public class CciSupportResistanceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var cci = new CommodityChannelIndex { Length = CciLength };
-		var sma = new SimpleMovingAverage { Length = CciLength };
+		var sma = new SMA { Length = CciLength };
 		var std = new StandardDeviation { Length = CciLength };
-		var emaFast = new ExponentialMovingAverage { Length = FastMaLength };
-		var emaSlow = new ExponentialMovingAverage { Length = SlowMaLength };
+		var emaFast = new EMA { Length = FastMaLength };
+		var emaSlow = new EMA { Length = SlowMaLength };
 		var lowest2 = new Lowest { Length = 2 };
 		var highest2 = new Highest { Length = 2 };
 		var atr = new AverageTrueRange { Length = 100 };

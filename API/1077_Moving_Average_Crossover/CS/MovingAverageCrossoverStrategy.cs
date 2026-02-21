@@ -62,13 +62,13 @@ public class MovingAverageCrossoverStrategy : Strategy
 		_shortLength = Param(nameof(ShortLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Short MA Length", "Period of the short moving average", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		
 		_longLength = Param(nameof(LongLength), 21)
 		.SetGreaterThanZero()
 		.SetDisplay("Long MA Length", "Period of the long moving average", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 5);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -91,9 +91,9 @@ public class MovingAverageCrossoverStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var shortMa = new SMA { Length = ShortLength };
 		var longMa = new SMA { Length = LongLength };

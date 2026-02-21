@@ -59,8 +59,8 @@ public class NormalizedOscillatorsSpiderChartStrategy : Strategy
 
 	public NormalizedOscillatorsSpiderChartStrategy()
 	{
-		_length = Param(nameof(Length), 14).SetDisplay("Length").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle type");
+		_length = Param(nameof(Length), 14).SetDisplay("Length", "Length", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle type", "Candle type", "General");
 
 		_prices = new decimal[Length];
 		_upFlags = new decimal[Length];
@@ -72,12 +72,12 @@ public class NormalizedOscillatorsSpiderChartStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = Length };
-		_stochastic = new StochasticOscillator { Length = Length };
+		_stochastic = new StochasticOscillator { K = { Length = Length } };
 		_mfi = new MoneyFlowIndex { Length = Length };
 		_wpr = new WilliamsR { Length = Length };
 		_cmo = new ChandeMomentumOscillator { Length = Length };
@@ -86,7 +86,7 @@ public class NormalizedOscillatorsSpiderChartStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(_stochastic, _rsi, _mfi, _wpr, _cmo, _aos, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue, IIndicatorValue rsiValue, IIndicatorValue mfiValue, IIndicatorValue wprValue, IIndicatorValue cmoValue, IIndicatorValue aosValue)

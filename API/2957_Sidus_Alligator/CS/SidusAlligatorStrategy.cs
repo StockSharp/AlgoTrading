@@ -284,9 +284,9 @@ public SidusAlligatorStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
 		{
@@ -333,10 +333,10 @@ public SidusAlligatorStrategy()
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var jawValue = _jaw.Process(median, candle.OpenTime, true);
-		var teethValue = _teeth.Process(median, candle.OpenTime, true);
-		var lipsValue = _lips.Process(median, candle.OpenTime, true);
-		var rsiValue = _rsi.Process(candle.ClosePrice, candle.OpenTime, true);
+		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.OpenTime));
+		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.OpenTime));
+		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.OpenTime));
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.OpenTime));
 
 		if (!jawValue.IsFinal || !teethValue.IsFinal || !lipsValue.IsFinal || !rsiValue.IsFinal)
 		return;

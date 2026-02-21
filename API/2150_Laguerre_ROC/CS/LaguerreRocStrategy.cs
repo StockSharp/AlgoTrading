@@ -87,22 +87,22 @@ public class LaguerreRocStrategy : Strategy
 		_period = Param(nameof(Period), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Period", "Rate of change lookback", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_gamma = Param(nameof(Gamma), 0.5m)
 		.SetRange(0.1m, 0.9m)
 		.SetDisplay("Gamma", "Laguerre smoothing factor", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_upLevel = Param(nameof(UpLevel), 0.75m)
 		.SetRange(0.1m, 0.9m)
 		.SetDisplay("Up Level", "Overbought threshold", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_downLevel = Param(nameof(DownLevel), 0.25m)
 		.SetRange(0.1m, 0.9m)
 		.SetDisplay("Down Level", "Oversold threshold", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -115,9 +115,9 @@ public class LaguerreRocStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_roc = new RateOfChange { Length = Period };
 

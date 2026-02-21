@@ -140,9 +140,9 @@ public class TrailingStopFrCnStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = GetPipSize();
 
@@ -312,7 +312,7 @@ public class TrailingStopFrCnStrategy : Strategy
 				if (index < 0)
 					break;
 
-				var low = _candles[index].Low;
+				var low = _candles[index].LowPrice;
 				if (low > 0m && price - low > minOffset)
 					return low;
 			}
@@ -351,7 +351,7 @@ public class TrailingStopFrCnStrategy : Strategy
 				if (index < 0)
 					break;
 
-				var high = _candles[index].High;
+				var high = _candles[index].HighPrice;
 				if (high > 0m && high - price > minOffset)
 					return high;
 			}

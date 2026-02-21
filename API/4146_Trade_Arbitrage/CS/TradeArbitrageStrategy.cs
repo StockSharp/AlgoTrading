@@ -143,7 +143,7 @@ public class TradeArbitrageStrategy : Strategy
 		_lotSizeParam = Param(nameof(LotSize), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Lot Size", "Base lot size for each arbitrage basket", "Position Sizing")
-		.SetCanOptimize(true);
+		;
 
 		_minLotParam = Param(nameof(MinLot), 0.1m)
 		.SetGreaterThanZero()
@@ -186,9 +186,9 @@ public class TradeArbitrageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (_graphNeedsRebuild)
 		PrepareArbitrageGraph();

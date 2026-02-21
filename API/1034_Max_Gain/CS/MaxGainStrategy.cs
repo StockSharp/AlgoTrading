@@ -48,10 +48,10 @@ public class MaxGainStrategy : Strategy
 		_periodLength = Param(nameof(PeriodLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Period Length", "Number of candles for high/low calculation", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -62,11 +62,11 @@ public class MaxGainStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var highest = new Highest { Length = PeriodLength };
 		var lowest = new Lowest { Length = PeriodLength };

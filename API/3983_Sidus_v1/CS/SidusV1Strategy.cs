@@ -201,81 +201,81 @@ public class SidusV1Strategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 23)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Length of the fast EMA for buy signals", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 62)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length", "Length of the slow EMA for buy signals", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 90, 10);
 
 		_fastEma2Length = Param(nameof(FastEma2Length), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length (Sell)", "Length of the fast EMA for sell signals", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 35, 5);
 
 		_slowEma2Length = Param(nameof(SlowEma2Length), 54)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length (Sell)", "Length of the slow EMA for sell signals", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 80, 10);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 67)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period used for buy signals", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 90, 10);
 
 		_rsiPeriod2 = Param(nameof(RsiPeriod2), 97)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period (Sell)", "RSI period used for sell signals", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 110, 10);
 
 		_buyDifferenceThreshold = Param(nameof(BuyDifferenceThreshold), 63m)
 			.SetDisplay("Buy EMA Threshold", "Maximum fast-slow EMA difference to allow buy", "Trading Rules")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40m, 80m, 5m);
 
 		_buyRsiThreshold = Param(nameof(BuyRsiThreshold), 59m)
 			.SetDisplay("Buy RSI Threshold", "Maximum RSI level to allow buy", "Trading Rules")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40m, 70m, 5m);
 
 		_sellDifferenceThreshold = Param(nameof(SellDifferenceThreshold), -57m)
 			.SetDisplay("Sell EMA Threshold", "Minimum fast-slow EMA difference to allow sell", "Trading Rules")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-80m, -40m, 5m);
 
 		_sellRsiThreshold = Param(nameof(SellRsiThreshold), 60m)
 			.SetDisplay("Sell RSI Threshold", "Minimum RSI level to allow sell", "Trading Rules")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 80m, 5m);
 
 		_buyTakeProfitPips = Param(nameof(BuyTakeProfitPips), 95m)
 			.SetNotNegative()
 			.SetDisplay("Buy Take Profit", "Take profit distance in pips for long trades", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 120m, 10m);
 
 		_buyStopLossPips = Param(nameof(BuyStopLossPips), 100m)
 			.SetNotNegative()
 			.SetDisplay("Buy Stop Loss", "Stop loss distance in pips for long trades", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 140m, 10m);
 
 		_sellTakeProfitPips = Param(nameof(SellTakeProfitPips), 17m)
 			.SetNotNegative()
 			.SetDisplay("Sell Take Profit", "Take profit distance in pips for short trades", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_sellStopLossPips = Param(nameof(SellStopLossPips), 69m)
 			.SetNotNegative()
 			.SetDisplay("Sell Stop Loss", "Stop loss distance in pips for short trades", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40m, 100m, 10m);
 
 		_orderVolume = Param(nameof(OrderVolume), 0.5m)
@@ -285,7 +285,7 @@ public class SidusV1Strategy : Strategy
 		_maxCandleVolume = Param(nameof(MaxCandleVolume), 10m)
 			.SetNotNegative()
 			.SetDisplay("Max Candle Volume", "Maximum candle volume allowed for trading", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 20m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -299,16 +299,16 @@ public class SidusV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security.PriceStep ?? 1m;
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
-		var fastEma2 = new ExponentialMovingAverage { Length = FastEma2Length };
-		var slowEma2 = new ExponentialMovingAverage { Length = SlowEma2Length };
+		var fastEma = new EMA { Length = FastEmaLength };
+		var slowEma = new EMA { Length = SlowEmaLength };
+		var fastEma2 = new EMA { Length = FastEma2Length };
+		var slowEma2 = new EMA { Length = SlowEma2Length };
 		var rsi = new RSI { Length = RsiPeriod };
 		var rsi2 = new RSI { Length = RsiPeriod2 };
 

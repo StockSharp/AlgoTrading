@@ -58,57 +58,57 @@ public class McValuteCloudStrategy : Strategy
 
 		_filterMaLength = Param(nameof(FilterMaLength), 3)
 		.SetDisplay("Filter EMA", "Length of the trend filter EMA", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 20, 1);
 
 		_blueMaLength = Param(nameof(BlueMaLength), 13)
 		.SetDisplay("Blue SMMA", "Length of the slower smoothed MA", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 1);
 
 		_limeMaLength = Param(nameof(LimeMaLength), 5)
 		.SetDisplay("Lime SMMA", "Length of the faster smoothed MA", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 40, 1);
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 		.SetDisplay("MACD Fast", "Short EMA length for the MACD", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 		.SetDisplay("MACD Slow", "Long EMA length for the MACD", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 80, 1);
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 		.SetDisplay("MACD Signal", "Signal EMA length for the MACD", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 30, 1);
 
 		_tenkanLength = Param(nameof(TenkanLength), 12)
 		.SetDisplay("Tenkan", "Tenkan-sen length for the Ichimoku cloud", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 
 		_kijunLength = Param(nameof(KijunLength), 20)
 		.SetDisplay("Kijun", "Kijun-sen length for the Ichimoku cloud", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 1);
 
 		_senkouLength = Param(nameof(SenkouLength), 40)
 		.SetDisplay("Senkou Span B", "Span B length for the Ichimoku cloud", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 120, 1);
 
 		_takeProfit = Param(nameof(TakeProfit), 30)
 		.SetDisplay("Take Profit", "Take profit distance in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 5);
 
 		_stopLoss = Param(nameof(StopLoss), 350)
 		.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 600, 10);
 
 		_lastProcessedTime = DateTimeOffset.MinValue;
@@ -242,7 +242,7 @@ public class McValuteCloudStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_filterMa = new ExponentialMovingAverage { Length = FilterMaLength };
+		_filterMa = new EMA { Length = FilterMaLength };
 		_blueMa = new SmoothedMovingAverage { Length = BlueMaLength };
 		_limeMa = new SmoothedMovingAverage { Length = LimeMaLength };
 

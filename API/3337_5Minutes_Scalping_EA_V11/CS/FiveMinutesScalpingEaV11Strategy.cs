@@ -85,7 +85,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 
 		_indicatorShift = Param(nameof(IndicatorShift), 1)
 		.SetDisplay("Indicator Shift", "Number of completed candles used for confirmation", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 3, 1)
 		.SetNotNegative();
 
@@ -393,11 +393,11 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_pipSize = GetPipSize();
 		ResetRiskState();
@@ -858,7 +858,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 		if (!UseTimeFilter)
 			return true;
 
-		var hour = time.LocalDateTime.Hour;
+		var hour = time.Hour;
 		var start = StartHour % 24;
 		var end = EndHour % 24;
 

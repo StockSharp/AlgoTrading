@@ -129,9 +129,9 @@ public class MtfBbStrategy : Strategy
 		=> [(Security, CandleType), (Security, MtfCandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_bollinger = new BollingerBands
@@ -148,7 +148,7 @@ public class MtfBbStrategy : Strategy
 
 		if (UseMaFilter)
 		{
-			_ma = new ExponentialMovingAverage { Length = MaLength };
+			_ma = new EMA { Length = MaLength };
 		}
 
 		// Subscribe to main timeframe

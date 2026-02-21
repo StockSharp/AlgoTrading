@@ -73,17 +73,17 @@ public class CycleBiologiqueStrategy : Strategy
 		_cycleLength = Param(nameof(CycleLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Cycle Length", "Number of bars in the cycle", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 100, 5);
 
 		_amplitude = Param(nameof(Amplitude), 1m)
 			.SetDisplay("Amplitude", "Amplitude of the cycle", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_offset = Param(nameof(Offset), 0)
 			.SetDisplay("Offset", "Cycle offset in bars", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-360, 360, 5);
 	}
 
@@ -103,11 +103,11 @@ public class CycleBiologiqueStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

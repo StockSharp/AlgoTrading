@@ -166,17 +166,17 @@ public class EmaCrossoverRsiDistanceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_emaShort = new ExponentialMovingAverage { Length = EmaShortLength };
-		_emaMedium = new ExponentialMovingAverage { Length = EmaMediumLength };
-		_emaLong1 = new ExponentialMovingAverage { Length = EmaLong1Length };
-		_emaLong2 = new ExponentialMovingAverage { Length = EmaLong2Length };
+		_emaShort = new EMA { Length = EmaShortLength };
+		_emaMedium = new EMA { Length = EmaMediumLength };
+		_emaLong1 = new EMA { Length = EmaLong1Length };
+		_emaLong2 = new EMA { Length = EmaLong2Length };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_rsiAverage = new SimpleMovingAverage { Length = RsiAverageLength };
-		_distanceAverage = new SimpleMovingAverage { Length = DistanceLength };
+		_rsiAverage = new SMA { Length = RsiAverageLength };
+		_distanceAverage = new SMA { Length = DistanceLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

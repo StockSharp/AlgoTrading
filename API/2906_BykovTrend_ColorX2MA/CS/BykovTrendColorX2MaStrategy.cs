@@ -349,13 +349,13 @@ public BykovTrendColorX2MaStrategy()
 	_bykovWilliamsPeriod = Param(nameof(BykovWilliamsPeriod), 9)
 	.SetGreaterThanZero()
 	.SetDisplay("Williams %R Period", "Williams %R length used by BykovTrend", "BykovTrend")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(5, 30, 1);
 
 	_bykovRisk = Param(nameof(BykovRisk), 3)
 	.SetDisplay("Risk Offset", "Shifts Williams %R thresholds (33 - Risk)", "BykovTrend")
 	.SetRange(0, 30)
-	.SetCanOptimize(true);
+	;
 
 	_bykovSignalBar = Param(nameof(BykovSignalBar), 1)
 	.SetDisplay("Signal Bar", "Delay in completed candles before acting", "BykovTrend")
@@ -382,7 +382,7 @@ public BykovTrendColorX2MaStrategy()
 	_colorFirstLength = Param(nameof(ColorFirstLength), 12)
 	.SetGreaterThanZero()
 	.SetDisplay("First MA Length", "Length of the first smoothing stage", "ColorX2MA")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(5, 30, 1);
 
 	_colorFirstPhase = Param(nameof(ColorFirstPhase), 15)
@@ -394,7 +394,7 @@ public BykovTrendColorX2MaStrategy()
 	_colorSecondLength = Param(nameof(ColorSecondLength), 5)
 	.SetGreaterThanZero()
 	.SetDisplay("Second MA Length", "Length of the second smoothing stage", "ColorX2MA")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(3, 20, 1);
 
 	_colorSecondPhase = Param(nameof(ColorSecondPhase), 15)
@@ -439,9 +439,9 @@ protected override void OnReseted()
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_bykovWilliams = new WilliamsR { Length = BykovWilliamsPeriod };
 	_colorFirstMa = CreateMovingAverage(ColorFirstMethod, ColorFirstLength);
@@ -499,11 +499,11 @@ private void ProcessColorX2Ma(ICandleMessage candle)
 	return;
 
 	var price = GetAppliedPrice(candle, ColorAppliedPrice);
-	var firstValue = _colorFirstMa.Process(price, candle.CloseTime, true).ToNullableDecimal();
+	var firstValue = _colorFirstMa.Process(new DecimalIndicatorValue(_colorFirstMa, price, candle.CloseTime)).ToNullableDecimal();
 	if (firstValue is null)
 	return;
 
-	var secondValue = _colorSecondMa.Process(firstValue.Value, candle.CloseTime, true).ToNullableDecimal();
+	var secondValue = _colorSecondMa.Process(new DecimalIndicatorValue(_colorSecondMa, firstValue.Value, candle.CloseTime)).ToNullableDecimal();
 	if (secondValue is null)
 	return;
 

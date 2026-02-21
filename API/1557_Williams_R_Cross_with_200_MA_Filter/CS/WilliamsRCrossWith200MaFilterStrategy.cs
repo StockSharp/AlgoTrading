@@ -80,19 +80,19 @@ public WilliamsRCrossWith200MaFilterStrategy()
 _wrLength = Param(nameof(WrLength), 14)
 .SetGreaterThanZero()
 .SetDisplay("%R Length", "Williams %R period", "General")
-.SetCanOptimize(true);
+;
 
 _crossThreshold = Param(nameof(CrossThreshold), 10m)
 .SetDisplay("Cross Threshold", "Offset from -50 level", "General")
-.SetCanOptimize(true);
+;
 
 _takeProfit = Param(nameof(TakeProfit), 30m)
 .SetDisplay("Take Profit", "Profit target in steps", "General")
-.SetCanOptimize(true);
+;
 
 _stopLoss = Param(nameof(StopLoss), 20m)
 .SetDisplay("Stop Loss", "Loss limit in steps", "General")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
@@ -113,12 +113,12 @@ _entryPrice = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var wpr = new WilliamsR { Length = WrLength };
-var ma200 = new SimpleMovingAverage { Length = 200 };
+var ma200 = new SMA { Length = 200 };
 
 var subscription = SubscribeCandles(CandleType);
 subscription.Bind(wpr, ma200, ProcessCandle).Start();
@@ -132,7 +132,7 @@ DrawIndicator(area, ma200);
 DrawOwnTrades(area);
 }
 
-StartProtection();
+StartProtection(null, null);
 }
 
 private void ProcessCandle(ICandleMessage candle, decimal wr, decimal ma)

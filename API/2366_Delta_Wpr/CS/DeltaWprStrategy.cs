@@ -70,17 +70,17 @@ public class DeltaWprStrategy : Strategy
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetDisplay("Fast WPR Period", "Period for the fast Williams %R", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 30)
 			.SetDisplay("Slow WPR Period", "Period for the slow Williams %R", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 5);
 
 		_level = Param(nameof(Level), -50m)
 			.SetDisplay("Signal Level", "Threshold level for signals", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-80m, -20m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -101,9 +101,9 @@ public class DeltaWprStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fast = new WilliamsR { Length = FastPeriod };
 		var slow = new WilliamsR { Length = SlowPeriod };

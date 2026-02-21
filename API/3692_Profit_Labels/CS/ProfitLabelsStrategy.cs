@@ -57,11 +57,11 @@ public class ProfitLabelsStrategy : Strategy
 
 		_placingTrade = Param(nameof(PlacingTrade), false)
 			.SetDisplay("Enable Trading", "Place live orders on signals", "Trading")
-			.SetCanOptimize(false);
+			;
 
 		_labelOffset = Param(nameof(LabelOffset), 0m)
 			.SetDisplay("Label Offset", "Vertical offset for profit labels", "Visualization")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <summary>
@@ -116,9 +116,9 @@ public class ProfitLabelsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 

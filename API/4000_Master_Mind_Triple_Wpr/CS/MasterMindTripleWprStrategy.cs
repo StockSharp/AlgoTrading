@@ -121,15 +121,15 @@ public class MasterMindTripleWprStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trade Volume", "Target net position volume", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_oversoldLevel = Param(nameof(OversoldLevel), -99.99m)
 		.SetDisplay("Oversold Level", "All Williams %R must be below this level", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), -0.01m)
 		.SetDisplay("Overbought Level", "All Williams %R must be above this level", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 2000)
 		.SetDisplay("Stop Loss (steps)", "Protective stop distance in price steps", "Risk");
@@ -167,9 +167,9 @@ public class MasterMindTripleWprStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -196,7 +196,7 @@ public class MasterMindTripleWprStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal wpr26Value, decimal wpr27Value, decimal wpr29Value, decimal wpr30Value)

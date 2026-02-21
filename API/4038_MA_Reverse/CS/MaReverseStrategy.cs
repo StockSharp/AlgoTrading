@@ -36,27 +36,27 @@ public class MaReverseStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 		.SetDisplay("Trade Volume", "Lot size used for market orders", "Trading")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_smaPeriod = Param(nameof(SmaPeriod), 14)
 		.SetDisplay("SMA Period", "Number of candles used by the moving average", "Indicator")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_streakThreshold = Param(nameof(StreakThreshold), 150)
 		.SetDisplay("Streak Threshold", "Number of consecutive closes required before reversing", "Logic")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_minimumDeviation = Param(nameof(MinimumDeviation), 0.004m)
 		.SetDisplay("Minimum Deviation", "Minimum distance between price and SMA to confirm the reversal", "Logic")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 30m)
 		.SetDisplay("Take Profit (points)", "Take-profit distance expressed in price steps", "Risk")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for SMA calculation", "General");
@@ -132,9 +132,9 @@ public class MaReverseStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Synchronize the base Strategy volume with the configured trade volume.
 		Volume = TradeVolume;

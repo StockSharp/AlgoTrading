@@ -66,12 +66,12 @@ public class HeikinAshiConsecutiveStrategy : Strategy
 	{
 		_consecutiveCandles = Param(nameof(ConsecutiveCandles), 3)
 			.SetDisplay("Consecutive Candles", "Number of consecutive candles required for signal", "Trading parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 5, 1);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop Loss (%)", "Stop loss as a percentage of entry price", "Risk parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 3, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -98,9 +98,9 @@ public class HeikinAshiConsecutiveStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create subscription
 		var subscription = SubscribeCandles(CandleType);

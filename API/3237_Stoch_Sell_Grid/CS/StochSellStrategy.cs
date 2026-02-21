@@ -63,20 +63,20 @@ public class StochSellStrategy : Strategy
 
 		_atrPeriod = Param(nameof(AtrPeriod), 35)
 			.SetDisplay("ATR Period", "Number of candles used for ATR smoothing", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 5);
 
 		_atrThreshold = Param(nameof(AtrThreshold), 0.00043m)
 			.SetDisplay("ATR Threshold", "Upper volatility filter measured in price units", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0002m, 0.001m, 0.0001m);
 
 		_fastKPeriod = Param(nameof(FastKPeriod), 30)
 			.SetDisplay("Fast %K", "Lookback for the fast stochastic", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 5);
 
-		_fastDPeriod = Param(nameof(FastDPeriod), 3)
+		_fastD = { Length = Param }(nameof(FastDPeriod), 3)
 			.SetDisplay("Fast %D", "Signal smoothing for the fast stochastic", "Indicators");
 
 		_fastSlowing = Param(nameof(FastSlowing), 3)
@@ -84,10 +84,10 @@ public class StochSellStrategy : Strategy
 
 		_mediumKPeriod = Param(nameof(MediumKPeriod), 100)
 			.SetDisplay("Medium %K", "Lookback for the medium stochastic", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60, 150, 10);
 
-		_mediumDPeriod = Param(nameof(MediumDPeriod), 1)
+		_mediumD = { Length = Param }(nameof(MediumDPeriod), 1)
 			.SetDisplay("Medium %D", "Signal smoothing for the medium stochastic", "Indicators");
 
 		_mediumSlowing = Param(nameof(MediumSlowing), 3)
@@ -95,10 +95,10 @@ public class StochSellStrategy : Strategy
 
 		_slowKPeriod = Param(nameof(SlowKPeriod), 900)
 			.SetDisplay("Slow %K", "Lookback for the slow stochastic", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(400, 1200, 100);
 
-		_slowDPeriod = Param(nameof(SlowDPeriod), 1)
+		_slowD = { Length = Param }(nameof(SlowDPeriod), 1)
 			.SetDisplay("Slow %D", "Signal smoothing for the slow stochastic", "Indicators");
 
 		_slowSlowing = Param(nameof(SlowSlowing), 3)
@@ -106,47 +106,47 @@ public class StochSellStrategy : Strategy
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 20m)
 			.SetDisplay("Trigger Level", "%K value that must be crossed downward", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 30m, 5m);
 
 		_longTermOversoldLevel = Param(nameof(LongTermOversoldLevel), 40m)
 			.SetDisplay("Slow Confirmation", "Maximum value allowed for the slow stochastic", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30m, 60m, 5m);
 
 		_profitTargetPips = Param(nameof(ProfitTargetPips), 23m)
 			.SetDisplay("Profit Target", "Desired profit in pips before flattening", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15m, 40m, 5m);
 
 		_gridOrdersCount = Param(nameof(GridOrdersCount), 8)
 			.SetDisplay("Grid Orders", "Number of supplemental sell stops", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_gridStartOffsetPips = Param(nameof(GridStartOffsetPips), -13m)
 			.SetDisplay("Grid Offset", "Initial distance from the trigger price in pips", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-30m, -5m, 5m);
 
 		_gridStepPips = Param(nameof(GridStepPips), -23m)
 			.SetDisplay("Grid Step", "Distance in pips between consecutive pending orders", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-40m, -10m, 5m);
 
 		_gridVolume = Param(nameof(GridVolume), 0.7m)
 			.SetDisplay("Grid Volume", "Volume multiplier applied to each pending order", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.3m, 1.0m, 0.1m);
 
 		_gridExpirationMinutes = Param(nameof(GridExpirationMinutes), 45)
 			.SetDisplay("Grid Expiration", "Lifetime of pending sell stops in minutes", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 120, 15);
 
 		_marketVolume = Param(nameof(MarketVolume), 0.3m)
 			.SetDisplay("Market Volume", "Volume used for the initial market sell", "Execution")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1.0m, 0.1m);
 	}
 
@@ -362,9 +362,9 @@ public class StochSellStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
@@ -392,8 +392,7 @@ public class StochSellStrategy : Strategy
 	private StochasticOscillator CreateStochastic(int kPeriod, int dPeriod, int slowing)
 	{
 		return new StochasticOscillator
-		{
-			Length = kPeriod,
+		{ K = { Length = kPeriod },
 			K = { Length = slowing },
 			D = { Length = dPeriod }
 		};

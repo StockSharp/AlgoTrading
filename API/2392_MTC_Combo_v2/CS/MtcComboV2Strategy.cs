@@ -82,11 +82,11 @@ public class MtcComboV2Strategy : Strategy
 		_tp = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
+		base.OnStarted2(time);
+		StartProtection(null, null);
+		_ma = new SMA { Length = MaPeriod };
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(_ma, ProcessCandle).Start();
 		var area = CreateChartArea();

@@ -119,7 +119,7 @@ public class NeuralNetworkTemplateStrategy : Strategy
 		_barsToPattern = Param(nameof(BarsToPattern), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Bars", "Candles analysed", "Model")
-			.SetCanOptimize(true);
+			;
 
 		_maxTakeProfitPoints = Param(nameof(MaxTakeProfitPoints), 500)
 			.SetGreaterThanZero()
@@ -172,9 +172,9 @@ public class NeuralNetworkTemplateStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = 12 };
 		_macd = new MovingAverageConvergenceDivergenceSignal

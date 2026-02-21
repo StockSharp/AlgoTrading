@@ -72,13 +72,13 @@ public class BollingerBandReversalStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Number of periods for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetNotNegative()
 			.SetDisplay("Bollinger Deviation", "Number of standard deviations for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -87,7 +87,7 @@ public class BollingerBandReversalStrategy : Strategy
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
 			.SetNotNegative()
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR to set stop-loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 	}
 
@@ -98,9 +98,9 @@ public class BollingerBandReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_bollingerBands = new BollingerBands

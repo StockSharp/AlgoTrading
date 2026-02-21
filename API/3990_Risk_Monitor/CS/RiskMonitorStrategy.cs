@@ -48,7 +48,7 @@ public class RiskMonitorStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk %", "Portion of balance used to size positions", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 30m, 5m);
 	}
 
@@ -66,9 +66,9 @@ public class RiskMonitorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Capture initial position snapshot when the strategy becomes active.
 		_currentPosition = Position;

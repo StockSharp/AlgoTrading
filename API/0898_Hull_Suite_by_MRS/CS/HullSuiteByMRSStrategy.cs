@@ -94,9 +94,9 @@ public class HullSuiteByMRSStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -110,9 +110,9 @@ public class HullSuiteByMRSStrategy : Strategy
 			}
 			case HullModes.Ehma:
 			{
-				_emaFast = new ExponentialMovingAverage { Length = Math.Max(1, Length / 2) };
-				_emaSlow = new ExponentialMovingAverage { Length = Length };
-				_emaFinal = new ExponentialMovingAverage { Length = (int)Math.Round(Math.Sqrt(Length)) };
+				_emaFast = new EMA { Length = Math.Max(1, Length / 2) };
+				_emaSlow = new EMA { Length = Length };
+				_emaFinal = new EMA { Length = (int)Math.Round(Math.Sqrt(Length)) };
 				_finalMa = _emaFinal;
 				subscription.Bind(_emaFast, _emaSlow, ProcessEhma).Start();
 				break;

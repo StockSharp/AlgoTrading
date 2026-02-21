@@ -93,14 +93,14 @@ public class ProfitViewTemplateStrategy : Strategy
 		_ma1Length = Param(nameof(Ma1Length), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1 Length", "Length of first moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 		_ma2Type = Param(nameof(Ma2Type), MaTypes.SMA)
 			.SetDisplay("MA2 Type", "Type of second moving average", "Moving Averages");
 		_ma2Length = Param(nameof(Ma2Length), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("MA2 Length", "Length of second moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 10);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -113,9 +113,9 @@ public class ProfitViewTemplateStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ma1 = CreateMa(Ma1Type, Ma1Length);
 		var ma2 = CreateMa(Ma2Type, Ma2Length);
@@ -139,8 +139,8 @@ public class ProfitViewTemplateStrategy : Strategy
 	{
 		return type switch
 		{
-			MaTypes.SMA => new SimpleMovingAverage { Length = length },
-			MaTypes.EMA => new ExponentialMovingAverage { Length = length },
+			MaTypes.SMA => new SMA { Length = length },
+			MaTypes.EMA => new EMA { Length = length },
 			MaTypes.RMA => new SmoothedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type))
 		};

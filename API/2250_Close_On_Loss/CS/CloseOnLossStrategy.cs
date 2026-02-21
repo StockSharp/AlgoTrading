@@ -45,7 +45,7 @@ public class CloseOnLossStrategy : Strategy
 	{
 		_maxLoss = Param(nameof(MaxLoss), 1000m)
 			.SetDisplay("Max Loss", "Maximum loss before closing positions", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", string.Empty, "Data");
@@ -58,11 +58,11 @@ public class CloseOnLossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

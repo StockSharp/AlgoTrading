@@ -139,13 +139,13 @@ public class OrderEscortStrategy : Strategy
 		_targetBar = Param(nameof(TargetBar), 35m)
 			.SetGreaterThanZero()
 			.SetDisplay("Target Bar", "Bars required to reach full trailing distance", "Trailing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 80m, 5m);
 
 		_deltaPoints = Param(nameof(DeltaPoints), 80m)
 			.SetGreaterThanZero()
 			.SetDisplay("Delta Points", "Total trailing distance in points", "Trailing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 120m, 10m);
 
 		_trailingMode = Param(nameof(TrailingMode), TrailingTypes.Linear)
@@ -194,9 +194,9 @@ public class OrderEscortStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 		RecalculateCoefficients();

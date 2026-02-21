@@ -67,7 +67,7 @@ public BuySellStopButtonsStrategy()
 {
 	_useTakeProfitInMoney = Param(nameof(UseTakeProfitInMoney), false)
 	.SetDisplay("TP in money", "Close all positions once aggregated profit reaches the threshold.", "Money targets")
-	.SetCanOptimize(false);
+	;
 
 	_takeProfitInMoney = Param(nameof(TakeProfitInMoney), 10m)
 	.SetDisplay("TP amount", "Monetary profit that triggers the immediate close when TP in money is enabled.", "Money targets")
@@ -75,7 +75,7 @@ public BuySellStopButtonsStrategy()
 
 	_useTakeProfitPercent = Param(nameof(UseTakeProfitPercent), false)
 	.SetDisplay("TP percent", "Close all positions once profit exceeds the configured percentage of equity.", "Money targets")
-	.SetCanOptimize(false);
+	;
 
 	_takeProfitPercent = Param(nameof(TakeProfitPercent), 10m)
 	.SetDisplay("TP %", "Percentage of portfolio value used by the percent based take-profit.", "Money targets")
@@ -83,7 +83,7 @@ public BuySellStopButtonsStrategy()
 
 	_enableTrailing = Param(nameof(EnableTrailing), true)
 	.SetDisplay("Enable trailing", "Activates the equity based trailing block from the original expert.", "Money targets")
-	.SetCanOptimize(false);
+	;
 
 	_trailingProfitMoney = Param(nameof(TrailingProfitMoney), 40m)
 	.SetDisplay("Trailing activation", "Profit in money that arms the trailing equity lock.", "Money targets")
@@ -95,11 +95,11 @@ public BuySellStopButtonsStrategy()
 
 	_useBollingerExit = Param(nameof(UseBollingerExit), true)
 	.SetDisplay("Use Bollinger exit", "Mimics the chart stop button that closes positions at the opposite band.", "Exits")
-	.SetCanOptimize(false);
+	;
 
 	_useBreakEven = Param(nameof(UseBreakEven), true)
 	.SetDisplay("Move to break even", "Enables the break-even logic that shifts the stop above the entry.", "Exits")
-	.SetCanOptimize(false);
+	;
 
 	_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 10m)
 	.SetDisplay("Break-even trigger", "Distance in pips required before the stop is moved to break even.", "Exits")
@@ -130,19 +130,19 @@ public BuySellStopButtonsStrategy()
 
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 	.SetDisplay("Candle type", "Heartbeat candles used to evaluate the management rules.", "Data")
-	.SetCanOptimize(false);
+	;
 
 	_buyRequest = Param(nameof(BuyRequest), false)
 	.SetDisplay("Buy request", "Set to true to replicate the BUY button action.", "Manual controls")
-	.SetCanOptimize(false);
+	;
 
 	_sellRequest = Param(nameof(SellRequest), false)
 	.SetDisplay("Sell request", "Set to true to replicate the SELL button action.", "Manual controls")
-	.SetCanOptimize(false);
+	;
 
 	_closeRequest = Param(nameof(CloseRequest), false)
 	.SetDisplay("Close request", "Set to true to emulate the CLOSE button that flattened all tickets.", "Manual controls")
-	.SetCanOptimize(false);
+	;
 }
 
 /// <summary>
@@ -326,16 +326,16 @@ public bool CloseRequest
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	Volume = GetManualVolume();
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription.Bind(_bollinger, ProcessCandle).Start();
 
-	StartProtection();
+	StartProtection(null, null);
 }
 
 /// <inheritdoc />

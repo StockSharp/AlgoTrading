@@ -90,37 +90,37 @@ public class MacdVolumeXauusdStrategy : Strategy
 	{
 		_shortLength = Param(nameof(ShortLength), 5)
 			.SetDisplay("Short Length", "Volume EMA short length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_longLength = Param(nameof(LongLength), 8)
 			.SetDisplay("Long Length", "Volume EMA long length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_fastLength = Param(nameof(FastLength), 16)
 			.SetDisplay("Fast Length", "MACD fast period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 1);
 
 		_slowLength = Param(nameof(SlowLength), 26)
 			.SetDisplay("Slow Length", "MACD slow period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 1);
 
 		_signalLength = Param(nameof(SignalLength), 9)
 			.SetDisplay("Signal Length", "MACD signal period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_leverage = Param(nameof(Leverage), 1m)
 			.SetDisplay("Leverage", "Position leverage", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_stopLoss = Param(nameof(StopLoss), 10100m)
 			.SetDisplay("Stop Loss", "Price distance for stop-loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1000m, 20000m, 1000m);
 
 		_takeProfitMultiplier = Param(nameof(TakeProfitMultiplier), 1.1m)
@@ -155,8 +155,8 @@ public class MacdVolumeXauusdStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_shortVolumeEma = new ExponentialMovingAverage { Length = ShortLength };
-		_longVolumeEma = new ExponentialMovingAverage { Length = LongLength };
+		_shortVolumeEma = new EMA { Length = ShortLength };
+		_longVolumeEma = new EMA { Length = LongLength };
 		_macd = new MovingAverageConvergenceDivergence
 		{
 			Fast = FastLength,
@@ -180,8 +180,8 @@ public class MacdVolumeXauusdStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var shortVol = _shortVolumeEma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
-		var longVol = _longVolumeEma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var shortVol = _shortVolumeEma.Process(new DecimalIndicatorValue(_shortVolumeEma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
+		var longVol = _longVolumeEma.Process(new DecimalIndicatorValue(_longVolumeEma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 		if (longVol == 0)
 			return;

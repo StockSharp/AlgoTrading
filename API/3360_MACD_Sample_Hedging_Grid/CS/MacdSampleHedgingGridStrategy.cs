@@ -284,7 +284,7 @@ public class MacdSampleHedgingGridStrategy : Strategy
 			SignalMa = { Length = SignalPeriod }
 		};
 
-		var trendEma = new ExponentialMovingAverage { Length = TrendMaPeriod };
+		var trendEma = new EMA { Length = TrendMaPeriod };
 
 		var mainSubscription = SubscribeCandles(CandleType);
 		mainSubscription

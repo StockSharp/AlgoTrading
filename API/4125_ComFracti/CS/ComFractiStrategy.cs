@@ -435,25 +435,25 @@ public class ComFractiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializeHistoryBuffers(HistoryCapacity);
 
 		Volume = BaseVolume;
 
-		_stochasticBuy.Length = Math.Max(1, StochasticPeriodBuy);
+		_stochasticBuy.K.Length = Math.Max(1, StochasticPeriodBuy);
 		_stochasticBuy.K.Length = 3;
 		_stochasticBuy.D.Length = 3;
 
-		_stochasticSell.Length = Math.Max(1, StochasticPeriodSell);
+		_stochasticSell.K.Length = Math.Max(1, StochasticPeriodSell);
 		_stochasticSell.K.Length = 3;
 		_stochasticSell.D.Length = 3;
 
 		_rsi.Length = 3;
 
-		_maFilter = new ExponentialMovingAverage { Length = Math.Max(1, MaPeriod) };
+		_maFilter = new EMA { Length = Math.Max(1, MaPeriod) };
 		_psarFilter = new ParabolicSar
 		{
 			Acceleration = PsarStep,

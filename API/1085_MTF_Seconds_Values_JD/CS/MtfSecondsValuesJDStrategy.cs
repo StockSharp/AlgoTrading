@@ -45,20 +45,20 @@ public class MtfSecondsValuesJDStrategy : Strategy
 	public MtfSecondsValuesJDStrategy()
 	{
 		_secondsTimeframe = Param(nameof(SecondsTimeframe), 30)
-			.SetDisplay("Seconds Timeframe")
-			.SetCanOptimize(true);
+			.SetDisplay("Seconds Timeframe", "Seconds Timeframe", "General")
+			;
 
 		_averageLength = Param(nameof(AverageLength), 20)
-			.SetDisplay("Average Length")
-			.SetCanOptimize(true);
+			.SetDisplay("Average Length", "Average Length", "General")
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = AverageLength };
+		var sma = new SMA { Length = AverageLength };
 
 		var candleType = TimeSpan.FromSeconds(SecondsTimeframe).TimeFrame();
 		var subscription = SubscribeCandles(candleType);

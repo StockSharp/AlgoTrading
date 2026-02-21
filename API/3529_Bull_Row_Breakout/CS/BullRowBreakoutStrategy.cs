@@ -52,75 +52,75 @@ public class BullRowBreakoutStrategy : Strategy
 	{
 		_candleTimeFrame = Param(nameof(CandleTimeFrame), TimeSpan.FromHours(1))
 		.SetDisplay("Timeframe", "Primary candle timeframe", "Market")
-		.SetCanOptimize(false);
+		;
 
 		_stopLossLookback = Param(nameof(StopLossLookback), 10)
 		.SetDisplay("Stop loss bars", "Bars used to locate protective stop", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 100m)
 		.SetDisplay("Take profit %", "Reward distance relative to stop", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_bearRowSize = Param(nameof(BearRowSize), 3)
 		.SetDisplay("Bear row size", "Required consecutive bearish candles", "Pattern")
-		.SetCanOptimize(true);
+		;
 
 		_bearMinBody = Param(nameof(BearMinBody), 0m)
 		.SetDisplay("Bear min body", "Minimum bearish candle body (price steps)", "Pattern")
-		.SetCanOptimize(true);
+		;
 
 		_bearRowMode = Param(nameof(BearRowMode), RowSequenceModes.Normal)
 		.SetDisplay("Bear row mode", "Body size progression for bearish row", "Pattern")
-		.SetCanOptimize(true);
+		;
 
 		_bearShift = Param(nameof(BearShift), 3)
 		.SetDisplay("Bear row shift", "How many bars back the bearish row starts", "Pattern")
-		.SetCanOptimize(true);
+		;
 
 		_bullRowSize = Param(nameof(BullRowSize), 2)
 		.SetDisplay("Bull row size", "Required consecutive bullish candles", "Pattern")
-		.SetCanOptimize(true);
+		;
 
 		_bullMinBody = Param(nameof(BullMinBody), 0m)
 		.SetDisplay("Bull min body", "Minimum bullish candle body (price steps)", "Pattern")
-		.SetCanOptimize(true);
+		;
 
 		_bullRowMode = Param(nameof(BullRowMode), RowSequenceModes.Normal)
 		.SetDisplay("Bull row mode", "Body size progression for bullish row", "Pattern")
-		.SetCanOptimize(true);
+		;
 
 		_bullShift = Param(nameof(BullShift), 1)
 		.SetDisplay("Bull row shift", "How many bars back the bullish row starts", "Pattern")
-		.SetCanOptimize(true);
+		;
 
 		_breakoutLookback = Param(nameof(BreakoutLookback), 10)
 		.SetDisplay("Breakout lookback", "Bars checked for the breakout filter", "Pattern")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 40)
 		.SetDisplay("Stochastic %K", "%K period", "Indicators")
-		.SetCanOptimize(true);
+		;
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 8)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 8)
 		.SetDisplay("Stochastic %D", "%D period", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticSlowing = Param(nameof(StochasticSlowing), 10)
 		.SetDisplay("Stochastic slowing", "Smoothing applied to %K", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticRangePeriod = Param(nameof(StochasticRangePeriod), 3)
 		.SetDisplay("Stochastic bars", "Bars that must remain inside the oscillator channel", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticUpperLevel = Param(nameof(StochasticUpperLevel), 70m)
 		.SetDisplay("Stochastic upper", "Upper bound for the oscillator", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticLowerLevel = Param(nameof(StochasticLowerLevel), 30m)
 		.SetDisplay("Stochastic lower", "Lower bound for the oscillator", "Indicators")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>
@@ -286,9 +286,9 @@ public class BullRowBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_stochastic = new StochasticOscillator
 		{
@@ -311,7 +311,7 @@ public class BullRowBreakoutStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochasticValue)

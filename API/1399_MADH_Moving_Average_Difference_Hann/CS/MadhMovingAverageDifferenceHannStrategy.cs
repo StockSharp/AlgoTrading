@@ -83,9 +83,9 @@ public class MadhMovingAverageDifferenceHannStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_madh = new MadhIndicator
 		{
@@ -125,7 +125,7 @@ public class MadhMovingAverageDifferenceHannStrategy : Strategy
 		}
 	}
 
-	private class MadhIndicator : Indicator<decimal>
+	private class MadhIndicator : BaseIndicator
 	{
 		public int ShortLength { get; set; } = 8;
 		public int DominantCycle { get; set; } = 27;

@@ -64,7 +64,7 @@ public class VwapMeanReversionStrategy : Strategy
 		_kParam = Param(nameof(K), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "ATR multiplier for entry distance from VWAP", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 4.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -73,7 +73,7 @@ public class VwapMeanReversionStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR indicator period", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 	}
 
@@ -92,9 +92,9 @@ public class VwapMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 
 		// Create indicators

@@ -46,18 +46,18 @@ public class TenPipsStrategy : Strategy
 	/// </summary>
 	public TenPipsStrategy()
 	{
-		_takeProfitBuy = Param(nameof(TakeProfitBuy), 10m).SetDisplay("Take Profit Buy");
-		_stopLossBuy = Param(nameof(StopLossBuy), 50m).SetDisplay("Stop Loss Buy");
-		_trailingStopBuy = Param(nameof(TrailingStopBuy), 50m).SetDisplay("Trailing Stop Buy");
-		_takeProfitSell = Param(nameof(TakeProfitSell), 10m).SetDisplay("Take Profit Sell");
-		_stopLossSell = Param(nameof(StopLossSell), 50m).SetDisplay("Stop Loss Sell");
-		_trailingStopSell = Param(nameof(TrailingStopSell), 50m).SetDisplay("Trailing Stop Sell");
+		_takeProfitBuy = Param(nameof(TakeProfitBuy), 10m).SetDisplay("Take Profit Buy", "Take Profit Buy", "General");
+		_stopLossBuy = Param(nameof(StopLossBuy), 50m).SetDisplay("Stop Loss Buy", "Stop Loss Buy", "General");
+		_trailingStopBuy = Param(nameof(TrailingStopBuy), 50m).SetDisplay("Trailing Stop Buy", "Trailing Stop Buy", "General");
+		_takeProfitSell = Param(nameof(TakeProfitSell), 10m).SetDisplay("Take Profit Sell", "Take Profit Sell", "General");
+		_stopLossSell = Param(nameof(StopLossSell), 50m).SetDisplay("Stop Loss Sell", "Stop Loss Sell", "General");
+		_trailingStopSell = Param(nameof(TrailingStopSell), 50m).SetDisplay("Trailing Stop Sell", "Trailing Stop Sell", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var trades = SubscribeTicks();
 		trades.Bind(ProcessTrade).Start();

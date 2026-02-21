@@ -10,7 +10,7 @@
 - **Стопы**: нет.
 - **Значения по умолчанию**:
   - `LowestPeriod = 5`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
   - `StartTime = new DateTimeOffset(2014, 1, 1, 0, 0, 0, TimeSpan.Zero)`
   - `EndTime = new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero)`
 - **Фильтры**:

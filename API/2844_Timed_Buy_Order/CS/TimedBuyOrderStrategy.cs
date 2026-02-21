@@ -34,12 +34,12 @@ public class TimedBuyOrderStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume for each market buy order", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_ordersToPlace = Param(nameof(OrdersToPlace), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Orders To Place", "Number of sequential buy orders before stopping", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_interval = Param(nameof(Interval), TimeSpan.FromSeconds(1))
 			.SetDisplay("Timer Interval", "Delay between timer ticks that trigger order placement", "Timing");
@@ -83,11 +83,11 @@ public class TimedBuyOrderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_ordersPlaced = 0;
 		_expectedSecond = 0;

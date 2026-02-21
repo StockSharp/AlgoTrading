@@ -77,25 +77,25 @@ public class ParabolicSarWithVolatilityExpansionStrategy : Strategy
 		_sarAf = Param(nameof(SarAf), 0.02m)
 			.SetGreaterThanZero()
 			.SetDisplay("SAR AF", "Parabolic SAR acceleration factor", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_sarMaxAf = Param(nameof(SarMaxAf), 0.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Max AF", "Parabolic SAR maximum acceleration factor", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.3m, 0.05m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_volatilityExpansionFactor = Param(nameof(VolatilityExpansionFactor), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volatility Expansion Factor", "Factor for volatility expansion detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -109,9 +109,9 @@ public class ParabolicSarWithVolatilityExpansionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var parabolicSar = new ParabolicSar
@@ -121,7 +121,7 @@ public class ParabolicSarWithVolatilityExpansionStrategy : Strategy
 		};
 		
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var atrSma = new SimpleMovingAverage { Length = AtrPeriod };
+		var atrSma = new SMA { Length = AtrPeriod };
 		var atrStdDev = new StandardDeviation { Length = AtrPeriod };
 
 		// Subscribe to candles and bind indicators
@@ -131,8 +131,8 @@ public class ParabolicSarWithVolatilityExpansionStrategy : Strategy
 			.Bind(parabolicSar, atr, (candle, sarValue, atrValue) =>
 			{
 				// Calculate ATR average and standard deviation
-				var atrSmaValue = atrSma.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished);
-				var atrStdDevValue = atrStdDev.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished);
+				var atrSmaValue = atrSma.Process(new DecimalIndicatorValue(atrSma, atrValue, candle.ServerTime));
+				var atrStdDevValue = atrStdDev.Process(new DecimalIndicatorValue(atrStdDev, atrValue, candle.ServerTime));
 				
 				// Process the strategy logic
 				ProcessStrategy(

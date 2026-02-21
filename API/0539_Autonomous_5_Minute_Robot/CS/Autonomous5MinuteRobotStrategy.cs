@@ -67,29 +67,29 @@ public class Autonomous5MinuteRobotStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend MA Length", "Moving average length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 5);
 
 		_volumeLength = Param(nameof(VolumeLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Length", "Volume lookback length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_lookback = Param(nameof(Lookback), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Bars used for previous close", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 12, 1);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 3m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 29m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 50m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -103,11 +103,11 @@ public class Autonomous5MinuteRobotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = MaLength };
+		_sma = new SMA { Length = MaLength };
 		_shift = new Shift { Length = Lookback };
 
 		var subscription = SubscribeCandles(CandleType);

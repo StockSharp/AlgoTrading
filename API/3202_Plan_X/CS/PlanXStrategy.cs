@@ -87,33 +87,33 @@ public class PlanXStrategy : Strategy
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 150, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 40)
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 150, 10);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 5);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetDisplay("Trailing Step (pips)", "Minimal profit increment before trailing adjusts", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 30, 1);
 
 		_channelHeightPips = Param(nameof(ChannelHeightPips), 34)
 			.SetDisplay("Channel Height (pips)", "Required breakout distance in pips", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_candleShift = Param(nameof(CandleShift), 2)
 			.SetDisplay("Candle Shift", "Number of bars used as the reference", "Signals")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_useTimeControl = Param(nameof(UseTimeControl), true)
@@ -121,12 +121,12 @@ public class PlanXStrategy : Strategy
 
 		_startHour = Param(nameof(StartHour), 10)
 			.SetDisplay("Start Hour", "Hour when trading begins", "Time")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 23, 1);
 
 		_endHour = Param(nameof(EndHour), 21)
 			.SetDisplay("End Hour", "Hour when trading stops", "Time")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 23, 1);
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
@@ -147,9 +147,9 @@ public class PlanXStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
 			throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");
@@ -171,7 +171,7 @@ public class PlanXStrategy : Strategy
 		ResetProtection();
 		_closeHistory.Clear();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

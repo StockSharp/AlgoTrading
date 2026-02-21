@@ -20,7 +20,7 @@ This strategy enters long positions when both volume and price movement exceed c
   - `VixThreshold` = 44.
   - `HoldPeriods` = 8.
   - `CandleType` = TimeSpan.FromMinutes(1).TimeFrame().
-  - `VixCandleType` = TimeSpan.FromDays(1).TimeFrame().
+  - `VixCandleType` = TimeSpan.FromMinutes(5).TimeFrame().
 - **Filters**:
   - Category: Breakout
   - Direction: Long only

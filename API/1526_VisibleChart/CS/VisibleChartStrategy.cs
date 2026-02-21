@@ -42,10 +42,10 @@ public class VisibleChartStrategy : Strategy
 	{
 		_visibleBars = Param(nameof(VisibleBars), 100)
 			.SetDisplay("Visible Bars", "Number of bars considered visible", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 20);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to analyze", "General");
 	}
 
@@ -56,9 +56,9 @@ public class VisibleChartStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = VisibleBars };
 		_lowest = new Lowest { Length = VisibleBars };
@@ -82,8 +82,8 @@ public class VisibleChartStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var high = _highest.Process(candle.HighPrice, candle.OpenTime, true).ToDecimal();
-		var low = _lowest.Process(candle.LowPrice, candle.OpenTime, true).ToDecimal();
+		var high = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime)).ToDecimal();
+		var low = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime)).ToDecimal();
 
 		if (!_highest.IsFormed || !_lowest.IsFormed)
 			return;

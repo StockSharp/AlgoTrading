@@ -92,9 +92,9 @@ public class Fon60DkStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ema1 = new() { Length = T3Length };
 		_ema2 = new() { Length = T3Length };
@@ -114,7 +114,7 @@ public class Fon60DkStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(williams, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue williamsValue)
@@ -146,10 +146,10 @@ public class Fon60DkStrategy : Strategy
 
 	private static decimal CalcT3(ExponentialMovingAverage ema1, ExponentialMovingAverage ema2, ExponentialMovingAverage ema3, ExponentialMovingAverage ema4, decimal opt, decimal price, DateTimeOffset time)
 	{
-		var e1 = ema1.Process(price, time, true).ToDecimal();
-		var e2 = ema2.Process(e1, time, true).ToDecimal();
-		var e3 = ema3.Process(e2, time, true).ToDecimal();
-		var e4 = ema4.Process(e3, time, true).ToDecimal();
+		var e1 = ema1.Process(new DecimalIndicatorValue(ema1, price, time.UtcDateTime)).ToDecimal();
+		var e2 = ema2.Process(new DecimalIndicatorValue(ema2, e1, time.UtcDateTime)).ToDecimal();
+		var e3 = ema3.Process(new DecimalIndicatorValue(ema3, e2, time.UtcDateTime)).ToDecimal();
+		var e4 = ema4.Process(new DecimalIndicatorValue(ema4, e3, time.UtcDateTime)).ToDecimal();
 
 		var c1 = -opt * opt * opt;
 		var c2 = 3m * opt * opt + 3m * opt * opt * opt;
@@ -161,7 +161,7 @@ public class Fon60DkStrategy : Strategy
 
 	private static decimal CalcVar(decimal price, ChandeMomentumOscillator cmo, int length, ref decimal? prev, DateTimeOffset time)
 	{
-		var cmoVal = cmo.Process(price, time, true).ToDecimal();
+		var cmoVal = cmo.Process(new DecimalIndicatorValue(cmo, price, time.UtcDateTime)).ToDecimal();
 		var valpha = 2m / (length + 1m);
 		var absCmo = Math.Abs(cmoVal / 100m);
 		var previous = prev ?? price;

@@ -50,19 +50,19 @@ public class PlcStrategy : Strategy
 		_shiftOhlcPips = Param(nameof(ShiftOhlcPips), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Shift OHLC", "Offset added to candle high/low (in pips)", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_minimumProfit = Param(nameof(MinimumProfit), 7m)
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Profit", "Profit threshold that triggers closing all positions", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3m, 20m, 1m);
 
 		_shiftPositionPips = Param(nameof(ShiftPositionPips), 43)
 			.SetGreaterThanZero()
 			.SetDisplay("Shift Position", "Required distance from the highest/lowest position before placing a new stop", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_buyVolume = Param(nameof(BuyVolume), 0.01m)
@@ -201,9 +201,9 @@ public class PlcStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var mainSubscription = SubscribeCandles(CandleType);
 		mainSubscription.Bind(ProcessMainCandle).Start();

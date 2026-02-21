@@ -59,13 +59,13 @@ public class VwapWithAdxTrendStrengthStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
 			.SetRange(10m, decimal.MaxValue)
 			.SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 35, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -87,9 +87,9 @@ public class VwapWithAdxTrendStrengthStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };

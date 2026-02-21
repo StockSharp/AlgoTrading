@@ -68,18 +68,18 @@ public class CenterOfGravityStrategy : Strategy
 		_prevColor = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = Period };
+		_sma = new SMA { Length = Period };
 		_wma = new WeightedMovingAverage { Length = Period };
-		_signal = new SimpleMovingAverage { Length = SmoothPeriod };
+		_signal = new SMA { Length = SmoothPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_sma, _wma, Process).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -99,7 +99,7 @@ public class CenterOfGravityStrategy : Strategy
 			return;
 
 		var center = smaValue * wmaValue;
-		var signalVal = _signal.Process(center, candle.CloseTime, true);
+		var signalVal = _signal.Process(new DecimalIndicatorValue(_signal, center, candle.CloseTime));
 
 		if (!signalVal.IsFinal)
 			return;

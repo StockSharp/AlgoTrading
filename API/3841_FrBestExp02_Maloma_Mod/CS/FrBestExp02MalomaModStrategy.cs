@@ -58,51 +58,51 @@ public class FrBestExp02MalomaModStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in points.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 1000)
 			.SetDisplay("Take Profit (points)", "Profit target distance expressed in points.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0)
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance in points. Zero disables trailing.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 1500, 50);
 
 		_volumeThreshold = Param(nameof(VolumeThreshold), 50m)
 			.SetDisplay("Volume Threshold", "Minimum previous candle volume required for signals.", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_osmaFastPeriod = Param(nameof(OsmaFastPeriod), 12)
 			.SetDisplay("OsMA Fast Period", "Fast EMA period used by the MACD histogram.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1)
 			.SetGreaterThanZero();
 
 		_osmaSlowPeriod = Param(nameof(OsmaSlowPeriod), 26)
 			.SetDisplay("OsMA Slow Period", "Slow EMA period used by the MACD histogram.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 1)
 			.SetGreaterThanZero();
 
 		_osmaSignalPeriod = Param(nameof(OsmaSignalPeriod), 9)
 			.SetDisplay("OsMA Signal Period", "Signal line period for the MACD histogram.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1)
 			.SetGreaterThanZero();
 
 		_pivotWindow = Param(nameof(PivotWindow), 96)
 			.SetDisplay("Pivot Window", "Number of finished candles used to build the session pivot.", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(32, 144, 16)
 			.SetGreaterThanZero();
 
 		_minTradeIntervalSeconds = Param(nameof(MinTradeIntervalSeconds), 20)
 			.SetDisplay("Min Trade Interval (sec)", "Minimum number of seconds between new entries.", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 1800, 60);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -230,14 +230,14 @@ public class FrBestExp02MalomaModStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_macd = new MACD
 		{
-			ShortPeriod = OsmaFastPeriod,
-			LongPeriod = OsmaSlowPeriod,
+			ShortMa = { Length = OsmaFastPeriod },
+			LongMa = { Length = OsmaSlowPeriod },
 			SignalPeriod = OsmaSignalPeriod
 		};
 
@@ -248,7 +248,7 @@ public class FrBestExp02MalomaModStrategy : Strategy
 			.Bind(_macd, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal macdSignal)

@@ -335,9 +335,9 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.Step ?? 0m;
 		Volume = Math.Max(LongVolume, ShortVolume);
@@ -504,23 +504,23 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		return ((sum - candle.LowPrice) + (sum - candle.HighPrice)) / 2m;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(SmoothMethods method, int length, int phase)
+	private static DecimalLengthIndicator CreateMovingAverage(SmoothMethods method, int length, int phase)
 	{
 		var normalizedLength = Math.Max(1, length);
 
 		return method switch
 		{
-			SmoothMethods.Sma => new SimpleMovingAverage { Length = normalizedLength },
-			SmoothMethods.Ema => new ExponentialMovingAverage { Length = normalizedLength },
+			SmoothMethods.Sma => new SMA { Length = normalizedLength },
+			SmoothMethods.Ema => new EMA { Length = normalizedLength },
 			SmoothMethods.Smma => new SmoothedMovingAverage { Length = normalizedLength },
 			SmoothMethods.Lwma => new WeightedMovingAverage { Length = normalizedLength },
 			SmoothMethods.Jurik => new JurikMovingAverage { Length = normalizedLength, Phase = phase },
 			SmoothMethods.JurX => new JurikMovingAverage { Length = normalizedLength, Phase = phase },
-			SmoothMethods.Parabolic => new ExponentialMovingAverage { Length = normalizedLength },
+			SmoothMethods.Parabolic => new EMA { Length = normalizedLength },
 			SmoothMethods.T3 => new JurikMovingAverage { Length = normalizedLength, Phase = phase },
-			SmoothMethods.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
+			SmoothMethods.Vidya => new EMA { Length = normalizedLength },
 			SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
-			_ => new ExponentialMovingAverage { Length = normalizedLength },
+			_ => new EMA { Length = normalizedLength },
 		};
 	}
 
@@ -562,10 +562,10 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		private readonly int _takeProfitPoints;
 		private readonly decimal _priceStep;
 
-		private readonly List<LengthIndicator<decimal>> _ladder = new();
+		private readonly List<DecimalLengthIndicator> _ladder = new();
 		private readonly List<decimal?> _previousValues = new();
-		private LengthIndicator<decimal> _bullsSmoother;
-		private LengthIndicator<decimal> _bearsSmoother;
+		private DecimalLengthIndicator _bullsSmoother;
+		private DecimalLengthIndicator _bearsSmoother;
 		private readonly List<UltraFatlSnapshot> _history = new();
 		private readonly FatlFilter _fatl = new();
 		private ISubscriptionHandler<ICandleMessage> _subscription;

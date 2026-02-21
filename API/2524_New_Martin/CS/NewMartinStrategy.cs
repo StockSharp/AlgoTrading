@@ -115,37 +115,37 @@ public class NewMartinStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit", "Target distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 200m, 10m);
 
 		_initialVolume = Param(nameof(InitialVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Initial Volume", "Volume per hedge side", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 1m, 0.01m);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 20)
 		.SetGreaterThan(1)
 		.SetDisplay("Slow MA", "Slow smoothed MA period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 80, 5);
 
 		_fastPeriod = Param(nameof(FastPeriod), 5)
 		.SetGreaterThan(1)
 		.SetDisplay("Fast MA", "Fast smoothed MA period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 20, 1);
 
 		_lossPercent = Param(nameof(LossPercent), 12m)
 		.SetGreaterThanZero()
 		.SetDisplay("Equity DD %", "Maximum drawdown before reset", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 30m, 1m);
 
 		_multiplier = Param(nameof(Multiplier), 1.6m)
 		.SetGreaterThan(1m)
 		.SetDisplay("Multiplier", "Martingale growth factor", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.1m, 3m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -178,9 +178,9 @@ public class NewMartinStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (SlowPeriod <= FastPeriod)
 			throw new InvalidOperationException("Slow period must be greater than fast period.");

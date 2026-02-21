@@ -82,17 +82,17 @@ public class BigCandleRsiDivergenceStrategy : Strategy
 	{
 		_trailStartTicks = Param(nameof(TrailStartTicks), 200)
 			.SetDisplay("Trailing Start Ticks", "Ticks before trailing stop activates", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 50);
 
 		_trailDistanceTicks = Param(nameof(TrailDistanceTicks), 150)
 			.SetDisplay("Trailing Distance Ticks", "Trailing stop distance in ticks", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 250, 50);
 
 		_initialStopLossTicks = Param(nameof(InitialStopLossTicks), 200)
 			.SetDisplay("Initial Stop Loss Ticks", "Initial stop loss distance in ticks", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 50);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -116,9 +116,9 @@ public class BigCandleRsiDivergenceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var tick = Security?.PriceStep ?? 1m;
 		_trailStartPrice = TrailStartTicks * tick;

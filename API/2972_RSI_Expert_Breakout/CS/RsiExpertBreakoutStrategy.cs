@@ -134,15 +134,15 @@ public RsiExpertBreakoutStrategy()
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Lookback period for RSI", "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 60m)
 			.SetDisplay("RSI Upper", "Overbought threshold", "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 20m)
 			.SetDisplay("RSI Lower", "Oversold threshold", "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 60)
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
@@ -174,9 +174,9 @@ public RsiExpertBreakoutStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsiIndicator = new RelativeStrengthIndex
 		{

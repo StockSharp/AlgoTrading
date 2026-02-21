@@ -38,7 +38,7 @@ public class DskyzDafeGenesisStrategy : Strategy
 	{
 		_rsiLength = Param(nameof(RsiLength), 9)
 			.SetDisplay("RSI Length", "RSI calculation period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -52,22 +52,22 @@ public class DskyzDafeGenesisStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var smaFast = new SimpleMovingAverage { Length = 9 };
-		var smaSlow = new SimpleMovingAverage { Length = 30 };
+		var smaFast = new SMA { Length = 9 };
+		var smaSlow = new SMA { Length = 30 };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var emaFast = new ExponentialMovingAverage { Length = 8 };
-		var emaSlow = new ExponentialMovingAverage { Length = 21 };
+		var emaFast = new EMA { Length = 8 };
+		var emaSlow = new EMA { Length = 21 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(smaFast, smaSlow, rsi, emaFast, emaSlow, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

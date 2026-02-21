@@ -60,19 +60,19 @@ public class RsiLongPositionDax2HoursDowJones1HourStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Period for RSI", "General")
-			.SetCanOptimize(true);
+			;
 
 		_oversold = Param(nameof(Oversold), 35m)
 			.SetDisplay("Oversold", "Level to enter", "General")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 55m)
 			.SetDisplay("Take Profit", "Exit level", "General")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 30m)
 			.SetDisplay("Stop Loss", "Cross-under exit level", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -94,9 +94,9 @@ public class RsiLongPositionDax2HoursDowJones1HourStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 

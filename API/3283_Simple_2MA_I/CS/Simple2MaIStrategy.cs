@@ -67,25 +67,25 @@ public class Simple2MaIStrategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average", "Moving Averages")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average", "Moving Averages")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 150, 5);
 
 		_momentumLength = Param(nameof(MomentumLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Length", "Lookback for rate of change calculation", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 20, 2);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Threshold", "Minimal absolute rate of change to confirm entries", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1.0m, 0.1m);
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
@@ -280,22 +280,20 @@ public class Simple2MaIStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_point = Security.PriceStep ?? 1m;
 
 		_fastMa = new WeightedMovingAverage
 		{
-			Length = FastMaLength,
-			CandlePrice = CandlePrice.Typical,
+			Length = FastMaLength
 		};
 
 		_slowMa = new WeightedMovingAverage
 		{
-			Length = SlowMaLength,
-			CandlePrice = CandlePrice.Typical,
+			Length = SlowMaLength
 		};
 
 		_momentum = new RateOfChange { Length = MomentumLength };

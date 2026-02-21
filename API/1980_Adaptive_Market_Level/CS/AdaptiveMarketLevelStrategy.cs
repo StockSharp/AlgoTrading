@@ -39,19 +39,19 @@ public class AdaptiveMarketLevelStrategy : Strategy
 		
 		_fractal = Param(nameof(Fractal), 6)
 		.SetDisplay("Fractal", "Fractal period", "Indicator")
-		.SetCanOptimize(true);
+		;
 		
 		_lag = Param(nameof(Lag), 7)
 		.SetDisplay("Lag", "Lag period", "Indicator")
-		.SetCanOptimize(true);
+		;
 		
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
 		.SetDisplay("Stop Loss (ticks)", "Stop loss in ticks", "Risk")
-		.SetCanOptimize(true);
+		;
 		
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 2000)
 		.SetDisplay("Take Profit (ticks)", "Take profit in ticks", "Risk")
-		.SetCanOptimize(true);
+		;
 		
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
 		.SetDisplay("Allow Long Entry", "Enable opening long positions", "Trading");
@@ -136,9 +136,9 @@ public class AdaptiveMarketLevelStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_aml = new AdaptiveMarketLevel
 		{

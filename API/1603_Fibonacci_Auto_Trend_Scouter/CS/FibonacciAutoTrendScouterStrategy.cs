@@ -31,15 +31,15 @@ public class FibonacciAutoTrendScouterStrategy : Strategy
 
 	public FibonacciAutoTrendScouterStrategy()
 	{
-		_smallPeriod = Param(nameof(SmallPeriod), 8).SetDisplay("Small Period").SetCanOptimize(true);
-		_mediumPeriod = Param(nameof(MediumPeriod), 21).SetDisplay("Medium Period").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
+		_smallPeriod = Param(nameof(SmallPeriod), 8).SetDisplay("Small Period", "Small Period", "General");
+		_mediumPeriod = Param(nameof(MediumPeriod), 21).SetDisplay("Medium Period", "Medium Period", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var highSmall = new Highest { Length = SmallPeriod };
 		var lowSmall = new Lowest { Length = SmallPeriod };

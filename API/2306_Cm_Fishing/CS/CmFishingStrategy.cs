@@ -140,11 +140,11 @@ public class CmFishingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var lastTrade = Security.LastTick;
 		_level = lastTrade?.Price ?? 0m;

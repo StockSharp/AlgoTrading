@@ -103,19 +103,19 @@ public class MacdZeroFilteredCrossStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Short EMA period for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Long EMA period for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Period", "Signal line length for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 12, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 300m)
@@ -125,7 +125,7 @@ public class MacdZeroFilteredCrossStrategy : Strategy
 		_lotVolume = Param(nameof(LotVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Volume", "Trading volume per order", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_minimumBalancePerVolume = Param(nameof(MinimumBalancePerVolume), 1000m)

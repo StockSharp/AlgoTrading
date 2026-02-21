@@ -64,80 +64,80 @@ public class MacdDiverAndRsiStrategy : Strategy
 		_longRsiPeriod = Param(nameof(LongRsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Long RSI Period", "Length of RSI for bullish setups", "Long")
-			.SetCanOptimize(true);
+			;
 
 		_longRsiThreshold = Param(nameof(LongRsiThreshold), 30m)
 			.SetDisplay("Long RSI Threshold", "Oversold threshold that enables long signals", "Long")
-			.SetCanOptimize(true);
+			;
 
 		_longMacdFastLength = Param(nameof(LongMacdFastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Long MACD Fast", "Fast EMA length for bullish MACD", "Long")
-			.SetCanOptimize(true);
+			;
 
 		_longMacdSlowLength = Param(nameof(LongMacdSlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Long MACD Slow", "Slow EMA length for bullish MACD", "Long")
-			.SetCanOptimize(true);
+			;
 
 		_longMacdSignalLength = Param(nameof(LongMacdSignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Long MACD Signal", "Signal EMA length for bullish MACD", "Long")
-			.SetCanOptimize(true);
+			;
 
 		_longVolume = Param(nameof(LongVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Volume", "Order size used when opening long trades", "Long")
-			.SetCanOptimize(true);
+			;
 
 		_longStopLossPips = Param(nameof(LongStopLossPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Long Stop Loss (pips)", "Distance of the protective stop for long trades", "Long")
-			.SetCanOptimize(true);
+			;
 
 		_longTakeProfitPips = Param(nameof(LongTakeProfitPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Long Take Profit (pips)", "Distance of the profit target for long trades", "Long")
-			.SetCanOptimize(true);
+			;
 
 		_shortRsiPeriod = Param(nameof(ShortRsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Short RSI Period", "Length of RSI for bearish setups", "Short")
-			.SetCanOptimize(true);
+			;
 
 		_shortRsiThreshold = Param(nameof(ShortRsiThreshold), 70m)
 			.SetDisplay("Short RSI Threshold", "Overbought threshold that enables short signals", "Short")
-			.SetCanOptimize(true);
+			;
 
 		_shortMacdFastLength = Param(nameof(ShortMacdFastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Short MACD Fast", "Fast EMA length for bearish MACD", "Short")
-			.SetCanOptimize(true);
+			;
 
 		_shortMacdSlowLength = Param(nameof(ShortMacdSlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Short MACD Slow", "Slow EMA length for bearish MACD", "Short")
-			.SetCanOptimize(true);
+			;
 
 		_shortMacdSignalLength = Param(nameof(ShortMacdSignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Short MACD Signal", "Signal EMA length for bearish MACD", "Short")
-			.SetCanOptimize(true);
+			;
 
 		_shortVolume = Param(nameof(ShortVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Volume", "Order size used when opening short trades", "Short")
-			.SetCanOptimize(true);
+			;
 
 		_shortStopLossPips = Param(nameof(ShortStopLossPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Short Stop Loss (pips)", "Distance of the protective stop for short trades", "Short")
-			.SetCanOptimize(true);
+			;
 
 		_shortTakeProfitPips = Param(nameof(ShortTakeProfitPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Short Take Profit (pips)", "Distance of the profit target for short trades", "Short")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>

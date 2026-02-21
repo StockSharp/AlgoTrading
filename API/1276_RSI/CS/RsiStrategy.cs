@@ -71,15 +71,15 @@ public class RsiStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_overSold = Param(nameof(OverSold), 25m)
 			.SetDisplay("Oversold", "Oversold level", "General")
-			.SetCanOptimize(true);
+			;
 
 		_overBought = Param(nameof(OverBought), 75m)
 			.SetDisplay("Overbought", "Overbought level", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -101,9 +101,9 @@ public class RsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 

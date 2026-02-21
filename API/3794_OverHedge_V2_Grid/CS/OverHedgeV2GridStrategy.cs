@@ -61,37 +61,37 @@ public class OverHedgeV2GridStrategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Base Volume", "Initial contract volume for the first hedge order.", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1m, 0.1m);
 
 		_hedgeMultiplier = Param(nameof(HedgeMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Hedge Multiplier", "Multiplier applied to the volume of each subsequent hedge leg.", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.5m, 3m, 0.5m);
 
 		_tunnelWidth = Param(nameof(TunnelWidth), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Tunnel Width (points)", "Base distance in price points between alternating hedge orders.", "Levels")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 5);
 
 		_profitTarget = Param(nameof(ProfitTarget), 100m)
 		.SetGreaterThanZero()
 		.SetDisplay("Profit Target", "Open profit value that closes all hedge positions.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50m, 300m, 50m);
 
-		_emaShortPeriod = Param(nameof(EmaShortPeriod), 8)
+		_emaShortMa = { Length = Param }(nameof(EmaShortPeriod), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Short EMA", "Length of the fast EMA used for direction detection.", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 15, 1);
 
-		_emaLongPeriod = Param(nameof(EmaLongPeriod), 21)
+		_emaLongMa = { Length = Param }(nameof(EmaLongPeriod), 21)
 		.SetGreaterThanZero()
 		.SetDisplay("Long EMA", "Length of the slow EMA used for direction detection.", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(15, 40, 1);
 
 		_shutdownGrid = Param(nameof(ShutdownGrid), false)
@@ -214,9 +214,9 @@ public class OverHedgeV2GridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializeInstrumentMetrics();
 

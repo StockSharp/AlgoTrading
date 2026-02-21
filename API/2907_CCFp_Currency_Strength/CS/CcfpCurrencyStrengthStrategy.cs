@@ -195,17 +195,17 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast moving average length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow moving average length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stepThreshold = Param(nameof(StepThreshold), 0.0001m)
 			.SetGreaterThanZero()
 			.SetDisplay("Strength Step", "Minimal strength difference", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_closeOppositePositions = Param(nameof(CloseOppositePositions), true)
 			.SetDisplay("Close Opposite", "Close opposite positions before entry", "Risk");
@@ -262,9 +262,9 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 		EnsurePairsConfigured();
@@ -314,8 +314,8 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 		var state = new PairState
 		{
 			Security = security,
-			Fast = new SimpleMovingAverage { Length = FastMaPeriod },
-			Slow = new SimpleMovingAverage { Length = SlowMaPeriod },
+			Fast = new SMA { Length = FastMaPeriod },
+			Slow = new SMA { Length = SlowMaPeriod },
 			InvertRatio = invert,
 			BaseCurrency = baseCurrency,
 			QuoteCurrency = quoteCurrency,

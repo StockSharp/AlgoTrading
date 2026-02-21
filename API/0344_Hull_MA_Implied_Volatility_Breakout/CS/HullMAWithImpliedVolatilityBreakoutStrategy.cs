@@ -95,25 +95,25 @@ public class HullMAWithImpliedVolatilityBreakoutStrategy : Strategy
 		_hmaPeriod = Param(nameof(HmaPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("HMA Period", "Hull Moving Average period", "HMA Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 15, 2);
 
 		_ivPeriod = Param(nameof(IVPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("IV Period", "Implied Volatility averaging period", "Volatility Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 		_ivMultiplier = Param(nameof(IVMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("IV StdDev Multiplier", "Multiplier for IV standard deviation", "Volatility Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.5m, 3m, 0.5m);
 
 		_stopLossAtr = Param(nameof(StopLossAtr), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (ATR)", "Stop Loss in multiples of ATR", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -136,9 +136,9 @@ public class HullMAWithImpliedVolatilityBreakoutStrategy : Strategy
 		_impliedVolatilityHistory.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var hma = new HullMovingAverage { Length = HmaPeriod };

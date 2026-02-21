@@ -88,7 +88,7 @@ public class ConsistentMomentumStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Days", "Days in momentum lookback window", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 
 		_holdingMonths = Param(nameof(HoldingMonths), 6)
@@ -118,12 +118,12 @@ public class ConsistentMomentumStrategy : Strategy
 		_lastDay = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe cannot be empty.");
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		foreach (var (sec, dt) in GetWorkingSecurities())
 		{

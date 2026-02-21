@@ -149,47 +149,47 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 40m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 200m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit distance in pips", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_percentOfBalance = Param(nameof(PercentOfBalance), 1m)
 			.SetNotNegative()
 			.SetDisplay("Profit %", "Close all positions after reaching percent of balance", "Targets")
-			.SetCanOptimize(true);
+			;
 
 		_profitAmount = Param(nameof(ProfitAmount), 12m)
 			.SetNotNegative()
 			.SetDisplay("Profit Amount", "Close all positions after reaching currency profit", "Targets")
-			.SetCanOptimize(true);
+			;
 
 		_positionProfitTarget = Param(nameof(PositionProfitTarget), 4m)
 			.SetNotNegative()
 			.SetDisplay("Position Profit", "Close active position after reaching currency profit", "Targets")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStartPips = Param(nameof(TrailingStartPips), 30m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Start", "Activate trailing after this gain in pips", "Trailing")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 20m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Distance", "Distance maintained by trailing stop", "Trailing")
-			.SetCanOptimize(true);
+			;
 
 		_breakevenGainPips = Param(nameof(BreakevenGainPips), 25m)
 			.SetNotNegative()
 			.SetDisplay("Breakeven Trigger", "Move stop to breakeven after this gain", "Breakeven")
-			.SetCanOptimize(true);
+			;
 
 		_breakevenLockPips = Param(nameof(BreakevenLockPips), 10m)
 			.SetNotNegative()
 			.SetDisplay("Breakeven Lock", "Pips locked in profit when moving stop", "Breakeven")
-			.SetCanOptimize(true);
+			;
 
 		_useStealthStops = Param(nameof(UseStealthStops), false)
 			.SetDisplay("Stealth Mode", "Simulate stops without placing orders", "Protection");
@@ -220,9 +220,9 @@ public class LacusTrailingStopAndBreakevenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_initialCapital = Portfolio?.CurrentValue;
 

@@ -81,13 +81,13 @@ public class MaAdxStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -96,13 +96,13 @@ public class MaAdxStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_takeProfitAtrMultiplier = Param(nameof(TakeProfitAtrMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("TP ATR Multiplier", "Take profit as ATR multiplier", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 	}
 
@@ -121,9 +121,9 @@ public class MaAdxStrategy : Strategy
 		_isFirstCandle = true;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		// Create indicators
 		var ma = new SMA { Length = MaPeriod };
 		var adx = new ADX { Length = AdxPeriod };

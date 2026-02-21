@@ -112,17 +112,17 @@ public class RsiHistogramStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "Length of the RSI indicator", "RSI")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_highLevel = Param(nameof(HighLevel), 60m)
 			.SetDisplay("High Level", "Overbought threshold", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(55m, 70m, 5m);
 
 		_lowLevel = Param(nameof(LowLevel), 40m)
 			.SetDisplay("Low Level", "Oversold threshold", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30m, 45m, 5m);
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
@@ -156,9 +156,9 @@ public class RsiHistogramStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RSI { Length = RsiPeriod };
 
@@ -196,7 +196,7 @@ public class RsiHistogramStrategy : Strategy
 		})
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

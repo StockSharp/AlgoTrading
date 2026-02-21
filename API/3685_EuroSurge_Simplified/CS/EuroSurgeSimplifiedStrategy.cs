@@ -301,13 +301,13 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 52)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Length of the long moving average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 150, 10);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Length of the RSI filter", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 
 		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 50m)
@@ -390,8 +390,8 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = MacdFast,
-			LongPeriod = MacdSlow,
+			ShortMa = { Length = MacdFast },
+			LongMa = { Length = MacdSlow },
 			SignalPeriod = MacdSignal,
 		};
 		_bollinger = new BollingerBands
@@ -400,10 +400,9 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 			Width = BollingerWidth,
 		};
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			KPeriod = StochasticK,
-			DPeriod = StochasticD,
+			D = { Length = StochasticD },
 		};
 
 		var subscription = SubscribeCandles(CandleType);

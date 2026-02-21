@@ -49,7 +49,7 @@ public class AbsolutelyNoLagLwmaRangeChannelTmPlusStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 7)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Channel Length", "Length used by both LWMA smoothing passes", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -61,17 +61,17 @@ public class AbsolutelyNoLagLwmaRangeChannelTmPlusStrategy : Strategy
 
 		_volume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Order Volume", "Contracts or lots used for entries", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Stop Loss (points)", "Protective stop distance in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Take Profit (points)", "Profit target distance in price steps", "Risk");
 
 		_enableBuyEntries = Param(nameof(EnableBuyEntries), true)
@@ -242,9 +242,9 @@ public class AbsolutelyNoLagLwmaRangeChannelTmPlusStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Prepare the double LWMA structure that emulates the original indicator.
 		_upperStage1 = new WeightedMovingAverage { Length = Length };

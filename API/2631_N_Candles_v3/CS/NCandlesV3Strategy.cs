@@ -118,32 +118,32 @@ public class NCandlesV3Strategy : Strategy
 		_identicalCandles = Param(nameof(IdenticalCandles), 3)
 			.SetRange(1, 10)
 			.SetDisplay("Identical Candles", "Required number of equal candles", "Pattern")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 			.SetRange(0m, 500m)
 			.SetDisplay("Take Profit Points", "Take profit distance in price steps", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 			.SetRange(0m, 500m)
 			.SetDisplay("Stop Loss Points", "Stop loss distance in price steps", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 10m)
 			.SetRange(0m, 500m)
 			.SetDisplay("Trailing Stop Points", "Trailing stop distance in price steps", "Trailing")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 4m)
 			.SetRange(0m, 200m)
 			.SetDisplay("Trailing Step Points", "Extra distance required to move the trailing stop", "Trailing")
-			.SetCanOptimize(true);
+			;
 
 		_maxPositions = Param(nameof(MaxPositions), 2)
 			.SetRange(1, 10)
 			.SetDisplay("Max Positions", "Maximum simultaneous entries per direction", "Trading")
-			.SetCanOptimize(true);
+			;
 
 	}
 
@@ -175,9 +175,9 @@ public class NCandlesV3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

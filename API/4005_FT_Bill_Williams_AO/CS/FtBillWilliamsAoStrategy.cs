@@ -236,12 +236,12 @@ public class FtBillWilliamsAoStrategy : Strategy
 		_fractalPeriod = Param(nameof(FractalPeriod), 5)
 			.SetDisplay("Fractal Period", "Number of bars required to confirm a fractal", "Signals")
 			.SetRange(3, 21)
-			.SetCanOptimize(true);
+			;
 
 		_indentPoints = Param(nameof(IndentPoints), 1m)
 			.SetDisplay("Indent Points", "Additional offset in MetaTrader points above the trigger candle", "Signals")
 			.SetRange(0m, 100m)
-			.SetCanOptimize(true);
+			;
 
 		_jawPeriod = Param(nameof(JawPeriod), 13)
 			.SetDisplay("Jaw Period", "Alligator jaw moving average length", "Alligator")
@@ -283,12 +283,12 @@ public class FtBillWilliamsAoStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
 			.SetDisplay("Stop-Loss Points", "MetaTrader points for stop-loss", "Risk")
 			.SetRange(0m, 2000m)
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
 			.SetDisplay("Take-Profit Points", "MetaTrader points for take-profit", "Risk")
 			.SetRange(0m, 2000m)
-			.SetCanOptimize(true);
+			;
 
 		_signalShift = Param(nameof(SignalShift), 1)
 			.SetDisplay("Signal Shift", "Number of candles skipped when reading Awesome Oscillator", "Signals")
@@ -313,17 +313,17 @@ public class FtBillWilliamsAoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdateHistoryLimit();
 
 		var ao = new AwesomeOscillator();
-		var jaw = new SmoothedMovingAverage { Length = JawPeriod, CandlePrice = CandlePrice.Median };
-		var teeth = new SmoothedMovingAverage { Length = TeethPeriod, CandlePrice = CandlePrice.Median };
-		var lips = new SmoothedMovingAverage { Length = LipsPeriod, CandlePrice = CandlePrice.Median };
-		var trendSma = new SimpleMovingAverage { Length = TrendSmaPeriod, CandlePrice = CandlePrice.Close };
+		var jaw = new SmoothedMovingAverage { Length = JawPeriod };
+		var teeth = new SmoothedMovingAverage { Length = TeethPeriod };
+		var lips = new SmoothedMovingAverage { Length = LipsPeriod };
+		var trendSma = new SMA { Length = TrendSmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -343,7 +343,7 @@ public class FtBillWilliamsAoStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal aoValue, decimal jawValue, decimal teethValue, decimal lipsValue, decimal trendSmaValue)

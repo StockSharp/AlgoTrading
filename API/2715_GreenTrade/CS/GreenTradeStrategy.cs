@@ -263,9 +263,9 @@ public class GreenTradeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_smma = new SmoothedMovingAverage { Length = MaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
@@ -293,8 +293,8 @@ public class GreenTradeStrategy : Strategy
 			return;
 
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
-		var maValue = _smma.Process(medianPrice, candle.OpenTime, true).ToDecimal();
-		var rsiValue = _rsi.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
+		var maValue = _smma.Process(new DecimalIndicatorValue(_smma, medianPrice, candle.OpenTime)).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.OpenTime)).ToDecimal();
 
 		_maHistory.Add(maValue);
 		_rsiHistory.Add(rsiValue);

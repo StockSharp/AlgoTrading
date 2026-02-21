@@ -171,9 +171,9 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Sync the base strategy volume with the parameter value.
 		Volume = TradeVolume;
@@ -191,7 +191,7 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 			.Start();
 
 		// Enable built-in protection helpers (no additional parameters required).
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
@@ -296,15 +296,15 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 		return digits == 3 || digits == 5 ? step * 10m : step;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKinds type, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageKinds type, int length)
 	{
 		return type switch
 		{
-			MovingAverageKinds.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageKinds.Simple => new SMA { Length = length },
+			MovingAverageKinds.Exponential => new EMA { Length = length },
 			MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageKinds.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

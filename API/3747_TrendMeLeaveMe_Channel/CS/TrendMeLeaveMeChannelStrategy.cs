@@ -49,55 +49,55 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 		_trendLength = Param(nameof(TrendLength), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("Trend Length", "Number of candles used in the regression trend line", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 200, 25);
 
 		_buyStepUpper = Param(nameof(BuyStepUpper), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Buy Upper Offset", "Number of price steps added above the trend line for buy stop", "Buy Orders")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 
 		_buyStepLower = Param(nameof(BuyStepLower), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Buy Lower Offset", "Number of price steps below the trend line that activates buy orders", "Buy Orders")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 80, 10);
 
 		_sellStepUpper = Param(nameof(SellStepUpper), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Sell Upper Offset", "Number of price steps above the trend line that activates sell orders", "Sell Orders")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 80, 10);
 
 		_sellStepLower = Param(nameof(SellStepLower), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Sell Lower Offset", "Number of price steps below the trend line for sell stop", "Sell Orders")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 
 		_buyTakeProfitSteps = Param(nameof(BuyTakeProfitSteps), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Buy Take Profit", "Take-profit distance in price steps for long trades", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 10);
 
 		_buyStopLossSteps = Param(nameof(BuyStopLossSteps), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Buy Stop Loss", "Stop-loss distance in price steps for long trades", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 10);
 
 		_sellTakeProfitSteps = Param(nameof(SellTakeProfitSteps), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Sell Take Profit", "Take-profit distance in price steps for short trades", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 10);
 
 		_sellStopLossSteps = Param(nameof(SellStopLossSteps), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Sell Stop Loss", "Stop-loss distance in price steps for short trades", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 10);
 
 		_buyVolume = Param(nameof(BuyVolume), 1m)
@@ -235,9 +235,9 @@ public class TrendMeLeaveMeChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var regression = new LinearRegression { Length = TrendLength };
 		var subscription = SubscribeCandles(CandleType);

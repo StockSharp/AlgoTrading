@@ -239,9 +239,9 @@ public class BronzeWarrioirStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cci = new CommodityChannelIndex { Length = IndicatorPeriod };
 		_williams = new WilliamsR { Length = IndicatorPeriod };
@@ -471,7 +471,7 @@ public class BronzeWarrioirStrategy : Strategy
 		}
 	}
 
-	private sealed class DayImpulsIndicator : Indicator<ICandleMessage>
+	private sealed class DayImpulsIndicator : BaseIndicator
 	{
 		private readonly ExponentialMovingAverage _first = new();
 		private readonly ExponentialMovingAverage _second = new();

@@ -88,27 +88,27 @@ public class ParabolicSarMultiTimeframeStrategy : Strategy
 	{
 		_step15 = Param(nameof(Step15), 0.062m)
 			.SetDisplay("Step15", "SAR acceleration for 15 minute timeframe", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_step30 = Param(nameof(Step30), 0.058m)
 			.SetDisplay("Step30", "SAR acceleration for 30 minute timeframe", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_step60 = Param(nameof(Step60), 0.058m)
 			.SetDisplay("Step60", "SAR acceleration for 1 hour timeframe", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_step240 = Param(nameof(Step240), 0.058m)
 			.SetDisplay("Step240", "SAR acceleration for 4 hour timeframe", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_maxStep = Param(nameof(MaxStep), 0.1m)
 			.SetDisplay("MaxStep", "Maximum SAR acceleration", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 	}
 
@@ -119,9 +119,9 @@ public class ParabolicSarMultiTimeframeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var sar15 = new ParabolicSar { Acceleration = Step15, AccelerationMax = MaxStep };
 		var sar30 = new ParabolicSar { Acceleration = Step30, AccelerationMax = MaxStep };
@@ -148,7 +148,7 @@ public class ParabolicSarMultiTimeframeStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void Process30(ICandleMessage candle, decimal sar)

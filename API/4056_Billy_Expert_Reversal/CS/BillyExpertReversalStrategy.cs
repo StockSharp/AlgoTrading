@@ -71,7 +71,7 @@ public class BillyExpertReversalStrategy : Strategy
 			.SetDisplay("Stochastic Length", "Lookback period for %K", "Indicators");
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 3)
 			.SetDisplay("%K Smoothing", "Smoothing period applied to %K", "Indicators");
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 			.SetDisplay("%D Period", "Smoothing period applied to %D", "Indicators");
 		_stochasticSlowing = Param(nameof(StochasticSlowing), 3)
 			.SetDisplay("Slowing", "Additional smoothing for %K", "Indicators");
@@ -196,9 +196,9 @@ public class BillyExpertReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? Security?.Step ?? 0m;
 		if (_priceStep <= 0m)
@@ -208,16 +208,14 @@ public class BillyExpertReversalStrategy : Strategy
 		}
 
 		_fastStochastic = new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			K = { Length = StochasticKPeriod },
 			D = { Length = StochasticDPeriod },
 			Slowing = StochasticSlowing
 		};
 
 		_slowStochastic = new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			K = { Length = StochasticKPeriod },
 			D = { Length = StochasticDPeriod },
 			Slowing = StochasticSlowing

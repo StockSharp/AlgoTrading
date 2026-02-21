@@ -61,22 +61,22 @@ public class BlerisStrategy : Strategy
 
 	public BlerisStrategy()
 {
-	_signalBarSample = Param(nameof(SignalBarSample), 24).SetDisplay("Signal bar sample").SetCanOptimize(true);
-	_counterTrend = Param(nameof(CounterTrend), false).SetDisplay("Counter trend").SetCanOptimize(true);
-	_lots = Param(nameof(Lots), 0.3m).SetDisplay("Lot size").SetCanOptimize(true);
-	_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame()).SetDisplay("Candle type");
-	_anotherOrderPips = Param(nameof(AnotherOrderPips), 600).SetDisplay("Another order pips").SetCanOptimize(true);
+	_signalBarSample = Param(nameof(SignalBarSample), 24).SetDisplay("Signal bar sample", "Signal bar sample", "General");
+	_counterTrend = Param(nameof(CounterTrend), false).SetDisplay("Counter trend", "Counter trend", "General");
+	_lots = Param(nameof(Lots), 0.3m).SetDisplay("Lot size", "Lot size", "General");
+	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle type", "Candle type", "General");
+	_anotherOrderPips = Param(nameof(AnotherOrderPips), 600).SetDisplay("Another order pips", "Another order pips", "General");
 }
 
 /// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
-	StartProtection();
+	StartProtection(null, null);
 
-	_highest = new Highest { Length = SignalBarSample, CandlePrice = CandlePrice.High };
-	_lowest = new Lowest { Length = SignalBarSample, CandlePrice = CandlePrice.Low };
+	_highest = new Highest { Length = SignalBarSample };
+	_lowest = new Lowest { Length = SignalBarSample };
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription.Bind(_highest, _lowest, ProcessCandle).Start();

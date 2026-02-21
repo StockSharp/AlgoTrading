@@ -34,8 +34,8 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 	private readonly StrategyParam<decimal> _middleLevel;
 	private readonly StrategyParam<decimal> _lowLevel;
 	
-	private LengthIndicator<decimal> _primarySmoother = null!;
-	private LengthIndicator<decimal> _secondarySmoother = null!;
+	private DecimalLengthIndicator _primarySmoother = null!;
+	private DecimalLengthIndicator _secondarySmoother = null!;
 	private readonly Queue<decimal> _volatilityWindow = new();
 	private readonly List<decimal> _mainHistory = new();
 	
@@ -175,31 +175,31 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 		
 		_primaryMethod = Param(nameof(PrimaryMethod), SmoothMethods.Sma)
 		.SetDisplay("Primary Method", "Smoothing applied to high-low spread", "Indicator")
-		.SetCanOptimize(true);
+		;
 		
 		_primaryLength = Param(nameof(PrimaryLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Primary Length", "Periods for primary smoothing", "Indicator")
-		.SetCanOptimize(true);
+		;
 		
 		_secondaryMethod = Param(nameof(SecondaryMethod), SmoothMethods.Jurik)
 		.SetDisplay("Secondary Method", "Smoothing applied to stochastic ratio", "Indicator")
-		.SetCanOptimize(true);
+		;
 		
 		_secondaryLength = Param(nameof(SecondaryLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Secondary Length", "Periods for secondary smoothing", "Indicator")
-		.SetCanOptimize(true);
+		;
 		
 		_stochasticLength = Param(nameof(StochasticLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic Length", "Lookback for highest-lowest range", "Indicator")
-		.SetCanOptimize(true);
+		;
 		
 		_signalShift = Param(nameof(SignalShift), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Shift", "Completed candles offset for signals", "Trading")
-		.SetCanOptimize(true);
+		;
 		
 		_allowLongEntry = Param(nameof(AllowLongEntry), true)
 		.SetDisplay("Allow Long Entry", "Enable opening of buy trades", "Trading");
@@ -238,15 +238,15 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_primarySmoother = CreateSmoother(PrimaryMethod, PrimaryLength);
 		_secondarySmoother = CreateSmoother(SecondaryMethod, SecondaryLength);
 		
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 		
 		var area = CreateChartArea();
 		if (area != null)
@@ -358,16 +358,16 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 		queue.Dequeue();
 	}
 	
-	private static LengthIndicator<decimal> CreateSmoother(SmoothMethods method, int length)
+	private static DecimalLengthIndicator CreateSmoother(SmoothMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothMethods.Sma => new SimpleMovingAverage { Length = length },
-			SmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.Sma => new SMA { Length = length },
+			SmoothMethods.Ema => new EMA { Length = length },
 			SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
 			SmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
 			SmoothMethods.Jurik => new JurikMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 	

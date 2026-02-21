@@ -133,12 +133,12 @@ public class MultiLayerAwesomeOscillatorSaucerStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 		
-		_filterEma = new ExponentialMovingAverage { Length = EmaLength };
+		_filterEma = new EMA { Length = EmaLength };
 		_teethSmma = new SmoothedMovingAverage { Length = 8 };
 		_ao = new AwesomeOscillator();
 		

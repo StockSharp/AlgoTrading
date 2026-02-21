@@ -82,7 +82,7 @@ public class CommodityMomentumStrategy : Strategy
 		// Minimum USD amount for a trade.
 		_minUsd = Param(nameof(MinTradeUsd), 200m);
 		// Candle type for calculations.
-		_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
+		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />

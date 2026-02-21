@@ -73,13 +73,13 @@ public class ZScoreBuySellStrategy : Strategy
 		_rollingWindow = Param(nameof(RollingWindow), 80)
 			.SetGreaterThanZero()
 			.SetDisplay("Rolling Window", "Lookback period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 150, 10);
 
 		_zThreshold = Param(nameof(ZThreshold), 2.8m)
 			.SetGreaterThanZero()
 			.SetDisplay("Z Threshold", "Z-score trigger level", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_coolDown = Param(nameof(CoolDown), 5)
@@ -101,11 +101,11 @@ public class ZScoreBuySellStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = RollingWindow };
+		var sma = new SMA { Length = RollingWindow };
 		var stdDev = new StandardDeviation { Length = RollingWindow };
 
 		var subscription = SubscribeCandles(CandleType);

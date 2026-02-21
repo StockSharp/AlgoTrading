@@ -129,17 +129,17 @@ public class ExpHlrSignStrategy : Strategy
 		_range = Param(nameof(Range), 40)
 			.SetDisplay("Range", "Lookback period for HLR", "Indicator")
 			.SetOptimize(20, 80, 10)
-			.SetCanOptimize(true);
+			;
 
 		_upLevel = Param(nameof(UpLevel), 80m)
 			.SetDisplay("Up Level", "Upper level for HLR", "Indicator")
 			.SetOptimize(60m, 90m, 5m)
-			.SetCanOptimize(true);
+			;
 
 		_dnLevel = Param(nameof(DnLevel), 20m)
 			.SetDisplay("Down Level", "Lower level for HLR", "Indicator")
 			.SetOptimize(10m, 40m, 5m)
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
@@ -172,9 +172,9 @@ public class ExpHlrSignStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var donchian = new DonchianChannels { Length = Range };
 

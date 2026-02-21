@@ -73,31 +73,31 @@ public NCandlesSequenceStrategy()
 		_consecutiveCandles = Param(nameof(ConsecutiveCandles), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Consecutive Candles", "Number of identical candles in a row", "Entry")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 6, 1);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 100m, 10m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 100m, 10m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 30m, 5m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 4m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional distance before shifting the trail", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_maxPositionsPerDirection = Param(nameof(MaxPositionsPerDirection), 2)
@@ -219,9 +219,9 @@ public NCandlesSequenceStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 

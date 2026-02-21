@@ -126,11 +126,11 @@ public class VrSmartGridLiteStrategy : Strategy
 	{
 		_takeProfitPips = Param(nameof(TakeProfitPips), 300)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit (pips)", "Target profit distance for single positions", "Trading").SetCanOptimize(true);
+			.SetDisplay("Take Profit (pips)", "Target profit distance for single positions", "Trading");
 
 		_startVolume = Param(nameof(StartVolume), 0.01m)
 			.SetGreaterThanZero()
-			.SetDisplay("Start Volume", "Base volume for the first order", "Trading").SetCanOptimize(true);
+			.SetDisplay("Start Volume", "Base volume for the first order", "Trading");
 
 		_maximalVolume = Param(nameof(MaximalVolume), 2.56m)
 			.SetGreaterThanZero()
@@ -141,11 +141,11 @@ public class VrSmartGridLiteStrategy : Strategy
 
 		_orderStepPips = Param(nameof(OrderStepPips), 390)
 			.SetGreaterThanZero()
-			.SetDisplay("Order Step (pips)", "Required distance before adding a new order", "Grid").SetCanOptimize(true);
+			.SetDisplay("Order Step (pips)", "Required distance before adding a new order", "Grid");
 
 		_minimalProfitPips = Param(nameof(MinimalProfitPips), 70)
 			.SetGreaterThanZero()
-			.SetDisplay("Minimal Profit (pips)", "Extra profit added to weighted exits", "Exit").SetCanOptimize(true);
+			.SetDisplay("Minimal Profit (pips)", "Extra profit added to weighted exits", "Exit");
 
 		_slippagePips = Param(nameof(SlippagePips), 30)
 			.SetGreaterThanZero()
@@ -172,11 +172,11 @@ public class VrSmartGridLiteStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_pipSize = CalculatePipSize();
 

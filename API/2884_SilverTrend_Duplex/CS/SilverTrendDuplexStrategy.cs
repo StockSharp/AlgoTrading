@@ -160,13 +160,13 @@ public class SilverTrendDuplexStrategy : Strategy
 		_longSsp = Param(nameof(LongSsp), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Long SSP", "SilverTrend lookback for long entries", "Long SilverTrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_longRisk = Param(nameof(LongRisk), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Risk", "Risk parameter for long SilverTrend", "Long SilverTrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 15, 1);
 
 		_longSignalBar = Param(nameof(LongSignalBar), 1)
@@ -185,13 +185,13 @@ public class SilverTrendDuplexStrategy : Strategy
 		_shortSsp = Param(nameof(ShortSsp), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Short SSP", "SilverTrend lookback for short entries", "Short SilverTrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_shortRisk = Param(nameof(ShortRisk), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Risk", "Risk parameter for short SilverTrend", "Short SilverTrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 15, 1);
 
 		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
@@ -225,9 +225,9 @@ public class SilverTrendDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_longIndicator = new SilverTrendIndicator
 		{
@@ -353,7 +353,7 @@ public class SilverTrendDuplexStrategy : Strategy
 		}
 	}
 
-	private sealed class SilverTrendIndicator : Indicator<ICandleMessage>
+	private sealed class SilverTrendIndicator : BaseIndicator
 	{
 		public int Length { get; set; } = 9;
 		public int Risk { get; set; } = 3;

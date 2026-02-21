@@ -129,17 +129,17 @@ public class RsiTraderV1Strategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Calculation period", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_buyPoint = Param(nameof(BuyPoint), 30m)
 			.SetDisplay("Buy Threshold", "RSI level for long entry", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_sellPoint = Param(nameof(SellPoint), 70m)
 			.SetDisplay("Sell Threshold", "RSI level for short entry", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 5m);
 
 		_closeOnOpposite = Param(nameof(CloseOnOpposite), true)
@@ -154,13 +154,13 @@ public class RsiTraderV1Strategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 0.005m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.02m, 0.001m);
 
 		_stopLoss = Param(nameof(StopLoss), 0.005m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.02m, 0.001m);
 	}
 
@@ -182,9 +182,9 @@ public class RsiTraderV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 

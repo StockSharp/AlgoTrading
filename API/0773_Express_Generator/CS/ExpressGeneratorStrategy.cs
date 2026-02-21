@@ -123,39 +123,39 @@ public class ExpressGeneratorStrategy : Strategy
 
 		_fastMa = Param(nameof(FastMa), 9)
 			.SetDisplay("Fast MA", "Fast moving average length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowMa = Param(nameof(SlowMa), 21)
 			.SetDisplay("Slow MA", "Slow moving average length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetDisplay("RSI Length", "RSI calculation period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_overbought = Param(nameof(Overbought), 70)
 			.SetDisplay("Overbought", "RSI overbought level", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_oversold = Param(nameof(Oversold), 30)
 			.SetDisplay("Oversold", "RSI oversold level", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetDisplay("MACD Fast", "MACD fast period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 			.SetDisplay("MACD Slow", "MACD slow period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetDisplay("MACD Signal", "MACD signal period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetDisplay("ATR Length", "ATR calculation period", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_riskPercent = Param(nameof(RiskPercent), 1m)
 			.SetDisplay("Risk %", "Risk percent of equity", "Risk");
@@ -193,8 +193,8 @@ public class ExpressGeneratorStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		var fast = new SimpleMovingAverage { Length = FastMa };
-		var slow = new SimpleMovingAverage { Length = SlowMa };
+		var fast = new SMA { Length = FastMa };
+		var slow = new SMA { Length = SlowMa };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{

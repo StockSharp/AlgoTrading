@@ -88,19 +88,19 @@ public class ThreeBarLowStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA period for filter", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 50);
 
 		_lowestLength = Param(nameof(LowestLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Lowest Length", "Lookback for lowest close", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 5, 1);
 
 		_highestLength = Param(nameof(HighestLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Highest Length", "Lookback for highest close", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 10, 1);
 
 		_useEmaFilter = Param(nameof(UseEmaFilter), false)
@@ -124,11 +124,11 @@ public class ThreeBarLowStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = MaPeriod };
+		_ema = new EMA { Length = MaPeriod };
 		_lowest = new Lowest { Length = LowestLength };
 		_highest = new Highest { Length = HighestLength };
 

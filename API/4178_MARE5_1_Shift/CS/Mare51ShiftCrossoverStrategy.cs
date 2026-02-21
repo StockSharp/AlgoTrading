@@ -50,37 +50,37 @@ public class Mare51ShiftCrossoverStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 7.8m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Lot size used for market entries.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 10m, 0.1m);
 
 		_fastPeriod = Param(nameof(FastPeriod), 13)
 			.SetRange(1, 200)
 			.SetDisplay("Fast MA Period", "Period of the fast simple moving average.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 55)
 			.SetRange(1, 400)
 			.SetDisplay("Slow MA Period", "Period of the slow simple moving average.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 5);
 
 		_movingAverageShift = Param(nameof(MovingAverageShift), 2)
 			.SetRange(0, 20)
 			.SetDisplay("MA Shift", "Forward shift applied to both moving averages.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 10, 1);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 80m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Stop-loss distance expressed in MetaTrader points.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 200m, 10m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 110m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Take-profit distance expressed in MetaTrader points.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 250m, 10m);
 
 		_timeOpenHour = Param(nameof(TimeOpenHour), 8)
@@ -206,15 +206,15 @@ public class Mare51ShiftCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = _tradeVolume.Value;
 		_pointSize = GetPointSize();
 
-		_fastMa = new SimpleMovingAverage { Length = FastPeriod };
-		_slowMa = new SimpleMovingAverage { Length = SlowPeriod };
+		_fastMa = new SMA { Length = FastPeriod };
+		_slowMa = new SMA { Length = SlowPeriod };
 
 		_fastShift0 = CreateShift(MovingAverageShift);
 		_fastShift2 = CreateShift(MovingAverageShift + 2);
@@ -321,7 +321,7 @@ public class Mare51ShiftCrossoverStrategy : Strategy
 		if (shift == null)
 		return baseValue;
 
-		var value = shift.Process(baseValue, candle.OpenTime, true);
+		var value = shift.Process(new DecimalIndicatorValue(shift, baseValue, candle.OpenTime));
 		return value.IsFinal ? value.ToDecimal() : null;
 	}
 
@@ -332,7 +332,7 @@ public class Mare51ShiftCrossoverStrategy : Strategy
 
 	private bool IsWithinTradingWindow(DateTimeOffset time)
 	{
-		var hour = time.LocalDateTime.Hour;
+		var hour = time.Hour;
 		var start = TimeOpenHour;
 		var end = TimeCloseHour;
 

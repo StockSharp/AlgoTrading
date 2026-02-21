@@ -101,25 +101,25 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Period", "Period for the exponential moving average", "Keltner Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "Period for the average true range", "Keltner Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 21, 7);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "Multiplier for ATR in Keltner Channels", "Keltner Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.5m, 3m, 0.5m);
 
 		_stopLossAtr = Param(nameof(StopLossAtr), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (ATR)", "Stop Loss in multiples of ATR", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -142,9 +142,9 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		_lastPrice = _previousEma = _previousAtr = _previousPrice = _previousSignalPrice = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Keltner Channels using EMA and ATR
 		var keltner = new KeltnerChannels

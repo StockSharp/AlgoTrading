@@ -199,9 +199,9 @@ public class GridTemplateStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 
@@ -209,7 +209,7 @@ public class GridTemplateStrategy : Strategy
 			.Bind(ProcessLevel1)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessLevel1(Level1ChangeMessage level1)

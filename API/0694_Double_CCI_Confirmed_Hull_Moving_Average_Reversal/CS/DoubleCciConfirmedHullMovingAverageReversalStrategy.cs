@@ -113,37 +113,37 @@ public class DoubleCciConfirmedHullMovingAverageReversalStrategy : Strategy
 		_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 1.75m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop Loss ATR Multiplier", "ATR multiplier for stop loss", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingActivationMultiplier = Param(nameof(TrailingActivationMultiplier), 2.25m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Trailing Activation Multiplier", "ATR multiplier for trailing profit activation", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_fastCciPeriod = Param(nameof(FastCciPeriod), 25)
 			.SetRange(5, 50)
 			.SetDisplay("Fast CCI Period", "Length of fast CCI", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowCciPeriod = Param(nameof(SlowCciPeriod), 50)
 			.SetRange(10, 100)
 			.SetDisplay("Slow CCI Period", "Length of slow CCI", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_hullMaLength = Param(nameof(HullMaLength), 34)
 			.SetRange(10, 100)
 			.SetDisplay("Hull MA Length", "Length for Hull Moving Average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_trailingEmaLength = Param(nameof(TrailingEmaLength), 20)
 			.SetRange(10, 100)
 			.SetDisplay("Trailing EMA Length", "Length for trailing EMA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetRange(5, 50)
 			.SetDisplay("ATR Period", "ATR calculation period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -168,15 +168,15 @@ public class DoubleCciConfirmedHullMovingAverageReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var hull = new HullMovingAverage { Length = HullMaLength };
 		var fastCci = new CommodityChannelIndex { Length = FastCciPeriod };
 		var slowCci = new CommodityChannelIndex { Length = SlowCciPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var trailingEma = new ExponentialMovingAverage { Length = TrailingEmaLength };
+		var trailingEma = new EMA { Length = TrailingEmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

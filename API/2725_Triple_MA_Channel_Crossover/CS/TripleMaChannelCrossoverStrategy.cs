@@ -63,9 +63,9 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 	private readonly StrategyParam<int> _channelPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _fastMa = null!;
-	private LengthIndicator<decimal> _middleMa = null!;
-	private LengthIndicator<decimal> _slowMa = null!;
+	private DecimalLengthIndicator _fastMa = null!;
+	private DecimalLengthIndicator _middleMa = null!;
+	private DecimalLengthIndicator _slowMa = null!;
 	private DonchianChannels _channel = null!;
 	private Shift _fastShiftIndicator;
 	private Shift _middleShiftIndicator;
@@ -357,9 +357,9 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = CreateMovingAverage(FastMaType, FastPeriod);
 		_middleMa = CreateMovingAverage(MiddleMaType, MiddlePeriod);
@@ -394,16 +394,16 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fastValue = _fastMa.Process(candle).ToDecimal();
+		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, candle).ToDecimal();
 		var middleValue = _middleMa.Process(candle).ToDecimal();
 		var slowValue = _slowMa.Process(candle).ToDecimal();
 
 		if (_fastShiftIndicator != null)
-			fastValue = _fastShiftIndicator.Process(fastValue, candle.OpenTime, true).ToDecimal();
+			fastValue = _fastShiftIndicator.Process(fastValue, candle.OpenTime)).ToDecimal();
 		if (_middleShiftIndicator != null)
-			middleValue = _middleShiftIndicator.Process(middleValue, candle.OpenTime, true).ToDecimal();
+			middleValue = _middleShiftIndicator.Process(new DecimalIndicatorValue(_middleShiftIndicator, middleValue, candle.OpenTime)).ToDecimal();
 		if (_slowShiftIndicator != null)
-			slowValue = _slowShiftIndicator.Process(slowValue, candle.OpenTime, true).ToDecimal();
+			slowValue = _slowShiftIndicator.Process(new DecimalIndicatorValue(_slowShiftIndicator, slowValue, candle.OpenTime)).ToDecimal();
 
 		var channelValue = (DonchianChannelsValue)_channel.Process(candle);
 		var channelUpper = channelValue.UpBand as decimal?;
@@ -773,14 +773,14 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 		_shortBreakEvenActivated = false;
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageModes mode, int length)
+	private DecimalLengthIndicator CreateMovingAverage(MovingAverageModes mode, int length)
 	{
 		return mode switch
 		{
-			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageModes.Exponential => new EMA { Length = length },
 			MovingAverageModes.Weighted => new WeightedMovingAverage { Length = length },
 			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 }

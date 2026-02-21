@@ -91,25 +91,25 @@ public class EmaCrossoverFiltersStrategy : Strategy
 		_ema9Length = Param(nameof(Ema9Length), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA 9 Length", "Period for the 9 EMA", "EMA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_ema50Length = Param(nameof(Ema50Length), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA 50 Length", "Period for the 50 EMA", "EMA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 70, 5);
 
 		_ema100Length = Param(nameof(Ema100Length), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA 100 Length", "Period for the 100 EMA", "EMA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(80, 150, 10);
 
 		_ema200Length = Param(nameof(Ema200Length), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA 200 Length", "Period for the 200 EMA", "EMA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(150, 300, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -134,9 +134,9 @@ public class EmaCrossoverFiltersStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ema9 = new EMA { Length = Ema9Length };
 		_ema50 = new EMA { Length = Ema50Length };
@@ -149,7 +149,7 @@ public class EmaCrossoverFiltersStrategy : Strategy
 			.Bind(_ema9, _ema50, _ema100, _ema200, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

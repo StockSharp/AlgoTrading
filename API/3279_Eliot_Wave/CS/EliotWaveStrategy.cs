@@ -174,43 +174,43 @@ public class EliotWaveStrategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 120, 5);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Length of the momentum indicator on the higher timeframe", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 			.SetNotNegative()
 			.SetDisplay("Momentum Buy Threshold", "Deviation from 100 required to confirm a bullish setup", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1.5m, 0.1m);
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
 			.SetNotNegative()
 			.SetDisplay("Momentum Sell Threshold", "Deviation from 100 required to confirm a bearish setup", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1.5m, 0.1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pts)", "Protective stop-loss distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 60m, 5m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pts)", "Target distance in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 100m, 5m);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -246,9 +246,9 @@ public class EliotWaveStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = new WeightedMovingAverage { Length = FastMaLength };
 		_slowMa = new WeightedMovingAverage { Length = SlowMaLength };
@@ -300,8 +300,8 @@ public class EliotWaveStrategy : Strategy
 		var isFinished = candle.State == CandleStates.Finished;
 		var typical = GetTypicalPrice(candle);
 
-		_fastValue = _fastMa.Process(typical, candle.OpenTime, isFinished).ToDecimal();
-		_slowValue = _slowMa.Process(typical, candle.OpenTime, isFinished).ToDecimal();
+		_fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, typical, candle.OpenTime)).ToDecimal();
+		_slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, typical, candle.OpenTime)).ToDecimal();
 
 		if (!isFinished)
 			return;

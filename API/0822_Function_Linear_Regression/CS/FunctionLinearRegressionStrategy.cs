@@ -53,7 +53,7 @@ public class FunctionLinearRegressionStrategy : Strategy
 		_length = Param(nameof(Length), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Number of points used for regression", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -78,9 +78,9 @@ public class FunctionLinearRegressionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

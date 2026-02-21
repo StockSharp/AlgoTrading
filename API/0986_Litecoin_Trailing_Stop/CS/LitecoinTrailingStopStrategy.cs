@@ -86,25 +86,25 @@ public class LitecoinTrailingStopStrategy : Strategy
 		_kamaLength = Param(nameof(KamaLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("KAMA Length", "Period for KAMA indicator", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 5);
 
 		_barsBetweenEntries = Param(nameof(BarsBetweenEntries), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Bars Between Entries", "Minimum bars between new positions", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 
 		_trailingStopPercent = Param(nameof(TrailingStopPercent), 12m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Stop %", "Percent for trailing stop", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 20m, 1m);
 
 		_delayBars = Param(nameof(DelayBars), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Delay Bars", "Bars before trailing starts", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 100, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -131,9 +131,9 @@ public class LitecoinTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_kama = new KaufmanAdaptiveMovingAverage { Length = KamaLength };
 

@@ -33,13 +33,13 @@ public class AlliheikTraderStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _orderVolume;
 
-	private LengthIndicator<decimal> _jaws;
-	private LengthIndicator<decimal> _openPreSmooth;
-	private LengthIndicator<decimal> _closePreSmooth;
-	private LengthIndicator<decimal> _highPreSmooth;
-	private LengthIndicator<decimal> _lowPreSmooth;
-	private LengthIndicator<decimal> _lowerPostSmooth;
-	private LengthIndicator<decimal> _upperPostSmooth;
+	private DecimalLengthIndicator _jaws;
+	private DecimalLengthIndicator _openPreSmooth;
+	private DecimalLengthIndicator _closePreSmooth;
+	private DecimalLengthIndicator _highPreSmooth;
+	private DecimalLengthIndicator _lowPreSmooth;
+	private DecimalLengthIndicator _lowerPostSmooth;
+	private DecimalLengthIndicator _upperPostSmooth;
 
 	private decimal?[] _closeHistory = Array.Empty<decimal?>();
 	private decimal?[] _jawsHistory = Array.Empty<decimal?>();
@@ -268,9 +268,9 @@ public class AlliheikTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = Security?.PriceStep ?? 0m;
 		if (_pointSize <= 0m)
@@ -302,7 +302,7 @@ public class AlliheikTraderStrategy : Strategy
 		.Bind(ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />
@@ -347,13 +347,13 @@ public class AlliheikTraderStrategy : Strategy
 		UpdateHistory(_closeHistory, candle.ClosePrice);
 
 		var jawPrice = GetAppliedPrice(candle, JawsPrice);
-		var jawValue = _jaws.Process(jawPrice, candle.OpenTime, true);
+		var jawValue = _jaws.Process(new DecimalIndicatorValue(_jaws, jawPrice, candle.OpenTime));
 		UpdateHistory(_jawsHistory, jawValue.IsFinal ? jawValue.ToDecimal() : (decimal?)null);
 
-		var openValue = _openPreSmooth.Process(candle.OpenPrice, candle.OpenTime, true);
-		var closeValue = _closePreSmooth.Process(candle.ClosePrice, candle.OpenTime, true);
-		var highValue = _highPreSmooth.Process(candle.HighPrice, candle.OpenTime, true);
-		var lowValue = _lowPreSmooth.Process(candle.LowPrice, candle.OpenTime, true);
+		var openValue = _openPreSmooth.Process(new DecimalIndicatorValue(_openPreSmooth, candle.OpenPrice, candle.OpenTime));
+		var closeValue = _closePreSmooth.Process(new DecimalIndicatorValue(_closePreSmooth, candle.ClosePrice, candle.OpenTime));
+		var highValue = _highPreSmooth.Process(new DecimalIndicatorValue(_highPreSmooth, candle.HighPrice, candle.OpenTime));
+		var lowValue = _lowPreSmooth.Process(new DecimalIndicatorValue(_lowPreSmooth, candle.LowPrice, candle.OpenTime));
 
 		if (!openValue.IsFinal || !closeValue.IsFinal || !highValue.IsFinal || !lowValue.IsFinal)
 		return;
@@ -388,8 +388,8 @@ public class AlliheikTraderStrategy : Strategy
 		_prevRawHaOpen = haOpen;
 		_prevRawHaClose = haClose;
 
-		var lowerValue = _lowerPostSmooth.Process(lowerSource, candle.OpenTime, true);
-		var upperValue = _upperPostSmooth.Process(upperSource, candle.OpenTime, true);
+		var lowerValue = _lowerPostSmooth.Process(new DecimalIndicatorValue(_lowerPostSmooth, lowerSource, candle.OpenTime));
+		var upperValue = _upperPostSmooth.Process(new DecimalIndicatorValue(_upperPostSmooth, upperSource, candle.OpenTime));
 
 		if (!lowerValue.IsFinal || !upperValue.IsFinal)
 		return;
@@ -564,14 +564,14 @@ public class AlliheikTraderStrategy : Strategy
 		return _lastEntryBarTime != candle.OpenTime;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

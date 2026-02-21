@@ -42,15 +42,15 @@ public class RgtEaRsiStrategy : Strategy
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 8)
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_rsiHigh = Param(nameof(RsiHigh), 90)
 			.SetDisplay("RSI High", "Overbought threshold", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLow = Param(nameof(RsiLow), 10)
 			.SetDisplay("RSI Low", "Oversold threshold", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 70m)
 			.SetGreaterThanZero()
@@ -75,9 +75,9 @@ public class RgtEaRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RSI { Length = RsiPeriod };
 		var bb = new BollingerBands { Length = 20, Width = 2m };
@@ -85,7 +85,7 @@ public class RgtEaRsiStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(rsi, bb, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal middle, decimal upper, decimal lower)

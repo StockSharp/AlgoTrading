@@ -12,7 +12,7 @@ The **Consistent Momentum** strategy selects instruments that exhibit strong mom
   - `LookbackDays = 7 * 21`
   - `HoldingMonths = 6`
   - `MinTradeUsd = 50`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Momentum
   - Direction: Both

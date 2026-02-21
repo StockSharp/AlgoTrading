@@ -95,23 +95,23 @@ public class FlexibleMovingAverageStrategy : Strategy
 		_isFirstBar = true;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		IIndicator ma = MaMethod switch
 		{
-			"EMA" => new ExponentialMovingAverage { Length = MaLength },
+			"EMA" => new EMA { Length = MaLength },
 			"WMA" => new WeightedMovingAverage { Length = MaLength },
 			"HMA" => new HullMovingAverage { Length = MaLength },
 			"SMMA" => new ModifiedMovingAverage { Length = MaLength },
-			_ => new SimpleMovingAverage { Length = MaLength }
+			_ => new SMA { Length = MaLength }
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ma, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)

@@ -81,7 +81,7 @@ public class RDExpendituresStrategy : Strategy
 		_minUsd = Param(nameof(MinTradeUsd), 200m)
 		.SetGreaterThanZero()
 		.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

@@ -43,12 +43,12 @@ public class RegressionChannelBreakoutStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 250)
 			.SetDisplay("Length", "Number of candles for regression and deviation", "Common")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 500, 50);
 
 		_deviation = Param(nameof(Deviation), 2m)
 			.SetDisplay("Deviation", "Standard deviation multiplier", "Common")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -65,11 +65,11 @@ public class RegressionChannelBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_regression = new LinearRegression { Length = Length };
 		_stdev = new StandardDeviation { Length = Length };

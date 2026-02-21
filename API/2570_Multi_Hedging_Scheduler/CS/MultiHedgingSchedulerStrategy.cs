@@ -139,11 +139,11 @@ public class MultiHedgingSchedulerStrategy : Strategy
 
 		_profitPercent = Param(nameof(PercentProfit), 1m)
 		.SetDisplay("Profit %", "Equity percentage gain to close all positions", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_lossPercent = Param(nameof(PercentLoss), 55m)
 		.SetDisplay("Loss %", "Equity percentage loss to close all positions", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Candle series driving the scheduler", "General");
@@ -183,9 +183,9 @@ public class MultiHedgingSchedulerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_initialBalance = Portfolio?.CurrentValue ?? 0m;
 
@@ -216,7 +216,7 @@ public class MultiHedgingSchedulerStrategy : Strategy
 		var volumeParam = Param($"Volume{index}", volume)
 		.SetGreaterThanZero()
 		.SetDisplay($"Volume #{displayIndex}", $"Order volume for symbol #{displayIndex}", group)
-		.SetCanOptimize(true);
+		;
 
 		return new SymbolSlot
 		{

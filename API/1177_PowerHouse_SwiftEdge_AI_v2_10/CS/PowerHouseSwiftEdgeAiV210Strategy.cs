@@ -92,27 +92,27 @@ public class PowerHouseSwiftEdgeAiV210Strategy : Strategy
 	public PowerHouseSwiftEdgeAiV210Strategy()
 	{
 		_pivotLength = Param(nameof(PivotLength), 5)
-			.SetDisplay("Pivot Length")
-			.SetCanOptimize(true);
+			.SetDisplay("Pivot Length", "Pivot Length", "General")
+			;
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 1m)
-			.SetDisplay("Momentum Threshold (%)")
-			.SetCanOptimize(true);
+			.SetDisplay("Momentum Threshold (%)", "Momentum Threshold (%)", "General")
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 10m)
-			.SetDisplay("Take Profit (points)")
-			.SetCanOptimize(true);
+			.SetDisplay("Take Profit (points)", "Take Profit (points)", "General")
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 10m)
-			.SetDisplay("Stop Loss (points)")
-			.SetCanOptimize(true);
+			.SetDisplay("Stop Loss (points)", "Stop Loss (points)", "General")
+			;
 
 		_minSignalDistance = Param(nameof(MinSignalDistance), 5)
-			.SetDisplay("Min Signal Distance (bars)")
-			.SetCanOptimize(true);
+			.SetDisplay("Min Signal Distance (bars)", "Min Signal Distance (bars)", "General")
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type");
+			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
@@ -135,11 +135,11 @@ public class PowerHouseSwiftEdgeAiV210Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var highest = new Highest { Length = PivotLength };
 		var lowest = new Lowest { Length = PivotLength };

@@ -709,9 +709,9 @@ public DataType CandleType
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	Volume = OrderVolume;
 
@@ -1061,7 +1061,7 @@ private void ResetProtection()
 
 private static bool IsTradingTime(DateTimeOffset time)
 {
-	var local = time.LocalDateTime;
+	var local = time;
 	switch (local.DayOfWeek)
 	{
 		case DayOfWeek.Monday:

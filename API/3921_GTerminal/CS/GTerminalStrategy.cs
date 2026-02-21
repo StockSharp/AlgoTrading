@@ -249,7 +249,7 @@ public class GTerminalStrategy : Strategy
 
 		_crossMethod = Param(nameof(CrossMethod), 1)
 			.SetDisplay("Cross Method", "0 = strict crossing, 1 = instant trigger", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 1, 1);
 
 		_startShift = Param(nameof(StartShift), 0)
@@ -333,9 +333,9 @@ public class GTerminalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_closeHistory.Clear();
 		_longEntryPrice = 0m;

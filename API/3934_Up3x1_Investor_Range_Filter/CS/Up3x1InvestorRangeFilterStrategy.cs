@@ -72,13 +72,13 @@ public Up3x1InvestorRangeFilterStrategy()
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0.0001m;
-		_sma24 = new SimpleMovingAverage { Length = 24 };
-		_sma60 = new SimpleMovingAverage { Length = 60 };
+		_sma24 = new SMA { Length = 24 };
+		_sma60 = new SMA { Length = 60 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_sma24, _sma60, OnProcessCandle).Start();

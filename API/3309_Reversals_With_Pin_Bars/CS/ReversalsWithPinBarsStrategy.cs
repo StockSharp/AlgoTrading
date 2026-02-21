@@ -331,8 +331,8 @@ public class ReversalsWithPinBarsStrategy : Strategy
 
 		Volume = AlignVolume(TradeVolume);
 
-		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod, CandlePrice = CandlePrice.Typical };
-		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod, CandlePrice = CandlePrice.Typical };
+		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergence
 		{

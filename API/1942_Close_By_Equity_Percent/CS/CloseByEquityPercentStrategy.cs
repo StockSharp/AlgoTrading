@@ -48,7 +48,7 @@ public class CloseByEquityPercentStrategy : Strategy
 	{
 		_equityPercent = Param(nameof(EquityPercentFromBalance), 1.2m)
 			.SetDisplay("Equity/Bal Multiplier", "Threshold multiplier for equity relative to balance", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.1m, 2m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -69,9 +69,9 @@ public class CloseByEquityPercentStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_currentBalance = Portfolio?.CurrentValue ?? 0m;
 

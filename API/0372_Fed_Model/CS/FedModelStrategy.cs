@@ -105,7 +105,7 @@ public class FedModelStrategy : Strategy
 				.SetGreaterThanZero()
 				.SetDisplay("Regression Months", "Months in regression window", "Settings");
 
-		_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_minUsd = Param(nameof(MinTradeUsd), 200m)
@@ -139,7 +139,7 @@ public class FedModelStrategy : Strategy
 		_lastMonth = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Universe == null || !Universe.Any())
 		{
@@ -149,7 +149,7 @@ public class FedModelStrategy : Strategy
 				throw new InvalidOperationException("Universe is empty.");
 		}
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		foreach (var (s, tf) in GetWorkingSecurities())
 			SubscribeCandles(tf, true, s)

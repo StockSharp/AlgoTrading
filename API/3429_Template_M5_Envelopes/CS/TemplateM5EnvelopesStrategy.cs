@@ -252,15 +252,15 @@ public class TemplateM5EnvelopesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = FixedVolume;
 
 		_point = CalculatePointValue();
 		_envelopeMa.Length = EnvelopePeriod;
-		_envelopeMa.CandlePrice = CandlePrice.Median;
+		_envelopeMa.;
 
 		SubscribeCandles(CandleType)
 		.Bind(_envelopeMa, ProcessCandle)

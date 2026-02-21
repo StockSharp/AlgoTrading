@@ -411,71 +411,71 @@ public class TraderToolEaStrategy : Strategy
 
 		_openBuyRequest = Param(nameof(OpenBuyRequest), false)
 		.SetDisplay("Open Buy", "Send a market buy order (resets after execution).", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_openSellRequest = Param(nameof(OpenSellRequest), false)
 		.SetDisplay("Open Sell", "Send a market sell order (resets after execution).", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_placeBuyStopRequest = Param(nameof(PlaceBuyStopRequest), false)
 		.SetDisplay("Place Buy Stops", "Place a layered buy stop grid above the ask price.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_placeSellStopRequest = Param(nameof(PlaceSellStopRequest), false)
 		.SetDisplay("Place Sell Stops", "Place a layered sell stop grid below the bid price.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_placeStopGridRequest = Param(nameof(PlaceStopGridRequest), false)
 		.SetDisplay("Place Stop Grid", "Place buy and sell stop grids simultaneously.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_placeBuyLimitRequest = Param(nameof(PlaceBuyLimitRequest), false)
 		.SetDisplay("Place Buy Limits", "Place a layered buy limit grid below the bid price.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_placeSellLimitRequest = Param(nameof(PlaceSellLimitRequest), false)
 		.SetDisplay("Place Sell Limits", "Place a layered sell limit grid above the ask price.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_placeLimitGridRequest = Param(nameof(PlaceLimitGridRequest), false)
 		.SetDisplay("Place Limit Grid", "Place buy and sell limit grids simultaneously.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_closeBuyRequest = Param(nameof(CloseBuyRequest), false)
 		.SetDisplay("Close Buys", "Close all open long positions.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_closeSellRequest = Param(nameof(CloseSellRequest), false)
 		.SetDisplay("Close Sells", "Close all open short positions.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_closeAllRequest = Param(nameof(CloseAllRequest), false)
 		.SetDisplay("Close All", "Close every open position.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_deleteBuyStopsRequest = Param(nameof(DeleteBuyStopsRequest), false)
 		.SetDisplay("Delete Buy Stops", "Cancel tracked buy stop orders.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_deleteSellStopsRequest = Param(nameof(DeleteSellStopsRequest), false)
 		.SetDisplay("Delete Sell Stops", "Cancel tracked sell stop orders.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_deleteAllStopsRequest = Param(nameof(DeleteAllStopsRequest), false)
 		.SetDisplay("Delete All Stops", "Cancel every tracked stop order.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_deleteBuyLimitsRequest = Param(nameof(DeleteBuyLimitsRequest), false)
 		.SetDisplay("Delete Buy Limits", "Cancel tracked buy limit orders.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_deleteSellLimitsRequest = Param(nameof(DeleteSellLimitsRequest), false)
 		.SetDisplay("Delete Sell Limits", "Cancel tracked sell limit orders.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 
 		_deleteAllLimitsRequest = Param(nameof(DeleteAllLimitsRequest), false)
 		.SetDisplay("Delete All Limits", "Cancel every tracked limit order.", "Manual Commands")
-		.SetCanOptimize(false);
+		;
 	}
 
 	/// <inheritdoc />
@@ -504,9 +504,9 @@ public class TraderToolEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var security = Security ?? throw new InvalidOperationException("Security is not specified.");
 		if (Portfolio == null)

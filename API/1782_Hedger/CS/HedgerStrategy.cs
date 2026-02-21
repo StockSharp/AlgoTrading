@@ -42,40 +42,40 @@ public class HedgerStrategy : Strategy
 	{
 		_entryPrice = Param(nameof(EntryPrice), 0m)
 		.SetDisplay("Entry Price", "Price for limit order", "Trading")
-		.SetCanOptimize(true);
+		;
 		
 		_stopLoss = Param(nameof(StopLoss), 0m)
 		.SetDisplay("Stop Loss", "Protective stop price", "Trading")
-		.SetCanOptimize(true);
+		;
 		
 		_takeProfit = Param(nameof(TakeProfit), 0m)
 		.SetDisplay("Take Profit", "Target profit price", "Trading")
-		.SetCanOptimize(true);
+		;
 		
 		
 		_spread = Param(nameof(Spread), 0m)
 		.SetDisplay("Spread", "Price offset for hedge", "Trading")
-		.SetCanOptimize(true);
+		;
 		
 		_isLong = Param(nameof(IsLong), true)
 		.SetDisplay("Is Long", "Trade long when true, short otherwise", "General")
-		.SetCanOptimize(true);
+		;
 		
 		_useRiskHedge = Param(nameof(UseRiskHedge), false)
 		.SetDisplay("Use Risk Hedge", "Hedge after adverse move", "Risk")
-		.SetCanOptimize(true);
+		;
 		
 		_useRiskSl = Param(nameof(UseRiskSl), true)
 		.SetDisplay("Use Risk SL", "Tighten stop after adverse move", "Risk")
-		.SetCanOptimize(true);
+		;
 		
 		_riskSlTicks = Param(nameof(RiskSlTicks), 100)
 		.SetDisplay("Risk SL Ticks", "Ticks to tighten stop", "Risk")
-		.SetCanOptimize(true);
+		;
 		
 		_useRule7550 = Param(nameof(UseRule7550), false)
 		.SetDisplay("Use 75-50 Rule", "Move stop to 50% after 75% gain", "Rules")
-		.SetCanOptimize(true);
+		;
 	}
 	
 	public decimal EntryPrice { get => _entryPrice.Value; set => _entryPrice.Value = value; }
@@ -93,11 +93,11 @@ public class HedgerStrategy : Strategy
 	=> [(Security, DataType.Ticks)];
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		RegisterEntryOrders();
 		

@@ -223,77 +223,77 @@ public class StarterV6ModEStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 35)
 		.SetDisplay("Stop Loss", "Protective stop distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 80, 5);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10)
 		.SetDisplay("Take Profit", "Target distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 5);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0)
 		.SetDisplay("Trailing Stop", "Trailing distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 80, 5);
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 120)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA", "Slow EMA period (PRICE_MEDIAN)", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60, 200, 10);
 
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 40)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA", "Fast EMA period (PRICE_MEDIAN)", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 120, 10);
 
 		_angleEmaPeriod = Param(nameof(AngleEmaPeriod), 34)
 		.SetGreaterThanZero()
 		.SetDisplay("Angle EMA", "EMA period for angle detector", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 80, 5);
 
 		_angleStartShift = Param(nameof(AngleStartShift), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Angle Start Shift", "Older bar index used in angle calculation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 12, 1);
 
 		_angleEndShift = Param(nameof(AngleEndShift), 0)
 		.SetDisplay("Angle End Shift", "Recent bar index used in angle calculation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 3, 1);
 
 		_angleThreshold = Param(nameof(AngleThreshold), 0.2m)
 		.SetDisplay("Angle Threshold", "Minimum slope to allow trading", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI Period", "Commodity Channel Index period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 2);
 
 		_cciThreshold = Param(nameof(CciThreshold), 5m)
 		.SetDisplay("CCI Threshold", "Absolute CCI level for confirmation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 50m, 1m);
 
 		_laguerreGamma = Param(nameof(LaguerreGamma), 0.7m)
 		.SetDisplay("Laguerre Gamma", "Smoothing factor for Laguerre RSI", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.4m, 0.9m, 0.05m);
 
 		_laguerreOversold = Param(nameof(LaguerreOversold), 0.05m)
 		.SetDisplay("Laguerre Oversold", "Entry level for longs (0-1)", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 0.2m, 0.01m);
 
 		_laguerreOverbought = Param(nameof(LaguerreOverbought), 0.95m)
 		.SetDisplay("Laguerre Overbought", "Entry level for shorts (0-1)", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.8m, 1m, 0.01m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -301,12 +301,12 @@ public class StarterV6ModEStrategy : Strategy
 
 		_fridayBlockHour = Param(nameof(FridayBlockHour), 18)
 		.SetDisplay("Friday Block Hour", "Hour after which new trades stop", "Safety")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(16, 22, 1);
 
 		_fridayExitHour = Param(nameof(FridayExitHour), 20)
 		.SetDisplay("Friday Exit Hour", "Hour when open trades are closed", "Safety")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(18, 23, 1);
 	}
 
@@ -343,13 +343,13 @@ public class StarterV6ModEStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		_angleEma = new ExponentialMovingAverage { Length = AngleEmaPeriod };
+		_slowEma = new EMA { Length = SlowEmaPeriod };
+		_fastEma = new EMA { Length = FastEmaPeriod };
+		_angleEma = new EMA { Length = AngleEmaPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 
 		_pipSize = Security?.PriceStep ?? 0.0001m;
@@ -379,10 +379,10 @@ public class StarterV6ModEStrategy : Strategy
 
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var slowValue = _slowEma.Process(medianPrice, candle.OpenTime, true);
-		var fastValue = _fastEma.Process(medianPrice, candle.OpenTime, true);
-		var angleValue = _angleEma.Process(medianPrice, candle.OpenTime, true);
-		var cciValue = _cci.Process(candle.ClosePrice, candle.OpenTime, true);
+		var slowValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, medianPrice, candle.OpenTime));
+		var fastValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, medianPrice, candle.OpenTime));
+		var angleValue = _angleEma.Process(new DecimalIndicatorValue(_angleEma, medianPrice, candle.OpenTime));
+		var cciValue = _cci.Process(new DecimalIndicatorValue(_cci, candle.ClosePrice, candle.OpenTime));
 
 		var slow = slowValue.ToDecimal();
 		var fast = fastValue.ToDecimal();
@@ -413,7 +413,7 @@ public class StarterV6ModEStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var time = candle.CloseTime.LocalDateTime;
+		var time = candle.CloseTime;
 		var isFriday = time.DayOfWeek == DayOfWeek.Friday;
 		var blockFridayTrades = isFriday && time.Hour >= FridayBlockHour;
 		var exitOnFriday = isFriday && time.Hour >= FridayExitHour;

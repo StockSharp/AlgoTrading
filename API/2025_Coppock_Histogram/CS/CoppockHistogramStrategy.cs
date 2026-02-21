@@ -72,17 +72,17 @@ public class CoppockHistogramStrategy : Strategy
 		_roc1Period = Param(nameof(Roc1Period), 14)
 			.SetRange(1, 200)
 			.SetDisplay("ROC1 Period", "First ROC length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_roc2Period = Param(nameof(Roc2Period), 11)
 			.SetRange(1, 200)
 			.SetDisplay("ROC2 Period", "Second ROC length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_smoothPeriod = Param(nameof(SmoothPeriod), 3)
 			.SetRange(1, 50)
 			.SetDisplay("Smoothing", "Moving average length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -96,11 +96,11 @@ public class CoppockHistogramStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = SmoothPeriod };
+		_sma = new SMA { Length = SmoothPeriod };
 
 		var roc1 = new RateOfChange { Length = Roc1Period };
 		var roc2 = new RateOfChange { Length = Roc2Period };
@@ -116,7 +116,7 @@ public class CoppockHistogramStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal roc1Value, decimal roc2Value)

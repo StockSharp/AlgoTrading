@@ -99,15 +99,15 @@ public class TSIDeMarkerStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		_demarker = new DeMarker { Length = DemarkerPeriod };
 		_tsi = new TrueStrengthIndex { ShortLength = ShortLength, LongLength = LongLength };
-		_signal = new SimpleMovingAverage { Length = SignalLength };
+		_signal = new SMA { Length = SignalLength };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

@@ -101,14 +101,14 @@ public class AlligatorMaTrendCatcherStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var jaw = new SmoothedMovingAverage { Length = JawLength };
 		var teeth = new SmoothedMovingAverage { Length = TeethLength };
 		var lips = new SmoothedMovingAverage { Length = LipsLength };
-		var trend = new ExponentialMovingAverage { Length = TrendlineLength };
+		var trend = new EMA { Length = TrendlineLength };
 
 		var subscription = SubscribeCandles(CandleType);
 

@@ -122,12 +122,12 @@ public class NevalyashkaBreakdownLevelStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Lot size used for breakout entries", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Martingale Multiplier", "Multiplier applied after a stop-loss", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_useBreakeven = Param(nameof(UseBreakeven), true)
 		.SetDisplay("Use Breakeven", "Move the stop to break-even once the trade is in profit", "Risk");
@@ -164,9 +164,9 @@ public class NevalyashkaBreakdownLevelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_lastOrderVolume = OrderVolume;
 

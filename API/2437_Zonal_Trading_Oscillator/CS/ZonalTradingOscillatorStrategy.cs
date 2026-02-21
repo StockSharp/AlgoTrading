@@ -27,8 +27,8 @@ public class ZonalTradingOscillatorStrategy : Strategy
 	private readonly StrategyParam<bool> _buyClose;
 	private readonly StrategyParam<bool> _sellClose;
 	
-	private readonly AwesomeOscillator _aoMain = new() { ShortPeriod = 5, LongPeriod = 34 };
-	private readonly AwesomeOscillator _aoAc = new() { ShortPeriod = 5, LongPeriod = 34 };
+	private readonly AwesomeOscillator _aoMain = new() { ShortMa = { Length = 5 }, LongMa = { Length = 34 } };
+	private readonly AwesomeOscillator _aoAc = new() { ShortMa = { Length = 5 }, LongMa = { Length = 34 } };
 	private readonly SimpleMovingAverage _acMa = new() { Length = 5 };
 	
 	private decimal? _prevAo;
@@ -99,9 +99,9 @@ public ZonalTradingOscillatorStrategy()
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var aoSubscription = SubscribeCandles(AoCandleType);
 		aoSubscription.BindEx(_aoMain, ProcessAo).Start();

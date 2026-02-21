@@ -212,31 +212,31 @@ public class AlexavD1ProfitGbpUsdBreakoutStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Period", "Length of the EMA applied to highs and lows", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 15, 1);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Length of the RSI filter", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 28)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "Length of the ATR used for money management", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 2);
 
 		_atrStopMultiplier = Param(nameof(AtrStopMultiplier), 1.6m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Stop Multiplier", "ATR multiplier for stop-loss", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.8m, 3m, 0.2m);
 
 		_atrTargetMultiplier = Param(nameof(AtrTargetMultiplier), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Target Multiplier", "Base ATR multiplier for profit targets", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2m, 0.1m);
 
 		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 60m)

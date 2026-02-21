@@ -99,7 +99,7 @@ _sellManualPrice = Param(nameof(SellManualPrice), 0m)
 _defaultVolume = Param(nameof(DefaultVolume), 1m)
 .SetGreaterThanZero()
 .SetDisplay("Default Volume", "Volume used when individual volumes are disabled.", "Volumes")
-.SetCanOptimize(true)
+
 .SetOptimize(0.1m, 10m, 0.1m);
 
 _useIndividualVolumes = Param(nameof(UseIndividualVolumes), false)
@@ -108,37 +108,37 @@ _useIndividualVolumes = Param(nameof(UseIndividualVolumes), false)
 _buyVolume = Param(nameof(BuyVolume), 1m)
 .SetGreaterThanZero()
 .SetDisplay("Buy Volume", "Volume applied to buy orders when custom volumes are enabled.", "Volumes")
-.SetCanOptimize(true)
+
 .SetOptimize(0.1m, 10m, 0.1m);
 
 _sellVolume = Param(nameof(SellVolume), 1m)
 .SetGreaterThanZero()
 .SetDisplay("Sell Volume", "Volume applied to sell orders when custom volumes are enabled.", "Volumes")
-.SetCanOptimize(true)
+
 .SetOptimize(0.1m, 10m, 0.1m);
 
 _takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
 .SetNotNegative()
 .SetDisplay("Take Profit Points", "Distance in points used to close positions for profit. Zero disables the feature.", "Risk Management")
-.SetCanOptimize(true)
+
 .SetOptimize(50, 800, 50);
 
 _stopLossPoints = Param(nameof(StopLossPoints), 200)
 .SetNotNegative()
 .SetDisplay("Stop Loss Points", "Distance in points used to protect positions from losses. Zero disables the feature.", "Risk Management")
-.SetCanOptimize(true)
+
 .SetOptimize(20, 400, 20);
 
 _limitOrderPoints = Param(nameof(LimitOrderPoints), 50)
 .SetNotNegative()
 .SetDisplay("Limit Offset Points", "Offset in points applied to automatic limit prices.", "Pricing")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 200, 5);
 
 _stopOrderPoints = Param(nameof(StopOrderPoints), 50)
 .SetNotNegative()
 .SetDisplay("Stop Offset Points", "Offset in points applied to automatic stop prices.", "Pricing")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 200, 5);
 
 _buyRequest = Param(nameof(BuyRequest), false)
@@ -335,9 +335,9 @@ _takeProfitTriggered = false;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 Volume = GetDefaultVolume();
 

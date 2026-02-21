@@ -64,7 +64,7 @@ public class CovidStatisticsTrackerStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Lookback", "Candles for growth ratio", "General");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 	
@@ -77,9 +77,9 @@ public class CovidStatisticsTrackerStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		Security = CreateSecurity();
 		

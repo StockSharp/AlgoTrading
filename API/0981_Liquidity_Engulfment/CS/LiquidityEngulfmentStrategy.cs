@@ -66,8 +66,8 @@ public class LiquidityEngulfmentStrategy : Strategy
 	public LiquidityEngulfmentStrategy()
 	{
 		_mode = Param(nameof(Mode), TradeModes.Both).SetDisplay("Mode", "Trading mode", "General");
-		_upperLookback = Param(nameof(UpperLookback), 10).SetGreaterThanZero().SetDisplay("Upper Lookback", "Upper liquidity", "Indicators").SetCanOptimize(true).SetOptimize(5, 20, 1);
-		_lowerLookback = Param(nameof(LowerLookback), 10).SetGreaterThanZero().SetDisplay("Lower Lookback", "Lower liquidity", "Indicators").SetCanOptimize(true).SetOptimize(5, 20, 1);
+		_upperLookback = Param(nameof(UpperLookback), 10).SetGreaterThanZero().SetDisplay("Upper Lookback", "Upper liquidity", "Indicators").SetOptimize(5, 20, 1);
+		_lowerLookback = Param(nameof(LowerLookback), 10).SetGreaterThanZero().SetDisplay("Lower Lookback", "Lower liquidity", "Indicators").SetOptimize(5, 20, 1);
 		_stopLossPips = Param(nameof(StopLossPips), 10).SetGreaterThanZero().SetDisplay("Stop Loss", "Stop in pips", "Risk");
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20).SetGreaterThanZero().SetDisplay("Take Profit", "Target in pips", "Risk");
 		_enableTakeProfit = Param(nameof(EnableTakeProfit), true).SetDisplay("Enable TP", "Use take profit", "Risk");
@@ -103,15 +103,15 @@ public class LiquidityEngulfmentStrategy : Strategy
 		_index = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest.Length = UpperLookback;
 		_lowest.Length = LowerLookback;
 
 		var sub = SubscribeCandles(CandleType);
-		sub.ForEach(Process).Start();
+		sub.Bind(Process).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -129,8 +129,8 @@ public class LiquidityEngulfmentStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var highest = _highest.Process(candle.HighPrice, candle.OpenTime, true).ToDecimal();
-		var lowest = _lowest.Process(candle.LowPrice, candle.OpenTime, true).ToDecimal();
+		var highest = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime)).ToDecimal();
+		var lowest = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime)).ToDecimal();
 
 		if (candle.LowPrice <= lowest)
 			_touchedLower = true;

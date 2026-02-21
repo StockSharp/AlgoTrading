@@ -99,31 +99,31 @@ public class MySystemStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 86m)
 			.SetDisplay("Take Profit (points)", "Distance for take profit orders in price steps", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 60m)
 			.SetDisplay("Stop Loss (points)", "Distance for stop loss orders in price steps", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 10m)
 			.SetDisplay("Trailing Stop (points)", "Trailing exit trigger distance in price steps", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 100m, 5m);
 
 		_orderVolume = Param(nameof(OrderVolume), 8.3m)
 			.SetDisplay("Order Volume", "Volume used when placing entries", "Trading")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 10m, 0.1m);
 
 		_powerPeriod = Param(nameof(PowerPeriod), 13)
 			.SetDisplay("Power Period", "Indicator length for Bulls/Bears Power", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -152,9 +152,9 @@ public class MySystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bullsPower = new BullPower { Length = PowerPeriod };
 		_bearsPower = new BearPower { Length = PowerPeriod };

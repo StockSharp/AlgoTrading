@@ -72,19 +72,19 @@ public class RsiProPlusBearMarketStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 11)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "RSI Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 30, 1);
 
 		_rsiLevel = Param(nameof(RsiLevel), 8m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Level", "RSI level to trigger long entry", "RSI Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 50m, 1m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.11m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Take Profit %", "Percentage of entry price for take profit", "Exit Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 5m, 0.01m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -107,9 +107,9 @@ public class RsiProPlusBearMarketStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex
 		{
@@ -119,7 +119,7 @@ public class RsiProPlusBearMarketStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_rsi, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

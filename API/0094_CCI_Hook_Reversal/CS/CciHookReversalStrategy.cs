@@ -81,22 +81,22 @@ public class CciHookReversalStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetDisplay("CCI Period", "Period for CCI calculation", "CCI Settings")
 			.SetRange(14, 30)
-			.SetCanOptimize(true);
+			;
 			
 		_oversoldLevel = Param(nameof(OversoldLevel), -100)
 			.SetDisplay("Oversold Level", "Oversold level for CCI", "CCI Settings")
 			.SetRange(-150, -50)
-			.SetCanOptimize(true);
+			;
 			
 		_overboughtLevel = Param(nameof(OverboughtLevel), 100)
 			.SetDisplay("Overbought Level", "Overbought level for CCI", "CCI Settings")
 			.SetRange(50, 150)
-			.SetCanOptimize(true);
+			;
 			
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 			.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
 			.SetRange(1m, 3m)
-			.SetCanOptimize(true);
+			;
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -117,9 +117,9 @@ public class CciHookReversalStrategy : Strategy
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnStarted2(DateTime time)
 		{
-				base.OnStarted(time);
+				base.OnStarted2(time);
 
 				// Enable position protection using stop-loss
 				StartProtection(

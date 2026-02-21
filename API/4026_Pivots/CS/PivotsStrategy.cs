@@ -55,19 +55,19 @@ public class PivotsStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume of each pending order", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 30)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance expressed in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 200, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Working Candle Type", "Intraday series used for trailing and scheduling", "Data");
 
-		_pivotCandleType = Param(nameof(PivotCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_pivotCandleType = Param(nameof(PivotCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Pivot Candle Type", "Higher timeframe used to derive classic pivot levels", "Data");
 
 		_logPivotUpdates = Param(nameof(LogPivotUpdates), true)
@@ -178,9 +178,9 @@ public class PivotsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = GetPriceStep();
 

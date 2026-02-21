@@ -115,12 +115,12 @@ public class BuySellBullishEngulfingStrategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetRange(0.5m, 10m)
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.5m, 10m)
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_orderPercent = Param(nameof(OrderPercent), 30m)
 			.SetRange(1m, 100m)
@@ -150,9 +150,9 @@ public class BuySellBullishEngulfingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var sma50 = new SMA { Length = 50 };
 		var sma200 = new SMA { Length = 200 };

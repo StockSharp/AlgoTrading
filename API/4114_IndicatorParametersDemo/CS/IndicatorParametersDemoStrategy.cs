@@ -45,17 +45,17 @@ public class IndicatorParametersDemoStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("SMA Length", "Period of the simple moving average demonstrated in the sample", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_emaLength = Param(nameof(EmaLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Length", "Period of the exponential moving average demonstrated in the sample", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Length", "Period of the relative strength index demonstrated in the sample", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_logIndicatorValues = Param(nameof(LogIndicatorValues), false)
 		.SetDisplay("Log Indicator Values", "Write indicator values to the log whenever a candle closes", "Logging");
@@ -107,16 +107,16 @@ public class IndicatorParametersDemoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage
+		_sma = new SMA
 		{
 			Length = SmaLength
 		};
 
-		_ema = new ExponentialMovingAverage
+		_ema = new EMA
 		{
 			Length = EmaLength
 		};

@@ -87,27 +87,27 @@ public class EmVolStrategy : Strategy
 	{
 		_takeProfit = Param(nameof(TakeProfit), 100m)
 			.SetDisplay("Take Profit", "Take profit distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 200m, 50m);
 
 		_stopLoss = Param(nameof(StopLoss), 500m)
 			.SetDisplay("Stop Loss", "Stop loss distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1000m, 100m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "ATR period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "ADX period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 30m)
 			.SetDisplay("ADX Threshold", "Trades allowed when ADX below", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_trailStart = Param(nameof(TrailStart), 10m)
@@ -127,9 +127,9 @@ public class EmVolStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tickSize = Security.PriceStep ?? 1m;
 

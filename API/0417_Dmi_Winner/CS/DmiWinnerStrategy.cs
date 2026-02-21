@@ -163,9 +163,9 @@ public class DmiWinnerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var dmi = new DirectionalIndex
@@ -182,8 +182,8 @@ public class DmiWinnerStrategy : Strategy
 		if (UseMA)
 		{
 			ma = MAType == "EMA" 
-				? new ExponentialMovingAverage { Length = MALength }
-				: new SimpleMovingAverage { Length = MALength };
+				? new EMA { Length = MALength }
+				: new SMA { Length = MALength };
 		}
 
 		// Subscribe to candles

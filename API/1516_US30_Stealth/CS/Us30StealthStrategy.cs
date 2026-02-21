@@ -142,42 +142,42 @@ public class Us30StealthStrategy : Strategy
 	{
 		_maLen = Param(nameof(MaLen), 50)
 			.SetDisplay("MA Length", "Moving average length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_volMaLen = Param(nameof(VolMaLen), 20)
 			.SetDisplay("Volume MA Length", "Volume moving average length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_hlLookback = Param(nameof(HlLookback), 5)
 			.SetDisplay("High/Low Lookback", "Lookback for swing detection", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_rrRatio = Param(nameof(RrRatio), 2.2m)
 			.SetDisplay("Risk/Reward", "Risk-to-reward ratio", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_maxCandleSize = Param(nameof(MaxCandleSize), 30m)
 			.SetDisplay("Max Candle Size", "Maximum candle size", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_pipValue = Param(nameof(PipValue), 1m)
 			.SetDisplay("Pip Value", "Value of one pip", "Risk");
 
 		_riskAmount = Param(nameof(RiskAmount), 50m)
 			.SetDisplay("Risk Amount", "Risk per trade", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_largeCandleThreshold = Param(nameof(LargeCandleThreshold), 25m)
 			.SetDisplay("Large Candle Threshold", "Threshold for large candles", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_maSlopeLen = Param(nameof(MaSlopeLen), 3)
 			.SetDisplay("MA Slope Lookback", "Bars for slope calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_minSlope = Param(nameof(MinSlope), 0.1m)
 			.SetDisplay("Min Slope", "Minimal slope threshold", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -201,14 +201,14 @@ public class Us30StealthStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		var ma = new SimpleMovingAverage { Length = MaLen };
-		var volMa = new SimpleMovingAverage { Length = VolMaLen };
+		var ma = new SMA { Length = MaLen };
+		var volMa = new SMA { Length = VolMaLen };
 		var highest = new Highest { Length = HlLookback + 1 };
 		var lowest = new Lowest { Length = HlLookback + 1 };
 

@@ -75,7 +75,7 @@ public class Ch2010StructureStrategy : Strategy
 		_breakoutBufferPercent.SetGreaterThanZero();
 		_breakoutBufferPercent.SetDisplay("Buffer %", "Percentage of daily range added above/below breakout", "Logic");
 		
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame());
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame());
 		_dailyCandleType.SetDisplay("Daily Candle", "Time frame used for the daily bias", "Data");
 		_intradayCandleType = Param(nameof(IntradayCandleType), TimeSpan.FromMinutes(30).TimeFrame());
 		_intradayCandleType.SetDisplay("Intraday Candle", "Time frame used for intraday execution", "Data");
@@ -244,9 +244,9 @@ public class Ch2010StructureStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var hasSecurity = false;
 		

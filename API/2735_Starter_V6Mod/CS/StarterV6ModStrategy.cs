@@ -246,12 +246,12 @@ public class StarterV6ModStrategy : Strategy
 		_manualVolume = Param(nameof(ManualVolume), 1m)
 		.SetRange(0.01m, 100m)
 		.SetDisplay("Volume", "Manual volume per trade", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_riskPercent = Param(nameof(RiskPercent), 5m)
 		.SetRange(0.5m, 20m)
 		.SetDisplay("Risk %", "Risk percentage when auto-sizing trades", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 35)
 		.SetRange(0, 500)
@@ -292,17 +292,17 @@ public class StarterV6ModStrategy : Strategy
 		_longEmaPeriod = Param(nameof(LongEmaPeriod), 120)
 		.SetRange(10, 400)
 		.SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_shortEmaPeriod = Param(nameof(ShortEmaPeriod), 40)
 		.SetRange(5, 200)
 		.SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 		.SetRange(5, 100)
 		.SetDisplay("CCI Period", "CCI indicator length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_angleThreshold = Param(nameof(AngleThreshold), 3m)
 		.SetRange(0m, 50m)
@@ -350,17 +350,17 @@ public class StarterV6ModStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var priceStep = Security?.PriceStep ?? 1m;
 		var decimals = Security?.Decimals ?? 0;
 		var multiplier = decimals is 3 or 5 ? 10m : 1m;
 		_pipSize = priceStep * multiplier;
 
-		_longEma = new ExponentialMovingAverage { Length = LongEmaPeriod };
-		_shortEma = new ExponentialMovingAverage { Length = ShortEmaPeriod };
+		_longEma = new EMA { Length = LongEmaPeriod };
+		_shortEma = new EMA { Length = ShortEmaPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_laguerreProxy = new RelativeStrengthIndex { Length = 14 };
 
@@ -394,7 +394,7 @@ public class StarterV6ModStrategy : Strategy
 		}
 
 		var laguerre = rsiValue / 100m;
-		var time = candle.OpenTime.LocalDateTime;
+		var time = candle.OpenTime;
 		var today = time.Date;
 
 		if (today != _currentDay)

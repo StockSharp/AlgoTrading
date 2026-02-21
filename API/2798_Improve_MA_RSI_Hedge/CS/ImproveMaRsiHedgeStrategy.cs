@@ -123,7 +123,7 @@ public class ImproveMaRsiHedgeStrategy : Strategy
 		_profitTarget = Param(nameof(ProfitTarget), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Target", "Combined profit target across both legs", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_hedgeSecurity = Param<Security>(nameof(HedgeSecurity))
 			.SetDisplay("Hedge Security", "Secondary instrument to trade", "General");
@@ -131,25 +131,25 @@ public class ImproveMaRsiHedgeStrategy : Strategy
 		_fastPeriod = Param(nameof(FastMaPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast smoothed MA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowPeriod = Param(nameof(SlowMaPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow smoothed MA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Length of the RSI", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
 			.SetDisplay("Oversold", "RSI oversold threshold", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
 			.SetDisplay("Overbought", "RSI overbought threshold", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for calculations", "Data");
@@ -183,9 +183,9 @@ public class ImproveMaRsiHedgeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("Primary security must be specified.");

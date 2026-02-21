@@ -79,19 +79,19 @@ public class ExpDigitalMacdStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA", "Length of the fast EMA used inside MACD", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 18, 2);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA", "Length of the slow EMA used inside MACD", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 34, 2);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal EMA", "Length of the MACD signal smoothing", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 9, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

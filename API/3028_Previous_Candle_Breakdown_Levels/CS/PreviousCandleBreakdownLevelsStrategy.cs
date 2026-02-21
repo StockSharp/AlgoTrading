@@ -71,7 +71,7 @@ public class PreviousCandleBreakdownLevelsStrategy : Strategy
 
 		_indentSteps = Param(nameof(IndentSteps), 10m)
 			.SetDisplay("Indent Steps", "Offset above/below the previous candle in price steps", "General")
-			.SetCanOptimize(true);
+			;
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
 			.SetDisplay("Fast MA Period", "Length of the fast moving average (0 disables filter)", "Filters");
@@ -87,19 +87,19 @@ public class PreviousCandleBreakdownLevelsStrategy : Strategy
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 50m)
 			.SetDisplay("Stop Loss Steps", "Distance to the stop loss in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 150m)
 			.SetDisplay("Take Profit Steps", "Distance to the take profit in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopSteps = Param(nameof(TrailingStopSteps), 15m)
 			.SetDisplay("Trailing Stop Steps", "Trailing stop distance in price steps (0 disables)", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepSteps = Param(nameof(TrailingStepSteps), 5m)
 			.SetDisplay("Trailing Step Steps", "Minimal advance required to move the trailing stop", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_profitClose = Param(nameof(ProfitClose), 0m)
 			.SetDisplay("Profit Close", "Floating profit target that closes all positions", "Risk");
@@ -202,9 +202,9 @@ public class PreviousCandleBreakdownLevelsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Validate trailing parameters before subscriptions are created.
 		if (TrailingStopSteps > 0m && TrailingStepSteps <= 0m)
@@ -309,24 +309,24 @@ public class PreviousCandleBreakdownLevelsStrategy : Strategy
 		// Store the latest MA values and apply optional shift offsets.
 		if (_fastMa != null)
 		{
-			var maValue = _fastMa.Process(candle);
+			var maValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, candle);
 			if (maValue.IsFinal)
 			{
 				var baseValue = maValue.ToDecimal();
 				_fastMaValue = _fastShift != null
-					? _fastShift.Process(baseValue, candle.OpenTime, true).ToDecimal()
+					? _fastShift.Process(baseValue, candle.OpenTime)).ToDecimal()
 					: baseValue;
 			}
 		}
 
 		if (_slowMa != null)
 		{
-			var maValue = _slowMa.Process(candle);
+			var maValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, candle);
 			if (maValue.IsFinal)
 			{
 				var baseValue = maValue.ToDecimal();
 				_slowMaValue = _slowShift != null
-					? _slowShift.Process(baseValue, candle.OpenTime, true).ToDecimal()
+					? _slowShift.Process(baseValue, candle.OpenTime)).ToDecimal()
 					: baseValue;
 			}
 		}

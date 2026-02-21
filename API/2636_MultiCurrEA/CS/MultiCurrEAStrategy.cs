@@ -46,7 +46,7 @@ public class MultiCurrEAStrategy : Strategy
 			BollingerPeriodParam = owner.Param($"Symbol{index}BollingerPeriod", defaultPeriod)
 			.SetGreaterThanZero()
 			.SetDisplay(periodLabel, "Number of candles used by Bollinger Bands", _groupName)
-			.SetCanOptimize(true);
+			;
 
 			BollingerShiftParam = owner.Param($"Symbol{index}BollingerShift", 0)
 			.SetNotNegative()
@@ -55,7 +55,7 @@ public class MultiCurrEAStrategy : Strategy
 			BollingerDeviationParam = owner.Param($"Symbol{index}BollingerDeviation", defaultDeviation)
 			.SetGreaterThanZero()
 			.SetDisplay(deviationLabel, "Standard deviation multiplier for Bollinger Bands", _groupName)
-			.SetCanOptimize(true);
+			;
 		}
 
 		public StrategyParam<Security> SecurityParam { get; }
@@ -182,9 +182,9 @@ public class MultiCurrEAStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		foreach (var slot in _symbols)
 		{
@@ -232,8 +232,8 @@ public class MultiCurrEAStrategy : Strategy
 
 		var time = candle.OpenTime;
 
-		var highValue = slot.BollingerHigh.Process(candle.HighPrice, time, true);
-		var lowValue = slot.BollingerLow.Process(candle.LowPrice, time, true);
+		var highValue = slot.BollingerHigh.Process(new DecimalIndicatorValue(BollingerHigh, candle.HighPrice, time));
+		var lowValue = slot.BollingerLow.Process(new DecimalIndicatorValue(BollingerLow, candle.LowPrice, time));
 
 		if (!slot.BollingerHigh.IsFormed || !slot.BollingerLow.IsFormed)
 		return;

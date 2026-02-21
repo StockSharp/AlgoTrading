@@ -171,7 +171,7 @@ public class JkSynchroStrategy : Strategy
 	_orderVolume = Param(nameof(OrderVolume), 0.1m)
 	.SetGreaterThanZero()
 	.SetDisplay("Order Volume", "Volume placed with every market order", "Trading")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(0.1m, 2m, 0.1m);
 
 	_maxPositions = Param(nameof(MaxPositions), 10)
@@ -232,9 +232,9 @@ public class JkSynchroStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	if (StartHour < 0 || StartHour > 24)
 	throw new InvalidOperationException("Start hour must be within 0-24 range.");

@@ -58,47 +58,47 @@ public class ForMaxV2Strategy : Strategy
 
 		_buyTakeProfitPoints = Param(nameof(BuyTakeProfitPoints), 100)
 			.SetDisplay("Buy Take Profit (points)", "Take-profit distance for long trades expressed in points.", "Entries")
-			.SetCanOptimize(true);
+			;
 
 		_sellTakeProfitPoints = Param(nameof(SellTakeProfitPoints), 100)
 			.SetDisplay("Sell Take Profit (points)", "Take-profit distance for short trades expressed in points.", "Entries")
-			.SetCanOptimize(true);
+			;
 
 		_gapPoints = Param(nameof(GapPoints), 1)
 			.SetDisplay("Gap (points)", "Offset added to breakout stop orders beyond the reference candle extremum.", "Entries")
-			.SetCanOptimize(true);
+			;
 
 		_maxSearchBars = Param(nameof(MaxSearchBars), 100)
 			.SetDisplay("Search Depth", "Number of historical candles scanned for the engulfing setup.", "Entries")
-			.SetCanOptimize(true);
+			;
 
 		_orderExpirationFactor = Param(nameof(OrderExpirationFactor), 8)
 			.SetDisplay("Order Expiry (bars)", "Lifetime of pending orders measured in candle multiples.", "Entries")
-			.SetCanOptimize(true);
+			;
 
 		_breakEvenTriggerPoints = Param(nameof(BreakEvenTriggerPoints), 25)
 			.SetDisplay("Break-even Trigger (points)", "Profit in points required before the stop is moved to secure profit.", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_breakEvenOffsetPoints = Param(nameof(BreakEvenOffsetPoints), 1)
 			.SetDisplay("Break-even Offset (points)", "Distance from the entry used when arming the break-even stop.", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingBufferLongPoints = Param(nameof(TrailingBufferLongPoints), 50)
 			.SetDisplay("Long Trailing Buffer (points)", "Distance maintained between the price extreme and the long stop.", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingBufferShortPoints = Param(nameof(TrailingBufferShortPoints), 35)
 			.SetDisplay("Short Trailing Buffer (points)", "Distance maintained between the price extreme and the short stop.", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 3)
 			.SetDisplay("Trailing Step (points)", "Minimum improvement required before tightening the trailing stop.", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailOnlyAfterProfit = Param(nameof(TrailOnlyAfterProfit), true)
 			.SetDisplay("Trail Only After Profit", "Enable trailing only once the trade is already in profit.", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe that drives the strategy calculations.", "General");
@@ -241,9 +241,9 @@ public class ForMaxV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

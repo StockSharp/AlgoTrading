@@ -82,7 +82,7 @@ public class VolumeSupportResistanceZonesStrategy : Strategy
 		_volumeMaPeriod = Param(nameof(VolumeMaPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume MA", "Volume moving average period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
@@ -95,11 +95,11 @@ public class VolumeSupportResistanceZonesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_volumeSma = new SimpleMovingAverage { Length = VolumeMaPeriod };
+		_volumeSma = new SMA { Length = VolumeMaPeriod };
 
 		_highs = new decimal?[6];
 		_lows = new decimal?[6];
@@ -112,7 +112,7 @@ public class VolumeSupportResistanceZonesStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -120,7 +120,7 @@ public class VolumeSupportResistanceZonesStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var smaValue = _volumeSma.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+		var smaValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 
 		for (var i = 0; i < _highs.Length - 1; i++)
 		{

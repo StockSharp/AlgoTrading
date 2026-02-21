@@ -319,9 +319,9 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = new IdealMovingAverage
 		{
@@ -467,7 +467,7 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 		_sellReEntries = 0;
 	}
 
-	private sealed class IdealMovingAverage : Indicator<decimal>
+	private sealed class IdealMovingAverage : BaseIndicator
 	{
 		public int Period1 { get; set; } = 10;
 		public int Period2 { get; set; } = 10;
@@ -523,7 +523,7 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 		}
 	}
 
-	private sealed class TripleIdealMovingAverage : Indicator<decimal>
+	private sealed class TripleIdealMovingAverage : BaseIndicator
 	{
 		public int PeriodX1 { get; set; } = 10;
 		public int PeriodX2 { get; set; } = 10;

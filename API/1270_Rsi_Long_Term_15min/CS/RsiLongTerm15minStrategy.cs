@@ -86,14 +86,14 @@ public class RsiLongTerm15minStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_sma1 = new SimpleMovingAverage { Length = Sma1Length };
-		_sma2 = new SimpleMovingAverage { Length = Sma2Length };
-		_volumeSma = new SimpleMovingAverage { Length = VolumeSmaLength };
+		_sma1 = new SMA { Length = Sma1Length };
+		_sma2 = new SMA { Length = Sma2Length };
+		_volumeSma = new SMA { Length = VolumeSmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -115,7 +115,7 @@ public class RsiLongTerm15minStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var volSmaValue = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var volSmaValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 		if (!_rsi.IsFormed || !_sma1.IsFormed || !_sma2.IsFormed || !_volumeSma.IsFormed)
 		return;

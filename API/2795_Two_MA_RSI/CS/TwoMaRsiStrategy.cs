@@ -48,17 +48,17 @@ public class TwoMaRsiStrategy : Strategy
 	{
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetDisplay("Fast EMA Length", "Length of the fast exponential moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_slowLength = Param(nameof(SlowLength), 20)
 			.SetDisplay("Slow EMA Length", "Length of the slow exponential moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetDisplay("RSI Length", "Number of bars for the RSI calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
@@ -191,16 +191,16 @@ public class TwoMaRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastEma = new ExponentialMovingAverage
+		_fastEma = new EMA
 		{
 			Length = FastLength
 		};
 
-		_slowEma = new ExponentialMovingAverage
+		_slowEma = new EMA
 		{
 			Length = SlowLength
 		};

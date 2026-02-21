@@ -148,43 +148,43 @@ public class MacdEaStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 55)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast moving average period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 120, 5);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 69)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow moving average period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 5);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 90)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal MA", "Signal moving average period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 150, 5);
 
 		_stopLossPips = Param(nameof(StopLossPips), 80)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 200, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 500)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 800, 20);
 
 		_partialProfitPips = Param(nameof(PartialProfitPips), 70)
 			.SetNotNegative()
 			.SetDisplay("Partial Profit", "Pips to close half the position", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 200, 10);
 
 		_breakevenPips = Param(nameof(BreakevenPips), 0)
 			.SetNotNegative()
 			.SetDisplay("Breakeven", "Distance to activate breakeven", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 200, 10);
 
 		_useMoneyManagement = Param(nameof(UseMoneyManagement), false)
@@ -193,13 +193,13 @@ public class MacdEaStrategy : Strategy
 		_riskMultiplier = Param(nameof(RiskMultiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Multiplier", "Multiplier applied to base volume", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_baseVolume = Param(nameof(BaseVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Default order size", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -236,8 +236,8 @@ public class MacdEaStrategy : Strategy
 
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = FastPeriod,
-			LongPeriod = SlowPeriod,
+			ShortMa = { Length = FastPeriod },
+			LongMa = { Length = SlowPeriod },
 			SignalPeriod = SignalPeriod
 		};
 

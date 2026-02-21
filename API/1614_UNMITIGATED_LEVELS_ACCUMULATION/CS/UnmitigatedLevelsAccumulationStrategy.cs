@@ -170,14 +170,14 @@ public class UnmitigatedLevelsAccumulationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_initialCapital = Portfolio.CurrentValue;
 
 		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
-		SubscribeCandles(TimeSpan.FromDays(1).TimeFrame()).Bind(ProcessDaily).Start();
+		SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame()).Bind(ProcessDaily).Start();
 		SubscribeCandles(TimeSpan.FromDays(7).TimeFrame()).Bind(ProcessWeekly).Start();
 		SubscribeCandles(TimeSpan.FromDays(30).TimeFrame()).Bind(ProcessMonthly).Start();
 		SubscribeCandles(TimeSpan.FromDays(365).TimeFrame()).Bind(ProcessYearly).Start();

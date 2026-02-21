@@ -80,12 +80,12 @@ public class CharlesSmaTrailingStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 18)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast Period", "Length of fast SMA", "Indicators")
-		.SetCanOptimize(true);
+		;
 		
 		_slowPeriod = Param(nameof(SlowPeriod), 60)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow Period", "Length of slow SMA", "Indicators")
-		.SetCanOptimize(true);
+		;
 		
 		_stopLoss = Param(nameof(StopLoss), 0m)
 		.SetDisplay("Stop Loss", "Fixed stop loss", "Risk");
@@ -107,12 +107,12 @@ public class CharlesSmaTrailingStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_fastSma = new SimpleMovingAverage { Length = FastPeriod };
-		_slowSma = new SimpleMovingAverage { Length = SlowPeriod };
+		_fastSma = new SMA { Length = FastPeriod };
+		_slowSma = new SMA { Length = SlowPeriod };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription

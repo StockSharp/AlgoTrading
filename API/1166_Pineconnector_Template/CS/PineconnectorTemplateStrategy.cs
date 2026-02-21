@@ -58,13 +58,13 @@ public class PineconnectorTemplateStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Period of the fast moving average", "MA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_slowLength = Param(nameof(SlowLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Period of the slow moving average", "MA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -78,9 +78,9 @@ public class PineconnectorTemplateStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastMa = new SMA { Length = FastLength };
 		var slowMa = new SMA { Length = SlowLength };

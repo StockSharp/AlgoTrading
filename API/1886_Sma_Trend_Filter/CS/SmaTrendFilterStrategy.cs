@@ -108,9 +108,9 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 	
 	var sub1 = SubscribeCandles(CandleType1);
 	sub1.Bind(_smas[0][0], _smas[0][1], _smas[0][2], _smas[0][3], _smas[0][4], ProcessTf1).Start();

@@ -128,40 +128,40 @@ public class StochasticAutomatedStrategy : Strategy
 		_kPeriod = Param(nameof(KPeriod), 5)
 					   .SetGreaterThanZero()
 					   .SetDisplay("%K Period", "Stochastic %K period", "Stochastic")
-					   .SetCanOptimize(true);
+					   ;
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 					   .SetGreaterThanZero()
 					   .SetDisplay("%D Period", "Stochastic %D period", "Stochastic")
-					   .SetCanOptimize(true);
+					   ;
 
 		_slowing = Param(nameof(Slowing), 3)
 					   .SetGreaterThanZero()
 					   .SetDisplay("Slowing", "Stochastic slowing", "Stochastic")
-					   .SetCanOptimize(true);
+					   ;
 
 		_overBought = Param(nameof(OverBought), 80m)
 						  .SetDisplay("Overbought", "Overbought threshold", "Stochastic")
-						  .SetCanOptimize(true);
+						  ;
 
 		_overSold = Param(nameof(OverSold), 20m)
 						.SetDisplay("Oversold", "Oversold threshold", "Stochastic")
-						.SetCanOptimize(true);
+						;
 
 		_takeProfit = Param(nameof(TakeProfit), 150m)
 						  .SetNotNegative()
 						  .SetDisplay("Take Profit", "Profit target in price", "Risk")
-						  .SetCanOptimize(true);
+						  ;
 
 		_stopLoss = Param(nameof(StopLoss), 100m)
 						.SetNotNegative()
 						.SetDisplay("Stop Loss", "Stop loss in price", "Risk")
-						.SetCanOptimize(true);
+						;
 
 		_trailingStop = Param(nameof(TrailingStop), 30m)
 							.SetNotNegative()
 							.SetDisplay("Trailing Stop", "Trailing stop in price", "Risk")
-							.SetCanOptimize(true);
+							;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 						  .SetDisplay("Candle Type", "Time frame", "General");
@@ -181,14 +181,13 @@ public class StochasticAutomatedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tickSize = Security?.PriceStep ?? 1m;
 
-		_stochastic = new StochasticOscillator {
-			Length = KPeriod,
+		_stochastic = new StochasticOscillator { K = { Length = KPeriod },
 			K = { Length = Slowing },
 			D = { Length = DPeriod },
 		};

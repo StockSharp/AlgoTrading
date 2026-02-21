@@ -47,13 +47,13 @@ public class SmaRsiVolumeAtrStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Period for price SMA", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Period for RSI", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 30, 1);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
@@ -67,13 +67,13 @@ public class SmaRsiVolumeAtrStrategy : Strategy
 		_volumeThreshold = Param(nameof(VolumeThreshold), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Threshold", "Multiple of average volume", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "Period for ATR", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 30, 1);
 
 		_takeProfitPerc = Param(nameof(TakeProfitPerc), 1.5m)
@@ -99,7 +99,7 @@ public class SmaRsiVolumeAtrStrategy : Strategy
 		_prevAtr = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_sma = new SMA { Length = SmaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
@@ -124,7 +124,7 @@ public class SmaRsiVolumeAtrStrategy : Strategy
 			takeProfit: new Unit(TakeProfitPerc, UnitTypes.Percent),
 			stopLoss: new Unit(StopLossPerc, UnitTypes.Percent));
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal sma, decimal rsi, decimal atr)
@@ -132,7 +132,7 @@ public class SmaRsiVolumeAtrStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var avgVolume = _volumeSma.Process(candle.TotalVolume ?? 0m, candle.ServerTime, true).ToDecimal();
+		var avgVolume = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume ?? 0m, candle.ServerTime)).ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading() || !_sma.IsFormed || !_rsi.IsFormed || !_atr.IsFormed || !_volumeSma.IsFormed)
 		{

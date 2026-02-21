@@ -51,7 +51,7 @@ public class TfmStrategy : Strategy
 		_multiplier = Param(nameof(Multiplier), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Higher timeframe multiplier", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 5, 1);
 
 		_allowShort = Param(nameof(AllowShort), false)
@@ -74,9 +74,9 @@ public class TfmStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var baseSub = SubscribeCandles(CandleTime.TimeFrame());
 		baseSub.Bind(ProcessBase).Start();

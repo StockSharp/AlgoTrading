@@ -164,9 +164,9 @@ public class WajdyssIchimokuCandleMmrecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = KijunLength };
 		_lowest = new Lowest { Length = KijunLength };

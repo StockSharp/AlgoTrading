@@ -65,9 +65,9 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 
 	private WeightedMovingAverage _firstLwma = null!;
 	private WeightedMovingAverage _secondLwma = null!;
-	private List<LengthIndicator<decimal>> _trendIndicators = null!;
-	private LengthIndicator<decimal> _upSmoother = null!;
-	private LengthIndicator<decimal> _downSmoother = null!;
+	private List<DecimalLengthIndicator> _trendIndicators = null!;
+	private DecimalLengthIndicator _upSmoother = null!;
+	private DecimalLengthIndicator _downSmoother = null!;
 	private decimal?[] _previousTrendValues = Array.Empty<decimal?>();
 	private bool[] _trendHasHistory = Array.Empty<bool>();
 	private bool _indicatorsFormed;
@@ -266,9 +266,9 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 		CancelProtection();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Prepare the double LWMA filter that removes short-term noise.
 		_firstLwma = new WeightedMovingAverage { Length = Math.Max(1, BaseLength) };
@@ -276,7 +276,7 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 
 		var steps = Math.Max(0, StepsTotal);
 		// Build the ladder of smoothing indicators with growing lengths.
-		_trendIndicators = new List<LengthIndicator<decimal>>(steps + 1);
+		_trendIndicators = new List<DecimalLengthIndicator>(steps + 1);
 		_previousTrendValues = new decimal?[steps + 1];
 		_trendHasHistory = new bool[steps + 1];
 
@@ -304,12 +304,12 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 		var price = SelectPrice(candle);
 		var time = candle.CloseTime;
 
-		var first = _firstLwma.Process(price, time, true);
+		var first = _firstLwma.Process(new DecimalIndicatorValue(_firstLwma, price, time));
 		if (!first.IsFinal)
 			return;
 
 		var firstValue = first.ToDecimal();
-		var second = _secondLwma.Process(firstValue, time, true);
+		var second = _secondLwma.Process(new DecimalIndicatorValue(_secondLwma, firstValue, time));
 		if (!second.IsFinal)
 			return;
 
@@ -324,7 +324,7 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 		for (var i = 0; i < _trendIndicators.Count; i++)
 		{
 			var indicator = _trendIndicators[i];
-			var value = indicator.Process(doubleLwma, time, true);
+			var value = indicator.Process(new DecimalIndicatorValue(indicator, doubleLwma, time));
 			if (!value.IsFinal)
 				return;
 
@@ -355,8 +355,8 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 			_indicatorsFormed = true;
 		}
 
-		var upValue = _upSmoother.Process(bullishCount, time, true);
-		var downValue = _downSmoother.Process(bearishCount, time, true);
+		var upValue = _upSmoother.Process(new DecimalIndicatorValue(_upSmoother, bullishCount, time));
+		var downValue = _downSmoother.Process(new DecimalIndicatorValue(_downSmoother, bearishCount, time));
 
 		if (!upValue.IsFinal || !downValue.IsFinal)
 			return;
@@ -549,7 +549,7 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 		return ((adjusted - candle.LowPrice) + (adjusted - candle.HighPrice)) / 2m;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(UltraSmoothMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(UltraSmoothMethods method, int length)
 	{
 		var normalizedLength = Math.Max(1, length);
 

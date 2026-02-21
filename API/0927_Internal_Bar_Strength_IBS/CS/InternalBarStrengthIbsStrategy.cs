@@ -57,12 +57,12 @@ public class InternalBarStrengthIbsStrategy : Strategy
 		_upperThreshold = Param(nameof(UpperThreshold), 0.8m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Upper Threshold", "IBS value to exit position", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_lowerThreshold = Param(nameof(LowerThreshold), 0.2m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Lower Threshold", "IBS value to enter long", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -81,11 +81,11 @@ public class InternalBarStrengthIbsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

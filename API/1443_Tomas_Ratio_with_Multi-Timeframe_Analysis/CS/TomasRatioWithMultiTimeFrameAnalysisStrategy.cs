@@ -54,17 +54,17 @@ public class TomasRatioWithMultiTimeFrameAnalysisStrategy : Strategy
 		_length = Param(nameof(Length), 720)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Monthly weight length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_deviationLength = Param(nameof(DeviationLength), 168)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Length", "Weekly deviation length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_pointsTarget = Param(nameof(PointsTarget), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Points Target", "Target points for entry", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_useStdDev = Param(nameof(UseStandardDeviation), true)
 			.SetDisplay("Use StdDev", "Enable standard deviation increment", "Parameters");
@@ -94,22 +94,22 @@ public class TomasRatioWithMultiTimeFrameAnalysisStrategy : Strategy
 		_closePoints = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_deviation = new StandardDeviation { Length = DeviationLength };
-		_gainsAvg = new SimpleMovingAverage { Length = DeviationLength };
-		_lossesAvg = new SimpleMovingAverage { Length = DeviationLength };
-		_gainsWeightAvg = new SimpleMovingAverage { Length = Length };
-		_lossesWeightAvg = new SimpleMovingAverage { Length = Length };
-		_ma100 = new SimpleMovingAverage { Length = 100 };
-		_ema720 = new ExponentialMovingAverage { Length = 720 };
-		_buyPointsAvg = new SimpleMovingAverage { Length = 24 };
-		_closePointsAvg = new SimpleMovingAverage { Length = 24 };
+		_gainsAvg = new SMA { Length = DeviationLength };
+		_lossesAvg = new SMA { Length = DeviationLength };
+		_gainsWeightAvg = new SMA { Length = Length };
+		_lossesWeightAvg = new SMA { Length = Length };
+		_ma100 = new SMA { Length = 100 };
+		_ema720 = new EMA { Length = 720 };
+		_buyPointsAvg = new SMA { Length = 24 };
+		_closePointsAvg = new SMA { Length = 24 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

@@ -67,25 +67,25 @@ public class TradePadSampleStrategy : Strategy
 		_stochasticLength = Param(nameof(StochasticLength), 5)
 		.SetRange(1, 100)
 		.SetDisplay("Stochastic Length", "Base period used for the %K calculation", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 3)
 		.SetRange(1, 100)
 		.SetDisplay("Stochastic %K Smoothing", "Smoothing applied to the %K line", "Indicators")
-		.SetCanOptimize(true);
+		;
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 		.SetRange(1, 100)
 		.SetDisplay("Stochastic %D Period", "Smoothing applied to the %D line", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_upperLevel = Param(nameof(UpperLevel), 80m)
 		.SetDisplay("Upper Threshold", "Level that marks an uptrend state", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_lowerLevel = Param(nameof(LowerLevel), 20m)
 		.SetDisplay("Lower Threshold", "Level that marks a downtrend state", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Time-frame used for indicator calculations", "Data");
@@ -174,9 +174,9 @@ public class TradePadSampleStrategy : Strategy
 	public IReadOnlyDictionary<string, decimal> LatestKValues => _latestK;
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var securities = ResolveSecurities();
 		if (securities.Count == 0)
@@ -187,10 +187,9 @@ public class TradePadSampleStrategy : Strategy
 		foreach (var security in securities)
 		{
 			var stochastic = new StochasticOscillator
-			{
-				Length = Math.Max(1, StochasticLength),
+			{ K = { Length = Math }.Max(1, StochasticLength),
 				KPeriod = Math.Max(1, StochasticKPeriod),
-				DPeriod = Math.Max(1, StochasticDPeriod)
+				D = { Length = Math }.Max(1, StochasticDPeriod)
 			};
 
 			_stochastics[security] = stochastic;

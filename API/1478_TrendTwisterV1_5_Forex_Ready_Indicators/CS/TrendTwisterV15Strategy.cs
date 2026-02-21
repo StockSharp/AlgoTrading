@@ -67,19 +67,19 @@ public TrendTwisterV15Strategy()
 _hmaLength = Param(nameof(HmaLength), 12)
 .SetGreaterThanZero()
 .SetDisplay("HMA Length", "Period for Hull MA", "Indicators")
-.SetCanOptimize(true);
+;
 _emaLength = Param(nameof(EmaLength), 5)
 .SetGreaterThanZero()
 .SetDisplay("EMA Length", "Period for EMA", "Indicators")
-.SetCanOptimize(true);
+;
 _rsiLength = Param(nameof(RsiLength), 14)
 .SetGreaterThanZero()
 .SetDisplay("RSI Length", "Period for RSI", "Indicators")
-.SetCanOptimize(true);
+;
 _profitFactor = Param(nameof(ProfitFactor), 1.65m)
 .SetGreaterThanZero()
 .SetDisplay("Profit Factor", "Multiplier for take profit", "Risk")
-.SetCanOptimize(true);
+;
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Timeframe", "General");
 }
@@ -108,15 +108,15 @@ _targetPrice = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _hma = new HullMovingAverage { Length = HmaLength };
-_ema = new ExponentialMovingAverage { Length = EmaLength };
+_ema = new EMA { Length = EmaLength };
 _rsi = new RelativeStrengthIndex { Length = RsiLength };
-_stoch1 = new StochasticOscillator { KPeriod = 12, DPeriod = 3, Smooth = 1 };
-_stoch2 = new StochasticOscillator { KPeriod = 5, DPeriod = 3, Smooth = 1 };
+_stoch1 = new StochasticOscillator {, D = {  K = { Length = 3 } }, Smooth = 1 };
+_stoch2 = new StochasticOscillator {, D = {  K = { Length = 3 } }, Smooth = 1 };
 
 var subscription = SubscribeCandles(CandleType);
 subscription.BindEx(_hma, _ema, _rsi, _stoch1, _stoch2, ProcessCandle).Start();

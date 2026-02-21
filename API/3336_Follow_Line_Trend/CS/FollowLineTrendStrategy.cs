@@ -388,9 +388,9 @@ public class FollowLineTrendStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bollinger = new BollingerBands
 		{
@@ -403,11 +403,11 @@ public class FollowLineTrendStrategy : Strategy
 			Length = AtrPeriod
 		};
 
-		_highSma = new SimpleMovingAverage { Length = MovingAveragePeriod };
-		_openSma = new SimpleMovingAverage { Length = MovingAveragePeriod };
-		_closeSma = new SimpleMovingAverage { Length = MovingAveragePeriod };
-		_lowSma = new SimpleMovingAverage { Length = MovingAveragePeriod };
-		_medianSma = new SimpleMovingAverage { Length = MovingAveragePeriod };
+		_highSma = new SMA { Length = MovingAveragePeriod };
+		_openSma = new SMA { Length = MovingAveragePeriod };
+		_closeSma = new SMA { Length = MovingAveragePeriod };
+		_lowSma = new SMA { Length = MovingAveragePeriod };
+		_medianSma = new SMA { Length = MovingAveragePeriod };
 
 		_pendingSignals.Clear();
 		_previousTrendDirection = 0;
@@ -426,7 +426,7 @@ public class FollowLineTrendStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

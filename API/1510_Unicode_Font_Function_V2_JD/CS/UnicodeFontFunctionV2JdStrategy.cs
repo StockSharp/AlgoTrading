@@ -85,9 +85,9 @@ public class UnicodeFontFunctionV2JdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var first = FontTypeSelector(Input1, FontType1);
 		var second = FontTypeSelector(Input2, FontType2);

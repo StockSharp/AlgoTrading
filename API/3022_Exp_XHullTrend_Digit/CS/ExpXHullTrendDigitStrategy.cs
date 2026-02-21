@@ -246,9 +246,9 @@ public class ExpXHullTrendDigitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = new XHullTrendDigitIndicator
 		{
@@ -383,7 +383,7 @@ public class ExpXHullTrendDigitStrategy : Strategy
 	/// <summary>
 	/// Indicator reproducing the logic of the XHullTrend Digit MQL5 indicator.
 	/// </summary>
-	public class XHullTrendDigitIndicator : BaseIndicator<decimal>
+	public class XHullTrendDigitIndicator : BaseIndicator
 	{
 		private IIndicator _shortMa;
 		private IIndicator _longMa;
@@ -468,8 +468,8 @@ public class ExpXHullTrendDigitStrategy : Strategy
 		{
 			return Method switch
 			{
-				SmoothMethods.Simple => new SimpleMovingAverage { Length = length },
-				SmoothMethods.Exponential => new ExponentialMovingAverage { Length = length },
+				SmoothMethods.Simple => new SMA { Length = length },
+				SmoothMethods.Exponential => new EMA { Length = length },
 				SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 				_ => new WeightedMovingAverage { Length = length },
 			};

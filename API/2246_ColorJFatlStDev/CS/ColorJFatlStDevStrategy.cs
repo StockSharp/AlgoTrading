@@ -183,9 +183,9 @@ public class ColorJFatlStDevStrategy : Strategy
     }
 
     /// <inheritdoc />
-    protected override void OnStarted(DateTimeOffset time)
+    protected override void OnStarted2(DateTime time)
     {
-        base.OnStarted(time);
+        base.OnStarted2(time);
 
         var jma = new JurikMovingAverage { Length = JmaLength, Phase = JmaPhase };
         var std = new StandardDeviation { Length = StdPeriod };
@@ -195,7 +195,7 @@ public class ColorJFatlStDevStrategy : Strategy
             .Bind(jma, std, ProcessCandle)
             .Start();
 
-        StartProtection();
+        StartProtection(null, null);
     }
 
     private void ProcessCandle(ICandleMessage candle, decimal jmaValue, decimal stdValue)

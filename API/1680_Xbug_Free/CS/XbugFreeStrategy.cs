@@ -59,7 +59,7 @@ public class XbugFreeStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 19)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Length of moving average", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_maShift = Param(nameof(MaShift), 15)
 			.SetDisplay("MA Shift", "Horizontal shift of moving average", "Parameters");
@@ -67,7 +67,7 @@ public class XbugFreeStrategy : Strategy
 		_stopPoints = Param(nameof(StopPoints), 270)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Points", "Distance for stop-loss and take-profit in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -90,11 +90,11 @@ public class XbugFreeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = MaPeriod };
+		_sma = new SMA { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(c => (c.HighPrice + c.LowPrice) / 2m, _sma, ProcessCandle).Start();

@@ -98,7 +98,7 @@ public class AssetGrowthEffectStrategy : Strategy
 			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
 
 		// Candle type parameter.
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for calculations", "General");
 	}
 
@@ -120,9 +120,9 @@ public class AssetGrowthEffectStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe cannot be empty.");

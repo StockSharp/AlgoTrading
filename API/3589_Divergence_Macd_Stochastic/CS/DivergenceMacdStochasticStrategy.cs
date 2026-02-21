@@ -163,37 +163,37 @@ public class DivergenceMacdStochasticStrategy : Strategy
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Fast", "Fast EMA length for MACD histogram.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Slow", "Slow EMA length for MACD histogram.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal", "Signal EMA length for MACD histogram.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdDivergenceThreshold = Param(nameof(MacdDivergenceThreshold), 0.0005m)
 		.SetGreaterThanZero()
 		.SetDisplay("Histogram Threshold", "Minimum histogram difference required for divergence.", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticLength = Param(nameof(StochasticLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic Length", "Primary stochastic length used for %K.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticSlowK = Param(nameof(StochasticSlowK), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic SlowK", "Smoothing length applied to %K.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticSlowD = Param(nameof(StochasticSlowD), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic SlowD", "Smoothing length applied to %D.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticUpperLevel = Param(nameof(StochasticUpperLevel), 80m)
 		.SetDisplay("Overbought", "Level considered overbought for divergence confirmation.", "Filters");
@@ -203,11 +203,11 @@ public class DivergenceMacdStochasticStrategy : Strategy
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50m)
 		.SetDisplay("Take Profit (steps)", "Optional take profit distance in price steps.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 50m)
 		.SetDisplay("Stop Loss (steps)", "Optional stop loss distance in price steps.", "Risk")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <inheritdoc />
@@ -249,8 +249,7 @@ public class DivergenceMacdStochasticStrategy : Strategy
 		};
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			K = { Length = StochasticSlowK },
 			D = { Length = StochasticSlowD },
 		};

@@ -93,12 +93,12 @@ public class HardProfitStrategy : Strategy
 	{
 		_breakoutPeriod = Param(nameof(BreakoutPeriod), 1)
 			.SetRange(1, 200)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Breakout Period", "Number of finished candles used to compute the breakout range", "Signals");
 
 		_trendPeriod = Param(nameof(TrendPeriod), 3)
 			.SetRange(1, 200)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Trend Period", "Length of the smoothed moving average applied to median price", "Signals");
 
 		_onlyShort = Param(nameof(OnlyShort), false)
@@ -113,12 +113,12 @@ public class HardProfitStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 40m)
 			.SetRange(0m, 5000m)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk");
 
 		_breakEvenPips = Param(nameof(BreakEvenPips), 30m)
 			.SetRange(0m, 5000m)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Break-even (pips)", "Profit distance that arms the break-even stop", "Risk");
 
 		_trailingActivationPips = Param(nameof(TrailingActivationPips), 330m)
@@ -479,9 +479,9 @@ public class HardProfitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_trendAverage = new SmoothedMovingAverage { Length = Math.Max(1, TrendPeriod) };
 		_breakoutHigh = new Highest { Length = Math.Max(1, BreakoutPeriod) };
@@ -494,7 +494,7 @@ public class HardProfitStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />
@@ -559,10 +559,10 @@ public class HardProfitStrategy : Strategy
 		ManageOpenPosition(candle);
 
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
-		var trendValue = _trendAverage.Process(medianPrice, candle.OpenTime, true).ToDecimal();
+		var trendValue = _trendAverage.Process(new DecimalIndicatorValue(_trendAverage, medianPrice, candle.OpenTime)).ToDecimal();
 
-		var highestValue = _breakoutHigh.Process(candle.HighPrice, candle.OpenTime, true).ToDecimal();
-		var lowestValue = _breakoutLow.Process(candle.LowPrice, candle.OpenTime, true).ToDecimal();
+		var highestValue = _breakoutHigh.Process(new DecimalIndicatorValue(_breakoutHigh, candle.HighPrice, candle.OpenTime)).ToDecimal();
+		var lowestValue = _breakoutLow.Process(new DecimalIndicatorValue(_breakoutLow, candle.LowPrice, candle.OpenTime)).ToDecimal();
 
 		if (!_hasPreviousRange)
 		{

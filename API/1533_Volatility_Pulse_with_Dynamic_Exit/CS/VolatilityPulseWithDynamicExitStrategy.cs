@@ -149,12 +149,12 @@ public class VolatilityPulseWithDynamicExitStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_atr = new AverageTrueRange { Length = AtrLength };
-		_atrAverage = new SimpleMovingAverage { Length = 20 };
+		_atrAverage = new SMA { Length = 20 };
 		_momentum = new Momentum { Length = MomentumLength };
 		
 		var subscription = SubscribeCandles(CandleType);

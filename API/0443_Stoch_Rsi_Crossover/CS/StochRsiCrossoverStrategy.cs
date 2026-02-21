@@ -155,61 +155,61 @@ public class StochRsiCrossoverStrategy : Strategy
 		_smoothK = Param(nameof(SmoothK), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth K", "%K smoothing periods", "Stochastic RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_smoothD = Param(nameof(SmoothD), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth D", "%D smoothing periods", "Stochastic RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI length for Stochastic RSI", "Stochastic RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 25, 2);
 
 		_stochLength = Param(nameof(StochLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Length", "Stochastic length for Stochastic RSI", "Stochastic RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 25, 2);
 
 		_ema1Length = Param(nameof(Ema1Length), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA 1 Length", "First EMA length", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 2);
 
 		_ema2Length = Param(nameof(Ema2Length), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA 2 Length", "Second EMA length", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 25, 3);
 
 		_ema3Length = Param(nameof(Ema3Length), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA 3 Length", "Third EMA length", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 70, 10);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation length", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_atrLossMultiplier = Param(nameof(AtrLossMultiplier), 3.0m)
 			.SetRange(0.5m, 10.0m)
 			.SetDisplay("ATR Loss Multiplier", "ATR multiplier for stop loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_atrProfitMultiplier = Param(nameof(AtrProfitMultiplier), 1.0m)
 			.SetRange(0.5m, 10.0m)
 			.SetDisplay("ATR Profit Multiplier", "ATR multiplier for take profit", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3.0m, 0.5m);
 	}
 
@@ -231,19 +231,19 @@ public class StochRsiCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_stochRsiHigh = new Highest { Length = StochLength };
 		_stochRsiLow = new Lowest { Length = StochLength };
-		_smoothKSma = new SimpleMovingAverage { Length = SmoothK };
-		_smoothDSma = new SimpleMovingAverage { Length = SmoothD };
-		_ema1 = new ExponentialMovingAverage { Length = Ema1Length };
-		_ema2 = new ExponentialMovingAverage { Length = Ema2Length };
-		_ema3 = new ExponentialMovingAverage { Length = Ema3Length };
+		_smoothKSma = new SMA { Length = SmoothK };
+		_smoothDSma = new SMA { Length = SmoothD };
+		_ema1 = new EMA { Length = Ema1Length };
+		_ema2 = new EMA { Length = Ema2Length };
+		_ema3 = new EMA { Length = Ema3Length };
 		_atr = new AverageTrueRange { Length = AtrLength };
 
 		// Create subscription for candles
@@ -283,8 +283,8 @@ public class StochRsiCrossoverStrategy : Strategy
 
 		// Calculate Stochastic RSI manually
 		var rsiPrice = rsiValue.ToDecimal();
-		var highestRsi = _stochRsiHigh.Process(rsiPrice, candle.ServerTime, candle.State == CandleStates.Finished);
-		var lowestRsi = _stochRsiLow.Process(rsiPrice, candle.ServerTime, candle.State == CandleStates.Finished);
+		var highestRsi = _stochRsiHigh.Process(new DecimalIndicatorValue(_stochRsiHigh, rsiPrice, candle.ServerTime));
+		var lowestRsi = _stochRsiLow.Process(new DecimalIndicatorValue(_stochRsiLow, rsiPrice, candle.ServerTime));
 
 		if (!highestRsi.IsFormed || !lowestRsi.IsFormed)
 			return;
@@ -295,8 +295,8 @@ public class StochRsiCrossoverStrategy : Strategy
 		var stochRsi = highVal != lowVal ? (rsiPrice - lowVal) / (highVal - lowVal) * 100 : 50;
 
 		// Calculate smoothed K and D values
-		var kValue = _smoothKSma.Process(stochRsi, candle.ServerTime, candle.State == CandleStates.Finished);
-		var dValue = _smoothDSma.Process(kValue.ToDecimal(), candle.ServerTime, candle.State == CandleStates.Finished);
+		var kValue = _smoothKSma.Process(new DecimalIndicatorValue(_smoothKSma, stochRsi, candle.ServerTime));
+		var dValue = _smoothDSma.Process(new DecimalIndicatorValue(_smoothDSma, kValue.ToDecimal(), candle.ServerTime));
 
 		if (!kValue.IsFormed || !dValue.IsFormed)
 			return;

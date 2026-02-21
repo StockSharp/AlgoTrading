@@ -60,12 +60,12 @@ public class SpreadInformerStrategy : Strategy
 	{
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 0)
 		.SetDisplay("Max Spread", "Maximum allowed spread in points (0 disables alert)", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 100, 5);
 
 		_alertIntervalSeconds = Param(nameof(AlertIntervalSeconds), 0)
 		.SetDisplay("Alert Interval", "Minimum interval between alerts in seconds", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 300, 30);
 	}
 
@@ -96,9 +96,9 @@ public class SpreadInformerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 

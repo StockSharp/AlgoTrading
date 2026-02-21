@@ -93,27 +93,27 @@ public RsiTraderAlignedAveragesStrategy()
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI calculation period", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 1);
 
 		_shortPriceMaPeriod = Param(nameof(ShortPriceMaPeriod), 9)
 			.SetDisplay("Short Price MA", "Short period for price moving average", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_longPriceMaPeriod = Param(nameof(LongPriceMaPeriod), 45)
 			.SetDisplay("Long Price MA", "Long period for price moving average", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 90, 5);
 
 		_shortRsiMaPeriod = Param(nameof(ShortRsiMaPeriod), 9)
 			.SetDisplay("Short RSI MA", "Short smoothing period for RSI", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_longRsiMaPeriod = Param(nameof(LongRsiMaPeriod), 45)
 			.SetDisplay("Long RSI MA", "Long smoothing period for RSI", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 90, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -139,15 +139,15 @@ public RsiTraderAlignedAveragesStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators for price and RSI smoothing.
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_shortRsiMa = new SimpleMovingAverage { Length = ShortRsiMaPeriod };
-		_longRsiMa = new SimpleMovingAverage { Length = LongRsiMaPeriod };
-		_shortPriceMa = new SimpleMovingAverage { Length = ShortPriceMaPeriod };
+		_shortRsiMa = new SMA { Length = ShortRsiMaPeriod };
+		_longRsiMa = new SMA { Length = LongRsiMaPeriod };
+		_shortPriceMa = new SMA { Length = ShortPriceMaPeriod };
 		_longPriceMa = new WeightedMovingAverage { Length = LongPriceMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -186,10 +186,10 @@ public RsiTraderAlignedAveragesStrategy()
 			return;
 
 		var rsi = rsiValue.ToDecimal();
-		var shortRsi = _shortRsiMa.Process(rsi, candle.OpenTime, true).ToDecimal();
-		var longRsi = _longRsiMa.Process(rsi, candle.OpenTime, true).ToDecimal();
-		var shortPrice = _shortPriceMa.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
-		var longPrice = _longPriceMa.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
+		var shortRsi = _shortRsiMa.Process(new DecimalIndicatorValue(_shortRsiMa, rsi, candle.OpenTime)).ToDecimal();
+		var longRsi = _longRsiMa.Process(new DecimalIndicatorValue(_longRsiMa, rsi, candle.OpenTime)).ToDecimal();
+		var shortPrice = _shortPriceMa.Process(new DecimalIndicatorValue(_shortPriceMa, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var longPrice = _longPriceMa.Process(new DecimalIndicatorValue(_longPriceMa, candle.ClosePrice, candle.OpenTime)).ToDecimal();
 
 		if (!_shortRsiMa.IsFormed || !_longRsiMa.IsFormed || !_shortPriceMa.IsFormed || !_longPriceMa.IsFormed)
 			return;

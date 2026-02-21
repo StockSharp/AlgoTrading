@@ -72,17 +72,17 @@ public class WprHistogramStrategy : Strategy
 		_wprPeriod = Param(nameof(WprPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("WPR Period", "Period for Williams %R", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 28, 7);
 
 		_highLevel = Param(nameof(HighLevel), -30m)
 		.SetDisplay("High Level", "Overbought threshold", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(-20m, -40m, -10m);
 
 		_lowLevel = Param(nameof(LowLevel), -70m)
 		.SetDisplay("Low Level", "Oversold threshold", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(-60m, -80m, -10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -103,9 +103,9 @@ public class WprHistogramStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var wpr = new WilliamsR { Length = WprPeriod };
 

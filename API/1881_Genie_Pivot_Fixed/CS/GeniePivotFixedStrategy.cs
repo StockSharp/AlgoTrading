@@ -64,13 +64,13 @@ public class GeniePivotFixedStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Target profit in price units", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1000m, 100m);
 
 		_trailingStop = Param(nameof(TrailingStop), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in price units", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 500m, 50m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -93,9 +93,9 @@ public class GeniePivotFixedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

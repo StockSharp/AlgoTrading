@@ -98,7 +98,7 @@ public class BasicMaTemplateStrategy : Strategy
 		_movingAveragePeriod = Param(nameof(MovingAveragePeriod), 49)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Number of bars for the moving average", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 5);
 
 		_movingAverageShift = Param(nameof(MovingAverageShift), 0)
@@ -109,12 +109,12 @@ public class BasicMaTemplateStrategy : Strategy
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 38.5m)
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 80m, 5m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 48.5m)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 90m, 5m);
 	}
 
@@ -135,9 +135,9 @@ public class BasicMaTemplateStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var movingAverage = CreateMovingAverage(MovingAverageMethod, MovingAveragePeriod);
 
@@ -237,7 +237,7 @@ public class BasicMaTemplateStrategy : Strategy
 		return step * multiplier;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int period)
 	{
 		return method switch
 		{

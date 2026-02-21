@@ -90,17 +90,17 @@ public class SuperAtr7StepProfitStrategy : Strategy
 		_entryPrice = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_trendStrength = new SimpleMovingAverage { Length = MomentumPeriod };
-		_adaptiveAtrSma = new SimpleMovingAverage { Length = AtrSmaPeriod };
+		_trendStrength = new SMA { Length = MomentumPeriod };
+		_adaptiveAtrSma = new SMA { Length = AtrSmaPeriod };
 
 		var momentum = new Momentum { Length = MomentumPeriod };
 		var stdev = new StandardDeviation { Length = MomentumPeriod };
-		var shortMa = new SimpleMovingAverage { Length = ShortPeriod };
-		var longMa = new SimpleMovingAverage { Length = LongPeriod };
+		var shortMa = new SMA { Length = ShortPeriod };
+		var longMa = new SMA { Length = LongPeriod };
 		var shortAtr = new AverageTrueRange { Length = ShortPeriod };
 		var longAtr = new AverageTrueRange { Length = LongPeriod };
 		var atrTp = new AverageTrueRange { Length = AtrLengthTp };
@@ -115,7 +115,7 @@ public class SuperAtr7StepProfitStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal momentumValue, decimal stdevValue, decimal shortMa, decimal longMa, decimal shortAtr, decimal longAtr, decimal atrTp)
@@ -130,10 +130,10 @@ public class SuperAtr7StepProfitStrategy : Strategy
 		var adaptiveAtr = (shortAtr * momentumFactor + longAtr) / (1 + momentumFactor);
 		var atrMultiple = adaptiveAtr != 0m ? momentumValue / adaptiveAtr : 0m;
 
-		var tsValue = _trendStrength.Process(atrMultiple, candle.CloseTime, true);
+		var tsValue = _trendStrength.Process(new DecimalIndicatorValue(_trendStrength, atrMultiple, candle.CloseTime));
 		var trendStrength = tsValue.ToDecimal();
 
-		var atrSmaValue = _adaptiveAtrSma.Process(adaptiveAtr, candle.CloseTime, true);
+		var atrSmaValue = _adaptiveAtrSma.Process(new DecimalIndicatorValue(_adaptiveAtrSma, adaptiveAtr, candle.CloseTime));
 		var adaptiveAtrSma = atrSmaValue.ToDecimal();
 
 		var trendSignal = shortMa > longMa && trendStrength > TrendStrengthThreshold

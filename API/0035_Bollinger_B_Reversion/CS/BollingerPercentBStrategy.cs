@@ -78,22 +78,22 @@ public class BollingerPercentBStrategy : Strategy
 	{
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Bollinger Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetDisplay("Bollinger Deviation", "Deviation for Bollinger Bands calculation", "Bollinger Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 2.5m, 0.25m);
 
 		_exitValue = Param(nameof(ExitValue), 0.5m)
 			.SetDisplay("Exit %B Value", "Exit threshold for %B", "Exit Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.3m, 0.7m, 0.1m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -107,9 +107,9 @@ public class BollingerPercentBStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var bollinger = new BollingerBands

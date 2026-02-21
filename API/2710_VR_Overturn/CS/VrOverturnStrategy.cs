@@ -88,22 +88,22 @@ public class VrOverturnStrategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Initial order size", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Distance to stop loss in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 90)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Distance to take profit in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_lotMultiplier = Param(nameof(LotMultiplier), 1.6m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Multiplier", "Multiplier applied after losses or wins", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -189,9 +189,9 @@ public class VrOverturnStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 

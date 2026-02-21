@@ -40,28 +40,28 @@ public class IntelleCityWorldCycleAthAtlLogarithmicStrategy : Strategy
 		_athLongLength = Param(nameof(AthLongLength), 350)
 			.SetGreaterThanZero()
 			.SetDisplay("ATH Long MA", "Length for ATH long moving average", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200, 500, 50);
 
 		_athShortLength = Param(nameof(AthShortLength), 111)
 			.SetGreaterThanZero()
 			.SetDisplay("ATH Short MA", "Length for ATH short moving average", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
 		_atlLongLength = Param(nameof(AtlLongLength), 471)
 			.SetGreaterThanZero()
 			.SetDisplay("ATL Long MA", "Length for ATL long moving average", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(300, 600, 50);
 
 		_atlShortLength = Param(nameof(AtlShortLength), 150)
 			.SetGreaterThanZero()
 			.SetDisplay("ATL Short MA", "Length for ATL short moving average", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy Parameters");
 	}
 
@@ -77,14 +77,14 @@ public class IntelleCityWorldCycleAthAtlLogarithmicStrategy : Strategy
 		_prevAthLong = _prevAthShort = _prevAtlLong = _prevAtlShort = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var maAthLong = new SimpleMovingAverage { Length = AthLongLength };
-		var maAthShort = new SimpleMovingAverage { Length = AthShortLength };
-		var maAtlLong = new SimpleMovingAverage { Length = AtlLongLength };
-		var maAtlShort = new ExponentialMovingAverage { Length = AtlShortLength };
+		var maAthLong = new SMA { Length = AthLongLength };
+		var maAthShort = new SMA { Length = AthShortLength };
+		var maAtlLong = new SMA { Length = AtlLongLength };
+		var maAtlShort = new EMA { Length = AtlShortLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

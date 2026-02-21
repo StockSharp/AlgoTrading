@@ -147,7 +147,7 @@ public class HistoryTrainingBridgeStrategy : Strategy
 		_defaultVolume = Param(nameof(DefaultVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Default volume", "Order volume used when external command does not provide custom size", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_requestBuyParam = Param(nameof(RequestBuy), false)
@@ -182,11 +182,11 @@ public class HistoryTrainingBridgeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		SubscribeLevel1()
 			.Bind(ProcessLevel1)

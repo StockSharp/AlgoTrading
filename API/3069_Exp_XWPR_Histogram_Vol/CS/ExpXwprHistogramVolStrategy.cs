@@ -238,12 +238,12 @@ public class ExpXwprHistogramVolStrategy : Strategy
 		_primaryVolume = Param(nameof(PrimaryVolume), 0.1m)
 		.SetDisplay("Primary Volume", "Volume used by first-level signals", "Money Management")
 		.SetRange(0.01m, 10m)
-		.SetCanOptimize(true);
+		;
 
 		_secondaryVolume = Param(nameof(SecondaryVolume), 0.2m)
 		.SetDisplay("Secondary Volume", "Volume used by second-level signals", "Money Management")
 		.SetRange(0.01m, 10m)
-		.SetCanOptimize(true);
+		;
 
 		_allowLongEntry = Param(nameof(AllowLongEntry), true)
 		.SetDisplay("Allow Long Entry", "Enable opening of long positions", "General");
@@ -260,12 +260,12 @@ public class ExpXwprHistogramVolStrategy : Strategy
 		_stopLossSteps = Param(nameof(StopLossSteps), 1000m)
 		.SetDisplay("Stop Loss", "Stop-loss distance in price steps", "Risk Management")
 		.SetRange(0m, 5000m)
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 2000m)
 		.SetDisplay("Take Profit", "Take-profit distance in price steps", "Risk Management")
 		.SetRange(0m, 10000m)
-		.SetCanOptimize(true);
+		;
 
 		_deviationSteps = Param(nameof(DeviationSteps), 10m)
 		.SetDisplay("Deviation", "Reserved slippage parameter", "Compatibility");
@@ -273,12 +273,12 @@ public class ExpXwprHistogramVolStrategy : Strategy
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetDisplay("Signal Bar", "Number of closed candles used for signals", "Indicator")
 		.SetRange(0, 5)
-		.SetCanOptimize(true);
+		;
 
 		_wprPeriod = Param(nameof(WprPeriod), 14)
 		.SetDisplay("WPR Period", "Williams %R lookback period", "Indicator")
 		.SetRange(5, 200)
-		.SetCanOptimize(true);
+		;
 
 		_volumeAggregation = Param(nameof(VolumeMode), VolumeAggregations.Tick)
 		.SetDisplay("Volume Mode", "Volume source used in the histogram", "Indicator");
@@ -286,22 +286,22 @@ public class ExpXwprHistogramVolStrategy : Strategy
 		_highLevel2 = Param(nameof(HighLevel2), 17m)
 		.SetDisplay("High Level 2", "Upper histogram multiplier for strong bullish zones", "Indicator")
 		.SetRange(-100m, 100m)
-		.SetCanOptimize(true);
+		;
 
 		_highLevel1 = Param(nameof(HighLevel1), 5m)
 		.SetDisplay("High Level 1", "Upper histogram multiplier for mild bullish zones", "Indicator")
 		.SetRange(-100m, 100m)
-		.SetCanOptimize(true);
+		;
 
 		_lowLevel1 = Param(nameof(LowLevel1), -5m)
 		.SetDisplay("Low Level 1", "Lower histogram multiplier for mild bearish zones", "Indicator")
 		.SetRange(-100m, 100m)
-		.SetCanOptimize(true);
+		;
 
 		_lowLevel2 = Param(nameof(LowLevel2), -17m)
 		.SetDisplay("Low Level 2", "Lower histogram multiplier for strong bearish zones", "Indicator")
 		.SetRange(-100m, 100m)
-		.SetCanOptimize(true);
+		;
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethods.Sma)
 		.SetDisplay("Smoothing Method", "Type of moving average applied", "Indicator");
@@ -309,12 +309,12 @@ public class ExpXwprHistogramVolStrategy : Strategy
 		_smoothingLength = Param(nameof(SmoothingLength), 12)
 		.SetDisplay("Smoothing Length", "Length of the histogram smoother", "Indicator")
 		.SetRange(1, 200)
-		.SetCanOptimize(true);
+		;
 
 		_smoothingPhase = Param(nameof(SmoothingPhase), 15)
 		.SetDisplay("Smoothing Phase", "Phase parameter forwarded to Jurik-based smoothers", "Indicator")
 		.SetRange(-100, 100)
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for the indicator", "General");
@@ -327,9 +327,9 @@ public class ExpXwprHistogramVolStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_primaryLongActive = false;
 		_secondaryLongActive = false;
@@ -607,7 +607,7 @@ public class ExpXwprHistogramVolStrategy : Strategy
 	/// <summary>
 	/// Indicator replicating the XWPR Histogram Vol custom indicator.
 	/// </summary>
-	public class XwprHistogramVolIndicator : BaseIndicator<decimal>
+	public class XwprHistogramVolIndicator : BaseIndicator
 	{
 		private WilliamsR _williams;
 		private IIndicator _valueSmoother;
@@ -752,17 +752,17 @@ public class ExpXwprHistogramVolStrategy : Strategy
 			var length = Math.Max(1, Length);
 			return Method switch
 			{
-				SmoothMethods.Sma => new SimpleMovingAverage { Length = length },
-				SmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
+				SmoothMethods.Sma => new SMA { Length = length },
+				SmoothMethods.Ema => new EMA { Length = length },
 				SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
 				SmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
 				SmoothMethods.Jjma => CreateJurik(length),
 				SmoothMethods.JurX => CreateJurik(length),
-				SmoothMethods.ParMa => new ExponentialMovingAverage { Length = length },
+				SmoothMethods.ParMa => new EMA { Length = length },
 				SmoothMethods.T3 => new TripleExponentialMovingAverage { Length = length },
-				SmoothMethods.Vidya => new ExponentialMovingAverage { Length = length },
+				SmoothMethods.Vidya => new EMA { Length = length },
 				SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
-				_ => new SimpleMovingAverage { Length = length },
+				_ => new SMA { Length = length },
 			};
 		}
 

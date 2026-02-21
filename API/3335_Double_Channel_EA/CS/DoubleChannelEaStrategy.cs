@@ -67,7 +67,7 @@ public class DoubleChannelEaStrategy : Strategy
 		_channelPeriod = Param(nameof(ChannelPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Channel Period", "Number of candles for the double channel window", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_indicatorShift = Param(nameof(IndicatorShift), 0)
@@ -86,7 +86,7 @@ public class DoubleChannelEaStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Absolute price distance for the target", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 50m, 5m);
 
 		_useStopLoss = Param(nameof(UseStopLoss), false)
@@ -95,7 +95,7 @@ public class DoubleChannelEaStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Absolute price distance for the protective stop", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 50m, 5m);
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), false)
@@ -380,9 +380,9 @@ public class DoubleChannelEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = new DoubleChannelIndicator
 		{

@@ -126,31 +126,31 @@ public class IbsRsiCciV4X2Strategy : Strategy
 
 		_koefIbs = Param(nameof(KoefIbs), 7m)
 		.SetDisplay("IBS Weight", "Weight applied to the IBS component", "Weights")
-		.SetCanOptimize(true);
+		;
 
 		_koefRsi = Param(nameof(KoefRsi), 9m)
 		.SetDisplay("RSI Weight", "Weight applied to the RSI component", "Weights")
-		.SetCanOptimize(true);
+		;
 
 		_koefCci = Param(nameof(KoefCci), 1m)
 		.SetDisplay("CCI Weight", "Weight applied to the CCI component", "Weights")
-		.SetCanOptimize(true);
+		;
 
 		_kibs = Param(nameof(Kibs), -1m)
 		.SetDisplay("IBS Direction", "Directional multiplier for the IBS input", "Weights")
-		.SetCanOptimize(true);
+		;
 
 		_kcci = Param(nameof(Kcci), -1m)
 		.SetDisplay("CCI Direction", "Directional multiplier for the CCI input", "Weights")
-		.SetCanOptimize(true);
+		;
 
 		_krsi = Param(nameof(Krsi), -1m)
 		.SetDisplay("RSI Direction", "Directional multiplier for the RSI input", "Weights")
-		.SetCanOptimize(true);
+		;
 
 		_posit = Param(nameof(Posit), -1m)
 		.SetDisplay("Output Direction", "Directional multiplier for the composite output", "Weights")
-		.SetCanOptimize(true);
+		;
 
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Signal TF", "Signal timeframe", "Signal");
@@ -477,9 +477,9 @@ public class IbsRsiCciV4X2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var priceStep = Security?.PriceStep ?? 0.0001m;
 
@@ -677,13 +677,13 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		private readonly AppliedPriceTypes _cciPrice;
 		private readonly decimal _threshold;
 		private readonly decimal _priceStep;
-		private readonly LengthIndicator<decimal> _ibsMa;
+		private readonly DecimalLengthIndicator _ibsMa;
 		private readonly RelativeStrengthIndex _rsi;
 		private readonly CommodityChannelIndexCalculator _cci;
 		private readonly Highest _highest;
 		private readonly Lowest _lowest;
-		private readonly LengthIndicator<decimal> _rangeHighMa;
-		private readonly LengthIndicator<decimal> _rangeLowMa;
+		private readonly DecimalLengthIndicator _rangeHighMa;
+		private readonly DecimalLengthIndicator _rangeLowMa;
 
 		private decimal? _previousUp;
 
@@ -739,17 +739,17 @@ public class IbsRsiCciV4X2Strategy : Strategy
 				return null;
 
 			var ibsRaw = (candle.ClosePrice - candle.LowPrice) / range;
-			var ibsValue = _ibsMa.Process(ibsRaw, candle.OpenTime, true);
+			var ibsValue = _ibsMa.Process(new DecimalIndicatorValue(_ibsMa, ibsRaw, candle.OpenTime));
 			if (!ibsValue.IsFinal)
 				return null;
 
 			var rsiInput = GetPrice(candle, _rsiPrice);
-			var rsiValue = _rsi.Process(rsiInput, candle.OpenTime, true);
+			var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiInput, candle.OpenTime));
 			if (!rsiValue.IsFinal)
 				return null;
 
 			var cciInput = GetPrice(candle, _cciPrice);
-			var cciValue = _cci.Process(cciInput, candle.OpenTime, true);
+			var cciValue = _cci.Process(new DecimalIndicatorValue(_cci, cciInput, candle.OpenTime));
 			if (cciValue == null)
 				return null;
 
@@ -781,16 +781,16 @@ public class IbsRsiCciV4X2Strategy : Strategy
 
 			_previousUp = up;
 
-			var highestValue = _highest.Process(up, candle.OpenTime, true);
-			var lowestValue = _lowest.Process(up, candle.OpenTime, true);
+			var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, up, candle.OpenTime));
+			var lowestValue = _lowest.Process(new DecimalIndicatorValue(_lowest, up, candle.OpenTime));
 			if (!highestValue.IsFinal || !lowestValue.IsFinal)
 				return null;
 
 			var highest = highestValue.GetValue<decimal>();
 			var lowest = lowestValue.GetValue<decimal>();
 
-			var highSmooth = _rangeHighMa.Process(highest, candle.OpenTime, true);
-			var lowSmooth = _rangeLowMa.Process(lowest, candle.OpenTime, true);
+			var highSmooth = _rangeHighMa.Process(new DecimalIndicatorValue(_rangeHighMa, highest, candle.OpenTime));
+			var lowSmooth = _rangeLowMa.Process(new DecimalIndicatorValue(_rangeLowMa, lowest, candle.OpenTime));
 			if (!highSmooth.IsFinal || !lowSmooth.IsFinal)
 				return null;
 
@@ -813,15 +813,15 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			_rangeLowMa.Reset();
 		}
 
-		private static LengthIndicator<decimal> CreateMovingAverage(IbsMovingAverageTypes type, int length)
+		private static DecimalLengthIndicator CreateMovingAverage(IbsMovingAverageTypes type, int length)
 		{
 			return type switch
 			{
-				IbsMovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-				IbsMovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+				IbsMovingAverageTypes.Simple => new SMA { Length = length },
+				IbsMovingAverageTypes.Exponential => new EMA { Length = length },
 				IbsMovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 				IbsMovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
-				_ => new SimpleMovingAverage { Length = length }
+				_ => new SMA { Length = length }
 			};
 		}
 
@@ -869,12 +869,12 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		public CommodityChannelIndexCalculator(int period)
 		{
 			_period = period;
-			_sma = new SimpleMovingAverage { Length = period };
+			_sma = new SMA { Length = period };
 		}
 
 		public decimal? Process(decimal price, DateTimeOffset time, bool isFinal)
 		{
-			var maValue = _sma.Process(price, time, isFinal);
+			var maValue = _sma.Process(new DecimalIndicatorValue(_sma, price, time.UtcDateTime));
 			_buffer.Enqueue(price);
 			if (_buffer.Count > _period)
 				_buffer.Dequeue();

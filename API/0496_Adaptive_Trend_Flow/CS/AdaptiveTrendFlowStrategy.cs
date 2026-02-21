@@ -141,19 +141,19 @@ public class AdaptiveTrendFlowStrategy : Strategy
 		_length = Param(nameof(Length), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Main Length", "Main calculation length", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 2);
 
 		_smoothLength = Param(nameof(SmoothLength), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Length", "Volatility smoothing length", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 2);
 
 		_sensitivity = Param(nameof(Sensitivity), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Sensitivity", "Channel sensitivity multiplier", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_useSmaFilter = Param(nameof(UseSmaFilter), true)
@@ -162,7 +162,7 @@ public class AdaptiveTrendFlowStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Length for SMA filter", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 2);
 
 		_useMacdFilter = Param(nameof(UseMacdFilter), true)
@@ -171,19 +171,19 @@ public class AdaptiveTrendFlowStrategy : Strategy
 		_macdFastLength = Param(nameof(MacdFastLength), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast Length", "Fast EMA period for MACD", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 2);
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow Length", "Slow EMA period for MACD", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 5);
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal Length", "Signal EMA period for MACD", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 2);
 	}
 
@@ -198,11 +198,11 @@ public class AdaptiveTrendFlowStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastEma = new ExponentialMovingAverage { Length = Length };
-		_slowEma = new ExponentialMovingAverage { Length = Length * 2 };
+		_fastEma = new EMA { Length = Length };
+		_slowEma = new EMA { Length = Length * 2 };
 		_stdDev = new StandardDeviation { Length = Length };
-		_smoothVol = new ExponentialMovingAverage { Length = SmoothLength };
-		_sma = new SimpleMovingAverage { Length = SmaLength };
+		_smoothVol = new EMA { Length = SmoothLength };
+		_sma = new SMA { Length = SmaLength };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
@@ -233,12 +233,12 @@ public class AdaptiveTrendFlowStrategy : Strategy
 
 		var typical = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
 
-		var fastValue = _fastEma.Process(typical, candle.ServerTime, true);
-		var slowValue = _slowEma.Process(typical, candle.ServerTime, true);
-		var stdValue = _stdDev.Process(typical, candle.ServerTime, true);
-		var smoothVolValue = _smoothVol.Process(stdValue.ToDecimal(), candle.ServerTime, true);
-		var smaValue = _sma.Process(candle.ClosePrice, candle.ServerTime, true);
-		var macdValue = _macd.Process(candle.ClosePrice, candle.ServerTime, true);
+		var fastValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, typical, candle.ServerTime));
+		var slowValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, typical, candle.ServerTime));
+		var stdValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, typical, candle.ServerTime));
+		var smoothVolValue = _smoothVol.Process(new DecimalIndicatorValue(_smoothVol, stdValue.ToDecimal(), candle.ServerTime));
+		var smaValue = _sma.Process(new DecimalIndicatorValue(_sma, candle.ClosePrice, candle.ServerTime));
+		var macdValue = _macd.Process(new DecimalIndicatorValue(_macd, candle.ClosePrice, candle.ServerTime));
 
 		if (!_smoothVol.IsFormed || (UseSmaFilter && !_sma.IsFormed) || (UseMacdFilter && !_macd.IsFormed))
 			return;

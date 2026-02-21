@@ -71,19 +71,19 @@ public class OutlierDetectorWithNSigmaConfidenceIntervalsStrategy : Strategy
 		_sampleSize = Param(nameof(SampleSize), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Sample Size", "Number of periods for standard deviation", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_firstLimit = Param(nameof(FirstLimit), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("First Limit", "Z-score exit threshold", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_secondLimit = Param(nameof(SecondLimit), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Second Limit", "Z-score entry threshold", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -106,9 +106,9 @@ public class OutlierDetectorWithNSigmaConfidenceIntervalsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_stdDev = new() { Length = SampleSize };
 

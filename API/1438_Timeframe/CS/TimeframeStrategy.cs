@@ -110,17 +110,17 @@ public class TimeframeStrategy : Strategy
 	{
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 1.5m)
 			.SetDisplay("Take Profit %", "Percentage take profit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetDisplay("Stop Loss %", "Percentage stop loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_trailingPercent = Param(nameof(TrailingPercent), 0.5m)
 			.SetDisplay("Trailing %", "Trailing stop percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.2m, 1m, 0.2m);
 
 		_startHour = Param(nameof(StartHour), 15)
@@ -157,14 +157,14 @@ public class TimeframeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema9 = new ExponentialMovingAverage { Length = 9 };
-		var ema20 = new ExponentialMovingAverage { Length = 20 };
-		var ema50 = new ExponentialMovingAverage { Length = 50 };
-		var ema200 = new ExponentialMovingAverage { Length = 200 };
+		var ema9 = new EMA { Length = 9 };
+		var ema20 = new EMA { Length = 20 };
+		var ema50 = new EMA { Length = 50 };
+		var ema200 = new EMA { Length = 200 };
 		var rsi = new RelativeStrengthIndex { Length = 14 };
 		var adx = new AverageDirectionalIndex { Length = 14 };
 

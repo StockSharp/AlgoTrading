@@ -89,25 +89,25 @@ public class Ma2CciStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Period", "Period of the fast moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Period", "Period of the slow moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_cciPeriod = Param(nameof(CciPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Period for CCI filter", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 15, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR stop-loss", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -136,9 +136,9 @@ public class Ma2CciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var fastMa = new SMA { Length = FastMaPeriod };

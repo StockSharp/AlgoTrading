@@ -72,39 +72,39 @@ public GonnaScalpStrategy()
 {
 _tradeVolume = Param(nameof(TradeVolume), 0.01m)
 .SetDisplay("Trade volume", "Base position size in lots.", "Position sizing")
-.SetCanOptimize(true);
+;
 
 _fastMaPeriod = Param(nameof(FastMaPeriod), 1)
 .SetDisplay("Fast LWMA", "Length of the fast weighted moving average.", "Trend filters")
-.SetCanOptimize(true);
+;
 
 _slowMaPeriod = Param(nameof(SlowMaPeriod), 5)
 .SetDisplay("Slow LWMA", "Length of the slow weighted moving average.", "Trend filters")
-.SetCanOptimize(true);
+;
 
 _momentumPeriod = Param(nameof(MomentumPeriod), 14)
 .SetDisplay("Momentum period", "Number of bars used by the momentum filter.", "Momentum")
-.SetCanOptimize(true);
+;
 
 _momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 .SetDisplay("Momentum buy threshold", "Minimum absolute deviation from 100 required to allow long entries.", "Momentum")
-.SetCanOptimize(true);
+;
 
 _momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
 .SetDisplay("Momentum sell threshold", "Minimum absolute deviation from 100 required to allow short entries.", "Momentum")
-.SetCanOptimize(true);
+;
 
 _stopLossSteps = Param(nameof(StopLossSteps), 200m)
 .SetDisplay("Stop loss (points)", "Protective stop distance expressed in MetaTrader points.", "Risk")
-.SetCanOptimize(true);
+;
 
 _takeProfitSteps = Param(nameof(TakeProfitSteps), 200m)
 .SetDisplay("Take profit (points)", "Profit target distance expressed in MetaTrader points.", "Risk")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Primary candles", "Timeframe used for the trading logic.", "Data")
-.SetCanOptimize(true);
+;
 }
 
 /// <summary>
@@ -195,12 +195,12 @@ base.OnStarted(time);
 
 Volume = AlignVolume(TradeVolume);
 
-_fastMa = new WeightedMovingAverage { Length = FastMaPeriod, CandlePrice = CandlePrice.Typical };
-_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod, CandlePrice = CandlePrice.Typical };
+_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 _momentum = new Momentum { Length = MomentumPeriod };
 _cci = new CommodityChannelIndex { Length = 20 };
 _atr = new AverageTrueRange { Length = 12 };
-_stochastic = new StochasticOscillator { KPeriod = 5, DPeriod = 3, Smooth = 3 };
+_stochastic = new StochasticOscillator {, D = { Length = 3 }, Smooth = 3 };
 _macd = new MovingAverageConvergenceDivergence { FastLength = 12, SlowLength = 26, SignalLength = 9 };
 
 _momentumAbsHistory.Clear();

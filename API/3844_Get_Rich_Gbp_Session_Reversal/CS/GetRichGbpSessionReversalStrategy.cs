@@ -164,27 +164,27 @@ public GetRichGbpSessionReversalStrategy()
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit Points", "Final take profit distance in points", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_partialTakeProfitPoints = Param(nameof(PartialTakeProfitPoints), 40m)
 		.SetGreaterThanZero()
 		.SetDisplay("Partial Take Profit Points", "Virtual take profit distance in points", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss Points", "Stop loss distance in points", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 30m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Stop Points", "Trailing stop distance in points", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_fixedVolume = Param(nameof(FixedVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Fixed Volume", "Base order volume in lots", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_useMoneyManagement = Param(nameof(UseMoneyManagement), false)
 		.SetDisplay("Use Money Management", "Enable dynamic position sizing", "Money Management");
@@ -192,29 +192,29 @@ public GetRichGbpSessionReversalStrategy()
 		_riskPercent = Param(nameof(RiskPercent), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk Percent", "Risk percentage used for dynamic sizing", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_lookback = Param(nameof(Lookback), 18)
 		.SetGreaterThanZero()
 		.SetDisplay("Lookback", "Number of candles used in direction count", "Logic")
-		.SetCanOptimize(true);
+		;
 
 		_firstEntryHour = Param(nameof(FirstEntryHour), 22)
 		.SetDisplay("First Entry Hour", "Primary trading hour before shift", "Schedule")
-		.SetCanOptimize(true);
+		;
 
 		_secondEntryHour = Param(nameof(SecondEntryHour), 19)
 		.SetDisplay("Second Entry Hour", "Secondary trading hour before shift", "Schedule")
-		.SetCanOptimize(true);
+		;
 
 		_hourShift = Param(nameof(HourShift), 2)
 		.SetDisplay("Hour Shift", "Offset applied to trading hours", "Schedule")
-		.SetCanOptimize(true);
+		;
 
 		_entryWindowMinutes = Param(nameof(EntryWindowMinutes), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Entry Window Minutes", "How many minutes after the hour orders are allowed", "Schedule")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to analyze", "General");
@@ -238,9 +238,9 @@ public GetRichGbpSessionReversalStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

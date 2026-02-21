@@ -406,9 +406,9 @@ public class SilverTrendColorJfatlDigitMmrecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_silverCalculator = new SilverTrendCalculator(SilverSsp, SilverRisk);
 		_colorCalculator = new ColorJfatlCalculator(ColorLength, ColorPhase, ColorPriceType, ColorDigit);
@@ -759,7 +759,7 @@ public class SilverTrendColorJfatlDigitMmrecStrategy : Strategy
 			_length = Math.Max(1, length);
 			_priceMode = priceMode;
 			_digit = Math.Max(0, digit);
-			_smoother = new ExponentialMovingAverage { Length = _length };
+			_smoother = new EMA { Length = _length };
 		}
 
 		public (decimal? Line, int? Color) Process(ICandleMessage candle)
@@ -777,7 +777,7 @@ public class SilverTrendColorJfatlDigitMmrecStrategy : Strategy
 			for (var i = 0; i < Coefficients.Length; i++)
 			fatl += Coefficients[i] * _prices[i];
 
-			var smoothed = _smoother.Process(fatl, candle.OpenTime, true).ToDecimal();
+			var smoothed = _smoother.Process(new DecimalIndicatorValue(_smoother, fatl, candle.OpenTime)).ToDecimal();
 
 			var factor = (decimal)Math.Pow(10, _digit);
 			smoothed = Math.Round(smoothed * factor) / factor;

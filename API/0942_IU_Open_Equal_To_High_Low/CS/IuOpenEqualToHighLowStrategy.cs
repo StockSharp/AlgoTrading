@@ -53,7 +53,7 @@ public class IuOpenEqualToHighLowStrategy : Strategy
 		_riskReward = Param(nameof(RiskReward), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk/Reward", "Take profit to stop ratio", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -77,10 +77,10 @@ public class IuOpenEqualToHighLowStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -93,7 +93,7 @@ public class IuOpenEqualToHighLowStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var day = candle.OpenTime.UtcDateTime.Date;
+		var day = candle.OpenTime.Date;
 
 		if (_currentDay != day)
 		{

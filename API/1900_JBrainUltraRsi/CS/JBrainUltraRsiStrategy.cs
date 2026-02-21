@@ -135,17 +135,17 @@ public class JBrainUltraRsiStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-		.SetCanOptimize(true);
+		;
 		
 		_stochLength = Param(nameof(StochLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %K", "Period for %K line", "Indicators")
-		.SetCanOptimize(true);
+		;
 		
 		_signalLength = Param(nameof(SignalLength), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %D", "Period for %D line", "Indicators")
-		.SetCanOptimize(true);
+		;
 		
 		_mode = Param(nameof(Mode), AlgorithmModes.Composition)
 		.SetDisplay("Mode", "Algorithm to enter the market", "General");
@@ -186,11 +186,11 @@ public class JBrainUltraRsiStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_stochastic = new StochasticOscillator

@@ -56,7 +56,7 @@ public class BuyAndHoldStrategy : Strategy
 	/// </summary>
 	public BuyAndHoldStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(new DateTime(2018, 1, 1)))
@@ -81,9 +81,9 @@ public class BuyAndHoldStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

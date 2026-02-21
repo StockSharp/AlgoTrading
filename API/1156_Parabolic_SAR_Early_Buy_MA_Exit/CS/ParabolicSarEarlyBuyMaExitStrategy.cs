@@ -60,22 +60,22 @@ public class ParabolicSarEarlyBuyMaExitStrategy : Strategy
 		_sarStart = Param(nameof(SarStart), 0.02m)
 			.SetRange(0.01m, 0.2m)
 			.SetDisplay("SAR Start", "Initial acceleration factor for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_sarIncrement = Param(nameof(SarIncrement), 0.02m)
 			.SetRange(0.01m, 0.2m)
 			.SetDisplay("SAR Increment", "Acceleration step for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_sarMax = Param(nameof(SarMax), 0.2m)
 			.SetRange(0.05m, 1m)
 			.SetDisplay("SAR Maximum", "Maximum acceleration factor for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maPeriod = Param(nameof(MaPeriod), 11)
 			.SetRange(1, 100)
 			.SetDisplay("MA Period", "Period for moving average used in exit", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -96,9 +96,9 @@ public class ParabolicSarEarlyBuyMaExitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var parabolicSar = new ParabolicSar
 		{
@@ -107,7 +107,7 @@ public class ParabolicSarEarlyBuyMaExitStrategy : Strategy
 			AccelerationMax = SarMax
 		};
 
-		var sma = new SimpleMovingAverage
+		var sma = new SMA
 		{
 			Length = MaPeriod
 		};

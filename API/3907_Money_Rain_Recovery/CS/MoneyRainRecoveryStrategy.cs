@@ -57,38 +57,38 @@ public class MoneyRainRecoveryStrategy : Strategy
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("DeMarker Period", "Oscillator length", "General")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (points)", "Distance to the take-profit expressed in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (points)", "Distance to the stop-loss expressed in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_baseVolume = Param(nameof(BaseVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Baseline position size before recovery adjustment", "Money Management")
-			.SetCanOptimize(true);
+			;
 
 		_lossesLimit = Param(nameof(LossesLimit), 1_000_000)
 			.SetDisplay("Loss Limit", "Maximum allowed consecutive losing trades", "Risk")
-			.SetCanOptimize(false);
+			;
 
 		_fastOptimization = Param(nameof(FastOptimization), true)
 			.SetDisplay("Fast Optimization", "Disable recovery sizing while optimizing", "Money Management")
-			.SetCanOptimize(false);
+			;
 
 		_threshold = Param(nameof(Threshold), 0.5m)
 			.SetDisplay("Threshold", "DeMarker threshold separating buys and sells", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <summary>
@@ -198,9 +198,9 @@ public class MoneyRainRecoveryStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var deMarker = new DeMarker { Length = DeMarkerPeriod };
 

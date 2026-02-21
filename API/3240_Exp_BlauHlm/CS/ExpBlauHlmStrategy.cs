@@ -254,9 +254,9 @@ public class ExpBlauHlmStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	
 		_calculator = new BlauHlmCalculator(
 			SmoothingMethod,
@@ -272,7 +272,7 @@ public class ExpBlauHlmStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 	
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -406,10 +406,10 @@ public class ExpBlauHlmStrategy : Strategy
 		private readonly SmoothMethods _method;
 		private readonly int _xLength;
 		private readonly int _phase;
-		private readonly LengthIndicator<decimal> _ma1;
-		private readonly LengthIndicator<decimal> _ma2;
-		private readonly LengthIndicator<decimal> _ma3;
-		private readonly LengthIndicator<decimal> _ma4;
+		private readonly DecimalLengthIndicator _ma1;
+		private readonly DecimalLengthIndicator _ma2;
+		private readonly DecimalLengthIndicator _ma3;
+		private readonly DecimalLengthIndicator _ma4;
 		private readonly Queue<decimal> _highWindow = new();
 		private readonly Queue<decimal> _lowWindow = new();
 		private readonly List<decimal> _histogram = new();
@@ -474,10 +474,10 @@ public class ExpBlauHlmStrategy : Strategy
 
 			var time = candle.OpenTime;
 
-			var stage1 = _ma1.Process(hlm, time, true).ToDecimal();
-			var stage2 = _ma2.Process(stage1, time, true).ToDecimal();
-			var stage3 = _ma3.Process(stage2, time, true).ToDecimal();
-			var signal = _ma4.Process(stage3, time, true).ToDecimal();
+			var stage1 = _ma1.Process(new DecimalIndicatorValue(_ma1, hlm, time)).ToDecimal();
+			var stage2 = _ma2.Process(new DecimalIndicatorValue(_ma2, stage1, time)).ToDecimal();
+			var stage3 = _ma3.Process(new DecimalIndicatorValue(_ma3, stage2, time)).ToDecimal();
+			var signal = _ma4.Process(new DecimalIndicatorValue(_ma4, stage3, time)).ToDecimal();
 
 			if (!_ma4.IsFormed)
 				return false;
@@ -522,18 +522,18 @@ public class ExpBlauHlmStrategy : Strategy
 			return true;
 		}
 
-		private LengthIndicator<decimal> CreateMovingAverage(SmoothMethods method, int length, int phase)
+		private DecimalLengthIndicator CreateMovingAverage(SmoothMethods method, int length, int phase)
 		{
 			return method switch
 			{
-				SmoothMethods.Simple => new SimpleMovingAverage { Length = length },
-				SmoothMethods.Exponential => new ExponentialMovingAverage { Length = length },
+				SmoothMethods.Simple => new SMA { Length = length },
+				SmoothMethods.Exponential => new EMA { Length = length },
 				SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 				SmoothMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 				SmoothMethods.Jurik => new JurikMovingAverage { Length = length, Phase = phase },
 				SmoothMethods.TripleExponential => new TripleExponentialMovingAverage { Length = length },
 				SmoothMethods.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
-				_ => new ExponentialMovingAverage { Length = length },
+				_ => new EMA { Length = length },
 			};
 		}
 	}

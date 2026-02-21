@@ -130,9 +130,9 @@ public class ExpBreakoutSignalsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Validate that configuration values are consistent before subscribing to market data.
 		if (!ValidateParameters())

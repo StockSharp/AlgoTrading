@@ -89,25 +89,25 @@ public class BlauErgodicMdiStrategy : Strategy
 		_primaryLength = Param(nameof(PrimaryLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Primary Length", "Base smoothing length", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 1);
 
 		_firstSmoothingLength = Param(nameof(FirstSmoothingLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Smoothing", "First smoothing length", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_secondSmoothingLength = Param(nameof(SecondSmoothingLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Histogram Smoothing", "Second smoothing length", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_signalLength = Param(nameof(SignalLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "Signal line smoothing", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 30, 1);
 
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
@@ -292,9 +292,9 @@ public class BlauErgodicMdiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = Security?.PriceStep ?? 1m;
 		if (_pointValue <= 0m)
@@ -512,10 +512,10 @@ public class BlauErgodicMdiStrategy : Strategy
 	{
 		return method switch
 		{
-			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SMA { Length = length },
 			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 

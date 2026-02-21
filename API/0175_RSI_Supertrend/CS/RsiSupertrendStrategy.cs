@@ -79,19 +79,19 @@ public class RsiSupertrendStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period for RSI indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Period", "ATR period for Supertrend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 14, 1);
 
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Multiplier", "ATR multiplier for Supertrend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2.0m, 4.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -121,9 +121,9 @@ public class RsiSupertrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create RSI indicator
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };

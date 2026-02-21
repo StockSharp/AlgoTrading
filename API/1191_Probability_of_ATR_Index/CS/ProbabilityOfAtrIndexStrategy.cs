@@ -66,12 +66,12 @@ public class ProbabilityOfAtrIndexStrategy : Strategy
 	{
 		_atrDistance = Param(nameof(AtrDistance), 1.5m)
 			.SetDisplay("ATR Distance", "ATR distance multiplier", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_bars = Param(nameof(Bars), 8)
 			.SetDisplay("Bars", "Number of bars for calculations", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -85,23 +85,23 @@ public class ProbabilityOfAtrIndexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var length = Math.Max(8, Bars);
 
 		_atr = new AverageTrueRange { Length = length };
-		_smaHigh = new SimpleMovingAverage { Length = length };
-		_smaLow = new SimpleMovingAverage { Length = length };
+		_smaHigh = new SMA { Length = length };
+		_smaLow = new SMA { Length = length };
 		_sdHigh = new StandardDeviation { Length = length };
 		_sdLow = new StandardDeviation { Length = length };
-		_probSma = new SimpleMovingAverage { Length = 1000 };
+		_probSma = new SMA { Length = 1000 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

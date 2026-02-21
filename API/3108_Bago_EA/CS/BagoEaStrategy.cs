@@ -66,10 +66,10 @@ public class BagoEaStrategy : Strategy
 	private readonly StrategyParam<int> _historyLimit;
 	private readonly StrategyParam<decimal> _fiftyLevel;
 
-	private LengthIndicator<decimal> _fastMa = null!;
-	private LengthIndicator<decimal> _slowMa = null!;
-	private LengthIndicator<decimal> _vegasFastMa = null!;
-	private LengthIndicator<decimal> _vegasSlowMa = null!;
+	private DecimalLengthIndicator _fastMa = null!;
+	private DecimalLengthIndicator _slowMa = null!;
+	private DecimalLengthIndicator _vegasFastMa = null!;
+	private DecimalLengthIndicator _vegasSlowMa = null!;
 	private RelativeStrengthIndex _rsi = null!;
 
 	private readonly List<decimal> _fastHistory = new();
@@ -465,9 +465,9 @@ public class BagoEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializeIndicators();
 		InitializePipSettings();
@@ -475,7 +475,7 @@ public class BagoEaStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void InitializeIndicators()
@@ -527,11 +527,11 @@ public class BagoEaStrategy : Strategy
 		var rsiInput = GetAppliedPrice(candle, RsiAppliedPrice);
 		var time = candle.OpenTime;
 
-		var fastValue = _fastMa.Process(maInput, time, true).ToDecimal();
-		var slowValue = _slowMa.Process(maInput, time, true).ToDecimal();
-		var vegasFastValue = _vegasFastMa.Process(maInput, time, true).ToDecimal();
-		var vegasSlowValue = _vegasSlowMa.Process(maInput, time, true).ToDecimal();
-		var rsiValue = _rsi.Process(rsiInput, time, true).ToDecimal();
+		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, maInput, time.UtcDateTime)).ToDecimal();
+		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, maInput, time.UtcDateTime)).ToDecimal();
+		var vegasFastValue = _vegasFastMa.Process(new DecimalIndicatorValue(_vegasFastMa, maInput, time.UtcDateTime)).ToDecimal();
+		var vegasSlowValue = _vegasSlowMa.Process(new DecimalIndicatorValue(_vegasSlowMa, maInput, time.UtcDateTime)).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiInput, time.UtcDateTime)).ToDecimal();
 
 		AddToHistory(_fastHistory, fastValue);
 		AddToHistory(_slowHistory, slowValue);
@@ -1027,14 +1027,14 @@ public class BagoEaStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SMA { Length = length },
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 

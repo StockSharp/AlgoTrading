@@ -92,7 +92,7 @@ public class BearishWickReversalStrategy : Strategy
 		_threshold = Param(nameof(Threshold), -1m)
 			.SetRange(-5m, 0m)
 			.SetDisplay("Long Threshold", "Percentage threshold for lower wick", "Strategy Settings")
-			.SetCanOptimize(true);
+			;
 
 		_useEmaFilter = Param(nameof(UseEmaFilter), false)
 			.SetDisplay("Use EMA Filter", "Enable EMA trend filter", "Trend Filter");
@@ -100,7 +100,7 @@ public class BearishWickReversalStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period for EMA trend filter", "Trend Filter")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
@@ -127,11 +127,11 @@ public class BearishWickReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_ema = new EMA { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 

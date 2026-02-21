@@ -53,7 +53,7 @@ public class BullsBearsPowerCrossStrategy : Strategy
 		_length = Param(nameof(Length), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Indicator length", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
@@ -74,9 +74,9 @@ public class BullsBearsPowerCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bulls = new BullPower { Length = Length };
 		var bears = new BearPower { Length = Length };

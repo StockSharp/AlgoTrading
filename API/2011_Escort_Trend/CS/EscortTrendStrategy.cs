@@ -79,22 +79,22 @@ public class EscortTrendStrategy : Strategy
 	{
 		_fastWmaPeriod = Param(nameof(FastWmaPeriod), 8)
 			.SetDisplay("Fast WMA", "Length of fast weighted MA", "General")
-			.SetCanOptimize(true);
+			;
 		_slowWmaPeriod = Param(nameof(SlowWmaPeriod), 18)
 			.SetDisplay("Slow WMA", "Length of slow weighted MA", "General")
-			.SetCanOptimize(true);
+			;
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetDisplay("CCI Period", "CCI calculation period", "General")
-			.SetCanOptimize(true);
+			;
 		_cciThreshold = Param(nameof(CciThreshold), 100m)
 			.SetDisplay("CCI Threshold", "Threshold for CCI signal", "General")
-			.SetCanOptimize(true);
+			;
 		_macdFast = Param(nameof(MacdFast), 8)
 			.SetDisplay("MACD Fast EMA", "Fast EMA period for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 		_macdSlow = Param(nameof(MacdSlow), 18)
 			.SetDisplay("MACD Slow EMA", "Slow EMA period for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 		_takeProfit = Param(nameof(TakeProfit), 200m)
 			.SetDisplay("Take Profit", "Take profit in price points", "Risk");
 		_stopLoss = Param(nameof(StopLoss), 55m)

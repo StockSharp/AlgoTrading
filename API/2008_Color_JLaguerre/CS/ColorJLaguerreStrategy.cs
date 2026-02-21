@@ -89,27 +89,27 @@ public class ColorJLaguerreStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetRange(5, 50)
 		.SetDisplay("RSI Length", "Period for RSI", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_highLevel = Param(nameof(HighLevel), 85m)
 		.SetRange(60m, 95m)
 		.SetDisplay("High Level", "Upper threshold", "Levels")
-		.SetCanOptimize(true);
+		;
 
 		_middleLevel = Param(nameof(MiddleLevel), 50m)
 		.SetRange(30m, 70m)
 		.SetDisplay("Middle Level", "Central threshold", "Levels")
-		.SetCanOptimize(true);
+		;
 
 		_lowLevel = Param(nameof(LowLevel), 15m)
 		.SetRange(5m, 40m)
 		.SetDisplay("Low Level", "Lower threshold", "Levels")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 		.SetRange(0.5m, 5m)
 		.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -122,9 +122,9 @@ public class ColorJLaguerreStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create RSI indicator as approximation of Laguerre oscillator
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };

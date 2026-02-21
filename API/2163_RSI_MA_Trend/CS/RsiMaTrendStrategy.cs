@@ -89,29 +89,29 @@ public class RsiMaTrendStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Length of RSI indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 30m)
 			.SetDisplay("RSI Buy Level", "Value below which long is opened", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_rsiSellLevel = Param(nameof(RsiSellLevel), 70m)
 			.SetDisplay("RSI Sell Level", "Value above which short is opened", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Period", "Length of fast moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 10);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Period", "Length of slow moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 20);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -125,9 +125,9 @@ public class RsiMaTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var fastMa = new SMA { Length = FastMaPeriod };

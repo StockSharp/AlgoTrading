@@ -61,37 +61,37 @@ private readonly StrategyParam<int> _trendWmaLength;
 	{
 		_takeProfit1Percent = Param(nameof(TakeProfit1Percent), 50)
 		.SetDisplay("1st TP %", "First take profit percent", "Take Profit")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 80, 5);
 
 		_takeProfit2Percent = Param(nameof(TakeProfit2Percent), 25)
 		.SetDisplay("2nd TP %", "Second take profit percent", "Take Profit")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 
 		_takeProfit3Percent = Param(nameof(TakeProfit3Percent), 25)
 		.SetDisplay("Final TP %", "Final take profit percent", "Take Profit")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 
 		_swingLookback = Param(nameof(SwingLookback), 10)
 		.SetDisplay("Swing Lookback", "Bars for swing high/low", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 		.SetDisplay("ATR Period", "ATR calculation period", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 28, 1);
 
 		_trendStrengthEntry = Param(nameof(TrendStrengthEntry), 60)
 		.SetDisplay("Trend Strength Entry", "Entry threshold", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 80, 5);
 
 _trendStrengthExit = Param(nameof(TrendStrengthExit), 40)
 			.SetDisplay("Trend Strength Exit", "Exit threshold", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -100,31 +100,31 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		_processNoise1 = Param(nameof(ProcessNoise1), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Process Noise 1", "Kalman process noise level", "Kalman")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.05m, 0.005m);
 
 		_processNoise2 = Param(nameof(ProcessNoise2), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Process Noise 2", "Kalman process noise slope", "Kalman")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.05m, 0.005m);
 
 		_measurementNoise = Param(nameof(MeasurementNoise), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Measurement Noise", "Observation noise", "Kalman")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1000m, 50m);
 
 		_oscBufferLength = Param(nameof(OscBufferLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Oscillator Buffer", "Bars for normalization", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_trendWmaLength = Param(nameof(TrendWmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend WMA Length", "Trend smoothing period", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 	}
 
@@ -262,9 +262,9 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 		_highest = new Highest { Length = SwingLookback };

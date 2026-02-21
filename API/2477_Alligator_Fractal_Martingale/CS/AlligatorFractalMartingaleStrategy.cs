@@ -454,9 +454,9 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_jaw = new SmoothedMovingAverage { Length = JawLength };
 		_teeth = new SmoothedMovingAverage { Length = TeethLength };
@@ -465,7 +465,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		_maxAlligatorBuffer = Math.Max(Math.Max(JawShift, TeethShift), LipsShift) + 10;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -482,15 +482,15 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 	{
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var jawValue = _jaw.Process(median, candle.ServerTime, candle.State == CandleStates.Finished);
+		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.ServerTime));
 		if (jawValue.IsFinal)
 		AddIndicatorValue(_jawHistory, jawValue.ToDecimal());
 
-		var teethValue = _teeth.Process(median, candle.ServerTime, candle.State == CandleStates.Finished);
+		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.ServerTime));
 		if (teethValue.IsFinal)
 		AddIndicatorValue(_teethHistory, teethValue.ToDecimal());
 
-		var lipsValue = _lips.Process(median, candle.ServerTime, candle.State == CandleStates.Finished);
+		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.ServerTime));
 		if (lipsValue.IsFinal)
 		AddIndicatorValue(_lipsHistory, lipsValue.ToDecimal());
 

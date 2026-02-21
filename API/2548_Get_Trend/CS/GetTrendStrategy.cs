@@ -58,17 +58,17 @@ public class GetTrendStrategy : Strategy
 		_maM15Length = Param(nameof(MaM15Length), 99)
 			.SetGreaterThanZero()
 			.SetDisplay("M15 MA Length", "Smoothed MA length on M15", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maH1Length = Param(nameof(MaH1Length), 184)
 			.SetGreaterThanZero()
 			.SetDisplay("H1 MA Length", "Smoothed MA length on H1", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticLength = Param(nameof(StochasticLength), 27)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "%K period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticSignalLength = Param(nameof(StochasticSignalLength), 3)
 			.SetGreaterThanZero()
@@ -77,21 +77,21 @@ public class GetTrendStrategy : Strategy
 		_thresholdPoints = Param(nameof(ThresholdPoints), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Threshold", "Maximum distance from MA", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 540m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 90m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 20m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
@@ -216,9 +216,9 @@ public class GetTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 

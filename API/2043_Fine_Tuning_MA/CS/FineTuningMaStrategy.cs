@@ -112,7 +112,7 @@ public class FineTuningMaStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Length of the moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_allowBuyOpen = Param(nameof(AllowBuyOpen), true)
@@ -154,11 +154,11 @@ public class FineTuningMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaLength };
+		_ma = new SMA { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_ma, ProcessCandle).Start();

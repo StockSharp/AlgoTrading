@@ -116,9 +116,9 @@ public class MilleniumCodeStrategy : Strategy
 		_entryTime = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fast = new SMA { Length = FastLength };
 		_slow = new SMA { Length = SlowLength };
@@ -137,7 +137,7 @@ public class MilleniumCodeStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)

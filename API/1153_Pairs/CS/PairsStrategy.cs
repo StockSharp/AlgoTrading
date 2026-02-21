@@ -70,12 +70,12 @@ public class PairsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (ReferenceSecurity == null)
 			throw new InvalidOperationException("ReferenceSecurity must be specified.");
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeCandles(CandleType, true, ReferenceSecurity)
 			.Bind(ProcessReference)
@@ -85,7 +85,7 @@ public class PairsStrategy : Strategy
 			.Bind(ProcessMain)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessReference(ICandleMessage candle)

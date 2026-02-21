@@ -72,27 +72,27 @@ public class McotsIntuitionStrategy : Strategy
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI calculation period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 1m)
 			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_exhaustionMultiplier = Param(nameof(ExhaustionMultiplier), 1m)
 			.SetDisplay("Exhaustion Multiplier", "Momentum exhaustion multiplier", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 1.5m, 0.1m);
 
 		_profitTargetTicks = Param(nameof(ProfitTargetTicks), 40)
 			.SetDisplay("Profit Target Ticks", "Profit target in ticks", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 10);
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 160)
 			.SetDisplay("Stop Loss Ticks", "Stop loss in ticks", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 200, 20);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -118,9 +118,9 @@ public class McotsIntuitionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_momentumStdDev = new StandardDeviation { Length = RsiPeriod };
@@ -138,7 +138,7 @@ public class McotsIntuitionStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
@@ -147,7 +147,7 @@ public class McotsIntuitionStrategy : Strategy
 			return;
 
 		var momentum = rsiValue - _prevRsi;
-		var stdValue = _momentumStdDev.Process(momentum, candle.ServerTime, true);
+		var stdValue = _momentumStdDev.Process(new DecimalIndicatorValue(_momentumStdDev, momentum, candle.ServerTime));
 		_currentStdDev = stdValue.ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading() || !_momentumStdDev.IsFormed)

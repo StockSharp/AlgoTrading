@@ -65,13 +65,13 @@ public class UhlMaCrossoverSystemStrategy : Strategy
 		_length = Param(nameof(Length), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Lookback length", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 10);
 
 		_multiplier = Param(nameof(Multiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Variance multiplier", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -94,11 +94,11 @@ public class UhlMaCrossoverSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = Length };
+		_sma = new SMA { Length = Length };
 		_variance = new Variance { Length = Length };
 
 		_cma = 0m;
@@ -110,7 +110,7 @@ public class UhlMaCrossoverSystemStrategy : Strategy
 			.Bind(_sma, _variance, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

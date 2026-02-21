@@ -91,7 +91,7 @@ public class BiasSentimentStrengthStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -104,9 +104,9 @@ public class BiasSentimentStrengthStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -121,26 +121,25 @@ public class BiasSentimentStrengthStrategy : Strategy
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var stoch = new StochasticOscillator
 		{
-			KPeriod = StochK,
-			DPeriod = StochD,
-			Slowing = StochSmooth
+			K = { Length = StochK },
+			D = { Length = StochD },
 		};
 		var ao = new AwesomeOscillator
 		{
-			ShortPeriod = AoShort,
-			LongPeriod = AoLong
+			ShortMa = { Length = AoShort },
+			LongMa = { Length = AoLong }
 		};
 		var vwma = new VolumeWeightedMovingAverage { Length = VolumeLength };
-		var sma = new SimpleMovingAverage { Length = VolumeLength };
+		var sma = new SMA { Length = VolumeLength };
 		var jaw = new SmoothedMovingAverage { Length = 13 };
 		var teeth = new SmoothedMovingAverage { Length = 8 };
 		var lips = new SmoothedMovingAverage { Length = 5 };
 		
-		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
+		StartProtection(null, new Unit(StopLossPercent, UnitTypes.Percent));
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(macd, rsi, stoch, ao, vwma, sma, jaw, teeth, lips, ProcessCandle)
+		.BindEx([macd, rsi, stoch, ao, vwma, sma, jaw, teeth, lips], ProcessCandle)
 		.Start();
 		
 		var area = CreateChartArea();
@@ -160,32 +159,34 @@ public class BiasSentimentStrengthStrategy : Strategy
 		}
 	}
 	
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue rsiValue, IIndicatorValue stochValue, IIndicatorValue aoValue, IIndicatorValue vwmaValue, IIndicatorValue smaValue, IIndicatorValue jawValue, IIndicatorValue teethValue, IIndicatorValue lipsValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
-		
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
-		
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macdHist = (macdTyped.Macd - macdTyped.Signal) * 2m;
-		
-		var rsi = rsiValue.ToDecimal();
+
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)values[0];
+		var macdHist = ((macdTyped.Macd ?? 0m) - (macdTyped.Signal ?? 0m)) * 2m;
+
+		var rsi = values[1].ToDecimal();
 		var rsiHist = (rsi - 50m) / 5m;
-		
-		var stochTyped = (StochasticOscillatorValue)stochValue;
-		var stochHist = ((stochTyped.K - stochTyped.D) / 10m) * 1.5m;
-		
-		var ao = aoValue.ToDecimal() * 0.6m;
-		
-		var vwma = vwmaValue.ToDecimal();
-		var sma = smaValue.ToDecimal();
+
+		var stochTyped = (StochasticOscillatorValue)values[2];
+		if (stochTyped.K is not decimal stochK || stochTyped.D is not decimal stochDVal)
+			return;
+		var stochHist = ((stochK - stochDVal) / 10m) * 1.5m;
+
+		var ao = values[3].ToDecimal() * 0.6m;
+
+		var vwma = values[4].ToDecimal();
+		var sma = values[5].ToDecimal();
 		var volumeHist = vwma - sma;
-		
-		var jaw = jawValue.ToDecimal();
-		var teeth = teethValue.ToDecimal();
-		var lips = lipsValue.ToDecimal();
+
+		var jaw = values[6].ToDecimal();
+		var teeth = values[7].ToDecimal();
+		var lips = values[8].ToDecimal();
 		var gatorHist = (lips - teeth) + (teeth - jaw);
 		
 		var bass = macdHist + rsiHist + stochHist + ao + gatorHist + volumeHist;

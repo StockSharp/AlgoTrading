@@ -53,42 +53,42 @@ public class GazonkosExpertStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 16m)
 			.SetDisplay("Take Profit (pips)", "Distance between entry and the take profit level", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_retracementPips = Param(nameof(RetracementPips), 16m)
 			.SetDisplay("Retracement (pips)", "Pullback distance that confirms the entry", "Signals")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 40m)
 			.SetDisplay("Stop Loss (pips)", "Distance between entry and the protective stop", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_t1Shift = Param(nameof(T1Shift), 3)
 			.SetDisplay("T1 Shift", "Index of the older reference close used for momentum detection", "Signals")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_t2Shift = Param(nameof(T2Shift), 2)
 			.SetDisplay("T2 Shift", "Index of the newer reference close used for momentum detection", "Signals")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_deltaPips = Param(nameof(DeltaPips), 40m)
 			.SetDisplay("Delta (pips)", "Minimum distance between the reference closes to trigger a signal", "Signals")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_lotSize = Param(nameof(LotSize), 0.1m)
 			.SetDisplay("Lot Size", "Fixed volume used for each trade", "Orders")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_maxActiveTrades = Param(nameof(MaxActiveTrades), 1)
 			.SetDisplay("Max Active Trades", "Maximum number of simultaneous trades allowed", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to evaluate the momentum signal", "General");
@@ -195,9 +195,9 @@ public class GazonkosExpertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = Security?.PriceStep ?? 0m;
 		if (_pointValue <= 0m)

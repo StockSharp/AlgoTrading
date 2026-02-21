@@ -60,17 +60,17 @@ public class SuperTradeIchimokuCloudStrategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Tenkan Period", "Tenkan-sen periods", "Ichimoku Settings")
-			.SetCanOptimize(true);
+			;
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Kijun Period", "Kijun-sen periods", "Ichimoku Settings")
-			.SetCanOptimize(true);
+			;
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 			.SetGreaterThanZero()
 			.SetDisplay("Senkou Span B Period", "Senkou Span B periods", "Ichimoku Settings")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -83,9 +83,9 @@ public class SuperTradeIchimokuCloudStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ichimoku = new Ichimoku
 		{

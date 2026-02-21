@@ -79,13 +79,13 @@ public class PsarTraderStrategy : Strategy
 		_sarStep = Param(nameof(SarStep), 0.001m)
 		.SetGreaterThanZero()
 		.SetDisplay("SAR Step", "Acceleration factor for Parabolic SAR", "Parabolic SAR")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.0005m, 0.02m, 0.0005m);
 		
 		_sarMaxStep = Param(nameof(SarMaxStep), 0.2m)
 		.SetGreaterThanZero()
 		.SetDisplay("SAR Max Step", "Maximum acceleration factor for Parabolic SAR", "Parabolic SAR")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 0.3m, 0.05m);
 		
 		_startHour = Param(nameof(StartHour), 0)
@@ -123,9 +123,9 @@ public class PsarTraderStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_parabolicSar = new ParabolicSar
 		{
@@ -157,7 +157,7 @@ public class PsarTraderStrategy : Strategy
 		return;
 		
 		// Session filter
-		var hour = candle.OpenTime.UtcDateTime.Hour;
+		var hour = candle.OpenTime.Hour;
 		var inSession = hour >= StartHour && hour <= EndHour;
 		
 		var isPriceAboveSar = candle.ClosePrice > sarValue;

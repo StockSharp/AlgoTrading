@@ -82,25 +82,25 @@ public class ForexLineStrategy : Strategy
 		_fastLength1 = Param(nameof(FastLength1), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA1 Length", "First smoothing length for fast line", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_fastLength2 = Param(nameof(FastLength2), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA2 Length", "Second smoothing length for fast line", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_slowLength1 = Param(nameof(SlowLength1), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA1 Length", "First smoothing length for slow line", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 1);
 
 		_slowLength2 = Param(nameof(SlowLength2), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA2 Length", "Second smoothing length for slow line", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -122,9 +122,9 @@ public class ForexLineStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize moving averages for double smoothing
 		var ma11 = new WeightedMovingAverage { Length = FastLength1 };

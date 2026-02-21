@@ -83,13 +83,13 @@ public class AmstellGridStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Virtual take profit distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 150, 10);
 
 		_stepPips = Param(nameof(StepPips), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Step (pips)", "Distance between grid entries", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -116,9 +116,9 @@ public class AmstellGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 
@@ -134,7 +134,7 @@ public class AmstellGridStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

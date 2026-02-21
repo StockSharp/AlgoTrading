@@ -72,15 +72,15 @@ public class TrendSyncProSmcStrategy : Strategy
 		_trendPeriod = Param(nameof(TrendPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Trend Period", "Lookback for pivot", "General")
-		.SetCanOptimize(true);
+		;
 		_slPercent = Param(nameof(SlPercent), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss %", "Percent stop loss", "Risk")
-		.SetCanOptimize(true);
+		;
 		_tpPercent = Param(nameof(TpPercent), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit %", "Percent take profit", "Risk")
-		.SetCanOptimize(true);
+		;
 		_tradeDirection = Param(nameof(TradeDir), (Sides?)null)
 			.SetDisplay("Trade Direction", "Allowed direction", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -112,9 +112,9 @@ public class TrendSyncProSmcStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = TrendPeriod };
 		_lowest = new Lowest { Length = TrendPeriod };

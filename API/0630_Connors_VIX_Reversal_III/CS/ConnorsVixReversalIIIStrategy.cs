@@ -73,16 +73,16 @@ public class ConnorsVixReversalIIIStrategy : Strategy
 		_lengthMa = Param(nameof(LengthMA), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Length", "Length of VIX moving average", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 		
 		_percentThreshold = Param(nameof(PercentThreshold), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Percent Threshold", "Percentage threshold for signals", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 20m, 1m);
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "Data");
 		
 		_vixSecurity = Param<Security>(nameof(VixSecurity))
@@ -108,9 +108,9 @@ public class ConnorsVixReversalIIIStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_vixSma = new SMA { Length = LengthMA };
 		

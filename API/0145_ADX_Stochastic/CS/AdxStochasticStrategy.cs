@@ -118,49 +118,49 @@ public class AdxStochasticStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period of the ADX indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
 			.SetNotNegative()
 			.SetDisplay("ADX Threshold", "ADX level considered strong trend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15m, 35m, 5m);
 
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Period of the Stochastic Oscillator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_stochK = Param(nameof(StochK), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "Smoothing of the %K line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_stochD = Param(nameof(StochD), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Smoothing of the %D line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_stochOversold = Param(nameof(StochOversold), 20m)
 			.SetNotNegative()
 			.SetDisplay("Stochastic Oversold", "Level considered oversold", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 30m, 5m);
 
 		_stochOverbought = Param(nameof(StochOverbought), 80m)
 			.SetNotNegative()
 			.SetDisplay("Stochastic Overbought", "Level considered overbought", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(70m, 90m, 5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -174,9 +174,9 @@ public class AdxStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create ADX indicator with all components
 		var adx = new AverageDirectionalIndex

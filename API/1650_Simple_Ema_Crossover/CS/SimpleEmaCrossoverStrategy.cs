@@ -71,17 +71,17 @@ public class SimpleEmaCrossoverStrategy : Strategy
 		_periods = Param(nameof(Periods), 17)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period for the fast EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 1);
 
 		_stopLoss = Param(nameof(StopLoss), new Unit(31m, UnitTypes.Absolute))
 			.SetDisplay("Stop Loss", "Stop-loss distance in price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_takeProfit = Param(nameof(TakeProfit), new Unit(69m, UnitTypes.Absolute))
 			.SetDisplay("Take Profit", "Take-profit distance in price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -103,14 +103,14 @@ public class SimpleEmaCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(takeProfit: TakeProfit, stopLoss: StopLoss);
 
-		var fastEma = new ExponentialMovingAverage { Length = Periods };
-		var slowEma = new ExponentialMovingAverage { Length = Periods + 2 };
+		var fastEma = new EMA { Length = Periods };
+		var slowEma = new EMA { Length = Periods + 2 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

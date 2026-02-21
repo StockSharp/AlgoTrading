@@ -103,19 +103,19 @@ public class ColorTrendCfStrategy : Strategy {
 			  .SetGreaterThanZero()
 			  .SetDisplay("CF Period", "Base period for fast EMA",
 				  "Indicator")
-			  .SetCanOptimize(true)
+			  
 			  .SetOptimize(10, 60, 10);
 
 	_stopLoss =
 		Param(nameof(StopLoss), 1000m)
 		.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 2000m, 100m);
 
 	_takeProfit =
 		Param(nameof(TakeProfit), 2000m)
 		.SetDisplay("Take Profit", "Take profit in price units", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 4000m, 100m);
 
 	_allowBuyOpen = Param(nameof(AllowBuyOpen), true)
@@ -157,11 +157,11 @@ public class ColorTrendCfStrategy : Strategy {
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
-	base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+	base.OnStarted2(time);
 
-	var fastEma = new ExponentialMovingAverage { Length = Period };
-	var slowEma = new ExponentialMovingAverage { Length = Period * 2 };
+	var fastEma = new EMA { Length = Period };
+	var slowEma = new EMA { Length = Period * 2 };
 
 	var subscription = SubscribeCandles(CandleType);
 	var prevFast = 0m;
@@ -228,6 +228,6 @@ public class ColorTrendCfStrategy : Strategy {
 		  })
 		.Start();
 
-	StartProtection();
+	StartProtection(null, null);
 	}
 }

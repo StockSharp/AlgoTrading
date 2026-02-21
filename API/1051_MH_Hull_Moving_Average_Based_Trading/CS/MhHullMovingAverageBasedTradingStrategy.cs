@@ -50,7 +50,7 @@ public class MhHullMovingAverageBasedTradingStrategy : Strategy
 	{
 		_hullPeriod = Param(nameof(HullPeriod), 210)
 			.SetDisplay("Hull Period", "Period for Hull Moving Average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -72,9 +72,9 @@ public class MhHullMovingAverageBasedTradingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var hma = new HullMovingAverage { Length = HullPeriod };
 

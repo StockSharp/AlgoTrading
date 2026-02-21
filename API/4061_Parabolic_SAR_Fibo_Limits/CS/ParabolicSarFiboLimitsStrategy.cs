@@ -76,22 +76,22 @@ public class ParabolicSarFiboLimitsStrategy : Strategy
 
 		_fastStep = Param(nameof(FastAcceleration), 0.02m)
 			.SetDisplay("Fast SAR Step", "Acceleration factor for the fast SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_fastMaxStep = Param(nameof(FastAccelerationMax), 0.2m)
 			.SetDisplay("Fast SAR Max", "Maximum acceleration factor for the fast SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.5m, 0.1m);
 
 		_slowStep = Param(nameof(SlowAcceleration), 0.005m)
 			.SetDisplay("Slow SAR Step", "Acceleration factor for the slow SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.02m, 0.001m);
 
 		_slowMaxStep = Param(nameof(SlowAccelerationMax), 0.05m)
 			.SetDisplay("Slow SAR Max", "Maximum acceleration factor for the slow SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.02m, 0.2m, 0.02m);
 
 		_barSearch = Param(nameof(BarSearch), 3)
@@ -294,9 +294,9 @@ public class ParabolicSarFiboLimitsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security.PriceStep ?? 0m;
 		if (_priceStep <= 0m)
@@ -318,14 +318,12 @@ public class ParabolicSarFiboLimitsStrategy : Strategy
 
 		_highestHigh = new Highest
 		{
-			Length = BarSearch,
-			CandlePrice = CandlePrice.High
+			Length = BarSearch
 		};
 
 		_lowestLow = new Lowest
 		{
-			Length = BarSearch,
-			CandlePrice = CandlePrice.Low
+			Length = BarSearch
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -333,7 +331,7 @@ public class ParabolicSarFiboLimitsStrategy : Strategy
 			.Bind(_slowSar, _fastSar, _highestHigh, _lowestLow, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

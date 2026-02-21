@@ -77,27 +77,27 @@ public class MultiBreakoutV001kStrategy : Strategy
 
 		_numberOfOrdersPerSide = Param(nameof(NumberOfOrdersPerSide), 20)
 		.SetDisplay("Orders Per Side", "How many stop orders to stack on each side", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 30, 1);
 
 		_takeProfitIncrement = Param(nameof(TakeProfitIncrement), 5)
 		.SetDisplay("TP Increment", "Distance in points between staged take profits", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 20, 1);
 
 		_pipsForEntry = Param(nameof(PipsForEntry), 5)
 		.SetDisplay("Entry Buffer", "Extra points added beyond the range breakout", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 20, 1);
 
 		_stopLoss = Param(nameof(StopLoss), 20)
 		.SetDisplay("Stop Loss", "Initial protective stop distance in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 5);
 
 		_breakEven = Param(nameof(BreakEven), 10)
 		.SetDisplay("Break Even", "Distance in points before moving the stop to break-even", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 5);
 
 		_movingBreakEven = Param(nameof(MovingBreakEven), true)
@@ -105,7 +105,7 @@ public class MultiBreakoutV001kStrategy : Strategy
 
 		_movingBreakEvenHoursToStart = Param(nameof(MovingBreakEvenHoursToStart), 3)
 		.SetDisplay("MBE Hours", "Hours after session start to activate moving break-even", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 6, 1);
 
 		_brokerOffsetToGmt = Param(nameof(BrokerOffsetToGmt), 0)
@@ -116,7 +116,7 @@ public class MultiBreakoutV001kStrategy : Strategy
 
 		_sessionHour1 = Param(nameof(SessionHour1), 6)
 		.SetDisplay("Session Hour 1", "Hour for the first trading session (0-23)", "Schedule")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 23, 1);
 
 		_tradeSession2 = Param(nameof(TradeSession2), true)
@@ -124,7 +124,7 @@ public class MultiBreakoutV001kStrategy : Strategy
 
 		_sessionHour2 = Param(nameof(SessionHour2), 12)
 		.SetDisplay("Session Hour 2", "Hour for the second trading session (0-23)", "Schedule")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 23, 1);
 
 		_tradeSession3 = Param(nameof(TradeSession3), true)
@@ -132,7 +132,7 @@ public class MultiBreakoutV001kStrategy : Strategy
 
 		_sessionHour3 = Param(nameof(SessionHour3), 18)
 		.SetDisplay("Session Hour 3", "Hour for the third trading session (0-23)", "Schedule")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 23, 1);
 
 		_tradeSession4 = Param(nameof(TradeSession4), true)
@@ -140,12 +140,12 @@ public class MultiBreakoutV001kStrategy : Strategy
 
 		_sessionHour4 = Param(nameof(SessionHour4), 0)
 		.SetDisplay("Session Hour 4", "Hour for the fourth trading session (0-23)", "Schedule")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 23, 1);
 
 		_exitMinute = Param(nameof(ExitMinute), 55)
 		.SetDisplay("Exit Minute", "Minute within the session hour to liquidate everything", "Schedule")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 59, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -363,9 +363,9 @@ public class MultiBreakoutV001kStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeCandles(CandleType)
 		.Bind(ProcessHourCandle)
@@ -735,7 +735,7 @@ public class MultiBreakoutV001kStrategy : Strategy
 
 	private DateTime ApplyBrokerOffset(DateTimeOffset time)
 	{
-		var utc = time.UtcDateTime;
+		var utc = time;
 		return utc.AddHours(BrokerOffsetToGmt);
 	}
 

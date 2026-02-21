@@ -14,7 +14,7 @@ No market orders are sent; the strategy only reports the event to the log, match
 ## Parameters
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| `CandleType` | `DataType` | Daily timeframe (`TimeSpan.FromDays(1).TimeFrame()`) | Defines which candles are observed for the first-Friday detection. Change the value if the broker provides custom daily bars or alternative periodicities. |
+| `CandleType` | `DataType` | Daily timeframe (`TimeSpan.FromMinutes(5).TimeFrame()`) | Defines which candles are observed for the first-Friday detection. Change the value if the broker provides custom daily bars or alternative periodicities. |
 
 ## Implementation Notes
 - High-level StockSharp API (`SubscribeCandles().Bind(...)`) is used to process candle updates.

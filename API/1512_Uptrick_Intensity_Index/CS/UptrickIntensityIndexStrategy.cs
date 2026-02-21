@@ -86,22 +86,22 @@ public class UptrickIntensityIndexStrategy : Strategy
 		_ma1Length = Param(nameof(Ma1Length), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1 Length", "Length of first SMA", "General")
-			.SetCanOptimize(true);
+			;
 
 		_ma2Length = Param(nameof(Ma2Length), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA2 Length", "Length of second SMA", "General")
-			.SetCanOptimize(true);
+			;
 
 		_ma3Length = Param(nameof(Ma3Length), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("MA3 Length", "Length of third SMA", "General")
-			.SetCanOptimize(true);
+			;
 
 		_tiiMaLength = Param(nameof(TiiMaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("TII SMA Length", "Length of TII moving average", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -126,17 +126,17 @@ public class UptrickIntensityIndexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ma1 = new SimpleMovingAverage { Length = Ma1Length };
-		_ma2 = new SimpleMovingAverage { Length = Ma2Length };
-		_ma3 = new SimpleMovingAverage { Length = Ma3Length };
-		_tiiMa = new SimpleMovingAverage { Length = TiiMaLength };
+		_ma1 = new SMA { Length = Ma1Length };
+		_ma2 = new SMA { Length = Ma2Length };
+		_ma3 = new SMA { Length = Ma3Length };
+		_tiiMa = new SMA { Length = TiiMaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

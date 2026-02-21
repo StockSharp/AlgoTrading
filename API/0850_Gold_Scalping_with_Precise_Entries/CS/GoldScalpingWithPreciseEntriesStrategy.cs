@@ -113,22 +113,22 @@ public class GoldScalpingWithPreciseEntriesStrategy : Strategy
 		_emaFastPeriod = Param(nameof(EmaFastPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Fast", "Fast EMA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_emaSlowPeriod = Param(nameof(EmaSlowPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Slow", "Slow EMA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLower = Param(nameof(RsiLower), 45m)
 			.SetDisplay("RSI Lower", "Lower RSI bound", "Indicators");
@@ -160,12 +160,12 @@ public class GoldScalpingWithPreciseEntriesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var emaFast = new ExponentialMovingAverage { Length = EmaFastPeriod };
-		var emaSlow = new ExponentialMovingAverage { Length = EmaSlowPeriod };
+		var emaFast = new EMA { Length = EmaFastPeriod };
+		var emaSlow = new EMA { Length = EmaSlowPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 

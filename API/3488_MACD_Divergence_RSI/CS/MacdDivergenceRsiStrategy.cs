@@ -66,26 +66,26 @@ public class MacdDivergenceRsiStrategy : Strategy
 		_lowerRsiPeriod = Param(nameof(LowerRsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Lower RSI Period", "Period for the oversold RSI filter (shifted by one bar).", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_lowerRsiThreshold = Param(nameof(LowerRsiThreshold), 30m)
 			.SetDisplay("Lower RSI Threshold", "Oversold threshold used before checking for bullish divergence.", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_bullishFastEma = Param(nameof(BullishFastEma), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Bullish MACD Fast EMA", "Fast EMA length for the bullish MACD divergence detector.", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_bullishSlowEma = Param(nameof(BullishSlowEma), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Bullish MACD Slow EMA", "Slow EMA length for the bullish MACD divergence detector.", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_bullishSignalSma = Param(nameof(BullishSignalSma), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Bullish MACD Signal", "Signal smoothing period for the bullish MACD divergence detector.", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_bullishVolume = Param(nameof(BullishVolume), 0.01m)
 			.SetGreaterThanZero()
@@ -102,26 +102,26 @@ public class MacdDivergenceRsiStrategy : Strategy
 		_upperRsiPeriod = Param(nameof(UpperRsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Upper RSI Period", "Period for the overbought RSI filter (shifted by one bar).", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_upperRsiThreshold = Param(nameof(UpperRsiThreshold), 70m)
 			.SetDisplay("Upper RSI Threshold", "Overbought threshold used before checking for bearish divergence.", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_bearishFastEma = Param(nameof(BearishFastEma), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Bearish MACD Fast EMA", "Fast EMA length for the bearish MACD divergence detector.", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_bearishSlowEma = Param(nameof(BearishSlowEma), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Bearish MACD Slow EMA", "Slow EMA length for the bearish MACD divergence detector.", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_bearishSignalSma = Param(nameof(BearishSignalSma), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Bearish MACD Signal", "Signal smoothing period for the bearish MACD divergence detector.", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_bearishVolume = Param(nameof(BearishVolume), 0.01m)
 			.SetGreaterThanZero()
@@ -658,7 +658,7 @@ public class MacdDivergenceRsiStrategy : Strategy
 	{
 		if (TryGetCandle(shift, out var candle))
 		{
-			low = candle.Low;
+			low = candle.LowPrice;
 			return true;
 		}
 
@@ -670,7 +670,7 @@ public class MacdDivergenceRsiStrategy : Strategy
 	{
 		if (TryGetCandle(shift, out var candle))
 		{
-			high = candle.High;
+			high = candle.HighPrice;
 			return true;
 		}
 

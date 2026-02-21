@@ -98,7 +98,7 @@ public class FiboCandlesTrendStrategy : Strategy
 		_period = Param(nameof(Period), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "Lookback period for high/low", "FiboCandles")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_fiboLevel = Param(nameof(Level), FiboLevels.Level1)
@@ -107,13 +107,13 @@ public class FiboCandlesTrendStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 1000)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500, 2000, 500);
 
 		_takeProfit = Param(nameof(TakeProfit), 2000)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1000, 4000, 500);
 	}
 
@@ -135,9 +135,9 @@ public class FiboCandlesTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = Period };
 		_lowest = new Lowest { Length = Period };

@@ -64,11 +64,11 @@ public class MmFibonacciStrategy : Strategy
 		_frame = Param(nameof(Frame), 64)
 			.SetGreaterThanZero()
 			.SetDisplay("Frame Size", "Murrey frame size", "General")
-			.SetCanOptimize(true);
+			;
 
 		_multiplier = Param(nameof(Multiplier), 1.5m)
 			.SetDisplay("Multiplier", "Frame multiplier", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -92,9 +92,9 @@ public class MmFibonacciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var length = (int)Math.Round(Frame * Multiplier);
 
@@ -102,7 +102,7 @@ public class MmFibonacciStrategy : Strategy
 		_lowest = new Lowest { Length = length };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -113,7 +113,7 @@ public class MmFibonacciStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

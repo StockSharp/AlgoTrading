@@ -81,22 +81,22 @@ public class VltTraderStrategy : Strategy
 	{
 		_period = Param(nameof(Period), 9)
 			.SetDisplay("Period", "Indicator period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 50, 1);
 
 		_pendingLevel = Param(nameof(PendingLevel), 100)
 			.SetDisplay("Pending level", "Offset for stop orders in ticks", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 		_stopLoss = Param(nameof(StopLoss), 550)
 			.SetDisplay("Stop loss", "Stop loss in ticks", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 2000, 50);
 
 		_takeProfit = Param(nameof(TakeProfit), 550)
 			.SetDisplay("Take profit", "Take profit in ticks", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 2000, 50);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -110,9 +110,9 @@ public class VltTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_lowest = new Lowest { Length = Period };
 		_prevRange = 0m;

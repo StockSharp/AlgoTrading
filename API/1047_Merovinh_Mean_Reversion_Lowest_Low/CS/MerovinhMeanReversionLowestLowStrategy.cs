@@ -80,13 +80,13 @@ public class MerovinhMeanReversionLowestLowStrategy : Strategy {
 		_bars = Param(nameof(Bars), 9)
 					.SetGreaterThanZero()
 					.SetDisplay("Bars", "Lookback length", "General")
-					.SetCanOptimize(true);
+					;
 
 		_numberOfLows =
 			Param(nameof(NumberOfLows), 1)
 				.SetRange(1, 4)
 				.SetDisplay("Number Of Lows", "Required broken lows", "General")
-				.SetCanOptimize(true);
+				;
 
 		_startDate =
 			Param(nameof(StartDate),
@@ -124,8 +124,8 @@ public class MerovinhMeanReversionLowestLowStrategy : Strategy {
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
-		base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = Bars };
 		_lowest = new Lowest { Length = Bars };

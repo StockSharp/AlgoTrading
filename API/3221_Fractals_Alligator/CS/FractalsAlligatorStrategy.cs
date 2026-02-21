@@ -218,18 +218,18 @@ public class FractalsAlligatorStrategy : Strategy
 		_jawLength = Param(nameof(JawLength), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Jaw Length", "Alligator jaw period", "Alligator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 1);
 
 		_jawShift = Param(nameof(JawShift), 8)
 			.SetNotNegative()
 			.SetDisplay("Jaw Shift", "Forward shift for the jaw line", "Alligator")
-			.SetCanOptimize(false);
+			;
 
 		_teethLength = Param(nameof(TeethLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Teeth Length", "Alligator teeth period", "Alligator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_teethShift = Param(nameof(TeethShift), 5)
@@ -239,7 +239,7 @@ public class FractalsAlligatorStrategy : Strategy
 		_lipsLength = Param(nameof(LipsLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Lips Length", "Alligator lips period", "Alligator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_lipsShift = Param(nameof(LipsShift), 3)
@@ -316,9 +316,9 @@ public class FractalsAlligatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_jaw = new SmoothedMovingAverage { Length = JawLength };
 		_teeth = new SmoothedMovingAverage { Length = TeethLength };

@@ -192,9 +192,9 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 		_instrumentCurrencies.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		BuildInstrumentCurrencies();
 		ParseNewsEvents();

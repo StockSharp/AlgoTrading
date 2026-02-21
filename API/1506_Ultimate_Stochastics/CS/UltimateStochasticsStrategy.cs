@@ -100,9 +100,9 @@ public DataType CandleType { get => _candleType.Value; set => _candleType.Value 
 
 public UltimateStochasticsStrategy()
 {
-	_fastKLength = Param(nameof(FastKLength), 9).SetGreaterThanZero().SetDisplay("Fast K", "Fast %K length", "Indicators").SetCanOptimize(true).SetOptimize(5, 15, 2);
-	_slowKLength = Param(nameof(SlowKLength), 18).SetGreaterThanZero().SetDisplay("Slow K", "Slow %K smoothing", "Indicators").SetCanOptimize(true).SetOptimize(10, 25, 2);
-	_slowDLength = Param(nameof(SlowDLength), 4).SetGreaterThanZero().SetDisplay("Slow D", "%D length", "Indicators").SetCanOptimize(true).SetOptimize(2, 8, 1);
+	_fastKLength = Param(nameof(FastKLength), 9).SetGreaterThanZero().SetDisplay("Fast K", "Fast %K length", "Indicators").SetOptimize(5, 15, 2);
+	_slowKLength = Param(nameof(SlowKLength), 18).SetGreaterThanZero().SetDisplay("Slow K", "Slow %K smoothing", "Indicators").SetOptimize(10, 25, 2);
+	_slowDLength = Param(nameof(SlowDLength), 4).SetGreaterThanZero().SetDisplay("Slow D", "%D length", "Indicators").SetOptimize(2, 8, 1);
 	_overbought = Param(nameof(Overbought), 60m).SetRange(0m, 100m).SetDisplay("Overbought", "Overbought level", "Levels");
 	_oversold = Param(nameof(Oversold), 90m).SetRange(0m, 100m).SetDisplay("Oversold", "Oversold level", "Levels");
 	_allowLongs = Param(nameof(AllowLongs), true).SetDisplay("Allow Longs", "Enable long trades", "Trading");
@@ -119,13 +119,12 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	return [(Security, CandleType)];
 }
 
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 	
 	var stoch = new StochasticOscillator
-	{
-		Length = FastKLength,
+	{ K = { Length = FastKLength },
 		K = { Length = SlowKLength },
 	D = { Length = SlowDLength }
 	};

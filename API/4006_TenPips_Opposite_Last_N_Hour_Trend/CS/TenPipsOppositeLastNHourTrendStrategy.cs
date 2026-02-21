@@ -209,7 +209,7 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 	{
 		_fixedVolume = Param(nameof(FixedVolume), 0.1m)
 		.SetDisplay("Fixed Volume", "Fixed volume for entries", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 1m, 0.1m);
 
 		_minimumVolume = Param(nameof(MinimumVolume), 0.1m)
@@ -220,12 +220,12 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 
 		_maximumRisk = Param(nameof(MaximumRisk), 0.05m)
 		.SetDisplay("Maximum Risk", "Risk fraction when Fixed Volume is zero", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 0.2m, 0.01m);
 
 		_maxOrders = Param(nameof(MaxOrders), 1)
 		.SetDisplay("Max Orders", "Maximum simultaneous orders", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 3, 1);
 
 		_tradingHour = Param(nameof(TradingHour), 7)
@@ -293,9 +293,9 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializePipSize();
 
@@ -311,7 +311,7 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

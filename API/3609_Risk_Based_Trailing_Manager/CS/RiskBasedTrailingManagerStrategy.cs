@@ -73,17 +73,17 @@ public class RiskBasedTrailingManagerStrategy : Strategy
 		_riskPercentage = Param(nameof(RiskPercentage), 1m)
 			.SetRange(0m, 10m)
 			.SetDisplay("Risk Percentage", "Risk percentage of the balance used as a stop threshold", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_profitPercentage = Param(nameof(ProfitPercentage), 2m)
 			.SetRange(0m, 20m)
 			.SetDisplay("Profit Percentage", "Profit percentage of the balance required to secure gains", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 50m)
 			.SetRange(0m, 500m)
 			.SetDisplay("Trailing Stop Points", "Trailing stop distance in price points", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used to evaluate open positions", "General");
@@ -99,9 +99,9 @@ public class RiskBasedTrailingManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Portfolio == null)
 			throw new InvalidOperationException("Portfolio cannot be null.");
@@ -109,7 +109,7 @@ public class RiskBasedTrailingManagerStrategy : Strategy
 		if (Security == null)
 			throw new InvalidOperationException("Security must be specified.");
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

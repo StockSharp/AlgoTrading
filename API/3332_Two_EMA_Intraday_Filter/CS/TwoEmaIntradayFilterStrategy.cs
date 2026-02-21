@@ -67,36 +67,36 @@ public class TwoEmaIntradayFilterStrategy : Strategy
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA", "Period for the fast EMA", "EMA")
-		.SetCanOptimize(true);
+		;
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA", "Period for the slow EMA", "EMA")
-		.SetCanOptimize(true);
+		;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "Period for ATR calculation", "ATR")
-		.SetCanOptimize(true);
+		;
 
 		_limitMultiplier = Param(nameof(LimitMultiplier), 1.2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Limit Multiplier", "ATR multiplier that offsets limit prices", "Orders")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop-Loss Multiplier", "ATR multiplier for stop-loss placement", "Orders")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitMultiplier = Param(nameof(TakeProfitMultiplier), 8m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take-Profit Multiplier", "ATR multiplier for take-profit placement", "Orders")
-		.SetCanOptimize(true);
+		;
 
 		_expirationBars = Param(nameof(ExpirationBars), 4)
 		.SetDisplay("Expiration Bars", "Number of bars before cancelling pending orders", "Orders")
-		.SetCanOptimize(true);
+		;
 
 		_goodMinuteOfHour = Param(nameof(GoodMinuteOfHour), -1)
 		.SetDisplay("Allowed Minute", "Specific minute of hour allowed for entries (-1 disables)", "Time Filter");
@@ -244,15 +244,15 @@ public class TwoEmaIntradayFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (FastEmaPeriod >= SlowEmaPeriod)
 		throw new InvalidOperationException("Slow EMA period must be greater than fast EMA period.");
 
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_fastEma = new EMA { Length = FastEmaPeriod };
+		_slowEma = new EMA { Length = SlowEmaPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
 		_pendingOrders.Clear();

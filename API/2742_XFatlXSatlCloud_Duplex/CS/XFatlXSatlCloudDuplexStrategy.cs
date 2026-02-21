@@ -482,9 +482,9 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicator instances with current parameter values for both directions.
 		_longIndicator = new XFatlXSatlCloudIndicator(LongMethod1, LongLength1, LongPhase1, LongMethod2, LongLength2, LongPhase2, LongAppliedPrice);
@@ -651,7 +651,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 		return false;
 	}
 
-	private sealed class XFatlXSatlCloudIndicator : Indicator<ICandleMessage>
+	private sealed class XFatlXSatlCloudIndicator : BaseIndicator
 	{
 		private static readonly decimal[] FatlCoefficients =
 		{

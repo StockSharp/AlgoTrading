@@ -73,12 +73,12 @@ public class TrailingStopManagerStrategy : Strategy
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop (pips)", "Distance to activate trailing", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimal move before adjusting stop", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_startDirection = Param(nameof(StartDirection), InitialDirections.None)
 			.SetDisplay("Initial Direction", "Optional market order on start", "Trading");
@@ -91,9 +91,9 @@ public class TrailingStopManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Retrieve price step to convert pip values into price offsets.
 		_priceStep = Security?.PriceStep ?? 1m;

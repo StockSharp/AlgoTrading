@@ -136,12 +136,12 @@ public class EmaPlusWprV2Strategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var wpr = new WilliamsPercentRange { Length = WprPeriod };
-		var ema = new ExponentialMovingAverage { Length = EmaTrendPeriod };
+		var ema = new EMA { Length = EmaTrendPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(wpr, ema, ProcessCandle).Start();

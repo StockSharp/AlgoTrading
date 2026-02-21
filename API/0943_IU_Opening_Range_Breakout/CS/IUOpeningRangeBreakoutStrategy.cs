@@ -80,7 +80,7 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 		_riskReward = Param(nameof(RiskReward), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk/Reward", "Risk to reward ratio", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_maxTrades = Param(nameof(MaxTrades), 2)
@@ -98,9 +98,9 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_currentDay = time.Date;
 

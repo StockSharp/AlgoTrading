@@ -129,16 +129,16 @@ public class VwapProV21Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var emaFast = new ExponentialMovingAverage { Length = EmaFastPeriod };
-		var emaSlow = new ExponentialMovingAverage { Length = EmaSlowPeriod };
+		var emaFast = new EMA { Length = EmaFastPeriod };
+		var emaSlow = new EMA { Length = EmaSlowPeriod };
 		var vwap = new VolumeWeightedMovingAverage();
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		var trendEma = new ExponentialMovingAverage { Length = 50 };
+		var trendEma = new EMA { Length = 50 };
 		var trendSubscription = SubscribeCandles(TimeSpan.FromHours(1).TimeFrame());
 		trendSubscription
 			.Bind(trendEma, ProcessTrend)

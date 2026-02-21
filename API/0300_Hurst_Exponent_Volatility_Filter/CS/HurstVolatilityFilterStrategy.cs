@@ -89,25 +89,25 @@ public class HurstVolatilityFilterStrategy : Strategy
 		_hurstPeriodParam = Param(nameof(HurstPeriod), 100)
 			.SetDisplay("Hurst Period", "Period for calculating Hurst exponent", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 10);
 
 		_maPeriodParam = Param(nameof(MAPeriod), 20)
 			.SetDisplay("MA Period", "Period for calculating Moving Average", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_atrPeriodParam = Param(nameof(ATRPeriod), 14)
 			.SetDisplay("ATR Period", "Period for calculating Average True Range", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_stopLossParam = Param(nameof(StopLoss), 2.0m)
 			.SetDisplay("Stop Loss", "Stop loss percentage from entry price", "Risk Management")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -130,9 +130,9 @@ public class HurstVolatilityFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Reset state
 

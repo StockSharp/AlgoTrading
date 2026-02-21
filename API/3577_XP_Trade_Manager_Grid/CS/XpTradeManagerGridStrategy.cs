@@ -83,30 +83,30 @@ public class XpTradeManagerGridStrategy : Strategy
 	{
 		// Initialize all strategy parameters that mirror the original MetaTrader inputs.
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type");
+			.SetDisplay("Candle Type", "Candle Type", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 0.25m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume for every market order", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 1m, 0.05m);
 
 		_maxOrders = Param(nameof(MaxOrders), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Orders", "Maximum simultaneous grid orders", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_stepPoints = Param(nameof(StepPoints), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Grid Step (points)", "Price distance in points before adding the next grid order", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 150, 5);
 
 		_riskPercent = Param(nameof(RiskPercent), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Percent", "Maximum floating loss relative to account balance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_takeProfit1Total = Param(nameof(TakeProfit1Total), 150m).SetDisplay("TP1 Total", null, "Take Profit");
@@ -271,10 +271,10 @@ public class XpTradeManagerGridStrategy : Strategy
 
 	/// <inheritdoc />
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		// Subscribe to the selected candle type and open the very first grid order.
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = Security?.PriceStep ?? 0.0001m;
 		_pipPrice = Security?.StepPrice ?? 1m;
@@ -284,7 +284,7 @@ public class XpTradeManagerGridStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		SendInitialOrder();
 	}

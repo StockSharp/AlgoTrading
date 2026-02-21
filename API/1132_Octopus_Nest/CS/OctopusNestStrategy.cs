@@ -126,9 +126,9 @@ _longStop = _longTake = _shortStop = _shortTake = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _ema = new EMA { Length = EmaLength };
 _bollinger = new BollingerBands { Length = BbLength, Width = BbMultiplier };

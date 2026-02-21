@@ -113,20 +113,18 @@ public class EmaCrossStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		var fastEma = new ExponentialMovingAverage
+		var fastEma = new EMA
 		{
-			Length = ShortLength,
-			CandlePrice = CandlePrice.Close,
+			Length = ShortLength
 		};
 		
-		var slowEma = new ExponentialMovingAverage
+		var slowEma = new EMA
 		{
-			Length = LongLength,
-			CandlePrice = CandlePrice.Close,
+			Length = LongLength
 		};
 		
 		var subscription = SubscribeCandles(CandleType);
@@ -135,7 +133,7 @@ public class EmaCrossStrategy : Strategy
 		.Bind(fastEma, slowEma, ProcessCandle)
 		.Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)

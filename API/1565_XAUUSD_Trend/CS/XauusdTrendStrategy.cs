@@ -40,16 +40,16 @@ public class XauusdTrendStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public XauusdTrendStrategy()
 	{
-		_emaShort = Param(nameof(EmaShort), 50).SetDisplay("EMA Short").SetCanOptimize(true);
-		_emaLong = Param(nameof(EmaLong), 200).SetDisplay("EMA Long").SetCanOptimize(true);
-		_rsiLength = Param(nameof(RsiLength), 14).SetDisplay("RSI Length").SetCanOptimize(true);
-		_rsiOverbought = Param(nameof(RsiOverbought), 70m).SetDisplay("RSI Overbought").SetCanOptimize(true);
-		_rsiOversold = Param(nameof(RsiOversold), 30m).SetDisplay("RSI Oversold").SetCanOptimize(true);
-		_bollingerLength = Param(nameof(BollingerLength), 20).SetDisplay("BB Length").SetCanOptimize(true);
-		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m).SetDisplay("BB Mult").SetCanOptimize(true);
-		_tpRiskRatio = Param(nameof(TpRiskRatio), 2m).SetDisplay("TP/SL Ratio").SetCanOptimize(true);
-		_riskPercent = Param(nameof(RiskPercent), 1m).SetDisplay("Risk %").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
+		_emaShort = Param(nameof(EmaShort), 50).SetDisplay("EMA Short", "EMA Short", "General");
+		_emaLong = Param(nameof(EmaLong), 200).SetDisplay("EMA Long", "EMA Long", "General");
+		_rsiLength = Param(nameof(RsiLength), 14).SetDisplay("RSI Length", "RSI Length", "General");
+		_rsiOverbought = Param(nameof(RsiOverbought), 70m).SetDisplay("RSI Overbought", "RSI Overbought", "General");
+		_rsiOversold = Param(nameof(RsiOversold), 30m).SetDisplay("RSI Oversold", "RSI Oversold", "General");
+		_bollingerLength = Param(nameof(BollingerLength), 20).SetDisplay("BB Length", "BB Length", "General");
+		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m).SetDisplay("BB Mult", "BB Mult", "General");
+		_tpRiskRatio = Param(nameof(TpRiskRatio), 2m).SetDisplay("TP/SL Ratio", "TP/SL Ratio", "General");
+		_riskPercent = Param(nameof(RiskPercent), 1m).SetDisplay("Risk %", "Risk %", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
@@ -62,13 +62,13 @@ public class XauusdTrendStrategy : Strategy
 		_stopPrice = 0;
 		_takePrice = 0;
 	}
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 		
-		var emaFast = new ExponentialMovingAverage { Length = EmaShort };
-		var emaSlow = new ExponentialMovingAverage { Length = EmaLong };
+		var emaFast = new EMA { Length = EmaShort };
+		var emaSlow = new EMA { Length = EmaLong };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var bb = new BollingerBands { Length = BollingerLength, Width = BollingerMultiplier };
 		

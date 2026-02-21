@@ -66,9 +66,9 @@ _up=_down=0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 var atr = new AverageTrueRange{Length=AtrPeriod};
 var adx = new AverageDirectionalIndex{Length=AdxPeriod};
 var ma1 = new SmoothedMovingAverage{Length=Ma1Period};
@@ -102,7 +102,7 @@ else if(Position>=0&&_down!=0m&&c.ClosePrice<=_down&&c.ClosePrice<=ma1)SellMarke
 if(Position<=0&&ma1>=ma2&&ma2>=ma3&&c.ClosePrice>ma1)BuyMarket(Volume+Math.Abs(Position));
 else if(Position>=0&&ma1<=ma2&&ma2<=ma3&&c.ClosePrice<ma1)SellMarket(Volume+Math.Abs(Position));
 }
-if(Position>0&&c.ClosePrice-PositionAvgPrice>=atr*MinProfit)SellMarket(Position);
-else if(Position<0&&PositionAvgPrice-c.ClosePrice>=atr*MinProfit)BuyMarket(-Position);
+if(Position>0&&c.ClosePrice-PositionPrice>=atr*MinProfit)SellMarket(Position);
+else if(Position<0&&PositionPrice-c.ClosePrice>=atr*MinProfit)BuyMarket(-Position);
 }
 }

@@ -63,22 +63,22 @@ public class ImaIsarEaStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetDisplay("Take Profit (pips)", "Target distance", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_useTrailing = Param(nameof(UseTrailing), true)
 		.SetDisplay("Use Trailing", "Enable trailing stop", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 25m)
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 		.SetDisplay("Trailing Step (pips)", "Minimum move before trailing update", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle series", "General");
@@ -290,9 +290,9 @@ public class ImaIsarEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = new() { Length = FastMaPeriod };
 		_normalMa = new() { Length = NormalMaPeriod };
@@ -333,7 +333,7 @@ public class ImaIsarEaStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastMaValue, decimal normalMaValue, decimal slowMaValue, decimal fastSarValue, decimal normalSarValue)
@@ -638,7 +638,7 @@ public class ImaIsarEaStrategy : Strategy
 		if (shift is null)
 		return value;
 
-		var shifted = shift.Process(value, candle.OpenTime, true);
+		var shifted = shift.Process(new DecimalIndicatorValue(shift, value, candle.OpenTime));
 		return shift.IsFormed ? shifted.ToDecimal() : null;
 	}
 

@@ -114,28 +114,28 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetDisplay("Fast Period", "Fast EMA length", "General")
-			.SetCanOptimize(true);
+			;
 		_mediumPeriod = Param(nameof(MediumPeriod), 10)
 			.SetDisplay("Medium Period", "Medium EMA length", "General")
-			.SetCanOptimize(true);
+			;
 		_slowPeriod = Param(nameof(SlowPeriod), 50)
 			.SetDisplay("Slow Period", "Slow EMA length", "General")
-			.SetCanOptimize(true);
+			;
 		_fastExitPeriod = Param(nameof(FastExitPeriod), 5)
 			.SetDisplay("Fast Exit Period", "Fast exit EMA length", "Exit")
-			.SetCanOptimize(true);
+			;
 		_mediumExitPeriod = Param(nameof(MediumExitPeriod), 10)
 			.SetDisplay("Medium Exit Period", "Medium exit EMA length", "Exit")
-			.SetCanOptimize(true);
+			;
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "ATR calculation length", "Risk")
-			.SetCanOptimize(true);
+			;
 		_atrStopMultiplier = Param(nameof(AtrStopMultiplier), 1.4m)
 			.SetDisplay("ATR Stop", "ATR stop multiplier", "Risk")
-			.SetCanOptimize(true);
+			;
 		_atrTakeMultiplier = Param(nameof(AtrTakeMultiplier), 3.2m)
 			.SetDisplay("ATR Take", "ATR take multiplier", "Risk")
-			.SetCanOptimize(true);
+			;
 		_enableSlow = Param(nameof(EnableSlow), true)
 			.SetDisplay("Use Slow", "Enable slow EMA filter", "General");
 		_enableMacd = Param(nameof(EnableMacd), true)
@@ -151,15 +151,15 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
-		var mediumEma = new ExponentialMovingAverage { Length = MediumPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
-		var fastExitEma = new ExponentialMovingAverage { Length = FastExitPeriod };
-		var mediumExitEma = new ExponentialMovingAverage { Length = MediumExitPeriod };
+		var fastEma = new EMA { Length = FastPeriod };
+		var mediumEma = new EMA { Length = MediumPeriod };
+		var slowEma = new EMA { Length = SlowPeriod };
+		var fastExitEma = new EMA { Length = FastExitPeriod };
+		var mediumExitEma = new EMA { Length = MediumExitPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var macd = new MovingAverageConvergenceDivergence();
 
@@ -168,7 +168,7 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 			.Bind(fastEma, mediumEma, slowEma, fastExitEma, mediumExitEma, atr, macd, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal medium, decimal slow, decimal fastExit, decimal mediumExit, decimal atr, decimal macd, decimal signal, decimal hist)

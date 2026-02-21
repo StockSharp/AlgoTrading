@@ -75,7 +75,7 @@ public class RenkoLiveChartsPimpedStrategy : Strategy
 		_boxSize = Param(nameof(BoxSize), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Box Size", "Renko brick size", "Renko")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 20m, 1m);
 		
 		
@@ -85,7 +85,7 @@ public class RenkoLiveChartsPimpedStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 24)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "ATR calculation period", "Renko")
-		.SetCanOptimize(true);
+		;
 		
 		_atrCandleType = Param(nameof(AtrCandleType), TimeSpan.FromMinutes(60).TimeFrame())
 		.SetDisplay("ATR TimeFrame", "Candles for ATR calculation", "Renko");
@@ -96,7 +96,7 @@ public class RenkoLiveChartsPimpedStrategy : Strategy
 		_atrMaPeriod = Param(nameof(AtrMaPeriod), 120)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR MA Period", "Moving average length for ATR", "Renko")
-		.SetCanOptimize(true);
+		;
 	}
 	
 	/// <inheritdoc />
@@ -131,9 +131,9 @@ public class RenkoLiveChartsPimpedStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		if (CalculateBestBoxSize)
 		{
@@ -143,7 +143,7 @@ public class RenkoLiveChartsPimpedStrategy : Strategy
 			
 			if (UseAtrMa)
 			{
-				_atrMa = new SimpleMovingAverage { Length = AtrMaPeriod };
+				_atrMa = new SMA { Length = AtrMaPeriod };
 				atrSub.Bind(_atr, _atrMa, ProcessAtr).Start();
 			}
 			else
@@ -196,7 +196,7 @@ public class RenkoLiveChartsPimpedStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		_renkoStarted = true;
 	}

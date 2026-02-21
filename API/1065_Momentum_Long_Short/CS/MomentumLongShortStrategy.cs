@@ -132,10 +132,10 @@ public class MomentumLongShortStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var ma100 = CreateMa(100);
 		var ma500 = CreateMa(500);
@@ -201,15 +201,15 @@ public class MomentumLongShortStrategy : Strategy
 		if (shortCondition && Position >= 0)
 			SellMarket();
 
-		var longStop = PositionAvgPrice * (1 - SlPercentLong / 100m);
+		var longStop = PositionPrice * (1 - SlPercentLong / 100m);
 		if (Position > 0)
 		{
 			if (candle.LowPrice <= longStop || candle.ClosePrice < ma500)
 				SellMarket(Position);
 		}
 
-		var shortStop = PositionAvgPrice * (1 + SlPercentShort / 100m);
-		var shortTp = PositionAvgPrice * (1 - TpPercentShort / 100m);
+		var shortStop = PositionPrice * (1 + SlPercentShort / 100m);
+		var shortTp = PositionPrice * (1 - TpPercentShort / 100m);
 		if (Position < 0)
 		{
 			if (candle.HighPrice >= shortStop || candle.LowPrice <= shortTp)

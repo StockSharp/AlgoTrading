@@ -62,12 +62,12 @@ public class ColorMetroXrsxStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast moving average length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow moving average length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
@@ -87,9 +87,9 @@ public class ColorMetroXrsxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fast = new Sma { Length = FastPeriod };
 		var slow = new Sma { Length = SlowPeriod };
@@ -108,7 +108,7 @@ public class ColorMetroXrsxStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)

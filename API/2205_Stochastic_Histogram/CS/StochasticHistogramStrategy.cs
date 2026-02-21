@@ -114,29 +114,29 @@ public class StochasticHistogramStrategy : Strategy
 		_kPeriod = Param(nameof(KPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("K Period", "Stochastic %K period", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("D Period", "Stochastic %D period", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_slowing = Param(nameof(Slowing), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Slowing", "Smoothing for %K line", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_highLevel = Param(nameof(HighLevel), 60m)
 			.SetDisplay("High Level", "Upper threshold", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(55m, 80m, 5m);
 
 		_lowLevel = Param(nameof(LowLevel), 40m)
 			.SetDisplay("Low Level", "Lower threshold", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 45m, 5m);
 
 		_mode = Param(nameof(Mode), TrendModes.Cross)
@@ -162,13 +162,12 @@ public class StochasticHistogramStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stoch = new StochasticOscillator
-		{
-			Length = KPeriod,
+		{ K = { Length = KPeriod },
 			K = { Length = Slowing },
 			D = { Length = DPeriod }
 		};
@@ -184,7 +183,7 @@ public class StochasticHistogramStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)

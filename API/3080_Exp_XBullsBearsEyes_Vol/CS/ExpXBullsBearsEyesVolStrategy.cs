@@ -338,9 +338,9 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = new XBullsBearsEyesVolCalculator(
 			IndicatorPeriod,
@@ -625,8 +625,8 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 	private sealed class XBullsBearsEyesVolCalculator
 {
 	private readonly ExponentialMovingAverage _ema;
-	private readonly LengthIndicator<decimal> _valueSmoother;
-	private readonly LengthIndicator<decimal> _volumeSmoother;
+	private readonly DecimalLengthIndicator _valueSmoother;
+	private readonly DecimalLengthIndicator _volumeSmoother;
 	private readonly AppliedVolumes _volumeType;
 	private readonly decimal _gamma;
 	private readonly decimal _highLevel2;
@@ -652,7 +652,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 		int smoothPhase)
 		{
 			var period = Math.Max(1, emaPeriod);
-			_ema = new ExponentialMovingAverage { Length = period };
+			_ema = new EMA { Length = period };
 			_gamma = Math.Min(0.999m, Math.Max(0m, gamma));
 			_volumeType = volumeType;
 			_highLevel2 = highLevel2;
@@ -677,7 +677,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 		public XBullsBearsEyesVolResult? Process(ICandleMessage candle)
 		{
 			var time = candle.CloseTime ?? candle.OpenTime;
-			var emaValue = _ema.Process(candle.ClosePrice, time, true).ToNullableDecimal();
+			var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, time.UtcDateTime)).ToNullableDecimal();
 			if (emaValue is null)
 			return null;
 
@@ -720,8 +720,8 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 			var volume = GetVolume(candle);
 			var scaled = baseValue * volume;
 
-			var smoothedValue = _valueSmoother.Process(scaled, time, true).ToNullableDecimal();
-			var smoothedVolume = _volumeSmoother.Process(volume, time, true).ToNullableDecimal();
+			var smoothedValue = _valueSmoother.Process(new DecimalIndicatorValue(_valueSmoother, scaled, time.UtcDateTime)).ToNullableDecimal();
+			var smoothedVolume = _volumeSmoother.Process(new DecimalIndicatorValue(_volumeSmoother, volume, time.UtcDateTime)).ToNullableDecimal();
 
 			if (smoothedValue is null || smoothedVolume is null)
 			return null;
@@ -762,27 +762,27 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 			};
 		}
 
-		private static LengthIndicator<decimal> CreateSmoother(SmoothMethods method, int length, int phase)
+		private static DecimalLengthIndicator CreateSmoother(SmoothMethods method, int length, int phase)
 		{
 			var normalizedLength = Math.Max(1, length);
 
 			return method switch
 			{
-				SmoothMethods.Sma => new SimpleMovingAverage { Length = normalizedLength },
-				SmoothMethods.Ema => new ExponentialMovingAverage { Length = normalizedLength },
+				SmoothMethods.Sma => new SMA { Length = normalizedLength },
+				SmoothMethods.Ema => new EMA { Length = normalizedLength },
 				SmoothMethods.Smma => new SmoothedMovingAverage { Length = normalizedLength },
 				SmoothMethods.Lwma => new WeightedMovingAverage { Length = normalizedLength },
 				SmoothMethods.Jjma => CreateJurik(normalizedLength, phase),
 				SmoothMethods.JurX => CreateJurik(normalizedLength, phase),
-				SmoothMethods.ParMa => new ExponentialMovingAverage { Length = normalizedLength },
+				SmoothMethods.ParMa => new EMA { Length = normalizedLength },
 				SmoothMethods.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
-				SmoothMethods.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
+				SmoothMethods.Vidya => new EMA { Length = normalizedLength },
 				SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
-				_ => new SimpleMovingAverage { Length = normalizedLength },
+				_ => new SMA { Length = normalizedLength },
 			};
 		}
 
-		private static LengthIndicator<decimal> CreateJurik(int length, int phase)
+		private static DecimalLengthIndicator CreateJurik(int length, int phase)
 		{
 			var jurik = new JurikMovingAverage { Length = length };
 			var property = jurik.GetType().GetProperty("Phase", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);

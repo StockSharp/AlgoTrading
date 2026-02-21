@@ -65,43 +65,43 @@ public class VirtualRobotStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 400m)
 		.SetDisplay("Stop Loss (pips)", "Distance in pips for the protective stop", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
 		.SetDisplay("Take Profit (pips)", "Target in pips for a single real order", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_minTakeProfitPips = Param(nameof(MinTakeProfitPips), 15m)
 		.SetDisplay("Minimum TP (pips)", "Profit in pips required to close the first virtual order", "Virtual")
-		.SetCanOptimize(true);
+		;
 
 		_averageTakeProfitPips = Param(nameof(AverageTakeProfitPips), 10m)
 		.SetDisplay("Average TP (pips)", "Profit in pips applied to the averaged basket", "Virtual")
-		.SetCanOptimize(true);
+		;
 
 		_baseVolume = Param(nameof(BaseVolume), 0.01m)
 		.SetDisplay("Base volume", "Initial trade size", "Money")
-		.SetCanOptimize(true);
+		;
 
 		_maxVolume = Param(nameof(MaxVolume), 2m)
 		.SetDisplay("Max volume", "Upper bound for any order size", "Money")
-		.SetCanOptimize(true);
+		;
 
 		_multiplier = Param(nameof(Multiplier), 1.5m)
 		.SetDisplay("Multiplier", "Lot multiplier applied when averaging", "Money")
-		.SetCanOptimize(true);
+		;
 
 		_realStepper = Param(nameof(RealStepper), 1)
 		.SetDisplay("Real stepper", "Number of filled orders before applying the multiplier", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_virtualStepper = Param(nameof(VirtualStepper), 2)
 		.SetDisplay("Virtual stepper", "Virtual orders filled with the base volume before scaling", "Virtual")
-		.SetCanOptimize(true);
+		;
 
 		_pipStepPips = Param(nameof(PipStepPips), 18m)
 		.SetDisplay("Pip step", "Minimum adverse excursion between grid orders (pips)", "Virtual")
-		.SetCanOptimize(true);
+		;
 
 		_maxTrades = Param(nameof(MaxTrades), 16)
 		.SetDisplay("Max trades", "Maximum number of real orders per side", "Trading");
@@ -207,9 +207,9 @@ public class VirtualRobotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = GetPointSize();
 		_pipDistance = PipStepPips * _pointSize;
@@ -223,7 +223,7 @@ public class VirtualRobotStrategy : Strategy
 		.Bind(ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

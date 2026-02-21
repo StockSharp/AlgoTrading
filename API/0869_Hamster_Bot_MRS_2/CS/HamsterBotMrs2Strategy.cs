@@ -27,14 +27,14 @@ public class HamsterBotMrs2Strategy : Strategy
 	
 	public HamsterBotMrs2Strategy()
 	{
-	_length = Param(nameof(Length), 3).SetDisplay("MA Length").SetCanOptimize(true);
-	_shift = Param(nameof(Shift), 1m).SetDisplay("Shift").SetCanOptimize(true);
+	_length = Param(nameof(Length), 3).SetDisplay("MA Length", "MA Length", "General");
+	_shift = Param(nameof(Shift), 1m).SetDisplay("Shift", "Shift", "General");
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 	
 	_ma.Length = Length;
 	SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame())

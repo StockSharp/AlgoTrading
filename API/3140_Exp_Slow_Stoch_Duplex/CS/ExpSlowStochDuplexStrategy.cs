@@ -45,10 +45,10 @@ public class ExpSlowStochDuplexStrategy : Strategy
 
 	private StochasticOscillator _longStochastic;
 	private StochasticOscillator _shortStochastic;
-	private LengthIndicator<decimal> _longKSmoother;
-	private LengthIndicator<decimal> _longDSmoother;
-	private LengthIndicator<decimal> _shortKSmoother;
-	private LengthIndicator<decimal> _shortDSmoother;
+	private DecimalLengthIndicator _longKSmoother;
+	private DecimalLengthIndicator _longDSmoother;
+	private DecimalLengthIndicator _shortKSmoother;
+	private DecimalLengthIndicator _shortDSmoother;
 
 	private decimal?[] _longKHistory = Array.Empty<decimal?>();
 	private decimal?[] _longDHistory = Array.Empty<decimal?>();
@@ -67,7 +67,7 @@ public class ExpSlowStochDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Long %K", "%K calculation period for the long stochastic", "Indicators");
 
-		_longDPeriod = Param(nameof(LongDPeriod), 3)
+		_longD = { Length = Param }(nameof(LongDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Long %D", "%D smoothing period for the long stochastic", "Indicators");
 
@@ -99,7 +99,7 @@ public class ExpSlowStochDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Short %K", "%K calculation period for the short stochastic", "Indicators");
 
-		_shortDPeriod = Param(nameof(ShortDPeriod), 3)
+		_shortD = { Length = Param }(nameof(ShortDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Short %D", "%D smoothing period for the short stochastic", "Indicators");
 
@@ -359,23 +359,23 @@ public class ExpSlowStochDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
 		_longStochastic = new StochasticOscillator
 		{
 			KPeriod = LongKPeriod,
-			DPeriod = LongDPeriod,
+			D = {  K = { Length = LongDPeriod } },
 			Smooth = LongSlowing,
 		};
 
 		_shortStochastic = new StochasticOscillator
 		{
 			KPeriod = ShortKPeriod,
-			DPeriod = ShortDPeriod,
+			D = {  K = { Length = ShortDPeriod } },
 			Smooth = ShortSlowing,
 		};
 
@@ -511,22 +511,22 @@ public class ExpSlowStochDuplexStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethods method, int length)
+	private static DecimalLengthIndicator CreateSmoother(SmoothingMethods method, int length)
 	{
 		if (method == SmoothingMethods.None || length <= 1)
 			return null;
 
 		return method switch
 		{
-			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SMA { Length = length },
+			SmoothingMethods.Exponential => new EMA { Length = length },
 			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
 			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			_ => null,
 		};
 	}
 
-	private static decimal? ApplySmoothing(LengthIndicator<decimal> smoother, decimal value, ICandleMessage candle)
+	private static decimal? ApplySmoothing(DecimalLengthIndicator smoother, decimal value, ICandleMessage candle)
 	{
 		if (smoother == null)
 			return value;

@@ -95,7 +95,7 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Long RSI Period", "Fast RSI length for the long block", "Long Block");
 
-		_longRsiLongPeriod = Param(nameof(LongRsiLongPeriod), 13)
+		_longRsiLongMa = { Length = Param }(nameof(LongRsiLongPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Long RSI Slow Period", "Slow RSI length for the long block", "Long Block");
 
@@ -103,7 +103,7 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Long MA Period", "Fast moving average length for the long block", "Long Block");
 
-		_longMaLongPeriod = Param(nameof(LongMaLongPeriod), 10)
+		_longMaLongMa = { Length = Param }(nameof(LongMaLongPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Long MA Slow Period", "Slow moving average length for the long block", "Long Block");
 
@@ -150,7 +150,7 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Short RSI Period", "Fast RSI length for the short block", "Short Block");
 
-		_shortRsiLongPeriod = Param(nameof(ShortRsiLongPeriod), 13)
+		_shortRsiLongMa = { Length = Param }(nameof(ShortRsiLongPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Short RSI Slow Period", "Slow RSI length for the short block", "Short Block");
 
@@ -158,7 +158,7 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Short MA Period", "Fast moving average length for the short block", "Short Block");
 
-		_shortMaLongPeriod = Param(nameof(ShortMaLongPeriod), 10)
+		_shortMaLongMa = { Length = Param }(nameof(ShortMaLongPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Short MA Slow Period", "Slow moving average length for the short block", "Short Block");
 
@@ -506,9 +506,9 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_longCalculator = new ColorMaRsiTriggerCalculator(
 			CreateMovingAverage(LongMaType, LongMaPeriod),
@@ -712,15 +712,15 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 			history.RemoveAt(history.Count - 1);
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 
@@ -777,8 +777,8 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 
 	private sealed class ColorMaRsiTriggerCalculator
 	{
-		private readonly LengthIndicator<decimal> _fastMa;
-		private readonly LengthIndicator<decimal> _slowMa;
+		private readonly DecimalLengthIndicator _fastMa;
+		private readonly DecimalLengthIndicator _slowMa;
 		private readonly RelativeStrengthIndex _fastRsi;
 		private readonly RelativeStrengthIndex _slowRsi;
 		private readonly AppliedPriceTypes _fastMaPrice;
@@ -787,8 +787,8 @@ public class ColorMaRsiTriggerDuplexStrategy : Strategy
 		private readonly AppliedPriceTypes _slowRsiPrice;
 
 		public ColorMaRsiTriggerCalculator(
-			LengthIndicator<decimal> fastMa,
-			LengthIndicator<decimal> slowMa,
+			DecimalLengthIndicator fastMa,
+			DecimalLengthIndicator slowMa,
 			RelativeStrengthIndex fastRsi,
 			RelativeStrengthIndex slowRsi,
 			AppliedPriceTypes fastMaPrice,

@@ -73,32 +73,32 @@ public class MacdPatternTraderAllStrategy : Strategy
 	{
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 24)
 			.SetDisplay("Fast EMA Period", "Period for fast EMA in MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(12, 40, 2);
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 13)
 			.SetDisplay("Slow EMA Period", "Period for slow EMA in MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 26, 1);
 
 		_stopLossBars = Param(nameof(StopLossBars), 22)
 			.SetDisplay("Stop Loss Bars", "Bars to look back for stop loss", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 1);
 
 		_takeProfitBars = Param(nameof(TakeProfitBars), 32)
 			.SetDisplay("Take Profit Bars", "Bars to look back for take profit", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 2);
 
 		_offsetPoints = Param(nameof(OffsetPoints), 40)
 			.SetDisplay("Offset Points", "Point offset added to stop loss", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_ratioThreshold = Param(nameof(RatioThreshold), 5m)
 			.SetDisplay("MACD Ratio", "Minimal ratio of surrounding MACD values", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3m, 7m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

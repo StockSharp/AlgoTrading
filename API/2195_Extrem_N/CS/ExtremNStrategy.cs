@@ -94,7 +94,7 @@ public class ExtremNStrategy : Strategy
 	{
 		_period = Param(nameof(Period), 9)
 			.SetDisplay("Period", "Donchian lookback period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -134,9 +134,9 @@ public class ExtremNStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var donchian = new DonchianChannels
 		{

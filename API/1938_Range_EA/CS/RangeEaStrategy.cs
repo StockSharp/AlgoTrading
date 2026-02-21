@@ -148,12 +148,12 @@ public class RangeEaStrategy : Strategy
 	{
 		_maLength = Param(nameof(MaLength), 21)
 			.SetDisplay("MA Length", "Moving average period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_range = Param(nameof(Range), 250m)
 			.SetDisplay("Range", "Price range from MA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 500m, 50m);
 
 		_takeProfit = Param(nameof(TakeProfit), 500m)
@@ -203,9 +203,9 @@ public class RangeEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_entryPrice = default;
 		_stopPrice = default;
@@ -213,7 +213,7 @@ public class RangeEaStrategy : Strategy
 		_nextStepPrice = default;
 		_turnPrice = default;
 
-		var ma = new SimpleMovingAverage
+		var ma = new SMA
 		{
 			Length = MaLength
 		};

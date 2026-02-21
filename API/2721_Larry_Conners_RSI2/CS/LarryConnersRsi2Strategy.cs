@@ -145,30 +145,30 @@ public class LarryConnersRsi2Strategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_fastSmaPeriod = Param(nameof(FastSmaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA Period", "Fast SMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowSmaPeriod = Param(nameof(SlowSmaPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA Period", "Slow SMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI lookback", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLongEntry = Param(nameof(RsiLongEntry), 6m)
 			.SetDisplay("RSI Long Entry", "RSI threshold for longs", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_rsiShortEntry = Param(nameof(RsiShortEntry), 95m)
 			.SetDisplay("RSI Short Entry", "RSI threshold for shorts", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
 			.SetDisplay("Use Stop Loss", "Enable stop-loss management", "Risk");
@@ -176,7 +176,7 @@ public class LarryConnersRsi2Strategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useTakeProfit = Param(nameof(UseTakeProfit), true)
 			.SetDisplay("Use Take Profit", "Enable take-profit management", "Risk");
@@ -184,7 +184,7 @@ public class LarryConnersRsi2Strategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 60m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
@@ -208,9 +208,9 @@ public class LarryConnersRsi2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Use configured trade volume for default order size.
 		Volume = TradeVolume;
@@ -224,8 +224,8 @@ public class LarryConnersRsi2Strategy : Strategy
 			_pipSize = priceStep;
 
 		// Prepare technical indicators.
-		var fastSma = new SimpleMovingAverage { Length = FastSmaPeriod };
-		var slowSma = new SimpleMovingAverage { Length = SlowSmaPeriod };
+		var fastSma = new SMA { Length = FastSmaPeriod };
+		var slowSma = new SMA { Length = SlowSmaPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		// Subscribe to candles and bind indicators for combined processing.

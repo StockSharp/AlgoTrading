@@ -127,15 +127,15 @@ public class Ema612CrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (SlowPeriod <= FastPeriod)
 			throw new InvalidOperationException("Slow period must be greater than fast period.");
 
-		_fastSma = new SimpleMovingAverage { Length = FastPeriod };
-		_slowSma = new SimpleMovingAverage { Length = SlowPeriod };
+		_fastSma = new SMA { Length = FastPeriod };
+		_slowSma = new SMA { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

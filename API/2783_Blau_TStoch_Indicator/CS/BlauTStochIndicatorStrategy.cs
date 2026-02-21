@@ -368,9 +368,9 @@ public class BlauTStochIndicatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = new BlauTripleStochastic
 		{
@@ -515,7 +515,7 @@ public class BlauTStochIndicatorStrategy : Strategy
 		return _indicatorValues[index];
 	}
 
-	private class BlauTripleStochastic : Indicator<ICandleMessage>
+	private class BlauTripleStochastic : BaseIndicator
 	{
 		public SmoothingMethods Method { get; set; } = SmoothingMethods.Ema;
 		public int Period { get; set; } = 20;
@@ -622,10 +622,10 @@ public class BlauTStochIndicatorStrategy : Strategy
 
 			return Method switch
 			{
-				SmoothingMethods.Sma => new SimpleMovingAverage { Length = len },
+				SmoothingMethods.Sma => new SMA { Length = len },
 				SmoothingMethods.Smma => new SmoothedMovingAverage { Length = len },
 				SmoothingMethods.Lwma => new WeightedMovingAverage { Length = len },
-				_ => new ExponentialMovingAverage { Length = len },
+				_ => new EMA { Length = len },
 			};
 		}
 

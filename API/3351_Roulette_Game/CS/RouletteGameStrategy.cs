@@ -120,9 +120,9 @@ public class RouletteGameStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_currentMultiplier = 1m;
 		_entryPrice = 0m;
@@ -131,7 +131,7 @@ public class RouletteGameStrategy : Strategy
 		_hasOpenBet = false;
 
 		// Enable built-in protection once at start so accidental manual positions are handled.
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

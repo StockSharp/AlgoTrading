@@ -137,55 +137,55 @@ public class BullBearCandleMartingaleStrategy : Strategy
 		_initialVolume = Param(nameof(InitialVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Initial Volume", "Base volume used when a new martingale cycle starts", "Money Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 5m, 0.1m);
 
 		_bullMultiplier = Param(nameof(BullMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bull Multiplier", "Volume multiplier after a losing bullish trade", "Money Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.5m, 4m, 0.5m);
 
 		_bearMultiplier = Param(nameof(BearMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bear Multiplier", "Volume multiplier after a losing bearish trade", "Money Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.5m, 4m, 0.5m);
 
 		_bullStopLossPips = Param(nameof(BullStopLossPips), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Bull Stop Loss", "Stop-loss distance for bullish trades in pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 10);
 
 		_bullTakeProfitPips = Param(nameof(BullTakeProfitPips), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Bull Take Profit", "Take-profit distance for bullish trades in pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 10);
 
 		_bearStopLossPips = Param(nameof(BearStopLossPips), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Bear Stop Loss", "Stop-loss distance for bearish trades in pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 10);
 
 		_bearTakeProfitPips = Param(nameof(BearTakeProfitPips), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Bear Take Profit", "Take-profit distance for bearish trades in pips", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 10);
 
 		_bullMinBodyPips = Param(nameof(BullMinBodyPips), 40)
 		.SetGreaterThanZero()
 		.SetDisplay("Bull Body Filter", "Minimum bullish candle body size in pips", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 100, 5);
 
 		_bearMinBodyPips = Param(nameof(BearMinBodyPips), 40)
 		.SetGreaterThanZero()
 		.SetDisplay("Bear Body Filter", "Minimum bearish candle body size in pips", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 100, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -213,9 +213,9 @@ public class BullBearCandleMartingaleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializePipSize();
 

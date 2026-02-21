@@ -191,7 +191,7 @@ public class DematusStrategy : Strategy
 		_demarkerLength = Param(nameof(DemarkerLength), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("DeMarker Length", "DeMarker indicator period.", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_stopLossPips = Param(nameof(StopLossPips), 999m)
@@ -271,14 +271,14 @@ public class DematusStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 		throw new InvalidOperationException("Trailing step must be greater than zero when trailing stop is enabled.");
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_pipSize = ComputePipSize();
 		_nextOrderVolume = EnsureVolume(InitialVolume);

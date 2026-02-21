@@ -58,16 +58,16 @@ public class RiskManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_startBalance = Portfolio.CurrentValue ?? 0m;
 		_day = time.Date;
 		_peakProfit = 0m;
 
 		// Start position protection once when strategy starts.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />

@@ -180,9 +180,9 @@ _prevRecentLow = 0m;
 _initialized = false;
 }
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _volumeSma.Length = VolumeMaLength;
 _momentumSma.Length = 20;
@@ -192,7 +192,7 @@ _smartMoneySma.Length = 20;
 var rsi = new RelativeStrengthIndex { Length = RsiLength };
 var momentum = new Momentum { Length = 10 };
 var ad = new AccumulationDistribution();
-var priceMean = new SimpleMovingAverage { Length = NashPeriod };
+var priceMean = new SMA { Length = NashPeriod };
 var stdDev = new StandardDeviation { Length = NashPeriod };
 var highest = new Highest { Length = LiquidityLookback };
 var lowest = new Lowest { Length = LiquidityLookback };
@@ -230,13 +230,13 @@ return;
 if (!IsFormedAndOnlineAndAllowTrading())
 return;
 
-var volumeMa = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
-var momentumMa = _momentumSma.Process(momentum, candle.ServerTime, true).ToDecimal();
-var adAverage = _adMa.Process(ad, candle.ServerTime, true).ToDecimal();
+var volumeMa = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
+var momentumMa = _momentumSma.Process(new DecimalIndicatorValue(_momentumSma, momentum, candle.ServerTime)).ToDecimal();
+var adAverage = _adMa.Process(new DecimalIndicatorValue(_adMa, ad, candle.ServerTime)).ToDecimal();
 
 var range = candle.HighPrice - candle.LowPrice;
 var smartMoney = range > 0m ? (candle.ClosePrice - candle.OpenPrice) / range * candle.TotalVolume : 0m;
-var smartMoneyMa = _smartMoneySma.Process(smartMoney, candle.ServerTime, true).ToDecimal();
+var smartMoneyMa = _smartMoneySma.Process(new DecimalIndicatorValue(_smartMoneySma, smartMoney, candle.ServerTime)).ToDecimal();
 var smartMoneyPositive = smartMoney > smartMoneyMa;
 
 var volumeSpike = candle.TotalVolume > volumeMa * HerdThreshold;

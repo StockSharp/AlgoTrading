@@ -70,7 +70,7 @@ public class NCandlesSequenceStreakStrategy : Strategy
 		_consecutiveCandles = Param(nameof(ConsecutiveCandles), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Consecutive Candles", "Number of candles with identical direction", "Pattern")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 10, 1);
 
 		_orderVolume = Param(nameof(OrderVolume), 0.01m)
@@ -80,13 +80,13 @@ public class NCandlesSequenceStreakStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit (pips)", "Distance for the take profit target", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 10);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (pips)", "Distance for the protective stop", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 10);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10)
@@ -114,7 +114,7 @@ public class NCandlesSequenceStreakStrategy : Strategy
 
 		_minProfit = Param(nameof(MinProfit), 3m)
 		.SetDisplay("Min Profit", "Close positions when floating profit exceeds this value", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 20m, 1m);
 
 		_closingBehavior = Param(nameof(ClosingBehavior), ClosingModes.All)
@@ -280,14 +280,14 @@ public class NCandlesSequenceStreakStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (UseTradeHours && StartHour >= EndHour)
 		throw new InvalidOperationException("Start hour must be less than end hour when the trading window is enabled.");
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_pipSize = CalculatePipSize();
 

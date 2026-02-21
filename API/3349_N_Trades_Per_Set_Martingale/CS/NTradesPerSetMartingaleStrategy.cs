@@ -42,32 +42,32 @@ public class NTradesPerSetMartingaleStrategy : Strategy
 		_tradesPerSet = Param(nameof(TradesPerSet), 5)
 			.SetRange(1, 100)
 			.SetDisplay("Trades Per Set", "Number of sequential trades that form one martingale cycle.", "Martingale")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetRange(0m, 10000m)
 			.SetDisplay("Stop Loss (pips)", "Protective stop in price steps applied to each position.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
 			.SetRange(0m, 10000m)
 			.SetDisplay("Take Profit (pips)", "Profit target in price steps applied to each position.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_scaleFactor = Param(nameof(ScaleFactor), 2m)
 			.SetRange(1m, 10m)
 			.SetDisplay("Scale Factor", "Multiplier applied to the next trade volume after a losing cycle.", "Martingale")
-			.SetCanOptimize(true);
+			;
 
 		_equityDivisor = Param(nameof(EquityDivisor), 100000m)
 			.SetRange(1m, 10000000m)
 			.SetDisplay("Equity Divisor", "Divides account equity to derive the base lot size after a winning cycle.", "Money Management")
-			.SetCanOptimize(true);
+			;
 
 		_equityIncreaseTarget = Param(nameof(EquityIncreaseTarget), 10m)
 			.SetRange(0m, 1000000m)
 			.SetDisplay("Equity Increase", "Amount of equity growth that triggers a global reset with volume recalculation.", "Money Management")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -125,11 +125,11 @@ public class NTradesPerSetMartingaleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		ResetCycle();
 		_currentVolume = AlignVolume(CalculateBaseVolume());

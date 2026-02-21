@@ -34,10 +34,10 @@ public class ExpAtrTrailingStrategy : Strategy
 
 	public ExpAtrTrailingStrategy()
 	{
-		_atrPeriod = Param(nameof(AtrPeriod), 14).SetDisplay("ATR Period");
-		_buyFactor = Param(nameof(BuyFactor), 2m).SetDisplay("Buy Factor");
-		_sellFactor = Param(nameof(SellFactor), 2m).SetDisplay("Sell Factor");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
+		_atrPeriod = Param(nameof(AtrPeriod), 14).SetDisplay("ATR Period", "ATR Period", "General");
+		_buyFactor = Param(nameof(BuyFactor), 2m).SetDisplay("Buy Factor", "Buy Factor", "General");
+		_sellFactor = Param(nameof(SellFactor), 2m).SetDisplay("Sell Factor", "Sell Factor", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
@@ -49,9 +49,9 @@ public class ExpAtrTrailingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 

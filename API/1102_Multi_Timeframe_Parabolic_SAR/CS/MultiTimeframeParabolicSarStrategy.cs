@@ -51,16 +51,16 @@ public class MultiTimeframeParabolicSarStrategy : Strategy
 	{
 	_acceleration = Param(nameof(Acceleration), 0.02m)
 		.SetDisplay("Acceleration", "Parabolic SAR acceleration", "SAR")
-		.SetCanOptimize(true);
+		;
 
 	_maxAcceleration = Param(nameof(MaxAcceleration), 0.2m)
 		.SetDisplay("Max Acceleration", "Parabolic SAR maximum acceleration", "SAR")
-		.SetCanOptimize(true);
+		;
 
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Base timeframe", "General");
 
-	_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromDays(1).TimeFrame())
+	_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Higher TF", "Higher timeframe", "General");
 
 	_lowerCandleType = Param(nameof(LowerCandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -74,11 +74,11 @@ public class MultiTimeframeParabolicSarStrategy : Strategy
 
 	_longSource = Param(nameof(LongSource), "Higher")
 		.SetDisplay("Long Source", "Source for long entries", "Logic")
-		.SetOptions("Higher", "Current", "Both");
+		.SetOptimizeValues(new[] { "Higher", "Current", "Both" });
 
 	_shortSource = Param(nameof(ShortSource), "Higher")
 		.SetDisplay("Short Source", "Source for short entries", "Logic")
-		.SetOptions("Higher", "Current", "Both");
+		.SetOptimizeValues(new[] { "Higher", "Current", "Both" });
 
 	_useStopLoss = Param(nameof(UseStopLoss), true)
 		.SetDisplay("Use Stop Loss", "Enable stop loss", "Protection");
@@ -256,9 +256,9 @@ public class MultiTimeframeParabolicSarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_currentSar = new ParabolicSar
 	{

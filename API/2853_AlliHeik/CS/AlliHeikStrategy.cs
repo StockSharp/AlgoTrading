@@ -59,12 +59,12 @@ public class AlliHeikStrategy : Strategy
 	private readonly StrategyParam<MaTypes> _signalMethod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _preOpenMa = null!;
-	private LengthIndicator<decimal> _preCloseMa = null!;
-	private LengthIndicator<decimal> _preHighMa = null!;
-	private LengthIndicator<decimal> _preLowMa = null!;
-	private LengthIndicator<decimal> _postSmoothMa = null!;
-	private LengthIndicator<decimal> _signalMa = null!;
+	private DecimalLengthIndicator _preOpenMa = null!;
+	private DecimalLengthIndicator _preCloseMa = null!;
+	private DecimalLengthIndicator _preHighMa = null!;
+	private DecimalLengthIndicator _preLowMa = null!;
+	private DecimalLengthIndicator _postSmoothMa = null!;
+	private DecimalLengthIndicator _signalMa = null!;
 
 	private bool _hasHaState;
 	private decimal _prevHaOpen;
@@ -279,9 +279,9 @@ public class AlliHeikStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 			throw new InvalidOperationException("Trailing step must be greater than zero when trailing stop is enabled.");
@@ -343,10 +343,10 @@ public class AlliHeikStrategy : Strategy
 
 	private (decimal oscillator, decimal signal) CalculateOscillator(ICandleMessage candle)
 	{
-		var openValue = _preOpenMa.Process(candle.OpenPrice, candle.OpenTime, true).GetValue<decimal>();
-		var closeValue = _preCloseMa.Process(candle.ClosePrice, candle.OpenTime, true).GetValue<decimal>();
-		var highValue = _preHighMa.Process(candle.HighPrice, candle.OpenTime, true).GetValue<decimal>();
-		var lowValue = _preLowMa.Process(candle.LowPrice, candle.OpenTime, true).GetValue<decimal>();
+		var openValue = _preOpenMa.Process(new DecimalIndicatorValue(_preOpenMa, candle.OpenPrice, candle.OpenTime)).GetValue<decimal>();
+		var closeValue = _preCloseMa.Process(new DecimalIndicatorValue(_preCloseMa, candle.ClosePrice, candle.OpenTime)).GetValue<decimal>();
+		var highValue = _preHighMa.Process(new DecimalIndicatorValue(_preHighMa, candle.HighPrice, candle.OpenTime)).GetValue<decimal>();
+		var lowValue = _preLowMa.Process(new DecimalIndicatorValue(_preLowMa, candle.LowPrice, candle.OpenTime)).GetValue<decimal>();
 
 		decimal haOpen;
 		if (_hasHaState)
@@ -363,14 +363,14 @@ public class AlliHeikStrategy : Strategy
 		var midpoint = (haOpen + haClose) / 2m;
 
 		var previousSmoothed = _prevSmoothed;
-		var smoothed = _postSmoothMa.Process(midpoint, candle.OpenTime, true).GetValue<decimal>();
+		var smoothed = _postSmoothMa.Process(new DecimalIndicatorValue(_postSmoothMa, midpoint, candle.OpenTime)).GetValue<decimal>();
 
 		_prevHaOpen = haOpen;
 		_prevHaClose = haClose;
 		_prevSmoothed = smoothed;
 
 		var oscillator = previousSmoothed.HasValue ? smoothed - previousSmoothed.Value : 0m;
-		var signal = _signalMa.Process(oscillator, candle.OpenTime, true).GetValue<decimal>();
+		var signal = _signalMa.Process(new DecimalIndicatorValue(_signalMa, oscillator, candle.OpenTime)).GetValue<decimal>();
 
 		return (oscillator, signal);
 	}
@@ -504,7 +504,7 @@ public class AlliHeikStrategy : Strategy
 		return pips * priceStep * multiplier;
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MaTypes type, int length)
+	private DecimalLengthIndicator CreateMovingAverage(MaTypes type, int length)
 	{
 		return type switch
 		{

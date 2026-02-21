@@ -70,25 +70,25 @@ public class VolumeSlopeBreakoutStrategy : Strategy
 		_volumeSmaPeriod = Param(nameof(VolumeSMAPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume SMA Period", "Period for volume SMA calculation", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 			
 		_slopePeriod = Param(nameof(SlopePeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slope Period", "Period for slope average and standard deviation", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 			
 		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout", "Signal")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 			
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -114,14 +114,14 @@ public class VolumeSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Initialize indicators
 		_volumeIndicator = new VolumeIndicator();
-		_volumeSma = new SimpleMovingAverage { Length = VolumeSMAPeriod };
-		_priceEma = new ExponentialMovingAverage { Length = 20 }; // For trend direction
+		_volumeSma = new SMA { Length = VolumeSMAPeriod };
+		_priceEma = new EMA { Length = 20 }; // For trend direction
 		_volumeSlope = new LinearRegression { Length = 2 }; // For calculating slope
 		
 		
@@ -156,17 +156,17 @@ public class VolumeSlopeBreakoutStrategy : Strategy
 			return;
 		
 		// Process volume SMA
-		decimal volumeSma = _volumeSma.Process(volumeValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		decimal volumeSma = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, volumeValue, candle.ServerTime)).ToDecimal();
 		
 		// Process price EMA for trend direction
-		decimal priceEma = _priceEma.Process(candle).ToDecimal();
+		decimal priceEma = _priceEma.Process(new DecimalIndicatorValue(_priceEma, candle).ToDecimal();
 		bool priceAboveEma = candle.ClosePrice > priceEma;
 		
 		// Calculate volume slope (current volume relative to SMA)
 		decimal volumeRatio = volumeValue / volumeSma;
 		
 		// We use LinearRegression to calculate slope of this ratio
-		var currentSlopeTyped = (LinearRegressionValue)_volumeSlope.Process(volumeRatio, candle.ServerTime, candle.State == CandleStates.Finished);
+		var currentSlopeTyped = (LinearRegressionValue)_volumeSlope.Process(volumeRatio, candle.ServerTime));
 
 		if (currentSlopeTyped.LinearReg is not decimal currentSlopeValue)
 			return; // Skip if slope is not available

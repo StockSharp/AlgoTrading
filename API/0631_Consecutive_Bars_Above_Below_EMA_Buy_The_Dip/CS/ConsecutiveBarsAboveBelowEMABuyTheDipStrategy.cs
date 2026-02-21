@@ -91,7 +91,7 @@ public class ConsecutiveBarsAboveBelowEMABuyTheDipStrategy : Strategy
 		_barsThreshold = Param(nameof(BarsThreshold), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Consecutive Bars", "Number of consecutive bars below MA to buy", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 5, 1);
 
 		_useEma = Param(nameof(UseEma), true)
@@ -100,7 +100,7 @@ public class ConsecutiveBarsAboveBelowEMABuyTheDipStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average period", "MA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -129,11 +129,11 @@ public class ConsecutiveBarsAboveBelowEMABuyTheDipStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ma = UseEma ? new EMA { Length = MaLength } : new SMA { Length = MaLength };
+		IIndicator ma = UseEma ? new EMA { Length = MaLength } : new SMA { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 

@@ -230,12 +230,12 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (steps)", "Take-profit distance expressed in price steps", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (steps)", "Stop-loss distance expressed in price steps", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_extraStopLossPoints = Param(nameof(ExtraStopLossPoints), 5)
 		.SetNotNegative()
@@ -244,7 +244,7 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 		_firstMaPeriod = Param(nameof(FirstMaPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("First MA Period", "Length of the first smoothing moving average", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_firstMaMethod = Param(nameof(FirstMaMethod), HaMaMethods.Smoothed)
 		.SetDisplay("First MA Method", "Method of the first smoothing moving average", "Indicators");
@@ -252,7 +252,7 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 		_secondMaPeriod = Param(nameof(SecondMaPeriod), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Second MA Period", "Length of the second smoothing moving average", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_secondMaMethod = Param(nameof(SecondMaMethod), HaMaMethods.LinearWeighted)
 		.SetDisplay("Second MA Method", "Method of the second smoothing moving average", "Indicators");
@@ -260,12 +260,12 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 		_maxM5TrendLength = Param(nameof(MaxM5TrendLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Max M5 Trend Length", "Maximum consecutive bullish or bearish M5 readings", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_minM15TrendLength = Param(nameof(MinM15TrendLength), 200)
 		.SetGreaterThanZero()
 		.SetDisplay("Min M15 Trend Length", "Minimum number of updates the M15 trend must persist", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_m1CandleType = Param(nameof(M1CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("M1 Candles", "Primary candle series driving updates", "Data");
@@ -317,9 +317,9 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializeTimeframes();
 
@@ -389,11 +389,11 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 	{
 		return method switch
 		{
-			HaMaMethods.Simple => new SimpleMovingAverage { Length = length },
-			HaMaMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			HaMaMethods.Simple => new SMA { Length = length },
+			HaMaMethods.Exponential => new EMA { Length = length },
 			HaMaMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			HaMaMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 
@@ -415,10 +415,10 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 
 	private void UpdateHeikenAshi(TimeframeState state, ICandleMessage candle)
 	{
-		var openValue = state.OpenMa.Process(candle.OpenPrice, candle.OpenTime, true);
-		var closeValue = state.CloseMa.Process(candle.ClosePrice, candle.OpenTime, true);
-		var highValue = state.HighMa.Process(candle.HighPrice, candle.OpenTime, true);
-		var lowValue = state.LowMa.Process(candle.LowPrice, candle.OpenTime, true);
+		var openValue = state.OpenMa.Process(new DecimalIndicatorValue(OpenMa, candle.OpenPrice, candle.OpenTime));
+		var closeValue = state.CloseMa.Process(new DecimalIndicatorValue(CloseMa, candle.ClosePrice, candle.OpenTime));
+		var highValue = state.HighMa.Process(new DecimalIndicatorValue(HighMa, candle.HighPrice, candle.OpenTime));
+		var lowValue = state.LowMa.Process(new DecimalIndicatorValue(LowMa, candle.LowPrice, candle.OpenTime));
 
 		if (!state.OpenMa.IsFormed || !state.CloseMa.IsFormed || !state.HighMa.IsFormed || !state.LowMa.IsFormed)
 		return;
@@ -433,8 +433,8 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 		? (state.PreviousHaOpen.Value + state.PreviousHaClose.Value) / 2m
 		: (maOpen + maClose) / 2m;
 
-		var smoothedOpenValue = state.OpenSmooth.Process(haOpen, candle.OpenTime, true);
-		var smoothedCloseValue = state.CloseSmooth.Process(haClose, candle.OpenTime, true);
+		var smoothedOpenValue = state.OpenSmooth.Process(new DecimalIndicatorValue(OpenSmooth, haOpen, candle.OpenTime));
+		var smoothedCloseValue = state.CloseSmooth.Process(new DecimalIndicatorValue(CloseSmooth, haClose, candle.OpenTime));
 
 		state.PreviousHaOpen = haOpen;
 		state.PreviousHaClose = haClose;
@@ -682,12 +682,12 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 
 	private sealed class TimeframeState
 	{
-		public IIndicator OpenMa { get; set; } = new SimpleMovingAverage();
-		public IIndicator CloseMa { get; set; } = new SimpleMovingAverage();
-		public IIndicator HighMa { get; set; } = new SimpleMovingAverage();
-		public IIndicator LowMa { get; set; } = new SimpleMovingAverage();
-		public IIndicator OpenSmooth { get; set; } = new SimpleMovingAverage();
-		public IIndicator CloseSmooth { get; set; } = new SimpleMovingAverage();
+		public IIndicator OpenMa { get; set; } = new SMA();
+		public IIndicator CloseMa { get; set; } = new SMA();
+		public IIndicator HighMa { get; set; } = new SMA();
+		public IIndicator LowMa { get; set; } = new SMA();
+		public IIndicator OpenSmooth { get; set; } = new SMA();
+		public IIndicator CloseSmooth { get; set; } = new SMA();
 		public decimal? PreviousHaOpen { get; set; }
 		public decimal? PreviousHaClose { get; set; }
 		public decimal? LastOpen { get; set; }

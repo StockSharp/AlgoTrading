@@ -101,12 +101,12 @@ public class HedgeAnyPositionsStrategy : Strategy
 		_losingPips = Param(nameof(LosingPips), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Losing Distance (pips)", "Adverse move in pips required before hedging", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_lotCoefficient = Param(nameof(LotCoefficient), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Multiplier", "Multiplier applied to the hedging order volume", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_autoPlaceInitialTrade = Param(nameof(AutoPlaceInitialTrade), false)
 			.SetDisplay("Auto Place Initial Trade", "Automatically send the first order on start", "General");
@@ -114,7 +114,7 @@ public class HedgeAnyPositionsStrategy : Strategy
 		_initialVolume = Param(nameof(InitialVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Volume for the optional first order", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_initialDirection = Param(nameof(InitialDirection), Sides.Buy)
 			.SetDisplay("Initial Direction", "Direction used by the optional first order", "Trading");
@@ -131,9 +131,9 @@ public class HedgeAnyPositionsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 
@@ -142,7 +142,7 @@ public class HedgeAnyPositionsStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

@@ -109,10 +109,10 @@ public class SpectrAnalysisWprStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var wpr = new WilliamsR { Length = WprPeriod };
 		var subscription = SubscribeCandles(CandleType);

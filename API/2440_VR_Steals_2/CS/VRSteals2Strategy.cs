@@ -36,10 +36,10 @@ public class VRSteals2Strategy : Strategy
 
 	public VRSteals2Strategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 50m).SetDisplay("Take Profit", "Distance to take profit in steps", "General").SetCanOptimize(true);
-		_stopLoss = Param(nameof(StopLoss), 50m).SetDisplay("Stop Loss", "Distance to stop loss in steps", "General").SetCanOptimize(true);
-		_breakeven = Param(nameof(Breakeven), 20m).SetDisplay("Breakeven", "Distance to activate breakeven in steps", "General").SetCanOptimize(true);
-		_breakevenOffset = Param(nameof(BreakevenOffset), 9m).SetDisplay("Breakeven Offset", "Offset applied when breakeven is triggered", "General").SetCanOptimize(true);
+		_takeProfit = Param(nameof(TakeProfit), 50m).SetDisplay("Take Profit", "Distance to take profit in steps", "General");
+		_stopLoss = Param(nameof(StopLoss), 50m).SetDisplay("Stop Loss", "Distance to stop loss in steps", "General");
+		_breakeven = Param(nameof(Breakeven), 20m).SetDisplay("Breakeven", "Distance to activate breakeven in steps", "General");
+		_breakevenOffset = Param(nameof(BreakevenOffset), 9m).SetDisplay("Breakeven Offset", "Offset applied when breakeven is triggered", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -58,11 +58,11 @@ public class VRSteals2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(ProcessCandle).Start();

@@ -106,31 +106,31 @@ public class IchimokuWidthBreakoutStrategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Tenkan Period", "Period for Tenkan-sen line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 			
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Kijun Period", "Period for Kijun-sen line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 			
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 			.SetGreaterThanZero()
 			.SetDisplay("Senkou Span B Period", "Period for Senkou Span B line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 80, 4);
 			
 		_avgPeriod = Param(nameof(AvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Average Period", "Period for cloud width average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 		
 		_multiplier = Param(nameof(Multiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -139,7 +139,7 @@ public class IchimokuWidthBreakoutStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 	}
 	
@@ -158,9 +158,9 @@ public class IchimokuWidthBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 
 		// Create indicators
@@ -171,7 +171,7 @@ public class IchimokuWidthBreakoutStrategy : Strategy
 			SenkouB = { Length = SenkouSpanBPeriod }
 		};
 		
-		_widthAverage = new SimpleMovingAverage { Length = AvgPeriod };
+		_widthAverage = new SMA { Length = AvgPeriod };
 		
 		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
@@ -225,7 +225,7 @@ public class IchimokuWidthBreakoutStrategy : Strategy
 		var width = Math.Abs(senkouSpanA - senkouSpanB);
 		
 		// Process width through average
-		var widthAvgValue = _widthAverage.Process(width, candle.ServerTime, candle.State == CandleStates.Finished);
+		var widthAvgValue = _widthAverage.Process(new DecimalIndicatorValue(_widthAverage, width, candle.ServerTime));
 		var avgWidth = widthAvgValue.ToDecimal();
 		
 		// For first values, just save and skip

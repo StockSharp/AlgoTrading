@@ -77,22 +77,22 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 
 		_fastLength = Param(nameof(FastLength), 9)
 						  .SetDisplay("Fast MA Length", "Length of fast moving average", "Moving Averages")
-						  .SetCanOptimize(true)
+						  
 						  .SetOptimize(5, 20, 1);
 
 		_slowLength = Param(nameof(SlowLength), 19)
 						  .SetDisplay("Slow MA Length", "Length of slow moving average", "Moving Averages")
-						  .SetCanOptimize(true)
+						  
 						  .SetOptimize(10, 40, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 						 .SetDisplay("ATR Period", "Period for ATR calculation", "Risk Management")
-						 .SetCanOptimize(true)
+						 
 						 .SetOptimize(7, 28, 1);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 							 .SetDisplay("ATR Multiplier", "ATR multiplier for price filter", "Risk Management")
-							 .SetCanOptimize(true)
+							 
 							 .SetOptimize(1m, 3m, 0.1m);
 
 		_useTrendFilter =
@@ -285,20 +285,20 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 		_trend15m = 0;
 		_entryPrice = 0;
 		_trailingStop = 0;
-		_volumeSma = new SimpleMovingAverage { Length = 10 };
+		_volumeSma = new SMA { Length = 10 };
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = CreateMovingAverage(FastMaType, FastLength);
 		_slowMa = CreateMovingAverage(SlowMaType, SlowLength);
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_volumeSma = new SimpleMovingAverage { Length = 10 };
-		_fastMa15 = new SimpleMovingAverage { Length = FastLength };
-		_slowMa15 = new SimpleMovingAverage { Length = SlowLength };
+		_volumeSma = new SMA { Length = 10 };
+		_fastMa15 = new SMA { Length = FastLength };
+		_slowMa15 = new SMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_fastMa, _slowMa, _atr, ProcessCandle).Start();
@@ -310,15 +310,16 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastMa, _slowMa);
+			DrawIndicator(area, _fastMa);
+			DrawIndicator(area, _slowMa);
 			DrawOwnTrades(area);
 		}
 	}
 
 	private static IIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 	{
-		return type switch { MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
-							 MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
+		return type switch { MovingAverageTypes.SMA => new SMA { Length = length },
+							 MovingAverageTypes.EMA => new EMA { Length = length },
 							 MovingAverageTypes.SMMA => new SmoothedMovingAverage { Length = length },
 							 MovingAverageTypes.HMA => new HullMovingAverage { Length = length },
 							 MovingAverageTypes.TEMA => new TripleExponentialMovingAverage { Length = length },
@@ -328,7 +329,7 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 							 MovingAverageTypes.ALMA => new ArnaudLegouxMovingAverage { Length = length },
 							 MovingAverageTypes.KAMA => new KaufmanAdaptiveMovingAverage { Length = length },
 							 MovingAverageTypes.DEMA => new DoubleExponentialMovingAverage { Length = length },
-							 _ => new SimpleMovingAverage { Length = length } };
+							 _ => new SMA { Length = length } };
 	}
 
 	private void ProcessTrend(ICandleMessage candle, decimal fast15, decimal slow15)
@@ -345,8 +346,7 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 			return;
 
 		var volValue = _volumeSma.Process(candle.TotalVolume);
-		if (volValue.Value is not decimal volumeAvg)
-			return;
+		var volumeAvg = volValue.ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

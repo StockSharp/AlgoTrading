@@ -63,7 +63,7 @@ public class TcpPivotReversalLimitStrategy : Strategy
 
 		_targetMode = Param(nameof(TargetMode), 1)
 		.SetDisplay("Target Mode", "Selects which pivot levels are used for entries and exits", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 5, 1);
 
 		_trailingPoints = Param(nameof(TrailingPoints), 30m)
@@ -159,9 +159,9 @@ public class TcpPivotReversalLimitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 		_priceStep = Security?.PriceStep ?? 0m;

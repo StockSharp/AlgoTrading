@@ -106,7 +106,7 @@ public class VmMatrixDoubleZeroStrategy : Strategy
 		.SetDisplay("End Hour", "Trading window end hour (terminal time)", "General");
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 		.SetDisplay("Order Volume", "Base order size in lots or contracts", "General")
-		.SetCanOptimize(true);
+		;
 		_useTrailingStop = Param(nameof(UseTrailingStop), false)
 		.SetDisplay("Use Trailing Stop", "Enable original trailing-stop behavior", "General");
 		_closeOnBiasFlip = Param(nameof(CloseOnBiasFlip), false)
@@ -115,18 +115,18 @@ public class VmMatrixDoubleZeroStrategy : Strategy
 		.SetDisplay("Enable Long Entries", "Allow algorithm to open buy trades", "Long");
 		_longStopLossPips = Param(nameof(LongStopLossPips), 80)
 		.SetDisplay("Long Stop (pips)", "Stop-loss distance for buy trades", "Long")
-		.SetCanOptimize(true);
+		;
 		_longTakeProfitPips = Param(nameof(LongTakeProfitPips), 50)
 		.SetDisplay("Long Take Profit (pips)", "Take-profit distance for buy trades", "Long")
-		.SetCanOptimize(true);
+		;
 		_enableShorts = Param(nameof(EnableShorts), true)
 		.SetDisplay("Enable Short Entries", "Allow algorithm to open sell trades", "Short");
 		_shortStopLossPips = Param(nameof(ShortStopLossPips), 80)
 		.SetDisplay("Short Stop (pips)", "Stop-loss distance for sell trades", "Short")
-		.SetCanOptimize(true);
+		;
 		_shortTakeProfitPips = Param(nameof(ShortTakeProfitPips), 50)
 		.SetDisplay("Short Take Profit (pips)", "Take-profit distance for sell trades", "Short")
-		.SetCanOptimize(true);
+		;
 		_useBiasFilter = Param(nameof(UseBiasFilter), true)
 		.SetDisplay("Use Matrix Filter", "Enable multi-bar bias comparison filter", "Filters");
 		_longK1 = Param(nameof(LongK1), 1)
@@ -684,9 +684,9 @@ public class VmMatrixDoubleZeroStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 
@@ -700,10 +700,10 @@ public class VmMatrixDoubleZeroStrategy : Strategy
 		hourSubscription.Bind(_hourAtrFast, _hourAtrSlow, ProcessHourCandle).Start();
 
 		_dailyCci = new CommodityChannelIndex { Length = Math.Max(1, DailyCciPeriod) };
-		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		dailySubscription.Bind(_dailyCci, ProcessDailyCci).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessBaseCandle(ICandleMessage candle, decimal atrValue)

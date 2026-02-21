@@ -52,15 +52,15 @@ public class SimpleForecastKeltnerWormsStrategy : Strategy
 
 		_length = Param(nameof(Length), 10)
 			.SetDisplay("Length", "Channel calculation period", "Indicators")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = Length };
+		_ema = new EMA { Length = Length };
 		_atr = new AverageTrueRange { Length = Length };
 
 		SubscribeCandles(CandleType)
@@ -73,7 +73,7 @@ public class SimpleForecastKeltnerWormsStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var ma = _ema.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
+		var ma = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, candle.OpenTime)).ToDecimal();
 		var range = _atr.Process(candle).ToDecimal();
 
 		var mult = 0m;

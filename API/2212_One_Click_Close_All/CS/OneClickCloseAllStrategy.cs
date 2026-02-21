@@ -86,11 +86,11 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
-	StartProtection();
+	StartProtection(null, null);
 
 	var securities = new HashSet<Security>();
 

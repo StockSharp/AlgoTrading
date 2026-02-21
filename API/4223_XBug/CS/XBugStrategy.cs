@@ -238,9 +238,9 @@ public class XBugStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 
@@ -252,8 +252,8 @@ public class XBugStrategy : Strategy
 		var pipMultiplier = decimals is 5 or 3 ? 10m : 1m;
 		_pipSize = priceStep * pipMultiplier;
 
-		_fastMa = new SimpleMovingAverage { Length = FastPeriod };
-		_slowMa = new SimpleMovingAverage { Length = SlowPeriod };
+		_fastMa = new SMA { Length = FastPeriod };
+		_slowMa = new SMA { Length = SlowPeriod };
 
 		_fastHistory.Clear();
 		_slowHistory.Clear();
@@ -293,8 +293,8 @@ public class XBugStrategy : Strategy
 		var price = GetPrice(candle, AppliedPrice);
 		var isFinal = candle.State == CandleStates.Finished;
 
-		var fastValue = _fastMa.Process(price, candle.OpenTime, isFinal);
-		var slowValue = _slowMa.Process(price, candle.OpenTime, isFinal);
+		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, price, candle.OpenTime));
+		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, price, candle.OpenTime));
 
 		if (_fastMa.Length != FastPeriod)
 			_fastMa.Length = FastPeriod;

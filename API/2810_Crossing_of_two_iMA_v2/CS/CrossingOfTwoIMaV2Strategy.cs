@@ -265,16 +265,16 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		_firstPeriod = Param(nameof(FirstPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("First MA Period", "Period of the first moving average", "First Moving Average")
-		.SetCanOptimize(true);
+		;
 
 		_firstShift = Param(nameof(FirstShift), 3)
 		.SetNotNegative()
 		.SetDisplay("First MA Shift", "Shift (in bars) applied to the first moving average", "First Moving Average")
-		.SetCanOptimize(true);
+		;
 
 		_firstMethod = Param(nameof(FirstMethod), MaMethods.Smoothed)
 		.SetDisplay("First MA Method", "Smoothing method for the first moving average", "First Moving Average")
-		.SetCanOptimize(true);
+		;
 
 		_firstPrice = Param(nameof(FirstAppliedPrice), AppliedPriceTypes.Close)
 		.SetDisplay("First MA Price", "Price source for the first moving average", "First Moving Average");
@@ -282,16 +282,16 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		_secondPeriod = Param(nameof(SecondPeriod), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Second MA Period", "Period of the second moving average", "Second Moving Average")
-		.SetCanOptimize(true);
+		;
 
 		_secondShift = Param(nameof(SecondShift), 5)
 		.SetNotNegative()
 		.SetDisplay("Second MA Shift", "Shift (in bars) applied to the second moving average", "Second Moving Average")
-		.SetCanOptimize(true);
+		;
 
 		_secondMethod = Param(nameof(SecondMethod), MaMethods.Smoothed)
 		.SetDisplay("Second MA Method", "Smoothing method for the second moving average", "Second Moving Average")
-		.SetCanOptimize(true);
+		;
 
 		_secondPrice = Param(nameof(SecondAppliedPrice), AppliedPriceTypes.Close)
 		.SetDisplay("Second MA Price", "Price source for the second moving average", "Second Moving Average");
@@ -302,16 +302,16 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		_thirdPeriod = Param(nameof(ThirdPeriod), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("Third MA Period", "Period of the third moving average filter", "Filter")
-		.SetCanOptimize(true);
+		;
 
 		_thirdShift = Param(nameof(ThirdShift), 8)
 		.SetNotNegative()
 		.SetDisplay("Third MA Shift", "Shift (in bars) applied to the third moving average filter", "Filter")
-		.SetCanOptimize(true);
+		;
 
 		_thirdMethod = Param(nameof(ThirdMethod), MaMethods.Smoothed)
 		.SetDisplay("Third MA Method", "Smoothing method for the third moving average filter", "Filter")
-		.SetCanOptimize(true);
+		;
 
 		_thirdPrice = Param(nameof(ThirdAppliedPrice), AppliedPriceTypes.Close)
 		.SetDisplay("Third MA Price", "Price source for the third moving average filter", "Filter");
@@ -326,7 +326,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk Percent", "Percentage of equity risked per trade", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_pipValue = Param(nameof(PipValue), 1m)
 		.SetGreaterThanZero()
@@ -376,9 +376,9 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_firstMa = CreateMovingAverage(FirstMethod, FirstPeriod);
 		_secondMa = CreateMovingAverage(SecondMethod, SecondPeriod);
@@ -442,7 +442,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 
 		if (UseFilter && _thirdMa != null && _thirdSeries.Length > 0 && thirdInput.HasValue)
 		{
-			var thirdValue = _thirdMa.Process(thirdInput.Value, candle.OpenTime, true);
+			var thirdValue = _thirdMa.Process(new DecimalIndicatorValue(_thirdMa, thirdInput.Value, candle.OpenTime));
 			ShiftSeries(_thirdSeries, thirdValue.IsFinal ? thirdValue.ToDecimal() : (decimal?)null);
 		}
 
@@ -722,11 +722,11 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 	{
 		return method switch
 		{
-			MaMethods.Simple => new SimpleMovingAverage { Length = period },
-			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MaMethods.Simple => new SMA { Length = period },
+			MaMethods.Exponential => new EMA { Length = period },
 			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			MaMethods.Weighted => new WeightedMovingAverage { Length = period },
-			_ => new SimpleMovingAverage { Length = period }
+			_ => new SMA { Length = period }
 		};
 	}
 

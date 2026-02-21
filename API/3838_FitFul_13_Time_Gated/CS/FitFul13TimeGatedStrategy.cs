@@ -256,9 +256,9 @@ public class FitFul13TimeGatedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = Security?.PriceStep ?? 0.0001m;
 
@@ -271,7 +271,7 @@ public class FitFul13TimeGatedStrategy : Strategy
 		var weeklySubscription = SubscribeCandles(TimeSpan.FromDays(7).TimeFrame());
 		weeklySubscription.Bind(ProcessWeeklyCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -680,12 +680,12 @@ public class FitFul13TimeGatedStrategy : Strategy
 
 	private static bool BodyCrossesUp(CandleSnapshot bar, decimal level)
 	{
-		return bar.Open <= level && bar.Close >= level;
+		return bar.OpenPrice <= level && bar.ClosePrice >= level;
 	}
 
 	private static bool BodyCrossesDown(CandleSnapshot bar, decimal level)
 	{
-		return bar.Open >= level && bar.Close <= level;
+		return bar.OpenPrice >= level && bar.ClosePrice <= level;
 	}
 
 	private static bool LowsCrossUp(CandleSnapshot older, CandleSnapshot newer, decimal level)

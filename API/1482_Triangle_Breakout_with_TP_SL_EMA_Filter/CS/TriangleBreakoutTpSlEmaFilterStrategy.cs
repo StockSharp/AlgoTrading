@@ -89,15 +89,15 @@ public class TriangleBreakoutTpSlEmaFilterStrategy : Strategy
 		_pivotLength = Param(nameof(PivotLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Pivot Length", "Bars on each side for pivot detection", "General")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 3m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.5m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useEmaFilter = Param(nameof(UseEmaFilter), true)
 			.SetDisplay("Use EMA Filter", "Require price above EMAs", "General");
@@ -142,17 +142,17 @@ public class TriangleBreakoutTpSlEmaFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		var size = PivotLength * 2 + 1;
 		_highBuffer = new decimal[size];
 		_lowBuffer = new decimal[size];
 		_bufferIndex = 0;
 		_bufferCount = 0;
 		_barIndex = 0;
-		_ema20 = new ExponentialMovingAverage { Length = EmaFast };
-		_ema50 = new ExponentialMovingAverage { Length = EmaSlow };
+		_ema20 = new EMA { Length = EmaFast };
+		_ema50 = new EMA { Length = EmaSlow };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_ema20, _ema50, ProcessCandle).Start();
 		var area = CreateChartArea();

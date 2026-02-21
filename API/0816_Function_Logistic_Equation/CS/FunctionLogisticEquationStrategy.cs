@@ -48,18 +48,18 @@ public class FunctionLogisticEquationStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 14)
 			.SetDisplay("Length", "Period for logistic equation calculation", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for analysis", "Parameters");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var momentum = new Momentum { Length = Length };
 		var highest = new Highest { Length = Length };

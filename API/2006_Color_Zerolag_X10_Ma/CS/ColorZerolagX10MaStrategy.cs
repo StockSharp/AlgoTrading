@@ -100,7 +100,7 @@ public class ColorZerolagX10MaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_zlma = new ZeroLagExponentialMovingAverage { Length = Length };
 
@@ -109,7 +109,7 @@ public class ColorZerolagX10MaStrategy : Strategy
 			.Bind(_zlma, ProcessCandle)
 			.Start();
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal ma)

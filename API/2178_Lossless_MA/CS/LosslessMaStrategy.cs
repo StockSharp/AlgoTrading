@@ -94,12 +94,12 @@ public class LosslessMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastMa = new SimpleMovingAverage { Length = FastLength };
-		var slowMa = new SimpleMovingAverage { Length = SlowLength };
+		var fastMa = new SMA { Length = FastLength };
+		var slowMa = new SMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 

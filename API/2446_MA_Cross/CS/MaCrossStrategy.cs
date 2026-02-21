@@ -30,8 +30,8 @@ public class MaCrossStrategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _fastIndicator = null!;
-	private LengthIndicator<decimal> _slowIndicator = null!;
+	private DecimalLengthIndicator _fastIndicator = null!;
+	private DecimalLengthIndicator _slowIndicator = null!;
 	private readonly List<decimal> _fastHistory = new();
 	private readonly List<decimal> _slowHistory = new();
 
@@ -133,13 +133,13 @@ public class MaCrossStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Period for the fast moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Period for the slow moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 1);
 
 		_fastMethod = Param(nameof(FastMethod), MovingAverageMethods.Simple)
@@ -184,9 +184,9 @@ public class MaCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastIndicator = CreateMovingAverage(FastMethod, FastPeriod);
 		_slowIndicator = CreateMovingAverage(SlowMethod, SlowPeriod);
@@ -205,7 +205,7 @@ public class MaCrossStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -219,8 +219,8 @@ public class MaCrossStrategy : Strategy
 		var slowPrice = GetAppliedPrice(candle, SlowPriceType);
 
 		// Update indicators with the selected prices.
-		var fastValue = _fastIndicator.Process(fastPrice, candle.OpenTime, true).ToDecimal();
-		var slowValue = _slowIndicator.Process(slowPrice, candle.OpenTime, true).ToDecimal();
+		var fastValue = _fastIndicator.Process(new DecimalIndicatorValue(_fastIndicator, fastPrice, candle.OpenTime)).ToDecimal();
+		var slowValue = _slowIndicator.Process(new DecimalIndicatorValue(_slowIndicator, slowPrice, candle.OpenTime)).ToDecimal();
 
 		// Ensure both moving averages are fully formed before trading.
 		if (!_fastIndicator.IsFormed || !_slowIndicator.IsFormed)
@@ -306,15 +306,15 @@ public class MaCrossStrategy : Strategy
 			|| (fastPrevious > slowCurrent && fastCurrent <= slowCurrent);
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

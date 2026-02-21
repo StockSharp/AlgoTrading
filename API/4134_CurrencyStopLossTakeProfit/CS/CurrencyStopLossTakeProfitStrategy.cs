@@ -49,12 +49,12 @@ public class CurrencyStopLossTakeProfitStrategy : Strategy
 		_takeProfitCurrency = Param(nameof(TakeProfitCurrency), 5m)
 			.SetNotNegative()
 			.SetDisplay("Take profit (currency)", "Profit target measured in account currency for each position.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossCurrency = Param(nameof(StopLossCurrency), 8m)
 			.SetNotNegative()
 			.SetDisplay("Stop loss (currency)", "Maximum tolerable loss in account currency for each position.", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	public decimal TakeProfitCurrency
@@ -88,9 +88,9 @@ public class CurrencyStopLossTakeProfitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeLevel1()
 			.Bind(ProcessLevel1)

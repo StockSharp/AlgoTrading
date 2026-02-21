@@ -58,9 +58,9 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).Set
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var volMa = new SMA { Length = VolLength };
 var indexShortMa = new SMA { Length = IndexShortLength };

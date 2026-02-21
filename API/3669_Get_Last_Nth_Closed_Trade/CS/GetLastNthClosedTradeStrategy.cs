@@ -135,7 +135,7 @@ public class GetLastNthClosedTradeStrategy : Strategy
 
 		_tradeIndex = Param(nameof(TradeIndex), 0)
 		.SetDisplay("Trade Index", "Zero-based index of the closed trade snapshot", "General")
-		.SetCanOptimize(true);
+		;
 
 		_maxStoredTrades = Param(nameof(MaxStoredTrades), 100)
 		.SetDisplay("Max Stored Trades", "Maximum number of closed trades kept in memory", "General")

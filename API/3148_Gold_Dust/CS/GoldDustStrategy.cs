@@ -266,17 +266,16 @@ public class GoldDustStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdateOffsets();
 		_requiredHistory = Math.Max(1, MaPeriod * 3 + 1);
 
 		var ma = new WeightedMovingAverage
 		{
-			Length = MaPeriod,
-			CandlePrice = CandlePrice.Weighted
+			Length = MaPeriod
 		};
 
 		var subscription = SubscribeCandles(CandleType);

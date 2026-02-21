@@ -58,43 +58,43 @@ public class TimeBombStrategy : Strategy
 	{
 		_sellPipsInTime = Param(nameof(SellPipsInTime), 5m)
 		.SetDisplay("Sell Pips In Time", "Downward price distance (pips) to trigger a sell", "Sell")
-		.SetCanOptimize(true);
+		;
 
 		_sellTimeToWait = Param(nameof(SellTimeToWait), 10)
 		.SetDisplay("Sell Time Window", "Maximum seconds allowed to reach the sell distance", "Sell")
-		.SetCanOptimize(true);
+		;
 
 		_sellVolume = Param(nameof(SellVolume), 0.01m)
 		.SetDisplay("Sell Volume", "Volume used for sell orders", "Sell")
-		.SetCanOptimize(true);
+		;
 
 		_sellStopLossPips = Param(nameof(SellStopLossPips), 20m)
 		.SetDisplay("Sell Stop Loss (pips)", "Protective stop size for short trades", "Sell")
-		.SetCanOptimize(true);
+		;
 
 		_sellTakeProfitPips = Param(nameof(SellTakeProfitPips), 20m)
 		.SetDisplay("Sell Take Profit (pips)", "Profit target size for short trades", "Sell")
-		.SetCanOptimize(true);
+		;
 
 		_buyPipsInTime = Param(nameof(BuyPipsInTime), 5m)
 		.SetDisplay("Buy Pips In Time", "Upward price distance (pips) to trigger a buy", "Buy")
-		.SetCanOptimize(true);
+		;
 
 		_buyTimeToWait = Param(nameof(BuyTimeToWait), 10)
 		.SetDisplay("Buy Time Window", "Maximum seconds allowed to reach the buy distance", "Buy")
-		.SetCanOptimize(true);
+		;
 
 		_buyVolume = Param(nameof(BuyVolume), 0.01m)
 		.SetDisplay("Buy Volume", "Volume used for buy orders", "Buy")
-		.SetCanOptimize(true);
+		;
 
 		_buyStopLossPips = Param(nameof(BuyStopLossPips), 20m)
 		.SetDisplay("Buy Stop Loss (pips)", "Protective stop size for long trades", "Buy")
-		.SetCanOptimize(true);
+		;
 
 		_buyTakeProfitPips = Param(nameof(BuyTakeProfitPips), 20m)
 		.SetDisplay("Buy Take Profit (pips)", "Profit target size for long trades", "Buy")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>
@@ -211,9 +211,9 @@ public class TimeBombStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 

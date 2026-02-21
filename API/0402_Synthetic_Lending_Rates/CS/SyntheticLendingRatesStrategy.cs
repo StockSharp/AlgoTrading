@@ -103,7 +103,7 @@ public class SyntheticLendingRatesStrategy : Strategy
 
 	private void OnMinute(ICandleMessage c)
 	{
-		var utc = c.OpenTime.UtcDateTime;
+		var utc = c.OpenTime;
 		// 19:57/59 UTC ≈ 15:57/59 ET (summer); adjust in prod
 		if (utc.Hour == 19 && utc.Minute == 57)
 			_intensityT0 = GetIntensity();

@@ -39,17 +39,17 @@ public class ZStrikeRecoveryStrategy : Strategy
 		_zLength = Param(nameof(ZLength), 16)
 			.SetGreaterThanZero()
 			.SetDisplay("Z-Score Length", "Lookback length for z-score", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_zThreshold = Param(nameof(ZThreshold), 1.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Z-Score Threshold", "Entry threshold", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_exitPeriods = Param(nameof(ExitPeriods), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Periods", "Bars to hold position", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -70,9 +70,9 @@ public class ZStrikeRecoveryStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_mean.Length = ZLength;
 		_std.Length = ZLength;

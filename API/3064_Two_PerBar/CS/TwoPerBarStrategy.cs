@@ -48,22 +48,22 @@ public class TwoPerBarStrategy : Strategy
 		_initialVolume = Param(nameof(InitialVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Lot size used when no previous positions exist.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Multiplier", "Factor applied to the heaviest remaining leg after closing a cycle.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_maxVolume = Param(nameof(MaxVolume), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Maximum Volume", "Upper limit for the calculated lot size before resetting to the initial value.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance to the take profit expressed in instrument points.", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -127,9 +127,9 @@ public class TwoPerBarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = CalculatePointSize();
 		_lastCycleVolume = PrepareVolume(InitialVolume);

@@ -58,13 +58,13 @@ public class MarkdownThePineEditorsHiddenGemStrategy : Strategy
 		_length = Param(nameof(Length), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Period of the moving average", "Bollinger")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Band width multiplier", "Bollinger")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -78,9 +78,9 @@ public class MarkdownThePineEditorsHiddenGemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bollinger = new BollingerBands
 		{

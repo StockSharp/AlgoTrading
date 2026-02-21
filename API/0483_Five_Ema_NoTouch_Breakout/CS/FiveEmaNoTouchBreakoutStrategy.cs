@@ -74,13 +74,13 @@ public class FiveEmaNoTouchBreakoutStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Length of EMA", "EMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_rewardRisk = Param(nameof(RewardRisk), 3.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Reward : Risk", "Reward to risk ratio", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 	}
 
@@ -108,11 +108,11 @@ public class FiveEmaNoTouchBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_ema = new EMA { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

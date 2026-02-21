@@ -105,10 +105,10 @@ public class DcaStrategy : Strategy
 
 	public DcaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame()).SetCanOptimize(false);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 		_toInvestQuote = Param(nameof(ToInvestQuote), 100m);
-		_startDate = Param(nameof(StartDate), new DateTimeOffset(2018, 1, 1, 0, 0, 0, TimeSpan.Zero)).SetCanOptimize(false);
-		_endDate = Param(nameof(EndDate), new DateTimeOffset(2069, 12, 31, 0, 0, 0, TimeSpan.Zero)).SetCanOptimize(false);
+		_startDate = Param(nameof(StartDate), new DateTimeOffset(2018, 1, 1, 0, 0, 0, TimeSpan.Zero));
+		_endDate = Param(nameof(EndDate), new DateTimeOffset(2069, 12, 31, 0, 0, 0, TimeSpan.Zero));
 		_closeAllOnLastCandle = Param(nameof(CloseAllOnLastCandle), true);
 		_basedOnDayOfWeek = Param(nameof(BasedOnDayOfWeek), true);
 		_buyDayOfWeek = Param(nameof(BuyDayOfWeek), 1);
@@ -116,16 +116,16 @@ public class DcaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

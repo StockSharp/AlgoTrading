@@ -62,7 +62,7 @@ public class Lanz50Strategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA filter period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maxTrades = Param(nameof(MaxTrades), 99)
 			.SetDisplay("Max Trades", "Maximum trades per day", "Risk")
@@ -117,9 +117,9 @@ public class Lanz50Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = (Security?.PriceStep ?? 1m) * 10m;
 
@@ -128,7 +128,7 @@ public class Lanz50Strategy : Strategy
 			stopLoss: new Unit(StopLossPips * _pipSize, UnitTypes.Absolute),
 			useMarketOrders: true);
 
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -152,7 +152,7 @@ public class Lanz50Strategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var nyTime = TimeZoneInfo.ConvertTime(candle.OpenTime.UtcDateTime, _nyZone);
+		var nyTime = TimeZoneInfo.ConvertTime(candle.OpenTime, _nyZone);
 		var today = nyTime.Date;
 
 		if (today != _lastDay)

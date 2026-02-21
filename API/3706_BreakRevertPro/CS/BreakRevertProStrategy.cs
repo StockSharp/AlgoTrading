@@ -67,7 +67,7 @@ public class BreakRevertProStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetRange(10, 60)
 		.SetDisplay("Lookback", "Number of finished candles used for statistics", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_breakoutThreshold = Param(nameof(BreakoutThreshold), 0.4m)
 		.SetDisplay("Breakout Threshold", "Minimum composite probability required for breakout entries", "Signals")
@@ -211,18 +211,18 @@ public class BreakRevertProStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var lookback = Math.Max(1, LookbackPeriod);
 
 		_m1Atr = new AverageTrueRange { Length = lookback };
-		_m1TrendAverage = new SimpleMovingAverage { Length = lookback };
-		_m15TrendAverage = new SimpleMovingAverage { Length = lookback };
-		_h1TrendAverage = new SimpleMovingAverage { Length = lookback };
-		_eventFrequency = new SimpleMovingAverage { Length = lookback };
-		_volatilityEma = new ExponentialMovingAverage { Length = lookback };
+		_m1TrendAverage = new SMA { Length = lookback };
+		_m15TrendAverage = new SMA { Length = lookback };
+		_h1TrendAverage = new SMA { Length = lookback };
+		_eventFrequency = new SMA { Length = lookback };
+		_volatilityEma = new EMA { Length = lookback };
 
 		// Subscribe to the main one-minute flow.
 		_m1Subscription = SubscribeCandles(CandleType);
@@ -242,7 +242,7 @@ public class BreakRevertProStrategy : Strategy
 		.Bind(ProcessH1Candle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessPrimaryCandle(ICandleMessage candle, decimal atrValue)
@@ -258,7 +258,7 @@ public class BreakRevertProStrategy : Strategy
 
 		if (_m1TrendAverage is not null)
 		{
-			var trendValue = _m1TrendAverage.Process(close, time, true).ToDecimal();
+			var trendValue = _m1TrendAverage.Process(new DecimalIndicatorValue(_m1TrendAverage, close, time.UtcDateTime)).ToDecimal();
 			if (_m1TrendAverage.IsFormed)
 			_m1Trend = close - trendValue;
 		}
@@ -269,14 +269,14 @@ public class BreakRevertProStrategy : Strategy
 			var eventValue = move >= pip * 5m ? 1m : 0m;
 			if (_eventFrequency is not null)
 			{
-				var avg = _eventFrequency.Process(eventValue, time, true).ToDecimal();
+				var avg = _eventFrequency.Process(new DecimalIndicatorValue(_eventFrequency, eventValue, time.UtcDateTime)).ToDecimal();
 				if (_eventFrequency.IsFormed)
 				_poissonProbability = Clamp(avg, 0m, 1m);
 			}
 
 			if (_volatilityEma is not null)
 			{
-				var ema = _volatilityEma.Process(move, time, true).ToDecimal();
+				var ema = _volatilityEma.Process(new DecimalIndicatorValue(_volatilityEma, move, time.UtcDateTime)).ToDecimal();
 				if (_volatilityEma.IsFormed)
 				{
 					var normalized = pip > 0m ? ema / (pip * 10m) : 0m;
@@ -302,7 +302,7 @@ public class BreakRevertProStrategy : Strategy
 		return;
 
 		var close = candle.ClosePrice;
-		var trend = _m15TrendAverage.Process(close, candle.CloseTime, true).ToDecimal();
+		var trend = _m15TrendAverage.Process(new DecimalIndicatorValue(_m15TrendAverage, close, candle.CloseTime)).ToDecimal();
 		if (_m15TrendAverage.IsFormed)
 		_m15Trend = close - trend;
 	}
@@ -318,7 +318,7 @@ public class BreakRevertProStrategy : Strategy
 		return;
 
 		var close = candle.ClosePrice;
-		var trend = _h1TrendAverage.Process(close, candle.CloseTime, true).ToDecimal();
+		var trend = _h1TrendAverage.Process(new DecimalIndicatorValue(_h1TrendAverage, close, candle.CloseTime)).ToDecimal();
 		if (_h1TrendAverage.IsFormed)
 		_h1Trend = close - trend;
 	}

@@ -118,47 +118,47 @@ public class WeightOscillatorDirectStrategy : Strategy
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetDisplay("Signal Bar", "Number of closed bars to skip before evaluating signals", "Trading")
 		.SetRange(1, 5)
-		.SetCanOptimize(true);
+		;
 
 		_rsiWeight = Param(nameof(RsiWeight), 1m)
 		.SetDisplay("RSI Weight", "Weight of RSI in the composite score", "Oscillator")
 		.SetRange(0m, 5m)
-		.SetCanOptimize(true);
+		;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetDisplay("RSI Period", "Number of bars used for RSI", "Oscillator")
 		.SetRange(2, 200)
-		.SetCanOptimize(true);
+		;
 
 		_mfiWeight = Param(nameof(MfiWeight), 1m)
 		.SetDisplay("MFI Weight", "Weight of Money Flow Index", "Oscillator")
 		.SetRange(0m, 5m)
-		.SetCanOptimize(true);
+		;
 
 		_mfiPeriod = Param(nameof(MfiPeriod), 14)
 		.SetDisplay("MFI Period", "Number of bars used for MFI", "Oscillator")
 		.SetRange(2, 200)
-		.SetCanOptimize(true);
+		;
 
 		_wprWeight = Param(nameof(WprWeight), 1m)
 		.SetDisplay("WPR Weight", "Weight of Williams %R", "Oscillator")
 		.SetRange(0m, 5m)
-		.SetCanOptimize(true);
+		;
 
 		_wprPeriod = Param(nameof(WprPeriod), 14)
 		.SetDisplay("WPR Period", "Number of bars used for Williams %R", "Oscillator")
 		.SetRange(2, 200)
-		.SetCanOptimize(true);
+		;
 
 		_deMarkerWeight = Param(nameof(DeMarkerWeight), 1m)
 		.SetDisplay("DeMarker Weight", "Weight of DeMarker oscillator", "Oscillator")
 		.SetRange(0m, 5m)
-		.SetCanOptimize(true);
+		;
 
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 14)
 		.SetDisplay("DeMarker Period", "Number of bars used for DeMarker", "Oscillator")
 		.SetRange(2, 200)
-		.SetCanOptimize(true);
+		;
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), WeightOscillatorSmoothingMethods.Jurik)
 		.SetDisplay("Smoothing Method", "Moving average applied to the blended oscillator", "Oscillator");
@@ -166,17 +166,17 @@ public class WeightOscillatorDirectStrategy : Strategy
 		_smoothingLength = Param(nameof(SmoothingLength), 5)
 		.SetDisplay("Smoothing Length", "Length of the smoothing moving average", "Oscillator")
 		.SetRange(1, 200)
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 		.SetDisplay("Stop Loss Points", "Protective stop in price steps (0 disables)", "Risk Management")
 		.SetRange(0, 10000)
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 		.SetDisplay("Take Profit Points", "Profit target in price steps (0 disables)", "Risk Management")
 		.SetRange(0, 20000)
-		.SetCanOptimize(true);
+		;
 
 		_buyOpenEnabled = Param(nameof(BuyOpenEnabled), true)
 		.SetDisplay("Allow Long Entries", "Enable opening long positions", "Trading");
@@ -376,9 +376,9 @@ public class WeightOscillatorDirectStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_mfi = new MoneyFlowIndex { Length = MfiPeriod };
@@ -424,7 +424,7 @@ public class WeightOscillatorDirectStrategy : Strategy
 
 		var blended = (RsiWeight * rsiValue + MfiWeight * mfiValue + WprWeight * normalizedWpr + DeMarkerWeight * normalizedDeMarker) / totalWeight;
 
-		var smoothedValue = _smoothing.Process(blended, candle.OpenTime, true);
+		var smoothedValue = _smoothing.Process(new DecimalIndicatorValue(_smoothing, blended, candle.OpenTime));
 		if (!smoothedValue.IsFinal)
 		return;
 
@@ -499,8 +499,8 @@ public class WeightOscillatorDirectStrategy : Strategy
 	{
 		return SmoothingMethod switch
 		{
-			WeightOscillatorSmoothingMethods.Simple => new SimpleMovingAverage { Length = SmoothingLength },
-			WeightOscillatorSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = SmoothingLength },
+			WeightOscillatorSmoothingMethods.Simple => new SMA { Length = SmoothingLength },
+			WeightOscillatorSmoothingMethods.Exponential => new EMA { Length = SmoothingLength },
 			WeightOscillatorSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = SmoothingLength },
 			WeightOscillatorSmoothingMethods.Weighted => new WeightedMovingAverage { Length = SmoothingLength },
 			WeightOscillatorSmoothingMethods.Kaufman => new KaufmanAdaptiveMovingAverage { Length = SmoothingLength },

@@ -113,25 +113,25 @@ public class ZigZagEvgeTrofiStrategy : Strategy
 		_depth = Param(nameof(Depth), 17)
 			.SetGreaterThanZero()
 			.SetDisplay("Depth", "ZigZag depth parameter", "ZigZag")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_deviation = Param(nameof(Deviation), 7m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation", "Minimum price movement in points", "ZigZag")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 20m, 1m);
 
 		_backstep = Param(nameof(Backstep), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Backstep", "Bars to lock a pivot before switching", "ZigZag")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 15, 1);
 
 		_urgency = Param(nameof(Urgency), 2)
 			.SetNotNegative()
 			.SetDisplay("Urgency", "Maximum bars to use the latest signal", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 5, 1);
 
 		_signalReverse = Param(nameof(SignalReverse), false)
@@ -165,9 +165,9 @@ public class ZigZagEvgeTrofiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = GetEffectivePriceStep();
 		_highest = new Highest { Length = Depth };

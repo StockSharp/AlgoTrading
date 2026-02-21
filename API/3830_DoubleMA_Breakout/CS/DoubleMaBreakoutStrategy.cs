@@ -37,8 +37,8 @@ public class DoubleMaBreakoutStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _fridayStopTradingTime;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _fastMa;
-	private LengthIndicator<decimal> _slowMa;
+	private DecimalLengthIndicator _fastMa;
+	private DecimalLengthIndicator _slowMa;
 	private LinearRegression _fastLsma;
 	private LinearRegression _slowLsma;
 	private readonly Queue<decimal> _fastHistory = new();
@@ -200,13 +200,13 @@ public class DoubleMaBreakoutStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Period", "Period of the fast moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 30, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Period", "Period of the slow moving average", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 5);
 
 		_fastMaMode = Param(nameof(FastMaMode), MovingAverageModes.Simple)
@@ -228,7 +228,7 @@ public class DoubleMaBreakoutStrategy : Strategy
 		_breakoutDistancePoints = Param(nameof(BreakoutDistancePoints), 45m)
 			.SetGreaterThanZero()
 			.SetDisplay("Breakout Distance", "Distance in points for stop entries", "Trading Rules")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 5m);
 
 		_useTimeWindow = Param(nameof(UseTimeWindow), true)
@@ -282,9 +282,9 @@ public class DoubleMaBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 		if (_priceStep <= 0m)
@@ -313,7 +313,7 @@ public class DoubleMaBreakoutStrategy : Strategy
 				DrawIndicator(area, _slowMa);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />
@@ -426,13 +426,13 @@ public class DoubleMaBreakoutStrategy : Strategy
 		return true;
 	}
 
-	private bool TryProcessIndicator(LengthIndicator<decimal> ma, LinearRegression lsma, decimal price, ICandleMessage candle, out decimal value)
+	private bool TryProcessIndicator(DecimalLengthIndicator ma, LinearRegression lsma, decimal price, ICandleMessage candle, out decimal value)
 	{
 		IIndicatorValue result = null;
 
 		if (lsma != null)
 		{
-			result = lsma.Process(price, candle.OpenTime, true);
+			result = lsma.Process(new DecimalIndicatorValue(lsma, price, candle.OpenTime));
 			if (!lsma.IsFormed)
 			{
 				value = 0m;
@@ -441,7 +441,7 @@ public class DoubleMaBreakoutStrategy : Strategy
 		}
 		else if (ma != null)
 		{
-			result = ma.Process(price, candle.OpenTime, true);
+			result = ma.Process(new DecimalIndicatorValue(ma, price, candle.OpenTime));
 			if (!ma.IsFormed)
 			{
 				value = 0m;
@@ -581,17 +581,17 @@ public class DoubleMaBreakoutStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageModes mode, int length, out LinearRegression lsma)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageModes mode, int length, out LinearRegression lsma)
 	{
 		lsma = null;
 		return mode switch
 		{
-			MovingAverageModes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageModes.Simple => new SMA { Length = length },
+			MovingAverageModes.Exponential => new EMA { Length = length },
 			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageModes.LinearWeighted => new WeightedMovingAverage { Length = length },
 			MovingAverageModes.LeastSquares => lsma = new LinearRegression { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

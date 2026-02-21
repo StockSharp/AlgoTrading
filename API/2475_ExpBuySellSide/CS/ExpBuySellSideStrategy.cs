@@ -94,25 +94,25 @@ public class ExpBuySellSideStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "ATR calculation length", "ATR")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 		
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "ATR band multiplier", "ATR")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 		
 		_fastPeriod = Param(nameof(FastPeriod), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast SMA", "Fast moving average length", "Step Up/Down")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 		
 		_slowPeriod = Param(nameof(SlowPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow SMA", "Slow moving average length", "Step Up/Down")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 		
 		_closeByOppositeSignal = Param(nameof(CloseByOppositeSignal), true)
@@ -139,12 +139,12 @@ public class ExpBuySellSideStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Start position protection once.
-		StartProtection();
+		StartProtection(null, null);
 		
 		var atr = new ATR { Length = AtrPeriod };
 		var fast = new SMA { Length = FastPeriod };

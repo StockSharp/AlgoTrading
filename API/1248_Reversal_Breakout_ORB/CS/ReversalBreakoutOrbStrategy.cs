@@ -119,9 +119,9 @@ protected override void OnReseted()
 	_beSet = false;
 }
 
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	var ema9 = new EMA { Length = Ema9Length };
 	var ema20 = new EMA { Length = Ema20Length };
@@ -239,7 +239,7 @@ private void Process(ICandleMessage candle, decimal ema9Val, decimal ema20Val, d
 			}
 			if (_tp1Done && !_beSet)
 			{
-				_stop = PositionAvgPrice;
+				_stop = PositionPrice;
 				_beSet = true;
 			}
 			if (_tp2.HasValue && candle.HighPrice >= _tp2)
@@ -266,7 +266,7 @@ private void Process(ICandleMessage candle, decimal ema9Val, decimal ema20Val, d
 			}
 			if (_tp1Done && !_beSet)
 			{
-				_stop = PositionAvgPrice;
+				_stop = PositionPrice;
 				_beSet = true;
 			}
 			if (_tp2.HasValue && candle.LowPrice <= _tp2)

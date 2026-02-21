@@ -138,17 +138,17 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 _fastPeriod = Param(nameof(FastPeriod), 12)
 .SetRange(5, 50)
 .SetDisplay("Fast Period", "Fast EMA period", "MACD")
-.SetCanOptimize(true);
+;
 
 _slowPeriod = Param(nameof(SlowPeriod), 26)
 .SetRange(10, 100)
 .SetDisplay("Slow Period", "Slow EMA period", "MACD")
-.SetCanOptimize(true);
+;
 
 _signalPeriod = Param(nameof(SignalPeriod), 9)
 .SetRange(3, 30)
 .SetDisplay("Signal Period", "Signal line period", "MACD")
-.SetCanOptimize(true);
+;
 
 _mode = Param(nameof(Mode), AlgModes.MacdDisposition)
 .SetDisplay("Mode", "Algorithm mode", "Logic");

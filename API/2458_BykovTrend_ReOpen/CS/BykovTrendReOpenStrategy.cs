@@ -145,37 +145,37 @@ public class BykovTrendReOpenStrategy : Strategy
 		_risk = Param(nameof(Risk), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk", "Risk parameter for BykovTrend", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_ssp = Param(nameof(Ssp), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("SSP", "Williams %R period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_priceStep = Param(nameof(PriceStep), 300m)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Step", "Distance for re-open", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1000m, 100m);
 
 		_maxPositions = Param(nameof(MaxPositions), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum positions per side", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop-loss distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 2000m, 100m);
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take-profit distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 4000m, 100m);
 
 		_enableLongOpen = Param(nameof(EnableLongOpen), true)
@@ -213,9 +213,9 @@ public class BykovTrendReOpenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var wpr = new WilliamsR { Length = Ssp };
 		var atr = new AverageTrueRange { Length = 15 };

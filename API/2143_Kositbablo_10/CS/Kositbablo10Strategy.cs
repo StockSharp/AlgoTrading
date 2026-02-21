@@ -51,7 +51,7 @@ public class Kositbablo10Strategy : Strategy
 		.SetDisplay("Turbo Mode", "Allow trading even if position exists", "General");
 		_hourlyCandleType = Param(nameof(HourlyCandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Hourly Candle Type", "Type of hourly candles", "General");
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Daily Candle Type", "Type of daily candles", "General");
 	}
 
@@ -68,9 +68,9 @@ public class Kositbablo10Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsiDailyBuy = new RelativeStrengthIndex { Length = 11 };
 		var rsiDailySell = new RelativeStrengthIndex { Length = 22 };
@@ -80,10 +80,10 @@ public class Kositbablo10Strategy : Strategy
 
 		var rsiHourlyBuy = new RelativeStrengthIndex { Length = 5 };
 		var rsiHourlySell = new RelativeStrengthIndex { Length = 20 };
-		var emaBuyLong = new ExponentialMovingAverage { Length = 20 };
-		var emaBuyShort = new ExponentialMovingAverage { Length = 2 };
-		var emaSellLong = new ExponentialMovingAverage { Length = 23 };
-		var emaSellShort = new ExponentialMovingAverage { Length = 12 };
+		var emaBuyLong = new EMA { Length = 20 };
+		var emaBuyShort = new EMA { Length = 2 };
+		var emaSellLong = new EMA { Length = 23 };
+		var emaSellShort = new EMA { Length = 12 };
 
 		var hourlySubscription = SubscribeCandles(HourlyCandleType);
 		hourlySubscription.Bind(rsiHourlyBuy, rsiHourlySell, emaBuyLong, emaBuyShort, emaSellLong, emaSellShort, OnHourlyProcess).Start();

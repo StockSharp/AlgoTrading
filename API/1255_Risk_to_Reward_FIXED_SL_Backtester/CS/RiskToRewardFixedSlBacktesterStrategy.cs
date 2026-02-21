@@ -110,9 +110,9 @@ public class RiskToRewardFixedSlBacktesterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = 14 };
 		_lowest = new Lowest { Length = PivotLookback };

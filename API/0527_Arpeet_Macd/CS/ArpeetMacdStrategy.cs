@@ -72,19 +72,19 @@ public class ArpeetMacdStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA", "Fast MA period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(6, 18, 2);
 
 		_slowLength = Param(nameof(SlowLength), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA", "Slow MA period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 2);
 
 		_signalLength = Param(nameof(SignalLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Length", "Signal line period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 15, 2);
 	}
 

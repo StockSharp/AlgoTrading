@@ -152,7 +152,7 @@ public class MartingaleWithMacdKdjOpeningConditionsStrategy : Strategy
 		{
 			Length = KdjLength,
 			KPeriod = KdjSmoothK,
-			DPeriod = KdjSmoothD
+			D = { Length = KdjSmoothD }
 		};
 		
 		var subscription = SubscribeCandles(CandleType);

@@ -90,31 +90,31 @@ public class StochasticExitAlertsStrategy : Strategy
 		_stochLength = Param(nameof(StochLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Length", "Main period of the Stochastic oscillator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_kLength = Param(nameof(KLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("%K Length", "Smoothing period for %K line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_dLength = Param(nameof(DLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("%D Length", "Smoothing period for %D line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 600)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss distance in ticks", "Protection")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 1500, 100);
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 1200)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit distance in ticks", "Protection")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200, 2000, 100);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -128,13 +128,12 @@ public class StochasticExitAlertsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochLength,
+		{ K = { Length = StochLength },
 			K = { Length = KLength },
 			D = { Length = DLength },
 		};

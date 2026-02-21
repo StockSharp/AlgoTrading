@@ -48,7 +48,7 @@ public class BuyingSellingVolumeStrategy : Strategy
 	private decimal _tpShort;
 	private decimal _slShort;
 
-	private readonly DataType _dailyType = TimeSpan.FromDays(1).TimeFrame();
+	private readonly DataType _dailyType = TimeSpan.FromMinutes(5).TimeFrame();
 	private readonly DataType _weeklyType = TimeSpan.FromDays(7).TimeFrame();
 
 	/// <summary>
@@ -139,11 +139,11 @@ public class BuyingSellingVolumeStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 20)
 			.SetDisplay("Length", "Period for volatility calculation", "Volatility")
-			.SetCanOptimize(true);
+			;
 
 		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetDisplay("StdDev", "Standard deviation multiplier", "Volatility")
-			.SetCanOptimize(true);
+			;
 
 		_allowLong = Param(nameof(AllowLong), true)
 			.SetDisplay("Allow Long", "Enable long trades", "General");
@@ -153,19 +153,19 @@ public class BuyingSellingVolumeStrategy : Strategy
 
 		_profitTargetLong = Param(nameof(ProfitTargetLong), 100m)
 			.SetDisplay("Long TP Mult", "Take profit multiplier for long trades", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossLong = Param(nameof(StopLossLong), 1m)
 			.SetDisplay("Long SL Mult", "Stop loss multiplier for long trades", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_profitTargetShort = Param(nameof(ProfitTargetShort), 100m)
 			.SetDisplay("Short TP Mult", "Take profit multiplier for short trades", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossShort = Param(nameof(StopLossShort), 5m)
 			.SetDisplay("Short SL Mult", "Stop loss multiplier for short trades", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for main data", "General");
@@ -196,17 +196,17 @@ public class BuyingSellingVolumeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = Length };
+		_sma = new SMA { Length = Length };
 		_stdev = new StandardDeviation { Length = Length };
 		_atr = new AverageTrueRange { Length = 14 };
 		_weeklyVwap = new VolumeWeightedMovingAverage();
 
 		var mainSub = SubscribeCandles(CandleType);
-		mainSub.ForEach(ProcessCandle).Start();
+		mainSub.Bind(ProcessCandle).Start();
 
 		var dailySub = SubscribeCandles(_dailyType);
 		dailySub.Bind(_atr, ProcessDaily).Start();

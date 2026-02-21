@@ -54,7 +54,7 @@ public class TrendFollowingCandlesStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Moving average period", "General")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -78,11 +78,11 @@ public class TrendFollowingCandlesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
+		_ma = new SMA { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_ma, ProcessCandle).Start();

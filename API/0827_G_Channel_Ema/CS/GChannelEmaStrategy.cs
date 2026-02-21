@@ -63,13 +63,13 @@ public class GChannelEmaStrategy : Strategy
 		_channelLength = Param(nameof(ChannelLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("G-Channel Length", "G-Channel period length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
 		_emaLength = Param(nameof(EmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -94,13 +94,13 @@ public class GChannelEmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new EMA { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ema, ProcessCandle).Start();

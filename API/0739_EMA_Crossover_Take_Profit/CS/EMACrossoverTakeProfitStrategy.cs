@@ -117,43 +117,43 @@ public class EMACrossoverTakeProfitStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA Length", "Period for fast EMA", "EMA")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 		
 		_slowLength = Param(nameof(SlowLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA Length", "Period for slow EMA", "EMA")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30, 100, 5);
 		
 		_tp1Multiplier = Param(nameof(Tp1Multiplier), 0.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("TP1 Multiplier", "Take-profit level 1 multiplier", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2m, 0.5m);
 		
 		_tp2Multiplier = Param(nameof(Tp2Multiplier), 1.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("TP2 Multiplier", "Take-profit level 2 multiplier", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2m, 0.5m);
 		
 		_tp3Multiplier = Param(nameof(Tp3Multiplier), 1.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("TP3 Multiplier", "Take-profit level 3 multiplier", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2m, 0.5m);
 		
 		_tp4Multiplier = Param(nameof(Tp4Multiplier), 2.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("TP4 Multiplier", "Take-profit level 4 multiplier", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2m, 0.5m);
 		
 		_stopLossPercent = Param(nameof(StopLossPercent), 3.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss %", "Stop-loss percentage from entry price", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.0m, 5.0m, 1.0m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -176,9 +176,9 @@ public class EMACrossoverTakeProfitStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var fastEma = new EMA { Length = FastLength };
 		var slowEma = new EMA { Length = SlowLength };

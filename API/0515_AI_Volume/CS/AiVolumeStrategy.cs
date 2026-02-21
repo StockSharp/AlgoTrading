@@ -74,19 +74,19 @@ public class AiVolumeStrategy : Strategy
 		_volumeEmaLength = Param(nameof(VolumeEmaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume EMA Length", "Length for volume EMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Multiplier", "Multiplier for volume spike detection", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_exitBars = Param(nameof(ExitBars), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Bars", "Exit position after this many bars", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 	}
 
@@ -104,12 +104,12 @@ public class AiVolumeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_priceEma = new ExponentialMovingAverage { Length = 50 };
-		_volumeEma = new ExponentialMovingAverage { Length = VolumeEmaLength };
+		_priceEma = new EMA { Length = 50 };
+		_volumeEma = new EMA { Length = VolumeEmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -130,7 +130,7 @@ public class AiVolumeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volumeEmaValue = _volumeEma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var volumeEmaValue = _volumeEma.Process(new DecimalIndicatorValue(_volumeEma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 		if (!_priceEma.IsFormed || !_volumeEma.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 			return;

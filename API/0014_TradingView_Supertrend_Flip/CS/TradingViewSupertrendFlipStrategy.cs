@@ -75,17 +75,17 @@ public class TradingViewSupertrendFlipStrategy : Strategy
 	{
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
 			.SetDisplay("Supertrend Period", "Period for Supertrend calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 14, 1);
 
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
 			.SetDisplay("Supertrend Multiplier", "Multiplier for Supertrend calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2.0m, 4.0m, 0.5m);
 
 		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
 			.SetDisplay("Volume Avg Period", "Period for volume average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -111,15 +111,15 @@ public class TradingViewSupertrendFlipStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create custom indicators
 		// Since StockSharp doesn't have a built-in Supertrend indicator,
 		// we'll use ATR and customize the calculation in the handler
 		var atr = new AverageTrueRange { Length = SupertrendPeriod };
-		var sma = new SimpleMovingAverage { Length = VolumeAvgPeriod }; // For volume average
+		var sma = new SMA { Length = VolumeAvgPeriod }; // For volume average
 
 		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);

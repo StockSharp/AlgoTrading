@@ -75,19 +75,19 @@ public class ExpMuvNorDiffCloudStrategy : Strategy
 	    _maPeriod = Param(nameof(MaPeriod), 14)
 	        .SetDisplay("MA Period", "Moving average period", "Parameters")
 	        .SetGreaterThanZero()
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(7, 28, 7);
 
 	    _momentumPeriod = Param(nameof(MomentumPeriod), 1)
 	        .SetDisplay("Momentum", "Momentum period", "Parameters")
 	        .SetGreaterThanZero()
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(1, 5, 1);
 
 	    _kPeriod = Param(nameof(KPeriod), 14)
 	        .SetDisplay("K Period", "Extremum period", "Parameters")
 	        .SetGreaterThanZero()
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(7, 28, 7);
 
 	    _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -108,9 +108,9 @@ public class ExpMuvNorDiffCloudStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 
 	    // configure indicator lengths
 	    _smaMomentum.Length = MomentumPeriod;

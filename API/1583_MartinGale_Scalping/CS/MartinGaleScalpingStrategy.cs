@@ -104,22 +104,22 @@ public class MartinGaleScalpingStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA Length", "Length for fast SMA", "General")
-			.SetCanOptimize(true);
+			;
 
 		_slowLength = Param(nameof(SlowLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA Length", "Length for slow SMA", "General")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 1.03m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit Mult", "Take profit multiplier", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 0.95m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss Mult", "Stop loss multiplier", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_tradingMode = Param(nameof(TradingMode), "Long")
 			.SetDisplay("Trading Mode", "Trade direction", "General");
@@ -149,12 +149,12 @@ public class MartinGaleScalpingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastSma = new SimpleMovingAverage { Length = FastLength };
-		_slowSma = new SimpleMovingAverage { Length = SlowLength };
+		_fastSma = new SMA { Length = FastLength };
+		_slowSma = new SMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

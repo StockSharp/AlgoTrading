@@ -59,30 +59,30 @@ public class ColorLemanTrendStrategy : Strategy
 		_minPeriod = Param(nameof(Min), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Min", "Shortest period", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_midPeriod = Param(nameof(Midle), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Midle", "Middle period", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_maxPeriod = Param(nameof(Max), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Max", "Longest period", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_emaPeriod = Param(nameof(PeriodEma), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Smoothing length", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 			.SetDisplay("Stop Loss", "Stop loss in points", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetDisplay("Take Profit", "Take profit in points", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_allowBuy = Param(nameof(AllowBuy), true)
 			.SetDisplay("Allow Buy", "Enable long entries", "Trading");
@@ -99,12 +99,12 @@ public class ColorLemanTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_bullsEma = new ExponentialMovingAverage { Length = PeriodEma };
-		_bearsEma = new ExponentialMovingAverage { Length = PeriodEma };
+		_bullsEma = new EMA { Length = PeriodEma };
+		_bearsEma = new EMA { Length = PeriodEma };
 
 		var highestMin = new Highest { Length = Min };
 		var highestMid = new Highest { Length = Midle };

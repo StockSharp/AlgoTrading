@@ -58,17 +58,17 @@ public class QqqV2EslEasyPeasyXStrategy : Strategy
 		_mainMaLength = Param(nameof(MainMaLength), 200)
 			.SetRange(50, 400)
 			.SetDisplay("Main MA Length", "Length of main moving average", "MA Settings")
-			.SetCanOptimize(true);
+			;
 
 		_trendLongLength = Param(nameof(TrendLongLength), 100)
 			.SetRange(20, 200)
 			.SetDisplay("Trend Long Length", "Trend filter length for long trades", "MA Settings")
-			.SetCanOptimize(true);
+			;
 
 		_trendShortLength = Param(nameof(TrendShortLength), 50)
 			.SetRange(20, 200)
 			.SetDisplay("Trend Short Length", "Trend filter length for short trades", "MA Settings")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
@@ -80,20 +80,20 @@ public class QqqV2EslEasyPeasyXStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var mainMa = new ExponentialMovingAverage { Length = MainMaLength };
-		var trendLongMa = new ExponentialMovingAverage { Length = TrendLongLength };
-		var trendShortMa = new ExponentialMovingAverage { Length = TrendShortLength };
+		var mainMa = new EMA { Length = MainMaLength };
+		var trendLongMa = new EMA { Length = TrendLongLength };
+		var trendShortMa = new EMA { Length = TrendShortLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(mainMa, trendLongMa, trendShortMa, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal mainMa, decimal trendLong, decimal trendShort)

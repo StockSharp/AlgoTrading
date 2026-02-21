@@ -91,22 +91,22 @@ public class ParabolicSarDistanceMeanReversionStrategy : Strategy
 	{
 		_accelerationFactor = Param(nameof(AccelerationFactor), 0.02m)
 			.SetDisplay("Acceleration Factor", "Acceleration factor for Parabolic SAR", "Parabolic SAR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_accelerationLimit = Param(nameof(AccelerationLimit), 0.2m)
 			.SetDisplay("Acceleration Limit", "Acceleration limit for Parabolic SAR", "Parabolic SAR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.3m, 0.05m);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation of distance", "Mean Reversion")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
 			.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Mean Reversion")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -135,9 +135,9 @@ public class ParabolicSarDistanceMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_parabolicSar = new ParabolicSar
@@ -146,7 +146,7 @@ public class ParabolicSarDistanceMeanReversionStrategy : Strategy
 			AccelerationMax = AccelerationLimit
 		};
 		
-		_distanceAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_distanceAverage = new SMA { Length = LookbackPeriod };
 		_distanceStdDev = new StandardDeviation { Length = LookbackPeriod };
 		
 		// Reset stored values
@@ -185,11 +185,11 @@ public class ParabolicSarDistanceMeanReversionStrategy : Strategy
 		_currentDistanceShort = _sarValue - candle.ClosePrice;
 		
 		// Calculate averages and standard deviations for both distances
-		var longDistanceAvg = _distanceAverage.Process(_currentDistanceLong, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-		var longDistanceStdDev = _distanceStdDev.Process(_currentDistanceLong, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var longDistanceAvg = _distanceAverage.Process(new DecimalIndicatorValue(_distanceAverage, _currentDistanceLong, candle.ServerTime)).ToDecimal();
+		var longDistanceStdDev = _distanceStdDev.Process(new DecimalIndicatorValue(_distanceStdDev, _currentDistanceLong, candle.ServerTime)).ToDecimal();
 		
-		var shortDistanceAvg = _distanceAverage.Process(_currentDistanceShort, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-		var shortDistanceStdDev = _distanceStdDev.Process(_currentDistanceShort, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var shortDistanceAvg = _distanceAverage.Process(new DecimalIndicatorValue(_distanceAverage, _currentDistanceShort, candle.ServerTime)).ToDecimal();
+		var shortDistanceStdDev = _distanceStdDev.Process(new DecimalIndicatorValue(_distanceStdDev, _currentDistanceShort, candle.ServerTime)).ToDecimal();
 		
 		// Skip the first value
 		if (_prevDistanceLong == 0 || _prevDistanceShort == 0)

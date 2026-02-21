@@ -69,12 +69,12 @@ public class GannSwingBreakoutStrategy : Strategy
 	{
 		_swingLookback = Param(nameof(SwingLookback), 5)
 			.SetDisplay("Swing Lookback", "Number of bars to identify swing points", "Trading parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetDisplay("MA Period", "Period for moving average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -104,12 +104,12 @@ public class GannSwingBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		var ma = new SimpleMovingAverage { Length = MaPeriod };
+		var ma = new SMA { Length = MaPeriod };
 
 		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);

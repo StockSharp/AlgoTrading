@@ -162,9 +162,9 @@ public class MaWithLogisticStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastMa = CreateMa(MaType, FastLength);
 		var slowMa = CreateMa(MaType, SlowLength);
@@ -181,7 +181,7 @@ public class MaWithLogisticStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
@@ -205,15 +205,15 @@ public class MaWithLogisticStrategy : Strategy
 		{
 			if (ExitType == ExitTypes.Percent)
 			{
-				var tpPrice = PositionAvgPrice * (1m + TakeProfitPercent / 100m);
-				var slPrice = PositionAvgPrice * (1m - StopLossPercent / 100m);
+				var tpPrice = PositionPrice * (1m + TakeProfitPercent / 100m);
+				var slPrice = PositionPrice * (1m - StopLossPercent / 100m);
 
 				if (close >= tpPrice || close <= slPrice)
 					SellMarket(Math.Abs(Position));
 			}
 			else if (ExitType == ExitTypes.Logistic)
 			{
-				var profitPct = (close - PositionAvgPrice) / PositionAvgPrice;
+				var profitPct = (close - PositionPrice) / PositionPrice;
 				var prob = 1m / (1m + (decimal)Math.Exp((double)(-LogisticSlope * (profitPct - LogisticMidpoint))));
 				if (prob >= TakeProfitProbability || prob <= StopLossProbability)
 					SellMarket(Math.Abs(Position));
@@ -223,15 +223,15 @@ public class MaWithLogisticStrategy : Strategy
 		{
 			if (ExitType == ExitTypes.Percent)
 			{
-				var tpPrice = PositionAvgPrice * (1m - TakeProfitPercent / 100m);
-				var slPrice = PositionAvgPrice * (1m + StopLossPercent / 100m);
+				var tpPrice = PositionPrice * (1m - TakeProfitPercent / 100m);
+				var slPrice = PositionPrice * (1m + StopLossPercent / 100m);
 
 				if (close <= tpPrice || close >= slPrice)
 					BuyMarket(Math.Abs(Position));
 			}
 			else if (ExitType == ExitTypes.Logistic)
 			{
-				var profitPct = (PositionAvgPrice - close) / PositionAvgPrice;
+				var profitPct = (PositionPrice - close) / PositionPrice;
 				var prob = 1m / (1m + (decimal)Math.Exp((double)(-LogisticSlope * (profitPct - LogisticMidpoint))));
 				if (prob >= TakeProfitProbability || prob <= StopLossProbability)
 					BuyMarket(Math.Abs(Position));
@@ -239,12 +239,12 @@ public class MaWithLogisticStrategy : Strategy
 		}
 	}
 
-	private LengthIndicator<decimal> CreateMa(MaTypes type, int length)
+	private DecimalLengthIndicator CreateMa(MaTypes type, int length)
 	{
 		return type switch {
-			MaTypes.EMA => new ExponentialMovingAverage { Length = length },
+			MaTypes.EMA => new EMA { Length = length },
 			MaTypes.WMA => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

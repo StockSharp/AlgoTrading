@@ -61,12 +61,12 @@ public class IctNyKillZoneAutoTradingStrategy : Strategy
 	{
 		_stopLoss = Param(nameof(StopLoss), 30m)
 			.SetDisplay("Stop Loss", "Stop loss in ticks", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_takeProfit = Param(nameof(TakeProfit), 60m)
 			.SetDisplay("Take Profit", "Take profit in ticks", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 200m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -87,9 +87,9 @@ public class IctNyKillZoneAutoTradingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 

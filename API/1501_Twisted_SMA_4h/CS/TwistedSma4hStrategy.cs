@@ -97,31 +97,31 @@ public class TwistedSma4hStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA Length", "Length of the fastest SMA", "SMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_midLength = Param(nameof(MidLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Middle SMA Length", "Length of the middle SMA", "SMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_slowLength = Param(nameof(SlowLength), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA Length", "Length of the slow SMA", "SMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 1);
 
 		_mainSmaLength = Param(nameof(MainSmaLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Main SMA Length", "Length of the main SMA", "SMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
 		_kamaLength = Param(nameof(KamaLength), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("KAMA Length", "Length of KAMA", "KAMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -142,14 +142,14 @@ public class TwistedSma4hStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastSma = new SimpleMovingAverage { Length = FastLength };
-		_midSma = new SimpleMovingAverage { Length = MidLength };
-		_slowSma = new SimpleMovingAverage { Length = SlowLength };
-		_mainSma = new SimpleMovingAverage { Length = MainSmaLength };
+		_fastSma = new SMA { Length = FastLength };
+		_midSma = new SMA { Length = MidLength };
+		_slowSma = new SMA { Length = SlowLength };
+		_mainSma = new SMA { Length = MainSmaLength };
 		_kama = new KAMA { Length = KamaLength };
 		_prevKama = 0m;
 
@@ -158,7 +158,7 @@ public class TwistedSma4hStrategy : Strategy
 			.Bind(_fastSma, _midSma, _slowSma, _mainSma, _kama, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

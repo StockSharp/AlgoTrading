@@ -273,9 +273,9 @@ public class Ntk07RangeTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TradingStartHour < 0 || TradingStartHour > 23)
 		throw new InvalidOperationException("TradingStartHour must be between 0 and 23.");
@@ -290,7 +290,7 @@ public class Ntk07RangeTraderStrategy : Strategy
 		throw new InvalidOperationException("Only one trailing mode can be enabled at a time.");
 
 		_priceStep = Security?.PriceStep ?? 1m;
-		_movingAverage = new SimpleMovingAverage { Length = MovingAveragePeriod };
+		_movingAverage = new SMA { Length = MovingAveragePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 

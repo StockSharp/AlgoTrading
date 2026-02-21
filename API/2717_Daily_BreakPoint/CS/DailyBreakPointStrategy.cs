@@ -172,7 +172,7 @@ public class DailyBreakPointStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
+		return [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
 	}
 
 	/// <inheritdoc />
@@ -191,9 +191,9 @@ public class DailyBreakPointStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 		_pipSize = CalculatePipSize();
@@ -201,7 +201,7 @@ public class DailyBreakPointStrategy : Strategy
 		var intradaySubscription = SubscribeCandles(CandleType);
 		intradaySubscription.Bind(ProcessCandle).Start();
 
-		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		dailySubscription.Bind(ProcessDailyCandle).Start();
 
 		var area = CreateChartArea();

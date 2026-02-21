@@ -58,11 +58,11 @@ public class Up3x1Premium2VmStrategy : Strategy
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 12)
 			.SetDisplay("Fast MA Period", "Length of the fast smoothed moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 26)
 			.SetDisplay("Slow MA Period", "Length of the slow smoothed moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rangeThreshold = Param(nameof(RangeThreshold), 0.0060m)
 			.SetDisplay("Range Threshold", "Minimum candle range required for the momentum filter", "Trading");
@@ -163,14 +163,14 @@ public class Up3x1Premium2VmStrategy : Strategy
 			yield break;
 
 		yield return (security, CandleType);
-		yield return (security, TimeSpan.FromDays(1).TimeFrame());
+		yield return (security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	// Prepare subscriptions and risk modules once the strategy is launched.
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = Security?.PriceStep ?? 0m;
 		// Default to one point when the instrument does not expose a price step.
@@ -179,14 +179,12 @@ public class Up3x1Premium2VmStrategy : Strategy
 
 		var fastMa = new SmoothedMovingAverage
 		{
-			Length = FastMaPeriod,
-			CandlePrice = CandlePrice.Typical,
+			Length = FastMaPeriod
 		};
 
 		var slowMa = new SmoothedMovingAverage
 		{
-			Length = SlowMaPeriod,
-			CandlePrice = CandlePrice.Typical,
+			Length = SlowMaPeriod
 		};
 
 		var mainSubscription = SubscribeCandles(CandleType);
@@ -195,8 +193,8 @@ public class Up3x1Premium2VmStrategy : Strategy
 			.Bind(fastMa, slowMa, ProcessPrimaryCandle)
 			.Start();
 
-		var dailyMa = new SimpleMovingAverage { Length = 10 };
-		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailyMa = new SMA { Length = 10 };
+		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		// Daily candles replicate the PERIOD_D1 series used by the original EA.
 		dailySubscription
 			.Bind(dailyMa, ProcessDailyCandle)

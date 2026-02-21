@@ -102,31 +102,31 @@ public class SupertrendStochasticStrategy : Strategy
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Period", "Supertrend ATR period length", "Supertrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Multiplier", "Supertrend ATR multiplier", "Supertrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Stochastic oscillator period", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_stochK = Param(nameof(StochK), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "Stochastic %K period", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_stochD = Param(nameof(StochD), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Stochastic %D period", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -135,7 +135,7 @@ public class SupertrendStochasticStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2.0m, 0.5m);
 	}
 
@@ -154,9 +154,9 @@ public class SupertrendStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_supertrend = new()

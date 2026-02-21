@@ -75,19 +75,19 @@ public class KeltnerChannelGoldenCrossStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 21)
 		.SetDisplay("MA Length", "Length for basis moving average", "General")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_entryAtrMultiplier = Param(nameof(EntryAtrMultiplier), 1m)
 		.SetDisplay("Entry ATR Mult", "ATR multiplier for entry channel", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_profitAtrMultiplier = Param(nameof(ProfitAtrMultiplier), 4m)
 		.SetDisplay("Profit Mult", "ATR multiplier for take profit", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_exitAtrMultiplier = Param(nameof(ExitAtrMultiplier), -1m)
 		.SetDisplay("Exit Mult", "ATR multiplier for stop", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
 		.SetDisplay("MA Type", "Type of basis moving average", "General");
@@ -95,34 +95,34 @@ public class KeltnerChannelGoldenCrossStrategy : Strategy
 		_shortMaLength = Param(nameof(ShortMaLength), 50)
 		.SetDisplay("Short MA", "Short moving average length", "Trend")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_longMaLength = Param(nameof(LongMaLength), 200)
 		.SetDisplay("Long MA", "Long moving average length", "Trend")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var basis = CreateMa(MaType, MaLength);
 		var entryAtr = new AverageTrueRange { Length = 10 };
 		var atr = new AverageTrueRange { Length = MaLength };
-		var shortMa = new ExponentialMovingAverage { Length = ShortMaLength };
-		var longMa = new ExponentialMovingAverage { Length = LongMaLength };
+		var shortMa = new EMA { Length = ShortMaLength };
+		var longMa = new EMA { Length = LongMaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(basis, entryAtr, atr, shortMa, longMa, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -135,13 +135,13 @@ public class KeltnerChannelGoldenCrossStrategy : Strategy
 		}
 	}
 
-	private LengthIndicator<decimal> CreateMa(MovingAverageTypes type, int length)
+	private DecimalLengthIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

@@ -103,21 +103,21 @@ public class FibonacciLevelsHighLowStrategy : Strategy
 		_lowestLookback = Param(nameof(LowestLookback), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lowest Lookback", "Lookback bars for lowest price", "Criteria")
-			.SetCanOptimize(true);
+			;
 
 		_highestLookback = Param(nameof(HighestLookback), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Highest Lookback", "Lookback bars for highest price", "Criteria")
-			.SetCanOptimize(true);
+			;
 
 		_fibLevel = Param(nameof(FibLevel), 0.5m)
 			.SetDisplay("Fibonacci Level", "Fibonacci level for signals", "Fibonacci")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_higherTimeframe = Param(nameof(HigherTimeframe), TimeSpan.FromDays(1).TimeFrame())
+		_higherTimeframe = Param(nameof(HigherTimeframe), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Higher Timeframe", "Timeframe for Fibonacci levels", "General");
 
 		_useCurrentHtf = Param(nameof(UseCurrentHtf), false)
@@ -149,9 +149,9 @@ public class FibonacciLevelsHighLowStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = HighestLookback };
 		_lowest = new Lowest { Length = LowestLookback };
@@ -172,7 +172,7 @@ public class FibonacciLevelsHighLowStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessHigher(ICandleMessage candle)

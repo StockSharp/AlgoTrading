@@ -101,25 +101,25 @@ public class LarryConnersVixReversalIIStrategy : Strategy
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 25)
 			.SetDisplay("RSI Period", "RSI length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_overbought = Param(nameof(OverboughtLevel), 61)
 			.SetDisplay("Overbought Level", "RSI overbought level", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_oversold = Param(nameof(OversoldLevel), 42)
 			.SetDisplay("Oversold Level", "RSI oversold level", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_minHolding = Param(nameof(MinHoldingDays), 7)
 			.SetDisplay("Min Holding Days", "Minimum holding period", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_maxHolding = Param(nameof(MaxHoldingDays), 12)
 			.SetDisplay("Max Holding Days", "Maximum holding period", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Data");
 	}
 
@@ -134,9 +134,9 @@ public class LarryConnersVixReversalIIStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 

@@ -246,7 +246,7 @@ public MartingaleViHybridStrategy()
 	_moneyTakeProfit = Param(nameof(MoneyTakeProfit), 10m)
 	.SetGreaterThanZero()
 	.SetDisplay("Money TP", "Profit target in currency", "Risk")
-	.SetCanOptimize(true);
+	;
 
 	_usePercentTakeProfit = Param(nameof(UsePercentTakeProfit), false)
 	.SetDisplay("Use Percent TP", "Enable percent take profit", "Risk");
@@ -254,7 +254,7 @@ public MartingaleViHybridStrategy()
 	_percentTakeProfit = Param(nameof(PercentTakeProfit), 10m)
 	.SetGreaterThanZero()
 	.SetDisplay("Percent TP", "Profit target as percent of equity", "Risk")
-	.SetCanOptimize(true);
+	;
 
 	_enableTrailing = Param(nameof(EnableTrailing), true)
 	.SetDisplay("Enable Trailing", "Use trailing stop in money", "Risk");
@@ -262,32 +262,32 @@ public MartingaleViHybridStrategy()
 	_trailingActivationMoney = Param(nameof(TrailingActivationMoney), 40m)
 	.SetGreaterThanZero()
 	.SetDisplay("Trailing Activation", "Profit required to start trailing", "Risk")
-	.SetCanOptimize(true);
+	;
 
 	_trailingDrawdownMoney = Param(nameof(TrailingDrawdownMoney), 10m)
 	.SetGreaterThanZero()
 	.SetDisplay("Trailing Drawdown", "Allowed profit give back", "Risk")
-	.SetCanOptimize(true);
+	;
 
 	_takeProfitPips = Param(nameof(TakeProfitPips), 10)
 	.SetGreaterThanZero()
 	.SetDisplay("Take Profit (pips)", "Distance for per-trade take profit", "Trading")
-	.SetCanOptimize(true);
+	;
 
 	_pipStep = Param(nameof(PipStep), 10)
 	.SetGreaterThanZero()
 	.SetDisplay("Pip Step", "Distance before adding a new order", "Martingale")
-	.SetCanOptimize(true);
+	;
 
 	_initialVolume = Param(nameof(InitialVolume), 1m)
 	.SetGreaterThanZero()
 	.SetDisplay("Initial Volume", "Volume of the first order", "Martingale")
-	.SetCanOptimize(true);
+	;
 
 	_volumeMultiplier = Param(nameof(VolumeMultiplier), 2m)
 	.SetGreaterThanZero()
 	.SetDisplay("Volume Multiplier", "Multiplier for each addition", "Martingale")
-	.SetCanOptimize(true);
+	;
 
 	_maxTrades = Param(nameof(MaxTrades), 4)
 	.SetGreaterThanZero()
@@ -300,22 +300,22 @@ public MartingaleViHybridStrategy()
 	_slowPeriod = Param(nameof(SlowPeriod), 50)
 	.SetGreaterThanZero()
 	.SetDisplay("Slow MA", "Slow moving average period", "Indicators")
-	.SetCanOptimize(true);
+	;
 
 	_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 	.SetGreaterThanZero()
 	.SetDisplay("MACD Fast", "Fast EMA length", "Indicators")
-	.SetCanOptimize(true);
+	;
 
 	_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 	.SetGreaterThanZero()
 	.SetDisplay("MACD Slow", "Slow EMA length", "Indicators")
-	.SetCanOptimize(true);
+	;
 
 	_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 	.SetGreaterThanZero()
 	.SetDisplay("MACD Signal", "Signal EMA length", "Indicators")
-	.SetCanOptimize(true);
+	;
 
 	_closeMaxOrders = Param(nameof(CloseMaxOrders), true)
 	.SetDisplay("Close Max Orders", "Close all trades when max trades reached", "Martingale");
@@ -386,8 +386,8 @@ private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 	if (candle.State != CandleStates.Finished)
 	return;
 
-	var fastValue = _fastSma.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
-	var slowValue = _slowSma.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
+	var fastValue = _fastSma.Process(new DecimalIndicatorValue(_fastSma, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+	var slowValue = _slowSma.Process(new DecimalIndicatorValue(_slowSma, candle.ClosePrice, candle.OpenTime)).ToDecimal();
 
 	if (macdValue is not MovingAverageConvergenceDivergenceSignalValue macdTyped)
 	return;
@@ -668,7 +668,7 @@ private decimal CalculateUnrealizedPnL(decimal price)
 	if (priceStep <= 0m || stepPrice <= 0m || Position == 0)
 	return 0m;
 
-	var diff = price - PositionAvgPrice;
+	var diff = price - PositionPrice;
 	var steps = diff / priceStep;
 	return steps * stepPrice * Position;
 }

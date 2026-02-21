@@ -103,11 +103,11 @@ public class SpringReversalStrategy : Strategy
 		_lastLowestValue = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		// Initialize indicators
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
+		_ma = new SMA { Length = MaPeriod };
 		_lowest = new Lowest { Length = LookbackPeriod };
 		
 		// Create and setup subscription for candles

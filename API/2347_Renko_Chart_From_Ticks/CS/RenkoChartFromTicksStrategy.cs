@@ -43,7 +43,7 @@ public class RenkoChartFromTicksStrategy : Strategy
 		_brickSize = Param(nameof(BrickSize), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Brick Size", "Renko brick size", "General")
-			.SetCanOptimize(true);
+			;
 
 	}
 
@@ -60,9 +60,9 @@ public class RenkoChartFromTicksStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(_renkoType);
 		subscription.Bind(ProcessCandle).Start();
@@ -74,7 +74,7 @@ public class RenkoChartFromTicksStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

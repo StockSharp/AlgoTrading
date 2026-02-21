@@ -62,7 +62,7 @@ public class ChartParametersDiagnosticsStrategy : Strategy
 		_visibleBars = Param(nameof(VisibleBars), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Visible Bars", "Approximate number of candles that the chart can display at once.", "Chart Layout")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 	}
 
@@ -84,9 +84,9 @@ public class ChartParametersDiagnosticsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_horizontalResolution = VisibleBars;
 		_digits = (int)(Security?.Decimals ?? 0);
@@ -99,14 +99,12 @@ public class ChartParametersDiagnosticsStrategy : Strategy
 
 		_highest = new Highest
 		{
-			Length = VisibleBars,
-			CandlePrice = CandlePrice.High
+			Length = VisibleBars
 		};
 
 		_lowest = new Lowest
 		{
-			Length = VisibleBars,
-			CandlePrice = CandlePrice.Low
+			Length = VisibleBars
 		};
 
 		var subscription = SubscribeCandles(CandleType);

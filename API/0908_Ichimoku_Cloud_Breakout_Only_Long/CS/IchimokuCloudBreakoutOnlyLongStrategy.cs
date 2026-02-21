@@ -73,19 +73,19 @@ public class IchimokuCloudBreakoutOnlyLongStrategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Tenkan Period", "Tenkan-sen length", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Kijun Period", "Kijun-sen length", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 			.SetGreaterThanZero()
 			.SetDisplay("Senkou Span B Period", "Senkou Span B length", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 60, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -109,9 +109,9 @@ public class IchimokuCloudBreakoutOnlyLongStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ichimoku = new Ichimoku
 		{

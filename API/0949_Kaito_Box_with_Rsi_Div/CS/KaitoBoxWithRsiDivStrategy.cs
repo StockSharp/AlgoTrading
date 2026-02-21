@@ -101,12 +101,12 @@ namespace StockSharp.Samples.Strategies;
 	{
 	_boxLength = Param(nameof(BoxLength), 3)
 	.SetDisplay("Box Length", "Length of the box range", "General")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(2, 10, 1);
 	
 	_rsiLength = Param(nameof(RsiLength), 2)
 	.SetDisplay("RSI Length", "Length of RSI", "General")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(2, 14, 1);
 	
 	_ma20Period = Param(nameof(Ma20Period), 20)
@@ -132,19 +132,19 @@ namespace StockSharp.Samples.Strategies;
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 	
-	StartProtection();
+	StartProtection(null, null);
 	
 	var highest = new Highest { Length = BoxLength };
 	var lowest = new Lowest { Length = BoxLength };
 	var rsi = new RelativeStrengthIndex { Length = RsiLength };
-	var ma20 = new SimpleMovingAverage { Length = Ma20Period };
-	var ma50 = new SimpleMovingAverage { Length = Ma50Period };
-	var ma100 = new SimpleMovingAverage { Length = Ma100Period };
-	var ma200 = new SimpleMovingAverage { Length = Ma200Period };
+	var ma20 = new SMA { Length = Ma20Period };
+	var ma50 = new SMA { Length = Ma50Period };
+	var ma100 = new SMA { Length = Ma100Period };
+	var ma200 = new SMA { Length = Ma200Period };
 	
 	var subscription = SubscribeCandles(CandleType);
 	subscription

@@ -59,24 +59,24 @@ public class MaGridStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 48)
 		.SetRange(5, 400)
 		.SetDisplay("MA Period", "Exponential moving average length", "Grid")
-		.SetCanOptimize(true);
+		;
 
 		_gridAmount = Param(nameof(GridAmount), 6)
 		.SetRange(2, 40)
 		.SetDisplay("Grid Amount", "Number of grid steps (will be forced to an even value)", "Grid")
-		.SetCanOptimize(true);
+		;
 
 		_distance = Param(nameof(Distance), 0.005m)
 		.SetGreaterThanZero()
 		.SetDisplay("Distance", "Relative spacing between grid levels", "Grid")
-		.SetCanOptimize(true);
+		;
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Volume per grid order", "Risk")
-		.SetCanOptimize(true);
+		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle type used by the strategy", "Data");
 	}
 
@@ -151,9 +151,9 @@ public class MaGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_effectiveGridAmount = GetEffectiveGridAmount();
 		_currentGrid = 0;
@@ -164,7 +164,7 @@ public class MaGridStrategy : Strategy
 		_shortExposure = 0m;
 		_orderIntents.Clear();
 
-		_ema = new ExponentialMovingAverage
+		_ema = new EMA
 		{
 			Length = MaPeriod
 		};

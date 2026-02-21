@@ -76,7 +76,7 @@ public class CurrencyPPPValueStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("K", "Number of currencies to long/short", "General");
 
-		_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame of candles", "General");
 
 		_minUsd = Param(nameof(MinTradeUsd), 100m)

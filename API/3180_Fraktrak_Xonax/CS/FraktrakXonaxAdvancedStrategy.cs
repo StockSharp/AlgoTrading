@@ -201,11 +201,11 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_tickSize = Security?.PriceStep ?? 0m;
 		if (_tickSize <= 0m)
@@ -359,7 +359,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 	{
 		if (Position > 0m)
 		{
-			_longEntry ??= PositionAvgPrice;
+			_longEntry ??= PositionPrice;
 
 			if (_longEntry is decimal entry)
 			{
@@ -388,7 +388,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 		}
 		else if (Position < 0m)
 		{
-			_shortEntry ??= PositionAvgPrice;
+			_shortEntry ??= PositionPrice;
 
 			if (_shortEntry is decimal entry)
 			{
@@ -537,15 +537,15 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 
 		if (Position > 0m)
 		{
-			_longEntry = PositionAvgPrice;
+			_longEntry = PositionPrice;
 			_shortEntry = null;
-			SetupInitialLongLevels(PositionAvgPrice);
+			SetupInitialLongLevels(PositionPrice);
 		}
 		else if (Position < 0m)
 		{
-			_shortEntry = PositionAvgPrice;
+			_shortEntry = PositionPrice;
 			_longEntry = null;
-			SetupInitialShortLevels(PositionAvgPrice);
+			SetupInitialShortLevels(PositionPrice);
 		}
 		else
 		{

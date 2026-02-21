@@ -129,34 +129,34 @@ public class LbsStrategy : Strategy
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips. Zero disables the stop.", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips.", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 15)
 		.SetDisplay("Trailing Step (pips)", "Additional pips required before the trailing stop moves.", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_moneyMode = Param(nameof(MoneyMode), MoneyManagementModes.FixedLot)
 		.SetDisplay("Money Mode", "Use fixed lots or risk percentage for sizing.", "Money Management");
 
 		_volumeOrRisk = Param(nameof(VolumeOrRisk), 1m)
 		.SetDisplay("Volume / Risk %", "Fixed lot size or risk percentage depending on the money mode.", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_hour1 = Param(nameof(Hour1), 10)
 		.SetDisplay("Hour 1", "First hour (0 disables).", "Timing")
-		.SetCanOptimize(true);
+		;
 
 		_hour2 = Param(nameof(Hour2), 11)
 		.SetDisplay("Hour 2", "Second hour (0 disables).", "Timing")
-		.SetCanOptimize(true);
+		;
 
 		_hour3 = Param(nameof(Hour3), 12)
 		.SetDisplay("Hour 3", "Third hour (0 disables).", "Timing")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Candle timeframe used for breakout calculations.", "General");
@@ -185,9 +185,9 @@ public class LbsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
 			throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");

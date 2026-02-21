@@ -135,7 +135,7 @@ public class OvernightSentimentAnomalyStrategy : Strategy
 
 	private void OnMinute(ICandleMessage candle)
 	{
-		var utc = candle.OpenTime.UtcDateTime;
+		var utc = candle.OpenTime;
 		
 		// 20:55 UTC ? 15:55 ET (entry 5 min before close)
 		if (utc.Hour == 20 && utc.Minute == 55)

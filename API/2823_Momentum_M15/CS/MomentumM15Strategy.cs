@@ -88,7 +88,7 @@ public class MomentumM15Strategy : Strategy
 		_volumeParam = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Default order volume", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -97,7 +97,7 @@ public class MomentumM15Strategy : Strategy
 		_maPeriodParam = Param(nameof(MaPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average lookback length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_maShiftParam = Param(nameof(MaShift), 8)
@@ -113,7 +113,7 @@ public class MomentumM15Strategy : Strategy
 		_momentumPeriodParam = Param(nameof(MomentumPeriod), 23)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Momentum indicator lookback", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 1);
 
 		_momentumPriceParam = Param(nameof(MomentumPrice), CandlePrices.Open)
@@ -303,9 +303,9 @@ public class MomentumM15Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = CreateMovingAverage(MaMethod, MaPeriod);
 		_momentum = new Momentum { Length = MomentumPeriod };
@@ -370,7 +370,7 @@ public class MomentumM15Strategy : Strategy
 	private decimal? ProcessMovingAverage(ICandleMessage candle)
 	{
 		var price = GetPrice(candle, MaPrice);
-		var value = _ma.Process(price, candle.OpenTime, true);
+		var value = _ma.Process(new DecimalIndicatorValue(_ma, price, candle.OpenTime));
 
 		if (!value.IsFinal)
 		return null;
@@ -392,7 +392,7 @@ public class MomentumM15Strategy : Strategy
 	private decimal? ProcessMomentum(ICandleMessage candle)
 	{
 		var price = GetPrice(candle, MomentumPrice);
-		var value = _momentum.Process(price, candle.OpenTime, true);
+		var value = _momentum.Process(new DecimalIndicatorValue(_momentum, price, candle.OpenTime));
 
 		if (!value.IsFinal)
 		return null;
@@ -582,11 +582,11 @@ public class MomentumM15Strategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = period },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MovingAverageMethods.Simple => new SMA { Length = period },
+			MovingAverageMethods.Exponential => new EMA { Length = period },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = period },
-			_ => new SimpleMovingAverage { Length = period },
+			_ => new SMA { Length = period },
 		};
 	}
 }

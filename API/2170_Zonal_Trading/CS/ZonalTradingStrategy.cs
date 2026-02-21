@@ -76,12 +76,12 @@ public class ZonalTradingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ao = new AwesomeOscillator();
-		_aoMa = new SimpleMovingAverage { Length = 5, Input = _ao };
+		_aoMa = new SMA { Length = 5, Input = _ao };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

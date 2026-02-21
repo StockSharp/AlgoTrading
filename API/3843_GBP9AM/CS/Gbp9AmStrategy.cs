@@ -143,15 +143,15 @@ public class Gbp9AmStrategy : Strategy
 
 		_lookHour = Param(nameof(LookHour), 9)
 			.SetDisplay("Look hour", "Hour that represents the London 9 AM fix", "Timing")
-			.SetCanOptimize(true);
+			;
 
 		_lookMinute = Param(nameof(LookMinute), 0)
 			.SetDisplay("Look minute", "Minute offset for the morning snapshot", "Timing")
-			.SetCanOptimize(true);
+			;
 
 		_closeHour = Param(nameof(CloseHour), 18)
 			.SetDisplay("Close hour", "Hour for forced daily exit", "Timing")
-			.SetCanOptimize(true);
+			;
 
 		_useCloseHour = Param(nameof(UseCloseHour), true)
 			.SetDisplay("Use close hour", "Toggle the forced exit logic", "Timing");
@@ -159,27 +159,27 @@ public class Gbp9AmStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Take profit (pips)", "Target distance applied to triggered trades", "Risk management")
-			.SetCanOptimize(true);
+			;
 
 		_buyDistancePips = Param(nameof(BuyDistancePips), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy distance (pips)", "Offset for the buy stop order", "Entries")
-			.SetCanOptimize(true);
+			;
 
 		_sellDistancePips = Param(nameof(SellDistancePips), 22)
 			.SetGreaterThanZero()
 			.SetDisplay("Sell distance (pips)", "Offset for the sell stop order", "Entries")
-			.SetCanOptimize(true);
+			;
 
 		_buyStopLossPips = Param(nameof(BuyStopLossPips), 22)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy stop-loss (pips)", "Stop-loss distance for long positions", "Risk management")
-			.SetCanOptimize(true);
+			;
 
 		_sellStopLossPips = Param(nameof(SellStopLossPips), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Sell stop-loss (pips)", "Stop-loss distance for short positions", "Risk management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle type", "Candle series that drives the schedule", "General");
@@ -212,11 +212,11 @@ public class Gbp9AmStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_pipSize = CalculatePipSize();
 

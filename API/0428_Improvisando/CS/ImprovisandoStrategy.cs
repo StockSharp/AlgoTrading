@@ -36,7 +36,7 @@ public class ImprovisandoStrategy : Strategy
 	private bool _prevBullishCandle;
 	private bool _prevBearishCandle;
 	
-	// Хранение данных предыдущей свечи
+	//    
 	private decimal _prevClose;
 	private decimal _prevOpen;
 
@@ -123,15 +123,15 @@ public class ImprovisandoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_macdFast = new ExponentialMovingAverage { Length = 12 };
-		_macdSlow = new ExponentialMovingAverage { Length = 26 };
+		_macdFast = new EMA { Length = 12 };
+		_macdSlow = new EMA { Length = 26 };
 
 		// Subscribe to candles using high-level API
 		var subscription = SubscribeCandles(CandleType);

@@ -61,7 +61,7 @@ public class TwoDLimitsStrategy : Strategy
 	public TwoDLimitsStrategy()
 	{
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to read the previous day range.", "General");
 	}
 
@@ -96,9 +96,9 @@ public class TwoDLimitsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeLevel1()
 			.Bind(ProcessLevel1)

@@ -61,13 +61,13 @@ public class CorrelationCycleStrategy : Strategy
 		_period = Param(nameof(Period), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "Correlation cycle period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_thresholdDegrees = Param(nameof(ThresholdDegrees), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Market State Threshold", "Angle difference threshold", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -90,9 +90,9 @@ public class CorrelationCycleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -141,7 +141,7 @@ public class CorrelationCycleStrategy : Strategy
 
 		for (var i = 0; i < period; i++)
 		{
-			var x = (double)series[^1 - i];
+			var x = (double)series[series.Count - 1 - i];
 			var temp = pi2 * i / period;
 			var yc = Math.Cos(temp);
 			var ys = -Math.Sin(temp);

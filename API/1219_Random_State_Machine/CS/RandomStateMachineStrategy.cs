@@ -37,7 +37,7 @@ public class RandomStateMachineStrategy : Strategy
 	private readonly StrategyParam<int> _barsHoldShort;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _maIndicator = null!;
+	private DecimalLengthIndicator _maIndicator = null!;
 	private int _barsSinceReset;
 	private int _transitions;
 	private int _barIndex;
@@ -229,9 +229,9 @@ public class RandomStateMachineStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_maIndicator = CreateMa(MaTypeIndicator, MaLength);
 
@@ -239,13 +239,13 @@ public class RandomStateMachineStrategy : Strategy
 		subscription.Bind(_maIndicator, ProcessCandle).Start();
 	}
 
-	private LengthIndicator<decimal> CreateMa(MaTypes type, int length)
+	private DecimalLengthIndicator CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaTypes.Sma => new SimpleMovingAverage { Length = length },
-			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			MaTypes.Sma => new SMA { Length = length },
+			MaTypes.Ema => new EMA { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

@@ -49,17 +49,17 @@ public class FtCciMaStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Trade size expressed in lots", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 150m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), true)
 			.SetDisplay("Use Time Filter", "Enable the intraday trading window", "Trading");
@@ -75,28 +75,28 @@ public class FtCciMaStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Averaging period for the Commodity Channel Index", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_cciLevelUp = Param(nameof(CciLevelUp), 200m)
 			.SetDisplay("CCI Upper Level", "Upper overbought threshold used with MA confirmation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_cciLevelDown = Param(nameof(CciLevelDown), -200m)
 			.SetDisplay("CCI Lower Level", "Lower oversold threshold used with MA confirmation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_cciLevelBuy = Param(nameof(CciLevelBuy), -100m)
 			.SetDisplay("CCI Buy Level", "Soft oversold threshold when price is above the MA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_cciLevelSell = Param(nameof(CciLevelSell), 100m)
 			.SetDisplay("CCI Sell Level", "Soft overbought threshold when price is below the MA", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maPeriod = Param(nameof(MaPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Length of the weighted moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maShift = Param(nameof(MaShift), 0)
 			.SetDisplay("MA Shift", "Forward shift applied to the moving average line", "Indicators")
@@ -248,22 +248,20 @@ public class FtCciMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializePipSize();
 
 		_cci = new CommodityChannelIndex
 		{
-			Length = CciPeriod,
-			CandlePrice = CandlePrice.Typical,
+			Length = CciPeriod
 		};
 
 		_ma = new WeightedMovingAverage
 		{
-			Length = MaPeriod,
-			CandlePrice = CandlePrice.Weighted,
+			Length = MaPeriod
 		};
 
 		var subscription = SubscribeCandles(CandleType);

@@ -134,17 +134,17 @@ public class NRTRATRStopStrategy : Strategy
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 20)
 			.SetDisplay("ATR Period", "Number of candles used for ATR calculation", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_coefficient = Param(nameof(Coefficient), 2m)
 			.SetDisplay("Coefficient", "Multiplier applied to ATR when building the stop levels", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "How many closed candles to wait before acting on a signal", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 3, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -186,9 +186,9 @@ public class NRTRATRStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 

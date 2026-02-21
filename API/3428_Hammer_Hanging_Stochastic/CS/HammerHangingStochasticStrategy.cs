@@ -46,43 +46,43 @@ public class HammerHangingStochasticStrategy : Strategy
 
 		_stochPeriodK = Param(nameof(StochPeriodK), 15)
 			.SetDisplay("Stochastic %K", "%K period of the stochastic oscillator", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_stochPeriodD = Param(nameof(StochPeriodD), 49)
 			.SetDisplay("Stochastic %D", "%D period (smoothing) of the stochastic oscillator", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_stochPeriodSlow = Param(nameof(StochPeriodSlow), 25)
 			.SetDisplay("Stochastic Slow", "Slow smoothing period for %K", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
 			.SetDisplay("Oversold Level", "Threshold used to confirm hammer signals", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
 			.SetDisplay("Overbought Level", "Threshold used to confirm hanging man signals", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_exitLowerLevel = Param(nameof(ExitLowerLevel), 20m)
 			.SetDisplay("Exit Lower Level", "Level where long trades are closed on upward cross", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_exitUpperLevel = Param(nameof(ExitUpperLevel), 80m)
 			.SetDisplay("Exit Upper Level", "Level where trades are closed on extreme cross", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_maxBodyRatio = Param(nameof(MaxBodyRatio), 0.35m)
 			.SetDisplay("Max Body Ratio", "Maximum candle body relative to range", "Pattern")
-			.SetCanOptimize(true);
+			;
 
 		_lowerShadowMultiplier = Param(nameof(LowerShadowMultiplier), 2.5m)
 			.SetDisplay("Lower Shadow Multiplier", "Minimum lower shadow length in body multiples", "Pattern")
-			.SetCanOptimize(true);
+			;
 
 		_upperShadowMultiplier = Param(nameof(UpperShadowMultiplier), 0.3m)
 			.SetDisplay("Upper Shadow Multiplier", "Maximum upper shadow relative to body", "Pattern")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -199,13 +199,12 @@ public class HammerHangingStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochPeriodK,
+		{ K = { Length = StochPeriodK },
 			K = { Length = StochPeriodSlow },
 			D = { Length = StochPeriodD },
 		};
@@ -216,7 +215,7 @@ public class HammerHangingStochasticStrategy : Strategy
 			.BindEx(_stochastic, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

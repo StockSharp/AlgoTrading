@@ -105,43 +105,43 @@ public class PriceImpulseStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetDisplay("Order Volume", "Volume used for each market order", "Trading")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 2m, 0.1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150)
 			.SetDisplay("Stop Loss Points", "Stop loss distance expressed in price points", "Risk")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 50);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
 			.SetDisplay("Take Profit Points", "Take profit distance expressed in price points", "Risk")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 		_impulsePoints = Param(nameof(ImpulsePoints), 15)
 			.SetDisplay("Impulse Points", "Minimum ask/bid impulse required to trade", "Signals")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 5);
 
 		_historyGap = Param(nameof(HistoryGap), 15)
 			.SetDisplay("Gap Ticks", "Number of Level1 updates between comparison points", "Signals")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 5);
 
 		_extraHistory = Param(nameof(ExtraHistory), 15)
 			.SetDisplay("Extra History", "Additional Level1 samples kept to absorb bursts", "Signals")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 30, 5);
 
 		_cooldownSeconds = Param(nameof(CooldownSeconds), 100)
 			.SetDisplay("Cooldown Seconds", "Minimum number of seconds between trades", "Risk")
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 300, 20);
 	}
 
@@ -162,9 +162,9 @@ public class PriceImpulseStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Derive point value from the security metadata.
 		_tickSize = Security?.PriceStep ?? Security?.MinPriceStep ?? 1m;

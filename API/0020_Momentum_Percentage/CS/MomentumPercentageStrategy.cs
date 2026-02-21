@@ -67,17 +67,17 @@ public class MomentumPercentageStrategy : Strategy
 		_momentumPeriod = Param(nameof(MomentumPeriod), 10)
 			.SetRange(5, 30)
 			.SetDisplay("Momentum Period", "Period for momentum calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_thresholdPercent = Param(nameof(ThresholdPercent), 5m)
 			.SetRange(1m, 10m)
 			.SetDisplay("Threshold %", "Momentum percentage threshold for entry", "Strategy")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -90,13 +90,13 @@ public class MomentumPercentageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var momentum = new Momentum { Length = MomentumPeriod };
-		var sma = new SimpleMovingAverage { Length = 20 };
+		var sma = new SMA { Length = 20 };
 
 		// Subscribe to candles and bind the indicators
 		var subscription = SubscribeCandles(CandleType);

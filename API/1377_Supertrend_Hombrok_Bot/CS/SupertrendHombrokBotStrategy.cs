@@ -81,14 +81,14 @@ public class SupertrendHombrokBotStrategy : Strategy
 		_tpLevel = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_supertrend = new SuperTrend { Length = AtrPeriod, Multiplier = AtrMultiplier };
-		_volumeSma = new SimpleMovingAverage { Length = 20 };
+		_volumeSma = new SMA { Length = 20 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(_atr, _rsi, _supertrend, ProcessCandle).Start();
@@ -109,7 +109,7 @@ public class SupertrendHombrokBotStrategy : Strategy
 
 		var atr = atrVal.ToDecimal();
 		var rsi = rsiVal.ToDecimal();
-		var volAvg = _volumeSma.Process(candle.TotalVolume ?? 0m, candle.OpenTime, true).ToDecimal();
+		var volAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume ?? 0m, candle.OpenTime)).ToDecimal();
 		var volOk = candle.TotalVolume > volAvg * VolumeMultiplier;
 		var bodySize = Math.Abs(candle.ClosePrice - candle.OpenPrice);
 		var bodyOk = bodySize > atr * BodyPctOfAtr;

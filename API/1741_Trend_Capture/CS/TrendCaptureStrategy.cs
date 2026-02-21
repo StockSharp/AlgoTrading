@@ -151,8 +151,8 @@ public class TrendCaptureStrategy : Strategy {
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
-		base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+		base.OnStarted2(time);
 
 		_sar = new ParabolicSar { AccelerationStep = SarStep,
 								  AccelerationMax = SarMax };

@@ -102,27 +102,27 @@ public class KeltnerKalmanStrategy : Strategy
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 		.SetDisplay("EMA Period", "EMA period for Keltner Channel", "Keltner Channel")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 		.SetDisplay("ATR Period", "ATR period for Keltner Channel", "Keltner Channel")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 20, 2);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
 		.SetDisplay("ATR Multiplier", "ATR multiplier for Keltner Channel", "Keltner Channel")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_kalmanProcessNoise = Param(nameof(KalmanProcessNoise), 0.01m)
 		.SetDisplay("Kalman Process Noise (Q)", "Kalman filter process noise parameter", "Kalman Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.001m, 0.1m, 0.005m);
 
 		_kalmanMeasurementNoise = Param(nameof(KalmanMeasurementNoise), 0.1m)
 		.SetDisplay("Kalman Measurement Noise (R)", "Kalman filter measurement noise parameter", "Kalman Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 1.0m, 0.05m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -153,12 +153,12 @@ public class KeltnerKalmanStrategy : Strategy
 		_atr = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		_ema = new ExponentialMovingAverage
+		_ema = new EMA
 		{
 			Length = EmaPeriod
 		};

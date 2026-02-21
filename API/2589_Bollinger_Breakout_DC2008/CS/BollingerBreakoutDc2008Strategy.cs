@@ -66,13 +66,13 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 		_bandsPeriod = Param(nameof(BandsPeriod), 80)
 			.SetDisplay("Bands Period", "Number of candles for Bollinger Bands", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 		_bandsDeviation = Param(nameof(BandsDeviation), 3m)
 			.SetDisplay("Deviation", "Standard deviation multiplier", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
@@ -96,9 +96,9 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Bollinger Bands indicator with the configured parameters.
 		_bollinger = new BollingerBands
@@ -127,7 +127,7 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 			return;
 
 		// Calculate Bollinger Bands for the selected price source.
-		var indicatorValue = _bollinger.Process(GetAppliedPrice(candle), candle.OpenTime, true);
+		var indicatorValue = _bollinger.Process(new DecimalIndicatorValue(_bollinger, GetAppliedPrice(candle), candle.OpenTime));
 
 		if (!indicatorValue.IsFinal)
 			return;

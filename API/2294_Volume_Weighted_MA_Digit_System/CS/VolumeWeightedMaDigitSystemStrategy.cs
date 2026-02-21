@@ -77,7 +77,7 @@ public class VolumeWeightedMaDigitSystemStrategy : Strategy
 		_vwmaPeriod = Param(nameof(VwmaPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("VWMA Period", "Length of the VWMA indicator", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -86,13 +86,13 @@ public class VolumeWeightedMaDigitSystemStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss value in points", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 3000m, 100m);
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit value in points", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 5000m, 100m);
 	}
 
@@ -113,9 +113,9 @@ public class VolumeWeightedMaDigitSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_vwmaHigh.Length = VwmaPeriod;
 		_vwmaLow.Length = VwmaPeriod;
@@ -151,8 +151,8 @@ public class VolumeWeightedMaDigitSystemStrategy : Strategy
 			return;
 
 		// Update indicators with high and low prices
-		var highValue = _vwmaHigh.Process(candle.HighPrice, candle.OpenTime, true);
-		var lowValue = _vwmaLow.Process(candle.LowPrice, candle.OpenTime, true);
+		var highValue = _vwmaHigh.Process(new DecimalIndicatorValue(_vwmaHigh, candle.HighPrice, candle.OpenTime));
+		var lowValue = _vwmaLow.Process(new DecimalIndicatorValue(_vwmaLow, candle.LowPrice, candle.OpenTime));
 
 		if (!highValue.IsFinal || !lowValue.IsFinal)
 			return;

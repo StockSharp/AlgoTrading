@@ -41,18 +41,18 @@ public class CheckExecutionStrategy : Strategy
 
 		_iterations = Param(nameof(Iterations), 30)
 		.SetDisplay("Iterations", "Number of modify attempts (1-500).", "General")
-		.SetCanOptimize(true);
+		;
 
 		_orderMode = Param(nameof(OrderMode), CheckExecutionOrderTypes.Pending)
 		.SetDisplay("Order Mode", "Select pending or market order workflow.", "General");
 
 		_pendingOffset = Param(nameof(PendingOffset), 100m)
 		.SetDisplay("Pending Offset", "Distance in price steps above the ask for the test pending order.", "General")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossOffset = Param(nameof(StopLossOffset), 100m)
 		.SetDisplay("Stop Offset", "Distance in price steps below the ask for the protective stop order.", "General")
-		.SetCanOptimize(true);
+		;
 
 		UpdateIndicatorLength();
 	}
@@ -87,14 +87,14 @@ public class CheckExecutionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 		UpdateIndicatorLength();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		SubscribeLevel1(Security)
 		.Bind(ProcessLevel1)

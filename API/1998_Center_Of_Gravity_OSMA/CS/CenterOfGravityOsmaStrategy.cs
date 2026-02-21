@@ -95,29 +95,29 @@ public class CenterOfGravityOsmaStrategy : Strategy
 		_period = Param(nameof(Period), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Period", "Base calculation period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 
 		_smoothPeriod1 = Param(nameof(SmoothPeriod1), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Smooth 1", "First smoothing period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 10, 1);
 
 		_smoothPeriod2 = Param(nameof(SmoothPeriod2), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Smooth 2", "Second smoothing period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 10, 1);
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
 		.SetDisplay("Stop Loss", "Stop loss distance", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 100m, 10m);
 
 		_takeProfit = Param(nameof(TakeProfit), 0m)
 		.SetDisplay("Take Profit", "Take profit distance", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 100m, 10m);
 
 		_buyOpen = Param(nameof(BuyPosOpen), true)
@@ -152,9 +152,9 @@ public class CenterOfGravityOsmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_indicator = new CenterOfGravityOsmaIndicator
 		{

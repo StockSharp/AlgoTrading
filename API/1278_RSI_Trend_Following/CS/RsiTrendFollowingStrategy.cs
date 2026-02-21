@@ -114,43 +114,43 @@ public class RsiTrendFollowingStrategy : Strategy
 		_stopLossAtr = Param(nameof(StopLossAtr), 1.75m)
 				.SetGreaterThanZero()
 				.SetDisplay("ATR Stop Loss", "ATR multiplier for stop loss", "Risk")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(1m, 3m, 0.25m);
 
 		_trailingActivationAtr = Param(nameof(TrailingActivationAtr), 2.25m)
 				.SetGreaterThanZero()
 				.SetDisplay("ATR Trailing Activation", "ATR multiplier to activate trailing profit", "Risk")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(1.5m, 3.5m, 0.25m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 				.SetGreaterThanZero()
 				.SetDisplay("RSI Length", "RSI calculation period", "Indicators")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(10, 30, 1);
 
 		_trailingEmaLength = Param(nameof(TrailingEmaLength), 20)
 				.SetGreaterThanZero()
 				.SetDisplay("Trailing EMA Length", "Length of trailing EMA", "Indicators")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(10, 50, 5);
 
 		_macdFast = Param(nameof(MacdFastLength), 12)
 				.SetGreaterThanZero()
 				.SetDisplay("MACD Fast", "MACD fast period", "Indicators")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(8, 20, 2);
 
 		_macdSlow = Param(nameof(MacdSlowLength), 26)
 				.SetGreaterThanZero()
 				.SetDisplay("MACD Slow", "MACD slow period", "Indicators")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(20, 40, 2);
 
 		_macdSignal = Param(nameof(MacdSignalLength), 9)
 				.SetGreaterThanZero()
 				.SetDisplay("MACD Signal", "MACD signal period", "Indicators")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(5, 15, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -178,15 +178,15 @@ public class RsiTrendFollowingStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		var filterEma = new ExponentialMovingAverage { Length = 200 };
+		var filterEma = new EMA { Length = 200 };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		var stochastic = new StochasticOscillator { Length = 14, K = { Length = 1 }, D = { Length = 3 } };
+		var stochastic = new StochasticOscillator { K = { Length = 14 }, K = { Length = 1 }, D = { Length = 3 } };
 		var atr = new AverageTrueRange { Length = 14 };
-		var trailingEma = new ExponentialMovingAverage { Length = TrailingEmaLength };
+		var trailingEma = new EMA { Length = TrailingEmaLength };
 		var macd = new MovingAverageConvergenceDivergence
 		{
-				ShortPeriod = MacdFastLength,
-				LongPeriod = MacdSlowLength,
+				ShortMa = { Length = MacdFastLength },
+				LongMa = { Length = MacdSlowLength },
 				SignalPeriod = MacdSignalLength
 		};
 

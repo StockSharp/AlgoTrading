@@ -157,17 +157,17 @@ public class BreakThroughStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit (pips)", "Profit target distance", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 30m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (pips)", "Loss limit distance", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 20m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -194,10 +194,10 @@ public class BreakThroughStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

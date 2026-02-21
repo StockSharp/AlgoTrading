@@ -149,7 +149,7 @@ public class BreakdownPendingStopStrategy : Strategy
 		return new (Security sec, DataType dt)[]
 		{
 			(Security, WorkingCandleType),
-			(Security, TimeSpan.FromDays(1).TimeFrame()),
+			(Security, TimeSpan.FromMinutes(5).TimeFrame()),
 		};
 	}
 
@@ -180,9 +180,9 @@ public class BreakdownPendingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tickSize = Security.PriceStep ?? 1m;
 
@@ -193,7 +193,7 @@ public class BreakdownPendingStopStrategy : Strategy
 			.Start();
 
 		// Subscribe to daily candles to collect previous day range levels.
-		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		dailySubscription
 			.Bind(ProcessDailyCandle)
 			.Start();

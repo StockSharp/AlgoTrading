@@ -175,7 +175,7 @@ public class HeikenAshiIdeaStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 				.SetDisplay("Primary Candle Type", "Primary timeframe used for trading signals.", "Data");
 
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Higher Candle Type", "Confirmation timeframe used for Heikin Ashi trend filter.", "Data");
 
 		_closeAllCandleType = Param(nameof(CloseAllCandleType), TimeSpan.FromDays(7).TimeFrame())
@@ -234,9 +234,9 @@ public class HeikenAshiIdeaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 
@@ -471,32 +471,32 @@ public class HeikenAshiIdeaStrategy : Strategy
 
 	private static bool IsBullish(HeikinAshiCandle candle)
 	{
-		return candle.Close > candle.Open;
+		return candle.ClosePrice > candle.OpenPrice;
 	}
 
 	private static bool IsBearish(HeikinAshiCandle candle)
 	{
-		return candle.Close < candle.Open;
+		return candle.ClosePrice < candle.OpenPrice;
 	}
 
 	private bool HasNoLowerShadow(HeikinAshiCandle candle)
 	{
-		return Math.Abs(candle.Open - candle.Low) <= _comparisonTolerance;
+		return Math.Abs(candle.OpenPrice - candle.LowPrice) <= _comparisonTolerance;
 	}
 
 	private bool HasLowerShadow(HeikinAshiCandle candle)
 	{
-		return Math.Abs(candle.Open - candle.Low) > _comparisonTolerance;
+		return Math.Abs(candle.OpenPrice - candle.LowPrice) > _comparisonTolerance;
 	}
 
 	private bool HasNoUpperShadow(HeikinAshiCandle candle)
 	{
-		return Math.Abs(candle.Open - candle.High) <= _comparisonTolerance;
+		return Math.Abs(candle.OpenPrice - candle.HighPrice) <= _comparisonTolerance;
 	}
 
 	private bool HasUpperShadow(HeikinAshiCandle candle)
 	{
-		return Math.Abs(candle.Open - candle.High) > _comparisonTolerance;
+		return Math.Abs(candle.OpenPrice - candle.HighPrice) > _comparisonTolerance;
 	}
 
 	private readonly struct HeikinAshiCandle

@@ -29,11 +29,11 @@ public class CloseOrdersRiskControlStrategy : Strategy
 	{
 		_targetProfitMoney = Param(nameof(TargetProfitMoney), 10m)
 			.SetDisplay("Target Profit", "Floating profit (money) required to close matching orders", "General")
-			.SetCanOptimize(true);
+			;
 
 		_cutLossMoney = Param(nameof(CutLossMoney), 0m)
 			.SetDisplay("Cut Loss", "Floating loss (money) that triggers forced liquidation", "General")
-			.SetCanOptimize(true);
+			;
 
 		_magicNumber = Param(nameof(MagicNumber), string.Empty)
 			.SetDisplay("Magic Number", "Strategy identifier to match (empty = all)", "General");
@@ -82,9 +82,9 @@ public class CloseOrdersRiskControlStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TargetProfitMoney <= 0m)
 			throw new InvalidOperationException("Target profit must be greater than zero.");

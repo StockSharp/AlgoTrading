@@ -129,13 +129,13 @@ public class GridBotBacktestingStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_highest = new Highest { Length = BoundLookback };
 		_lowest = new Lowest { Length = BoundLookback };
-		_sma = new SimpleMovingAverage { Length = BoundLookback };
+		_sma = new SMA { Length = BoundLookback };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription

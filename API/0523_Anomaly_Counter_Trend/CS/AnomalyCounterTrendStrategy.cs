@@ -80,12 +80,12 @@ public class AnomalyCounterTrendStrategy : Strategy
 		_percentageThreshold = Param(nameof(PercentageThreshold), 1m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Percentage Threshold", "Minimum percentage change to trigger", "Anomaly Detection")
-			.SetCanOptimize(true);
+			;
 
 		_lookbackMinutes = Param(nameof(LookbackMinutes), 30)
 			.SetRange(5, 120)
 			.SetDisplay("Lookback Minutes", "Window size in minutes", "Anomaly Detection")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 100)
 			.SetRange(10, 300)
@@ -114,9 +114,9 @@ public class AnomalyCounterTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -96,17 +96,17 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 	{
 		_fastLength = Param(nameof(FastLength), 32)
 			.SetDisplay("Fast MA Length", "Length of the fast moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 120, 2);
 
 		_slowLength = Param(nameof(SlowLength), 86)
 			.SetDisplay("Slow MA Length", "Length of the slow moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 2);
 
 		_channelLength = Param(nameof(ChannelLength), 6)
 			.SetDisplay("Channel Lookback", "Number of previous candles for high/low channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 170m)
@@ -149,9 +149,9 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastMa = CreateMovingAverage(FastMaType, FastLength, PriceSource);
 		var slowMa = CreateMovingAverage(SlowMaType, SlowLength, PriceSource);
@@ -340,15 +340,15 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 		_stopPrice = 0m;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length, CandlePrices price)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageTypes type, int length, CandlePrices price)
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length, CandlePrice = price },
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length, CandlePrice = price },
+			MovingAverageTypes.Simple => new SMA { Length = length, CandlePrice = price },
+			MovingAverageTypes.Exponential => new EMA { Length = length, CandlePrice = price },
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length, CandlePrice = price },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length, CandlePrice = price },
-			_ => new SimpleMovingAverage { Length = length, CandlePrice = price },
+			_ => new SMA { Length = length, CandlePrice = price },
 		};
 	}
 

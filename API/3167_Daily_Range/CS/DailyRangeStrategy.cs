@@ -117,32 +117,32 @@ public class DailyRangeStrategy : Strategy
 	{
 		_rangeMode = Param(nameof(RangeMode), DailyRangeCalculations.HighestLowest)
 			.SetDisplay("Range Mode", "Daily range calculation method", "General")
-			.SetCanOptimize(true);
+			;
 
 		_slidingWindowDays = Param(nameof(SlidingWindowDays), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Sliding Window", "Number of calendar days to analyse", "General")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossCoefficient = Param(nameof(StopLossCoefficient), 0.03m)
 			.SetDisplay("Stop Loss Coeff.", "Stop-loss multiplier applied to the daily range", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitCoefficient = Param(nameof(TakeProfitCoefficient), 0.05m)
 			.SetDisplay("Take Profit Coeff.", "Take-profit multiplier applied to the daily range", "Risk Management")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_offsetCoefficient = Param(nameof(OffsetCoefficient), 0.01m)
 			.SetDisplay("Offset Coeff.", "Additional offset applied to breakout levels", "General")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_maxPositionsPerDay = Param(nameof(MaxPositionsPerDay), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades Per Day", "Maximum number of entries allowed per direction each day", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_startTime = Param(nameof(StartTime), new TimeSpan(10, 5, 0))
 			.SetDisplay("Start Time", "Time of day when a new range is computed", "General");
@@ -165,14 +165,14 @@ public class DailyRangeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

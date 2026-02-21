@@ -103,11 +103,11 @@ public class UpthrustReversalStrategy : Strategy
 		_lastHighestValue = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		// Initialize indicators
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
+		_ma = new SMA { Length = MaPeriod };
 		_highest = new Highest { Length = LookbackPeriod };
 		
 		// Create and setup subscription for candles

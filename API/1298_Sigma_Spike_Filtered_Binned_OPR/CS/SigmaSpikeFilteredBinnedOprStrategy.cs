@@ -77,19 +77,19 @@ public class SigmaSpikeFilteredBinnedOprStrategy : Strategy
 
 	public SigmaSpikeFilteredBinnedOprStrategy()
 	{
-		_sigmaSpikeLength = Param(nameof(SigmaSpikeLength), 20).SetCanOptimize(true).SetDisplay("Sigma spike stdev length");
-		_filterBySigmaSpike = Param(nameof(FilterBySigmaSpike), true).SetDisplay("Filter by sigma spike threshold?");
-		_sigmaSpikeThreshold = Param(nameof(SigmaSpikeThreshold), 2m).SetCanOptimize(true).SetDisplay("Sigma spike threshold");
-		_oprThreshold = Param(nameof(OprThreshold), 10).SetCanOptimize(true).SetDisplay("Upper/lower OPR threshold");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle type");
+		_sigmaSpikeLength = Param(nameof(SigmaSpikeLength), 20).SetDisplay("Sigma spike stdev length", "Sigma spike stdev length", "General");
+		_filterBySigmaSpike = Param(nameof(FilterBySigmaSpike), true).SetDisplay("Filter by sigma spike threshold?", "Filter by sigma spike threshold?", "General");
+		_sigmaSpikeThreshold = Param(nameof(SigmaSpikeThreshold), 2m).SetDisplay("Sigma spike threshold", "Sigma spike threshold", "General");
+		_oprThreshold = Param(nameof(OprThreshold), 10).SetDisplay("Upper/lower OPR threshold", "Upper/lower OPR threshold", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_returnsStdDev = new StandardDeviation { Length = SigmaSpikeLength };
 

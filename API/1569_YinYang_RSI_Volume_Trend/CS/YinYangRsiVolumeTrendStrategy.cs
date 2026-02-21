@@ -183,16 +183,16 @@ public class YinYangRsiVolumeTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = TrendLength, CandlePrice = CandlePrices.High };
 		_lowest = new Lowest { Length = TrendLength, CandlePrice = CandlePrices.Low };
-		_midEma = new ExponentialMovingAverage { Length = TrendLength };
-		_avgVolume = new SimpleMovingAverage { Length = TrendLength };
+		_midEma = new EMA { Length = TrendLength };
+		_avgVolume = new SMA { Length = TrendLength };
 		_midVolVwma = new VolumeWeightedMovingAverage { Length = 3 };
-		_diffSma = new SimpleMovingAverage { Length = TrendLength };
+		_diffSma = new SMA { Length = TrendLength };
 		_rsi = new RelativeStrengthIndex { Length = TrendLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -214,16 +214,16 @@ public class YinYangRsiVolumeTrendStrategy : Strategy
 			return;
 
 		var mid = (highest + lowest) / 2m;
-		var midSmoothed = _midEma.Process(mid, candle.OpenTime, true).ToDecimal();
+		var midSmoothed = _midEma.Process(new DecimalIndicatorValue(_midEma, mid, candle.OpenTime)).ToDecimal();
 
-		var avgVol = _avgVolume.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+		var avgVol = _avgVolume.Process(new DecimalIndicatorValue(_avgVolume, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 		var volDiff = avgVol == 0 ? 0 : candle.TotalVolume / avgVol;
 		var midVol = midSmoothed * volDiff;
-		var midVolSmoothed = _midVolVwma.Process(midVol, candle.OpenTime, true).ToDecimal();
+		var midVolSmoothed = _midVolVwma.Process(new DecimalIndicatorValue(_midVolVwma, midVol, candle.OpenTime)).ToDecimal();
 
 		var diff = highest - lowest;
-		var midDifference = _diffSma.Process(diff, candle.OpenTime, true).ToDecimal();
-		var midRsi = _rsi.Process(midVolSmoothed, candle.OpenTime, true).ToDecimal() * 0.01m;
+		var midDifference = _diffSma.Process(new DecimalIndicatorValue(_diffSma, diff, candle.OpenTime)).ToDecimal();
+		var midRsi = _rsi.Process(new DecimalIndicatorValue(_rsi, midVolSmoothed, candle.OpenTime)).ToDecimal() * 0.01m;
 		var midAdd = midRsi * midDifference;
 
 		var zoneHigh = midSmoothed + midAdd;

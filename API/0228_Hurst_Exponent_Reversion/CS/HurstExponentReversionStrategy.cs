@@ -72,17 +72,17 @@ public class HurstExponentReversionStrategy : Strategy
 	{
 		_hurstPeriod = Param(nameof(HurstPeriod), 100)
 			.SetDisplay("Hurst period", "Period for Hurst exponent calculation", "Strategy parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 10);
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetDisplay("Average period", "Period for price average calculation", "Strategy parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop-loss %", "Stop-loss as percentage from entry price", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -105,12 +105,12 @@ public class HurstExponentReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize the SMA indicator
-		_sma = new SimpleMovingAverage { Length = AveragePeriod };
+		_sma = new SMA { Length = AveragePeriod };
 
 		// Create a subscription to candlesticks
 		var subscription = SubscribeCandles(CandleType);

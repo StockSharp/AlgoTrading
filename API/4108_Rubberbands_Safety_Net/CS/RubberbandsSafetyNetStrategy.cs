@@ -70,13 +70,13 @@ public class RubberbandsSafetyNetStrategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 0.05m)
 		.SetGreaterThanZero()
 		.SetDisplay("Base Volume", "Starting order volume", "Position")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 1m, 0.01m);
 
 		_targetProfitPerLot = Param(nameof(TargetProfitPerLot), 1000m)
 		.SetGreaterThanZero()
 		.SetDisplay("Target Profit / Lot", "Realized profit target for the base trade", "Profit")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 2000m, 100m);
 
 		_useSessionTakeProfit = Param(nameof(UseSessionTakeProfit), true)
@@ -85,7 +85,7 @@ public class RubberbandsSafetyNetStrategy : Strategy
 		_sessionTakeProfitPerLot = Param(nameof(SessionTakeProfitPerLot), 1300m)
 		.SetGreaterThanZero()
 		.SetDisplay("Session TP / Lot", "Session-wide profit target per lot", "Session")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(200m, 3000m, 100m);
 
 		_useSessionStopLoss = Param(nameof(UseSessionStopLoss), false)
@@ -94,7 +94,7 @@ public class RubberbandsSafetyNetStrategy : Strategy
 		_sessionStopLossPerLot = Param(nameof(SessionStopLossPerLot), 300m)
 		.SetGreaterThanZero()
 		.SetDisplay("Session SL / Lot", "Session-wide loss limit per lot", "Session")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 2000m, 100m);
 
 		_quiesceNow = Param(nameof(QuiesceNow), false)
@@ -115,31 +115,31 @@ public class RubberbandsSafetyNetStrategy : Strategy
 		_safetyStartPerLot = Param(nameof(SafetyStartPerLot), 2000m)
 		.SetGreaterThanZero()
 		.SetDisplay("Safety Start / Lot", "Drawdown per lot to activate safety mode", "Safety")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(200m, 4000m, 200m);
 
 		_safetyVolume = Param(nameof(SafetyVolume), 0.05m)
 		.SetGreaterThanZero()
 		.SetDisplay("Safety Volume", "Volume of each safety averaging order", "Safety")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 1m, 0.01m);
 
 		_safetyStepPerLot = Param(nameof(SafetyStepPerLot), 3000m)
 		.SetGreaterThanZero()
 		.SetDisplay("Safety Step / Lot", "Additional drawdown per safety order", "Safety")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(200m, 6000m, 200m);
 
 		_safetyProfitPerLot = Param(nameof(SafetyProfitPerLot), 1300m)
 		.SetGreaterThanZero()
 		.SetDisplay("Safety Profit / Lot", "Net profit target while in safety mode", "Safety")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(200m, 3000m, 100m);
 
 		_safetyModeTakeProfitPerLot = Param(nameof(SafetyModeTakeProfitPerLot), 500m)
 		.SetGreaterThanZero()
 		.SetDisplay("Safety Session TP", "Session profit target while in safety", "Safety")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 2000m, 100m);
 
 		_useInitialState = Param(nameof(UseInitialState), false)
@@ -386,9 +386,9 @@ public class RubberbandsSafetyNetStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -402,7 +402,7 @@ public class RubberbandsSafetyNetStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

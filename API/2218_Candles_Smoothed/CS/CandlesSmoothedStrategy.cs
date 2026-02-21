@@ -90,7 +90,7 @@ public class CandlesSmoothedStrategy : Strategy
 
 		_maLength = Param(nameof(MaLength), 30)
 			.SetDisplay("MA Length", "Moving average smoothing length", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_maMethod = Param(nameof(MaMethod), MaMethods.Weighted)
@@ -104,9 +104,9 @@ public class CandlesSmoothedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = MaMethod switch
 		{

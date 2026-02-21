@@ -111,27 +111,27 @@ public class CciHistogramStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 						 .SetGreaterThanZero()
 						 .SetDisplay("CCI Period", "Period length for the CCI indicator", "General")
-						 .SetCanOptimize(true)
+						 
 						 .SetOptimize(7, 28, 7);
 
 		_upperLevel = Param(nameof(UpperLevel), 100m)
 						  .SetDisplay("Upper Level", "Upper CCI level", "General")
-						  .SetCanOptimize(true)
+						  
 						  .SetOptimize(80m, 120m, 10m);
 
 		_lowerLevel = Param(nameof(LowerLevel), -100m)
 						  .SetDisplay("Lower Level", "Lower CCI level", "General")
-						  .SetCanOptimize(true)
+						  
 						  .SetOptimize(-120m, -80m, 10m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
 							  .SetDisplay("Stop Loss", "Stop loss in points", "Risk Management")
-							  .SetCanOptimize(true)
+							  
 							  .SetOptimize(50m, 200m, 25m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 200m)
 								.SetDisplay("Take Profit", "Take profit in points", "Risk Management")
-								.SetCanOptimize(true)
+								
 								.SetOptimize(50m, 300m, 25m);
 
 		_useStopLoss = Param(nameof(UseStopLoss), false)
@@ -158,9 +158,9 @@ public class CciHistogramStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(takeProfit: UseTakeProfit ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null,
 						stopLoss: UseStopLoss ? new Unit(StopLossPoints, UnitTypes.Absolute) : null,

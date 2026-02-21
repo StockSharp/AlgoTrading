@@ -115,14 +115,14 @@ public class AdxMaCrossoverStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period of the smoothed moving average", "General")
-			.SetCanOptimize(true);
+			;
 		_adxPeriod = Param(nameof(AdxPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Smoothing period for Average Directional Index", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_adxThreshold = Param(nameof(AdxThreshold), 16m)
 			.SetDisplay("ADX Threshold", "Minimum ADX value required to trade", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_takeProfitBuy = Param(nameof(TakeProfitBuy), 83m)
 			.SetDisplay("Buy Take Profit (pips)", "Take profit distance for long trades", "Risk Management")
 			.SetNotNegative();
@@ -171,9 +171,9 @@ public class AdxMaCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = new SmoothedMovingAverage { Length = MaPeriod };
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
@@ -206,7 +206,7 @@ public class AdxMaCrossoverStrategy : Strategy
 			return;
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-		var maValue = _ma.Process(median, candle.OpenTime, true);
+		var maValue = _ma.Process(new DecimalIndicatorValue(_ma, median, candle.OpenTime));
 
 		if (!maValue.IsFinal || !adxValue.IsFinal)
 			return;

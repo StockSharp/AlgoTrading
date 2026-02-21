@@ -96,7 +96,7 @@ public class ExpExtremumStrategy : Strategy
 		_length = Param(nameof(Length), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Period", "Indicator period", "General")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame of the Extremum indicator", "General");
@@ -121,9 +121,9 @@ public class ExpExtremumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_minHigh = new Lowest { Length = Length };
 		_maxLow = new Highest { Length = Length };

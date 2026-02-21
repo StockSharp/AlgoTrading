@@ -86,9 +86,9 @@ yield return (Security, TimeSpan.FromMinutes(30).TimeFrame());
 yield return (Security, TimeSpan.FromMinutes(60).TimeFrame());
 }
 
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var bb = new BollingerBands { Length = BollingerPeriod, Width = BollingerWidth };
 var rsi5 = new RSI { Length = RsiPeriod };

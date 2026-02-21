@@ -61,25 +61,25 @@ public class HybridRsiBreakoutDashboardStrategy : Strategy
 		_adxLength = Param(nameof(AdxLength), 14)
 						 .SetGreaterThanZero()
 						 .SetDisplay("ADX Length", "Length for ADX indicator", "Indicators")
-						 .SetCanOptimize(true)
+						 
 						 .SetOptimize(10, 30, 2);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 20m)
 							.SetGreaterThanZero()
 							.SetDisplay("ADX Threshold", "Trend detection threshold", "Indicators")
-							.SetCanOptimize(true)
+							
 							.SetOptimize(10m, 40m, 5m);
 
 		_emaLength = Param(nameof(EmaLength), 200)
 						 .SetGreaterThanZero()
 						 .SetDisplay("EMA Length", "Length for EMA trend filter", "Indicators")
-						 .SetCanOptimize(true)
+						 
 						 .SetOptimize(100, 300, 50);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 						 .SetGreaterThanZero()
 						 .SetDisplay("RSI Length", "Lookback period for RSI", "Indicators")
-						 .SetCanOptimize(true)
+						 
 						 .SetOptimize(10, 30, 2);
 
 		_rsiBuy = Param(nameof(RsiBuy), 40m).SetDisplay("RSI Buy", "RSI buy threshold", "Strategy Parameters");
@@ -91,19 +91,19 @@ public class HybridRsiBreakoutDashboardStrategy : Strategy
 		_breakoutLength = Param(nameof(BreakoutLength), 20)
 							  .SetGreaterThanZero()
 							  .SetDisplay("Breakout Lookback", "Lookback for breakout levels", "Strategy Parameters")
-							  .SetCanOptimize(true)
+							  
 							  .SetOptimize(10, 40, 5);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 						 .SetGreaterThanZero()
 						 .SetDisplay("ATR Length", "ATR period for trailing stop", "Risk")
-						 .SetCanOptimize(true)
+						 
 						 .SetOptimize(10, 30, 2);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 							 .SetGreaterThanZero()
 							 .SetDisplay("ATR Multiplier", "ATR multiplier for trailing stop", "Risk")
-							 .SetCanOptimize(true)
+							 
 							 .SetOptimize(1m, 4m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -192,12 +192,12 @@ public class HybridRsiBreakoutDashboardStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_adx = new AverageDirectionalIndex { Length = AdxLength };
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_highest = new Highest { Length = BreakoutLength };

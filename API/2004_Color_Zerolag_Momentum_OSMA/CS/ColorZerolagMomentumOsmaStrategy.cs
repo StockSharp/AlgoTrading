@@ -51,39 +51,39 @@ public class ColorZerolagMomentumOsmaStrategy : Strategy
 	public ColorZerolagMomentumOsmaStrategy()
 	{
 		_smoothing1 = Param(nameof(Smoothing1), 15)
-			.SetDisplay("Smoothing 1");
+			.SetDisplay("Smoothing 1", "Smoothing 1", "General");
 		_smoothing2 = Param(nameof(Smoothing2), 15)
-			.SetDisplay("Smoothing 2");
+			.SetDisplay("Smoothing 2", "Smoothing 2", "General");
 		_factor1 = Param<decimal>(nameof(Factor1), 0.43m)
-			.SetDisplay("Factor 1");
+			.SetDisplay("Factor 1", "Factor 1", "General");
 		_factor2 = Param<decimal>(nameof(Factor2), 0.26m)
-			.SetDisplay("Factor 2");
+			.SetDisplay("Factor 2", "Factor 2", "General");
 		_factor3 = Param<decimal>(nameof(Factor3), 0.16m)
-			.SetDisplay("Factor 3");
+			.SetDisplay("Factor 3", "Factor 3", "General");
 		_factor4 = Param<decimal>(nameof(Factor4), 0.10m)
-			.SetDisplay("Factor 4");
+			.SetDisplay("Factor 4", "Factor 4", "General");
 		_factor5 = Param<decimal>(nameof(Factor5), 0.05m)
-			.SetDisplay("Factor 5");
+			.SetDisplay("Factor 5", "Factor 5", "General");
 		_period1 = Param(nameof(MomentumPeriod1), 8)
-			.SetDisplay("Momentum Period 1");
+			.SetDisplay("Momentum Period 1", "Momentum Period 1", "General");
 		_period2 = Param(nameof(MomentumPeriod2), 21)
-			.SetDisplay("Momentum Period 2");
+			.SetDisplay("Momentum Period 2", "Momentum Period 2", "General");
 		_period3 = Param(nameof(MomentumPeriod3), 34)
-			.SetDisplay("Momentum Period 3");
+			.SetDisplay("Momentum Period 3", "Momentum Period 3", "General");
 		_period4 = Param(nameof(MomentumPeriod4), 55)
-			.SetDisplay("Momentum Period 4");
+			.SetDisplay("Momentum Period 4", "Momentum Period 4", "General");
 		_period5 = Param(nameof(MomentumPeriod5), 89)
-			.SetDisplay("Momentum Period 5");
+			.SetDisplay("Momentum Period 5", "Momentum Period 5", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type");
+			.SetDisplay("Candle Type", "Candle Type", "General");
 		_buyOpen = Param(nameof(BuyOpen), true)
-			.SetDisplay("Enable Buy Open");
+			.SetDisplay("Enable Buy Open", "Enable Buy Open", "General");
 		_sellOpen = Param(nameof(SellOpen), true)
-			.SetDisplay("Enable Sell Open");
+			.SetDisplay("Enable Sell Open", "Enable Sell Open", "General");
 		_buyClose = Param(nameof(BuyClose), true)
-			.SetDisplay("Enable Buy Close");
+			.SetDisplay("Enable Buy Close", "Enable Buy Close", "General");
 		_sellClose = Param(nameof(SellClose), true)
-			.SetDisplay("Enable Sell Close");
+			.SetDisplay("Enable Sell Close", "Enable Sell Close", "General");
 	}
 
 	public int Smoothing1 { get => _smoothing1.Value; set => _smoothing1.Value = value; }
@@ -105,11 +105,11 @@ public class ColorZerolagMomentumOsmaStrategy : Strategy
 	public bool SellClose { get => _sellClose.Value; set => _sellClose.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_mom1 = new Momentum { Length = MomentumPeriod1 };
 		_mom2 = new Momentum { Length = MomentumPeriod2 };

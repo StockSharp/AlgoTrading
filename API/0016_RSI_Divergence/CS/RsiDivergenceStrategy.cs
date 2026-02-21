@@ -61,14 +61,14 @@ public class RsiDivergenceStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetRange(5, 50)
 			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -90,9 +90,9 @@ public class RsiDivergenceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create RSI indicator
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
@@ -100,27 +100,48 @@ public class RsiDivergenceStrategy : Strategy
 		// Subscribe to candles and bind the indicator
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(rsi, ProcessCandle)
+			.Bind(rsi, (candle, rsiVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var currentPrice = candle.ClosePrice;
+
+				if (_isFirstCandle)
+				{
+					_prevPrice = currentPrice;
+					_prevRsi = rsiVal;
+					_isFirstCandle = false;
+					return;
+				}
+
+				// Detect bullish divergence: Price lower, RSI higher (in oversold zone)
+				if (currentPrice < _prevPrice && rsiVal > _prevRsi && rsiVal < 40 && Position <= 0)
+				{
+					BuyMarket(Volume + Math.Abs(Position));
+				}
+				// Detect bearish divergence: Price higher, RSI lower (in overbought zone)
+				else if (currentPrice > _prevPrice && rsiVal < _prevRsi && rsiVal > 60 && Position >= 0)
+				{
+					SellMarket(Volume + Math.Abs(Position));
+				}
+
+				// Exit long on overbought
+				if (Position > 0 && rsiVal > 70)
+					SellMarket(Math.Abs(Position));
+				// Exit short on oversold
+				else if (Position < 0 && rsiVal < 30)
+					BuyMarket(Math.Abs(Position));
+
+				_prevPrice = currentPrice;
+				_prevRsi = rsiVal;
+			})
 			.Start();
-
-		// Enable position protection
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			useMarketOrders: true
-		);
-
-		// Setup chart visualization
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi);
-			DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal currentRsi)
 	{
 		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
@@ -131,7 +152,6 @@ public class RsiDivergenceStrategy : Strategy
 			return;
 
 		var currentPrice = candle.ClosePrice;
-		var currentRsi = rsiValue.ToDecimal();
 
 		// For the first candle, just store values and return
 		if (_isFirstCandle)
@@ -143,7 +163,7 @@ public class RsiDivergenceStrategy : Strategy
 		}
 
 		// Detect bullish divergence: Price makes lower low but RSI makes higher low
-		if (currentPrice < _prevPrice && currentRsi > _prevRsi && Position <= 0)
+		if (currentPrice < _prevPrice && currentRsi > _prevRsi && currentRsi < 40 && Position <= 0)
 		{
 			// Buy signal
 			var volume = Volume + Math.Abs(Position);
@@ -153,7 +173,7 @@ public class RsiDivergenceStrategy : Strategy
 		}
 
 		// Detect bearish divergence: Price makes higher high but RSI makes lower high
-		else if (currentPrice > _prevPrice && currentRsi < _prevRsi && Position >= 0)
+		else if (currentPrice > _prevPrice && currentRsi < _prevRsi && currentRsi > 60 && Position >= 0)
 		{
 			// Sell signal
 			var volume = Volume + Math.Abs(Position);

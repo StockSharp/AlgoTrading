@@ -16,7 +16,7 @@
   - `Trade2nd` = true。
   - `Trade16th` = true。
   - `Trade31st` = true。
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame()。
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()。
 - **筛选**：
   - 类型: 季节性
   - 方向: 多头

@@ -37,7 +37,7 @@ public class ExpXpvtStrategy : Strategy
         private readonly StrategyParam<AppliedPriceOptions> _priceSource;
         private readonly StrategyParam<int> _signalBar;
 
-        private LengthIndicator<decimal> _signalSmoother = null!;
+        private DecimalLengthIndicator _signalSmoother = null!;
         private decimal _pvt;
         private decimal? _previousPrice;
         private readonly List<decimal> _pvtHistory = new();
@@ -239,9 +239,9 @@ public class ExpXpvtStrategy : Strategy
         }
 
         /// <inheritdoc />
-        protected override void OnStarted(DateTimeOffset time)
+        protected override void OnStarted2(DateTime time)
         {
-                base.OnStarted(time);
+                base.OnStarted2(time);
 
                 Volume = OrderVolume;
                 _signalSmoother = CreateSmoother(Smoothing, SmoothingLength, SmoothingPhase);
@@ -252,7 +252,7 @@ public class ExpXpvtStrategy : Strategy
                         .Bind(ProcessCandle)
                         .Start();
 
-                StartProtection();
+                StartProtection(null, null);
         }
 
         private void ProcessCandle(ICandleMessage candle)
@@ -275,7 +275,7 @@ public class ExpXpvtStrategy : Strategy
 
                 _previousPrice = price;
 
-                var indicatorValue = _signalSmoother.Process(_pvt, candle.OpenTime, true).ToNullableDecimal();
+                var indicatorValue = _signalSmoother.Process(new DecimalIndicatorValue(_signalSmoother, _pvt, candle.OpenTime)).ToNullableDecimal();
                 if (indicatorValue is null)
                         return;
 
@@ -425,27 +425,27 @@ public class ExpXpvtStrategy : Strategy
                         history.RemoveAt(0);
         }
 
-        private static LengthIndicator<decimal> CreateSmoother(SmoothingMethods method, int length, int phase)
+        private static DecimalLengthIndicator CreateSmoother(SmoothingMethods method, int length, int phase)
         {
                 var normalizedLength = Math.Max(1, length);
 
                 return method switch
                 {
-                        SmoothingMethods.Simple => new SimpleMovingAverage { Length = normalizedLength },
-                        SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = normalizedLength },
+                        SmoothingMethods.Simple => new SMA { Length = normalizedLength },
+                        SmoothingMethods.Exponential => new EMA { Length = normalizedLength },
                         SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = normalizedLength },
                         SmoothingMethods.LinearWeighted => new WeightedMovingAverage { Length = normalizedLength },
                         SmoothingMethods.Jjma => CreateJurik(normalizedLength, phase),
                         SmoothingMethods.Jurx => CreateJurik(normalizedLength, phase),
-                        SmoothingMethods.Parabolic => new ExponentialMovingAverage { Length = normalizedLength },
+                        SmoothingMethods.Parabolic => new EMA { Length = normalizedLength },
                         SmoothingMethods.TripleExponential => new TripleExponentialMovingAverage { Length = normalizedLength },
-                        SmoothingMethods.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
+                        SmoothingMethods.Vidya => new EMA { Length = normalizedLength },
                         SmoothingMethods.Adaptive => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
-                        _ => new SimpleMovingAverage { Length = normalizedLength },
+                        _ => new SMA { Length = normalizedLength },
                 };
         }
 
-        private static LengthIndicator<decimal> CreateJurik(int length, int phase)
+        private static DecimalLengthIndicator CreateJurik(int length, int phase)
         {
                 var jurik = new JurikMovingAverage { Length = length };
                 var property = jurik.GetType().GetProperty("Phase", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);

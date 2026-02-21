@@ -390,9 +390,9 @@ public class RsiBollingerBandsEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TriggerOne && TriggerTwo)
 		{
@@ -410,8 +410,7 @@ public class RsiBollingerBandsEaStrategy : Strategy
 		_rsiH4Trigger2 = new RelativeStrengthIndex { Length = RsiPeriod2 };
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticK,
+		{ K = { Length = StochasticK },
 			K = { Length = StochasticSlowing },
 			D = { Length = StochasticD }
 		};
@@ -586,7 +585,7 @@ public class RsiBollingerBandsEaStrategy : Strategy
 		if (_pipSize <= 0m)
 			return;
 
-		var time = candle.OpenTime.LocalDateTime;
+		var time = candle.OpenTime;
 
 		if (time.DayOfWeek == DayOfWeek.Friday && time.Hour >= FridayEndHour)
 			return;

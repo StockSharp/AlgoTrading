@@ -27,7 +27,7 @@ public class SpazmVolatilityBreakoutStrategy : Strategy
 	private readonly StrategyParam<bool> _drawSwingLines;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _volatilityIndicator;
+	private DecimalLengthIndicator _volatilityIndicator;
 	private decimal _priceStep;
 	private decimal _threshold;
 	private decimal _highestPrice;
@@ -165,9 +165,9 @@ public class SpazmVolatilityBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 		if (_priceStep <= 0m)
@@ -180,7 +180,7 @@ public class SpazmVolatilityBreakoutStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -190,11 +190,11 @@ public class SpazmVolatilityBreakoutStrategy : Strategy
 		}
 	}
 
-	private LengthIndicator<decimal> CreateVolatilityIndicator()
+	private DecimalLengthIndicator CreateVolatilityIndicator()
 	{
 		return UseWeightedVolatility
 			? new WeightedMovingAverage { Length = VolatilityPeriod }
-			: new SimpleMovingAverage { Length = VolatilityPeriod };
+			: new SMA { Length = VolatilityPeriod };
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -220,7 +220,7 @@ public class SpazmVolatilityBreakoutStrategy : Strategy
 			range = 0m;
 
 		var rangePoints = range / _priceStep;
-		var averagePoints = _volatilityIndicator.Process(rangePoints, candle.OpenTime, true).ToDecimal();
+		var averagePoints = _volatilityIndicator.Process(new DecimalIndicatorValue(_volatilityIndicator, rangePoints, candle.OpenTime)).ToDecimal();
 
 		if (!_volatilityIndicator.IsFormed)
 			return;

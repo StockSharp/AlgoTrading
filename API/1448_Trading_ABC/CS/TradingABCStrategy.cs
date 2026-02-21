@@ -133,9 +133,9 @@ _lastHigh = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var sma1 = new SMA { Length = Sma1Length };
 var sma2 = new SMA { Length = Sma2Length };

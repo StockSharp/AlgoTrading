@@ -91,19 +91,19 @@ public class TrendlineBounceStrategy : Strategy
 		_trendlinePeriod = Param(nameof(TrendlinePeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Trendline Period", "Number of candles to use for trendline calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for moving average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_bounceThresholdPercent = Param(nameof(BounceThresholdPercent), 0.5m)
 			.SetNotNegative()
 			.SetDisplay("Bounce Threshold %", "Maximum distance from trendline for bounce detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1.0m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -112,7 +112,7 @@ public class TrendlineBounceStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 	}
 
@@ -137,12 +137,12 @@ public class TrendlineBounceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create MA indicator
-		_ma = new SimpleMovingAverage
+		_ma = new SMA
 		{
 			Length = MAPeriod
 		};

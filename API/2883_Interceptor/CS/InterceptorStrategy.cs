@@ -500,25 +500,23 @@ public class InterceptorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0.0001m;
 		Volume = _volumeParam.Value;
 
-		_m5Emas = EmaLengths.Select(length => new ExponentialMovingAverage { Length = length }).ToArray();
-		_m15Emas = EmaLengths.Select(length => new ExponentialMovingAverage { Length = length }).ToArray();
-		_h1Emas = EmaLengths.Select(length => new ExponentialMovingAverage { Length = length }).ToArray();
+		_m5Emas = EmaLengths.Select(length => new EMA { Length = length }).ToArray();
+		_m15Emas = EmaLengths.Select(length => new EMA { Length = length }).ToArray();
+		_h1Emas = EmaLengths.Select(length => new EMA { Length = length }).ToArray();
 		_stochasticM5 = new StochasticOscillator
-		{
-			Length = StochasticKPeriodM5,
+		{ K = { Length = StochasticKPeriodM5 },
 			K = { Length = 3 },
 			D = { Length = 4 },
 		};
 		_stochasticM15 = new StochasticOscillator
-		{
-			Length = StochasticKPeriodM15,
+		{ K = { Length = StochasticKPeriodM15 },
 			K = { Length = 3 },
 			D = { Length = 4 },
 		};
@@ -769,9 +767,9 @@ public class InterceptorStrategy : Strategy
 		var bottom = emaValues.Min();
 		var breakout = 0;
 
-		if (candle.Open < bottom && candle.Close > top)
+		if (candle.OpenPrice < bottom && candle.ClosePrice > top)
 			breakout = 1;
-		else if (candle.Open > top && candle.Close < bottom)
+		else if (candle.OpenPrice > top && candle.ClosePrice < bottom)
 			breakout = -1;
 
 		return (orientation, distance, breakout);
@@ -786,10 +784,10 @@ public class InterceptorStrategy : Strategy
 		var ma1 = emaValues[1];
 		var ma2 = emaValues[2];
 
-		if (candle.Open < ma0 && candle.Open < ma1 && candle.Open < ma2 && candle.Close > ma0 && candle.Close > ma1 && candle.Close > ma2)
+		if (candle.OpenPrice < ma0 && candle.OpenPrice < ma1 && candle.OpenPrice < ma2 && candle.ClosePrice > ma0 && candle.ClosePrice > ma1 && candle.ClosePrice > ma2)
 			return 1;
 
-		if (candle.Open > ma0 && candle.Open > ma1 && candle.Open > ma2 && candle.Close < ma0 && candle.Close < ma1 && candle.Close < ma2)
+		if (candle.OpenPrice > ma0 && candle.OpenPrice > ma1 && candle.OpenPrice > ma2 && candle.ClosePrice < ma0 && candle.ClosePrice < ma1 && candle.ClosePrice < ma2)
 			return -1;
 
 		return 0;
@@ -848,8 +846,8 @@ public class InterceptorStrategy : Strategy
 		var candle = _m15History.Values[^1];
 		var kPrev2 = _m15StochKHistory.Count >= 3 ? _m15StochKHistory.Values[^3] : kPrev;
 
-		var crossUp = kPrev < dPrev && kCurr > dCurr && candle.Close > candle.Open && (kPrev2 < StochasticLowerM15 || kPrev < StochasticLowerM15 || kCurr < StochasticLowerM15);
-		var crossDown = kPrev > dPrev && kCurr < dCurr && candle.Close < candle.Open && (kPrev2 > StochasticUpperM15 || kPrev > StochasticUpperM15 || kCurr > StochasticUpperM15);
+		var crossUp = kPrev < dPrev && kCurr > dCurr && candle.ClosePrice > candle.OpenPrice && (kPrev2 < StochasticLowerM15 || kPrev < StochasticLowerM15 || kCurr < StochasticLowerM15);
+		var crossDown = kPrev > dPrev && kCurr < dCurr && candle.ClosePrice < candle.OpenPrice && (kPrev2 > StochasticUpperM15 || kPrev > StochasticUpperM15 || kCurr > StochasticUpperM15);
 
 		if (crossUp)
 			return 1;
@@ -882,10 +880,10 @@ public class InterceptorStrategy : Strategy
 				break;
 
 			var bar = _m5History.Values[index];
-			if (bar.High > rangeHigh)
-				rangeHigh = bar.High;
-			if (bar.Low < rangeLow)
-				rangeLow = bar.Low;
+			if (bar.HighPrice > rangeHigh)
+				rangeHigh = bar.HighPrice;
+			if (bar.LowPrice < rangeLow)
+				rangeLow = bar.LowPrice;
 
 			barsInRange++;
 
@@ -939,10 +937,10 @@ public class InterceptorStrategy : Strategy
 		for (var i = start; i < end; i++)
 		{
 			var bar = _m5History.Values[i];
-			if (bar.High > highest)
-				highest = bar.High;
-			if (bar.Low < lowest)
-				lowest = bar.Low;
+			if (bar.HighPrice > highest)
+				highest = bar.HighPrice;
+			if (bar.LowPrice < lowest)
+				lowest = bar.LowPrice;
 		}
 
 		if (current.Open < highest && current.Close > highest)
@@ -988,7 +986,7 @@ public class InterceptorStrategy : Strategy
 		if (_m5History.Count < MinDivergenceBars + 5 || _stochKHistory.Count < _m5History.Count)
 			return 0;
 
-		var lows = _m5History.Values.Select(c => c.Low).ToList();
+		var lows = _m5History.Values.Select(c => c.LowPrice).ToList();
 		var pivots = FindLocalExtrema(lows, findLow: true);
 		if (pivots.Count < 2)
 			return 0;
@@ -1015,7 +1013,7 @@ public class InterceptorStrategy : Strategy
 		if (_m5History.Count < MinDivergenceBars + 5 || _stochKHistory.Count < _m5History.Count)
 			return 0;
 
-		var highs = _m5History.Values.Select(c => c.High).ToList();
+		var highs = _m5History.Values.Select(c => c.HighPrice).ToList();
 		var pivots = FindLocalExtrema(highs, findLow: false);
 		if (pivots.Count < 2)
 			return 0;
@@ -1093,20 +1091,20 @@ public class InterceptorStrategy : Strategy
 				break;
 
 			var bar = values[index];
-			var range = bar.High - bar.Low;
+			var range = bar.HighPrice - bar.LowPrice;
 			if (range < minSize)
 				continue;
 
-			var upperShadow = bar.High - Math.Max(bar.Open, bar.Close);
-			var lowerShadow = Math.Min(bar.Open, bar.Close) - bar.Low;
+			var upperShadow = bar.HighPrice - Math.Max(bar.OpenPrice, bar.ClosePrice);
+			var lowerShadow = Math.Min(bar.OpenPrice, bar.ClosePrice) - bar.LowPrice;
 
-			if (lowerShadow >= range * longRatio && upperShadow <= range * shortRatio && bar.Close > bar.Open)
+			if (lowerShadow >= range * longRatio && upperShadow <= range * shortRatio && bar.ClosePrice > bar.OpenPrice)
 			{
 				if (IsExtreme(index, rangeBars, bullish: true))
 					return offset;
 			}
 
-			if (upperShadow >= range * longRatio && lowerShadow <= range * shortRatio && bar.Close < bar.Open)
+			if (upperShadow >= range * longRatio && lowerShadow <= range * shortRatio && bar.ClosePrice < bar.OpenPrice)
 			{
 				if (IsExtreme(index, rangeBars, bullish: false))
 					return -offset;
@@ -1147,9 +1145,9 @@ public class InterceptorStrategy : Strategy
 		var minBody = MinBodyPoints * _priceStep;
 
 		if (bullish)
-			return candle.Close > candle.Open && candle.Close - candle.Open >= minBody;
+			return candle.ClosePrice > candle.OpenPrice && candle.ClosePrice - candle.OpenPrice >= minBody;
 
-		return candle.Open > candle.Close && candle.Open - candle.Close >= minBody;
+		return candle.OpenPrice > candle.ClosePrice && candle.OpenPrice - candle.ClosePrice >= minBody;
 	}
 
 	private bool IsEqual(decimal left, decimal right)
@@ -1169,9 +1167,9 @@ public class InterceptorStrategy : Strategy
 
 			if (!_breakEvenActivated && StopLossAfterBreakeven > 0 && TakeProfitAfterBreakeven > 0 && _entryPrice != null)
 			{
-				if (candle.Close - _entryPrice >= TakeProfitAfterBreakeven * step)
+				if (candle.ClosePrice - _entryPrice >= TakeProfitAfterBreakeven * step)
 				{
-					var newStop = candle.Close - StopLossAfterBreakeven * step;
+					var newStop = candle.ClosePrice - StopLossAfterBreakeven * step;
 					if (_longStop == null || newStop > _longStop)
 					{
 						_longStop = newStop;
@@ -1182,23 +1180,23 @@ public class InterceptorStrategy : Strategy
 
 			if (TrailingDistancePoints > 0)
 			{
-				var newStop = candle.Close - TrailingDistancePoints * step;
+				var newStop = candle.ClosePrice - TrailingDistancePoints * step;
 				if (_longStop == null || newStop > _longStop + TrailingStepPoints * step)
 					_longStop = newStop;
 			}
 
-			if (_longTarget != null && candle.High >= _longTarget)
+			if (_longTarget != null && candle.HighPrice >= _longTarget)
 			{
 				SellMarket(Position);
-				LogInfo($"Long take profit hit at {_longTarget:F4} on {candle.Time:O}.");
+				LogInfo($"Long take profit hit at {_longTarget:F4} on {candle.ServerTime:O}.");
 				ResetRisk();
 				return;
 			}
 
-			if (_longStop != null && candle.Low <= _longStop)
+			if (_longStop != null && candle.LowPrice <= _longStop)
 			{
 				SellMarket(Position);
-				LogInfo($"Long stop hit at {_longStop:F4} on {candle.Time:O}.");
+				LogInfo($"Long stop hit at {_longStop:F4} on {candle.ServerTime:O}.");
 				ResetRisk();
 				return;
 			}
@@ -1210,9 +1208,9 @@ public class InterceptorStrategy : Strategy
 
 			if (!_breakEvenActivated && StopLossAfterBreakeven > 0 && TakeProfitAfterBreakeven > 0 && _entryPrice != null)
 			{
-				if (_entryPrice - candle.Close >= TakeProfitAfterBreakeven * step)
+				if (_entryPrice - candle.ClosePrice >= TakeProfitAfterBreakeven * step)
 				{
-					var newStop = candle.Close + StopLossAfterBreakeven * step;
+					var newStop = candle.ClosePrice + StopLossAfterBreakeven * step;
 					if (_shortStop == null || newStop < _shortStop)
 					{
 						_shortStop = newStop;
@@ -1223,23 +1221,23 @@ public class InterceptorStrategy : Strategy
 
 			if (TrailingDistancePoints > 0)
 			{
-				var newStop = candle.Close + TrailingDistancePoints * step;
+				var newStop = candle.ClosePrice + TrailingDistancePoints * step;
 				if (_shortStop == null || newStop < _shortStop - TrailingStepPoints * step)
 					_shortStop = newStop;
 			}
 
-			if (_shortTarget != null && candle.Low <= _shortTarget)
+			if (_shortTarget != null && candle.LowPrice <= _shortTarget)
 			{
 				BuyMarket(Math.Abs(Position));
-				LogInfo($"Short take profit hit at {_shortTarget:F4} on {candle.Time:O}.");
+				LogInfo($"Short take profit hit at {_shortTarget:F4} on {candle.ServerTime:O}.");
 				ResetRisk();
 				return;
 			}
 
-			if (_shortStop != null && candle.High >= _shortStop)
+			if (_shortStop != null && candle.HighPrice >= _shortStop)
 			{
 				BuyMarket(Math.Abs(Position));
-				LogInfo($"Short stop hit at {_shortStop:F4} on {candle.Time:O}.");
+				LogInfo($"Short stop hit at {_shortStop:F4} on {candle.ServerTime:O}.");
 				ResetRisk();
 				return;
 			}
@@ -1252,21 +1250,21 @@ public class InterceptorStrategy : Strategy
 
 	private void SetEntry(CandleSnapshot candle, bool isLong)
 	{
-		_entryPrice = candle.Close;
+		_entryPrice = candle.ClosePrice;
 		_positionDirection = isLong ? 1 : -1;
 		_breakEvenActivated = false;
 
 		if (isLong)
 		{
-			_longStop = StopLossPoints > 0 ? candle.Close - StopLossPoints * _priceStep : null;
-			_longTarget = TakeProfitPoints > 0 ? candle.Close + TakeProfitPoints * _priceStep : null;
+			_longStop = StopLossPoints > 0 ? candle.ClosePrice - StopLossPoints * _priceStep : null;
+			_longTarget = TakeProfitPoints > 0 ? candle.ClosePrice + TakeProfitPoints * _priceStep : null;
 			_shortStop = null;
 			_shortTarget = null;
 		}
 		else
 		{
-			_shortStop = StopLossPoints > 0 ? candle.Close + StopLossPoints * _priceStep : null;
-			_shortTarget = TakeProfitPoints > 0 ? candle.Close - TakeProfitPoints * _priceStep : null;
+			_shortStop = StopLossPoints > 0 ? candle.ClosePrice + StopLossPoints * _priceStep : null;
+			_shortTarget = TakeProfitPoints > 0 ? candle.ClosePrice - TakeProfitPoints * _priceStep : null;
 			_longStop = null;
 			_longTarget = null;
 		}

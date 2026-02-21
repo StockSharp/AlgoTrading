@@ -51,17 +51,17 @@ public class XmacdModesStrategy : Strategy
 	{
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 12)
 			.SetDisplay("Fast EMA Period", "Period for fast EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 2);
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
 			.SetDisplay("Slow EMA Period", "Period for slow EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 32, 2);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetDisplay("Signal Period", "Period for signal line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 13, 2);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -72,12 +72,12 @@ public class XmacdModesStrategy : Strategy
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop Loss (%)", "Stop loss as percent of entry price", "Risk parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
 			.SetDisplay("Take Profit (%)", "Take profit as percent of entry price", "Risk parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 6m, 1m);
 
 		Param(nameof(Volume), 1m)

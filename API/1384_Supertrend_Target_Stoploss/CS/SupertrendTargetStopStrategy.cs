@@ -80,22 +80,22 @@ public class SupertrendTargetStopStrategy : Strategy
 	{
 		_period = Param(nameof(Period), 14)
 			.SetDisplay("ATR Length", "ATR length for Supertrend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_multiplier = Param(nameof(Multiplier), 3m)
 			.SetDisplay("Multiplier", "Multiplier for Supertrend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 4m, 0.5m);
 
 		_targetPct = Param(nameof(TargetPct), 0.01m)
 			.SetDisplay("Target %", "Target percentage", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.005m, 0.02m, 0.005m);
 
 		_stopPct = Param(nameof(StopPct), 0.01m)
 			.SetDisplay("Stop %", "Stop loss percentage", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.005m, 0.02m, 0.005m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -118,9 +118,9 @@ public class SupertrendTargetStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = Period };
 

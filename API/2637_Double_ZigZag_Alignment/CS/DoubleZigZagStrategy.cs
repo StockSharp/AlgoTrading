@@ -90,16 +90,16 @@ public class DoubleZigZagStrategy : Strategy
 	{
 		_fastLength = Param(nameof(FastLength), 13)
 			.SetDisplay("Fast Length", "Lookback for the fast swing detector", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_slowLength = Param(nameof(SlowLength), 104)
 			.SetDisplay("Slow Length", "Lookback for the slow confirmation swing", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_strengthMultiplier = Param(nameof(StrengthMultiplier), 2.1m)
 			.SetDisplay("Strength Multiplier", "Required ratio between fast and opposite swing counts", "Signals")
-			.SetCanOptimize(true);
+			;
 		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2.1m)
 			.SetDisplay("Breakout Multiplier", "Required expansion of the newest swing over the previous swing", "Signals")
-			.SetCanOptimize(true);
+			;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to analyze", "General");
 	}
@@ -128,9 +128,9 @@ public class DoubleZigZagStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create swing detectors that approximate the original ZigZag behaviour.
 		_fastHighest = new Highest { Length = FastLength };

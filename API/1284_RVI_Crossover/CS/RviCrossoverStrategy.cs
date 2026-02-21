@@ -87,22 +87,22 @@ public class RviCrossoverStrategy : Strategy
 		_rviLength = Param(nameof(RviLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Length", "Length for RVI", "General")
-			.SetCanOptimize(true);
+			;
 
 		_signalLength = Param(nameof(SignalLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "Length for signal line", "General")
-			.SetCanOptimize(true);
+			;
 
 		_emaLength = Param(nameof(EmaLength), 31)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Length for EMA", "General")
-			.SetCanOptimize(true);
+			;
 
 		_vwmaLength = Param(nameof(VwmaLength), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("VWMA Length", "Length for VWMA", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -128,19 +128,19 @@ public class RviCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rvi = new RelativeVigorIndex { Length = RviLength };
-		_signal = new SimpleMovingAverage { Length = SignalLength };
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_signal = new SMA { Length = SignalLength };
+		_ema = new EMA { Length = EmaLength };
 		_vwma = new VolumeWeightedMovingAverage { Length = VwmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

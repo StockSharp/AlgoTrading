@@ -34,11 +34,11 @@ public class CloseProfitV2Strategy : Strategy
 	{
 		_profitClose = Param(nameof(ProfitClose), 10m)
 			.SetDisplay("Profit Close", "Floating profit target that triggers liquidation", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_lossClose = Param(nameof(LossClose), 1000m)
 			.SetDisplay("Loss Close", "Floating loss threshold that triggers liquidation", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_allSymbols = Param(nameof(AllSymbols), false)
 			.SetDisplay("All Symbols", "Track every strategy security instead of only the primary one", "General");
@@ -100,11 +100,11 @@ public class CloseProfitV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		UpdateFlatEquity();
 

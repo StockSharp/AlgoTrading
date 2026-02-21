@@ -62,9 +62,9 @@ public class TianDiGridMergeStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		_buildGrid();
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(ProcessCandle).Start();
@@ -134,9 +134,9 @@ public class TianDiGridMergeStrategy : Strategy
 		if (CloseOnProfit)
 		{
 			var step = _gridWidth == 0m ? _grid[1] - _grid[0] : _gridWidth;
-			if (Position > 0 && price >= PositionAvgPrice + step)
+			if (Position > 0 && price >= PositionPrice + step)
 				SellMarket(Position);
-			else if (Position < 0 && price <= PositionAvgPrice - step)
+			else if (Position < 0 && price <= PositionPrice - step)
 				BuyMarket(-Position);
 		}
 	}

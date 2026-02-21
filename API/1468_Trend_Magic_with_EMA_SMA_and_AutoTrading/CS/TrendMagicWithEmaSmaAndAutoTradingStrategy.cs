@@ -95,14 +95,14 @@ public class TrendMagicWithEmaSmaAndAutoTradingStrategy : Strategy {
 		_shortTake = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time) {
-		base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+		base.OnStarted2(time);
 
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var ema45 = new ExponentialMovingAverage { Length = 45 };
-		var sma90 = new SimpleMovingAverage { Length = 90 };
-		var sma180 = new SimpleMovingAverage { Length = 180 };
+		var ema45 = new EMA { Length = 45 };
+		var sma90 = new SMA { Length = 90 };
+		var sma180 = new SMA { Length = 180 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(cci, atr, ema45, sma90, sma180, ProcessCandle)

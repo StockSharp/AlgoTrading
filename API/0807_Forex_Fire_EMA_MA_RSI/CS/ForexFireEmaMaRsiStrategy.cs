@@ -75,26 +75,26 @@ public class ForexFireEmaMaRsiStrategy : Strategy
 	{
 		_emaShortLength = Param(nameof(EmaShortLength), 13)
 			.SetDisplay("EMA Short Length", string.Empty, "General")
-			.SetCanOptimize(true);
+			;
 
 		_emaLongLength = Param(nameof(EmaLongLength), 62)
 			.SetDisplay("EMA Long Length", string.Empty, "General")
-			.SetCanOptimize(true);
+			;
 
 		_maLength = Param(nameof(MaLength), 200)
 			.SetDisplay("MA Length", string.Empty, "General")
-			.SetCanOptimize(true);
+			;
 
 		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
 			.SetDisplay("MA Type", string.Empty, "General");
 
 		_rsiSlowLength = Param(nameof(RsiSlowLength), 28)
 			.SetDisplay("RSI Slow Length", string.Empty, "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_rsiFastLength = Param(nameof(RsiFastLength), 7)
 			.SetDisplay("RSI Fast Length", string.Empty, "RSI")
-			.SetCanOptimize(true);
+			;
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 			.SetDisplay("RSI Overbought", string.Empty, "RSI");
@@ -128,7 +128,7 @@ public class ForexFireEmaMaRsiStrategy : Strategy
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetDisplay("ATR Length", string.Empty, "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Entry Candle", string.Empty, "Timeframes");
@@ -337,20 +337,20 @@ public class ForexFireEmaMaRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_emaShortEntry = new ExponentialMovingAverage { Length = EmaShortLength };
-		_emaLongEntry = new ExponentialMovingAverage { Length = EmaLongLength };
+		_emaShortEntry = new EMA { Length = EmaShortLength };
+		_emaLongEntry = new EMA { Length = EmaLongLength };
 		_maEntry = CreateMa(MaType, MaLength);
 		_rsiSlowEntry = new RelativeStrengthIndex { Length = RsiSlowLength };
 		_rsiFastEntry = new RelativeStrengthIndex { Length = RsiFastLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
-		_volumeSma = new SimpleMovingAverage { Length = 20 };
+		_volumeSma = new SMA { Length = 20 };
 
-		_emaShortConf = new ExponentialMovingAverage { Length = EmaShortLength };
-		_emaLongConf = new ExponentialMovingAverage { Length = EmaLongLength };
+		_emaShortConf = new EMA { Length = EmaShortLength };
+		_emaLongConf = new EMA { Length = EmaLongLength };
 		_maConf = CreateMa(MaType, MaLength);
 		_rsiSlowConf = new RelativeStrengthIndex { Length = RsiSlowLength };
 		_rsiFastConf = new RelativeStrengthIndex { Length = RsiFastLength };
@@ -365,7 +365,7 @@ public class ForexFireEmaMaRsiStrategy : Strategy
 			.Bind(_emaShortConf, _emaLongConf, _maConf, _rsiSlowConf, _rsiFastConf, ProcessConfluence)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessConfluence(ICandleMessage candle, decimal emaShort, decimal emaLong, decimal ma, decimal rsiSlow, decimal rsiFast)
@@ -385,7 +385,7 @@ public class ForexFireEmaMaRsiStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volumeAvg = _volumeSma.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+		var volumeAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 		if (!_volumeSma.IsFormed)
 			return;
 
@@ -476,11 +476,11 @@ public class ForexFireEmaMaRsiStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SMA { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

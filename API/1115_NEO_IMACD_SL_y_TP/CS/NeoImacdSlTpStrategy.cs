@@ -90,37 +90,37 @@ public class NeoImacdSlTpStrategy : Strategy
 	{
 		_zlemaLength = Param(nameof(ZlemaLength), 34)
 			.SetDisplay("ZLEMA Length", "Length for zero-lag EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_shortLength = Param(nameof(ShortLength), 12)
 			.SetDisplay("MACD Short Length", "Fast period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_longLength = Param(nameof(LongLength), 26)
 			.SetDisplay("MACD Long Length", "Slow period for MACD", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 1);
 
 		_signalLength = Param(nameof(SignalLength), 9)
 			.SetDisplay("MACD Signal Length", "Signal smoothing", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_emaLength = Param(nameof(EmaLength), 100)
 			.SetDisplay("EMA Length", "EMA filter length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 10);
 
 		_riskReward = Param(nameof(RiskReward), 2m)
 			.SetDisplay("Risk-Reward Ratio", "Take profit to stop loss ratio", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.5m)
 			.SetDisplay("Stop Loss %", "Percentage of stop loss", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -156,22 +156,22 @@ public class NeoImacdSlTpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema1 = new ExponentialMovingAverage { Length = ZlemaLength };
-		_ema2 = new ExponentialMovingAverage { Length = ZlemaLength };
-		_fastEma = new ExponentialMovingAverage { Length = ShortLength };
-		_slowEma = new ExponentialMovingAverage { Length = LongLength };
-		_signalSma = new SimpleMovingAverage { Length = SignalLength };
-		_ema100 = new ExponentialMovingAverage { Length = EmaLength };
+		_ema1 = new EMA { Length = ZlemaLength };
+		_ema2 = new EMA { Length = ZlemaLength };
+		_fastEma = new EMA { Length = ShortLength };
+		_slowEma = new EMA { Length = LongLength };
+		_signalSma = new SMA { Length = SignalLength };
+		_ema100 = new EMA { Length = EmaLength };
 		_rsi = new RelativeStrengthIndex { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_ema1, _ema2, _ema100, _rsi, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal ema1, decimal ema2, decimal ema100, decimal rsi)
@@ -183,10 +183,10 @@ public class NeoImacdSlTpStrategy : Strategy
 			return;
 
 		var zlema = 2m * ema1 - ema2;
-		var fast = _fastEma.Process(zlema, candle.ServerTime, true).ToDecimal();
-		var slow = _slowEma.Process(zlema, candle.ServerTime, true).ToDecimal();
+		var fast = _fastEma.Process(new DecimalIndicatorValue(_fastEma, zlema, candle.ServerTime)).ToDecimal();
+		var slow = _slowEma.Process(new DecimalIndicatorValue(_slowEma, zlema, candle.ServerTime)).ToDecimal();
 		var macd = fast - slow;
-		var signal = _signalSma.Process(macd, candle.ServerTime, true).ToDecimal();
+		var signal = _signalSma.Process(new DecimalIndicatorValue(_signalSma, macd, candle.ServerTime)).ToDecimal();
 		var hist = macd - signal;
 
 		var macdCrossUp = _prevMacd <= _prevSignal && macd > signal;

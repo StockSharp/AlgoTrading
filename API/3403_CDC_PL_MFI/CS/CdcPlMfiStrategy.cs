@@ -181,12 +181,12 @@ public class CdcPlMfiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_bodyAverage = new SimpleMovingAverage { Length = BodyAveragePeriod };
-		_closeAverage = new SimpleMovingAverage { Length = BodyAveragePeriod };
+		_bodyAverage = new SMA { Length = BodyAveragePeriod };
+		_closeAverage = new SMA { Length = BodyAveragePeriod };
 		var mfi = new MoneyFlowIndex { Length = MfiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -242,8 +242,8 @@ public class CdcPlMfiStrategy : Strategy
 		_prevMfi = mfiValue;
 
 		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var bodyAvgValue = _bodyAverage.Process(body, candle.CloseTime, true).ToNullableDecimal();
-		var closeAvgValue = _closeAverage.Process(candle.ClosePrice, candle.CloseTime, true).ToNullableDecimal();
+		var bodyAvgValue = _bodyAverage.Process(new DecimalIndicatorValue(_bodyAverage, body, candle.CloseTime)).ToNullableDecimal();
+		var closeAvgValue = _closeAverage.Process(new DecimalIndicatorValue(_closeAverage, candle.ClosePrice, candle.CloseTime)).ToNullableDecimal();
 
 		_closeAvgPrev2 = _closeAvgPrev;
 		_closeAvgPrev = closeAvgValue;

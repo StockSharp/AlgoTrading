@@ -244,34 +244,34 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 _rsiPeriod = Param(nameof(RsiPeriod), 14)
 .SetGreaterThanZero()
 .SetDisplay("RSI Period", "Base RSI length", "RSI")
-.SetCanOptimize(true);
+;
 
 _shortPricePeriod = Param(nameof(ShortPricePeriod), 9)
 .SetGreaterThanZero()
 .SetDisplay("Fast Price MA", "Length of the fast price moving average", "Trend")
-.SetCanOptimize(true);
+;
 
 _longPricePeriod = Param(nameof(LongPricePeriod), 45)
 .SetGreaterThanZero()
 .SetDisplay("Slow Price MA", "Length of the slow price moving average", "Trend")
-.SetCanOptimize(true);
+;
 
 _shortRsiPeriod = Param(nameof(ShortRsiPeriod), 9)
 .SetGreaterThanZero()
 .SetDisplay("Fast RSI MA", "Length of the fast RSI moving average", "RSI")
-.SetCanOptimize(true);
+;
 
 _longRsiPeriod = Param(nameof(LongRsiPeriod), 45)
 .SetGreaterThanZero()
 .SetDisplay("Slow RSI MA", "Length of the slow RSI moving average", "RSI")
-.SetCanOptimize(true);
+;
 
 _stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
 .SetGreaterThanZero()
 .SetDisplay("%K Period", "Stochastic %K period", "Stochastic")
-.SetCanOptimize(true);
+;
 
-_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 .SetGreaterThanZero()
 .SetDisplay("%D Period", "Stochastic %D period", "Stochastic");
 
@@ -334,23 +334,23 @@ ResetProtectionLevels();
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-StartProtection();
+StartProtection(null, null);
 
 _priceStep = Security?.PriceStep ?? 0m;
 
-_shortPriceMa = new SimpleMovingAverage { Length = ShortPricePeriod };
+_shortPriceMa = new SMA { Length = ShortPricePeriod };
 _longPriceMa = new WeightedMovingAverage { Length = LongPricePeriod };
 _rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-_shortRsiAverage = new SimpleMovingAverage { Length = ShortRsiPeriod };
-_longRsiAverage = new SimpleMovingAverage { Length = LongRsiPeriod };
+_shortRsiAverage = new SMA { Length = ShortRsiPeriod };
+_longRsiAverage = new SMA { Length = LongRsiPeriod };
 _stochastic = new StochasticOscillator
 {
 KPeriod = StochasticKPeriod,
-DPeriod = StochasticDPeriod,
+D = {  K = { Length = StochasticDPeriod } },
 Slowing = StochasticSlowing
 };
 _deMarker = new DeMarker { Length = DemarkerPeriod };

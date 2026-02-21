@@ -171,12 +171,12 @@ public class TwentyPipsPriceChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastMa = new SimpleMovingAverage { Length = 1 };
-		_slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
+		_fastMa = new SMA { Length = 1 };
+		_slowMa = new SMA { Length = SlowMaPeriod };
 		_channelHigh = new Highest { Length = ChannelPeriod };
 		_channelLow = new Lowest { Length = ChannelPeriod };
 

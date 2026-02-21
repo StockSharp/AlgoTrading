@@ -176,19 +176,19 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 
 		_closeMode = Param(nameof(ManualCloseMode), CloseModes.Positions)
 			.SetDisplay("Close Mode", "Objects affected by the manual close", "Manual")
-			.SetCanOptimize(false);
+			;
 
 		_closeSymbol = Param(nameof(ManualCloseSymbol), CloseSymbols.Chart)
 			.SetDisplay("Symbol Scope", "Whether to close only the main symbol or all", "Manual")
-			.SetCanOptimize(false);
+			;
 
 		_closeProfitFilter = Param(nameof(ManualCloseProfitFilter), CloseProfitFilters.ProfitOnly)
 			.SetDisplay("Profit Filter", "Filter positions by floating PnL before closing", "Manual")
-			.SetCanOptimize(false);
+			;
 
 		_closeAll = Param(nameof(CloseAll), false)
 			.SetDisplay("Close All", "Set to true to close according to the configured filters", "Manual")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <inheritdoc />
@@ -209,9 +209,9 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 		{

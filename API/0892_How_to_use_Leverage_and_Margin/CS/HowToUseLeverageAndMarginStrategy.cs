@@ -84,19 +84,19 @@ public class HowToUseLeverageAndMarginStrategy : Strategy
 		_stochPeriod = Param(nameof(StochPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Lookback period for Stochastic", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_kPeriod = Param(nameof(KPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("%K Period", "Smoothing period for %K line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("%D Period", "Smoothing period for %D line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 100)
@@ -123,13 +123,12 @@ public class HowToUseLeverageAndMarginStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochPeriod,
+		{ K = { Length = StochPeriod },
 			K = { Length = KPeriod },
 			D = { Length = DPeriod },
 		};

@@ -114,19 +114,19 @@ public class RsiEmaStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation length", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 2);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
 			.SetRange(50, 95)
 			.SetDisplay("RSI Overbought", "RSI overbought level", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(65, 85, 5);
 
 		_rsiOversold = Param(nameof(RsiOversold), 30)
 			.SetRange(5, 50)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 35, 5);
 
 		_ma1Type = Param(nameof(Ma1Type), "EMA")
@@ -135,7 +135,7 @@ public class RsiEmaStrategy : Strategy
 		_ma1Length = Param(nameof(Ma1Length), 150)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1 Length", "First moving average length", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 200, 25);
 
 		_ma2Type = Param(nameof(Ma2Type), "EMA")
@@ -144,7 +144,7 @@ public class RsiEmaStrategy : Strategy
 		_ma2Length = Param(nameof(Ma2Length), 600)
 			.SetGreaterThanZero()
 			.SetDisplay("MA2 Length", "Second moving average length", "Moving Averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(400, 800, 100);
 	}
 
@@ -155,20 +155,20 @@ public class RsiEmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		
 		_ma1 = Ma1Type == "SMA" 
-			? (IIndicator)new SimpleMovingAverage { Length = Ma1Length }
-			: new ExponentialMovingAverage { Length = Ma1Length };
+			? (IIndicator)new SMA { Length = Ma1Length }
+			: new EMA { Length = Ma1Length };
 			
 		_ma2 = Ma2Type == "SMA" 
-			? (IIndicator)new SimpleMovingAverage { Length = Ma2Length }
-			: new ExponentialMovingAverage { Length = Ma2Length };
+			? (IIndicator)new SMA { Length = Ma2Length }
+			: new EMA { Length = Ma2Length };
 
 		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);

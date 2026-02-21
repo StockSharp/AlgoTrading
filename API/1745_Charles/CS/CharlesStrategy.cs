@@ -81,43 +81,43 @@ public class CharlesStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Period of the fast EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Period of the slow EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 100, 5);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_stopLoss = Param(nameof(StopLoss), 0.008m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Absolute stop-loss value", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.004m, 0.02m, 0.004m);
 
 		_takeProfit = Param(nameof(TakeProfit), 0.02m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Absolute take-profit value", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_trailStart = Param(nameof(TrailStart), 0.006m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trail Start", "Profit to activate trailing", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.004m, 0.02m, 0.004m);
 
 		_trailOffset = Param(nameof(TrailOffset), 0.003m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trail Offset", "Distance of trailing stop", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.002m, 0.01m, 0.002m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -142,9 +142,9 @@ public class CharlesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(
 			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),

@@ -13,7 +13,7 @@
 - **止损**：有。
 - **默认值**：
   - `TickSize` = 0.01
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame().
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame().
 - **筛选**：
   - 类型: 反转
   - 方向: 多头

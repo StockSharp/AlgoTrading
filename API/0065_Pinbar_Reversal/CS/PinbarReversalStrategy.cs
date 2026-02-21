@@ -91,12 +91,12 @@ public class PinbarReversalStrategy : Strategy
 		_tailToBodyRatio = Param(nameof(TailToBodyRatio), 2.0m)
 			.SetRange(1.5m, 5.0m)
 			.SetDisplay("Tail/Body Ratio", "Minimum ratio of tail to body length", "Pattern Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_oppositeTailRatio = Param(nameof(OppositeTailRatio), 0.5m)
 			.SetRange(0.1m, 1.0m)
 			.SetDisplay("Opposite Tail Ratio", "Maximum ratio of opposite tail to body", "Pattern Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -104,7 +104,7 @@ public class PinbarReversalStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetRange(0.5m, 3.0m)
 			.SetDisplay("Stop Loss %", "Percentage-based stop loss from entry", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_useTrend = Param(nameof(UseTrend), true)
 			.SetDisplay("Use Trend Filter", "Whether to use MA trend filter", "Signal Parameters");
@@ -112,7 +112,7 @@ public class PinbarReversalStrategy : Strategy
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetRange(10, 50)
 			.SetDisplay("MA Period", "Period for the moving average trend filter", "Signal Parameters")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -122,12 +122,12 @@ public class PinbarReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create moving average for trend detection
-		_ma = new SimpleMovingAverage { Length = MAPeriod };
+		_ma = new SMA { Length = MAPeriod };
 
 		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);

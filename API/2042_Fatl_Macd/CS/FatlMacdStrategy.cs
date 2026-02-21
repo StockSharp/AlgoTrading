@@ -74,17 +74,17 @@ public FatlMacdStrategy()
 _fastLength = Param(nameof(FastLength), 12)
 .SetDisplay("Fast EMA", "Period of the fast moving average", "MACD")
 .SetGreaterThanZero()
-.SetCanOptimize(true);
+;
 
 _slowLength = Param(nameof(SlowLength), 26)
 .SetDisplay("Slow EMA", "Period of the slow moving average", "MACD")
 .SetGreaterThanZero()
-.SetCanOptimize(true);
+;
 
 _signalLength = Param(nameof(SignalLength), 9)
 .SetDisplay("Signal EMA", "Period of the signal line", "MACD")
 .SetGreaterThanZero()
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles for processing", "General");
@@ -111,8 +111,8 @@ base.OnStarted(time);
 
 var macd = new MovingAverageConvergenceDivergence
 {
-ShortPeriod = FastLength,
-LongPeriod = SlowLength,
+ShortMa = { Length = FastLength },
+LongMa = { Length = SlowLength },
 SignalPeriod = SignalLength
 };
 

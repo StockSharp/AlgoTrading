@@ -140,7 +140,7 @@ public class OneTwoThreePatternStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 60m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "MetaTrader style take profit distance.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 120m, 10m);
 
 		_volumeParam = Param(nameof(TradeVolume), 0.5m)
@@ -149,13 +149,13 @@ public class OneTwoThreePatternStrategy : Strategy
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 30m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in MetaTrader points.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 60m, 5m);
 
                 _trendRatio = Param(nameof(TrendRatio), 4m)
                         .SetGreaterThanZero()
                         .SetDisplay("Trend Ratio", "Required ratio between previous and current trend lengths.", "Filters")
-                        .SetCanOptimize(true)
+                        
                         .SetOptimize(2m, 6m, 0.5m);
 
                 _macdEpsilon = Param(nameof(MacdEpsilon), 0.001m)
@@ -606,8 +606,8 @@ public class OneTwoThreePatternStrategy : Strategy
 			if (!TryGetCandle(i, out var candle))
 				return -1;
 
-			var value = Math.Min(candle.Open, candle.Close);
-			var upper = Math.Max(candle.Open, candle.Close);
+			var value = Math.Min(candle.OpenPrice, candle.ClosePrice);
+			var upper = Math.Max(candle.OpenPrice, candle.ClosePrice);
 
 			if (upper > maxLevel || value < minLevel)
 				return -1;
@@ -635,8 +635,8 @@ public class OneTwoThreePatternStrategy : Strategy
 			if (!TryGetCandle(i, out var candle))
 				return -1;
 
-			var value = Math.Max(candle.Open, candle.Close);
-			var lower = Math.Min(candle.Open, candle.Close);
+			var value = Math.Max(candle.OpenPrice, candle.ClosePrice);
+			var lower = Math.Min(candle.OpenPrice, candle.ClosePrice);
 
 			if (value > maxLevel || lower < minLevel)
 				return -1;
@@ -674,7 +674,7 @@ public class OneTwoThreePatternStrategy : Strategy
 			if (!TryGetCandle(startingBarNumber + i, out var candle))
 				return 0m;
 
-			maxima[i - 1] = Math.Max(candle.Open, candle.Close);
+			maxima[i - 1] = Math.Max(candle.OpenPrice, candle.ClosePrice);
 		}
 
 		var hull = new int[barsToProcess];
@@ -741,7 +741,7 @@ public class OneTwoThreePatternStrategy : Strategy
 			if (!TryGetCandle(startingBarNumber + i, out var candle))
 				return 0m;
 
-			minima[i - 1] = Math.Min(candle.Open, candle.Close);
+			minima[i - 1] = Math.Min(candle.OpenPrice, candle.ClosePrice);
 		}
 
 		var hull = new int[barsToProcess];

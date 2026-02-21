@@ -55,7 +55,7 @@ public class PvtCrossoverStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Length", "EMA period for PVT smoothing", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -80,11 +80,11 @@ public class PvtCrossoverStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -112,7 +112,7 @@ public class PvtCrossoverStrategy : Strategy
 		
 		_prevClose = candle.ClosePrice;
 		
-		var emaValue = _ema.Process(_pvt, candle.OpenTime, true).ToDecimal();
+		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, _pvt, candle.OpenTime)).ToDecimal();
 		
 		if (!_ema.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 		{

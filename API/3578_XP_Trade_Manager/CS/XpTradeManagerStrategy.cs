@@ -51,12 +51,12 @@ public class XpTradeManagerStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 20)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Initial stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 40)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Initial take-profit distance in pips", "Targets")
-			.SetCanOptimize(true);
+			;
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
 			.SetDisplay("Use Break-Even", "Move the stop-loss to break-even after configurable profit", "Break-Even");
@@ -64,12 +64,12 @@ public class XpTradeManagerStrategy : Strategy
 		_breakEvenActivationPips = Param(nameof(BreakEvenActivationPips), 50)
 			.SetNotNegative()
 			.SetDisplay("Break-Even Activation (pips)", "Profit required before the break-even stop is applied", "Break-Even")
-			.SetCanOptimize(true);
+			;
 
 		_breakEvenLockPips = Param(nameof(BreakEvenLockPips), 10)
 			.SetNotNegative()
 			.SetDisplay("Break-Even Lock (pips)", "Offset kept as profit when moving to break-even", "Break-Even")
-			.SetCanOptimize(true);
+			;
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
 			.SetDisplay("Use Trailing Stop", "Enable the progressive trailing stop controller", "Trailing");
@@ -77,17 +77,17 @@ public class XpTradeManagerStrategy : Strategy
 		_trailingStartPips = Param(nameof(TrailingStartPips), 10)
 			.SetNotNegative()
 			.SetDisplay("Trailing Start (pips)", "Profit required before trailing becomes active", "Trailing")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 10)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Profit increment that advances the trailing stop", "Trailing")
-			.SetCanOptimize(true);
+			;
 
 		_trailingDistancePips = Param(nameof(TrailingDistancePips), 15)
 			.SetNotNegative()
 			.SetDisplay("Trailing Distance (pips)", "Distance maintained behind price when trailing", "Trailing")
-			.SetCanOptimize(true);
+			;
 
 		_trailingEndsAtBreakEven = Param(nameof(TrailingEndsAtBreakEven), false)
 			.SetDisplay("Trailing Ends At Break-Even", "Restrict trailing to never move beyond the break-even lock", "Trailing");
@@ -209,9 +209,9 @@ public class XpTradeManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 		if (_pipSize <= 0m)

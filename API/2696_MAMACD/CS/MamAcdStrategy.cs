@@ -118,27 +118,27 @@ public class MamAcdStrategy : Strategy
 		_firstLowMaLength = Param(nameof(FirstLowMaLength), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("LWMA #1", "Length of the first LWMA on lows", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_secondLowMaLength = Param(nameof(SecondLowMaLength), 75)
 		.SetGreaterThanZero()
 		.SetDisplay("LWMA #2", "Length of the second LWMA on lows", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_triggerEmaLength = Param(nameof(TriggerEmaLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Trigger EMA", "Length of the EMA on closes", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdFastLength = Param(nameof(MacdFastLength), 15)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Fast", "Fast EMA length of MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Slow", "Slow EMA length of MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 15)
 		.SetNotNegative()
@@ -176,7 +176,7 @@ public class MamAcdStrategy : Strategy
 
 		_firstLowMa = new WeightedMovingAverage { Length = FirstLowMaLength };
 		_secondLowMa = new WeightedMovingAverage { Length = SecondLowMaLength };
-		_triggerEma = new ExponentialMovingAverage { Length = TriggerEmaLength };
+		_triggerEma = new EMA { Length = TriggerEmaLength };
 		_macd = new MovingAverageConvergenceDivergence
 		{
 			ShortMa = { Length = MacdFastLength },
@@ -216,10 +216,10 @@ public class MamAcdStrategy : Strategy
 		return;
 
 		// Feed indicator chain: LWMAs work on low prices, EMA and MACD on closes.
-		var firstLowValue = _firstLowMa.Process(candle.LowPrice, candle.OpenTime, true);
-		var secondLowValue = _secondLowMa.Process(candle.LowPrice, candle.OpenTime, true);
-		var triggerValue = _triggerEma.Process(candle.ClosePrice, candle.OpenTime, true);
-		var macdValue = _macd.Process(candle.ClosePrice, candle.OpenTime, true);
+		var firstLowValue = _firstLowMa.Process(new DecimalIndicatorValue(_firstLowMa, candle.LowPrice, candle.OpenTime));
+		var secondLowValue = _secondLowMa.Process(new DecimalIndicatorValue(_secondLowMa, candle.LowPrice, candle.OpenTime));
+		var triggerValue = _triggerEma.Process(new DecimalIndicatorValue(_triggerEma, candle.ClosePrice, candle.OpenTime));
+		var macdValue = _macd.Process(new DecimalIndicatorValue(_macd, candle.ClosePrice, candle.OpenTime));
 
 		// Wait for all indicators to collect enough history.
 		if (!_firstLowMa.IsFormed || !_secondLowMa.IsFormed || !_triggerEma.IsFormed || !_macd.IsFormed)

@@ -74,17 +74,17 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 	{
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetDisplay("Tenkan-sen Period", "Period for Tenkan-sen line (faster)", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 13, 2);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetDisplay("Kijun-sen Period", "Period for Kijun-sen line (slower)", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 30, 2);
 
 		_senkouSpanPeriod = Param(nameof(SenkouSpanPeriod), 52)
 			.SetDisplay("Senkou Span B Period", "Period for Senkou Span B calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 60, 4);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -109,9 +109,9 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Ichimoku indicator
 		var ichimoku = new Ichimoku

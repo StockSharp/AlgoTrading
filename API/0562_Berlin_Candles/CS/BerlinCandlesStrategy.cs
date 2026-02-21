@@ -47,12 +47,12 @@ public class BerlinCandlesStrategy : Strategy
 	{
 		_smoothing = Param(nameof(Smoothing), 1)
 		.SetDisplay("Smoothing", "EMA smoothing for Berlin open", "Berlin")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 		
 		_baselinePeriod = Param(nameof(BaselinePeriod), 26)
 		.SetDisplay("Baseline Period", "Donchian baseline period", "Berlin")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -71,16 +71,16 @@ public class BerlinCandlesStrategy : Strategy
 		_isInitialized = false;
 	}
 	
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		var ema = new ExponentialMovingAverage { Length = Smoothing + 1 };
+		var ema = new EMA { Length = Smoothing + 1 };
 		var donchian = new DonchianChannels { Length = BaselinePeriod };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(ema, donchian, ProcessCandle)
+		.BindEx([ema, donchian], ProcessCandle)
 		.Start();
 		
 		var area = CreateChartArea();
@@ -92,18 +92,23 @@ public class BerlinCandlesStrategy : Strategy
 		}
 	}
 	
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal middleBand, decimal upperBand, decimal lowerBand)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
-		
+
+		var emaValue = values[0].ToDecimal();
+		var donchianTyped = (DonchianChannelsValue)values[1];
+		if (donchianTyped.Middle is not decimal middleBand)
+			return;
+
 		if (!_isInitialized)
 		{
 			_prevEma = emaValue;
 			_isInitialized = true;
 			return;
 		}
-		
+
 		var openExpr = _prevEma;
 		var closeExpr = candle.ClosePrice;
 		

@@ -69,7 +69,7 @@ public class OrderTimeAlertStrategy : Strategy
 		_alertDelaySeconds = Param(nameof(AlertDelaySeconds), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Alert Delay", "Seconds before an alert is triggered", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 5);
 
 		_timerFrequencySeconds = Param(nameof(TimerFrequencySeconds), 1)
@@ -84,9 +84,9 @@ public class OrderTimeAlertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Start periodic timer to monitor active orders.
 		TimerInterval = TimeSpan.FromSeconds(TimerFrequencySeconds);

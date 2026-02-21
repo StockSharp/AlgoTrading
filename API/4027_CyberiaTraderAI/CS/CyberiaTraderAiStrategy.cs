@@ -187,17 +187,17 @@ public class CyberiaTraderAiStrategy : Strategy
 	{
 		_maxPeriod = Param(nameof(MaxPeriod), 23)
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Max Period", "Largest sampling stride tested by the probability engine", "Model");
 
 		_samplesPerPeriod = Param(nameof(SamplesPerPeriod), 5)
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Segments Per Period", "Number of historical segments processed for every period candidate", "Model");
 
 		_spreadThreshold = Param(nameof(SpreadThreshold), 0m)
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Spread Threshold", "Minimal absolute move to count a probability as successful", "Model");
 
 		_enableCyberiaLogic = Param(nameof(EnableCyberiaLogic), true)
@@ -214,22 +214,22 @@ public class CyberiaTraderAiStrategy : Strategy
 
 		_maPeriod = Param(nameof(MaPeriod), 23)
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetDisplay("EMA Period", "Length of the EMA used in the trend filter", "Indicators");
 
 		_macdFast = Param(nameof(MacdFast), 12)
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetDisplay("MACD Fast", "Fast EMA length for MACD", "Indicators");
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetDisplay("MACD Slow", "Slow EMA length for MACD", "Indicators");
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetDisplay("MACD Signal", "Signal EMA length for MACD", "Indicators");
 
 		_reversalFactor = Param(nameof(ReversalFactor), 3m)
@@ -283,7 +283,7 @@ public class CyberiaTraderAiStrategy : Strategy
 			SignalMa = { Length = MacdSignal }
 		};
 
-		_ema = new ExponentialMovingAverage { Length = MaPeriod };
+		_ema = new EMA { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

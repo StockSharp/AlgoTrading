@@ -166,31 +166,31 @@ public class BlauSmStochasticStrategy : Strategy
 		_lookbackLength = Param(nameof(LookbackLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Length", "Bars used to compute highest and lowest prices", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 25, 5);
 
 		_firstSmoothingLength = Param(nameof(FirstSmoothingLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("First Smoothing", "Length of the first smoothing stage", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_secondSmoothingLength = Param(nameof(SecondSmoothingLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Second Smoothing", "Length of the second smoothing stage", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 2);
 
 		_thirdSmoothingLength = Param(nameof(ThirdSmoothingLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Third Smoothing", "Length of the third smoothing stage", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_signalLength = Param(nameof(SignalLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Smoothing", "Length of the signal line smoothing", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 12, 1);
 
 		_smoothMethod = Param(nameof(SmoothMethod), BlauSmSmoothMethods.Ema)
@@ -217,13 +217,13 @@ public class BlauSmStochasticStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Take-profit distance expressed in instrument points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 4000, 500);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Stop-loss distance expressed in instrument points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 4000, 500);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -400,9 +400,9 @@ public class BlauSmStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var indicator = new BlauSmStochasticIndicator
 		{
@@ -598,7 +598,7 @@ public class BlauSmStochasticStrategy : Strategy
 /// <summary>
 /// Custom indicator implementing the Blau SM Stochastic oscillator.
 /// </summary>
-public class BlauSmStochasticIndicator : BaseIndicator<decimal>
+public class BlauSmStochasticIndicator : BaseIndicator
 {
 	private readonly List<decimal> _highs = new();
 	private readonly List<decimal> _lows = new();
@@ -790,17 +790,17 @@ public class BlauSmStochasticIndicator : BaseIndicator<decimal>
 	{
 		return SmoothMethod switch
 		{
-			BlauSmSmoothMethods.Sma => new SimpleMovingAverage { Length = length },
-			BlauSmSmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
+			BlauSmSmoothMethods.Sma => new SMA { Length = length },
+			BlauSmSmoothMethods.Ema => new EMA { Length = length },
 			BlauSmSmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
 			BlauSmSmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 
 	private static decimal? ProcessStage(IIndicator indicator, decimal value, DateTimeOffset time)
 	{
-		var result = indicator.Process(new DecimalIndicatorValue(indicator, value, time));
+		var result = indicator.Process(new DecimalIndicatorValue(indicator, value, time.UtcDateTime));
 		return indicator.IsFormed ? result.ToDecimal() : null;
 	}
 

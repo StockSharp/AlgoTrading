@@ -63,50 +63,50 @@ public class TurtleTraderSarStrategy : Strategy
 		_exitPeriod = Param(nameof(ExitPeriod), 10)
 			.SetDisplay("Exit Period", "Donchian exit period", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_shortPeriod = Param(nameof(ShortPeriod), 20)
 			.SetDisplay("Short Period", "Short breakout period", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_longPeriod = Param(nameof(LongPeriod), 55)
 			.SetDisplay("Long Period", "Long breakout period", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_riskFraction = Param(nameof(RiskFraction), 0.01m)
 			.SetDisplay("Risk Fraction", "Account fraction risked per trade", "Money")
-			.SetCanOptimize(true);
+			;
 
 		_maxUnits = Param(nameof(MaxUnits), 4m)
 			.SetDisplay("Max Units", "Maximum number of units", "Money")
-			.SetCanOptimize(true);
+			;
 
 		_addInterval = Param(nameof(AddInterval), 1m)
 			.SetDisplay("Add Interval", "ATR move to add units", "Money")
-			.SetCanOptimize(true);
+			;
 
 		_stopAtr = Param(nameof(StopAtr), 1m)
 			.SetDisplay("Stop ATR", "ATR multiplier for stop", "Money")
-			.SetCanOptimize(true);
+			;
 
 		_takeAtr = Param(nameof(TakeAtr), 1m)
 			.SetDisplay("Take ATR", "ATR multiplier for take profit", "Money")
-			.SetCanOptimize(true);
+			;
 
 		_useSar = Param(nameof(UseSar), false)
 			.SetDisplay("Use SAR", "Enable Parabolic SAR trailing", "Money");
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
 			.SetDisplay("SAR Step", "Parabolic SAR step", "Money")
-			.SetCanOptimize(true);
+			;
 
 		_sarMax = Param(nameof(SarMax), 0.2m)
 			.SetDisplay("SAR Max", "Parabolic SAR maximum", "Money")
-			.SetCanOptimize(true);
+			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -116,12 +116,12 @@ public class TurtleTraderSarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Enable built-in position protection
-		StartProtection();
+		StartProtection(null, null);
 
 		// Create indicators
 		_atr = new AverageTrueRange { Length = 20 };

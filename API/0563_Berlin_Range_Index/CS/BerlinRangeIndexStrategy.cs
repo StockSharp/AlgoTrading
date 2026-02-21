@@ -104,7 +104,7 @@ public class BerlinRangeIndexStrategy : Strategy {
 		Param(nameof(Length), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Length", "Choppiness index period", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 	_chopMax = Param(nameof(ChopMax), 40m)
@@ -112,7 +112,7 @@ public class BerlinRangeIndexStrategy : Strategy {
 			   .SetDisplay("Trend Threshold",
 				   "Maximum choppiness value considered trend",
 				   "General")
-			   .SetCanOptimize(true)
+			   
 			   .SetOptimize(30m, 60m, 5m);
 
 	_chopMin =
@@ -122,14 +122,14 @@ public class BerlinRangeIndexStrategy : Strategy {
 			"Exhausted Threshold",
 			"Minimum choppiness value considered exhausted trend",
 			"General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 20m, 5m);
 
 	_atrLength =
 		Param(nameof(AtrLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Length", "ATR filter period", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 20, 2);
 
 	_lowLookback =
@@ -137,7 +137,7 @@ public class BerlinRangeIndexStrategy : Strategy {
 		.SetGreaterThanZero()
 		.SetDisplay("Low Lookback", "Lookback period for lowest StdDev",
 				"General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 	_useNormalized =
@@ -150,7 +150,7 @@ public class BerlinRangeIndexStrategy : Strategy {
 		.SetGreaterThanZero()
 		.SetDisplay("StdDev Length",
 				"Length for ATR standard deviation", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 	_candleType =
@@ -175,8 +175,8 @@ public class BerlinRangeIndexStrategy : Strategy {
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
-	base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+	base.OnStarted2(time);
 
 	var atr = new AverageTrueRange { Length = AtrLength };
 	var choppiness = new ChoppinessIndex { Length = Length };
@@ -199,10 +199,10 @@ public class BerlinRangeIndexStrategy : Strategy {
 
 	var atrVal = UseNormalized ? atrValue / candle.ClosePrice : atrValue;
 
-	var stdDevValue = _stdDev.Process(atrVal, candle.ServerTime, true);
+	var stdDevValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, atrVal, candle.ServerTime));
 	var stdDev = stdDevValue.ToDecimal();
 
-	var lowValue = _stdDevLow.Process(stdDev, candle.ServerTime, true);
+	var lowValue = _stdDevLow.Process(new DecimalIndicatorValue(_stdDevLow, stdDev, candle.ServerTime));
 	var stdDevLow = lowValue.ToDecimal();
 
 	if (!_stdDev.IsFormed || !_stdDevLow.IsFormed)

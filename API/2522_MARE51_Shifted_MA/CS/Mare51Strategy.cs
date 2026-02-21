@@ -144,9 +144,9 @@ public class Mare51Strategy : Strategy
 		_pipSize = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (SessionOpenHour >= SessionCloseHour)
 			throw new InvalidOperationException("SessionOpenHour must be less than SessionCloseHour.");

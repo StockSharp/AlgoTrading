@@ -44,31 +44,31 @@ public class MacrossStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Length of the fast simple moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 20, 2);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Length of the slow simple moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Distance to the profit target expressed in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 50m, 5m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Distance to the protective stop expressed in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 50m, 5m);
 
 		_lotSize = Param(nameof(LotSize), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Size", "Volume used for each market entry", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 2m, 0.1m);
 
 		_minEquity = Param(nameof(MinEquity), 100m)
@@ -163,12 +163,12 @@ public class MacrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	Volume = LotSize;
-	StartProtection();
+	StartProtection(null, null);
 
 	_fastMa = new SMA { Length = FastPeriod };
 	_slowMa = new SMA { Length = SlowPeriod };

@@ -58,12 +58,12 @@ public class RonzAutoSltpStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 550)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Distance in MetaTrader pips used for the take-profit target.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 350)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Distance in MetaTrader pips used for the protective stop-loss.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_useServerStops = Param(nameof(UseServerStops), true)
 		.SetDisplay("Use Server Stops", "Send actual stop and limit orders instead of closing positions virtually.", "Execution");
@@ -74,12 +74,12 @@ public class RonzAutoSltpStrategy : Strategy
 		_lockProfitAfterPips = Param(nameof(LockProfitAfterPips), 100)
 		.SetNotNegative()
 		.SetDisplay("Lock After (pips)", "Profit in pips required before the stop-lock engages.", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_profitLockPips = Param(nameof(ProfitLockPips), 60)
 		.SetNotNegative()
 		.SetDisplay("Locked Profit (pips)", "Profit preserved once the lock is active.", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_trailingMode = Param(nameof(TrailingStopMode), TrailingModes.Classic)
 		.SetDisplay("Trailing Mode", "Style of the trailing stop used after the lock threshold.", "Trailing");
@@ -87,12 +87,12 @@ public class RonzAutoSltpStrategy : Strategy
 		_trailingStopPips = Param(nameof(TrailingStopPips), 50)
 		.SetNotNegative()
 		.SetDisplay("Trailing Distance (pips)", "Distance maintained by the trailing stop when active.", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 10)
 		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Increment applied by step-based trailing modes.", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_enableAlerts = Param(nameof(EnableAlerts), false)
 		.SetDisplay("Enable Alerts", "Log informational messages when virtual protection closes a position.", "General");
@@ -221,11 +221,11 @@ public class RonzAutoSltpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		if (Security != null)
 		{

@@ -100,13 +100,13 @@ public class SyndicateTraderStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
-		_volumeMa = new SimpleMovingAverage { Length = VolumeMaLength };
+		_fastEma = new EMA { Length = FastEmaLength };
+		_slowEma = new EMA { Length = SlowEmaLength };
+		_volumeMa = new SMA { Length = VolumeMaLength };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -140,9 +140,9 @@ public class SyndicateTraderStrategy : Strategy
 			}
 		}
 		
-		var fast = _fastEma.Process(candle).ToDecimal();
+		var fast = _fastEma.Process(new DecimalIndicatorValue(_fastEma, candle).ToDecimal();
 		var slow = _slowEma.Process(candle).ToDecimal();
-		var volumeAvg = _volumeMa.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+		var volumeAvg = _volumeMa.Process(candle.TotalVolume, candle.OpenTime)).ToDecimal();
 		
 		var crossUp = fast > slow && _prevFast <= _prevSlow;
 		var crossDown = fast < slow && _prevFast >= _prevSlow;

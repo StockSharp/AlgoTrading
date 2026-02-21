@@ -87,20 +87,20 @@ public ReversalFinderStrategy()
 _lookback = Param(nameof(Lookback), 20)
 .SetGreaterThanZero()
 .SetDisplay("Lookback", "Period for highest high/lowest low", "General")
-.SetCanOptimize(true);
+;
 
 _smaLength = Param(nameof(SmaLength), 20)
 .SetGreaterThanZero()
 .SetDisplay("SMA Length", "Length for average range", "General")
-.SetCanOptimize(true);
+;
 
 _rangeMultiple = Param(nameof(RangeMultiple), 1.5m)
 .SetDisplay("Range Multiple", "Multiplier for average range", "General")
-.SetCanOptimize(true);
+;
 
 _rangeThreshold = Param(nameof(RangeThreshold), 0.5m)
 .SetDisplay("Range Threshold", "Fraction of range near extreme", "General")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
@@ -125,16 +125,16 @@ _prevLow = default;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-_rangeSma = new SimpleMovingAverage { Length = SmaLength };
+_rangeSma = new SMA { Length = SmaLength };
 _highest = new Highest { Length = Lookback };
 _lowest = new Lowest { Length = Lookback };
 
 var subscription = SubscribeCandles(CandleType);
-subscription.WhenNew(ProcessCandle).Start();
+subscription.Bind(ProcessCandle).Start();
 
 var area = CreateChartArea();
 if (area != null)

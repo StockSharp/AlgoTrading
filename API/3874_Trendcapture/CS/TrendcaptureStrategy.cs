@@ -45,19 +45,19 @@ public class TrendcaptureStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 180m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit (points)", "Distance to the take-profit in price steps.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60m, 240m, 30m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (points)", "Distance to the stop-loss in price steps.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 120m, 10m);
 
 		_maximumRisk = Param(nameof(MaximumRisk), 0.03m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk Factor", "Scaling factor applied to the base volume (0.03 keeps the original lot size).", "Money management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 0.10m, 0.01m);
 
 		_guardPoints = Param(nameof(GuardPoints), 5m)
@@ -67,19 +67,19 @@ public class TrendcaptureStrategy : Strategy
 		_sarStep = Param(nameof(SarStep), 0.02m)
 		.SetGreaterThanZero()
 		.SetDisplay("SAR Step", "Initial acceleration factor for Parabolic SAR.", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 0.05m, 0.005m);
 
 		_sarMax = Param(nameof(SarMax), 0.2m)
 		.SetGreaterThanZero()
 		.SetDisplay("SAR Max", "Maximum acceleration factor for Parabolic SAR.", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 0.4m, 0.05m);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ADX Period", "Smoothing period of the Average Directional Index.", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 28, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -179,9 +179,9 @@ public class TrendcaptureStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_sar = new ParabolicSar
 		{

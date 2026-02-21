@@ -83,17 +83,17 @@ public class L3H3PivotStrategy : Strategy
 		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Entry Candle Type", "Primary candle series for entry logic", "General");
 
-		_pivotCandleType = Param(nameof(PivotCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_pivotCandleType = Param(nameof(PivotCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Pivot Candle Type", "Timeframe used to measure the previous session", "General");
 
 		_entryOffsetPips = Param(nameof(EntryOffsetPips), 2m)
 			.SetDisplay("Entry Offset (pips)", "Distance added to the previous low for buy orders", "Orders")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 10m, 1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 16m)
 			.SetDisplay("Stop Loss (pips)", "Distance used to place protective stop orders", "Orders")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8m, 40m, 2m);
 	}
 
@@ -121,9 +121,9 @@ public class L3H3PivotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = Security?.PriceStep ?? 0m;
 		if (_pipSize <= 0m)

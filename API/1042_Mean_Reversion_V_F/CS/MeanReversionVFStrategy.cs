@@ -139,11 +139,11 @@ public class MeanReversionVFStrategy : Strategy
 		ResetState();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var ma = CreateMa(MovingAverageType, MaLength);
 
@@ -267,12 +267,12 @@ public class MeanReversionVFStrategy : Strategy
 		_extremePrice = 0m;
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MaTypes type, int length)
+	private static DecimalLengthIndicator CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaTypes.Sma => new SimpleMovingAverage { Length = length },
-			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
+			MaTypes.Sma => new SMA { Length = length },
+			MaTypes.Ema => new EMA { Length = length },
 			MaTypes.Wma => new WeightedMovingAverage { Length = length },
 			MaTypes.Rma => new SmoothedMovingAverage { Length = length },
 			MaTypes.Hma => new HullMovingAverage { Length = length },

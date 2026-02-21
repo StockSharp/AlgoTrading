@@ -95,7 +95,7 @@ public class LondonBreakOutClassicStrategy : Strategy
 		_crv = Param(nameof(Crv), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("CRV", "Risk reward factor", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -134,9 +134,9 @@ public class LondonBreakOutClassicStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(OnProcess).Start();

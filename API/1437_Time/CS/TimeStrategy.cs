@@ -69,11 +69,11 @@ public class TimeStrategy : Strategy
 	{
 		_ticksFromOpen = Param(nameof(TicksFromOpen), 0)
 			.SetDisplay("Ticks From Open", "Minimal ticks from open", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 10, 1);
 		_secondsCondition = Param(nameof(SecondsCondition), 20)
 			.SetDisplay("Seconds Condition", "Seconds condition must hold", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 		_resetOnNewBar = Param(nameof(ResetOnNewBar), true)
 			.SetDisplay("Reset On New Bar", "Reset timer on new bar", "General");
@@ -96,9 +96,9 @@ public class TimeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

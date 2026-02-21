@@ -71,7 +71,7 @@ public class TheWeeklyFactorStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
+		return [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
 	}
 
 	/// <inheritdoc />
@@ -87,14 +87,14 @@ public class TheWeeklyFactorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var intraday = SubscribeCandles(CandleType);
 		intraday.Bind(ProcessCandle).Start();
 
-		var daily = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var daily = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		daily.Bind(ProcessDaily).Start();
 
 		var area = CreateChartArea();

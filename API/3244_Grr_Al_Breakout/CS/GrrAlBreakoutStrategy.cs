@@ -91,26 +91,26 @@ public class GrrAlBreakoutStrategy : Strategy
 		_deltaPoints = Param(nameof(DeltaPoints), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Breakout Distance", "Required distance from the candle open in points", "Logic")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100)
 		.SetGreaterOrEqualToZero()
 		.SetDisplay("Stop Loss", "Protective stop in points", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 700)
 		.SetGreaterOrEqualToZero()
 		.SetDisplay("Take Profit", "Profit target in points", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for anchoring the breakout", "Data");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdatePointSize();
 
@@ -119,7 +119,7 @@ public class GrrAlBreakoutStrategy : Strategy
 		.Bind(ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

@@ -14,7 +14,7 @@
   - `Length = 5`
   - `StdevMultiplier = 7.1m`
   - `VolatilitySecurity = "TVC:VIX"`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **过滤器**:
   - 分类: Volatility
   - 方向: Both

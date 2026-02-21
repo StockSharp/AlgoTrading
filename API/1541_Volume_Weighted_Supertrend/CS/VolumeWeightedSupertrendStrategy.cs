@@ -83,17 +83,17 @@ public class VolumeWeightedSupertrendStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for price supertrend", "General")
-			.SetCanOptimize(true);
+			;
 
 		_volumePeriod = Param(nameof(VolumePeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Period", "Period for VWAP and volume trend", "General")
-			.SetCanOptimize(true);
+			;
 
 		_factor = Param(nameof(Factor), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Factor", "ATR multiplier", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -104,17 +104,17 @@ public class VolumeWeightedSupertrendStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 		_vwap = new VolumeWeightedMovingAverage { Length = VolumePeriod };
-		_volumeAtr = new ExponentialMovingAverage { Length = VolumePeriod };
+		_volumeAtr = new EMA { Length = VolumePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.WhenNew(ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();

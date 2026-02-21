@@ -34,7 +34,7 @@ public class OneMaChannelBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _movingAverage = null!;
+	private DecimalLengthIndicator _movingAverage = null!;
 	private decimal[] _maBuffer = Array.Empty<decimal>();
 	private CandleSnapshot[] _priceBuffer = Array.Empty<CandleSnapshot>();
 	private int _bufferCount;
@@ -158,12 +158,12 @@ public class OneMaChannelBreakoutStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 44)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average length", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_maShift = Param(nameof(MaShift), 4)
 			.SetDisplay("MA Shift", "Horizontal displacement in bars", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 10, 1);
 
 		_maMethod = Param(nameof(MaMethodParam), MaMethods.Ema)
@@ -174,24 +174,24 @@ public class OneMaChannelBreakoutStrategy : Strategy
 
 		_maBarShift = Param(nameof(MaBarShift), 0)
 			.SetDisplay("MA Bar", "Bar index for MA reading", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 5, 1);
 
 		_priceBarShift = Param(nameof(PriceBarShift), 0)
 			.SetDisplay("Price Bar", "Bar index for candle data", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 5, 1);
 
 		_channelHighPips = Param(nameof(ChannelHighPips), 14m)
 			.SetGreaterThanZero()
 			.SetDisplay("Upper Channel (pips)", "Channel ceiling distance", "Channel")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 30m, 1m);
 
 		_channelLowPips = Param(nameof(ChannelLowPips), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lower Channel (pips)", "Channel floor distance", "Channel")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 20m, 1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 100m)
@@ -224,9 +224,9 @@ public class OneMaChannelBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Synchronize strategy order volume with external parameter.
 		Volume = TradeVolume;
@@ -348,14 +348,14 @@ public class OneMaChannelBreakoutStrategy : Strategy
 		return _priceBuffer[index];
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MaMethods method, int length)
 	{
 		return method switch
 		{
-			MaMethods.Sma => new SimpleMovingAverage { Length = length },
+			MaMethods.Sma => new SMA { Length = length },
 			MaMethods.Smma => new SmoothedMovingAverage { Length = length },
 			MaMethods.Lwma => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 

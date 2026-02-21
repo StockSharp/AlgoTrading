@@ -100,31 +100,31 @@ public class IchimokuAdxStrategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Tenkan Period", "Period for Tenkan-sen (conversion line)", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 13, 2);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Kijun Period", "Period for Kijun-sen (base line)", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 32, 3);
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 			.SetGreaterThanZero()
 			.SetDisplay("Senkou Span B Period", "Period for Senkou Span B (second cloud component)", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 60, 5);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 5);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Threshold", "Minimum ADX value to confirm trend strength", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 30m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -148,9 +148,9 @@ public class IchimokuAdxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var ichimoku = new Ichimoku

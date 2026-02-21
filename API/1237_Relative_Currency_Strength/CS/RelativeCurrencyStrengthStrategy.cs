@@ -159,7 +159,7 @@ public class RelativeCurrencyStrengthStrategy : Strategy
 
 		_threshold = Param(nameof(Threshold), 0.01m)
 			.SetDisplay("Threshold", "Strength difference for signal", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.005m, 0.05m, 0.005m);
 
 		_audUsd = Param<Security>(nameof(AudUsd))
@@ -213,9 +213,9 @@ public class RelativeCurrencyStrengthStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeCandles(CandleType)
 			.Bind(ProcessMain)

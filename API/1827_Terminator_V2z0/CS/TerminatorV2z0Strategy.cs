@@ -79,36 +79,36 @@ public class TerminatorV2z0Strategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MACD Period", "Fast period for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MACD Period", "Slow period for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 1);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Period", "Signal line period", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_takeProfit = Param(nameof(TakeProfit), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in price points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1000m, 100m);
 
 		_stopLoss = Param(nameof(StopLoss), 2500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in price points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 5000m, 500m);
 
 		_trailingStop = Param(nameof(TrailingStop), 0m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 2000m, 100m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

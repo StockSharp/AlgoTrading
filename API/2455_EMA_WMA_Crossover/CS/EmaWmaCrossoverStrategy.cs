@@ -71,12 +71,12 @@ public class EmaWmaCrossoverStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 28)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Period", "EMA period length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_wmaPeriod = Param(nameof(WmaPeriod), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("WMA Period", "WMA period length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 50)
 		.SetNotNegative()
@@ -110,9 +110,9 @@ public class EmaWmaCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var tick = Security?.PriceStep ?? 1m;
 		_stopLossDistance = StopLossTicks * tick;
@@ -122,8 +122,8 @@ public class EmaWmaCrossoverStrategy : Strategy
 		takeProfit: new Unit(_takeProfitDistance, UnitTypes.Absolute),
 		stopLoss: new Unit(_stopLossDistance, UnitTypes.Absolute));
 
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod, CandlePrice = CandlePrice.Open };
-		var wma = new WeightedMovingAverage { Length = WmaPeriod, CandlePrice = CandlePrice.Open };
+		var ema = new EMA { Length = EmaPeriod };
+		var wma = new WeightedMovingAverage { Length = WmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ema, wma, ProcessCandle).Start();

@@ -101,12 +101,12 @@ public class MultiConditionsCurveFittingStrategy : Strategy
 	/// </summary>
 	public MultiConditionsCurveFittingStrategy()
 	{
-		_fastEmaLength = Param(nameof(FastEmaLength), 10).SetCanOptimize(true);
-		_slowEmaLength = Param(nameof(SlowEmaLength), 25).SetCanOptimize(true);
-		_rsiLength = Param(nameof(RsiLength), 14).SetCanOptimize(true);
-		_rsiOverbought = Param(nameof(RsiOverbought), 80m).SetCanOptimize(true);
-		_rsiOversold = Param(nameof(RsiOversold), 20m).SetCanOptimize(true);
-		_stochLength = Param(nameof(StochLength), 14).SetCanOptimize(true);
+		_fastEmaLength = Param(nameof(FastEmaLength), 10);
+		_slowEmaLength = Param(nameof(SlowEmaLength), 25);
+		_rsiLength = Param(nameof(RsiLength), 14);
+		_rsiOverbought = Param(nameof(RsiOverbought), 80m);
+		_rsiOversold = Param(nameof(RsiOversold), 20m);
+		_stochLength = Param(nameof(StochLength), 14);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
 	}
 
@@ -117,14 +117,14 @@ public class MultiConditionsCurveFittingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		_fastEma = new EMA { Length = FastEmaLength };
+		_slowEma = new EMA { Length = SlowEmaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_stoch = new StochasticOscillator
 		{

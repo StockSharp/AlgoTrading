@@ -89,7 +89,7 @@ public ColorHmaReversalStrategy()
 {
 _hmaPeriod = Param(nameof(HmaPeriod), 13)
 .SetDisplay("HMA Period", "Hull Moving Average period", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 30, 1);
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -116,9 +116,9 @@ _prevValue2 = default;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var hma = new HullMovingAverage { Length = HmaPeriod };
 

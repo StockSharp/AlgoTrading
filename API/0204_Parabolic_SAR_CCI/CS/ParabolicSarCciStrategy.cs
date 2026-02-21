@@ -67,17 +67,17 @@ public class ParabolicSarCciStrategy : Strategy
 		_sarAccelerationFactor = Param(nameof(SarAccelerationFactor), 0.02m)
 			.SetRange(0.01m, 0.05m)
 			.SetDisplay("SAR AF", "Parabolic SAR acceleration factor", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_sarMaxAccelerationFactor = Param(nameof(SarMaxAccelerationFactor), 0.2m)
 			.SetRange(0.1m, 0.5m)
 			.SetDisplay("SAR Max AF", "Parabolic SAR maximum acceleration factor", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetRange(10, 50)
 			.SetDisplay("CCI Period", "Period for CCI indicator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -96,9 +96,9 @@ public class ParabolicSarCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnStarted2(DateTime time)
 		{
-				base.OnStarted(time);
+				base.OnStarted2(time);
 
 		// Initialize indicators
 		var parabolicSar = new ParabolicSar

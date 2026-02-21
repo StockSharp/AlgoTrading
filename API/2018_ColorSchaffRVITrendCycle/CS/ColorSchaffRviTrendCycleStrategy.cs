@@ -100,25 +100,25 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 		_fastRviLength = Param(nameof(FastRviLength), 23)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast RVI Length", "Period for fast RVI", "General")
-			.SetCanOptimize(true);
+			;
 
 		_slowRviLength = Param(nameof(SlowRviLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow RVI Length", "Period for slow RVI", "General")
-			.SetCanOptimize(true);
+			;
 
 		_cycleLength = Param(nameof(CycleLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Cycle", "Length of stochastic cycle", "General")
-			.SetCanOptimize(true);
+			;
 
 		_highLevel = Param(nameof(HighLevel), 60)
 			.SetDisplay("High Level", "Upper threshold", "General")
-			.SetCanOptimize(true);
+			;
 
 		_lowLevel = Param(nameof(LowLevel), -60)
 			.SetDisplay("Low Level", "Lower threshold", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -149,9 +149,9 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastRvi = new RelativeVigorIndex { Length = FastRviLength };
 		_slowRvi = new RelativeVigorIndex { Length = SlowRviLength };
@@ -161,9 +161,9 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 		_stc = new decimal[CycleLength];
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

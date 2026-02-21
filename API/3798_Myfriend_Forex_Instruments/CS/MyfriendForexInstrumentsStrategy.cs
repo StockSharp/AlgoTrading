@@ -166,19 +166,19 @@ public class MyfriendForexInstrumentsStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 70)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit (points)", "Take profit distance in MetaTrader points", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 150, 5);
 
 		_stopLossBufferPoints = Param(nameof(StopLossBufferPoints), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Buffer (points)", "Extra stop buffer in MetaTrader points", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_channelPeriod = Param(nameof(ChannelPeriod), 16)
 		.SetGreaterThanZero()
 		.SetDisplay("Channel Period", "Donchian channel period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 1);
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
@@ -187,13 +187,13 @@ public class MyfriendForexInstrumentsStrategy : Strategy
 		_trailingStartPoints = Param(nameof(TrailingStartPoints), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Start", "Minimal profit before trailing in points", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_trailingBufferPoints = Param(nameof(TrailingBufferPoints), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Buffer", "Distance from Donchian boundary for the trailing stop", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_useTimeClose = Param(nameof(UseTimeClose), true)
@@ -202,7 +202,7 @@ public class MyfriendForexInstrumentsStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Primary Candle", "Intraday candle type (default M30)", "General");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Daily Candle", "Daily candle type used for pivots", "General");
 	}
 
@@ -241,9 +241,9 @@ public class MyfriendForexInstrumentsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = BaseVolume;
 
@@ -252,12 +252,12 @@ public class MyfriendForexInstrumentsStrategy : Strategy
 			Length = ChannelPeriod
 		};
 
-		_shortSma = new SimpleMovingAverage
+		_shortSma = new SMA
 		{
 			Length = 3
 		};
 
-		_longSma = new SimpleMovingAverage
+		_longSma = new SMA
 		{
 			Length = 9
 		};

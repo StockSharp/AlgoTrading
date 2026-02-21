@@ -34,16 +34,16 @@ public class BuilderWithIndicatorsStrategy : Strategy
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetDisplay("EMA Length", "EMA period length", "Parameters")
-			.SetCanOptimize(true);
+			;
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Length", "RSI period length", "Parameters")
-			.SetCanOptimize(true);
+			;
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
 			.SetDisplay("RSI Overbought", "RSI overbought level", "Parameters")
-			.SetCanOptimize(true);
+			;
 		_rsiOversold = Param(nameof(RsiOversold), 30)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "Parameters")
-			.SetCanOptimize(true);
+			;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
@@ -53,9 +53,9 @@ public class BuilderWithIndicatorsStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ema = new EMA { Length = EmaPeriod };
 		var rsi = new RSI { Length = RsiPeriod };

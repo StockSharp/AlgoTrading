@@ -75,17 +75,17 @@ public class VwapAdxTrendStrategy : Strategy
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 		.SetDisplay("ADX Period", "Period for ADX and Directional Index calculations", "ADX")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 20, 2);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
 		.SetDisplay("ADX Threshold", "ADX threshold for trend strength entry", "ADX")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 40m, 5m);
 
 		_adxExitThreshold = Param(nameof(AdxExitThreshold), 20m)
 		.SetDisplay("ADX Exit Threshold", "ADX threshold for trend strength exit", "ADX")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 25m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -112,9 +112,9 @@ public class VwapAdxTrendStrategy : Strategy
 		_di = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_vwap = new VolumeWeightedMovingAverage();

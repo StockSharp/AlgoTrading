@@ -26,7 +26,7 @@ public class SpasmStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossFraction;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _volatilityIndicator;
+	private DecimalLengthIndicator _volatilityIndicator;
 	private decimal _priceStep;
 	private decimal _threshold;
 	private decimal _highestPrice;
@@ -149,9 +149,9 @@ public class SpasmStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 		if (_priceStep <= 0m)
@@ -164,7 +164,7 @@ public class SpasmStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -174,11 +174,11 @@ public class SpasmStrategy : Strategy
 		}
 	}
 
-	private LengthIndicator<decimal> CreateVolatilityIndicator()
+	private DecimalLengthIndicator CreateVolatilityIndicator()
 	{
 		return UseWeightedVolatility
 			? new WeightedMovingAverage { Length = VolatilityPeriod }
-			: new SimpleMovingAverage { Length = VolatilityPeriod };
+			: new SMA { Length = VolatilityPeriod };
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -211,7 +211,7 @@ public class SpasmStrategy : Strategy
 			: candle.HighPrice - candle.LowPrice;
 
 		// Feed the volatility indicator with the latest range sample.
-		var volatilityValue = _volatilityIndicator.Process(range, candle.OpenTime, true).ToDecimal();
+		var volatilityValue = _volatilityIndicator.Process(new DecimalIndicatorValue(_volatilityIndicator, range, candle.OpenTime)).ToDecimal();
 
 		if (!_volatilityIndicator.IsFormed)
 			return;

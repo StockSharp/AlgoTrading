@@ -53,7 +53,7 @@ public class XmaRangeChannelStrategy : Strategy
 		_length = Param(nameof(Length), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Channel Length", "Period for high and low moving averages", "Indicator")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -63,13 +63,13 @@ public class XmaRangeChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Prepare moving averages for high and low prices.
-		_highMa = new SimpleMovingAverage { Length = Length };
-		_lowMa = new SimpleMovingAverage { Length = Length };
+		_highMa = new SMA { Length = Length };
+		_lowMa = new SMA { Length = Length };
 
 		// Subscribe to candles and process each one.
 		var subscription = SubscribeCandles(CandleType);
@@ -79,7 +79,7 @@ public class XmaRangeChannelStrategy : Strategy
 			.Start();
 
 		// Enable built-in position protection.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -92,8 +92,8 @@ public class XmaRangeChannelStrategy : Strategy
 			return;
 
 		// Update moving averages with high and low prices.
-		var upper = _highMa.Process(candle.HighPrice, candle.ServerTime, true).ToDecimal();
-		var lower = _lowMa.Process(candle.LowPrice, candle.ServerTime, true).ToDecimal();
+		var upper = _highMa.Process(new DecimalIndicatorValue(_highMa, candle.HighPrice, candle.ServerTime)).ToDecimal();
+		var lower = _lowMa.Process(new DecimalIndicatorValue(_lowMa, candle.LowPrice, candle.ServerTime)).ToDecimal();
 
 		// Wait until both indicators have enough data.
 		if (!_highMa.IsFormed || !_lowMa.IsFormed)

@@ -39,8 +39,8 @@ public class AdjustableMovingAverageStrategy : Strategy
 	private readonly StrategyParam<int> _maxSlippage;
 	private readonly StrategyParam<string> _tradeComment;
 
-	private LengthIndicator<decimal> _fastMa;
-	private LengthIndicator<decimal> _slowMa;
+	private DecimalLengthIndicator _fastMa;
+	private DecimalLengthIndicator _slowMa;
 	private decimal _pointValue;
 	private decimal _minGapThreshold;
 	private int _previousSignal;
@@ -55,28 +55,28 @@ public class AdjustableMovingAverageStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle timeframe", "Timeframe used to build moving averages", "General")
-			.SetCanOptimize(true);
+			;
 
 		_fastPeriod = Param(nameof(FastPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast period", "Short moving average length", "Moving averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 30, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow period", "Long moving average length", "Moving averages")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 60, 1);
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("MA method", "Moving average calculation method", "Moving averages")
-			.SetCanOptimize(true);
+			;
 
 		_minGapPoints = Param(nameof(MinGapPoints), 3m)
 			.SetNotNegative()
 			.SetDisplay("Minimum gap (points)", "Required distance between fast and slow MAs before signalling", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 20m, 1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
@@ -303,9 +303,9 @@ public class AdjustableMovingAverageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastLength = Math.Min(FastPeriod, SlowPeriod);
 		var slowLength = Math.Max(FastPeriod, SlowPeriod);
@@ -618,15 +618,15 @@ public class AdjustableMovingAverageStrategy : Strategy
 		return point;
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
-		LengthIndicator<decimal> indicator = method switch
+		DecimalLengthIndicator indicator = method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length, CandlePrice = CandlePrice.Close },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length, CandlePrice = CandlePrice.Close },
-			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length, CandlePrice = CandlePrice.Close },
-			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length, CandlePrice = CandlePrice.Close },
-			_ => new ExponentialMovingAverage { Length = length, CandlePrice = CandlePrice.Close }
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
+			_ => new EMA { Length = length }
 		};
 
 		return indicator;

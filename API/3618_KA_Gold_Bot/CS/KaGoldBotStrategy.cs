@@ -62,24 +62,24 @@ public class KaGoldBotStrategy : Strategy
 
 	public KaGoldBotStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
-		_keltnerPeriod = Param(nameof(KeltnerPeriod), 50).SetDisplay("Keltner Period");
-		_emaShortPeriod = Param(nameof(EmaShortPeriod), 10).SetDisplay("EMA 1 Period");
-		_emaLongPeriod = Param(nameof(EmaLongPeriod), 200).SetDisplay("EMA 2 Period");
-		_fixedVolume = Param(nameof(FixedVolume), 1m).SetDisplay("Fixed Volume");
-		_useRiskPercent = Param(nameof(UseRiskPercent), true).SetDisplay("Use Risk Percent");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
+		_keltnerPeriod = Param(nameof(KeltnerPeriod), 50).SetDisplay("Keltner Period", "Keltner Period", "General");
+		_emaShortMa = { Length = Param }(nameof(EmaShortPeriod), 10).SetDisplay("EMA 1 Period", "EMA 1 Period", "General");
+		_emaLongMa = { Length = Param }(nameof(EmaLongPeriod), 200).SetDisplay("EMA 2 Period", "EMA 2 Period", "General");
+		_fixedVolume = Param(nameof(FixedVolume), 1m).SetDisplay("Fixed Volume", "Fixed Volume", "General");
+		_useRiskPercent = Param(nameof(UseRiskPercent), true).SetDisplay("Use Risk Percent", "Use Risk Percent", "General");
 		_riskPercent = Param(nameof(RiskPercent), 1m).SetDisplay("Risk Percent", "Percent of equity used per trade", "Money Management");
-		_stopLossPips = Param(nameof(StopLossPips), 500m).SetDisplay("Stop Loss (pips)");
-		_takeProfitPips = Param(nameof(TakeProfitPips), 500m).SetDisplay("Take Profit (pips)");
-		_trailingTriggerPips = Param(nameof(TrailingTriggerPips), 300m).SetDisplay("Trailing Trigger (pips)");
-		_trailingStopPips = Param(nameof(TrailingStopPips), 300m).SetDisplay("Trailing Stop (pips)");
-		_trailingStepPips = Param(nameof(TrailingStepPips), 100m).SetDisplay("Trailing Step (pips)");
-		_useTimeFilter = Param(nameof(UseTimeFilter), true).SetDisplay("Use Time Filter");
-		_startHour = Param(nameof(StartHour), 2).SetDisplay("Start Hour");
-		_startMinute = Param(nameof(StartMinute), 30).SetDisplay("Start Minute");
-		_endHour = Param(nameof(EndHour), 21).SetDisplay("End Hour");
-		_endMinute = Param(nameof(EndMinute), 0).SetDisplay("End Minute");
-		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 65m).SetDisplay("Max Spread (points)");
+		_stopLossPips = Param(nameof(StopLossPips), 500m).SetDisplay("Stop Loss (pips)", "Stop Loss (pips)", "General");
+		_takeProfitPips = Param(nameof(TakeProfitPips), 500m).SetDisplay("Take Profit (pips)", "Take Profit (pips)", "General");
+		_trailingTriggerPips = Param(nameof(TrailingTriggerPips), 300m).SetDisplay("Trailing Trigger (pips)", "Trailing Trigger (pips)", "General");
+		_trailingStopPips = Param(nameof(TrailingStopPips), 300m).SetDisplay("Trailing Stop (pips)", "Trailing Stop (pips)", "General");
+		_trailingStepPips = Param(nameof(TrailingStepPips), 100m).SetDisplay("Trailing Step (pips)", "Trailing Step (pips)", "General");
+		_useTimeFilter = Param(nameof(UseTimeFilter), true).SetDisplay("Use Time Filter", "Use Time Filter", "General");
+		_startHour = Param(nameof(StartHour), 2).SetDisplay("Start Hour", "Start Hour", "General");
+		_startMinute = Param(nameof(StartMinute), 30).SetDisplay("Start Minute", "Start Minute", "General");
+		_endHour = Param(nameof(EndHour), 21).SetDisplay("End Hour", "End Hour", "General");
+		_endMinute = Param(nameof(EndMinute), 0).SetDisplay("End Minute", "End Minute", "General");
+		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 65m).SetDisplay("Max Spread (points)", "Max Spread (points)", "General");
 		_pipValue = Param(nameof(PipValue), 1m).SetDisplay("Pip Value", "Monetary value of one pip", "Money Management");
 	}
 
@@ -198,9 +198,9 @@ public class KaGoldBotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Array.Clear(_emaSeries, 0, _emaSeries.Length);
 		Array.Clear(_rangeSeries, 0, _rangeSeries.Length);
@@ -224,7 +224,7 @@ public class KaGoldBotStrategy : Strategy
 		.Bind(ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -571,7 +571,7 @@ public class KaGoldBotStrategy : Strategy
 
 	private bool IsWithinTradingSession(DateTimeOffset time)
 	{
-		var localTime = time.LocalDateTime;
+		var localTime = time;
 		var startTime = new DateTime(localTime.Year, localTime.Month, localTime.Day, StartHour, StartMinute, 0, localTime.Kind);
 		var endTime = new DateTime(localTime.Year, localTime.Month, localTime.Day, EndHour, EndMinute, 0, localTime.Kind);
 

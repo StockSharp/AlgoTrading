@@ -100,7 +100,7 @@ public class HighYieldSpreadWithSmaFilterStrategy : Strategy
 	/// </summary>
 	public HighYieldSpreadWithSmaFilterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_basis = Param(nameof(BasisSelection), Bases.HighYieldSpread)
@@ -108,7 +108,7 @@ public class HighYieldSpreadWithSmaFilterStrategy : Strategy
 
 		_threshold = Param(nameof(Threshold), 5m)
 			.SetDisplay("Threshold", "Spread threshold", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 0.5m);
 
 		_direction = Param(nameof(Direction), Sides.Buy)
@@ -117,7 +117,7 @@ public class HighYieldSpreadWithSmaFilterStrategy : Strategy
 		_holdingPeriod = Param(nameof(HoldingPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Holding Period", "Bars to hold position", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_useSmaFilter = Param(nameof(UseSmaFilter), true)
@@ -126,7 +126,7 @@ public class HighYieldSpreadWithSmaFilterStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Length of SMA filter", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 	}
 
@@ -156,11 +156,11 @@ public class HighYieldSpreadWithSmaFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = SmaLength };
+		_sma = new SMA { Length = SmaLength };
 
 		var mainSub = SubscribeCandles(CandleType);
 		mainSub.Bind(_sma, ProcessMainCandle).Start();

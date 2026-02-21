@@ -178,7 +178,7 @@ public class BollingerBounceReversalStrategy : Strategy
 			SignalMa = { Length = MacdSignalLength }
 		};
 		
-		_volumeSma = new SimpleMovingAverage { Length = VolumePeriod };
+		_volumeSma = new SMA { Length = VolumePeriod };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -212,7 +212,7 @@ public class BollingerBounceReversalStrategy : Strategy
 		if (bb.UpBand is not decimal upperBand || bb.LowBand is not decimal lowerBand)
 		return;
 		
-		var volAvg = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var volAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 		
 		if (!_bollinger.IsFormed || !_macd.IsFormed || !_volumeSma.IsFormed)
 		{

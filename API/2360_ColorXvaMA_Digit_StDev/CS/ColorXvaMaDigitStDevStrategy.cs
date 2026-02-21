@@ -81,11 +81,11 @@ public class ColorXvaMaDigitStDevStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = MaLength };
+		var ema = new EMA { Length = MaLength };
 		var std = new StandardDeviation { Length = StdLength };
 
 		var subscription = SubscribeCandles(CandleType);

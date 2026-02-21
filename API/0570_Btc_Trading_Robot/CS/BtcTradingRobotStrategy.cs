@@ -106,25 +106,25 @@ public class BtcTradingRobotStrategy : Strategy
 		_barsCount = Param(nameof(BarsCount), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Bars N", "Bars lookback", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("TP %", "Take profit percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("SL %", "Stop loss percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_trailingPercent = Param(nameof(TrailingPercent), 7m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trail %", "Trailing percent of TP", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 15m, 1m);
 
 		_startHour = Param(nameof(StartHour), 0)
@@ -152,9 +152,9 @@ public class BtcTradingRobotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var channel = new DonchianChannels { Length = BarsCount * 2 + 1 };
 
@@ -194,7 +194,7 @@ public class BtcTradingRobotStrategy : Strategy
 		var trailPoints = tpPoints * TrailingPercent / 100m;
 		var trailTrigger = tpPoints * TrailingPercent / 100m;
 
-		var hour = candle.CloseTime.LocalDateTime.Hour;
+		var hour = candle.CloseTime.Hour;
 		var inSession = (StartHour == 0 || hour >= StartHour) && (EndHour == 0 || hour < EndHour);
 
 		if (Position == 0 && inSession)

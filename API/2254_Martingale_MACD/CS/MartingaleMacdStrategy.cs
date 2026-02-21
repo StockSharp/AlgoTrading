@@ -113,36 +113,36 @@ public class MartingaleMacdStrategy : Strategy {
 	_shape = Param(nameof(Shape), 1000m)
 			 .SetDisplay("Shape", "Balance divider for initial size",
 				 "Trading")
-			 .SetCanOptimize(true);
+			 ;
 	_doublingCount =
 		Param(nameof(DoublingCount), 1)
 		.SetDisplay("Doubling Count",
 				"Maximum consecutive volume doublings", "Risk")
-		.SetCanOptimize(true);
+		;
 	_stopLossPoints =
 		Param(nameof(StopLossPoints), 500)
 		.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-		.SetCanOptimize(true);
+		;
 	_takeProfitPoints =
 		Param(nameof(TakeProfitPoints), 1500)
 		.SetDisplay("Take Profit", "Take profit in points", "Risk")
-		.SetCanOptimize(true);
+		;
 	_macd1Fast = Param(nameof(Macd1Fast), 5)
 			 .SetDisplay("MACD1 Fast", "Fast EMA for first MACD",
 					 "Indicators")
-			 .SetCanOptimize(true);
+			 ;
 	_macd1Slow = Param(nameof(Macd1Slow), 20)
 			 .SetDisplay("MACD1 Slow", "Slow EMA for first MACD",
 					 "Indicators")
-			 .SetCanOptimize(true);
+			 ;
 	_macd2Fast = Param(nameof(Macd2Fast), 10)
 			 .SetDisplay("MACD2 Fast", "Fast EMA for second MACD",
 					 "Indicators")
-			 .SetCanOptimize(true);
+			 ;
 	_macd2Slow = Param(nameof(Macd2Slow), 15)
 			 .SetDisplay("MACD2 Slow", "Slow EMA for second MACD",
 					 "Indicators")
-			 .SetCanOptimize(true);
+			 ;
 	_candleType =
 		Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for candles", "General");
@@ -170,10 +170,10 @@ public class MartingaleMacdStrategy : Strategy {
 	base.OnStarted(time);
 
 	var macd1 = new MovingAverageConvergenceDivergence {
-		ShortPeriod = Macd1Fast, LongPeriod = Macd1Slow, SignalPeriod = 3
+		ShortMa = { Length = Macd1Fast }, LongMa = { Length = Macd1Slow }, SignalPeriod = 3
 	};
 	var macd2 = new MovingAverageConvergenceDivergence {
-		ShortPeriod = Macd2Fast, LongPeriod = Macd2Slow, SignalPeriod = 3
+		ShortMa = { Length = Macd2Fast }, LongMa = { Length = Macd2Slow }, SignalPeriod = 3
 	};
 
 	var subscription = SubscribeCandles(CandleType);

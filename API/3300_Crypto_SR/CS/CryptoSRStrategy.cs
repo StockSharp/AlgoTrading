@@ -78,27 +78,27 @@ public class CryptoSrStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast LWMA", "Length of the fast LWMA calculated from typical price", "Trend")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow LWMA", "Length of the slow LWMA calculated from typical price", "Trend")
-			.SetCanOptimize(true);
+			;
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Length", "Period of the higher timeframe momentum filter", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Buy Threshold", "Minimum |Momentum-100| to allow long entries", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Sell Threshold", "Minimum |Momentum-100| to allow short entries", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetGreaterThanZero()
@@ -114,26 +114,26 @@ public class CryptoSrStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetDisplay("Stop Loss (pips)", "Distance of the protective stop in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetDisplay("Take Profit (pips)", "Distance of the profit target in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
 			.SetDisplay("Trailing Stop (pips)", "Distance of the price-based trailing stop", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
 			.SetDisplay("Use Break Even", "Move the stop to break even after sufficient profit", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30m)
 			.SetDisplay("Break Even Trigger", "Profit in pips required before moving to break even", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 30m)
 			.SetDisplay("Break Even Offset", "Additional offset applied when moving the stop", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_fractalWindowLength = Param(nameof(FractalWindowLength), 7)
 			.SetGreaterThanZero()
@@ -145,7 +145,7 @@ public class CryptoSrStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume for entries", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Primary Candles", "Timeframe used for LWMA and fractal calculations", "Data");
@@ -389,8 +389,8 @@ public class CryptoSrStrategy : Strategy
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_longTermMacd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 

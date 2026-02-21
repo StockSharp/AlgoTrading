@@ -98,31 +98,31 @@ public class SmaPullbackAtrExitsStrategy : Strategy
 		_fastSmaLength = Param(nameof(FastSmaLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Fast SMA length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_slowSmaLength = Param(nameof(SlowSmaLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Slow SMA length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 5);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 2);
 
 		_atrMultiplierSl = Param(nameof(AtrMultiplierSl), 1.2m)
 			.SetRange(0.1m, 10m)
 			.SetDisplay("ATR SL Mult", "ATR multiplier for stop-loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.1m);
 
 		_atrMultiplierTp = Param(nameof(AtrMultiplierTp), 2.0m)
 			.SetRange(0.1m, 10m)
 			.SetDisplay("ATR TP Mult", "ATR multiplier for take-profit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 	}
 
@@ -140,12 +140,12 @@ public class SmaPullbackAtrExitsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastSma = new SimpleMovingAverage { Length = FastSmaLength };
-		_slowSma = new SimpleMovingAverage { Length = SlowSmaLength };
+		_fastSma = new SMA { Length = FastSmaLength };
+		_slowSma = new SMA { Length = SlowSmaLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);

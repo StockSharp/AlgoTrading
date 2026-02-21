@@ -91,7 +91,7 @@ public class SheKanskigorStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Intraday candle type", "General");
 		
-		_dailyType = TimeSpan.FromDays(1).TimeFrame();
+		_dailyType = TimeSpan.FromMinutes(5).TimeFrame();
 	}
 	
 	/// <inheritdoc />
@@ -114,9 +114,9 @@ public class SheKanskigorStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var intraday = SubscribeCandles(CandleType);
 		intraday.Bind(ProcessCandle).Start();
@@ -124,7 +124,7 @@ public class SheKanskigorStrategy : Strategy
 		var daily = SubscribeCandles(_dailyType);
 		daily.Bind(ProcessDaily).Start();
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessDaily(ICandleMessage candle)

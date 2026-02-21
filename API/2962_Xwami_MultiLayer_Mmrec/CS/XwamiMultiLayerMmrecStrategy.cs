@@ -208,9 +208,9 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_layers.Clear();
 
@@ -709,13 +709,13 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 		{
 			return method switch
 			{
-				XwamiSmoothMethods.Sma => new IndicatorWrapper(new SimpleMovingAverage { Length = length }),
-				XwamiSmoothMethods.Ema => new IndicatorWrapper(new ExponentialMovingAverage { Length = length }),
+				XwamiSmoothMethods.Sma => new IndicatorWrapper(new SMA { Length = length }),
+				XwamiSmoothMethods.Ema => new IndicatorWrapper(new EMA { Length = length }),
 				XwamiSmoothMethods.Smma => new IndicatorWrapper(new SmoothedMovingAverage { Length = length }),
 				XwamiSmoothMethods.Lwma => new IndicatorWrapper(new WeightedMovingAverage { Length = length }),
 				XwamiSmoothMethods.Jurik => new IndicatorWrapper(new JurikMovingAverage { Length = length }),
 				XwamiSmoothMethods.T3 => new TillsonT3Filter(length, phase),
-				_ => new IndicatorWrapper(new ExponentialMovingAverage { Length = length }),
+				_ => new IndicatorWrapper(new EMA { Length = length }),
 			};
 		}
 	}
@@ -739,7 +739,7 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 
 		public decimal Process(decimal value, DateTimeOffset time)
 		{
-			return _indicator.Process(value, time, true).ToDecimal();
+			return _indicator.Process(new DecimalIndicatorValue(_indicator, value, time.UtcDateTime)).ToDecimal();
 		}
 	}
 

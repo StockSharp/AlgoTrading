@@ -66,12 +66,12 @@ public class TwoPoleIdealMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators.
-		_fastMa = new ExponentialMovingAverage { Length = FastPeriod };
+		_fastMa = new EMA { Length = FastPeriod };
 		_slowMa = new TripleExponentialMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -80,7 +80,7 @@ public class TwoPoleIdealMaStrategy : Strategy
 			.Start();
 
 		// Enable default protective behavior.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)

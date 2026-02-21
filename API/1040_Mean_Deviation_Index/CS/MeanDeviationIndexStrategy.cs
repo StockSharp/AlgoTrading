@@ -58,24 +58,24 @@ public class MeanDeviationIndexStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period for EMA", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 100, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 100, 1);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "ATR deviation factor", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_level = Param(nameof(Level), 0m)
 			.SetDisplay("Level", "Threshold to trigger trades", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 10m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -89,12 +89,12 @@ public class MeanDeviationIndexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

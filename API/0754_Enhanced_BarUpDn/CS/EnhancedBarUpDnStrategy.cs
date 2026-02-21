@@ -107,37 +107,37 @@ public class EnhancedBarUpDnStrategy : Strategy
 		_bbLength = Param(nameof(BbLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Length", "Bollinger Bands length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_bbMultiplier = Param(nameof(BbMultiplier), 2m)
 			.SetRange(0.1m, 10m)
 			.SetDisplay("BB Multiplier", "Bollinger Bands multiplier", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_maLength = Param(nameof(MaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Trend MA length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 1);
 
 		_atrMultiplierSl = Param(nameof(AtrMultiplierSl), 2m)
 			.SetRange(0.1m, 10m)
 			.SetDisplay("ATR SL Mult", "ATR multiplier for stop-loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 4m, 0.5m);
 
 		_atrMultiplierTp = Param(nameof(AtrMultiplierTp), 3m)
 			.SetRange(0.1m, 10m)
 			.SetDisplay("ATR TP Mult", "ATR multiplier for take-profit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 6m, 0.5m);
 	}
 
@@ -157,9 +157,9 @@ public class EnhancedBarUpDnStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bollinger = new BollingerBands
 		{
@@ -167,7 +167,7 @@ public class EnhancedBarUpDnStrategy : Strategy
 			Width = BbMultiplier
 		};
 
-		_trendMa = new SimpleMovingAverage
+		_trendMa = new SMA
 		{
 			Length = MaLength
 		};

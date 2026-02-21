@@ -212,31 +212,31 @@ public class AltariusRsiStochasticDualStrategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 1m)
 		.SetNotNegative()
 		.SetDisplay("Base Volume", "Initial volume before money management rules", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 2m, 0.1m);
 
 		_maximumRiskPercent = Param(nameof(MaximumRiskPercent), 0.1m)
 		.SetNotNegative()
 		.SetDisplay("Max Risk %", "Equity drawdown percentage that forces position closure", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 0.3m, 0.05m);
 
 		_decreaseFactor = Param(nameof(DecreaseFactor), 3m)
 		.SetNotNegative()
 		.SetDisplay("Decrease Factor", "Loss streak divider applied to volume", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 1m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Length of RSI used for exits", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 8, 1);
 
 		_slowStochPeriod = Param(nameof(SlowStochasticPeriod), 15)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow Stochastic Period", "Main period of slow stochastic", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 25, 1);
 
 		_slowStochK = Param(nameof(SlowStochasticK), 8)
@@ -250,7 +250,7 @@ public class AltariusRsiStochasticDualStrategy : Strategy
 		_fastStochPeriod = Param(nameof(FastStochasticPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast Stochastic Period", "Main period of fast stochastic", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 15, 1);
 
 		_fastStochK = Param(nameof(FastStochasticK), 3)
@@ -264,7 +264,7 @@ public class AltariusRsiStochasticDualStrategy : Strategy
 		_differenceThreshold = Param(nameof(StochasticDifferenceThreshold), 5m)
 		.SetNotNegative()
 		.SetDisplay("Momentum Threshold", "Minimum difference between fast stochastic lines", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 10m, 1m);
 
 		_buyLimit = Param(nameof(BuyStochasticLimit), 50m)
@@ -307,9 +307,9 @@ public class AltariusRsiStochasticDualStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_lastRealizedPnL = PnLManager?.RealizedPnL ?? 0m;
 
@@ -319,15 +319,13 @@ public class AltariusRsiStochasticDualStrategy : Strategy
 		};
 
 		var slowStochastic = new StochasticOscillator
-		{
-			Length = SlowStochasticPeriod,
+		{ K = { Length = SlowStochasticPeriod },
 			K = { Length = SlowStochasticK },
 			D = { Length = SlowStochasticD },
 		};
 
 		var fastStochastic = new StochasticOscillator
-		{
-			Length = FastStochasticPeriod,
+		{ K = { Length = FastStochasticPeriod },
 			K = { Length = FastStochasticK },
 			D = { Length = FastStochasticD },
 		};

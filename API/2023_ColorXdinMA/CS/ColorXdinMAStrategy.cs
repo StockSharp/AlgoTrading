@@ -65,13 +65,13 @@ public class ColorXdinMAStrategy : Strategy
 		_mainLength = Param(nameof(MainLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Main MA Length", "Period of the main moving average", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_plusLength = Param(nameof(PlusLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Additional MA Length", "Period of the additional moving average", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
@@ -85,9 +85,9 @@ public class ColorXdinMAStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_mainMa = new SMA { Length = MainLength };
 		_plusMa = new SMA { Length = PlusLength };

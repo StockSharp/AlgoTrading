@@ -50,32 +50,32 @@ public class ExampleOfMacdAutomatedStrategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Starting order volume for AdvancedMM", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (steps)", "Stop-loss distance in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 30m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (steps)", "Take-profit distance in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Entry Timeframe", "Working timeframe for entries", "General");

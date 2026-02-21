@@ -54,13 +54,13 @@ public class PendulumSwingStrategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base volume", "Initial lot used for the very first pending stop.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume multiplier", "Progression factor applied after each filled level.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.2m, 3m, 0.2m);
 
 		_maxLevels = Param(nameof(MaxLevels), 8)
@@ -70,7 +70,7 @@ public class PendulumSwingStrategy : Strategy
 		_manualStepPips = Param(nameof(ManualStepPips), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Manual step (pips)", "Fallback distance between price and stop entries when daily range is not available.", "Entry")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 120, 10);
 
 		_useDynamicRange = Param(nameof(UseDynamicRange), true)
@@ -79,12 +79,12 @@ public class PendulumSwingStrategy : Strategy
 		_rangeFraction = Param(nameof(RangeFraction), 0.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Range fraction", "Portion of the last finished daily range that becomes the base step.", "Entry")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.5m, 0.05m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10)
 			.SetDisplay("Take profit (pips)", "Local profit target for the active position. Zero disables local exits.", "Exit")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 5);
 
 		_slippagePips = Param(nameof(SlippagePips), 3)
@@ -96,13 +96,13 @@ public class PendulumSwingStrategy : Strategy
 		_globalTakePercent = Param(nameof(GlobalTakePercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Global take-profit %", "Equity growth that triggers closing of every position.", "Exit")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_globalStopPercent = Param(nameof(GlobalStopPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Global stop-loss %", "Drawdown that forces a full liquidation.", "Exit")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -227,7 +227,7 @@ public class PendulumSwingStrategy : Strategy
 
 		if (UseDynamicRange)
 		{
-			yield return (Security, TimeSpan.FromDays(1).TimeFrame());
+			yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 		}
 	}
 
@@ -250,9 +250,9 @@ public class PendulumSwingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = BaseVolume;
 		InitializePipSize();
@@ -265,13 +265,13 @@ public class PendulumSwingStrategy : Strategy
 
 		if (UseDynamicRange)
 		{
-			_dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+			_dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 			_dailySubscription
 				.Bind(ProcessDailyCandle)
 				.Start();
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />
@@ -424,7 +424,7 @@ public class PendulumSwingStrategy : Strategy
 		if (_pipSize <= 0m)
 			return;
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		if (entryPrice <= 0m)
 			return;
 

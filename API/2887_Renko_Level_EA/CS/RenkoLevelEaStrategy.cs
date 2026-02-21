@@ -83,7 +83,7 @@ public class RenkoLevelEaStrategy : Strategy
 		_brickSize = Param(nameof(BrickSize), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Brick Size", "Renko block size in price steps", "Renko Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
@@ -119,9 +119,9 @@ public class RenkoLevelEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to candle data that feeds the Renko level logic.
 		var subscription = SubscribeCandles(CandleType);
@@ -139,7 +139,7 @@ public class RenkoLevelEaStrategy : Strategy
 		}
 
 		// Enable built-in protection features.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

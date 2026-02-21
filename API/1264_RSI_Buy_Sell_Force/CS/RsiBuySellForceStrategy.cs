@@ -53,7 +53,7 @@ public class RsiBuySellForceStrategy : Strategy
 		_length = Param(nameof(Length), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Period for RSI and EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -77,12 +77,12 @@ public class RsiBuySellForceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = Length };
-		_ema = new ExponentialMovingAverage { Length = Length };
+		_ema = new EMA { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(rsi, ProcessCandle).Start();

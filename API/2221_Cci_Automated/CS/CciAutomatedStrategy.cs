@@ -91,28 +91,28 @@ public class CciAutomatedStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 9)
 			.SetRange(5, 50)
 			.SetDisplay("CCI Period", "CCI indicator length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_tradesDuplicator = Param(nameof(TradesDuplicator), 3)
 			.SetRange(1, 10)
 			.SetDisplay("Trades Duplicator", "Maximum number of concurrent trades", "General")
-			.SetCanOptimize(true);
+			;
 
 
 		_stopLoss = Param(nameof(StopLoss), 50m)
 			.SetRange(10m, 200m)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 200m)
 			.SetRange(10m, 500m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStop = Param(nameof(TrailingStop), 50m)
 			.SetRange(10m, 200m)
 			.SetDisplay("Trailing Stop", "Trailing stop in price units", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -125,9 +125,9 @@ public class CciAutomatedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 

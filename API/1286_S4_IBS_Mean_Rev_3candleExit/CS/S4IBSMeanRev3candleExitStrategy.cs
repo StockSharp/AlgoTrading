@@ -34,12 +34,12 @@ public class S4IBSMeanRev3candleExitStrategy : Strategy
 
 	public S4IBSMeanRev3candleExitStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_ibsThreshold = Param(nameof(IbsThreshold), 0.25m)
 			.SetDisplay("IBS Threshold", "Internal bar strength threshold", "General")
-			.SetCanOptimize(true);
+			;
 
 		_startTime = Param(nameof(StartTime), new DateTimeOffset(2024, 1, 1, 5, 0, 0, TimeSpan.Zero))
 			.SetDisplay("Start Time", "Start time for trading", "Time");
@@ -101,9 +101,9 @@ public class S4IBSMeanRev3candleExitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -115,7 +115,7 @@ public class S4IBSMeanRev3candleExitStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

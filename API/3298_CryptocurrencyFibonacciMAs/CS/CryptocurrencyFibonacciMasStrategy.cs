@@ -51,31 +51,31 @@ public class CryptocurrencyFibonacciMasStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trade Volume", "Order volume in lots", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 1m, 0.01m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 60m, 5m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 120m, 10m);
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 		.SetNotNegative()
 		.SetDisplay("Momentum Buy Threshold", "Minimal absolute momentum distance from 100 for buys", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1m, 0.1m);
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
 		.SetNotNegative()
 		.SetDisplay("Momentum Sell Threshold", "Minimal absolute momentum distance from 100 for sells", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 1m, 0.1m);
 
 		_maxPositions = Param(nameof(MaxPositions), 1)
@@ -189,14 +189,14 @@ public class CryptocurrencyFibonacciMasStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema8 = new ExponentialMovingAverage { Length = 8 };
-		_ema13 = new ExponentialMovingAverage { Length = 13 };
-		_ema21 = new ExponentialMovingAverage { Length = 21 };
-		_ema55 = new ExponentialMovingAverage { Length = 55 };
+		_ema8 = new EMA { Length = 8 };
+		_ema13 = new EMA { Length = 13 };
+		_ema21 = new EMA { Length = 21 };
+		_ema55 = new EMA { Length = 55 };
 		_momentum = new Momentum { Length = 14 };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{

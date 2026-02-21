@@ -108,7 +108,7 @@ public class BetaNeutralArbitrageStrategy : Strategy
 
 		_lookbackPeriodParam = Param(nameof(LookbackPeriod), 20)
 			.SetDisplay("Lookback Period", "Period for spread calculation", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5)
 			.SetGreaterThanZero();
 
@@ -117,7 +117,7 @@ public class BetaNeutralArbitrageStrategy : Strategy
 			.SetNotNegative();
 
 		// Initialize indicators
-		_spreadSma = new SimpleMovingAverage { Length = LookbackPeriod };
+		_spreadSma = new SMA { Length = LookbackPeriod };
 		_spreadStdDev = new StandardDeviation { Length = LookbackPeriod };
 	}
 
@@ -150,9 +150,9 @@ public class BetaNeutralArbitrageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 
 		// Subscribe to candles for assets and market index
@@ -246,8 +246,8 @@ public class BetaNeutralArbitrageStrategy : Strategy
 		_lastSpread = betaAdjustedAsset1 - betaAdjustedAsset2;
 
 		// Process through indicators
-		var smaValue = _spreadSma.Process(_lastSpread, candle.ServerTime, candle.State == CandleStates.Finished);
-		var stdDevValue = _spreadStdDev.Process(_lastSpread, candle.ServerTime, candle.State == CandleStates.Finished);
+		var smaValue = _spreadSma.Process(new DecimalIndicatorValue(_spreadSma, _lastSpread, candle.ServerTime));
+		var stdDevValue = _spreadStdDev.Process(new DecimalIndicatorValue(_spreadStdDev, _lastSpread, candle.ServerTime));
 
 		// Update counter
 		_barCount++;

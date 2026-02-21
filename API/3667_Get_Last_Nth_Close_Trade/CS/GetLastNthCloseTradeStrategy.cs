@@ -44,12 +44,12 @@ public class GetLastNthCloseTradeStrategy : Strategy
 
 		_magicNumber = Param(nameof(MagicNumber), 1234L)
 		.SetDisplay("Magic Number", "Numeric identifier expected inside the order comment", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_tradeIndex = Param(nameof(TradeIndex), 0)
 		.SetRange(0, 10_000)
 		.SetDisplay("Trade Index", "Zero-based index counted from the most recent closed trade", "Display")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>
@@ -99,9 +99,9 @@ public class GetLastNthCloseTradeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdateLastTradeInfo();
 	}

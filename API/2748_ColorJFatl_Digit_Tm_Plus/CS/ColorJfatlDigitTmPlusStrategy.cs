@@ -226,7 +226,7 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 		_jmaLength = Param(nameof(JmaLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("JMA Length", "Jurik smoothing length", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 15, 1);
 
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
@@ -257,9 +257,9 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -440,7 +440,7 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 		return false;
 	}
 
-	private sealed class ColorJfatlDigitIndicator : Indicator<ICandleMessage>
+	private sealed class ColorJfatlDigitIndicator : BaseIndicator
 	{
 		private static readonly decimal[] _coefficients =
 		{

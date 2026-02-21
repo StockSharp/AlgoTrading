@@ -99,7 +99,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 		_fatlPeriod = Param(nameof(FatlPeriod), ColorJfatlDigitIndicator.MaxPeriod)
 			.SetRange(1, ColorJfatlDigitIndicator.MaxPeriod)
 			.SetDisplay("FATL Period", "Number of bars used for the FATL calculation", "Indicator")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -292,9 +292,9 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var longIndicator = new ColorJfatlDigitIndicator
 		{
@@ -568,7 +568,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 		Demark
 	}
 
-	private sealed class ColorJfatlDigitIndicator : Indicator<ICandleMessage>
+	private sealed class ColorJfatlDigitIndicator : BaseIndicator
 	{
 			private static readonly decimal[] FatlWeights =
 		{

@@ -87,18 +87,18 @@ public class DemoCreateObjBitmapLabelEaStrategy : Strategy
 
 		_pressedText = Param(nameof(PressedText), "€")
 			.SetDisplay("Pressed text", "Text shown when button is pressed", "Visualization")
-			.SetCanOptimize(false);
+			;
 
 		_releasedText = Param(nameof(ReleasedText), "$")
 			.SetDisplay("Released text", "Text shown when button is released", "Visualization")
-			.SetCanOptimize(false);
+			;
 
 		_priceOffset = Param(nameof(PriceOffset), 0m)
 			.SetDisplay("Price offset", "Shift label vertically", "Visualization");
 
 		_switchInterval = Param(nameof(SwitchInterval), 1)
 			.SetDisplay("Switch interval", "Finished candles between state changes", "Visualization")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <inheritdoc />
@@ -108,9 +108,9 @@ public class DemoCreateObjBitmapLabelEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_processedCandles = 0;
 		_isPressed = false;

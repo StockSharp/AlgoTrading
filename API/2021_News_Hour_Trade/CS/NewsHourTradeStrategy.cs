@@ -111,16 +111,16 @@ public class NewsHourTradeStrategy : Strategy
 	/// </summary>
 	public NewsHourTradeStrategy()
 	{
-		_startHour = Param(nameof(StartHour), 1).SetDisplay("Start Hour", "Hour to start", "Parameters").SetCanOptimize(true);
-		_startMinute = Param(nameof(StartMinute), 1).SetDisplay("Start Minute", "Minute to start", "Parameters").SetCanOptimize(true);
-		_delaySeconds = Param(nameof(DelaySeconds), 5).SetDisplay("Delay Seconds", "Delay before entry", "Parameters").SetCanOptimize(true);
-		_stopLoss = Param(nameof(StopLoss), 20).SetDisplay("Stop Loss", "Stop distance", "Risk").SetCanOptimize(true);
-		_takeProfit = Param(nameof(TakeProfit), 50).SetDisplay("Take Profit", "Take profit distance", "Risk").SetCanOptimize(true);
-		_priceGap = Param(nameof(PriceGap), 10).SetDisplay("Price Gap", "Price offset", "Parameters").SetCanOptimize(true);
-		_expirationSeconds = Param(nameof(Expiration), 60).SetDisplay("Expiration", "Order expiration", "Parameters").SetCanOptimize(true);
-		_trailStop = Param(nameof(TrailStop), false).SetDisplay("Use Trailing", "Enable trailing stop", "Risk").SetCanOptimize(true);
-		_trailingStop = Param(nameof(TrailingStop), 20).SetDisplay("Trailing Stop", "Trailing distance", "Risk").SetCanOptimize(true);
-		_trailingGap = Param(nameof(TrailingGap), 10).SetDisplay("Trailing Gap", "Additional trailing gap", "Risk").SetCanOptimize(true);
+		_startHour = Param(nameof(StartHour), 1).SetDisplay("Start Hour", "Hour to start", "Parameters");
+		_startMinute = Param(nameof(StartMinute), 1).SetDisplay("Start Minute", "Minute to start", "Parameters");
+		_delaySeconds = Param(nameof(DelaySeconds), 5).SetDisplay("Delay Seconds", "Delay before entry", "Parameters");
+		_stopLoss = Param(nameof(StopLoss), 20).SetDisplay("Stop Loss", "Stop distance", "Risk");
+		_takeProfit = Param(nameof(TakeProfit), 50).SetDisplay("Take Profit", "Take profit distance", "Risk");
+		_priceGap = Param(nameof(PriceGap), 10).SetDisplay("Price Gap", "Price offset", "Parameters");
+		_expirationSeconds = Param(nameof(Expiration), 60).SetDisplay("Expiration", "Order expiration", "Parameters");
+		_trailStop = Param(nameof(TrailStop), false).SetDisplay("Use Trailing", "Enable trailing stop", "Risk");
+		_trailingStop = Param(nameof(TrailingStop), 20).SetDisplay("Trailing Stop", "Trailing distance", "Risk");
+		_trailingGap = Param(nameof(TrailingGap), 10).SetDisplay("Trailing Gap", "Additional trailing gap", "Risk");
 		_buyTrade = Param(nameof(BuyTrade), true).SetDisplay("Buy Trade", "Enable buys", "Parameters");
 		_sellTrade = Param(nameof(SellTrade), true).SetDisplay("Sell Trade", "Enable sells", "Parameters");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Working timeframe", "Parameters");
@@ -141,11 +141,11 @@ public class NewsHourTradeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 		_tickSize = Security.PriceStep ?? 1m;
 
 		var subscription = SubscribeCandles(CandleType);

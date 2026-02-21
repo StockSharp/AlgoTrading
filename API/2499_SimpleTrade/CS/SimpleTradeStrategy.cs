@@ -67,7 +67,7 @@ public class SimpleTradeStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 120)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Fixed protective distance in pips", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
@@ -95,9 +95,9 @@ public class SimpleTradeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

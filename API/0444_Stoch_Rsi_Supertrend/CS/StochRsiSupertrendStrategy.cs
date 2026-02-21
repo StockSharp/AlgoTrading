@@ -145,25 +145,25 @@ public class StochRsiSupertrendStrategy : Strategy
 		_smoothK = Param(nameof(SmoothK), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth K", "%K smoothing periods", "Stochastic RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_smoothD = Param(nameof(SmoothD), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth D", "%D smoothing periods", "Stochastic RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI length for Stochastic RSI", "Stochastic RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 25, 2);
 
 		_stochLength = Param(nameof(StochLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Length", "Stochastic length for Stochastic RSI", "Stochastic RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 25, 2);
 
 		_maType = Param(nameof(MaType), "EMA")
@@ -172,19 +172,19 @@ public class StochRsiSupertrendStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Trend moving average length", "Moving Average")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(150, 250, 25);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 11)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for Supertrend", "Supertrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 15, 2);
 
 		_atrFactor = Param(nameof(AtrFactor), 2.0m)
 			.SetRange(0.5m, 10.0m)
 			.SetDisplay("ATR Factor", "ATR factor for Supertrend", "Supertrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_showShort = Param(nameof(ShowShort), false)
@@ -198,21 +198,21 @@ public class StochRsiSupertrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_stochRsiHigh = new Highest { Length = StochLength };
 		_stochRsiLow = new Lowest { Length = StochLength };
-		_smoothKSma = new SimpleMovingAverage { Length = SmoothK };
-		_smoothDSma = new SimpleMovingAverage { Length = SmoothD };
+		_smoothKSma = new SMA { Length = SmoothK };
+		_smoothDSma = new SMA { Length = SmoothD };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
 		_trendMa = MaType == "SMA" 
-			? (IIndicator)new SimpleMovingAverage { Length = MaLength }
-			: new ExponentialMovingAverage { Length = MaLength };
+			? (IIndicator)new SMA { Length = MaLength }
+			: new EMA { Length = MaLength };
 
 		// Create subscription for candles
 		var subscription = SubscribeCandles(CandleType);

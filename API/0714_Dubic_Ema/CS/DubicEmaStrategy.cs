@@ -92,9 +92,9 @@ _rangeBars = 0;
 _isReady = false;
 _longStop = _longTake = _shortStop = _shortTake = 0m;
 }
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _emaHigh = new EMA { Length = EmaLength };
 _emaLow = new EMA { Length = EmaLength };

@@ -247,9 +247,9 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 		_timeFrame = CandleType.Arg as TimeSpan?;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_timeFrame = CandleType.Arg as TimeSpan?;
 
@@ -257,7 +257,7 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 		subscription.Bind(ProcessCandle).Start();
 
 		// Enable loss protection guard as required by the framework.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

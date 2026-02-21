@@ -84,7 +84,7 @@ public class ZoneRecoveryHedgeStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Entry Candle", "Primary timeframe used for entries", "General");
 
-		_atrCandleType = Param(nameof(AtrCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_atrCandleType = Param(nameof(AtrCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("ATR Candle", "Timeframe used for ATR based sizing", "General");
 
 		_mode = Param(nameof(Mode), ZoneRecoveryModes.RsiMultiTimeframe)
@@ -433,9 +433,9 @@ public class ZoneRecoveryHedgeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializeRsiSettings();
 
@@ -952,7 +952,7 @@ public class ZoneRecoveryHedgeStrategy : Strategy
 		_rsiSettings.Add(new RsiSetting(TimeSpan.FromMinutes(30).TimeFrame(), () => _useM30.Value));
 		_rsiSettings.Add(new RsiSetting(TimeSpan.FromHours(1).TimeFrame(), () => _useH1.Value));
 		_rsiSettings.Add(new RsiSetting(TimeSpan.FromHours(4).TimeFrame(), () => _useH4.Value));
-		_rsiSettings.Add(new RsiSetting(TimeSpan.FromDays(1).TimeFrame(), () => _useD1.Value));
+		_rsiSettings.Add(new RsiSetting(TimeSpan.FromMinutes(5).TimeFrame(), () => _useD1.Value));
 		_rsiSettings.Add(new RsiSetting(TimeSpan.FromDays(7).TimeFrame(), () => _useW1.Value));
 		_rsiSettings.Add(new RsiSetting(TimeSpan.FromDays(30).TimeFrame(), () => _useMn1.Value));
 	}

@@ -62,26 +62,26 @@ public class UniversalSignalDemoStrategy : Strategy
 		_signalThresholdOpen = Param(nameof(SignalThresholdOpen), 10)
 			.SetDisplay("Open Threshold", "Score required to open", "Signals")
 			.SetRange(0, 500)
-			.SetCanOptimize(true);
+			;
 
 		_signalThresholdClose = Param(nameof(SignalThresholdClose), 10)
 			.SetDisplay("Close Threshold", "Score required to close", "Signals")
 			.SetRange(0, 500)
-			.SetCanOptimize(true);
+			;
 
 		_priceLevel = Param(nameof(PriceLevel), 0m)
 			.SetDisplay("Price Level", "Offset in price units for pending entries", "Orders")
-			.SetCanOptimize(true);
+			;
 
 		_stopLevel = Param(nameof(StopLevel), 50m)
 			.SetDisplay("Stop Loss", "Absolute stop-loss distance", "Risk")
 			.SetRange(0m, 10000m)
-			.SetCanOptimize(true);
+			;
 
 		_takeLevel = Param(nameof(TakeLevel), 50m)
 			.SetDisplay("Take Profit", "Absolute take-profit distance", "Risk")
 			.SetRange(0m, 10000m)
-			.SetCanOptimize(true);
+			;
 
 		_signalExpiration = Param(nameof(SignalExpiration), 4)
 			.SetDisplay("Signal Expiration", "Lifetime of pending entries in bars", "Orders")
@@ -94,48 +94,48 @@ public class UniversalSignalDemoStrategy : Strategy
 			_patternWeights[index] = Param($"Pattern{index}Weight", 100)
 				.SetDisplay($"Pattern {index}", $"Weight for pattern #{index}", "Signals")
 				.SetRange(0, 200)
-				.SetCanOptimize(true);
+				;
 		}
 
 		_universalWeight = Param(nameof(UniversalWeight), 1m)
 			.SetDisplay("Global Weight", "Multiplier applied to the final score", "Signals")
 			.SetRange(0m, 5m)
-			.SetCanOptimize(true);
+			;
 
 		_shortMaPeriod = Param(nameof(ShortMaPeriod), 10)
 			.SetDisplay("Short EMA", "Length of the fast EMA", "Indicators")
 			.SetRange(1, 200)
-			.SetCanOptimize(true);
+			;
 
 		_longMaPeriod = Param(nameof(LongMaPeriod), 30)
 			.SetDisplay("Long EMA", "Length of the slow EMA", "Indicators")
 			.SetRange(1, 400)
-			.SetCanOptimize(true);
+			;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "Length of the RSI", "Indicators")
 			.SetRange(2, 200)
-			.SetCanOptimize(true);
+			;
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetDisplay("Bollinger Period", "Length of the Bollinger basis", "Indicators")
 			.SetRange(2, 400)
-			.SetCanOptimize(true);
+			;
 
 		_bollingerWidth = Param(nameof(BollingerWidth), 2m)
 			.SetDisplay("Bollinger Width", "Band width multiplier", "Indicators")
 			.SetRange(0.5m, 5m)
-			.SetCanOptimize(true);
+			;
 
 		_trendSmaPeriod = Param(nameof(TrendSmaPeriod), 50)
 			.SetDisplay("Trend SMA", "Long-term SMA length", "Indicators")
 			.SetRange(2, 400)
-			.SetCanOptimize(true);
+			;
 
 		_volumeSmaPeriod = Param(nameof(VolumeSmaPeriod), 20)
 			.SetDisplay("Volume SMA", "Smoothing period for volume", "Indicators")
 			.SetRange(2, 400)
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -308,12 +308,12 @@ public class UniversalSignalDemoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_shortEma = new ExponentialMovingAverage { Length = ShortMaPeriod };
-		_longEma = new ExponentialMovingAverage { Length = LongMaPeriod };
+		_shortEma = new EMA { Length = ShortMaPeriod };
+		_longEma = new EMA { Length = LongMaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -329,8 +329,8 @@ public class UniversalSignalDemoStrategy : Strategy
 		Length = BollingerPeriod,
 		Width = BollingerWidth
 		};
-		_trendSma = new SimpleMovingAverage { Length = TrendSmaPeriod };
-		_volumeSma = new SimpleMovingAverage { Length = VolumeSmaPeriod };
+		_trendSma = new SMA { Length = TrendSmaPeriod };
+		_volumeSma = new SMA { Length = VolumeSmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -361,8 +361,8 @@ public class UniversalSignalDemoStrategy : Strategy
 	if (values[4] is not BollingerBandsValue bollingerValue)
 	return;
 
-	var trendSmaValue = _trendSma.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
-	var volumeAverage = _volumeSma.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+	var trendSmaValue = _trendSma.Process(new DecimalIndicatorValue(_trendSma, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+	var volumeAverage = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 
 	if (!_shortEma.IsFormed || !_longEma.IsFormed || !_rsi.IsFormed || !_macd.IsFormed || !_bollinger.IsFormed || !_trendSma.IsFormed || !_volumeSma.IsFormed)
 	{

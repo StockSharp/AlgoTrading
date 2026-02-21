@@ -145,12 +145,12 @@ public class AdvancedPositionManagementStrategy : Strategy
 	{
 		_fastLength = Param(nameof(FastLength), 10)
 						  .SetDisplay("Fast EMA Length", "Period of the fast EMA", "General")
-						  .SetCanOptimize(true)
+						  
 						  .SetOptimize(5, 20, 5);
 
 		_slowLength = Param(nameof(SlowLength), 20)
 						  .SetDisplay("Slow EMA Length", "Period of the slow EMA", "General")
-						  .SetCanOptimize(true)
+						  
 						  .SetOptimize(10, 40, 5);
 
 		_tp1Percent = Param(nameof(Tp1Percent), 2m)
@@ -226,9 +226,9 @@ public class AdvancedPositionManagementStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastEma = new EMA { Length = FastLength };
 		_slowEma = new EMA { Length = SlowLength };

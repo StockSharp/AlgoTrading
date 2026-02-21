@@ -121,13 +121,13 @@ public class DarkPoolPrintsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
-		_volumeAverage = new SimpleMovingAverage { Length = VolumePeriod };
+		_ma = new SMA { Length = MaPeriod };
+		_volumeAverage = new SMA { Length = VolumePeriod };
 		_adx = new AverageDirectionalIndex { Length = 14 }; // Standard ADX period
 		_atr = new AverageTrueRange { Length = 14 }; // Standard ATR period
 

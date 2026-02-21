@@ -86,22 +86,22 @@ public class DonchianWidthMeanReversionStrategy : Strategy
 	{
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 			.SetDisplay("Donchian Period", "Donchian Channel period", "Donchian")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation of width", "Mean Reversion")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
 			.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Mean Reversion")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -125,13 +125,13 @@ public class DonchianWidthMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_donchian = new DonchianChannels { Length = DonchianPeriod };
-		_widthAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_widthAverage = new SMA { Length = LookbackPeriod };
 		_widthStdDev = new StandardDeviation { Length = LookbackPeriod };
 		
 		// Reset stored values
@@ -181,8 +181,8 @@ public class DonchianWidthMeanReversionStrategy : Strategy
 		_currentWidth = upperBand - lowerBand;
 		
 		// Calculate the average and standard deviation of the width
-		var widthAverage = _widthAverage.Process(_currentWidth, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-		var widthStdDev = _widthStdDev.Process(_currentWidth, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var widthAverage = _widthAverage.Process(new DecimalIndicatorValue(_widthAverage, _currentWidth, candle.ServerTime)).ToDecimal();
+		var widthStdDev = _widthStdDev.Process(new DecimalIndicatorValue(_widthStdDev, _currentWidth, candle.ServerTime)).ToDecimal();
 		
 		// Skip the first value
 		if (_prevWidth == 0)

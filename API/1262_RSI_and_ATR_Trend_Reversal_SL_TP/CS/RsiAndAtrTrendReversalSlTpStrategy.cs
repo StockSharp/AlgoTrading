@@ -86,22 +86,22 @@ public class RsiAndAtrTrendReversalSlTpStrategy : Strategy
 	{
 		_rsiLength = Param(nameof(RsiLength), 8)
 			.SetDisplay("RSI Length", "RSI calculation period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_rsiMultiplier = Param(nameof(RsiMultiplier), 1.5m)
 			.SetDisplay("RSI Multiplier", "Multiplier for RSI/ATR adjustment", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.25m);
 
 		_lookback = Param(nameof(Lookback), 1)
 			.SetDisplay("Lookback", "Signal delay in bars", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 3, 1);
 
 		_minDifference = Param(nameof(MinDifference), 10m)
 			.SetDisplay("Min Difference", "Minimum difference percentage", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 20m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -129,9 +129,9 @@ public class RsiAndAtrTrendReversalSlTpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var atr = new AverageTrueRange { Length = RsiLength };

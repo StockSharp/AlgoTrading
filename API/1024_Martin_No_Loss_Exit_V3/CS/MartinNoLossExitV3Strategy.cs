@@ -95,23 +95,23 @@ public class MartinNoLossExitV3Strategy : Strategy
 	{
 		_initialCash = Param(nameof(InitialCash), 100m)
 			.SetDisplay("Initial Cash", "Initial purchase amount", "General")
-			.SetCanOptimize(true);
+			;
 
 		_maxOrders = Param(nameof(MaxOrders), 20)
 			.SetDisplay("Max Orders", "Maximum number of entries", "General")
-			.SetCanOptimize(true);
+			;
 
 		_priceStepPercent = Param(nameof(PriceStepPercent), 1.5m)
 			.SetDisplay("Price Step %", "Price drop for next order", "General")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 1m)
 			.SetDisplay("Take Profit %", "Profit target from average price", "General")
-			.SetCanOptimize(true);
+			;
 
 		_increaseFactor = Param(nameof(IncreaseFactor), 1.05m)
 			.SetDisplay("Increase Factor", "Multiplier for next cash amount", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -135,9 +135,9 @@ public class MartinNoLossExitV3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -149,7 +149,7 @@ public class MartinNoLossExitV3Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

@@ -188,14 +188,14 @@ public class ChaosTraderLiteStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		_lipsSmma = new SmoothedMovingAverage { Length = 5 };
 		_teethSmma = new SmoothedMovingAverage { Length = 8 };
-		_awesomeOscillator = new AwesomeOscillator { ShortPeriod = 5, LongPeriod = 34 };
+		_awesomeOscillator = new AwesomeOscillator { ShortMa = { Length = 5 }, LongMa = { Length = 34 } };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -344,11 +344,11 @@ public class ChaosTraderLiteStrategy : Strategy
 		if (Volume <= 0)
 			return;
 
-		var entryPrice = bar.High + point;
+		var entryPrice = bar.HighPrice + point;
 		if (entryPrice <= 0m)
 			return;
 
-		var stopPrice = bar.Low - point;
+		var stopPrice = bar.LowPrice - point;
 
 		CancelOrderIfActive(ref _sellStopOrder);
 
@@ -377,11 +377,11 @@ public class ChaosTraderLiteStrategy : Strategy
 		if (Volume <= 0)
 			return;
 
-		var entryPrice = bar.Low - point;
+		var entryPrice = bar.LowPrice - point;
 		if (entryPrice <= 0m)
 			return;
 
-		var stopPrice = bar.High + point;
+		var stopPrice = bar.HighPrice + point;
 
 		CancelOrderIfActive(ref _buyStopOrder);
 

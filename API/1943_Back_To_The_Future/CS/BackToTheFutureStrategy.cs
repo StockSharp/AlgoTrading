@@ -80,22 +80,22 @@ public class BackToTheFutureStrategy : Strategy
 		_barSize = Param(nameof(BarSize), 0.25m)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Difference", "Threshold to trigger trades", "General")
-			.SetCanOptimize(true);
+			;
 
 		_historyMinutes = Param(nameof(HistoryMinutes), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("History Minutes", "Minutes back for price comparison", "General")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Distance from entry", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 5000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Distance from entry", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -117,12 +117,12 @@ public class BackToTheFutureStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

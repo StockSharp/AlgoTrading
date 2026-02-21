@@ -88,31 +88,31 @@ public class BollingerAdxStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 2.5m, 0.5m);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Threshold", "ADX level considered as strong trend", "Trading Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 30, 5);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR to set stop-loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -126,9 +126,9 @@ public class BollingerAdxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var bollingerBands = new BollingerBands

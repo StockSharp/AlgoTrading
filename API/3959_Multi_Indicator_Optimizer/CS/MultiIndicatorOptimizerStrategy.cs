@@ -76,70 +76,70 @@ public class MultiIndicatorOptimizerStrategy : Strategy
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA period for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 24, 2);
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA period for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal line period for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_macdWeight = Param(nameof(MacdWeight), 1m)
 			.SetDisplay("MACD Weight", "Voting weight of MACD block", "Weights")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-2m, 2m, 0.5m);
 
 		_aoShort = Param(nameof(AoShortPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("AO Short", "Short moving average for Awesome Oscillator", "Awesome")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_aoLong = Param(nameof(AoLongPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("AO Long", "Long moving average for Awesome Oscillator", "Awesome")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 50, 2);
 
 		_aoWeight = Param(nameof(AoWeight), 1m)
 			.SetDisplay("AO Weight", "Voting weight of Awesome Oscillator block", "Weights")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-2m, 2m, 0.5m);
 
 		_osmaFast = Param(nameof(OsmaFastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("OsMA Fast", "Fast EMA period for OsMA histogram", "OsMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 24, 2);
 
 		_osmaSlow = Param(nameof(OsmaSlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("OsMA Slow", "Slow EMA period for OsMA histogram", "OsMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_osmaSignal = Param(nameof(OsmaSignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("OsMA Signal", "Signal EMA period for OsMA histogram", "OsMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_osmaWeight = Param(nameof(OsmaWeight), 1m)
 			.SetDisplay("OsMA Weight", "Voting weight of OsMA block", "Weights")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-2m, 2m, 0.5m);
 
 		_williamsPeriod = Param(nameof(WilliamsPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Lookback for Williams %R", "Williams %R")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_williamsLower = Param(nameof(WilliamsLowerLevel), -80m)
@@ -150,25 +150,25 @@ public class MultiIndicatorOptimizerStrategy : Strategy
 
 		_williamsWeight = Param(nameof(WilliamsWeight), 1m)
 			.SetDisplay("Williams Weight", "Voting weight of Williams %R block", "Weights")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-2m, 2m, 0.5m);
 
 		_stochKPeriod = Param(nameof(StochasticKPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "%K period for Stochastic Oscillator", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
-		_stochDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochD = { Length = Param }(nameof(StochasticDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "%D period for Stochastic Oscillator", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 9, 1);
 
 		_stochSlowing = Param(nameof(StochasticSlowing), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Smoothing", "Smoothing applied to %K", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 9, 1);
 
 		_stochLower = Param(nameof(StochasticLowerLevel), 20m)
@@ -179,17 +179,17 @@ public class MultiIndicatorOptimizerStrategy : Strategy
 
 		_stochWeight = Param(nameof(StochasticWeight), 1m)
 			.SetDisplay("Stochastic Weight", "Voting weight of Stochastic block", "Weights")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-2m, 2m, 0.5m);
 
 		_entryThreshold = Param(nameof(EntryThreshold), 0.5m)
 			.SetDisplay("Entry Threshold", "Minimum aggregated signal required to open a position", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.25m, 2m, 0.25m);
 
 		_exitThreshold = Param(nameof(ExitThreshold), 0.1m)
 			.SetDisplay("Exit Threshold", "Signal absolute value required to flat the position", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 1m, 0.05m);
 	}
 
@@ -464,15 +464,14 @@ public class MultiIndicatorOptimizerStrategy : Strategy
 
 		var awesome = new AwesomeOscillator
 		{
-			ShortPeriod = AoShortPeriod,
-			LongPeriod = AoLongPeriod
+			ShortMa = { Length = AoShortPeriod },
+			LongMa = { Length = AoLongPeriod }
 		};
 
 		var williams = new WilliamsR { Length = WilliamsPeriod };
 
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochasticKPeriod,
+		{ K = { Length = StochasticKPeriod },
 			K = { Length = StochasticSlowing },
 			D = { Length = StochasticDPeriod }
 		};

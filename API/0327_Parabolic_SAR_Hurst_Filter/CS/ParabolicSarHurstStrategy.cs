@@ -71,19 +71,19 @@ public class ParabolicSarHurstStrategy : Strategy
 		_sarAccelerationFactor = Param(nameof(SarAccelerationFactor), 0.02m)
 			.SetRange(0.01m, 0.2m)
 			.SetDisplay("SAR Acceleration Factor", "Initial acceleration factor for Parabolic SAR", "SAR Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_sarMaxAccelerationFactor = Param(nameof(SarMaxAccelerationFactor), 0.2m)
 			.SetRange(0.05m, 0.5m)
 			.SetDisplay("SAR Max Acceleration Factor", "Maximum acceleration factor for Parabolic SAR", "SAR Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.3m, 0.05m);
 
 		_hurstPeriod = Param(nameof(HurstPeriod), 100)
 			.SetRange(20, 200)
 			.SetDisplay("Hurst Period", "Period for Hurst exponent calculation", "Hurst Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 150, 25);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -106,9 +106,9 @@ public class ParabolicSarHurstStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var parabolicSar = new ParabolicSar

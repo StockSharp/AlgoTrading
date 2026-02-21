@@ -115,12 +115,12 @@ public class XTraderV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ma1 = new SimpleMovingAverage { Length = Ma1Period };
-		_ma2 = new SimpleMovingAverage { Length = Ma2Period };
+		_ma1 = new SMA { Length = Ma1Period };
+		_ma2 = new SMA { Length = Ma2Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

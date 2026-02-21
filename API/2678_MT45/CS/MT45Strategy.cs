@@ -94,12 +94,12 @@ public class MT45Strategy : Strategy
 	{
 		_stopPoints = Param(nameof(StopPoints), 600m)
 			.SetDisplay("Stop Points", "Distance to stop loss measured in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1500m, 50m);
 
 		_takePoints = Param(nameof(TakePoints), 700m)
 			.SetDisplay("Take Points", "Distance to take profit measured in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 2000m, 50m);
 
 		_baseVolume = Param(nameof(BaseVolume), 0.01m)
@@ -107,7 +107,7 @@ public class MT45Strategy : Strategy
 
 		_multiplier = Param(nameof(MartingaleMultiplier), 2m)
 			.SetDisplay("Martingale Multiplier", "Volume multiplier applied after a losing trade", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_maxVolume = Param(nameof(MaxVolume), 10m)
@@ -145,9 +145,9 @@ public class MT45Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = Security?.PriceStep ?? 1m;
 		Volume = BaseVolume;

@@ -110,22 +110,22 @@ public class PinBarReversalStrategy : Strategy
 		trendLength = Param(nameof(TrendLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend SMA Length", "Period for trend SMA", "General")
-			.SetCanOptimize(true);
+			;
 
 		maxBodyPct = Param(nameof(MaxBodyPct), 0.30m)
 			.SetRange(0.1m, 0.5m)
 			.SetDisplay("Max Body %", "Maximum body as % of range", "Pattern")
-			.SetCanOptimize(true);
+			;
 
 		minWickPct = Param(nameof(MinWickPct), 0.66m)
 			.SetRange(0.5m, 0.9m)
 			.SetDisplay("Min Wick %", "Minimum wick as % of range", "Pattern")
-			.SetCanOptimize(true);
+			;
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopMultiplier = Param(nameof(StopMultiplier), 1m)
 			.SetGreaterThanZero()
@@ -158,11 +158,11 @@ public class PinBarReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var trendSma = new SimpleMovingAverage { Length = TrendLength };
+		var trendSma = new SMA { Length = TrendLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);

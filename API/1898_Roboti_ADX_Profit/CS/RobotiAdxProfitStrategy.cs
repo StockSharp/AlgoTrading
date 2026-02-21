@@ -58,7 +58,7 @@ public class RobotiAdxProfitStrategy : Strategy
 	{
 		_dmiPeriod = Param(nameof(DmiPeriod), 14)
 			.SetDisplay("DMI Period", "Period for Directional Movement Index", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -67,7 +67,7 @@ public class RobotiAdxProfitStrategy : Strategy
 		_trailingStopPercent = Param(nameof(TrailingStopPercent), 1m)
 			.SetDisplay("Trailing Stop %", "Trailing stop as percent", "Risk Management")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 	}
 
@@ -78,9 +78,9 @@ public class RobotiAdxProfitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_dmi = new DirectionalIndex { Length = DmiPeriod };
 

@@ -138,13 +138,13 @@ public class TrailingMonsterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var kama = new KaufmanAdaptiveMovingAverage { Length = KamaLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var sma = new SimpleMovingAverage { Length = SmaLength };
+		var sma = new SMA { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

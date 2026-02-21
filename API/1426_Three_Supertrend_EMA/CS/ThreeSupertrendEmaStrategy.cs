@@ -45,9 +45,9 @@ public class ThreeSupertrendEmaStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ema = new EMA { Length = EmaLength };
 		var st1 = new SuperTrend { Length = AtrPeriod, Multiplier = Multiplier1 };

@@ -64,25 +64,25 @@ public ColorMaRsiTriggerStrategy()
 _emaFastLength = Param(nameof(EmaFastLength), 5)
 .SetGreaterThanZero()
 .SetDisplay("Fast EMA", "Fast EMA period", "General")
-.SetCanOptimize(true)
+
 .SetOptimize(3, 20, 1);
 
 _emaSlowLength = Param(nameof(EmaSlowLength), 10)
 .SetGreaterThanZero()
 .SetDisplay("Slow EMA", "Slow EMA period", "General")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 40, 1);
 
 _rsiFastLength = Param(nameof(RsiFastLength), 3)
 .SetGreaterThanZero()
 .SetDisplay("Fast RSI", "Fast RSI period", "General")
-.SetCanOptimize(true)
+
 .SetOptimize(2, 20, 1);
 
 _rsiSlowLength = Param(nameof(RsiSlowLength), 13)
 .SetGreaterThanZero()
 .SetDisplay("Slow RSI", "Slow RSI period", "General")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 40, 1);
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -103,12 +103,12 @@ _prevSignal = 0;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-_emaFast = new ExponentialMovingAverage { Length = EmaFastLength };
-_emaSlow = new ExponentialMovingAverage { Length = EmaSlowLength };
+_emaFast = new EMA { Length = EmaFastLength };
+_emaSlow = new EMA { Length = EmaSlowLength };
 _rsiFast = new RelativeStrengthIndex { Length = RsiFastLength };
 _rsiSlow = new RelativeStrengthIndex { Length = RsiSlowLength };
 

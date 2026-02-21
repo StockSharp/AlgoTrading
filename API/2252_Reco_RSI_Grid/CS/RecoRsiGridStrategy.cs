@@ -236,7 +236,7 @@ public class RecoRsiGridStrategy : Strategy
 	    Param(nameof(RsiPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "RSI indicator period", "Signal")
-		.SetCanOptimize(true);
+		;
 
 	_rsiSellZone =
 	    Param(nameof(RsiSellZone), 70m)
@@ -328,9 +328,9 @@ public class RecoRsiGridStrategy : Strategy
     }
 
     /// <inheritdoc />
-    protected override void OnStarted(DateTimeOffset time)
+    protected override void OnStarted2(DateTime time)
     {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_point = (Security.PriceStep ?? 1m) * PointMultiplier;
 

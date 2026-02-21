@@ -115,7 +115,7 @@ public class Ccit3ZeroCrossStrategy : Strategy
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 1750m)
 			.SetDisplay("Take Profit (pts)", "Take profit distance expressed in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200m, 4000m, 100m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
@@ -130,7 +130,7 @@ public class Ccit3ZeroCrossStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 285)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Period used by the Commodity Channel Index", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 400, 5);
 
 		_cciPriceType = Param(nameof(CciPriceType), CciAppliedPriceTypes.Typical)
@@ -139,7 +139,7 @@ public class Ccit3ZeroCrossStrategy : Strategy
 		_t3Period = Param(nameof(T3Period), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("T3 Period", "Tillson T3 smoothing period", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 120, 5);
 
 		_volumeFactor = Param(nameof(VolumeFactor), 0.618m)
@@ -282,9 +282,9 @@ public class Ccit3ZeroCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = Security?.PriceStep ?? 1m;
 		if (_pointValue <= 0m)
@@ -334,7 +334,7 @@ public class Ccit3ZeroCrossStrategy : Strategy
 			return;
 
 		var price = GetAppliedPrice(candle, CciPriceType);
-		var cciValue = cci.Process(price, candle.OpenTime, true).ToDecimal();
+		var cciValue = cci.Process(new DecimalIndicatorValue(cci, price, candle.OpenTime)).ToDecimal();
 
 		if (!cci.IsFormed)
 			return;

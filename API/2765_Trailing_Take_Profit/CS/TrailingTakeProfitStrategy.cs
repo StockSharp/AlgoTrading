@@ -114,13 +114,13 @@ public class TrailingTakeProfitStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit Points", "Distance for initial take profit", "Trailing")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 300m, 20m);
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Step Points", "Minimum reduction before moving take profit", "Trailing")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 50m, 5m);
 
 		_trailInLossZone = Param(nameof(TrailInLossZone), false)
@@ -160,9 +160,9 @@ public class TrailingTakeProfitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to Level1 to receive bid/ask updates for trailing decisions.
 		SubscribeLevel1()

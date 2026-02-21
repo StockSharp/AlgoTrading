@@ -340,22 +340,22 @@ public class GridEaProStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Lookback for RSI signal", "RSI")
-		.SetCanOptimize(true);
+		;
 
 		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 70m)
 		.SetDisplay("RSI Upper", "Overbought threshold", "RSI")
-		.SetCanOptimize(true);
+		;
 
 		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 30m)
 		.SetDisplay("RSI Lower", "Oversold threshold", "RSI")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for signals", "General");
 
 		_distance = Param(nameof(Distance), 50)
 		.SetDisplay("Distance", "Breakout distance in points", "Entries")
-		.SetCanOptimize(true);
+		;
 
 		_timerSeconds = Param(nameof(TimerSeconds), 10)
 		.SetDisplay("Timer Seconds", "Interval between breakout recalculations", "Entries");
@@ -368,7 +368,7 @@ public class GridEaProStrategy : Strategy
 
 		_riskPerTrade = Param(nameof(RiskPerTrade), 0m)
 		.SetDisplay("Risk %", "Risk per trade percentage", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_lotMultiplier = Param(nameof(LotMultiplier), 1.1m)
 		.SetDisplay("Lot Multiplier", "Multiplier applied to grid additions", "Money Management");
@@ -378,7 +378,7 @@ public class GridEaProStrategy : Strategy
 
 		_stepOrders = Param(nameof(StepOrders), 100)
 		.SetDisplay("Step", "Base grid distance in points", "Grid")
-		.SetCanOptimize(true);
+		;
 
 		_stepMultiplier = Param(nameof(StepMultiplier), 1.1m)
 		.SetDisplay("Step Multiplier", "Adaptive grid expansion factor", "Grid");
@@ -394,11 +394,11 @@ public class GridEaProStrategy : Strategy
 
 		_stopLoss = Param(nameof(StopLoss), -1)
 		.SetDisplay("Stop Loss", "Initial stop in points (-1 disables)", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfit = Param(nameof(TakeProfit), 500)
 		.SetDisplay("Take Profit", "Initial profit target in points", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_breakEvenStop = Param(nameof(BreakEvenStop), -1)
 		.SetDisplay("Break Even Stop", "Offset once breakeven triggers (-1 disables)", "Risk");
@@ -456,9 +456,9 @@ public class GridEaProStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tickSize = Security?.PriceStep ?? 0.0001m;
 		_stepValue = _tickSize;
@@ -472,7 +472,7 @@ public class GridEaProStrategy : Strategy
 		.Bind(_rsi, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

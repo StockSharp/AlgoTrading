@@ -158,19 +158,19 @@ public class ExpT3TrixStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Fast T3 averaging depth", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 30, 2);
 
 		_slowLength = Param(nameof(SlowLength), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow T3 averaging depth", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 40, 2);
 
 		_volumeFactor = Param(nameof(VolumeFactor), 0.7m)
 			.SetDisplay("Volume Factor", "Tillson T3 smoothing factor", "Indicator")
 			.SetRange(0m, 1m)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.4m, 0.9m, 0.05m);
 
 		_mode = Param(nameof(Mode), ExpT3TrixModes.Twist)
@@ -214,9 +214,9 @@ public class ExpT3TrixStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastEma1 = new() { Length = FastLength };
 		_fastEma2 = new() { Length = FastLength };
@@ -237,7 +237,7 @@ public class ExpT3TrixStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -391,12 +391,12 @@ public class ExpT3TrixStrategy : Strategy
 		DateTimeOffset time,
 		decimal volumeFactor)
 	{
-		var e1 = ema1.Process(price, time, true).ToDecimal();
-		var e2 = ema2.Process(e1, time, true).ToDecimal();
-		var e3 = ema3.Process(e2, time, true).ToDecimal();
-		var e4 = ema4.Process(e3, time, true).ToDecimal();
-		var e5 = ema5.Process(e4, time, true).ToDecimal();
-		var e6 = ema6.Process(e5, time, true).ToDecimal();
+		var e1 = ema1.Process(new DecimalIndicatorValue(ema1, price, time.UtcDateTime)).ToDecimal();
+		var e2 = ema2.Process(new DecimalIndicatorValue(ema2, e1, time.UtcDateTime)).ToDecimal();
+		var e3 = ema3.Process(new DecimalIndicatorValue(ema3, e2, time.UtcDateTime)).ToDecimal();
+		var e4 = ema4.Process(new DecimalIndicatorValue(ema4, e3, time.UtcDateTime)).ToDecimal();
+		var e5 = ema5.Process(new DecimalIndicatorValue(ema5, e4, time.UtcDateTime)).ToDecimal();
+		var e6 = ema6.Process(new DecimalIndicatorValue(ema6, e5, time.UtcDateTime)).ToDecimal();
 
 		var c1 = -volumeFactor * volumeFactor * volumeFactor;
 		var c2 = 3m * volumeFactor * volumeFactor + 3m * volumeFactor * volumeFactor * volumeFactor;

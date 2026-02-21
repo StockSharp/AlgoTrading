@@ -63,9 +63,9 @@ public class EugeneStrategy : Strategy
 		_prePreviousCandle = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Align the strategy order volume with the configured parameter
 		Volume = TradeVolume;

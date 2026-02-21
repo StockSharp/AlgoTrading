@@ -95,31 +95,31 @@ public class StochasticMeanReversionStrategy : Strategy
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Period for Stochastic calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 
 		_kPeriod = Param(nameof(KPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("K Period", "Period for %K calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 5, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("D Period", "Period for %D calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 5, 1);
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Average Period", "Period for Stochastic average calculation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_multiplier = Param(nameof(Multiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier for entry", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -140,9 +140,9 @@ public class StochasticMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 
 		// Create indicators
@@ -152,7 +152,7 @@ public class StochasticMeanReversionStrategy : Strategy
 			D = { Length = DPeriod }
 		};
 		
-		_stochAverage = new SimpleMovingAverage { Length = AveragePeriod };
+		_stochAverage = new SMA { Length = AveragePeriod };
 		_stochStdDev = new StandardDeviation { Length = AveragePeriod };
 
 		// Create candle subscription
@@ -191,8 +191,8 @@ public class StochasticMeanReversionStrategy : Strategy
 			return;
 
 		// Process Stochastic %K through average and standard deviation indicators
-		var stochAvgValue = _stochAverage.Process(kValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-		var stochStdDevValue = _stochStdDev.Process(kValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var stochAvgValue = _stochAverage.Process(new DecimalIndicatorValue(_stochAverage, kValue, candle.ServerTime)).ToDecimal();
+		var stochStdDevValue = _stochStdDev.Process(new DecimalIndicatorValue(_stochStdDev, kValue, candle.ServerTime)).ToDecimal();
 		
 		// Store previous Stochastic %K value for changes detection
 		decimal currentStochKValue = kValue;

@@ -81,46 +81,46 @@ public class IvidyaSimpleStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150)
 			.SetDisplay("Stop Loss", "Stop-loss in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 460)
 			.SetDisplay("Take Profit", "Take-profit in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_cmoPeriod = Param(nameof(CmoPeriod), 15)
 			.SetDisplay("CMO Period", "Length of the Chande Momentum Oscillator", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_emaPeriod = Param(nameof(EmaPeriod), 12)
 			.SetDisplay("EMA Period", "Base EMA length used by VIDYA", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_maShift = Param(nameof(MaShift), 1)
 			.SetDisplay("MA Shift", "Number of completed candles for VIDYA shift", "Indicator")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Applied Price", "Price source for VIDYA", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
 		_cmo = new ChandeMomentumOscillator { Length = CmoPeriod };
 		_vidyaHistory.Clear();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

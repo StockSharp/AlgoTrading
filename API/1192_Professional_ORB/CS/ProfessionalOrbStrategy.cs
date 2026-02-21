@@ -84,31 +84,31 @@ public class ProfessionalOrbStrategy : Strategy
 		_orbMinutes = Param(nameof(OrbMinutes), 15)
 			.SetDisplay("ORB Minutes", "Duration of opening range in minutes", "ORB")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 5);
 
 		_minOrbRange = Param(nameof(MinOrbRange), 40m)
 			.SetDisplay("Min ORB Range", "Minimum opening range in points", "ORB")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_stopLossAtr = Param(nameof(StopLossAtr), 1.5m)
 			.SetDisplay("Stop Loss ATR", "ATR multiplier for stop loss", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_profitTargetPoints = Param(nameof(ProfitTargetPoints), 50m)
 			.SetDisplay("Profit Target", "Profit target in points", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_maxTrades = Param(nameof(MaxTrades), 2)
 			.SetDisplay("Max Trades", "Maximum trades per day", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -129,9 +129,9 @@ public class ProfessionalOrbStrategy : Strategy
 		_currentDate = DateTime.MinValue;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = 14 };
 

@@ -70,21 +70,21 @@ public class BounceNumberStrategy : Strategy
 		_maxHistoryCandles = Param(nameof(MaxHistoryCandles), 10000)
 			.SetNotNegative()
 			.SetDisplay("Max History Candles", "Maximum number of candles inspected inside a single channel cycle", "General")
-			.SetCanOptimize(true);
+			;
 
 		_channelPoints = Param(nameof(ChannelPoints), 300)
 			.SetRange(10, 5000)
 			.SetDisplay("Channel Half-Width", "Half height of the bounce channel measured in price points", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to perform the bounce analysis", "Data");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var priceStep = Security?.PriceStep;
 

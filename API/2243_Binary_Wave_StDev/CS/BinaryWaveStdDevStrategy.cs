@@ -172,44 +172,44 @@ public class BinaryWaveStdDevStrategy : Strategy
 
 		_maPeriod = Param(nameof(MaPeriod), 13)
 			.SetDisplay("MA Period", "Moving average period", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_fastMacd = Param(nameof(FastMacd), 12)
 			.SetDisplay("Fast MACD", "Fast EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_slowMacd = Param(nameof(SlowMacd), 26)
 			.SetDisplay("Slow MACD", "Slow EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_signalMacd = Param(nameof(SignalMacd), 9)
 			.SetDisplay("MACD Signal", "Signal line length", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetDisplay("CCI Period", "Lookback period for CCI", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetDisplay("Momentum Period", "Lookback for momentum", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "Lookback for RSI", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "Lookback for ADX", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_stdDevPeriod = Param(nameof(StdDevPeriod), 9)
 			.SetDisplay("StdDev Period", "Length of standard deviation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_entryVolatility = Param(nameof(EntryVolatility), 1.5m)
 			.SetDisplay("Entry Volatility", "Minimum standard deviation to enter", "Risk Management")
-			.SetCanOptimize(true);
+			;
 		_exitVolatility = Param(nameof(ExitVolatility), 1m)
 			.SetDisplay("Exit Volatility", "Standard deviation threshold to exit", "Risk Management")
-			.SetCanOptimize(true);
+			;
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk Management")
-			.SetCanOptimize(true);
+			;
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetDisplay("Take Profit", "Take profit in points", "Risk Management")
-			.SetCanOptimize(true);
+			;
 		_useStopLoss = Param(nameof(UseStopLoss), false)
 			.SetDisplay("Use Stop Loss", "Enable stop loss", "Risk Management");
 		_useTakeProfit = Param(nameof(UseTakeProfit), false)
@@ -234,7 +234,7 @@ public class BinaryWaveStdDevStrategy : Strategy
 			takeProfit: UseTakeProfit ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null,
 			stopLoss: UseStopLoss ? new Unit(StopLossPoints, UnitTypes.Absolute) : null);
 
-		var ema = new ExponentialMovingAverage { Length = MaPeriod };
+		var ema = new EMA { Length = MaPeriod };
 		var macd = new MovingAverageConvergenceDivergence
 		{
 			ShortLength = FastMacd,

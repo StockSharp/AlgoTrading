@@ -73,19 +73,19 @@ public class MaCrossoverStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Period of the fast moving average", "MA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_slowLength = Param(nameof(SlowLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Period of the slow moving average", "MA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 1.0m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -109,9 +109,9 @@ public class MaCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var fastMa = new SMA { Length = FastLength };

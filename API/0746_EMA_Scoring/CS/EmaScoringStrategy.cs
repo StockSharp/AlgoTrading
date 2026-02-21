@@ -80,24 +80,24 @@ public class EmaScoringStrategy : Strategy
 		_shortEmaPeriod = Param(nameof(ShortEmaPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Short EMA Period", "Short EMA period", "EMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_mediumEmaPeriod = Param(nameof(MediumEmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Medium EMA Period", "Medium EMA period", "EMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 100, 5);
 
 		_longEmaPeriod = Param(nameof(LongEmaPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Long EMA Period", "Long EMA period", "EMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
 		_threshold = Param(nameof(Threshold), 4)
 			.SetDisplay("Score Threshold", "Score threshold", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 6, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -118,11 +118,11 @@ public class EmaScoringStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var emaShort = new EMA { Length = ShortEmaPeriod };
 		var emaMedium = new EMA { Length = MediumEmaPeriod };

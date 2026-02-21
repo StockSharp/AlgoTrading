@@ -91,13 +91,13 @@ public class TtmSqueezeStrategy : Strategy
 		_squeezeLength = Param(nameof(SqueezeLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Squeeze Length", "TTM Squeeze calculation length", "TTM Squeeze")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation length", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 2);
 
 		_useTP = Param(nameof(UseTP), false)
@@ -106,7 +106,7 @@ public class TtmSqueezeStrategy : Strategy
 		_tpPercent = Param(nameof(TpPercent), 1.2m)
 			.SetRange(0.1m, 10.0m)
 			.SetDisplay("TP Percent", "Take profit percentage", "Take Profit")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3.0m, 0.3m);
 	}
 
@@ -126,16 +126,16 @@ public class TtmSqueezeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_bollingerBands = new BollingerBands { Length = SqueezeLength, Width = 2.0m };
 		_keltnerChannels = new KeltnerChannels { Length = SqueezeLength, Multiplier = 1.5m };
 		_highest = new Highest { Length = SqueezeLength };
 		_lowest = new Lowest { Length = SqueezeLength };
-		_closeSma = new SimpleMovingAverage { Length = SqueezeLength };
+		_closeSma = new SMA { Length = SqueezeLength };
 		_momentum = new LinearRegression { Length = SqueezeLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 

@@ -285,20 +285,20 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var fastEma = new EMA { Length = FastEmaLength };
 		var alma = new ArnaudLegouxMovingAverage { Length = 15, Offset = 0.65m, Sigma = 6m };
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new EMA { Length = EmaLength };
 		var adx = new AverageDirectionalIndex { Length = AdxLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var bollinger = new BollingerBands { Length = 20, Width = BbMultiplier };
 		var atrUt = new AverageTrueRange { Length = UtAtrPeriod };
-		var volumeSma = new SimpleMovingAverage { Length = VolumeMaLength };
-		var atrAvg = new SimpleMovingAverage { Length = 50 };
+		var volumeSma = new SMA { Length = VolumeMaLength };
+		var atrAvg = new SMA { Length = 50 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

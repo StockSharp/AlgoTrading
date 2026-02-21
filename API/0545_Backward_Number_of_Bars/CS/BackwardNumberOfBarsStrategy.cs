@@ -45,7 +45,7 @@ public class BackwardNumberOfBarsStrategy : Strategy
 	{
 		_barCount = Param(nameof(BarCount), 50)
 			.SetDisplay("Bar Count", "Number of bars for the window", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -65,9 +65,9 @@ public class BackwardNumberOfBarsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var tf = (TimeSpan)CandleType.Arg;
 		_startTime = time - TimeSpan.FromTicks(tf.Ticks * BarCount);

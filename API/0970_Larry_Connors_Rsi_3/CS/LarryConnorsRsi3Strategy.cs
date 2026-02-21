@@ -90,30 +90,30 @@ public class LarryConnorsRsi3Strategy : Strategy
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 2)
 			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 5, 1);
 
 		_smaPeriod = Param(nameof(SmaPeriod), 200)
 			.SetDisplay("SMA Period", "Period for trend SMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 50);
 
 		_dropTrigger = Param(nameof(DropTrigger), 60m)
 			.SetDisplay("Drop Trigger", "RSI level required before drop", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 70m, 5m);
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 10m)
 			.SetDisplay("Oversold Level", "RSI oversold threshold", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 20m, 1m);
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
 			.SetDisplay("Overbought Level", "RSI exit threshold", "Strategy")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -132,11 +132,11 @@ public class LarryConnorsRsi3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = SmaPeriod };
+		var sma = new SMA { Length = SmaPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

@@ -98,9 +98,9 @@ public class HistoryInfoEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Calculate the pip size using security metadata (PriceStep, Decimals, etc.).
 		_pipSize = ResolvePipSize();

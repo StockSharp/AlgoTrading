@@ -64,22 +64,22 @@ public class CashMachineStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Total floating profit that triggers closing both positions.", "Risk Management");
 
-		_emaShortPeriod = Param(nameof(EmaShortPeriod), 8)
+		_emaShortMa = { Length = Param }(nameof(EmaShortPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Period", "Length of the short-term EMA on the base instrument.", "Trend Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
-		_emaLongPeriod = Param(nameof(EmaLongPeriod), 21)
+		_emaLongMa = { Length = Param }(nameof(EmaLongPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Period", "Length of the long-term EMA on the base instrument.", "Trend Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 1);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Length of the RSI oscillator filter.", "Oscillators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 21, 1);
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
@@ -91,13 +91,13 @@ public class CashMachineStrategy : Strategy
 		_correlationLookback = Param(nameof(CorrelationLookback), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Correlation Lookback", "Number of daily deviations used for Pearson correlation.", "Correlation")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 90, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Signal Candle Type", "Intraday candle type feeding EMA and RSI.", "General");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Daily Candle Type", "Higher timeframe used to build daily deviations for correlation.", "General");
 
 		_hedgeSecurityParam = Param<Security>(nameof(HedgeSecurity))
@@ -247,19 +247,19 @@ public class CashMachineStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (HedgeSecurity == null)
 			throw new InvalidOperationException("Hedge security is not specified.");
 
-		_fastEma = new ExponentialMovingAverage { Length = EmaShortPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = EmaLongPeriod };
+		_fastEma = new EMA { Length = EmaShortPeriod };
+		_slowEma = new EMA { Length = EmaLongPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-		_baseDailySma = new SimpleMovingAverage { Length = CorrelationLookback };
-		_hedgeDailySma = new SimpleMovingAverage { Length = CorrelationLookback };
+		_baseDailySma = new SMA { Length = CorrelationLookback };
+		_hedgeDailySma = new SMA { Length = CorrelationLookback };
 
 		var baseSubscription = SubscribeCandles(CandleType);
 		baseSubscription

@@ -129,9 +129,9 @@ public class OvernightEffectHighVolatilityCryptoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var volLength = VolatilityPeriodDays * 24;
 		var medianLength = MedianPeriodDays * 24;
@@ -166,8 +166,8 @@ public class OvernightEffectHighVolatilityCryptoStrategy : Strategy
 		var logReturn = (decimal)Math.Log((double)(candle.ClosePrice / _prevClose));
 		_prevClose = candle.ClosePrice;
 
-		var vol = _volatilityStdDev.Process(logReturn, candle.OpenTime, true);
-		var median = _medianVolatility.Process(vol ?? 0m, candle.OpenTime, true);
+		var vol = _volatilityStdDev.Process(new DecimalIndicatorValue(_volatilityStdDev, logReturn, candle.OpenTime));
+		var median = _medianVolatility.Process(new DecimalIndicatorValue(_medianVolatility, vol ?? 0m, candle.OpenTime));
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

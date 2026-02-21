@@ -413,13 +413,13 @@ public class FxNodeSafeTunnelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_highest = new Highest { Length = Math.Max(1, ZigZagDepth), CandlePrice = CandlePrice.High };
-		_lowest = new Lowest { Length = Math.Max(1, ZigZagDepth), CandlePrice = CandlePrice.Low };
+		_highest = new Highest { Length = Math.Max(1, ZigZagDepth) };
+		_lowest = new Lowest { Length = Math.Max(1, ZigZagDepth) };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -437,7 +437,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 
 		_timeFrame = GetTimeFrame();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal highestValue, decimal lowestValue)

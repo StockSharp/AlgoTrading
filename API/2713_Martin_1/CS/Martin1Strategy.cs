@@ -164,13 +164,13 @@ public class Martin1Strategy : Strategy
 		_lotMultiplier = Param(nameof(LotMultiplier), 1.6m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Multiplier", "Factor applied to volume after a loss", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.1m, 3m, 0.1m);
 
 		_maxMultiplications = Param(nameof(MaxMultiplications), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Multiplications", "Maximum hedging steps", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_startDirection = Param(nameof(StartDirection), Sides.Buy)
@@ -178,7 +178,7 @@ public class Martin1Strategy : Strategy
 
 		_minProfit = Param(nameof(MinProfit), 1.5m)
 			.SetDisplay("Min Profit", "Floating profit target to flatten", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 10m, 0.5m);
 
 		_initialVolume = Param(nameof(InitialVolume), 0.1m)
@@ -212,9 +212,9 @@ public class Martin1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (UseTradingHours && StartHour >= EndHour)
 			throw new InvalidOperationException("Start hour must be less than end hour when the filter is enabled.");

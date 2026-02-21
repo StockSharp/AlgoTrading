@@ -72,19 +72,19 @@ public class X2MaJfatlStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Length of the fast moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_slowLength = Param(nameof(SlowLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Length of the slow Jurik MA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 2);
 
 		_filterLength = Param(nameof(FilterLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Filter Length", "Length of the Jurik filter", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -106,9 +106,9 @@ public class X2MaJfatlStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastMa = new SMA { Length = FastLength };
 		var slowMa = new JurikMovingAverage { Length = SlowLength };

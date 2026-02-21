@@ -120,25 +120,25 @@ public class MoneyRainStrategy : Strategy
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 31)
 		.SetGreaterThanZero()
 		.SetDisplay("DeMarker Period", "DeMarker indicator averaging period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 5);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit (points)", "Take-profit distance expressed in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 15m, 1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (points)", "Stop-loss distance expressed in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 60m, 5m);
 
 		_baseVolume = Param(nameof(BaseVolume), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Base Volume", "Lot size used when no recovery is required", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 1m, 0.01m);
 
 		_lossLimit = Param(nameof(LossLimit), 1000000)
@@ -181,9 +181,9 @@ public class MoneyRainStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdateOffsets();
 

@@ -99,19 +99,19 @@ public class CointegrationPairsStrategy : Strategy
 		_periodParam = Param(nameof(Period), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "Period for residual calculations", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_entryThresholdParam = Param(nameof(EntryThreshold), 2.0m)
 			.SetRange(0.1m, decimal.MaxValue)
 			.SetDisplay("Entry Threshold", "Entry threshold as multiple of standard deviation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_betaParam = Param(nameof(Beta), 1.0m)
 			.SetRange(0.01m, decimal.MaxValue)
 			.SetDisplay("Beta", "Coefficient of cointegration", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2.0m, 0.1m);
 
 		_asset2Param = Param<Security>(nameof(Asset2))
@@ -120,7 +120,7 @@ public class CointegrationPairsStrategy : Strategy
 		_stopLossPercentParam = Param(nameof(StopLossPercent), 2.0m)
 			.SetRange(0.1m, decimal.MaxValue)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 1.0m);
 
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -155,9 +155,9 @@ public class CointegrationPairsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Asset2 == null)
 			throw new InvalidOperationException("Second asset is not specified.");

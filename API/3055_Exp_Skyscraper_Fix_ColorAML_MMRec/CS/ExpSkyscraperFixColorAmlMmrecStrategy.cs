@@ -103,7 +103,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 		_skyscraperLength = Param(nameof(SkyscraperLength), 10)
 			.SetDisplay("Length", "ATR window used to calculate the adaptive channel", "Skyscraper Fix")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 25, 5);
 
 		_skyscraperKv = Param(nameof(SkyscraperKv), 0.9m)
@@ -413,11 +413,11 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var step = Security?.PriceStep ?? 0m;
 		var volume = Math.Max(SkyscraperMm, ColorAmlMm);
@@ -867,7 +867,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 	/// <summary>
 	/// Color AML indicator translated from the original MQ5 implementation.
 	/// </summary>
-	public class ColorAmlIndicator : BaseIndicator<decimal>
+	public class ColorAmlIndicator : BaseIndicator
 	{
 		private readonly List<ICandleMessage> _candles = new();
 		private readonly List<decimal> _smoothHistory = new();

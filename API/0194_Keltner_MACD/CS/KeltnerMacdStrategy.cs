@@ -129,12 +129,12 @@ public class KeltnerMacdStrategy : Strategy
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetDisplay("EMA Period", "Period for EMA calculation in Keltner Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for Keltner Channel bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3m, 0.5m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
@@ -142,15 +142,15 @@ public class KeltnerMacdStrategy : Strategy
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetDisplay("MACD Fast Period", "Fast EMA period for MACD calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetDisplay("MACD Slow Period", "Slow EMA period for MACD calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetDisplay("MACD Signal Period", "Signal line period for MACD calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetDisplay("Stop Loss ATR Multiplier", "ATR multiplier for stop loss calculation", "Risk Management");
@@ -161,7 +161,7 @@ public class KeltnerMacdStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2.0m, 0.5m);
 	}
 
@@ -191,7 +191,7 @@ public class KeltnerMacdStrategy : Strategy
 		base.OnStarted(time);
 
 		// Create indicators
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		_ema = new EMA { Length = EmaPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
 		_macd = new MovingAverageConvergenceDivergenceSignal

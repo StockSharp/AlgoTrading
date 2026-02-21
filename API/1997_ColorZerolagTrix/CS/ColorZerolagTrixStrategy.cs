@@ -201,47 +201,47 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 
 _smoothing = Param(nameof(Smoothing), 15)
 .SetDisplay("Smoothing", "Smoothing factor", "Indicator")
-.SetCanOptimize(true);
+;
 
 _factor1 = Param(nameof(Factor1), 0.05m)
 .SetDisplay("Factor 1", "Weight for first TRIX", "Indicator")
-.SetCanOptimize(true);
+;
 
 _period1 = Param(nameof(TrixPeriod1), 8)
 .SetDisplay("TRIX Period 1", "Period for first TRIX", "Indicator")
-.SetCanOptimize(true);
+;
 
 _factor2 = Param(nameof(Factor2), 0.10m)
 .SetDisplay("Factor 2", "Weight for second TRIX", "Indicator")
-.SetCanOptimize(true);
+;
 
 _period2 = Param(nameof(TrixPeriod2), 21)
 .SetDisplay("TRIX Period 2", "Period for second TRIX", "Indicator")
-.SetCanOptimize(true);
+;
 
 _factor3 = Param(nameof(Factor3), 0.16m)
 .SetDisplay("Factor 3", "Weight for third TRIX", "Indicator")
-.SetCanOptimize(true);
+;
 
 _period3 = Param(nameof(TrixPeriod3), 34)
 .SetDisplay("TRIX Period 3", "Period for third TRIX", "Indicator")
-.SetCanOptimize(true);
+;
 
 _factor4 = Param(nameof(Factor4), 0.26m)
 .SetDisplay("Factor 4", "Weight for fourth TRIX", "Indicator")
-.SetCanOptimize(true);
+;
 
 _period4 = Param(nameof(TrixPeriod4), 55)
 .SetDisplay("TRIX Period 4", "Period for fourth TRIX", "Indicator")
-.SetCanOptimize(true);
+;
 
 _factor5 = Param(nameof(Factor5), 0.43m)
 .SetDisplay("Factor 5", "Weight for fifth TRIX", "Indicator")
-.SetCanOptimize(true);
+;
 
 _period5 = Param(nameof(TrixPeriod5), 89)
 .SetDisplay("TRIX Period 5", "Period for fifth TRIX", "Indicator")
-.SetCanOptimize(true);
+;
 
 _buyPosOpen = Param(nameof(BuyPosOpen), true)
 .SetDisplay("Buy Position Open", "Allow opening long positions", "Trade");
@@ -257,11 +257,11 @@ _sellPosClose = Param(nameof(SellPosClose), true)
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-StartProtection();
+StartProtection(null, null);
 
 _trix1 = new Trix { Length = TrixPeriod1 };
 _trix2 = new Trix { Length = TrixPeriod2 };

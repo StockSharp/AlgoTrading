@@ -113,12 +113,12 @@ public class ExpotestStrategy : Strategy
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
 			.SetDisplay("SAR Step", "Acceleration factor for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_sarMaximum = Param(nameof(SarMaximum), 0.2m)
 			.SetDisplay("SAR Maximum", "Maximum acceleration factor for Parabolic SAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.4m, 0.05m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150m)
@@ -162,9 +162,9 @@ public class ExpotestStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_parabolicSar = new ParabolicSar
 		{

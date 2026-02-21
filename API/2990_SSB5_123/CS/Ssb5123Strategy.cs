@@ -123,37 +123,37 @@ public class Ssb5123Strategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 45)
 			.SetGreaterThanZero()
 			.SetDisplay("SMMA Period", "Length of the smoothed moving average filter", "Trend")
-			.SetCanOptimize(true);
+			;
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 47)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA period for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 95)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA period for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 74)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal EMA period for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "Main period of the stochastic oscillator", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 12)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Smoothing period for the %D line", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticSlowing = Param(nameof(StochasticSlowing), 56)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Slowing", "Additional smoothing for %K", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
@@ -202,7 +202,7 @@ public class Ssb5123Strategy : Strategy
 		var stochastic = new StochasticOscillator
 		{
 			KPeriod = StochasticKPeriod,
-			DPeriod = StochasticDPeriod,
+			D = { Length = StochasticDPeriod },
 			Slowing = StochasticSlowing
 		};
 

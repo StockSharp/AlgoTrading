@@ -73,18 +73,18 @@ public class BarRangeStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Percent rank lookback", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 5);
 
 		_percentRankThreshold = Param(nameof(PercentRankThreshold), 95m)
 			.SetDisplay("Percent Rank Threshold", "Minimum percentile for entry", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(80m, 99m, 1m);
 
 		_exitBars = Param(nameof(ExitBars), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Bars", "Bars to hold the position", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 	}
 
@@ -104,9 +104,9 @@ public class BarRangeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

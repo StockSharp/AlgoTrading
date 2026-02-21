@@ -73,7 +73,7 @@ public class GenieRsiStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit distance in price units", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStop = Param(nameof(TrailingStop), 200m)
 			.SetGreaterThanOrEqualsZero()
@@ -82,7 +82,7 @@ public class GenieRsiStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period for RSI indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -105,9 +105,9 @@ public class GenieRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RSI { Length = RsiPeriod };
 
@@ -125,7 +125,7 @@ public class GenieRsiStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsi)

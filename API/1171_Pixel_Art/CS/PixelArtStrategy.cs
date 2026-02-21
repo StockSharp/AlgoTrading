@@ -32,9 +32,9 @@ public class PixelArtStrategy : Strategy
 			.SetDisplay("Logo", "Pixel art logo to display", "General");
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (!_pixels.TryGetValue(Logo, out var colors))
 		{

@@ -91,7 +91,7 @@ public class DivergenceIndicatorAnyOscillatorStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Length", "RSI period", "Oscillator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 21, 7);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -122,11 +122,11 @@ public class DivergenceIndicatorAnyOscillatorStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		

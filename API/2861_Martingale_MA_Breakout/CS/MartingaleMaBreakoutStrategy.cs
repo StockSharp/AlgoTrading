@@ -30,7 +30,7 @@ public class MartingaleMaBreakoutStrategy : Strategy
 	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<decimal> _riskPercent;
 
-	private LengthIndicator<decimal> _movingAverage;
+	private DecimalLengthIndicator _movingAverage;
 	private readonly List<decimal> _maHistory = new();
 	private decimal _pipSize;
 	private decimal? _stopPrice;
@@ -157,9 +157,9 @@ public class MartingaleMaBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips != 0 && TrailingStepPips == 0)
 		{
@@ -193,7 +193,7 @@ public class MartingaleMaBreakoutStrategy : Strategy
 	{
 		// Calculate the input price according to the selected source.
 		var price = GetAppliedPrice(candle, MaAppliedPrice);
-		var maValue = _movingAverage.Process(price, candle.OpenTime, candle.State == CandleStates.Finished);
+		var maValue = _movingAverage.Process(new DecimalIndicatorValue(_movingAverage, price, candle.OpenTime));
 
 		if (Position != 0)
 		{
@@ -442,16 +442,16 @@ public class MartingaleMaBreakoutStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageModes mode, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageModes mode, int length)
 	{
 		// Instantiate the requested moving average implementation.
 		return mode switch
 		{
-			MovingAverageModes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageModes.Simple => new SMA { Length = length },
+			MovingAverageModes.Exponential => new EMA { Length = length },
 			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageModes.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

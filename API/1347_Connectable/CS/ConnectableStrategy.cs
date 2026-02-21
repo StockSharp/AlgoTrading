@@ -75,13 +75,13 @@ public class ConnectableStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Percent of entry price for stop loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Percent of entry price for take profit", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 10m, 2m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -104,11 +104,11 @@ public class ConnectableStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

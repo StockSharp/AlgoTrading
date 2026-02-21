@@ -96,22 +96,22 @@ public RsiExpertTrendFilterStrategy()
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance of the protective stop in pips", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance of the profit target in pips", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance applied after activation", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional pips required before trailing moves again", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_moneyMode = Param(nameof(MoneyMode), MoneyManagementModes.FixedVolume)
 			.SetDisplay("Money Mode", "Choose fixed volume or percent risk sizing", "Money Management");
@@ -119,7 +119,7 @@ public RsiExpertTrendFilterStrategy()
 		_volumeOrRiskValue = Param(nameof(VolumeOrRiskValue), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume / Risk", "Lot size for fixed mode or percent risk when using risk mode", "Money Management")
-			.SetCanOptimize(true);
+			;
 
 		_useMartingale = Param(nameof(UseMartingale), true)
 			.SetDisplay("Use Martingale", "Double the next volume after a losing trade", "Money Management");
@@ -127,27 +127,27 @@ public RsiExpertTrendFilterStrategy()
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Period", "Period of the fast moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Period", "Period of the slow moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Averaging period for RSI", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLevelUp = Param(nameof(RsiLevelUp), 70m)
 			.SetRange(1m, 99m)
 			.SetDisplay("RSI Level Up", "Upper RSI threshold for shorts", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLevelDown = Param(nameof(RsiLevelDown), 30m)
 			.SetRange(1m, 99m)
 			.SetDisplay("RSI Level Down", "Lower RSI threshold for longs", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maMode = Param(nameof(MaMode), MaTradeModes.Forward)
 			.SetDisplay("MA Trade Mode", "Direction of the moving average confirmation", "Indicators");
@@ -302,9 +302,9 @@ public RsiExpertTrendFilterStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips == 0)
 			throw new InvalidOperationException("Trailing is not possible when the trailing step is zero.");
@@ -314,12 +314,12 @@ public RsiExpertTrendFilterStrategy()
 			Length = RsiPeriod
 		};
 
-		_fastMa = new SimpleMovingAverage
+		_fastMa = new SMA
 		{
 			Length = FastMaPeriod
 		};
 
-		_slowMa = new SimpleMovingAverage
+		_slowMa = new SMA
 		{
 			Length = SlowMaPeriod
 		};

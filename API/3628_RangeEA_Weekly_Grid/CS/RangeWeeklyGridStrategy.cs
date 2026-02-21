@@ -185,22 +185,22 @@ public class RangeWeeklyGridStrategy : Strategy
 
 		_startTradeHour = Param(nameof(StartTradeHour), 0)
 			.SetDisplay("Start hour", "Hour when the strategy can begin placing orders", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_endTradeHour = Param(nameof(EndTradeHour), 24)
 			.SetDisplay("End hour", "Hour after which new trades are blocked", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_closeAllAtEndTrade = Param(nameof(CloseAllAtEndTrade), true)
 			.SetDisplay("Liquidate at end", "Close orders and positions outside the trading window", "Schedule");
 
 		_maxOpenOrders = Param(nameof(MaxOpenOrders), 5)
 			.SetDisplay("Max open orders", "Maximum amount of simultaneous positions and pending orders", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_numberOfOrders = Param(nameof(NumberOfOrders), 10)
 			.SetDisplay("Grid orders", "Number of pending limit orders inside the range", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_orderVolume = Param(nameof(OrderVolume), 0.01m)
 			.SetDisplay("Order volume", "Volume used for each limit order", "Trading")
@@ -211,31 +211,31 @@ public class RangeWeeklyGridStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 60m)
 			.SetDisplay("Stop-loss points", "Minimum stop-loss distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 60m)
 			.SetDisplay("Take-profit points", "Minimum take-profit distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 3m)
 			.SetDisplay("Stop multiplier", "Multiplier applied to the dynamic stop-loss distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitMultiplier = Param(nameof(TakeProfitMultiplier), 1m)
 			.SetDisplay("Take multiplier", "Multiplier applied to the dynamic take-profit distance", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_targetPercentage = Param(nameof(TargetPercentage), 8m)
 			.SetDisplay("Target percentage", "Equity gain percentage that forces liquidation", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_initialEquity = Portfolio?.CurrentValue;
 

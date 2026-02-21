@@ -148,9 +148,9 @@ public class BbsrExtremeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var bollinger = new BollingerBands
 		{
@@ -158,7 +158,7 @@ public class BbsrExtremeStrategy : Strategy
 			Width = BollingerMultiplier
 		};
 
-		var ma = new ExponentialMovingAverage
+		var ma = new EMA
 		{
 			Length = MaLength
 		};
@@ -170,7 +170,7 @@ public class BbsrExtremeStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bollinger, ma, atr, ProcessCandle)
+			.BindEx([bollinger, ma, atr], ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -182,13 +182,19 @@ public class BbsrExtremeStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal maValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var bbValue = (BollingerBandsValue)values[0];
+		if (bbValue.UpBand is not decimal upper || bbValue.LowBand is not decimal lower)
+			return;
+		var maValue = values[1].ToDecimal();
+		var atrValue = values[2].ToDecimal();
 
 		if (!_isInitialized)
 		{

@@ -130,25 +130,25 @@ private readonly StrategyParam<decimal> _stopLossPercent;
 
 		_atrThreshold = Param(nameof(AtrThreshold), 50m)
 			.SetDisplay("ATR Threshold", "ATR percentile threshold", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 90m, 5m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Bars for ATR average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_atrLength = Param(nameof(AtrLength), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_atrLookback = Param(nameof(AtrLookback), 52)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Lookback", "Bars for ATR percentile rank", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -189,9 +189,9 @@ private readonly StrategyParam<decimal> _stopLossPercent;
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_teethSmma = new SmoothedMovingAverage { Length = 8 };
@@ -289,7 +289,7 @@ private readonly StrategyParam<decimal> _stopLossPercent;
 		
 		if (Position > 0)
 		{
-			var stopPrice = Math.Max(PositionAvgPrice * (1m - StopLossPercent), _downFractalActivation ?? decimal.MinValue);
+			var stopPrice = Math.Max(PositionPrice * (1m - StopLossPercent), _downFractalActivation ?? decimal.MinValue);
 			if (candle.LowPrice <= stopPrice)
 			SellMarket(Position);
 		}

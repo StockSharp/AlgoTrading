@@ -178,15 +178,15 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_bp8 = new SimpleMovingAverage { Length = 8 };
-		_bp13 = new SimpleMovingAverage { Length = 13 };
-		_bp21 = new SimpleMovingAverage { Length = 21 };
-		_bp34 = new SimpleMovingAverage { Length = 34 };
-		_bp55 = new SimpleMovingAverage { Length = 55 };
+		_bp8 = new SMA { Length = 8 };
+		_bp13 = new SMA { Length = 13 };
+		_bp21 = new SMA { Length = 21 };
+		_bp34 = new SMA { Length = 34 };
+		_bp55 = new SMA { Length = 55 };
 		
 		_atr8 = new AverageTrueRange { Length = 8 };
 		_atr13 = new AverageTrueRange { Length = 13 };
@@ -194,7 +194,7 @@ _direction = Param(nameof(Direction), (Sides?)null)
 		_atr34 = new AverageTrueRange { Length = 34 };
 		_atr55 = new AverageTrueRange { Length = 55 };
 		_atr = new AverageTrueRange { Length = 14 };
-		_weightedSma = new SimpleMovingAverage { Length = 3 };
+		_weightedSma = new SMA { Length = 3 };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -212,18 +212,18 @@ _direction = Param(nameof(Direction), (Sides?)null)
 		var trueHigh = Math.Max(candle.HighPrice, prevClose);
 		var bp = candle.ClosePrice - trueLow;
 		
-		var atr8 = _atr8.Process(candle).ToDecimal();
+		var atr8 = _atr8.Process(new DecimalIndicatorValue(_atr8, candle).ToDecimal();
 		var atr13 = _atr13.Process(candle).ToDecimal();
 		var atr21 = _atr21.Process(candle).ToDecimal();
 		var atr34 = _atr34.Process(candle).ToDecimal();
 		var atr55 = _atr55.Process(candle).ToDecimal();
 		var atrValue = _atr.Process(candle).ToDecimal();
 		
-		var bp8 = _bp8.Process(bp, candle.ServerTime, true).ToDecimal();
-		var bp13 = _bp13.Process(bp, candle.ServerTime, true).ToDecimal();
-		var bp21 = _bp21.Process(bp, candle.ServerTime, true).ToDecimal();
-		var bp34 = _bp34.Process(bp, candle.ServerTime, true).ToDecimal();
-		var bp55 = _bp55.Process(bp, candle.ServerTime, true).ToDecimal();
+		var bp8 = _bp8.Process(bp, candle.ServerTime)).ToDecimal();
+		var bp13 = _bp13.Process(new DecimalIndicatorValue(_bp13, bp, candle.ServerTime)).ToDecimal();
+		var bp21 = _bp21.Process(new DecimalIndicatorValue(_bp21, bp, candle.ServerTime)).ToDecimal();
+		var bp34 = _bp34.Process(new DecimalIndicatorValue(_bp34, bp, candle.ServerTime)).ToDecimal();
+		var bp55 = _bp55.Process(new DecimalIndicatorValue(_bp55, bp, candle.ServerTime)).ToDecimal();
 		
 		if (!_bp55.IsFormed || !_atr55.IsFormed)
 		{
@@ -239,7 +239,7 @@ _direction = Param(nameof(Direction), (Sides?)null)
 		var ratio55 = atr55 == 0m ? 0m : 100m * bp55 / atr55;
 		
 		var weighted = (5m * ratio8 + 4m * ratio13 + 3m * ratio21 + 2m * ratio34 + ratio55) / 15m;
-		var weightedSma = _weightedSma.Process(weighted, candle.ServerTime, true).ToDecimal();
+		var weightedSma = _weightedSma.Process(new DecimalIndicatorValue(_weightedSma, weighted, candle.ServerTime)).ToDecimal();
 		
 		if (!_weightedSma.IsFormed)
 		{

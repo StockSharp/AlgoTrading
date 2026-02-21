@@ -99,37 +99,37 @@ public class VwapStochasticStrategy : Strategy
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stoch Period", "Period for Stochastic calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_stochKPeriod = Param(nameof(StochKPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stoch %K", "Smoothing period for %K line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
-		_stochDPeriod = Param(nameof(StochDPeriod), 3)
+		_stochD = { Length = Param }(nameof(StochDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stoch %D", "Smoothing period for %D line", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 80m)
 			.SetRange(50, 95)
 			.SetDisplay("Overbought Level", "Level considered overbought", "Trading Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(70, 90, 5);
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 20m)
 			.SetRange(5, 50)
 			.SetDisplay("Oversold Level", "Level considered oversold", "Trading Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -143,9 +143,9 @@ public class VwapStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var vwap = new VolumeWeightedMovingAverage();

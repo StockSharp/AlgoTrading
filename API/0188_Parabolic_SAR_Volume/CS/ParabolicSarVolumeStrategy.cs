@@ -75,17 +75,17 @@ public class ParabolicSarVolumeStrategy : Strategy
 	{
 		_acceleration = Param(nameof(Acceleration), 0.02m)
 			.SetRange(0.01m, 0.1m)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("SAR Acceleration", "Starting acceleration factor", "Indicators");
 
 		_maxAcceleration = Param(nameof(MaxAcceleration), 0.2m)
 			.SetRange(0.1m, 0.5m)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("SAR Max Acceleration", "Maximum acceleration factor", "Indicators");
 
 		_volumePeriod = Param(nameof(VolumePeriod), 20)
 			.SetRange(10, 50)
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Volume Period", "Period for volume moving average", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -110,9 +110,9 @@ public class ParabolicSarVolumeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_parabolicSar = new ParabolicSar
@@ -123,7 +123,7 @@ public class ParabolicSarVolumeStrategy : Strategy
 
 		_volumeIndicator = new VolumeIndicator();
 		
-		_volumeAverage = new SimpleMovingAverage
+		_volumeAverage = new SMA
 		{
 			Length = VolumePeriod
 		};
@@ -160,7 +160,7 @@ public class ParabolicSarVolumeStrategy : Strategy
 
 	private void ProcessIndicators(ICandleMessage candle, decimal sarValue, decimal volumeValue)
 	{
-		_currentAvgVolume = _volumeAverage.Process(volumeValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		_currentAvgVolume = _volumeAverage.Process(new DecimalIndicatorValue(_volumeAverage, volumeValue, candle.ServerTime)).ToDecimal();
 
 		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)

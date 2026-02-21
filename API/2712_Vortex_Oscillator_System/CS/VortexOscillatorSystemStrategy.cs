@@ -44,7 +44,7 @@ public class VortexOscillatorSystemStrategy : Strategy
 		_length = Param(nameof(Length), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Vortex Length", "Period used for the Vortex indicator.", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -64,7 +64,7 @@ public class VortexOscillatorSystemStrategy : Strategy
 
 		_buyThreshold = Param(nameof(BuyThreshold), -0.75m)
 			.SetDisplay("Buy Threshold", "Oscillator value that triggers a long setup.", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-1.5m, -0.25m, 0.25m);
 
 		_buyStopLossLevel = Param(nameof(BuyStopLossLevel), -1m)
@@ -75,7 +75,7 @@ public class VortexOscillatorSystemStrategy : Strategy
 
 		_sellThreshold = Param(nameof(SellThreshold), 0.75m)
 			.SetDisplay("Sell Threshold", "Oscillator value that triggers a short setup.", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.25m, 1.5m, 0.25m);
 
 		_sellStopLossLevel = Param(nameof(SellStopLossLevel), 1m)
@@ -202,9 +202,9 @@ public class VortexOscillatorSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_vortexIndicator = new VortexIndicator
 		{

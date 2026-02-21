@@ -48,8 +48,8 @@ public class BykovTrendColorX2MaMmRecStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 
 	private WilliamsR _bykovTrendWpr = null!;
-	private LengthIndicator<decimal> _colorX2MaStage1 = null!;
-	private LengthIndicator<decimal> _colorX2MaStage2 = null!;
+	private DecimalLengthIndicator _colorX2MaStage1 = null!;
+	private DecimalLengthIndicator _colorX2MaStage2 = null!;
 
 	private readonly List<int> _bykovTrendColors = new();
 	private readonly List<int> _colorX2MaStates = new();
@@ -355,9 +355,9 @@ public class BykovTrendColorX2MaMmRecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Prepare BykovTrend Williams %R indicator.
 		_bykovTrendWpr = new WilliamsR { Length = BykovTrendWprLength };
@@ -544,12 +544,12 @@ public class BykovTrendColorX2MaMmRecStrategy : Strategy
 		return ((sum - candle.LowPrice) + (sum - candle.HighPrice)) / 2m;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(ColorX2MaSmoothingMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(ColorX2MaSmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			ColorX2MaSmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
-			ColorX2MaSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			ColorX2MaSmoothingMethods.Simple => new SMA { Length = length },
+			ColorX2MaSmoothingMethods.Exponential => new EMA { Length = length },
 			ColorX2MaSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			ColorX2MaSmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
 			ColorX2MaSmoothingMethods.Jurik => new JurikMovingAverage { Length = length },
@@ -559,7 +559,7 @@ public class BykovTrendColorX2MaMmRecStrategy : Strategy
 			ColorX2MaSmoothingMethods.TripleExponential => new TripleExponentialMovingAverage { Length = length },
 			ColorX2MaSmoothingMethods.ZeroLagExponential => new ZeroLagExponentialMovingAverage { Length = length },
 			ColorX2MaSmoothingMethods.KaufmanAdaptive => new KaufmanAdaptiveMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

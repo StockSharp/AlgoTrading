@@ -107,29 +107,29 @@ public class TwentyOneHourSessionBreakoutStrategy : Strategy
 
 		_firstSessionStartHour = Param(nameof(FirstSessionStartHour), 8)
 			.SetDisplay("First Session Start", "Hour of the first trading window start (0-23)", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_firstSessionStopHour = Param(nameof(FirstSessionStopHour), 21)
 			.SetDisplay("First Session Stop", "Hour of the first trading window stop (0-23)", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_secondSessionStartHour = Param(nameof(SecondSessionStartHour), 22)
 			.SetDisplay("Second Session Start", "Hour of the second trading window start (0-23)", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_secondSessionStopHour = Param(nameof(SecondSessionStopHour), 23)
 			.SetDisplay("Second Session Stop", "Hour of the second trading window stop (0-23)", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_stepPoints = Param(nameof(StepPoints), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Step Points", "Distance from price to stop orders in price steps", "Orders")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 40m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit Points", "Take-profit distance in price steps", "Orders")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles used to drive the trading schedule", "Data");
@@ -154,9 +154,9 @@ public class TwentyOneHourSessionBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Validate configured session hours before subscribing to data streams.
 		ValidateSchedule();
@@ -167,7 +167,7 @@ public class TwentyOneHourSessionBreakoutStrategy : Strategy
 		// Subscribe to timing candles and start streaming updates.
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.WhenNew(ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		// Track best bid/ask quotes to compute stop order activation prices.

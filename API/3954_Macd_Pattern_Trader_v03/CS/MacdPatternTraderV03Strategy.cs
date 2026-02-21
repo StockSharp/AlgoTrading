@@ -229,10 +229,10 @@ public class MacdPatternTraderV03Strategy : Strategy
 			Signal = 1
 		};
 
-		var emaOne = new ExponentialMovingAverage { Length = EmaOneLength };
-		var emaTwo = new ExponentialMovingAverage { Length = EmaTwoLength };
-		var sma = new SimpleMovingAverage { Length = SmaLength };
-		var emaFour = new ExponentialMovingAverage { Length = EmaFourLength };
+		var emaOne = new EMA { Length = EmaOneLength };
+		var emaTwo = new EMA { Length = EmaTwoLength };
+		var sma = new SMA { Length = SmaLength };
+		var emaFour = new EMA { Length = EmaFourLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -489,7 +489,7 @@ public class MacdPatternTraderV03Strategy : Strategy
 		if (Position == 0m)
 		return 0m;
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		if (entryPrice == 0m)
 		return 0m;
 

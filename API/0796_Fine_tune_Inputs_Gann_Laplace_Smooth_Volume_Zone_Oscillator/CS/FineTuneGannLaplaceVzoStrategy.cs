@@ -93,24 +93,24 @@ public class FineTuneGannLaplaceVzoStrategy : Strategy
 		_fastVolumeLength = Param(nameof(FastVolumeLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Volume EMA", "Fast volume EMA length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_slowVolumeLength = Param(nameof(SlowVolumeLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Volume EMA", "Slow volume EMA length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_smoothLength = Param(nameof(SmoothLength), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth Length", "EMA smoothing length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_threshold = Param(nameof(Threshold), 0m)
 			.SetDisplay("Threshold", "Signal threshold", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-10m, 10m, 1m);
 
 		_closeAll = Param(nameof(CloseAll), true)
@@ -138,13 +138,13 @@ public class FineTuneGannLaplaceVzoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastVolumeEma = new ExponentialMovingAverage { Length = FastVolumeLength };
-		_slowVolumeEma = new ExponentialMovingAverage { Length = SlowVolumeLength };
-		_smoothEma = new ExponentialMovingAverage { Length = SmoothLength };
+		_fastVolumeEma = new EMA { Length = FastVolumeLength };
+		_slowVolumeEma = new EMA { Length = SlowVolumeLength };
+		_smoothEma = new EMA { Length = SmoothLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -157,14 +157,14 @@ public class FineTuneGannLaplaceVzoStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fast = _fastVolumeEma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
-		var slow = _slowVolumeEma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var fast = _fastVolumeEma.Process(new DecimalIndicatorValue(_fastVolumeEma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
+		var slow = _slowVolumeEma.Process(new DecimalIndicatorValue(_slowVolumeEma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 		if (!_fastVolumeEma.IsFormed || !_slowVolumeEma.IsFormed)
 			return;
 
 		var vzo = slow == 0m ? 0m : (fast - slow) / slow * 100m;
-		var smooth = _smoothEma.Process(vzo, candle.ServerTime, true).ToDecimal();
+		var smooth = _smoothEma.Process(new DecimalIndicatorValue(_smoothEma, vzo, candle.ServerTime)).ToDecimal();
 
 		if (!_smoothEma.IsFormed)
 		{

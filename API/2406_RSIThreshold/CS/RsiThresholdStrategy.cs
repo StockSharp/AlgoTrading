@@ -65,17 +65,17 @@ public class RsiThresholdStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Period for RSI calculation", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 2);
 		
 		_highLevel = Param(nameof(HighLevel), 60m)
 		.SetDisplay("RSI High Level", "Overbought level", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50m, 80m, 5m);
 		
 		_lowLevel = Param(nameof(LowLevel), 40m)
 		.SetDisplay("RSI Low Level", "Oversold level", "Signal")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 50m, 5m);
 		
 		_trend = Param(nameof(Trend), TrendModes.Direct)
@@ -112,9 +112,9 @@ public class RsiThresholdStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		

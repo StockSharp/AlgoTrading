@@ -118,17 +118,17 @@ public class SimplestDeMarkerStrategy : Strategy
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("DeMarker Period", "Period for the DeMarker indicator", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 0.7m)
 		.SetDisplay("Overbought Level", "Upper threshold for DeMarker", "Indicator")
 		.SetRange(0.5m, 0.9m)
-		.SetCanOptimize(true);
+		;
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 0.3m)
 		.SetDisplay("Oversold Level", "Lower threshold for DeMarker", "Indicator")
 		.SetRange(0.1m, 0.5m)
-		.SetCanOptimize(true);
+		;
 
 		_tradeOnBarOpen = Param(nameof(TradeOnBarOpen), false)
 		.SetDisplay("Trade On Bar Open", "Place orders on the next bar open", "Trading Logic");
@@ -164,9 +164,9 @@ public class SimplestDeMarkerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		var deMarker = new DeMarker { Length = DeMarkerPeriod };

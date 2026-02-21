@@ -69,32 +69,32 @@ public class Franks4HourLimitOrdersStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 		.SetDisplay("Order Volume", "Fixed trade volume for limit orders", "Trading")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 35m)
 		.SetDisplay("Stop Loss (pips)", "Stop loss distance expressed in pips", "Risk")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150m)
 		.SetDisplay("Take Profit (pips)", "Take profit distance expressed in pips", "Risk")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 30m)
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance expressed in pips", "Risk")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_entryBufferPips = Param(nameof(EntryBufferPips), 16m)
 		.SetDisplay("Entry Buffer (pips)", "Minimum distance from current price to the pending order", "Trading")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_pipSize = Param(nameof(PipSize), 0.0001m)
 		.SetDisplay("Pip Size", "Price movement corresponding to one pip", "Trading")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for indicator calculations", "General");
@@ -196,9 +196,9 @@ public class Franks4HourLimitOrdersStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSizeValue = ResolvePipSize();
 		_pointSizeValue = ResolvePointSize();

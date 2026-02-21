@@ -119,17 +119,17 @@ public class DoubleSupertrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Moving Average indicators as SuperTrend substitute
-		var ma1 = new ExponentialMovingAverage
+		var ma1 = new EMA
 		{
 			Length = ATRPeriod1
 		};
 
-		var ma2 = new ExponentialMovingAverage
+		var ma2 = new EMA
 		{
 			Length = ATRPeriod2
 		};

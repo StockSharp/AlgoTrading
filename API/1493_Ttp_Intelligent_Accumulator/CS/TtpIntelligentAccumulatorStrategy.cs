@@ -93,19 +93,19 @@ public TtpIntelligentAccumulatorStrategy()
 _rsiPeriod = Param(nameof(RsiPeriod), 7)
 .SetGreaterThanZero()
 .SetDisplay("RSI Period", "RSI calculation length", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 14, 1);
 
 _maPeriod = Param(nameof(MaPeriod), 14)
 .SetGreaterThanZero()
 .SetDisplay("MA Period", "Period for RSI moving average", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(10, 30, 2);
 
 _stdPeriod = Param(nameof(StdPeriod), 14)
 .SetGreaterThanZero()
 .SetDisplay("Std Dev Period", "Period for RSI standard deviation", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(10, 30, 2);
 
 _addWhileInLossOnly = Param(nameof(AddWhileInLossOnly), true)
@@ -148,12 +148,12 @@ _avgEntryPrice = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-_rsiMa = new SimpleMovingAverage { Length = MaPeriod };
+_rsiMa = new SMA { Length = MaPeriod };
 _rsiStd = new StandardDeviation { Length = StdPeriod };
 
 var subscription = SubscribeCandles(CandleType);

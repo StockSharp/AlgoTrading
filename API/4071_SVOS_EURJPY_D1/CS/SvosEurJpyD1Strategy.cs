@@ -273,7 +273,7 @@ public SvosEurJpyD1Strategy()
 	.SetDisplay("Stochastic %K", "Length of the %K line", "Stochastic")
 	.SetGreaterThanZero();
 
-	_stochDPeriod = Param(nameof(StochDPeriod), 3)
+	_stochD = { Length = Param }(nameof(StochDPeriod), 3)
 	.SetDisplay("Stochastic %D", "Length of the %D line", "Stochastic")
 	.SetGreaterThanZero();
 
@@ -363,9 +363,9 @@ protected override void OnStarted(DateTimeOffset time)
 	if (_pipSize <= 0m)
 	_pipSize = 0.0001m;
 
-	_ema5 = new ExponentialMovingAverage { Length = 5 };
-	_ema20 = new ExponentialMovingAverage { Length = 20 };
-	_ema130 = new ExponentialMovingAverage { Length = 130 };
+	_ema5 = new EMA { Length = 5 };
+	_ema20 = new EMA { Length = 20 };
+	_ema130 = new EMA { Length = 130 };
 	_macd = new MovingAverageConvergenceDivergenceSignal
 	{
 		Macd =
@@ -378,7 +378,7 @@ protected override void OnStarted(DateTimeOffset time)
 _stochastic = new StochasticOscillator
 {
 	KPeriod = StochKPeriod,
-	DPeriod = StochDPeriod,
+	D = { Length = StochDPeriod },
 	Smooth = StochSlowing
 };
 _stdDev = new StandardDeviation { Length = StdDevPeriod };
@@ -798,17 +798,17 @@ private CandleSnapshot GetHistory(int offset)
 
 private static decimal Body(CandleSnapshot candle)
 {
-	return Math.Abs(candle.Close - candle.Open);
+	return Math.Abs(candle.ClosePrice - candle.OpenPrice);
 }
 
 private static decimal BodyLow(CandleSnapshot candle)
 {
-	return candle.Open < candle.Close ? candle.Open : candle.Close;
+	return candle.OpenPrice < candle.ClosePrice ? candle.OpenPrice : candle.ClosePrice;
 }
 
 private static decimal BodyHigh(CandleSnapshot candle)
 {
-	return candle.Open > candle.Close ? candle.Open : candle.Close;
+	return candle.OpenPrice > candle.ClosePrice ? candle.OpenPrice : candle.ClosePrice;
 }
 
 private decimal CalculatePipSize()
@@ -856,7 +856,7 @@ public decimal Low { get; }
 public decimal Close { get; }
 }
 
-private sealed class VerticalHorizontalFilter : LengthIndicator<decimal>
+private sealed class VerticalHorizontalFilter : DecimalLengthIndicator
 {
 	private readonly List<decimal> _closes = new();
 

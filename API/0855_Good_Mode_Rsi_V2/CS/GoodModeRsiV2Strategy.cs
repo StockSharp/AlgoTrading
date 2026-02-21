@@ -99,37 +99,37 @@ public class GoodModeRsiV2Strategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_sellLevel = Param(nameof(SellLevel), 96m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Sell Level", "RSI level to open short", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 100m, 5m);
 
 		_buyLevel = Param(nameof(BuyLevel), 4m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Buy Level", "RSI level to open long", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 40m, 5m);
 
 		_tpSellLevel = Param(nameof(TakeProfitLevelSell), 20m)
 			.SetRange(0m, 100m)
 			.SetDisplay("TP Sell Level", "RSI level to close short", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 60m, 5m);
 
 		_tpBuyLevel = Param(nameof(TakeProfitLevelBuy), 80m)
 			.SetRange(0m, 100m)
 			.SetDisplay("TP Buy Level", "RSI level to close long", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40m, 100m, 5m);
 
 		_trailingStopOffset = Param(nameof(TrailingStopOffset), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop Offset", "Offset in ticks for trailing stop", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -150,9 +150,9 @@ public class GoodModeRsiV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex
 		{

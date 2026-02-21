@@ -94,7 +94,7 @@ public class BlackScholesOptionPricingStrategy : Strategy
 		_isCall = Param(nameof(IsCall), true)
 			.SetDisplay("Is Call", "True for call option, false for put", "Black-Scholes");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -105,9 +105,9 @@ public class BlackScholesOptionPricingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 

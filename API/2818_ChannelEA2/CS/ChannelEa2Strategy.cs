@@ -90,12 +90,12 @@ public class ChannelEa2Strategy : Strategy
 	{
 		_beginHour = Param(nameof(BeginHour), 1)
 			.SetDisplay("Begin Hour", "Hour when the session resets", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 23, 1);
 
 		_endHour = Param(nameof(EndHour), 10)
 			.SetDisplay("End Hour", "Hour when breakout orders are scheduled", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 23, 1);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -137,11 +137,11 @@ public class ChannelEa2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

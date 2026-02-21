@@ -96,9 +96,9 @@ public class DotsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_dots = new DotsIndicator
 		{
@@ -149,7 +149,7 @@ public class DotsStrategy : Strategy
 		_prevColor = curr;
 	}
 
-	private class DotsIndicator : Indicator<decimal>
+	private class DotsIndicator : BaseIndicator
 	{
 		public int Length { get; set; } = 10;
 		public decimal Filter { get; set; } = 0m;

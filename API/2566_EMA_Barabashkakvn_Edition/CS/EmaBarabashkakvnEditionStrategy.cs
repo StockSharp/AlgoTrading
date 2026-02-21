@@ -119,25 +119,25 @@ public class EmaBarabashkakvnEditionStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume in lots", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 1m, 0.05m);
 
 		_virtualProfitPips = Param(nameof(VirtualProfitPips), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Virtual Profit", "Take profit distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_moveBackPips = Param(nameof(MoveBackPips), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Move Back", "Retracement after crossover in pips", "Entries")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_stopLossPips = Param(nameof(StopLossPips), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Virtual stop loss distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 2);
 
 		_pipSize = Param(nameof(PipSize), 0.0001m)
@@ -147,13 +147,13 @@ public class EmaBarabashkakvnEditionStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA length on median price", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_slowLength = Param(nameof(SlowLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA length on median price", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 40, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -184,14 +184,14 @@ public class EmaBarabashkakvnEditionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_fastEma = new ExponentialMovingAverage { Length = FastLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		_fastEma = new EMA { Length = FastLength };
+		_slowEma = new EMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -217,8 +217,8 @@ public class EmaBarabashkakvnEditionStrategy : Strategy
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
 
 		// Update EMA values using the median price.
-		var fastValue = _fastEma.Process(medianPrice, candle.OpenTime, true);
-		var slowValue = _slowEma.Process(medianPrice, candle.OpenTime, true);
+		var fastValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, medianPrice, candle.OpenTime));
+		var slowValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, medianPrice, candle.OpenTime));
 
 		if (!_fastEma.IsFormed || !_slowEma.IsFormed)
 		{

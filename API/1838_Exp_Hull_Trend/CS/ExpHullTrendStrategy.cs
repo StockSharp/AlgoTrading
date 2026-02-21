@@ -57,7 +57,7 @@ public class ExpHullTrendStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 20)
 			.SetDisplay("Hull Length", "Base period for Hull calculation", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for processing", "General");
@@ -81,9 +81,9 @@ public class ExpHullTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_wmaHalf = new WeightedMovingAverage { Length = Math.Max(1, Length / 2) };
 		_wmaFull = new WeightedMovingAverage { Length = Length };
@@ -100,7 +100,7 @@ public class ExpHullTrendStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue halfValue, IIndicatorValue fullValue)
@@ -112,7 +112,7 @@ public class ExpHullTrendStrategy : Strategy
 		var full = fullValue.ToDecimal();
 
 		var fast = 2m * half - full; // intermediate Hull value
-		var slow = _wmaFinal.Process(fast, candle.ServerTime, true).ToDecimal(); // smoothed Hull
+		var slow = _wmaFinal.Process(new DecimalIndicatorValue(_wmaFinal, fast, candle.ServerTime)).ToDecimal(); // smoothed Hull
 
 		if (!_prevFast.HasValue)
 		{

@@ -94,19 +94,19 @@ public class DcaWithHedgingStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Length of the EMA", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_dcaIntervalPercent = Param(nameof(DcaIntervalPercent), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("DCA Interval %", "Percentage move from last entry", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 5m, 0.05m);
 
 		_tpPercent = Param(nameof(TpPercent), 0.05m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Percentage gain to exit", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 5m, 0.05m);
 
 		_initialPosition = Param(nameof(InitialPosition), 1m)
@@ -138,9 +138,9 @@ public class DcaWithHedgingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ema = new() { Length = EmaLength };
 
@@ -149,7 +149,7 @@ public class DcaWithHedgingStrategy : Strategy
 			.Bind(_ema, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal ema)

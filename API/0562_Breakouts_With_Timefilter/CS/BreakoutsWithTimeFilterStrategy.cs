@@ -56,7 +56,7 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 5)
 			.SetDisplay("Length", "Lookback period for breakout levels", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -70,7 +70,7 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 
 		_maLength = Param(nameof(MaLength), 99)
 			.SetDisplay("MA Length", "Moving average period", "MA Filter")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), true)
@@ -114,17 +114,17 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 		_history.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var highest = new Highest { Length = Length };
 		var lowest = new Lowest { Length = Length };
 		var atr = new AverageTrueRange { Length = AtrLength };
-		var ma = MaType switch
+		IIndicator ma = MaType switch
 		{
-			MaTypes.Sma => new SimpleMovingAverage { Length = MaLength },
-			MaTypes.Ema => new ExponentialMovingAverage { Length = MaLength },
+			MaTypes.Sma => new SMA { Length = MaLength },
+			MaTypes.Ema => new EMA { Length = MaLength },
 			MaTypes.Wma => new WeightedMovingAverage { Length = MaLength },
 			MaTypes.Vwma => new VolumeWeightedMovingAverage { Length = MaLength },
 			_ => new HullMovingAverage { Length = MaLength }
@@ -132,7 +132,7 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(highest, lowest, atr, ma, ProcessCandle)
+			.BindEx([highest, lowest, atr, ma], ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -144,10 +144,15 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue, decimal atrValue, decimal maValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var highestValue = values[0].ToDecimal();
+		var lowestValue = values[1].ToDecimal();
+		var atrValue = values[2].ToDecimal();
+		var maValue = values[3].ToDecimal();
 
 		_history.Add(candle);
 		if (_history.Count > Math.Max(SlLength + 10, Length + 10))

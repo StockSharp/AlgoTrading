@@ -99,13 +99,13 @@ public class AllDivergencesStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Length", "Length of moving average", "MA")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 10);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Length", "RSI period", "RSI")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 21, 2);
 
 		_enableLong = Param(nameof(EnableLong), true)
@@ -127,13 +127,13 @@ public class AllDivergencesStrategy : Strategy
 		_stopPercent = Param(nameof(StopPercent), 1m)
 		.SetRange(0.1m, 10m)
 		.SetDisplay("Stop %", "Stop loss percentage", "Protection")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3m, 0.5m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 		.SetRange(0.1m, 10m)
 		.SetDisplay("Take Profit %", "Take profit percentage", "Protection")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5m, 0.5m);
 	}
 
@@ -157,11 +157,11 @@ public class AllDivergencesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaLength };
+		_ma = new SMA { Length = MaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);

@@ -47,11 +47,11 @@ public class TpSlPanelStrategy : Strategy
 	{
 		_takeProfitPrice = Param(nameof(TakeProfitPrice), 0m)
 			.SetDisplay("Take Profit Price", "Price level to take profit", "Trading")
-			.SetCanOptimize(false);
+			;
 
 		_stopLossPrice = Param(nameof(StopLossPrice), 0m)
 			.SetDisplay("Stop Loss Price", "Price level to stop loss", "Trading")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <inheritdoc />
@@ -59,15 +59,15 @@ public class TpSlPanelStrategy : Strategy
 		=> [(Security, DataType.Ticks)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		// Subscribe to trades for real-time price updates
 		SubscribeTicks().Bind(ProcessTrade).Start();
 
 		// Enable protection for position management
-		StartProtection();
+		StartProtection(null, null);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessTrade(ITickTradeMessage trade)

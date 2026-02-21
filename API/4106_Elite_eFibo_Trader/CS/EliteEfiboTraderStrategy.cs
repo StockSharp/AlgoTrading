@@ -67,19 +67,19 @@ public class EliteEfiboTraderStrategy : Strategy
 		_maSlowPeriod = Param(nameof(MaSlowPeriod), 65)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA", "Slow simple moving average period.", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 150, 5);
 
 		_maFastPeriod = Param(nameof(MaFastPeriod), 15)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA", "Fast simple moving average period.", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 5);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance in pips applied after an adverse MA crossover.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 5);
 
 		_useRsiFilter = Param(nameof(UseRsiFilter), false)
@@ -88,7 +88,7 @@ public class EliteEfiboTraderStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Period used for the RSI confirmation filter.", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 5);
 
 		_rsiHigh = Param(nameof(RsiHigh), 70m)
@@ -113,19 +113,19 @@ public class EliteEfiboTraderStrategy : Strategy
 		_levelDistancePips = Param(nameof(LevelDistancePips), 20)
 		.SetNotNegative()
 		.SetDisplay("Level Distance", "Distance between consecutive pending levels in pips.", "Execution")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 80, 5);
 
 		_stopLossPips = Param(nameof(StopLossPips), 10)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Initial stop-loss distance in pips for each level.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 80, 5);
 
 		_moneyTakeProfit = Param(nameof(MoneyTakeProfit), 2000m)
 		.SetNotNegative()
 		.SetDisplay("Money Take Profit", "Cash profit target for the active basket.", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(200m, 5000m, 200m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -361,9 +361,9 @@ public class EliteEfiboTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ConfigureLevelVolumeParams(_levelCount.Value);
 
@@ -371,8 +371,8 @@ public class EliteEfiboTraderStrategy : Strategy
 		_priceStep = Security?.PriceStep ?? 0m;
 		_stepPrice = Security?.StepPrice ?? 0m;
 
-		_slowMa = new SimpleMovingAverage { Length = MaSlowPeriod };
-		_fastMa = new SimpleMovingAverage { Length = MaFastPeriod };
+		_slowMa = new SMA { Length = MaSlowPeriod };
+		_fastMa = new SMA { Length = MaFastPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -380,7 +380,7 @@ public class EliteEfiboTraderStrategy : Strategy
 		.Bind(_slowMa, _fastMa, _rsi, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

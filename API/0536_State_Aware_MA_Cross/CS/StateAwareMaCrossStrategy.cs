@@ -200,14 +200,14 @@ public class StateAwareMaCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_baseMa = new ExponentialMovingAverage { Length = BaseMaLength };
-		_s00Short = new ExponentialMovingAverage { Length = S00ShortLength };
+		_baseMa = new EMA { Length = BaseMaLength };
+		_s00Short = new EMA { Length = S00ShortLength };
 		_s00Long = new HullMovingAverage { Length = S00LongLength };
-		_s01Short = new SimpleMovingAverage { Length = S01ShortLength };
+		_s01Short = new SMA { Length = S01ShortLength };
 		_s01Long = new SmoothedMovingAverage { Length = S01LongLength };
 		_s10Short = new SmoothedMovingAverage { Length = S10ShortLength };
 		_s10Long = new HullMovingAverage { Length = S10LongLength };

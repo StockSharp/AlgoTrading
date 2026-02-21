@@ -76,25 +76,25 @@ public class TrailingStopStepManagerStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop-loss distance", "Distance from market price to the stop in price steps.", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 2000m, 100m);
 
 		_trailingStartPoints = Param(nameof(TrailingStartPoints), 1000m)
 			.SetNotNegative()
 			.SetDisplay("Trailing activation", "Profit distance in price steps required to enable trailing.", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 3000m, 100m);
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 200m)
 			.SetNotNegative()
 			.SetDisplay("Trailing step", "Minimum improvement in price steps before moving the stop again.", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 500m, 50m);
 
 		_priceDeviationPoints = Param(nameof(PriceDeviationPoints), 10m)
 			.SetNotNegative()
 			.SetDisplay("Price deviation", "Reserved parameter preserved for compatibility with the source expert.", "Execution")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 50m, 5m);
 	}
 
@@ -119,9 +119,9 @@ public class TrailingStopStepManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("Security is not specified.");

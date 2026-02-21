@@ -51,9 +51,9 @@ public class DailyPerformanceAnalysisStrategy : Strategy
 		foreach (var s in _month) s.Reset();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		var st = new SuperTrend { Length = AtrPeriod, Multiplier = Factor };
 		var sub = SubscribeCandles(CandleType);
 		sub.BindEx(st, Process).Start();

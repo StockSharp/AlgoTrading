@@ -143,36 +143,36 @@ public class TwoPairCorrelationStrategy : Strategy
 		_maxDrawdownPercentParam = Param(nameof(MaxDrawdownPercent), 20m)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Drawdown %", "Maximum drawdown before trading is paused", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 50m, 5m);
 
 		_riskPercentParam = Param(nameof(RiskPercent), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk %", "Percentage of equity risked per trade", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5m, 0.5m);
 
 		_priceDifferenceThresholdParam = Param(nameof(PriceDifferenceThreshold), 100m)
 		.SetGreaterThanZero()
 		.SetDisplay("Price Difference", "Bid divergence required to open the pair", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 300m, 20m);
 
 		_minimumTotalProfitParam = Param(nameof(MinimumTotalProfit), 0.30m)
 		.SetGreaterThanZero()
 		.SetDisplay("Total Profit", "Profit target for closing both legs", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 2m, 0.05m);
 
 		_atrPeriodParam = Param(nameof(AtrPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "Number of candles used by the volatility filter", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_recoveryPercentParam = Param(nameof(RecoveryPercent), 95m)
 		.SetDisplay("Recovery %", "Equity recovery required to resume trading", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(80m, 100m, 5m);
 
 		_stopLossPipsParam = Param(nameof(StopLossPips), 50)
@@ -225,9 +225,9 @@ public class TwoPairCorrelationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("Primary security is not specified.");

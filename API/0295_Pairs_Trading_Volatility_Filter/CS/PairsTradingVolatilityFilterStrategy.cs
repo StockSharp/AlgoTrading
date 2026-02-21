@@ -118,22 +118,22 @@ public class PairsTradingVolatilityFilterStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetRange(5, 100)
 			.SetDisplay("Lookback Period", "Lookback period for moving averages and standard deviation", "Parameters")
-			.SetCanOptimize(true);
+			;
 			
 		_entryThreshold = Param(nameof(EntryThreshold), 2.0m)
 			.SetRange(1.0m, 5.0m)
 			.SetDisplay("Entry Threshold", "Entry threshold in standard deviations", "Parameters")
-			.SetCanOptimize(true);
+			;
 			
 		_exitThreshold = Param(nameof(ExitThreshold), 0.0m)
 			.SetRange(0.0m, 1.0m)
 			.SetDisplay("Exit Threshold", "Exit threshold in standard deviations", "Parameters")
-			.SetCanOptimize(true);
+			;
 			
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetRange(0.5m, 5.0m)
 			.SetDisplay("Stop Loss", "Stop loss percentage from entry price", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "Data");
@@ -165,9 +165,9 @@ public class PairsTradingVolatilityFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 
 		if (Security1 == null)
@@ -178,8 +178,8 @@ public class PairsTradingVolatilityFilterStrategy : Strategy
 			
 		// Initialize indicators
 		_atr = new AverageTrueRange { Length = LookbackPeriod };
-		_spreadSma = new SimpleMovingAverage { Length = LookbackPeriod };
-		_atrSma = new SimpleMovingAverage { Length = LookbackPeriod };
+		_spreadSma = new SMA { Length = LookbackPeriod };
+		_atrSma = new SMA { Length = LookbackPeriod };
 		_stdDev = new StandardDeviation { Length = LookbackPeriod };
 		
 		// Set volume ratio to normalize pair
@@ -241,7 +241,7 @@ public class PairsTradingVolatilityFilterStrategy : Strategy
 			
 		// Store ATR value for volatility filter
 		_currentAtr = atrValue;
-		var atrSmaValue = _atrSma.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var atrSmaValue = _atrSma.Process(new DecimalIndicatorValue(_atrSma, atrValue, candle.ServerTime)).ToDecimal();
 		_averageAtr = atrSmaValue;
 		
 		// Check if we have all necessary data to make a trading decision
@@ -261,8 +261,8 @@ public class PairsTradingVolatilityFilterStrategy : Strategy
 		_currentSpread = price1 - (price2 * _volumeRatio);
 		
 		// Calculate spread statistics
-		var spreadSmaValue = _spreadSma.Process(_currentSpread, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-		var stdDevValue = _stdDev.Process(_currentSpread, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var spreadSmaValue = _spreadSma.Process(new DecimalIndicatorValue(_spreadSma, _currentSpread, candle.ServerTime)).ToDecimal();
+		var stdDevValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, _currentSpread, candle.ServerTime)).ToDecimal();
 		
 		_averageSpread = spreadSmaValue;
 		_standardDeviation = stdDevValue;

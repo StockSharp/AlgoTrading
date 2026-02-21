@@ -156,19 +156,19 @@ public class LimitsRsiMomentumBotStrategy : Strategy
 		_limitOrderDistance = Param(nameof(LimitOrderDistance), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Limit Order Distance", "Distance from candle open in price steps", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_takeProfit = Param(nameof(TakeProfit), 35)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Profit target in price steps", "Protection")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 5);
 
 		_stopLoss = Param(nameof(StopLoss), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Loss limit in price steps", "Protection")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -208,9 +208,9 @@ public class LimitsRsiMomentumBotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var momentum = new Momentum { Length = MomentumPeriod };
@@ -275,7 +275,7 @@ public class LimitsRsiMomentumBotStrategy : Strategy
 
 	private bool IsTradingTime(DateTimeOffset time)
 	{
-		var t = time.LocalDateTime.TimeOfDay;
+		var t = time.TimeOfDay;
 		return t >= StartTime && t <= EndTime;
 	}
 

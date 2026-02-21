@@ -39,7 +39,7 @@ public class OptimizedHeikinAshiBuySellStrategy : Strategy
 
 	public OptimizedHeikinAshiBuySellStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for Heikin-Ashi calculation", "General");
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(new DateTime(2023, 1, 1), TimeSpan.Zero))
@@ -126,9 +126,9 @@ public class OptimizedHeikinAshiBuySellStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

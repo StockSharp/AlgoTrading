@@ -105,23 +105,23 @@ public class DojiArrowsBreakoutStrategy : Strategy
 
 		_dojiBodyThresholdSteps = Param(nameof(DojiBodyThresholdSteps), 1m)
 			.SetDisplay("Doji Body Threshold", "Maximum candle body size in steps", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_breakoutBufferSteps = Param(nameof(BreakoutBufferSteps), 0m)
 			.SetDisplay("Breakout Buffer", "Extra breakout filter in steps", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_initialStopSteps = Param(nameof(InitialStopSteps), 20m)
 			.SetDisplay("Initial Stop", "Initial protective stop distance in steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 25m)
 			.SetDisplay("Take Profit", "Take-profit distance in steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopSteps = Param(nameof(TrailingStopSteps), 10m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in steps", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -144,9 +144,9 @@ public class DojiArrowsBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 

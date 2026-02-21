@@ -84,25 +84,25 @@ public class WilliamsIchimokuStrategy : Strategy
 		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Period for Williams %R calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 			
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Tenkan-sen Period", "Period for Tenkan-sen line (Ichimoku)", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 13, 1);
 			
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Kijun-sen Period", "Period for Kijun-sen line (Ichimoku)", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 30, 2);
 			
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 			.SetGreaterThanZero()
 			.SetDisplay("Senkou Span B Period", "Period for Senkou Span B line (Ichimoku)", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 60, 4);
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -126,9 +126,9 @@ public class WilliamsIchimokuStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_williamsR = new WilliamsR

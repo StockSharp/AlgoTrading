@@ -175,9 +175,9 @@ public class FuturesPortfolioControlExpirationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		foreach (var leg in _legs)
 			InitializeLeg(leg, time);

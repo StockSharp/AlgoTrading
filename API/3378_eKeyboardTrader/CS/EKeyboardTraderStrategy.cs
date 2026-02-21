@@ -118,19 +118,19 @@ public class EKeyboardTraderStrategy : Strategy
 		_slippagePoints = Param(nameof(SlippagePoints), 0)
 			.SetNotNegative()
 			.SetDisplay("Slippage (points)", "Maximum tolerated slippage used for informational logging.", "Manual Controls")
-			.SetCanOptimize(false);
+			;
 
 		_buyRequest = Param(nameof(BuyRequest), false)
 			.SetDisplay("Buy Request", "Set to true to send a market buy order (auto reset).", "Manual Controls")
-			.SetCanOptimize(false);
+			;
 
 		_sellRequest = Param(nameof(SellRequest), false)
 			.SetDisplay("Sell Request", "Set to true to send a market sell order (auto reset).", "Manual Controls")
-			.SetCanOptimize(false);
+			;
 
 		_closeRequest = Param(nameof(CloseRequest), false)
 			.SetDisplay("Close Request", "Set to true to close the entire position (auto reset).", "Manual Controls")
-			.SetCanOptimize(false);
+			;
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -151,9 +151,9 @@ public class EKeyboardTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("Security is not specified.");

@@ -101,7 +101,7 @@ public class TcpPivotLimitStrategy : Strategy
 
 		_volume = Param(nameof(LotVolume), 1m)
 			.SetDisplay("Volume", "Order volume", "General")
-			.SetCanOptimize(true)
+			
 			.SetGreaterThanZero();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -125,9 +125,9 @@ public class TcpPivotLimitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -138,7 +138,7 @@ public class TcpPivotLimitStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var day = candle.OpenTime.UtcDateTime.Date;
+		var day = candle.OpenTime.Date;
 
 		if (_currentDay != day)
 		{

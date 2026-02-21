@@ -80,24 +80,24 @@ public class UltimateTemplateStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA Length", "Period of the fast moving average", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		
 		_slowLength = Param(nameof(SlowLength), 21)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA Length", "Period of the slow moving average", "General")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 5);
 		
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 		.SetRange(0m, 50m)
 		.SetDisplay("Stop Loss %", "Percentage stop loss", "Risk")
-		.SetCanOptimize(true);
+		;
 		
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 3m)
 		.SetRange(0m, 100m)
 		.SetDisplay("Take Profit %", "Percentage take profit", "Risk")
-		.SetCanOptimize(true);
+		;
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for analysis", "General");
@@ -119,9 +119,9 @@ public class UltimateTemplateStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var fastMa = new SMA { Length = FastLength };
 		var slowMa = new SMA { Length = SlowLength };

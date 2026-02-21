@@ -286,9 +286,9 @@ public class GlfxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_resolvedHigherType = ResolveHigherTimeFrame(CandleType, HigherTimeFrameShift);
 
@@ -297,7 +297,7 @@ public class GlfxStrategy : Strategy
 			Length = RsiPeriod
 		};
 
-		_higherMa = new SimpleMovingAverage
+		_higherMa = new SMA
 		{
 			Length = MaPeriod
 		};

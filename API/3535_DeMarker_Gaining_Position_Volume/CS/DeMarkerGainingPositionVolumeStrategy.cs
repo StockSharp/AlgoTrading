@@ -103,19 +103,19 @@ public class DeMarkerGainingPositionVolumeStrategy : Strategy
 	{
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 14)
 			.SetDisplay("DeMarker Period", "Number of bars used by the oscillator.", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_upperLevel = Param(nameof(UpperLevel), 0.7m)
 			.SetDisplay("Upper Level", "Threshold that prepares short exposure.", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_lowerLevel = Param(nameof(LowerLevel), 0.3m)
 			.SetDisplay("Lower Level", "Threshold that prepares long exposure.", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetDisplay("Trade Volume", "Order volume submitted on each signal.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_onlyOnePosition = Param(nameof(OnlyOnePosition), false)
 			.SetDisplay("Only One Position", "Prohibit holding both long and short exposure simultaneously.", "Trading");
@@ -134,9 +134,9 @@ public class DeMarkerGainingPositionVolumeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var deMarker = new DeMarker
 		{
@@ -146,7 +146,7 @@ public class DeMarkerGainingPositionVolumeStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(deMarker, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal deMarkerValue)

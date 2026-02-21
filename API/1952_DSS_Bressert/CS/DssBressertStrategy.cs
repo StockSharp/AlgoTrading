@@ -81,25 +81,25 @@ public class DssBressertStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Period", "EMA smoothing period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		
 		_stoPeriod = Param(nameof(StoPeriod), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic Period", "Stochastic calculation period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 		
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit %", "Take profit level in percent", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 		
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss %", "Stop loss level in percent", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -121,9 +121,9 @@ public class DssBressertStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var dss = new DssBressertIndicator
 		{
@@ -182,7 +182,7 @@ public class DssBressertStrategy : Strategy
 /// Double Smoothed Stochastic Bressert indicator.
 /// Calculates DSS and MIT lines.
 /// </summary>
-public class DssBressertIndicator : BaseIndicator<decimal>
+public class DssBressertIndicator : BaseIndicator
 {
 	/// <summary>
 	/// EMA smoothing period.

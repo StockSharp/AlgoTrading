@@ -61,22 +61,22 @@ public class Rubberbands3Strategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.02m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume submitted with each market order.", "General")
-			.SetCanOptimize(true);
+			;
 
 		_maxOrders = Param(nameof(MaxOrders), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Orders", "Maximum simultaneous positions per direction.", "General")
-			.SetCanOptimize(true);
+			;
 
 		_pipStep = Param(nameof(PipStep), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Pip Step", "Distance in points required to add a new trade.", "Bands")
-			.SetCanOptimize(true);
+			;
 
 		_backStep = Param(nameof(BackStep), 20)
 			.SetNotNegative()
 			.SetDisplay("Back Step", "Retracement in points that triggers an exit.", "Bands")
-			.SetCanOptimize(true);
+			;
 
 		_quiesceNow = Param(nameof(QuiesceNow), false)
 			.SetDisplay("Quiesce Now", "Pause when no positions are open.", "Control");
@@ -96,7 +96,7 @@ public class Rubberbands3Strategy : Strategy
 		_sessionTakeProfit = Param(nameof(SessionTakeProfit), 2000m)
 			.SetNotNegative()
 			.SetDisplay("Session Take-Profit", "Profit target in account currency per lot.", "Session")
-			.SetCanOptimize(true);
+			;
 
 		_useSessionStopLoss = Param(nameof(UseSessionStopLoss), true)
 			.SetDisplay("Use Session Stop-Loss", "Enable loss cap while reversing.", "Session");
@@ -104,7 +104,7 @@ public class Rubberbands3Strategy : Strategy
 		_sessionStopLoss = Param(nameof(SessionStopLoss), 4000m)
 			.SetNotNegative()
 			.SetDisplay("Session Stop-Loss", "Loss limit in account currency per lot.", "Session")
-			.SetCanOptimize(true);
+			;
 
 		_useInitialValues = Param(nameof(UseInitialValues), false)
 			.SetDisplay("Use Initial Extremes", "Reuse saved price extremes when restarting.", "Session");
@@ -291,9 +291,9 @@ public class Rubberbands3Strategy : Strategy
 		_pendingEntry = null;
 	}
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = Security?.PriceStep ?? 0m;
 		if (_pipSize <= 0m)

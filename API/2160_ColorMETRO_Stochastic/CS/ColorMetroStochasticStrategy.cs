@@ -71,27 +71,27 @@ public class ColorMetroStochasticStrategy : Strategy
 		_kPeriod = Param(nameof(KPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("K Period")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("D Period")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_slowing = Param(nameof(Slowing), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Slowing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
-			.SetDisplay("Candle Type");
+			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		var stoch = new StochasticOscillator
 		{
@@ -117,7 +117,7 @@ public class ColorMetroStochasticStrategy : Strategy
 			takeProfit: new Unit(2, UnitTypes.Percent),
 			stopLoss: new Unit(2, UnitTypes.Percent));
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)

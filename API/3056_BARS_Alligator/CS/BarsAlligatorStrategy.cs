@@ -38,9 +38,9 @@ public class BarsAlligatorStrategy : Strategy
 	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _jaw = null!;
-	private LengthIndicator<decimal> _teeth = null!;
-	private LengthIndicator<decimal> _lips = null!;
+	private DecimalLengthIndicator _jaw = null!;
+	private DecimalLengthIndicator _teeth = null!;
+	private DecimalLengthIndicator _lips = null!;
 
 	private decimal?[] _jawHistory = Array.Empty<decimal?>();
 	private decimal?[] _teethHistory = Array.Empty<decimal?>();
@@ -307,9 +307,9 @@ public class BarsAlligatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
 		{
@@ -639,12 +639,12 @@ public class BarsAlligatorStrategy : Strategy
 		return true;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SMA { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SmoothedMovingAverage { Length = length }

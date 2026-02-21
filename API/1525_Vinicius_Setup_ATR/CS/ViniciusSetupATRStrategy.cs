@@ -59,22 +59,22 @@ public class ViniciusSetupATRStrategy : Strategy
 	{
 		_atrLength = Param(nameof(AtrLength), 10)
 			.SetDisplay("ATR Length", "ATR period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_factor = Param(nameof(Factor), 6m)
 			.SetDisplay("Multiplier", "SuperTrend multiplier", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 10m, 1m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI length", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_minBodyPercent = Param(nameof(MinBodyPercent), 1m)
 			.SetDisplay("Min Body %", "Minimal body size in ATR fractions", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -88,14 +88,14 @@ public class ViniciusSetupATRStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var supertrend = new SuperTrend { Length = AtrLength, Multiplier = Factor };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var atr = new AverageTrueRange { Length = AtrLength };
-		_volumeSma = new SimpleMovingAverage { Length = 20 };
+		_volumeSma = new SMA { Length = 20 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -123,7 +123,7 @@ public class ViniciusSetupATRStrategy : Strategy
 		var rsi = rsiValue.GetValue<decimal>();
 		var atr = atrValue.GetValue<decimal>();
 
-		var volAvg = _volumeSma.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+		var volAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 		if (!_volumeSma.IsFormed)
 			return;
 

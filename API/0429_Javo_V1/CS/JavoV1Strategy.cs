@@ -70,13 +70,13 @@ public class JavoV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_fastEma = new EMA { Length = FastEmaPeriod };
+		_slowEma = new EMA { Length = SlowEmaPeriod };
 
 		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType);
@@ -122,8 +122,8 @@ public class JavoV1Strategy : Strategy
 		}
 
 		// Process EMAs with HA close using proper indicator value
-		var fastEmaValue = _fastEma.Process(haClose, candle.ServerTime, candle.State == CandleStates.Finished);
-		var slowEmaValue = _slowEma.Process(haClose, candle.ServerTime, candle.State == CandleStates.Finished);
+		var fastEmaValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, haClose, candle.ServerTime));
+		var slowEmaValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, haClose, candle.ServerTime));
 
 		if (!_fastEma.IsFormed || !_slowEma.IsFormed)
 		{

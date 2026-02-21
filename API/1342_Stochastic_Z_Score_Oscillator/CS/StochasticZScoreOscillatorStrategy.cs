@@ -96,19 +96,19 @@ public class StochasticZScoreOscillatorStrategy : Strategy
 	_rollingWindow = Param(nameof(RollingWindow), 80)
 	.SetGreaterThanZero()
 	.SetDisplay("Rolling Window", "Length of rolling window", "Parameters")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(40, 120, 20);
 
 	_zThreshold = Param(nameof(ZThreshold), 2.8m)
 	.SetGreaterThanZero()
 	.SetDisplay("Z Threshold", "Z-score threshold", "Parameters")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(1m, 4m, 0.5m);
 
 	_coolDown = Param(nameof(CoolDown), 5)
 	.SetGreaterThanZero()
 	.SetDisplay("Cool Down", "Signal cool down period", "Parameters")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(1, 10, 1);
 
 	_stochLength = Param(nameof(StochLength), 14)
@@ -139,17 +139,16 @@ public class StochasticZScoreOscillatorStrategy : Strategy
 }
 
 /// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
-	_rollingMean = new SimpleMovingAverage { Length = RollingWindow };
+	_rollingMean = new SMA { Length = RollingWindow };
 	_rollingStdDev = new StandardDeviation { Length = RollingWindow };
 	var stochastic = new StochasticOscillator
-	{
-	Length = StochLength,
+	{ K = { Length = StochLength },
 	KPeriod = StochSmooth,
-	DPeriod = 1
+	D = { Length = 1 }
 };
 
 	var subscription = SubscribeCandles(CandleType);
@@ -157,7 +156,7 @@ public class StochasticZScoreOscillatorStrategy : Strategy
 	.BindEx(stochastic, ProcessCandle)
 	.Start();
 
-	StartProtection();
+	StartProtection(null, null);
 
 	var area = CreateChartArea();
 	if (area != null)
@@ -179,8 +178,8 @@ public class StochasticZScoreOscillatorStrategy : Strategy
 	return;
 
 	var stochRescaled = (stochK / 100m) * 8m - 4m;
-	var meanValue = _rollingMean.Process(candle.ClosePrice, candle.ServerTime, true);
-	var stdValue = _rollingStdDev.Process(candle.ClosePrice, candle.ServerTime, true);
+	var meanValue = _rollingMean.Process(new DecimalIndicatorValue(_rollingMean, candle.ClosePrice, candle.ServerTime));
+	var stdValue = _rollingStdDev.Process(new DecimalIndicatorValue(_rollingStdDev, candle.ClosePrice, candle.ServerTime));
 
 	if (!IsFormedAndOnlineAndAllowTrading() || !_rollingMean.IsFormed || !_rollingStdDev.IsFormed)
 	return;

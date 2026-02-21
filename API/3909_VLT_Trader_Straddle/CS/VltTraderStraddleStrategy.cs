@@ -39,27 +39,27 @@ public class VltTraderStraddleStrategy : Strategy
 	{
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetDisplay("Order Volume", "Lot size used when placing pending orders", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_entryOffsetPoints = Param(nameof(EntryOffsetPoints), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Offset (points)", "Distance added to the previous high/low when placing the stop orders", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (points)", "Take profit distance applied to both long and short trades", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (points)", "Protective stop distance attached to each pending order", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_lookbackCandles = Param(nameof(LookbackCandles), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Candles", "Number of earlier candles used to measure historical volatility", "Volatility")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for volatility calculations", "Data");
@@ -140,9 +140,9 @@ public class VltTraderStraddleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rangeLowest = new Lowest
 		{

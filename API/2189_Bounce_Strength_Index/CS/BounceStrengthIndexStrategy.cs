@@ -93,10 +93,10 @@ public class BounceStrengthIndexStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 		
 		_bsi = new BounceStrengthIndex
 		{
@@ -149,7 +149,7 @@ public class BounceStrengthIndexStrategy : Strategy
 /// Calculates the position of the close price within the recent range
 /// and applies double smoothing to produce a momentum-like value.
 /// </summary>
-public class BounceStrengthIndex : BaseIndicator<decimal>
+public class BounceStrengthIndex : BaseIndicator
 {
 	/// <summary>
 	/// Period for highest and lowest search.

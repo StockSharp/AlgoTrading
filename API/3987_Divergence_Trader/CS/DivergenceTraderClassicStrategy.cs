@@ -71,28 +71,28 @@ public class DivergenceTraderClassicStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Volume used when opening a new position.", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_fastPeriod = Param(nameof(FastPeriod), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast SMA", "Period for the fast simple moving average.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 88)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow SMA", "Period for the slow simple moving average.", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_appliedPrice = Param(nameof(AppliedPrice), CandlePrices.Open)
 		.SetDisplay("Applied Price", "Price component forwarded into the moving averages.", "Indicators");
 
 		_buyThreshold = Param(nameof(BuyThreshold), 0.0011m)
 		.SetDisplay("Buy Threshold", "Minimal divergence needed to allow long entries.", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_stayOutThreshold = Param(nameof(StayOutThreshold), 0.0079m)
 		.SetDisplay("Stay Out Threshold", "Upper divergence bound disabling new entries.", "Signals")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
 		.SetDisplay("Take Profit (pips)", "Distance in pips used to exit winners.", "Risk");
@@ -293,19 +293,19 @@ public class DivergenceTraderClassicStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 
-		_fastSma = new SimpleMovingAverage
+		_fastSma = new SMA
 		{
 			Length = FastPeriod,
 			CandlePrice = AppliedPrice
 		};
 
-		_slowSma = new SimpleMovingAverage
+		_slowSma = new SMA
 		{
 			Length = SlowPeriod,
 			CandlePrice = AppliedPrice
@@ -565,7 +565,7 @@ public class DivergenceTraderClassicStrategy : Strategy
 
 	private bool IsWithinTradingHours(DateTimeOffset time)
 	{
-		var hour = time.LocalDateTime.Hour;
+		var hour = time.Hour;
 
 		if (StartHour == StopHour)
 			return true;

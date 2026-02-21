@@ -72,47 +72,47 @@ public class IchimokuRetracementStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average", "Trend")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average", "Trend")
-			.SetCanOptimize(true);
+			;
 
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Tenkan Period", "Tenkan-sen period used by the Ichimoku cloud", "Ichimoku")
-			.SetCanOptimize(true);
+			;
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Kijun Period", "Kijun-sen period used by the Ichimoku cloud", "Ichimoku")
-			.SetCanOptimize(true);
+			;
 
 		_spanBPeriod = Param(nameof(SpanBPeriod), 52)
 			.SetGreaterThanZero()
 			.SetDisplay("Span B Period", "Senkou Span B period used by the Ichimoku cloud", "Ichimoku")
-			.SetCanOptimize(true);
+			;
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Lookback used for the momentum retracement test", "Momentum")
-			.SetCanOptimize(true);
+			;
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Threshold", "Minimum distance from 100 for the momentum ratio", "Momentum")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -244,9 +244,9 @@ public class IchimokuRetracementStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Derive the pip size from the security definition or fall back to a default.
 		_pipSize = Security?.PriceStep ?? 0.0001m;

@@ -45,7 +45,7 @@ public class AutoTpManagerStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 25m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Distance to the take-profit target expressed in pips.", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_useStopLoss = Param(nameof(UseStopLoss), false)
 		.SetDisplay("Use Stop Loss", "Enable stop-loss placement for manual positions.", "Risk Management");
@@ -53,7 +53,7 @@ public class AutoTpManagerStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 12m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Distance to the protective stop in pips.", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), false)
 		.SetDisplay("Use Trailing Stop", "Activate stop adjustments when the trade moves into profit.", "Risk Management");
@@ -61,7 +61,7 @@ public class AutoTpManagerStrategy : Strategy
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing distance maintained once the position is profitable.", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_useEquityProtection = Param(nameof(UseEquityProtection), false)
 		.SetDisplay("Use Equity Protection", "Close all exposure when account equity drops below a threshold.", "Risk Management");
@@ -154,15 +154,15 @@ public class AutoTpManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeLevel1()
 		.Bind(ProcessLevel1)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />

@@ -84,7 +84,7 @@ public TimeOfDayDayOfWeekSigmaSpikeStrategy()
 _threshold = Param(nameof(Threshold), 2.5m)
 .SetGreaterThanZero()
 .SetDisplay("Threshold", "Sigma spike threshold", "General")
-.SetCanOptimize(true);
+;
 
 _allDays = Param(nameof(AllDays), false)
 .SetDisplay("All Days", "Ignore day filter", "General");
@@ -95,7 +95,7 @@ _dayOfWeek = Param(nameof(DayOfWeekFilter), System.DayOfWeek.Monday)
 _stdevLength = Param(nameof(StdevLength), 20)
 .SetGreaterThanZero()
 .SetDisplay("Stdev Length", "Standard deviation length", "General")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
@@ -119,14 +119,14 @@ Array.Clear(_hourCounts, 0, _hourCounts.Length);
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _stdev = new StandardDeviation { Length = StdevLength };
 
 var subscription = SubscribeCandles(CandleType);
-subscription.WhenNew(ProcessCandle).Start();
+subscription.Bind(ProcessCandle).Start();
 }
 
 private void ProcessCandle(ICandleMessage candle)

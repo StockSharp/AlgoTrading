@@ -104,33 +104,33 @@ public class AmsEsRsiStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 47)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Number of bars used in the RSI calculation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 70, 5);
 
 		_bodyAveragePeriod = Param(nameof(BodyAveragePeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Body Average", "Number of candles for the average body size", "Patterns")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 6, 1);
 
 		_longEntryRsi = Param(nameof(LongEntryRsi), 40m)
 		.SetDisplay("Long RSI", "Maximum RSI value allowed for Morning Star entries", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 50m, 5m);
 
 		_shortEntryRsi = Param(nameof(ShortEntryRsi), 60m)
 		.SetDisplay("Short RSI", "Minimum RSI value required for Evening Star entries", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50m, 80m, 5m);
 
 		_lowerExitRsi = Param(nameof(LowerExitRsi), 30m)
 		.SetDisplay("Lower Exit", "RSI level closing short positions on upward crosses", "Exits")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 40m, 5m);
 
 		_upperExitRsi = Param(nameof(UpperExitRsi), 70m)
 		.SetDisplay("Upper Exit", "RSI level closing long positions on downward crosses", "Exits")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60m, 80m, 5m);
 	}
 
@@ -150,11 +150,11 @@ public class AmsEsRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var rsi = new RelativeStrengthIndex
 		{

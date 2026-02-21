@@ -48,28 +48,28 @@ public class ExpertAmlMfiStrategy : Strategy
 		_mfiPeriod = Param(nameof(MfiPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MFI Period", "Number of bars used by the MFI oscillator", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_bodyAveragePeriod = Param(nameof(BodyAveragePeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Body Average Period", "Window for candle body size averaging", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_bullishEntryLevel = Param<decimal>(nameof(BullishEntryLevel), 40m)
 			.SetDisplay("Bullish Entry Level", "Maximum MFI value for bullish entries", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_bearishEntryLevel = Param<decimal>(nameof(BearishEntryLevel), 60m)
 			.SetDisplay("Bearish Entry Level", "Minimum MFI value for bearish entries", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_oversoldLevel = Param<decimal>(nameof(OversoldLevel), 30m)
 			.SetDisplay("Oversold Level", "Threshold used for oversold cross signals", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_overboughtLevel = Param<decimal>(nameof(OverboughtLevel), 70m)
 			.SetDisplay("Overbought Level", "Threshold used for overbought cross signals", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
@@ -136,9 +136,9 @@ public class ExpertAmlMfiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 		_bodySma.Length = BodyAveragePeriod;
@@ -155,7 +155,7 @@ public class ExpertAmlMfiStrategy : Strategy
 			.Bind(mfi, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

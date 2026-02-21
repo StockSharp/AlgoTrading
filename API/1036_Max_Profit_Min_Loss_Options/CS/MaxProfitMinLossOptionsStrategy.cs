@@ -34,8 +34,8 @@ public class MaxProfitMinLossOptionsStrategy : Strategy {
 	private readonly StrategyParam<decimal> _trailProfitPerc;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _maFast;
-	private LengthIndicator<decimal> _maSlow;
+	private DecimalLengthIndicator _maFast;
+	private DecimalLengthIndicator _maSlow;
 	private RelativeStrengthIndex _rsi;
 	private MovingAverageConvergenceDivergence _macd;
 	private SimpleMovingAverage _volumeSma;
@@ -165,13 +165,13 @@ public class MaxProfitMinLossOptionsStrategy : Strategy {
 		Param(nameof(FastLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA Length", "Fast MA period", "General")
-		.SetCanOptimize(true);
+		;
 
 	_slowLength =
 		Param(nameof(SlowLength), 21)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA Length", "Slow MA period", "General")
-		.SetCanOptimize(true);
+		;
 
 	_useEma =
 		Param(nameof(UseEma), true)
@@ -180,7 +180,7 @@ public class MaxProfitMinLossOptionsStrategy : Strategy {
 	_rsiLength = Param(nameof(RsiLength), 14)
 			 .SetGreaterThanZero()
 			 .SetDisplay("RSI Length", "RSI period", "Indicators")
-			 .SetCanOptimize(true);
+			 ;
 
 	_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 				 .SetDisplay("RSI Overbought",
@@ -259,16 +259,16 @@ public class MaxProfitMinLossOptionsStrategy : Strategy {
 	protected override void OnStarted(DateTimeOffset time) {
 	base.OnStarted(time);
 
-	_maFast = UseEma ? new ExponentialMovingAverage { Length = FastLength }
-			 : new SimpleMovingAverage { Length = FastLength };
-	_maSlow = UseEma ? new ExponentialMovingAverage { Length = SlowLength }
-			 : new SimpleMovingAverage { Length = SlowLength };
+	_maFast = UseEma ? new EMA { Length = FastLength }
+			 : new SMA { Length = FastLength };
+	_maSlow = UseEma ? new EMA { Length = SlowLength }
+			 : new SMA { Length = SlowLength };
 	_rsi = new RelativeStrengthIndex { Length = RsiLength };
-	_macd = new MovingAverageConvergenceDivergence { ShortPeriod = MacdFast,
-							 LongPeriod = MacdSlow,
+	_macd = new MovingAverageConvergenceDivergence { ShortMa = { Length = MacdFast },
+							 LongMa = { Length = MacdSlow },
 							 SignalPeriod =
 								 MacdSignal };
-	_volumeSma = new SimpleMovingAverage { Length = VolSmaLength };
+	_volumeSma = new SMA { Length = VolSmaLength };
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription.Bind(_maFast, _maSlow, _rsi, _macd, ProcessCandle).Start();

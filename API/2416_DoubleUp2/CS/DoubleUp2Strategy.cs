@@ -71,32 +71,32 @@ public DoubleUp2Strategy()
 {
 _cciPeriod = Param(nameof(CciPeriod), 8)
 .SetDisplay("CCI Period", "Averaging period for CCI", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(4, 20, 1);
 
 _macdFastPeriod = Param(nameof(MacdFastPeriod), 13)
 .SetDisplay("MACD Fast", "Fast EMA period for MACD", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 20, 1);
 
 _macdSlowPeriod = Param(nameof(MacdSlowPeriod), 33)
 .SetDisplay("MACD Slow", "Slow EMA period for MACD", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(20, 50, 1);
 
 _macdSignalPeriod = Param(nameof(MacdSignalPeriod), 2)
 .SetDisplay("MACD Signal", "Signal period for MACD", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(1, 10, 1);
 
 _threshold = Param(nameof(Threshold), 230m)
 .SetDisplay("Threshold", "CCI and MACD extreme level", "Strategy")
-.SetCanOptimize(true)
+
 .SetOptimize(50m, 300m, 10m);
 
 _baseVolume = Param(nameof(BaseVolume), 0.1m)
 .SetDisplay("Base Volume", "Initial position volume", "Strategy")
-.SetCanOptimize(true)
+
 .SetOptimize(0.1m, 1m, 0.1m);
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

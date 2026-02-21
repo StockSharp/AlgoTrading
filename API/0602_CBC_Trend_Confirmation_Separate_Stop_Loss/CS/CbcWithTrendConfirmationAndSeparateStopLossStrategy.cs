@@ -72,11 +72,11 @@ public class CbcWithTrendConfirmationAndSeparateStopLossStrategy : Strategy
 	{
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetDisplay("ATR Length", "ATR calculation period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_profitTargetMultiplier = Param(nameof(ProfitTargetMultiplier), 1m)
 			.SetDisplay("Profit Target Multiplier", "ATR multiplier for take profit", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_strongFlipsOnly = Param(nameof(StrongFlipsOnly), true)
 			.SetDisplay("Strong Flips Only", "Enable strong flips filter", "General");
@@ -112,12 +112,12 @@ public class CbcWithTrendConfirmationAndSeparateStopLossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = 10 };
-		var slowEma = new ExponentialMovingAverage { Length = 20 };
+		var fastEma = new EMA { Length = 10 };
+		var slowEma = new EMA { Length = 20 };
 		var vwap = new VolumeWeightedMovingAverage { Length = 20 };
 		var atr = new AverageTrueRange { Length = AtrLength };
 

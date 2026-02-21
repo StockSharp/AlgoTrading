@@ -174,16 +174,16 @@ public class CciMacdScalperStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = 1m;
 		ResetState();
 
 		_baseFrame = TryGetTimeFrame(CandleType, out var frame) ? frame : TimeSpan.Zero;
 
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -514,7 +514,7 @@ public class CciMacdScalperStrategy : Strategy
 
 	private bool IsWithinTradingHours(DateTimeOffset time)
 	{
-		var hour = time.LocalDateTime.Hour;
+		var hour = time.Hour;
 		return hour >= MinHour && hour <= MaxHour;
 	}
 

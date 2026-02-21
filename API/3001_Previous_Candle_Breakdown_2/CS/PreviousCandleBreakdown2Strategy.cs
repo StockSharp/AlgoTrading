@@ -301,9 +301,9 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -604,11 +604,11 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 	{
 		return MaMethod switch
 		{
-			MaMethods.Simple => new SimpleMovingAverage { Length = period },
-			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MaMethods.Simple => new SMA { Length = period },
+			MaMethods.Exponential => new EMA { Length = period },
 			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			MaMethods.Weighted => new WeightedMovingAverage { Length = period },
-			_ => new SimpleMovingAverage { Length = period }
+			_ => new SMA { Length = period }
 		};
 	}
 

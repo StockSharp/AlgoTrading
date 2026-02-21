@@ -48,8 +48,8 @@ public class XcciHistogramVolStrategy : Strategy
 	private readonly StrategyParam<int> _colorExtremeNegative;
 
 	private CommodityChannelIndex _cci;
-	private LengthIndicator<decimal> _cciVolumeAverage;
-	private LengthIndicator<decimal> _volumeAverage;
+	private DecimalLengthIndicator _cciVolumeAverage;
+	private DecimalLengthIndicator _volumeAverage;
 	private readonly List<int> _colorHistory = new();
 	private bool _primaryLongActive;
 	private bool _secondaryLongActive;
@@ -64,32 +64,32 @@ public class XcciHistogramVolStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 		.SetDisplay("CCI Period", "Length of the Commodity Channel Index", "Indicator")
 		.SetRange(5, 200)
-		.SetCanOptimize(true);
+		;
 
 		_maLength = Param(nameof(MaLength), 12)
 		.SetDisplay("Smoothing Length", "Length for smoothing the volume weighted CCI", "Indicator")
 		.SetRange(1, 200)
-		.SetCanOptimize(true);
+		;
 
 		_highLevel2 = Param(nameof(HighLevel2), 100m)
 		.SetDisplay("High Level 2", "Upper extreme multiplier applied to smoothed volume", "Thresholds")
 		.SetRange(0m, 500m)
-		.SetCanOptimize(true);
+		;
 
 		_highLevel1 = Param(nameof(HighLevel1), 80m)
 		.SetDisplay("High Level 1", "Upper warning multiplier applied to smoothed volume", "Thresholds")
 		.SetRange(0m, 500m)
-		.SetCanOptimize(true);
+		;
 
 		_lowLevel1 = Param(nameof(LowLevel1), -80m)
 		.SetDisplay("Low Level 1", "Lower warning multiplier applied to smoothed volume", "Thresholds")
 		.SetRange(-500m, 0m)
-		.SetCanOptimize(true);
+		;
 
 		_lowLevel2 = Param(nameof(LowLevel2), -100m)
 		.SetDisplay("Low Level 2", "Lower extreme multiplier applied to smoothed volume", "Thresholds")
 		.SetRange(-500m, 0m)
-		.SetCanOptimize(true);
+		;
 
 		_signalBarOffset = Param(nameof(SignalBarOffset), 1)
 		.SetDisplay("Signal Offset", "Number of closed candles to wait before acting", "Trading")
@@ -389,9 +389,9 @@ public class XcciHistogramVolStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_cciVolumeAverage = CreateMovingAverage(Smoothing, MaLength);
@@ -458,8 +458,8 @@ public class XcciHistogramVolStrategy : Strategy
 		var volume = candle.TotalVolume;
 		var cciVolume = cciValue * volume;
 
-		var cciVolumeValue = _cciVolumeAverage.Process(cciVolume, candle.OpenTime, true);
-		var volumeValue = _volumeAverage.Process(volume, candle.OpenTime, true);
+		var cciVolumeValue = _cciVolumeAverage.Process(new DecimalIndicatorValue(_cciVolumeAverage, cciVolume, candle.OpenTime));
+		var volumeValue = _volumeAverage.Process(new DecimalIndicatorValue(_volumeAverage, volume, candle.OpenTime));
 
 		if (cciVolumeValue is not DecimalIndicatorValue { IsFinal: true, Value: var smoothedCciVolume } ||
 		volumeValue is not DecimalIndicatorValue { IsFinal: true, Value: var smoothedVolume })
@@ -616,16 +616,16 @@ public class XcciHistogramVolStrategy : Strategy
 		return volume;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(SmoothingMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(SmoothingMethods method, int length)
 	{
-		LengthIndicator<decimal> indicator = method switch
+		DecimalLengthIndicator indicator = method switch
 		{
-			SmoothingMethods.Exponential => new ExponentialMovingAverage(),
+			SmoothingMethods.Exponential => new EMA(),
 			SmoothingMethods.Smoothed => new SmoothedMovingAverage(),
 			SmoothingMethods.Weighted => new WeightedMovingAverage(),
 			SmoothingMethods.Hull => new HullMovingAverage(),
 			SmoothingMethods.VolumeWeighted => new VolumeWeightedMovingAverage(),
-			_ => new SimpleMovingAverage(),
+			_ => new SMA(),
 		};
 
 		indicator.Length = length;

@@ -143,7 +143,7 @@ public class LazyBotV1Strategy : Strategy
 	/// </summary>
 	public LazyBotV1Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used to detect the daily range", "General");
 
 		_botName = Param(nameof(BotName), "LazyBot_V1")
@@ -165,12 +165,12 @@ public class LazyBotV1Strategy : Strategy
 
 		_startHour = Param(nameof(StartHour), 7)
 		.SetDisplay("Start Hour", "Hour when pending orders can be placed", "Timing")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 23, 1);
 
 		_endHour = Param(nameof(EndHour), 22)
 		.SetDisplay("End Hour", "Hour when pending orders are no longer created", "Timing")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 23, 1);
 
 		_useRiskPercent = Param(nameof(UseRiskPercent), false)
@@ -207,9 +207,9 @@ public class LazyBotV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 

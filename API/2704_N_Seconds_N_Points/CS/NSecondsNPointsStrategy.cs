@@ -36,11 +36,11 @@ public class NSecondsNPointsStrategy : Strategy
 	{
 		_waitSeconds = Param(nameof(WaitSeconds), 40)
 			.SetDisplay("Wait Seconds", "Number of seconds before managing the position", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 15)
 			.SetDisplay("Take Profit (pips)", "Profit distance in pips before closing or protecting", "Risk Management")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -80,9 +80,9 @@ public class NSecondsNPointsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 

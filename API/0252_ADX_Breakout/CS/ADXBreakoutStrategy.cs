@@ -83,19 +83,19 @@ public class ADXBreakoutStrategy : Strategy
 		_adxPeriod = Param(nameof(ADXPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 		
 		_avgPeriod = Param(nameof(AvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Average Period", "Period for ADX average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 		
 		_multiplier = Param(nameof(Multiplier), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0m, 1.0m, 0.1m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -104,7 +104,7 @@ public class ADXBreakoutStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 	}
 	
@@ -123,14 +123,14 @@ public class ADXBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		
 		// Create indicators
 		_adx = new AverageDirectionalIndex { Length = ADXPeriod };
-		_adxAverage = new SimpleMovingAverage { Length = AvgPeriod };
+		_adxAverage = new SMA { Length = AvgPeriod };
 		
 		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
@@ -171,7 +171,7 @@ public class ADXBreakoutStrategy : Strategy
 		}
 
 		// Process ADX through average indicator
-		var adxAvgValue = _adxAverage.Process(currentAdx, candle.ServerTime, candle.State == CandleStates.Finished);
+		var adxAvgValue = _adxAverage.Process(new DecimalIndicatorValue(_adxAverage, currentAdx, candle.ServerTime));
 		var currentAdxAvg = adxAvgValue.ToDecimal();
 		
 		// For first values, just save and skip

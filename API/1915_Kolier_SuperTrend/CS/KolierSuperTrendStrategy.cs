@@ -61,12 +61,12 @@ public class KolierSuperTrendStrategy : Strategy
 	{
 		_period = Param(nameof(Period), 10)
 			.SetDisplay("ATR Period", "ATR period for SuperTrend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_multiplier = Param(nameof(Multiplier), 3.0m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for SuperTrend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2.0m, 4.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -88,9 +88,9 @@ public class KolierSuperTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = Period };
 

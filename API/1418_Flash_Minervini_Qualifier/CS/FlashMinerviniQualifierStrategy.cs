@@ -85,15 +85,15 @@ _prevTrail1 = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _rsi = new RelativeStrengthIndex { Length = MomRsiLength };
-_emaTrail = new ExponentialMovingAverage { Length = EmaLength };
-_ema50 = new ExponentialMovingAverage { Length = 50 };
-_ema150 = new ExponentialMovingAverage { Length = 150 };
-_ema200 = new ExponentialMovingAverage { Length = 200 };
+_emaTrail = new EMA { Length = EmaLength };
+_ema50 = new EMA { Length = 50 };
+_ema150 = new EMA { Length = 150 };
+_ema200 = new EMA { Length = 200 };
 _superTrend = new SuperTrend { Length = SuperTrendPeriod, Multiplier = SuperTrendMultiplier };
 
 var subscription = SubscribeCandles(CandleType);
@@ -101,7 +101,7 @@ subscription
 .BindEx(_superTrend, _emaTrail, _ema50, _ema150, _ema200, ProcessCandle)
 .Start();
 
-StartProtection();
+StartProtection(null, null);
 }
 
 private void ProcessCandle(ICandleMessage candle, IIndicatorValue stVal, IIndicatorValue emaVal, IIndicatorValue ema50Val, IIndicatorValue ema150Val, IIndicatorValue ema200Val)

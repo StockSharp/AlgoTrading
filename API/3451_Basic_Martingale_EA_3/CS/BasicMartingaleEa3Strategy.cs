@@ -354,7 +354,7 @@ public class BasicMartingaleEa3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_tema = new TripleExponentialMovingAverage { Length = TemaPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
@@ -362,8 +362,8 @@ public class BasicMartingaleEa3Strategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_tema, _atr, ProcessCandle).Start();
 
-		StartProtection();
-		base.OnStarted(time);
+		StartProtection(null, null);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal temaValue, decimal atrValue)

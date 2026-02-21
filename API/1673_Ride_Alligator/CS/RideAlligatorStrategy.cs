@@ -25,9 +25,9 @@ public class RideAlligatorStrategy : Strategy
 	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _jaw;
-	private LengthIndicator<decimal> _teeth;
-	private LengthIndicator<decimal> _lips;
+	private DecimalLengthIndicator _jaw;
+	private DecimalLengthIndicator _teeth;
+	private DecimalLengthIndicator _lips;
 
 	private decimal? _prevJaw;
 	private decimal? _prevLips;
@@ -91,9 +91,9 @@ public class RideAlligatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var phi = 1.61803398874989m;
 		var a1 = (int)Math.Round(AlligatorPeriod * phi);
@@ -154,12 +154,12 @@ public class RideAlligatorStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MovingAverageTypes type, int length)
+	private static DecimalLengthIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SMA { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type), type, null),

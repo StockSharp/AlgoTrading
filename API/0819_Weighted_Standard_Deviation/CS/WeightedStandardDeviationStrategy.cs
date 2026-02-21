@@ -61,13 +61,13 @@ public class WeightedStandardDeviationStrategy : Strategy
 		_length = Param(nameof(Length), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Number of samples", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Std Mult", "Standard deviation multiplier", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -88,9 +88,9 @@ public class WeightedStandardDeviationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -98,7 +98,7 @@ public class WeightedStandardDeviationStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

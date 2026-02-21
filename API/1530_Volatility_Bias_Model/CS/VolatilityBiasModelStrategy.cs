@@ -142,11 +142,11 @@ public class VolatilityBiasModelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_biasSma = new SimpleMovingAverage { Length = BiasWindow };
+		_biasSma = new SMA { Length = BiasWindow };
 		_highest = new Highest { Length = BiasWindow };
 		_lowest = new Lowest { Length = BiasWindow };
 		_atr = new AverageTrueRange { Length = AtrLength };
@@ -167,7 +167,7 @@ public class VolatilityBiasModelStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var upRatio = _biasSma.Process(candle.ClosePrice > candle.OpenPrice ? 1m : 0m, candle.OpenTime, true).ToDecimal();
+		var upRatio = _biasSma.Process(new DecimalIndicatorValue(_biasSma, candle.ClosePrice > candle.OpenPrice ? 1m : 0m, candle.OpenTime)).ToDecimal();
 		var rangePerc = lowest == 0m ? 0m : (highest - lowest) / lowest;
 
 		if (Position == 0)

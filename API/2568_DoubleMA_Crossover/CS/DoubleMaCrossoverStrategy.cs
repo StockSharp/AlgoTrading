@@ -169,69 +169,69 @@ public class DoubleMaCrossoverStrategy : Strategy
 	{
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 2)
 		.SetDisplay("Fast MA Period", "Period for the fast moving average.", "General")
-		.SetCanOptimize(true);
+		;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 5)
 		.SetDisplay("Slow MA Period", "Period for the slow moving average.", "General")
-		.SetCanOptimize(true);
+		;
 
 		_breakoutPips = Param(nameof(BreakoutPips), 45)
 		.SetDisplay("Breakout Pips", "Distance in price steps added before submitting an entry.", "General")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 25)
 		.SetDisplay("Stop Loss Pips", "Protective stop expressed in price steps.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0)
 		.SetDisplay("Take Profit Pips", "Take profit distance expressed in price steps.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), false)
 		.SetDisplay("Use Trailing", "Enable trailing stop management.", "Risk");
 
 		_trailingMode = Param(nameof(TrailingMode), TrailingTypes.Type3)
 		.SetDisplay("Trailing Type", "Trailing stop behaviour.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40)
 		.SetDisplay("Trailing Stop Pips", "Trailing distance used by type 2 trailing.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_level1TriggerPips = Param(nameof(Level1TriggerPips), 20)
 		.SetDisplay("Level 1 Trigger", "Profit in price steps required before the first trailing adjustment.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_level1OffsetPips = Param(nameof(Level1OffsetPips), 20)
 		.SetDisplay("Level 1 Offset", "Offset in price steps applied after the first trigger.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_level2TriggerPips = Param(nameof(Level2TriggerPips), 30)
 		.SetDisplay("Level 2 Trigger", "Profit in price steps required before the second trailing adjustment.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_level2OffsetPips = Param(nameof(Level2OffsetPips), 20)
 		.SetDisplay("Level 2 Offset", "Offset in price steps applied after the second trigger.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_level3TriggerPips = Param(nameof(Level3TriggerPips), 50)
 		.SetDisplay("Level 3 Trigger", "Profit in price steps required before the third trailing adjustment.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_level3OffsetPips = Param(nameof(Level3OffsetPips), 20)
 		.SetDisplay("Level 3 Offset", "Offset in price steps applied after the third trigger.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_useTimeLimit = Param(nameof(UseTimeLimit), true)
 		.SetDisplay("Use Time Limit", "Restrict the creation of new orders to a trading window.", "Schedule");
 
 		_startHour = Param(nameof(StartHour), 11)
 		.SetDisplay("Start Hour", "Hour when new setups become valid.", "Schedule")
-		.SetCanOptimize(true);
+		;
 
 		_stopHour = Param(nameof(StopHour), 16)
 		.SetDisplay("Stop Hour", "Hour after which no new setups are created.", "Schedule")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles used for analysis.", "General");
@@ -239,7 +239,7 @@ public class DoubleMaCrossoverStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 		.SetDisplay("Volume", "Order volume in lots.", "Trading")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -248,14 +248,14 @@ public class DoubleMaCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Reset internal buffers before processing market data.
 		ResetState();
 		Volume = TradeVolume;
-		StartProtection();
+		StartProtection(null, null);
 
 		var fastMa = new SMA { Length = FastMaPeriod };
 		var slowMa = new SMA { Length = SlowMaPeriod };
@@ -534,13 +534,13 @@ public class DoubleMaCrossoverStrategy : Strategy
 		// Simulate broker-side stop loss and take profit execution.
 		if (Position > 0)
 		{
-			if (_currentTakeProfit.HasValue && candle.High >= _currentTakeProfit.Value)
+			if (_currentTakeProfit.HasValue && candle.HighPrice >= _currentTakeProfit.Value)
 			{
 				ExitLong();
 				return true;
 			}
 
-			if (_currentStop.HasValue && candle.Low <= _currentStop.Value)
+			if (_currentStop.HasValue && candle.LowPrice <= _currentStop.Value)
 			{
 				ExitLong();
 				return true;
@@ -548,13 +548,13 @@ public class DoubleMaCrossoverStrategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			if (_currentTakeProfit.HasValue && candle.Low <= _currentTakeProfit.Value)
+			if (_currentTakeProfit.HasValue && candle.LowPrice <= _currentTakeProfit.Value)
 			{
 				ExitShort();
 				return true;
 			}
 
-			if (_currentStop.HasValue && candle.High >= _currentStop.Value)
+			if (_currentStop.HasValue && candle.HighPrice >= _currentStop.Value)
 			{
 				ExitShort();
 				return true;
@@ -581,14 +581,14 @@ public class DoubleMaCrossoverStrategy : Strategy
 			return;
 		}
 
-		if (_pendingBuyPrice is decimal buyPrice && candle.High >= buyPrice)
+		if (_pendingBuyPrice is decimal buyPrice && candle.HighPrice >= buyPrice)
 		{
 			// Breakout confirmed on the long side.
 			EnterLong(buyPrice);
 			_pendingBuyPrice = null;
 			_pendingSellPrice = null;
 		}
-		else if (_pendingSellPrice is decimal sellPrice && candle.Low <= sellPrice)
+		else if (_pendingSellPrice is decimal sellPrice && candle.LowPrice <= sellPrice)
 		{
 			// Breakout confirmed on the short side.
 			EnterShort(sellPrice);
@@ -654,7 +654,7 @@ public class DoubleMaCrossoverStrategy : Strategy
 			return true;
 		}
 
-		var hour = time.LocalDateTime.Hour;
+		var hour = time.Hour;
 
 		if (StartHour <= StopHour)
 		{

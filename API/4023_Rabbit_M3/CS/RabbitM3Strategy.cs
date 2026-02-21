@@ -82,19 +82,19 @@ public class RabbitM3Strategy : Strategy
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 33)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA Period", "Length of the fast trend filter (H1 EMA)", "Trend Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 80, 5);
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 70)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA Period", "Length of the slow trend filter (H1 EMA)", "Trend Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 120, 5);
 
 		_williamsPeriod = Param(nameof(WilliamsPeriod), 62)
 		.SetGreaterThanZero()
 		.SetDisplay("Williams %R Period", "Lookback for Williams %R momentum", "Entry Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 5);
 
 		_williamsSellLevel = Param(nameof(WilliamsSellLevel), -20m)
@@ -106,7 +106,7 @@ public class RabbitM3Strategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI Period", "Commodity Channel Index period", "Entry Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 
 		_cciSellLevel = Param(nameof(CciSellLevel), 101m)
@@ -118,7 +118,7 @@ public class RabbitM3Strategy : Strategy
 		_donchianLength = Param(nameof(DonchianLength), 410)
 		.SetGreaterThanZero()
 		.SetDisplay("Donchian Length", "History depth used for stop-and-reverse exits", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100, 600, 50);
 
 		_maxOpenPositions = Param(nameof(MaxOpenPositions), 1)
@@ -326,16 +326,16 @@ public class RabbitM3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastEma = new ExponentialMovingAverage
+		_fastEma = new EMA
 		{
 			Length = FastEmaPeriod,
 		};
 
-		_slowEma = new ExponentialMovingAverage
+		_slowEma = new EMA
 		{
 			Length = SlowEmaPeriod,
 		};
@@ -372,7 +372,7 @@ public class RabbitM3Strategy : Strategy
 		subscription.BindEx(_donchian, UpdateDonchian);
 		subscription.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue, decimal cciValue, decimal williamsValue)

@@ -144,9 +144,9 @@ public class SignalCountWithArrayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var combinations = GapCount;
 
@@ -219,12 +219,12 @@ public class SignalCountWithArrayStrategy : Strategy
 
 			// Build the virtual signal value for the upper band.
 			var upperValue = hasUpperSignal
-				? candle.High + offset
+				? candle.HighPrice + offset
 				: PositiveEmptyValue;
 
 			// Build the virtual signal value for the lower band.
 			var lowerValue = hasLowerSignal
-				? candle.Low - offset
+				? candle.LowPrice - offset
 				: NegativeEmptyValue;
 
 			UpdateCounters(index, 0, upperValue, PositiveEmptyValue);

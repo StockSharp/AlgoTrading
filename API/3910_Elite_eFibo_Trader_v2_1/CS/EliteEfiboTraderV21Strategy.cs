@@ -144,16 +144,16 @@ public class EliteEfiboTraderV21Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_allowTrading = true;
 		_priceStep = Security?.PriceStep ?? 0m;
 		_stepPrice = Security?.StepPrice ?? 0m;
 		_pipSize = CalculatePipSize();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var trades = SubscribeTicks();
 		trades.Bind(ProcessTrade).Start();

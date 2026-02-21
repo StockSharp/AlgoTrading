@@ -67,72 +67,72 @@ public class MacdRsiEmaBbAtrDayTradingStrategy : Strategy
 	{
 		_macdFast = Param(nameof(MacdFast), 12)
 		.SetDisplay("MACD Fast", "MACD fast period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		
 		_macdSlow = Param(nameof(MacdSlow), 26)
 		.SetDisplay("MACD Slow", "MACD slow period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 50, 1);
 		
 		_macdSignal = Param(nameof(MacdSignal), 9)
 		.SetDisplay("MACD Signal", "MACD signal period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 		
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetDisplay("RSI Length", "Length of RSI", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 		
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
 		.SetDisplay("RSI Overbought", "Overbought level", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60, 80, 5);
 		
 		_rsiOversold = Param(nameof(RsiOversold), 30)
 		.SetDisplay("RSI Oversold", "Oversold level", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 5);
 		
 		_emaFast = Param(nameof(EmaFast), 9)
 		.SetDisplay("Fast EMA", "Fast EMA length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		
 		_emaSlow = Param(nameof(EmaSlow), 21)
 		.SetDisplay("Slow EMA", "Slow EMA length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 1);
 		
 		_atrLength = Param(nameof(AtrLength), 14)
 		.SetDisplay("ATR Length", "ATR length", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 		
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 		.SetDisplay("ATR Multiplier", "Stop-loss ATR multiplier", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 		
 		_trailAtrMultiplier = Param(nameof(TrailAtrMultiplier), 1.5m)
 		.SetDisplay("Trail ATR Mult", "Trailing ATR multiplier", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3m, 0.5m);
 		
 		_bbLength = Param(nameof(BbLength), 20)
 		.SetDisplay("BB Length", "Bollinger Bands length", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 1);
 		
 		_bbMultiplier = Param(nameof(BbMultiplier), 2m)
 		.SetDisplay("BB Mult", "Bollinger Bands multiplier", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 		
 		_riskReward = Param(nameof(RiskReward), 2m)
 		.SetDisplay("Risk Reward", "Take profit multiplier", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -173,8 +173,8 @@ public class MacdRsiEmaBbAtrDayTradingStrategy : Strategy
 			Signal = MacdSignal
 		};
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_emaFastInd = new ExponentialMovingAverage { Length = EmaFast };
-		_emaSlowInd = new ExponentialMovingAverage { Length = EmaSlow };
+		_emaFastInd = new EMA { Length = EmaFast };
+		_emaSlowInd = new EMA { Length = EmaSlow };
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_bb = new BollingerBands { Length = BbLength, Width = BbMultiplier };
 		

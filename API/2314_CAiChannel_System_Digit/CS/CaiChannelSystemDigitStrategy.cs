@@ -37,9 +37,9 @@ _candle = Param(nameof(CandleType), TimeSpan.FromHours(12).TimeFrame());
 
 public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 var bb = new BollingerBands { Length = Length, Width = Width };
 var sub = SubscribeCandles(CandleType);
 sub.Bind(bb, Process).Start();

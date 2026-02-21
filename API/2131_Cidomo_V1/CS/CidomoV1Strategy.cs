@@ -126,7 +126,7 @@ public class CidomoV1Strategy : Strategy
 		_lookback = Param(nameof(Lookback), 32)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Number of candles to look back", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 10);
 
 		_delta = Param(nameof(Delta), 0m)
@@ -171,9 +171,9 @@ public class CidomoV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = Lookback };
 		_lowest = new Lowest { Length = Lookback };
@@ -192,7 +192,7 @@ public class CidomoV1Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)

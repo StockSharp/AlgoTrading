@@ -96,7 +96,7 @@ public class BigBarSoundStrategy : Strategy
 		_barPoint = Param(nameof(BarPoint), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Point Threshold", "Number of price steps required to trigger the alert", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 500, 50);
 
 		_differenceMode = Param(nameof(DifferenceMode), BigBarDifferenceModes.HighLow)
@@ -126,9 +126,9 @@ public class BigBarSoundStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to candle updates for the configured timeframe.
 		var subscription = SubscribeCandles(CandleType);

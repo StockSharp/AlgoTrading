@@ -42,42 +42,42 @@ public class JBStrategy : Strategy
 		_smaPeriod = Param(nameof(SmaPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Length of the smoothing moving average", "Trend Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
 		_forcePeriod = Param(nameof(ForcePeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Force Index Period", "Length of the Force Index indicator", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(13, 150, 13);
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Number of candles used by Bollinger Bands", "Volatility")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Volatility")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Initial order volume before multipliers", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1.0m, 0.1m);
 
 		_lossMultiplier = Param(nameof(LossMultiplier), 1.55m)
 			.SetGreaterThanZero()
 			.SetDisplay("Loss Multiplier", "Multiplier applied to volume after a losing cycle", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.1m, 2.0m, 0.1m);
 
 		_averageProfitTarget = Param(nameof(AverageProfitTarget), 2.8m)
 			.SetDisplay("Average Profit Target", "Average unrealized profit per contract required to close all positions", "Exits")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -173,14 +173,14 @@ public class JBStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_currentVolume = BaseVolume;
 	_lastRealizedPnL = PnLManager?.RealizedPnL ?? 0m;
 
-	var sma = new SimpleMovingAverage
+	var sma = new SMA
 	{
 	Length = SmaPeriod
 	};

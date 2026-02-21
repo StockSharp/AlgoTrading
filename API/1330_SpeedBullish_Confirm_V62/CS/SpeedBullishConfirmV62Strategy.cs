@@ -130,25 +130,25 @@ public class SpeedBullishConfirmV62Strategy : Strategy
 		_macdFast = Param(nameof(MacdFast), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast Length", "Fast EMA period", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 20, 2);
 
 		_macdSlow = Param(nameof(MacdSlow), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow Length", "Slow EMA period", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(14, 34, 2);
 
 		_macdSignal = Param(nameof(MacdSignal), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal Length", "Signal line period", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 12, 1);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "RSI")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_rsiEntryLevel = Param(nameof(RsiEntryLevel), 50m)
@@ -158,19 +158,19 @@ public class SpeedBullishConfirmV62Strategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit Points", "Take profit distance in ticks", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 100m, 10m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss Points", "Stop loss distance in ticks", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 60m, 10m);
 
 		_trailingDistancePoints = Param(nameof(TrailingDistancePoints), 300m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Distance Points", "Trailing stop distance in ticks", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 500m, 50m);
 
 		_useAtrConfirmation = Param(nameof(UseAtrConfirmation), true)
@@ -179,13 +179,13 @@ public class SpeedBullishConfirmV62Strategy : Strategy
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR SMA", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_useVolumeConfirmation = Param(nameof(UseVolumeConfirmation), true)
@@ -194,13 +194,13 @@ public class SpeedBullishConfirmV62Strategy : Strategy
 		_volumeLength = Param(nameof(VolumeLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume SMA Length", "Volume moving average period", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_volumeThresholdMultiplier = Param(nameof(VolumeThresholdMultiplier), 1.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Multiplier", "Multiplier for volume threshold", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.25m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -226,8 +226,8 @@ public class SpeedBullishConfirmV62Strategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_ema10 = new ExponentialMovingAverage { Length = 10 };
-		_ema15 = new ExponentialMovingAverage { Length = 15 };
+		_ema10 = new EMA { Length = 10 };
+		_ema15 = new EMA { Length = 15 };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
@@ -239,8 +239,8 @@ public class SpeedBullishConfirmV62Strategy : Strategy
 		};
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
-		_atrSma = new SimpleMovingAverage { Length = AtrLength };
-		_volumeSma = new SimpleMovingAverage { Length = VolumeLength };
+		_atrSma = new SMA { Length = AtrLength };
+		_volumeSma = new SMA { Length = VolumeLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

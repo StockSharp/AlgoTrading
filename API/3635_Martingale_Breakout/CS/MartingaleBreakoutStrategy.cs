@@ -114,41 +114,41 @@ public class MartingaleBreakoutStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
 		.SetRange(5, 500)
 		.SetDisplay("Take-profit points", "Distance between entry and take-profit in price steps.", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_balancePercentAvailable = Param(nameof(BalancePercentAvailable), 50m)
 		.SetRange(1m, 100m)
 		.SetDisplay("Balance usage", "Maximum balance percentage allowed for margin.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPercentOfBalance = Param(nameof(TakeProfitPercentOfBalance), 0.1m)
 		.SetRange(0.01m, 5m)
 		.SetDisplay("Balance take-profit", "Target profit as a percentage of balance.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPercentOfBalance = Param(nameof(StopLossPercentOfBalance), 10m)
 		.SetRange(0.5m, 50m)
 		.SetDisplay("Balance stop-loss", "Maximum loss as a percentage of balance.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_recoveryStartFraction = Param(nameof(RecoveryStartFraction), 0.1m)
 		.SetRange(0.01m, 1m)
 		.SetDisplay("Recovery fraction", "Fraction of the stop-loss used before activating recovery mode.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_recoveryPointsMultiplier = Param(nameof(RecoveryPointsMultiplier), 1m)
 		.SetRange(0.5m, 5m)
 		.SetDisplay("Recovery distance", "Multiplier applied to the take-profit distance while recovering.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle type", "Data source used for breakout detection.", "Data");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 

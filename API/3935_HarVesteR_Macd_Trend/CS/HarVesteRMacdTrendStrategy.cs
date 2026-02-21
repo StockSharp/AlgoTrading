@@ -167,55 +167,55 @@ public HarVesteRMacdTrendStrategy()
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Short-period EMA used in MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 1);
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Long-period EMA used in MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal EMA", "Signal smoothing period for MACD", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 12, 1);
 
 		_confirmationBars = Param(nameof(ConfirmationBars), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Confirmation Bars", "Maximum bars allowed between opposite MACD signs", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_trendSmaLength = Param(nameof(TrendSmaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend SMA", "Shorter SMA guiding trade management", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 5);
 
 		_filterSmaLength = Param(nameof(FilterSmaLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Filter SMA", "Longer SMA confirming the main trend", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60, 140, 5);
 
 		_offsetPoints = Param(nameof(OffsetPoints), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Offset (points)", "Price offset applied in comparisons", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_stopLossBars = Param(nameof(StopLossBars), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Bars", "Number of bars to evaluate stop extremes", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 12, 1);
 
 		_profitMultiplier = Param(nameof(ProfitMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Multiplier", "Multiplier for projecting the staged target", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_useAdxFilter = Param(nameof(UseAdxFilter), false)
@@ -224,7 +224,7 @@ public HarVesteRMacdTrendStrategy()
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "ADX lookback when the filter is active", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -261,13 +261,13 @@ public HarVesteRMacdTrendStrategy()
 
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = FastEmaPeriod,
-			LongPeriod = SlowEmaPeriod,
+			ShortMa = { Length = FastEmaPeriod },
+			LongMa = { Length = SlowEmaPeriod },
 			SignalPeriod = SignalPeriod
 		};
 
-		_trendSma = new SimpleMovingAverage { Length = TrendSmaLength };
-		_filterSma = new SimpleMovingAverage { Length = FilterSmaLength };
+		_trendSma = new SMA { Length = TrendSmaLength };
+		_filterSma = new SMA { Length = FilterSmaLength };
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		_lowest = new Lowest { Length = StopLossBars };
 		_highest = new Highest { Length = StopLossBars };

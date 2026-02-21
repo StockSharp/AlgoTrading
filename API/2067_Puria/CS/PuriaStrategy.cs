@@ -50,27 +50,27 @@ public PuriaStrategy()
 _stopLoss = Param(nameof(StopLoss), 14m)
 .SetGreaterThanZero()
 .SetDisplay("Stop Loss", "Stop loss in price points", "General")
-.SetCanOptimize(true);
+;
 
 _takeProfit = Param(nameof(TakeProfit), 15m)
 .SetGreaterThanZero()
 .SetDisplay("Take Profit", "Take profit in price points", "General")
-.SetCanOptimize(true);
+;
 
 _ma1Period = Param(nameof(Ma1Period), 75)
 .SetGreaterThanZero()
 .SetDisplay("MA1 Period", "LWMA period for low price", "Moving Averages")
-.SetCanOptimize(true);
+;
 
 _ma2Period = Param(nameof(Ma2Period), 85)
 .SetGreaterThanZero()
 .SetDisplay("MA2 Period", "Second LWMA period for low price", "Moving Averages")
-.SetCanOptimize(true);
+;
 
 _ma3Period = Param(nameof(Ma3Period), 5)
 .SetGreaterThanZero()
 .SetDisplay("MA3 Period", "EMA period for close price", "Moving Averages")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 .SetDisplay("Candle Type", "Timeframe for strategy", "General");
@@ -152,9 +152,9 @@ _canSell = true;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 StartProtection(
 takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
@@ -163,17 +163,15 @@ stopLoss: new Unit(StopLoss, UnitTypes.Absolute)
 
 _ma75 = new WeightedMovingAverage
 {
-Length = Ma1Period,
-CandlePrice = CandlePrice.Low
+Length = Ma1Period
 };
 
 _ma85 = new WeightedMovingAverage
 {
-Length = Ma2Period,
-CandlePrice = CandlePrice.Low
+Length = Ma2Period
 };
 
-_ma5 = new ExponentialMovingAverage
+_ma5 = new EMA
 {
 Length = Ma3Period
 };

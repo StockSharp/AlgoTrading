@@ -44,13 +44,13 @@ public class DojiTradingStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Period for EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_tolerance = Param(nameof(Tolerance), 0.05m)
 			.SetRange(0.01m, 0.10m)
 			.SetDisplay("Doji Tolerance", "Maximum body size as % of close", "Pattern")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.02m, 0.08m, 0.01m);
 
 		_stopBars = Param(nameof(StopBars), 450)
@@ -138,11 +138,11 @@ public class DojiTradingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		_lowest = new Lowest { Length = StopBars };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -158,7 +158,7 @@ public class DojiTradingStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaValue)

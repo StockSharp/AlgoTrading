@@ -124,42 +124,42 @@ public class RsiStochasticMaStrategy : Strategy
 	{
 	_rsiPeriod = Param(nameof(RsiPeriod), 3)
 	.SetDisplay("RSI Period", "RSI calculation period", "RSI")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(2, 14, 1);
 	
 	_rsiUpperLevel = Param(nameof(RsiUpperLevel), 80m)
 	.SetDisplay("RSI Upper Level", "RSI overbought level", "RSI")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(60m, 90m, 5m);
 	
 	_rsiLowerLevel = Param(nameof(RsiLowerLevel), 20m)
 	.SetDisplay("RSI Lower Level", "RSI oversold level", "RSI")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(10m, 40m, 5m);
 	
 	_maPeriod = Param(nameof(MaPeriod), 150)
 	.SetDisplay("MA Period", "Moving average period", "Trend")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(50, 200, 10);
 	
 	_stochKPeriod = Param(nameof(StochKPeriod), 6)
 	.SetDisplay("Stochastic K", "%K period", "Stochastic")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(5, 20, 1);
 	
-	_stochDPeriod = Param(nameof(StochDPeriod), 3)
+	_stochD = { Length = Param }(nameof(StochDPeriod), 3)
 	.SetDisplay("Stochastic D", "%D smoothing period", "Stochastic")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(2, 10, 1);
 	
 	_stochUpperLevel = Param(nameof(StochUpperLevel), 70m)
 	.SetDisplay("Stochastic Upper", "Stochastic overbought level", "Stochastic")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(60m, 90m, 5m);
 	
 	_stochLowerLevel = Param(nameof(StochLowerLevel), 30m)
 	.SetDisplay("Stochastic Lower", "Stochastic oversold level", "Stochastic")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(10m, 40m, 5m);
 	
 	
@@ -174,12 +174,12 @@ public class RsiStochasticMaStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 	
 	_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-	_ma = new SimpleMovingAverage { Length = MaPeriod };
+	_ma = new SMA { Length = MaPeriod };
 	_stochastic = new StochasticOscillator
 	{
 	K = { Length = StochKPeriod },
@@ -191,7 +191,7 @@ public class RsiStochasticMaStrategy : Strategy
 	.BindEx(_ma, _rsi, _stochastic, ProcessCandle)
 	.Start();
 	
-	StartProtection();
+	StartProtection(null, null);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue rsiValue, IIndicatorValue stochValue)

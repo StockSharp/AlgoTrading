@@ -42,7 +42,7 @@ public class RsiTestStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Lookback period for RSI", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 1);
 
 		_buyLevel = Param(nameof(BuyLevel), 12m)
@@ -123,9 +123,9 @@ public class RsiTestStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_priceStep = Security?.PriceStep ?? 0m;
@@ -143,7 +143,7 @@ public class RsiTestStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
@@ -205,7 +205,7 @@ public class RsiTestStrategy : Strategy
 
 		BuyMarket(volume);
 
-		var avgPrice = PositionAvgPrice;
+		var avgPrice = PositionPrice;
 		_entryPrice = avgPrice > 0m ? avgPrice : candle.ClosePrice;
 		_stopPrice = null;
 		_trailingArmed = false;
@@ -222,7 +222,7 @@ public class RsiTestStrategy : Strategy
 
 		SellMarket(volume);
 
-		var avgPrice = PositionAvgPrice;
+		var avgPrice = PositionPrice;
 		_entryPrice = avgPrice > 0m ? avgPrice : candle.ClosePrice;
 		_stopPrice = null;
 		_trailingArmed = false;
@@ -236,7 +236,7 @@ public class RsiTestStrategy : Strategy
 			return;
 		}
 
-		var avgPrice = PositionAvgPrice;
+		var avgPrice = PositionPrice;
 		if (avgPrice > 0m)
 		_entryPrice = avgPrice;
 

@@ -215,9 +215,9 @@ public class Laptrend1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = Security?.PriceStep ?? 0m;
 		if (_pointValue <= 0m)
@@ -264,7 +264,7 @@ public class Laptrend1Strategy : Strategy
 			return;
 
 		// Update LabTrend state on the signal timeframe.
-		_signalTrend.Process(candle, ChannelLength, RiskFactor);
+		_signalTrend.Process(new DecimalIndicatorValue(_signalTrend, candle, ChannelLength));
 
 		// Keep Fisher state in sync whenever a final value is available.
 		if (fisherValue.IsFinal && _fisher.IsFormed)
@@ -343,7 +343,7 @@ public class Laptrend1Strategy : Strategy
 			return;
 
 		// Track the higher timeframe trend for directional filtering.
-		_trendTrend.Process(candle, ChannelLength, RiskFactor);
+		_trendTrend.Process(new DecimalIndicatorValue(_trendTrend, candle, ChannelLength));
 	}
 
 	private void ManagePosition(ICandleMessage candle, bool canTrade)
@@ -577,7 +577,7 @@ public class Laptrend1Strategy : Strategy
 		}
 	}
 
-	private sealed class FisherYur4ikIndicator : Indicator<ICandleMessage>
+	private sealed class FisherYur4ikIndicator : BaseIndicator
 	{
 		public int Length { get; set; } = 10;
 

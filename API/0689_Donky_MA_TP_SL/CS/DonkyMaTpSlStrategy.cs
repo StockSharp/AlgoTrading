@@ -70,27 +70,27 @@ public class DonkyMaTpSlStrategy : Strategy
 	{
 		_fastLength = Param(nameof(FastLength), 10)
 			.SetDisplay("Fast MA Length", "Fast moving average length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_slowLength = Param(nameof(SlowLength), 30)
 			.SetDisplay("Slow MA Length", "Slow moving average length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 10);
 
 		_takeProfit1Pct = Param(nameof(TakeProfit1Pct), 0.03m)
 			.SetDisplay("Take Profit 1 (%)", "First take-profit percentage", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_takeProfit2Pct = Param(nameof(TakeProfit2Pct), 0.06m)
 			.SetDisplay("Take Profit 2 (%)", "Second take-profit percentage", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.02m, 0.1m, 0.02m);
 
 		_stopLossPct = Param(nameof(StopLossPct), 0.01m)
 			.SetDisplay("Stop Loss (%)", "Stop-loss percentage", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.005m, 0.03m, 0.005m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -98,14 +98,14 @@ public class DonkyMaTpSlStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		var fastMa = new SimpleMovingAverage { Length = FastLength };
-		var slowMa = new SimpleMovingAverage { Length = SlowLength };
+		var fastMa = new SMA { Length = FastLength };
+		var slowMa = new SMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

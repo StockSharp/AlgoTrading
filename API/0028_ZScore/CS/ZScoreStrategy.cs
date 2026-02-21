@@ -89,27 +89,27 @@ public class ZScoreStrategy : Strategy
 	{
 		_zScoreEntryThreshold = Param(nameof(ZScoreEntryThreshold), 2.0m)
 			.SetDisplay("Z-Score Entry Threshold", "Distance from mean in std deviations required to enter position", "Z-Score Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_zScoreExitThreshold = Param(nameof(ZScoreExitThreshold), 0.0m)
 			.SetDisplay("Z-Score Exit Threshold", "Distance from mean in std deviations required to exit position", "Z-Score Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0m, 1.0m, 0.2m);
 
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Technical Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_stdDevPeriod = Param(nameof(StdDevPeriod), 20)
 			.SetDisplay("StdDev Period", "Period for Standard Deviation calculation", "Technical Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -132,12 +132,12 @@ public class ZScoreStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
+		var sma = new SMA { Length = MAPeriod };
 		var stdDev = new StandardDeviation { Length = StdDevPeriod };
 
 		// Create subscription and bind indicators

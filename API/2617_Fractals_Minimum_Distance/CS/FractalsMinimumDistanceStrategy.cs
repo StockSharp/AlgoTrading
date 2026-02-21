@@ -53,15 +53,15 @@ public class FractalsMinimumDistanceStrategy : Strategy
 	{
 		_distancePips = Param(nameof(DistancePips), 15)
 			.SetDisplay("Distance (pips)", "Minimum allowed gap between the last two fractals", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_signalBar = Param(nameof(SignalBar), 3)
 			.SetDisplay("Signal bar offset", "How many closed bars ago the fractal must appear", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle type", "Primary candle series used for signals", "Data")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <inheritdoc />
@@ -84,9 +84,9 @@ public class FractalsMinimumDistanceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitializeBuffers();
 		_pipSize = CalculatePipSize();

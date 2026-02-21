@@ -120,9 +120,9 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 	public int NumberOfSteps { get => _numberOfSteps.Value; set => _numberOfSteps.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_vegasMa = CreateMa(MaTypes, VegasWindow);
 		_std = new StandardDeviation { Length = VegasWindow };
@@ -225,7 +225,7 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 		return type switch
 		{
 			MaTypes.Jurik => new JurikMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 }

@@ -51,7 +51,7 @@ public class BezierStDevStrategy : Strategy
 		_stdDevPeriod = Param(nameof(StdDevPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("StdDev Period", "Period for standard deviation calculation", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -74,9 +74,9 @@ public class BezierStDevStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var stdDev = new StandardDeviation { Length = StdDevPeriod };
 

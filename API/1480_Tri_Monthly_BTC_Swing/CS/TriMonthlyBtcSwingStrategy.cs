@@ -82,36 +82,36 @@ public class TriMonthlyBtcSwingStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_rsiThreshold = Param(nameof(RsiThreshold), 50m)
 			.SetDisplay("RSI Threshold", "RSI level", "General")
-			.SetCanOptimize(true);
+			;
 
 		_tradeInterval = Param(nameof(TradeInterval), TimeSpan.FromDays(90))
 			.SetDisplay("Trade Interval", "Minimum time between trades", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -133,12 +133,12 @@ public class TriMonthlyBtcSwingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
-		_macd = new MovingAverageConvergenceDivergenceSignal { Fast = MacdFast, Slow = MacdSlow, Signal = MacdSignal };
+		_ema = new EMA { Length = EmaLength };
+		_macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow } }, SignalMa = { Length = MacdSignal } };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -146,7 +146,7 @@ public class TriMonthlyBtcSwingStrategy : Strategy
 			.Bind(_ema, _macd, _rsi, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

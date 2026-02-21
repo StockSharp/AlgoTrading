@@ -149,12 +149,12 @@ public class MacdPatternTraderV01Strategy : Strategy
 		_stopLossBars = Param(nameof(StopLossBars), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop-Loss Bars", "Bars used to determine the stop-loss swing", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitBars = Param(nameof(TakeProfitBars), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Take-Profit Bars", "Bars per block for the recursive take-profit", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_offsetPoints = Param(nameof(OffsetPoints), 10)
 		.SetGreaterThanZero()
@@ -186,7 +186,7 @@ public class MacdPatternTraderV01Strategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Trade volume for every market order", "General");
 
-		_emaShortPeriod = Param(nameof(EmaShortPeriod), 7)
+		_emaShortMa = { Length = Param }(nameof(EmaShortPeriod), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Short", "Short EMA period for position management", "Indicators");
 
@@ -198,7 +198,7 @@ public class MacdPatternTraderV01Strategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("SMA Period", "SMA period used in the composite exit", "Indicators");
 
-		_emaLongPeriod = Param(nameof(EmaLongPeriod), 365)
+		_emaLongMa = { Length = Param }(nameof(EmaLongPeriod), 365)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Long", "Long EMA period used in the composite exit", "Indicators");
 
@@ -238,23 +238,23 @@ protected override void OnReseted()
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	Volume = OrderVolume;
 
 	_macd = new MACD
 	{
-		ShortPeriod = MacdFastPeriod,
-		LongPeriod = MacdSlowPeriod,
+		ShortMa = { Length = MacdFastPeriod },
+		LongMa = { Length = MacdSlowPeriod },
 		SignalPeriod = MacdSignalPeriod
 	};
 
-_emaShort = new ExponentialMovingAverage { Length = EmaShortPeriod };
-_emaMedium = new ExponentialMovingAverage { Length = EmaMediumPeriod };
-_sma = new SimpleMovingAverage { Length = SmaPeriod };
-_emaLong = new ExponentialMovingAverage { Length = EmaLongPeriod };
+_emaShort = new EMA { Length = EmaShortPeriod };
+_emaMedium = new EMA { Length = EmaMediumPeriod };
+_sma = new SMA { Length = SmaPeriod };
+_emaLong = new EMA { Length = EmaLongPeriod };
 
 var subscription = SubscribeCandles(CandleType);
 subscription

@@ -48,7 +48,7 @@ public class CalcProfitLossOnLinePriceStrategy : Strategy
 	{
 		_linePrice = Param(nameof(LinePrice), 0m)
 			.SetDisplay("Line Price", "Price level to evaluate PnL", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
@@ -61,9 +61,9 @@ public class CalcProfitLossOnLinePriceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 

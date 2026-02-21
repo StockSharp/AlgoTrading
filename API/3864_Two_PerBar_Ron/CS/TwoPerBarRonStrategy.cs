@@ -55,22 +55,22 @@ public class TwoPerBarRonStrategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Initial lot size used when no previous trades exist.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Multiplier", "Factor applied after an unfinished cycle closes.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_maxVolume = Param(nameof(MaxVolume), 12.8m)
 			.SetGreaterThanZero()
 			.SetDisplay("Maximum Volume", "Hard upper limit for the martingale lot size.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_profitTargetPoints = Param(nameof(ProfitTargetPoints), 19m)
 			.SetNotNegative()
 			.SetDisplay("Profit Target (points)", "Monetary target converted using instrument point size.", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -139,9 +139,9 @@ public class TwoPerBarRonStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = CalculatePointSize();
 		_currentVolume = NormalizeVolume(BaseVolume);

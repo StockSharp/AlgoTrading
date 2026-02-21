@@ -85,19 +85,19 @@ public class PairsTradingStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for calculating spread mean and standard deviation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 			
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Number of standard deviations for entry signals", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 			
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop-loss %", "Stop-loss as percentage of spread at entry", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -130,9 +130,9 @@ public class PairsTradingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (SecondSecurity == null)
 			throw new InvalidOperationException("Second security is not specified.");
@@ -184,8 +184,8 @@ public class PairsTradingStrategy : Strategy
 		_spread = candle.ClosePrice - _lastSecondPrice;
 		
 		// Process the spread through indicators
-		var maValue = _spreadMA.Process(_spread, candle.ServerTime, candle.State == CandleStates.Finished);
-		var stdDevValue = _spreadStdDev.Process(_spread, candle.ServerTime, candle.State == CandleStates.Finished);
+		var maValue = _spreadMA.Process(new DecimalIndicatorValue(_spreadMA, _spread, candle.ServerTime));
+		var stdDevValue = _spreadStdDev.Process(new DecimalIndicatorValue(_spreadStdDev, _spread, candle.ServerTime));
 		
 		// Skip until indicators are formed
 		if (!_spreadMA.IsFormed || !_spreadStdDev.IsFormed)

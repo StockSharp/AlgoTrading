@@ -63,8 +63,8 @@ public class LegoEaStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private CommodityChannelIndex _cci = null!;
-	private LengthIndicator<decimal> _maFast = null!;
-	private LengthIndicator<decimal> _maSlow = null!;
+	private DecimalLengthIndicator _maFast = null!;
+	private DecimalLengthIndicator _maSlow = null!;
 	private StochasticOscillator _stochastic = null!;
 	private Acceleration _accelerator = null!;
 	private DeMarker _deMarker = null!;
@@ -160,7 +160,7 @@ public class LegoEaStrategy : Strategy
 			.SetDisplay("Stochastic %K Period", "Number of bars for the %K calculation", "Indicators")
 			.SetGreaterThanZero();
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 			.SetDisplay("Stochastic %D Period", "Length of the %D smoothing", "Indicators")
 			.SetGreaterThanZero();
 
@@ -483,9 +483,9 @@ public class LegoEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cci = new CommodityChannelIndex
 		{
@@ -497,8 +497,7 @@ public class LegoEaStrategy : Strategy
 		_maSlow = CreateMovingAverage(MaMethod, MaSlowPeriod, MaPrice);
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = Math.Max(1, StochasticKPeriod),
+		{ K = { Length = Math }.Max(1, StochasticKPeriod),
 			K = { Length = Math.Max(1, StochasticKPeriod) },
 			D = { Length = Math.Max(1, StochasticDPeriod) },
 			Smooth = Math.Max(1, StochasticSlow)
@@ -782,15 +781,15 @@ public class LegoEaStrategy : Strategy
 		return priceStep * pipFactor;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethodOptions method, int length, CandlePrices price)
+	private static DecimalLengthIndicator CreateMovingAverage(MaMethodOptions method, int length, CandlePrices price)
 	{
-		LengthIndicator<decimal> indicator = method switch
+		DecimalLengthIndicator indicator = method switch
 		{
-			MaMethodOptions.Simple => new SimpleMovingAverage(),
-			MaMethodOptions.Exponential => new ExponentialMovingAverage(),
+			MaMethodOptions.Simple => new SMA(),
+			MaMethodOptions.Exponential => new EMA(),
 			MaMethodOptions.Smoothed => new SmoothedMovingAverage(),
 			MaMethodOptions.Weighted => new WeightedMovingAverage(),
-			_ => new SimpleMovingAverage()
+			_ => new SMA()
 		};
 
 		indicator.Length = Math.Max(1, length);

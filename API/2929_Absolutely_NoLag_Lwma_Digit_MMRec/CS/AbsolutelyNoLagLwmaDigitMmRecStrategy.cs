@@ -78,9 +78,9 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		foreach (var module in _modules)
 		{
@@ -203,7 +203,7 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 
 			_length = strategy.Param($"{prefix}Length", defaultLength)
 			.SetDisplay($"{displayName} Length", $"AbsolutelyNoLagLWMA length for {displayName}.", displayName)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 			_appliedPrice = strategy.Param($"{prefix}AppliedPrices", defaultPrice)

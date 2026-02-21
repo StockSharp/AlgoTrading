@@ -131,7 +131,7 @@ namespace StockSharp.Samples.Strategies;
 
 	_maPeriod = Param(nameof(MaPeriod), 5)
 	.SetDisplay("EMA Period", "EMA length", "Parameters")
-	.SetCanOptimize(true)
+	
 	.SetGreaterThanZero();
 
 	_stepLevel = Param(nameof(StepLevel), 10m)
@@ -154,18 +154,17 @@ namespace StockSharp.Samples.Strategies;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	var stochastic = new StochasticOscillator
-	{
-	Length = 5,
+	{ K = { Length = 5 },
 	K = { Length = 3 },
 	D = { Length = 3 }
 	};
 
-	var ema = new ExponentialMovingAverage
+	var ema = new EMA
 	{
 	Length = MaPeriod
 	};
@@ -175,7 +174,7 @@ namespace StockSharp.Samples.Strategies;
 	.Bind(stochastic, ema, ProcessCandle)
 	.Start();
 
-	StartProtection();
+	StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal k, decimal d, decimal ema)

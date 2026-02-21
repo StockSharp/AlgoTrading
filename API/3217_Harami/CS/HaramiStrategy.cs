@@ -63,13 +63,13 @@ public class HaramiStrategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast LWMA", "Length of the fast linear weighted MA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Length of the slow exponential MA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 120, 5);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
@@ -79,13 +79,13 @@ public class HaramiStrategy : Strategy
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bull Threshold", "Minimum momentum deviation for longs", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bear Threshold", "Minimum momentum deviation for shorts", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 40m)
@@ -202,12 +202,12 @@ public class HaramiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = new WeightedMovingAverage { Length = FastMaLength };
-		_slowMa = new ExponentialMovingAverage { Length = SlowMaLength };
+		_slowMa = new EMA { Length = SlowMaLength };
 		_higherMomentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{

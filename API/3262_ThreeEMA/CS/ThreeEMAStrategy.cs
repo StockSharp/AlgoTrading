@@ -38,23 +38,23 @@ public class ThreeEMAStrategy : Strategy
 
 		_fastPeriod = Param(nameof(FastPeriod), 5)
 		.SetDisplay("Fast EMA", "Length of the fast EMA.", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_mediumPeriod = Param(nameof(MediumPeriod), 12)
 		.SetDisplay("Medium EMA", "Length of the medium EMA.", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 24)
 		.SetDisplay("Slow EMA", "Length of the slow EMA.", "Parameters")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 400m)
 		.SetDisplay("Stop loss", "Protective distance in points.", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 900m)
 		.SetDisplay("Take profit", "Target distance in points.", "Risk")
-		.SetCanOptimize(true);
+		;
 	}
 
 	public DataType CandleType
@@ -100,9 +100,9 @@ public class ThreeEMAStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (FastPeriod <= 0 || MediumPeriod <= 0 || SlowPeriod <= 0)
 		{
@@ -119,9 +119,9 @@ public class ThreeEMAStrategy : Strategy
 			throw new InvalidOperationException("Slow EMA period must be greater than medium EMA period.");
 		}
 
-		_fastEma = new ExponentialMovingAverage { Length = FastPeriod };
-		_mediumEma = new ExponentialMovingAverage { Length = MediumPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
+		_fastEma = new EMA { Length = FastPeriod };
+		_mediumEma = new EMA { Length = MediumPeriod };
+		_slowEma = new EMA { Length = SlowPeriod };
 
 		// Subscribe to candle data and feed EMA indicators.
 		var subscription = SubscribeCandles(CandleType);

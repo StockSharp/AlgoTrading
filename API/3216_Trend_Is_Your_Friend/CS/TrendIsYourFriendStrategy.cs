@@ -261,13 +261,13 @@ public class TrendIsYourFriendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		_fastMa = new ExponentialMovingAverage { Length = FastMaLength };
+		_fastMa = new EMA { Length = FastMaLength };
 	_slowMa = new WeightedMovingAverage { Length = SlowMaLength };
 _bollinger = new BollingerBands
 {

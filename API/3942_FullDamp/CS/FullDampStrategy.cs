@@ -150,22 +150,22 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		
 		_bollingerPeriod1 = Param(nameof(BollingerPeriod1), 20)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Bollinger Period (Width 1)", "Period for the narrow bands", "Indicators");
 		
 		_bollingerPeriod2 = Param(nameof(BollingerPeriod2), 20)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Bollinger Period (Width 2)", "Period for the medium bands", "Indicators");
 		
 		_bollingerPeriod3 = Param(nameof(BollingerPeriod3), 20)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Bollinger Period (Width 3)", "Period for the wide bands", "Indicators");
 		
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("RSI Period", "Period for the RSI filter", "Indicators");
 		
 		_lookbackBars = Param(nameof(LookbackBars), 6)
@@ -180,11 +180,11 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		var bollingerWide = new BollingerBands
 		{
@@ -271,38 +271,38 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		ManageLongPosition(candle);
 		ManageShortPosition(candle);
 		
-		if (_wideLowerBand.HasValue && Position <= 0 && candle.Low <= _wideLowerBand.Value)
+		if (_wideLowerBand.HasValue && Position <= 0 && candle.LowPrice <= _wideLowerBand.Value)
 		{
 			_longPending = true;
-			_longLowestLow = candle.Low;
+			_longLowestLow = candle.LowPrice;
 			_longRsiReady = _longRsiCounter > 0;
 		}
 		else if (_longPending)
 		{
 			_longLowestLow = _longLowestLow.HasValue
-				? Math.Min(_longLowestLow.Value, candle.Low)
-				: candle.Low;
+				? Math.Min(_longLowestLow.Value, candle.LowPrice)
+				: candle.LowPrice;
 		}
 		
-		if (_wideUpperBand.HasValue && Position >= 0 && candle.High >= _wideUpperBand.Value)
+		if (_wideUpperBand.HasValue && Position >= 0 && candle.HighPrice >= _wideUpperBand.Value)
 		{
 			_shortPending = true;
-			_shortHighestHigh = candle.High;
+			_shortHighestHigh = candle.HighPrice;
 			_shortRsiReady = _shortRsiCounter > 0;
 		}
 		else if (_shortPending)
 		{
 			_shortHighestHigh = _shortHighestHigh.HasValue
-				? Math.Max(_shortHighestHigh.Value, candle.High)
-				: candle.High;
+				? Math.Max(_shortHighestHigh.Value, candle.HighPrice)
+				: candle.HighPrice;
 		}
 		
-		if (_longPending && _longRsiReady && _mediumLowerBand.HasValue && Position <= 0 && candle.Close > _mediumLowerBand.Value)
+		if (_longPending && _longRsiReady && _mediumLowerBand.HasValue && Position <= 0 && candle.ClosePrice > _mediumLowerBand.Value)
 		{
 			EnterLong(candle);
 		}
 		
-		if (_shortPending && _shortRsiReady && _mediumUpperBand.HasValue && Position >= 0 && candle.Close < _mediumUpperBand.Value)
+		if (_shortPending && _shortRsiReady && _mediumUpperBand.HasValue && Position >= 0 && candle.ClosePrice < _mediumUpperBand.Value)
 		{
 			EnterShort(candle);
 		}
@@ -340,21 +340,21 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		if (Position <= 0)
 			return;
 		
-		if (_longStopPrice.HasValue && candle.Low <= _longStopPrice.Value)
+		if (_longStopPrice.HasValue && candle.LowPrice <= _longStopPrice.Value)
 		{
 			SellMarket(Position);
 			ResetLongPositionState();
 			return;
 		}
 		
-		if (_mediumUpperBand.HasValue && candle.High >= _mediumUpperBand.Value)
+		if (_mediumUpperBand.HasValue && candle.HighPrice >= _mediumUpperBand.Value)
 		{
 			SellMarket(Position);
 			ResetLongPositionState();
 			return;
 		}
 		
-		if (_longTargetPrice.HasValue && !_longHalfClosed && candle.High >= _longTargetPrice.Value)
+		if (_longTargetPrice.HasValue && !_longHalfClosed && candle.HighPrice >= _longTargetPrice.Value)
 		{
 			var halfVolume = Position / 2m;
 			
@@ -375,21 +375,21 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		
 		var positionAbs = Math.Abs(Position);
 		
-		if (_shortStopPrice.HasValue && candle.High >= _shortStopPrice.Value)
+		if (_shortStopPrice.HasValue && candle.HighPrice >= _shortStopPrice.Value)
 		{
 			BuyMarket(positionAbs);
 			ResetShortPositionState();
 			return;
 		}
 		
-		if (_mediumLowerBand.HasValue && candle.Low <= _mediumLowerBand.Value)
+		if (_mediumLowerBand.HasValue && candle.LowPrice <= _mediumLowerBand.Value)
 		{
 			BuyMarket(positionAbs);
 			ResetShortPositionState();
 			return;
 		}
 		
-		if (_shortTargetPrice.HasValue && !_shortHalfClosed && candle.Low <= _shortTargetPrice.Value)
+		if (_shortTargetPrice.HasValue && !_shortHalfClosed && candle.LowPrice <= _shortTargetPrice.Value)
 		{
 			var halfVolume = positionAbs / 2m;
 			
@@ -408,7 +408,7 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		var priceStep = Security?.PriceStep ?? 1m;
 		var stopOffset = StopOffsetPoints * priceStep;
 		
-		var stopPrice = (_longLowestLow ?? candle.Low) - stopOffset;
+		var stopPrice = (_longLowestLow ?? candle.LowPrice) - stopOffset;
 		stopPrice = Security?.ShrinkPrice(stopPrice) ?? stopPrice;
 		
 		BuyMarket(Volume);
@@ -417,7 +417,7 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		_longRsiReady = false;
 		_longLowestLow = null;
 		_longStopPrice = stopPrice;
-		_longEntryPrice = candle.Close;
+		_longEntryPrice = candle.ClosePrice;
 		
 		if (_longStopPrice.HasValue)
 		{
@@ -432,7 +432,7 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		var priceStep = Security?.PriceStep ?? 1m;
 		var stopOffset = StopOffsetPoints * priceStep;
 		
-		var stopPrice = (_shortHighestHigh ?? candle.High) + stopOffset;
+		var stopPrice = (_shortHighestHigh ?? candle.HighPrice) + stopOffset;
 		stopPrice = Security?.ShrinkPrice(stopPrice) ?? stopPrice;
 		
 		SellMarket(Volume);
@@ -441,7 +441,7 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		_shortRsiReady = false;
 		_shortHighestHigh = null;
 		_shortStopPrice = stopPrice;
-		_shortEntryPrice = candle.Close;
+		_shortEntryPrice = candle.ClosePrice;
 		
 		if (_shortStopPrice.HasValue)
 		{

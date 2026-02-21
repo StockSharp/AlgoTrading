@@ -166,13 +166,13 @@ public class MemaBbRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
-		_ma1 = new ExponentialMovingAverage { Length = Ma1Period };
-		_ma2 = new ExponentialMovingAverage { Length = Ma2Period };
+		_ma1 = new EMA { Length = Ma1Period };
+		_ma2 = new EMA { Length = Ma2Period };
 		_bollinger = new BollingerBands
 		{
 			Length = BBLength,

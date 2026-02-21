@@ -141,7 +141,7 @@ public class MomentumRevVolStrategy : Strategy
 		_minUsd = Param(nameof(MinTradeUsd), 200m)
 			.SetDisplay("Min USD", "Minimum trade value", "Risk");
 
-		_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used", "General");
 	}
 

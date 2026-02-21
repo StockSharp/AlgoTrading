@@ -90,27 +90,27 @@ public EmaMacdRsiStrategy()
 {
 _fastEmaLength = Param(nameof(FastEmaLength), 50)
 .SetDisplay("Fast EMA", "Fast EMA length", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(10, 100, 5);
 
 _slowEmaLength = Param(nameof(SlowEmaLength), 200)
 .SetDisplay("Slow EMA", "Slow EMA length", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(50, 300, 10);
 
 _rsiLength = Param(nameof(RsiLength), 14)
 .SetDisplay("RSI Length", "RSI indicator length", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(7, 21, 1);
 
 _rsiBuyLevel = Param(nameof(RsiBuyLevel), 45m)
 .SetDisplay("RSI Buy Level", "Minimum RSI for buy", "Trading Levels")
-.SetCanOptimize(true)
+
 .SetOptimize(30m, 60m, 5m);
 
 _rsiSellLevel = Param(nameof(RsiSellLevel), 55m)
 .SetDisplay("RSI Sell Level", "Maximum RSI for sell", "Trading Levels")
-.SetCanOptimize(true)
+
 .SetOptimize(40m, 70m, 5m);
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -134,23 +134,22 @@ _isFirst = true;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
-var macd = new MovingAverageConvergenceDivergence
+var fastEma = new EMA { Length = FastEmaLength };
+var slowEma = new EMA { Length = SlowEmaLength };
+var macd = new MovingAverageConvergenceDivergenceSignal
 {
-ShortPeriod = 12,
-LongPeriod = 26,
-SignalPeriod = 9
+Macd = { ShortMa = { Length = 12 }, LongMa = { Length = 26 } },
+SignalMa = { Length = 9 }
 };
 var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 var subscription = SubscribeCandles(CandleType);
 subscription
-.Bind(macd, rsi, fastEma, slowEma, ProcessCandle)
+.BindEx([macd, rsi, fastEma, slowEma], ProcessCandle)
 .Start();
 
 var area = CreateChartArea();
@@ -168,13 +167,21 @@ DrawOwnTrades(area);
 }
 }
 
-private void ProcessCandle(ICandleMessage candle, decimal macd, decimal signal, decimal histogram, decimal rsi, decimal fastEma, decimal slowEma)
+private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 {
 if (candle.State != CandleStates.Finished)
 return;
 
 if (!IsFormedAndOnlineAndAllowTrading())
 return;
+
+var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)values[0];
+if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+return;
+
+var rsi = values[1].ToDecimal();
+var fastEma = values[2].ToDecimal();
+var slowEma = values[3].ToDecimal();
 
 if (_isFirst)
 {

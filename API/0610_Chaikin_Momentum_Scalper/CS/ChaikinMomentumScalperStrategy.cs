@@ -118,14 +118,14 @@ public class ChaikinMomentumScalperStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_fastEma = new ExponentialMovingAverage { Length = FastLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		_fastEma = new EMA { Length = FastLength };
+		_slowEma = new EMA { Length = SlowLength };
 		var ad = new AccumulationDistributionLine();
-		var sma = new SimpleMovingAverage { Length = SmaLength };
+		var sma = new SMA { Length = SmaLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 		
 		var subscription = SubscribeCandles(CandleType);
@@ -148,8 +148,8 @@ public class ChaikinMomentumScalperStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		var fastVal = _fastEma.Process(new DecimalIndicatorValue(_fastEma, adValue, candle.Time));
-		var slowVal = _slowEma.Process(new DecimalIndicatorValue(_slowEma, adValue, candle.Time));
+		var fastVal = _fastEma.Process(new DecimalIndicatorValue(_fastEma, adValue, candle.ServerTime));
+		var slowVal = _slowEma.Process(new DecimalIndicatorValue(_slowEma, adValue, candle.ServerTime));
 		
 		if (!fastVal.IsFinal || !slowVal.IsFinal)
 		{

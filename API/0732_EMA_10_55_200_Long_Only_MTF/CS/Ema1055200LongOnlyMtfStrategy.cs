@@ -52,7 +52,7 @@ public class Ema1055200LongOnlyMtfStrategy : Strategy
 	private bool _dailyReady;
 	private bool _weeklyReady;
 
-	private readonly DataType _dailyType = TimeSpan.FromDays(1).TimeFrame();
+	private readonly DataType _dailyType = TimeSpan.FromMinutes(5).TimeFrame();
 	private readonly DataType _weeklyType = TimeSpan.FromDays(7).TimeFrame();
 
 	/// <summary>
@@ -161,11 +161,11 @@ public class Ema1055200LongOnlyMtfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_ema10 = new EMA { Length = Ema10Length };
 		_ema55 = new EMA { Length = Ema55Length };

@@ -34,7 +34,7 @@ public class GridLikeStrategy : Strategy
 		_point = Param(nameof(Point), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Point", "Distance from baseline to grid levels", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_orderSize = Param(nameof(OrderSize), 1m)
@@ -99,14 +99,14 @@ public class GridLikeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void EnsureSize()

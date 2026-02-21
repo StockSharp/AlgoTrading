@@ -81,12 +81,12 @@ public class ExpRsiomaStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI calculation length", "Parameters")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_signalPeriod = Param(nameof(SignalPeriod), 21)
 			.SetDisplay("Signal Period", "Moving average length", "Parameters")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_highLevel = Param(nameof(HighLevel), 20)
 			.SetDisplay("High Level", "Upper threshold", "Parameters");
@@ -117,9 +117,9 @@ public class ExpRsiomaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsioma = new RsiOmaIndicator
 		{
@@ -214,7 +214,7 @@ public class ExpRsiomaStrategy : Strategy
 /// <summary>
 /// Indicator calculating RSI of moving average with signal and histogram.
 /// </summary>
-public class RsiOmaIndicator : BaseIndicator<decimal>
+public class RsiOmaIndicator : BaseIndicator
 {
 	public int RsiPeriod { get; set; } = 14;
 	public int SignalPeriod { get; set; } = 21;
@@ -229,7 +229,7 @@ public class RsiOmaIndicator : BaseIndicator<decimal>
 		return new DecimalIndicatorValue(this, default, input.Time);
 
 		_rsi ??= new RelativeStrengthIndex { Length = RsiPeriod };
-		_signal ??= new ExponentialMovingAverage { Length = SignalPeriod };
+		_signal ??= new EMA { Length = SignalPeriod };
 
 		var rsiVal = _rsi.Process(input);
 		if (!rsiVal.IsFinal)

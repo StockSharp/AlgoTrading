@@ -154,14 +154,14 @@ public class GoldBreakoutRr4Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_lwtiSma = new SimpleMovingAverage { Length = LwtiSmooth };
+		_lwtiSma = new SMA { Length = LwtiSmooth };
 
 		var donchian = new DonchianChannels { Length = DonchianLength };
-		var volumeSma = new SimpleMovingAverage { Length = MaVolumeLength };
+		var volumeSma = new SMA { Length = MaVolumeLength };
 		var wma = new WeightedMovingAverage { Length = LwtiLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -202,7 +202,7 @@ public class GoldBreakoutRr4Strategy : Strategy
 		if (_prevWma != null)
 		{
 			var lwti = wmaValue - _prevWma.Value;
-			var smoothed = _lwtiSma.Process(lwti, candle.OpenTime, true).ToDecimal();
+			var smoothed = _lwtiSma.Process(new DecimalIndicatorValue(_lwtiSma, lwti, candle.OpenTime)).ToDecimal();
 
 			if (_lwtiSma.IsFormed)
 			{

@@ -64,94 +64,94 @@ public class TrendFollowerRainbowStrategy : Strategy
 	{
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 		.SetDisplay("Order Volume", "Base order volume", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 17m)
 		.SetDisplay("Take Profit (pts)", "Distance in price steps for take profit", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
 		.SetDisplay("Stop Loss (pts)", "Distance in price steps for stop loss", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 45m)
 		.SetDisplay("Trailing Stop (pts)", "Distance in price steps for trailing stop", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_tradingStartHour = Param(nameof(TradingStartHour), 1)
 		.SetDisplay("Start Hour", "Hour (0-23) when trading window opens", "Trading Schedule")
-		.SetCanOptimize(true);
+		;
 
 		_tradingEndHour = Param(nameof(TradingEndHour), 23)
 		.SetDisplay("End Hour", "Hour (0-23) when trading window closes", "Trading Schedule")
-		.SetCanOptimize(true);
+		;
 
 		_fastEmaLength = Param(nameof(FastEmaLength), 4)
 		.SetRange(2, 20)
 		.SetDisplay("Fast EMA", "Length of the fast EMA", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 8)
 		.SetRange(3, 50)
 		.SetDisplay("Slow EMA", "Length of the slow EMA", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdFastLength = Param(nameof(MacdFastLength), 5)
 		.SetDisplay("MACD Fast", "Fast EMA length for MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 35)
 		.SetDisplay("MACD Slow", "Slow EMA length for MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 5)
 		.SetDisplay("MACD Signal", "Signal EMA length for MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_laguerreGamma = Param(nameof(LaguerreGamma), 0.7m)
 		.SetRange(0.1m, 0.9m)
 		.SetDisplay("Laguerre Gamma", "Smoothing factor for Laguerre filter", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_laguerreBuyThreshold = Param(nameof(LaguerreBuyThreshold), 0.15m)
 		.SetDisplay("Laguerre Buy", "Threshold crossed upward for long signals", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_laguerreSellThreshold = Param(nameof(LaguerreSellThreshold), 0.75m)
 		.SetDisplay("Laguerre Sell", "Threshold crossed downward for short signals", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_mfiPeriod = Param(nameof(MfiPeriod), 14)
 		.SetDisplay("MFI Period", "Money Flow Index calculation period", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_mfiBuyLevel = Param(nameof(MfiBuyLevel), 40m)
 		.SetDisplay("MFI Buy", "Upper bound for oversold check", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_mfiSellLevel = Param(nameof(MfiSellLevel), 60m)
 		.SetDisplay("MFI Sell", "Lower bound for overbought check", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_rainbowGroup1Base = Param(nameof(RainbowGroup1Base), 5)
 		.SetDisplay("Rainbow Group 1", "Base length for the fastest rainbow bundle", "Rainbow")
-		.SetCanOptimize(true);
+		;
 
 		_rainbowGroup2Base = Param(nameof(RainbowGroup2Base), 13)
 		.SetDisplay("Rainbow Group 2", "Base length for the second rainbow bundle", "Rainbow")
-		.SetCanOptimize(true);
+		;
 
 		_rainbowGroup3Base = Param(nameof(RainbowGroup3Base), 21)
 		.SetDisplay("Rainbow Group 3", "Base length for the middle rainbow bundle", "Rainbow")
-		.SetCanOptimize(true);
+		;
 
 		_rainbowGroup4Base = Param(nameof(RainbowGroup4Base), 34)
 		.SetDisplay("Rainbow Group 4", "Base length for the fourth rainbow bundle", "Rainbow")
-		.SetCanOptimize(true);
+		;
 
 		_rainbowGroup5Base = Param(nameof(RainbowGroup5Base), 55)
 		.SetDisplay("Rainbow Group 5", "Base length for the slowest rainbow bundle", "Rainbow")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle series", "General");
@@ -401,8 +401,8 @@ public class TrendFollowerRainbowStrategy : Strategy
 			useMarketOrders: true);
 		}
 
-		_emaFast = new ExponentialMovingAverage { Length = FastEmaLength };
-		_emaSlow = new ExponentialMovingAverage { Length = SlowEmaLength };
+		_emaFast = new EMA { Length = FastEmaLength };
+		_emaSlow = new EMA { Length = SlowEmaLength };
 		_macd = new MovingAverageConvergenceDivergence
 		{
 			ShortMa = { Length = MacdFastLength },
@@ -449,11 +449,11 @@ public class TrendFollowerRainbowStrategy : Strategy
 
 		return new[]
 		{
-			offsets.Select(o => new ExponentialMovingAverage { Length = Math.Max(1, RainbowGroup1Base + o) }).ToArray(),
-			offsets.Select(o => new ExponentialMovingAverage { Length = Math.Max(1, RainbowGroup2Base + o) }).ToArray(),
-			offsets.Select(o => new ExponentialMovingAverage { Length = Math.Max(1, RainbowGroup3Base + o) }).ToArray(),
-			offsets.Select(o => new ExponentialMovingAverage { Length = Math.Max(1, RainbowGroup4Base + o) }).ToArray(),
-			offsets.Select(o => new ExponentialMovingAverage { Length = Math.Max(1, RainbowGroup5Base + o) }).ToArray()
+			offsets.Select(o => new EMA { Length = Math.Max(1, RainbowGroup1Base + o) }).ToArray(),
+			offsets.Select(o => new EMA { Length = Math.Max(1, RainbowGroup2Base + o) }).ToArray(),
+			offsets.Select(o => new EMA { Length = Math.Max(1, RainbowGroup3Base + o) }).ToArray(),
+			offsets.Select(o => new EMA { Length = Math.Max(1, RainbowGroup4Base + o) }).ToArray(),
+			offsets.Select(o => new EMA { Length = Math.Max(1, RainbowGroup5Base + o) }).ToArray()
 		};
 	}
 
@@ -462,7 +462,7 @@ public class TrendFollowerRainbowStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var hour = candle.CloseTime.LocalDateTime.Hour;
+		var hour = candle.CloseTime.Hour;
 		if (hour <= TradingStartHour || hour >= TradingEndHour)
 		{
 			UpdatePreviousValues(values);

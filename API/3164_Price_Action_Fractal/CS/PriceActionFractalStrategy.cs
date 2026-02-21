@@ -74,59 +74,59 @@ public class PriceActionFractalStrategy : Strategy
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 		.SetDisplay("Fast LWMA", "Length of the fast weighted moving average", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 		.SetDisplay("Slow LWMA", "Length of the slow weighted moving average", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 		.SetDisplay("Momentum Period", "Lookback for the momentum confirmation", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 		.SetDisplay("Momentum Threshold", "Minimal |Momentum-100| deviation", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 		.SetDisplay("MACD Fast", "Short EMA length for MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 		.SetDisplay("MACD Slow", "Long EMA length for MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 		.SetDisplay("MACD Signal", "Signal EMA length for MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
 		.SetDisplay("Stop-Loss (pts)", "Stop-loss distance in price steps", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 		.SetDisplay("Take-Profit (pts)", "Take-profit distance in price steps", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 40m)
 		.SetDisplay("Trailing Stop (pts)", "Trailing stop distance in price steps", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_breakEvenTriggerPoints = Param(nameof(BreakEvenTriggerPoints), 30m)
 		.SetDisplay("Break-Even Trigger", "Profit required before locking the trade", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_breakEvenOffsetPoints = Param(nameof(BreakEvenOffsetPoints), 30m)
 		.SetDisplay("Break-Even Offset", "Additional profit locked once break-even triggers", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_fractalLifetime = Param(nameof(FractalLifetime), 10)
 		.SetDisplay("Fractal Lifetime", "Number of candles the last fractal remains valid", "Filters")
-		.SetCanOptimize(true);
+		;
 
 		_maxPositionUnits = Param(nameof(MaxPositionUnits), 1m)
 		.SetDisplay("Max Position", "Maximum absolute position size", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
 		.SetDisplay("Use Trailing", "Enable trailing stop logic", "Risk");
@@ -354,8 +354,8 @@ public class PriceActionFractalStrategy : Strategy
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 

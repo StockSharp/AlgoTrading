@@ -62,13 +62,13 @@ public class VolatilityAdjustedMeanReversionStrategy : Strategy
 		_periodParam = Param(nameof(Period), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "Period for indicators", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_multiplierParam = Param(nameof(Multiplier), 2.0m)
 			.SetRange(0.1m, decimal.MaxValue)
 			.SetDisplay("Multiplier", "Multiplier for entry threshold", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -92,12 +92,12 @@ public class VolatilityAdjustedMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		_sma = new SimpleMovingAverage { Length = Period };
+		_sma = new SMA { Length = Period };
 		_atr = new AverageTrueRange { Length = Period };
 		_stdDev = new StandardDeviation { Length = Period };
 

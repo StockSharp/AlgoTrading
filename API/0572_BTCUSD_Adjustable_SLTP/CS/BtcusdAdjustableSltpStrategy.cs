@@ -90,43 +90,43 @@ public class BtcusdAdjustableSltpStrategy : Strategy
 		_fastSmaLength = Param(nameof(FastSmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Length of fast SMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_slowSmaLength = Param(nameof(SlowSmaLength), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Length of slow SMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 1);
 
 		_emaFilterLength = Param(nameof(EmaFilterLength), 150)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Filter", "Length of EMA filter", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 200, 10);
 
 		_takeProfitDistance = Param(nameof(TakeProfitDistance), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("TP Distance", "Take profit distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200m, 2000m, 100m);
 
 		_stopLossDistance = Param(nameof(StopLossDistance), 250m)
 			.SetGreaterThanZero()
 			.SetDisplay("SL Distance", "Stop loss distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 1000m, 50m);
 
 		_breakEvenTrigger = Param(nameof(BreakEvenTrigger), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("BE Trigger", "Break-even trigger distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 1000m, 50m);
 
 		_retracementPercentage = Param(nameof(RetracementPercentage), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Retracement %", "Retracement percentage for long entry", "Entries")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.005m, 0.05m, 0.005m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -155,13 +155,13 @@ public class BtcusdAdjustableSltpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastSma = new SimpleMovingAverage { Length = FastSmaLength };
-		var slowSma = new SimpleMovingAverage { Length = SlowSmaLength };
-		var ema = new ExponentialMovingAverage { Length = EmaFilterLength };
+		var fastSma = new SMA { Length = FastSmaLength };
+		var slowSma = new SMA { Length = SlowSmaLength };
+		var ema = new EMA { Length = EmaFilterLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

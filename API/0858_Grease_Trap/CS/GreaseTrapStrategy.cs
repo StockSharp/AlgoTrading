@@ -93,12 +93,12 @@ public class GreaseTrapStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma1 = new SimpleMovingAverage { Length = Length1 };
-		_sma2 = new SimpleMovingAverage { Length = Length2 };
+		_sma1 = new SMA { Length = Length1 };
+		_sma2 = new SMA { Length = Length2 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

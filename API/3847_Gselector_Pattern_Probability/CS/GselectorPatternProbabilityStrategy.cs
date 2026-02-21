@@ -65,41 +65,41 @@ public class GselectorPatternProbabilityStrategy : Strategy
 	public GselectorPatternProbabilityStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type");
+		.SetDisplay("Candle Type", "Candle Type", "General");
 		_probabilityThreshold = Param(nameof(ProbabilityThreshold), 0.8m)
-		.SetDisplay("Minimum probability to open a trade");
+		.SetDisplay("Minimum probability to open a trade", "Minimum probability to open a trade", "General");
 		_baseDeltaPoints = Param(nameof(BaseDeltaPoints), 1)
-		.SetDisplay("Base step (in points) used to build patterns");
+		.SetDisplay("Base step (in points) used to build patterns", "Base step (in points) used to build patterns", "General");
 		_deltaSteps = Param(nameof(DeltaSteps), 20)
-		.SetDisplay("Number of delta multiples to analyse");
+		.SetDisplay("Number of delta multiples to analyse", "Number of delta multiples to analyse", "General");
 		_patternLength = Param(nameof(PatternLength), 10)
-		.SetDisplay("Number of price comparisons per pattern");
+		.SetDisplay("Number of price comparisons per pattern", "Number of price comparisons per pattern", "General");
 		_stopLevels = Param(nameof(StopLevels), 1)
-		.SetDisplay("Number of stop/take levels to evaluate");
+		.SetDisplay("Number of stop/take levels to evaluate", "Number of stop/take levels to evaluate", "General");
 		_stopDistancePoints = Param(nameof(StopDistancePoints), 25)
-		.SetDisplay("Base stop distance in points");
+		.SetDisplay("Base stop distance in points", "Base stop distance in points", "General");
 		_forgetFactor = Param(nameof(ForgetFactor), 1.05m)
-		.SetDisplay("Forgetting factor for probability statistics");
+		.SetDisplay("Forgetting factor for probability statistics", "Forgetting factor for probability statistics", "General");
 		_minSamples = Param(nameof(MinSamples), 10)
-		.SetDisplay("Minimum completed observations before trading");
+		.SetDisplay("Minimum completed observations before trading", "Minimum completed observations before trading", "General");
 		_probabilityBuffer = Param(nameof(ProbabilityBuffer), 0.05m)
-		.SetDisplay("Additional probability required to flip an opposite trade");
+		.SetDisplay("Additional probability required to flip an opposite trade", "Additional probability required to flip an opposite trade", "General");
 		_fixedVolume = Param(nameof(FixedVolume), 1m)
-		.SetDisplay("Base position volume");
+		.SetDisplay("Base position volume", "Base position volume", "General");
 		_useReinvest = Param(nameof(UseReinvest), true)
-		.SetDisplay("Scale volume by portfolio changes");
+		.SetDisplay("Scale volume by portfolio changes", "Scale volume by portfolio changes", "General");
 		_volumeMode = Param(nameof(VolumeMode), 1)
-		.SetDisplay("Lot calculation mode (0=fixed, 1=percent, 2=ladder, 3=linear)");
+		.SetDisplay("Lot calculation mode (0=fixed, 1=percent, 2=ladder, 3=linear)", "Lot calculation mode (0=fixed, 1=percent, 2=ladder, 3=linear)", "General");
 		_percentPer10k = Param(nameof(PercentPer10k), 3m)
-		.SetDisplay("Volume percent per 10k of free equity");
+		.SetDisplay("Volume percent per 10k of free equity", "Volume percent per 10k of free equity", "General");
 		_baseDeposit = Param(nameof(BaseDeposit), 500m)
-		.SetDisplay("Base deposit for ladder/linear volume modes");
+		.SetDisplay("Base deposit for ladder/linear volume modes", "Base deposit for ladder/linear volume modes", "General");
 		_depositStep = Param(nameof(DepositStep), 500m)
-		.SetDisplay("Deposit step for ladder/linear volume modes");
+		.SetDisplay("Deposit step for ladder/linear volume modes", "Deposit step for ladder/linear volume modes", "General");
 		_maxVolume = Param(nameof(MaxVolume), 10000m)
-		.SetDisplay("Maximum allowed volume");
+		.SetDisplay("Maximum allowed volume", "Maximum allowed volume", "General");
 		_cooldownFactor = Param(nameof(CooldownFactor), 2)
-		.SetDisplay("Multiplier applied to timeframe for reactivation cooldown");
+		.SetDisplay("Multiplier applied to timeframe for reactivation cooldown", "Multiplier applied to timeframe for reactivation cooldown", "General");
 	}
 
 	/// <summary>
@@ -265,9 +265,9 @@ public class GselectorPatternProbabilityStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceHistory = new List<decimal>[DeltaSteps];
 		_lastAnchor = new decimal[DeltaSteps];
@@ -298,7 +298,7 @@ public class GselectorPatternProbabilityStrategy : Strategy
 		.Bind(ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />

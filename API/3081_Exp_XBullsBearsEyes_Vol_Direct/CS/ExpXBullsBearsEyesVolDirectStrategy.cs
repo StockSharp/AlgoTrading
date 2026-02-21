@@ -249,11 +249,11 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage
+		_ema = new EMA
 		{
 			Length = Math.Max(1, Period)
 		};
@@ -508,12 +508,12 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 		var effectiveLength = Math.Max(1, length);
 		return method switch
 		{
-			SmoothingMethods.Sma => new SimpleMovingAverage { Length = effectiveLength },
-			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = effectiveLength },
+			SmoothingMethods.Sma => new SMA { Length = effectiveLength },
+			SmoothingMethods.Ema => new EMA { Length = effectiveLength },
 			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = effectiveLength },
 			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = effectiveLength },
 			SmoothingMethods.Jurik => CreateJurik(effectiveLength, phase),
-			_ => new SimpleMovingAverage { Length = effectiveLength },
+			_ => new SMA { Length = effectiveLength },
 		};
 	}
 

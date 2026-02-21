@@ -142,11 +142,11 @@ public class OptimizedAutoDetectStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		_shortMaPeriod = 9;
 		_longMaPeriod = 21;
@@ -200,9 +200,9 @@ public class OptimizedAutoDetectStrategy : Strategy
 			break;
 		}
 		
-		var shortSma = new SimpleMovingAverage { Length = _shortMaPeriod };
-		var longSma = new SimpleMovingAverage { Length = _longMaPeriod };
-		var trendSma = new SimpleMovingAverage { Length = 200 };
+		var shortSma = new SMA { Length = _shortMaPeriod };
+		var longSma = new SMA { Length = _longMaPeriod };
+		var trendSma = new SMA { Length = 200 };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		

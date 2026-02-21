@@ -90,9 +90,9 @@ public class HaUniversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_smaHigh = new Highest { Length = Period };
@@ -150,8 +150,8 @@ public class HaUniversalStrategy : Strategy
 		}
 
 		// Process indicators with HA values using candle's time
-		var highValue = _smaHigh.Process(haHigh, candle.ServerTime, candle.State == CandleStates.Finished);
-		var lowValue = _smaLow.Process(haLow, candle.ServerTime, candle.State == CandleStates.Finished);
+		var highValue = _smaHigh.Process(new DecimalIndicatorValue(_smaHigh, haHigh, candle.ServerTime));
+		var lowValue = _smaLow.Process(new DecimalIndicatorValue(_smaLow, haLow, candle.ServerTime));
 
 		if (!_smaHigh.IsFormed || !_smaLow.IsFormed)
 		{

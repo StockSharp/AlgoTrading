@@ -246,37 +246,37 @@ public class AdaptiveSqueezeMomentumStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Period", "Periods for Bollinger Bands", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 		
 		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2.0m)
 		.SetNotNegative()
 		.SetDisplay("Bollinger Multiplier", "Deviation multiplier for Bollinger Bands", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.5m, 3.0m, 0.5m);
 		
 		_keltnerPeriod = Param(nameof(KeltnerPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Keltner Period", "EMA period for Keltner Channels", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 		
 		_keltnerMultiplier = Param(nameof(KeltnerMultiplier), 1.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Keltner Multiplier", "ATR multiplier for Keltner Channels", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.0m, 3.0m, 0.5m);
 		
 		_momentumLength = Param(nameof(MomentumLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Length", "Periods for momentum calculation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 5);
 		
 		_trendMaLength = Param(nameof(TrendMaLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Trend EMA Length", "EMA period for trend filter", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 10);
 		
 		_useAtrStops = Param(nameof(UseAtrStops), true)
@@ -285,19 +285,19 @@ public class AdaptiveSqueezeMomentumStrategy : Strategy
 		_atrMultiplierSl = Param(nameof(AtrMultiplierSl), 1.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Stop Mult", "ATR multiplier for stop-loss", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.0m, 3.0m, 0.5m);
 		
 		_atrMultiplierTp = Param(nameof(AtrMultiplierTp), 2.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Take Mult", "ATR multiplier for take-profit", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.5m, 4.0m, 0.5m);
 		
 		_atrLength = Param(nameof(AtrLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Length", "Period for ATR", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 21, 7);
 		
 		_minVolatility = Param(nameof(MinVolatility), 0.5m)
@@ -317,7 +317,7 @@ public class AdaptiveSqueezeMomentumStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Length", "Period for RSI", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 21, 7);
 		
 		_rsiOversold = Param(nameof(RsiOversold), 40m)
@@ -349,9 +349,9 @@ public class AdaptiveSqueezeMomentumStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var bollinger = new BollingerBands
 		{
@@ -380,7 +380,7 @@ public class AdaptiveSqueezeMomentumStrategy : Strategy
 			Length = RsiLength
 		};
 		
-		var trendEma = new ExponentialMovingAverage
+		var trendEma = new EMA
 		{
 			Length = TrendMaLength
 		};

@@ -94,22 +94,22 @@ public class AdaptiveHmaPlusStrategy : Strategy
     {
         _minPeriod = Param(nameof(MinPeriod), 172)
             .SetDisplay("Min Period", "Minimum period for HMA", "General")
-            .SetCanOptimize(true)
+            
             .SetOptimize(100, 200, 10);
 
         _maxPeriod = Param(nameof(MaxPeriod), 233)
             .SetDisplay("Max Period", "Maximum period for HMA", "General")
-            .SetCanOptimize(true)
+            
             .SetOptimize(200, 260, 10);
 
         _adaptPercent = Param(nameof(AdaptPercent), 0.031m)
             .SetDisplay("Adapt Percent", "Percentage for length adaptation", "General")
-            .SetCanOptimize(true)
+            
             .SetOptimize(0.01m, 0.05m, 0.01m);
 
         _flatThreshold = Param(nameof(FlatThreshold), 0m)
             .SetDisplay("Flat Threshold", "Slope difference treated as flat", "General")
-            .SetCanOptimize(true)
+            
             .SetOptimize(0m, 1m, 0.1m);
 
         _useVolume = Param(nameof(UseVolume), false)
@@ -134,14 +134,14 @@ public class AdaptiveHmaPlusStrategy : Strategy
     }
 
     /// <inheritdoc />
-    protected override void OnStarted(DateTimeOffset time)
+    protected override void OnStarted2(DateTime time)
     {
-        base.OnStarted(time);
+        base.OnStarted2(time);
 
         _hma = new HullMovingAverage { Length = MinPeriod };
         _atrShort = new AverageTrueRange { Length = 14 };
         _atrLong = new AverageTrueRange { Length = 46 };
-        _volumeSma = new SimpleMovingAverage { Length = 20 };
+        _volumeSma = new SMA { Length = 20 };
 
         var subscription = SubscribeCandles(CandleType);
         subscription
@@ -162,7 +162,7 @@ public class AdaptiveHmaPlusStrategy : Strategy
         if (candle.State != CandleStates.Finished)
             return;
 
-        var volumeSmaValue = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+        var volumeSmaValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
         var plugged = UseVolume
             ? candle.TotalVolume > volumeSmaValue

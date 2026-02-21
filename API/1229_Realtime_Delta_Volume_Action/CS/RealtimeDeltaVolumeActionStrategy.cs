@@ -50,7 +50,7 @@ public class RealtimeDeltaVolumeActionStrategy : Strategy
 		_deltaThreshold = Param(nameof(DeltaThreshold), 100m)
 		.SetGreaterThanZero()
 		.SetDisplay("Delta Threshold", "Volume delta required to trade", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50m, 300m, 50m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -71,9 +71,9 @@ public class RealtimeDeltaVolumeActionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var candleSub = SubscribeCandles(CandleType);
 		candleSub.Bind(ProcessCandle).Start();

@@ -82,13 +82,13 @@ public class SimpleFxStrategy : Strategy
 		_longMaPeriod = Param(nameof(LongMaPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Long MA Period", "Period of the long EMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 50);
 
 		_shortMaPeriod = Param(nameof(ShortMaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Short MA Period", "Period of the short EMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_stopLoss = Param(nameof(StopLoss), 30)
@@ -116,9 +116,9 @@ public class SimpleFxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var longMa = new EMA { Length = LongMaPeriod };
 		var shortMa = new EMA { Length = ShortMaPeriod };

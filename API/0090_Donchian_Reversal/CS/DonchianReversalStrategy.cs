@@ -62,12 +62,12 @@ public class DonchianReversalStrategy : Strategy
 		_period = Param(nameof(Period), 20)
 			.SetDisplay("Period", "Period for Donchian Channel calculation", "Indicator Settings")
 			.SetOptimize(10, 40, 5)
-			.SetCanOptimize(true);
+			;
 			
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 			.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
 			.SetOptimize(1m, 3m, 0.5m)
-			.SetCanOptimize(true);
+			;
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -88,9 +88,9 @@ public class DonchianReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Enable position protection using stop-loss
 		StartProtection(

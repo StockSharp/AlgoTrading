@@ -61,12 +61,12 @@ public class CryptoVolatilityBitcoinCorrelationStrategy : Strategy
 		_currentBvol = 0m;
 		_prevBvol = 0m;
 	}
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var highestClose = new Highest { Length = VixFixLength };
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new EMA { Length = EmaLength };
 
 		var mainSubscription = SubscribeCandles(CandleType);
 		mainSubscription

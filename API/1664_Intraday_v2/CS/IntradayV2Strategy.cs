@@ -39,31 +39,31 @@ public class IntradayV2Strategy : Strategy
 		_bandLength = Param(nameof(BandLength), 20)
 			.SetDisplay("Band Length", "Bollinger band length", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_entryWidth = Param(nameof(EntryWidth), 2.4m)
 			.SetDisplay("Entry Width", "Standard deviation for entries", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_exitWidth = Param(nameof(ExitWidth), 1m)
 			.SetDisplay("Exit Width", "Standard deviation for exits", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 30m)
 			.SetDisplay("Stop Loss", "Price offset for stop loss", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 60m)
 			.SetDisplay("Take Profit", "Price offset for take profit", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General")
-			.SetCanOptimize(false);
+			;
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -72,11 +72,11 @@ public class IntradayV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var entryBands = new BollingerBands
 		{

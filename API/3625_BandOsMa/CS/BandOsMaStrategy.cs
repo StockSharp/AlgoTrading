@@ -178,58 +178,58 @@ public class BandOsMaStrategy : Strategy
 		_lotSize = Param(nameof(LotSize), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Lot Size", "Trade volume expressed in lots", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Protective stop distance in MetaTrader points", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Fast", "Fast EMA length used inside MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Slow", "Slow EMA length used inside MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal", "Signal EMA length used inside MACD", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_priceType = Param(nameof(PriceType), IndicatorAppliedPrices.Typical)
 		.SetDisplay("Applied Price", "Price source forwarded to the MACD", "General")
-		.SetCanOptimize(true);
+		;
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Period", "Number of OsMA samples used for Bollinger Bands", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_bollingerShift = Param(nameof(BollingerShift), 0)
 		.SetDisplay("Bollinger Shift", "Shift applied to Bollinger buffers (MetaTrader style)", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_maPeriod = Param(nameof(MovingAveragePeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("OsMA MA Period", "Length of the smoothing moving average", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_maShift = Param(nameof(MovingAverageShift), 0)
 		.SetDisplay("OsMA MA Shift", "Shift applied to the moving average buffer", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
 		.SetDisplay("OsMA MA Method", "Moving average method applied to the OsMA", "Indicators")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <inheritdoc />
@@ -311,7 +311,7 @@ public class BandOsMaStrategy : Strategy
 		}
 
 		var price = GetAppliedPrice(candle, PriceType);
-		var macdValue = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(price, candle.CloseTime, true);
+		var macdValue = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(new DecimalIndicatorValue(_macd, price, candle.CloseTime));
 		if (!macdValue.IsFinal || macdValue.Histogram is not decimal osma)
 		{
 			return;
@@ -565,10 +565,10 @@ public class BandOsMaStrategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

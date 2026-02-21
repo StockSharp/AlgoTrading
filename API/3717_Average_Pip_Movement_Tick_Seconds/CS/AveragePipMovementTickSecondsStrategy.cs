@@ -42,12 +42,12 @@ public class AveragePipMovementTickSecondsStrategy : Strategy
 		_maxTicks = Param(nameof(MaxTicks), 100)
 		.SetDisplay("Tick Buffer Size", "Number of ticks considered when computing averages.", "General")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_checkIntervalSeconds = Param(nameof(CheckIntervalSeconds), 1)
 		.SetDisplay("Check Interval (seconds)", "Seconds between periodic summary reports.", "General")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>
@@ -69,9 +69,9 @@ public class AveragePipMovementTickSecondsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var security = Security ?? throw new InvalidOperationException("Security is not set.");
 
@@ -84,13 +84,13 @@ public class AveragePipMovementTickSecondsStrategy : Strategy
 
 		var ticks = Math.Max(2, MaxTicks);
 
-		_pipMovementAverage = new SimpleMovingAverage
+		_pipMovementAverage = new SMA
 		{
 			// Use length equal to the number of absolute differences (ticks - 1).
 			Length = Math.Max(1, ticks - 1)
 		};
 
-		_spreadAverage = new SimpleMovingAverage
+		_spreadAverage = new SMA
 		{
 			Length = ticks
 		};
@@ -133,7 +133,7 @@ public class AveragePipMovementTickSecondsStrategy : Strategy
 		{
 			// Convert price movement into pips before feeding the indicator.
 			var pipMovement = Math.Abs((bid - previous) / _pipSize);
-			var value = _pipMovementAverage.Process(new DecimalIndicatorValue(_pipMovementAverage, pipMovement, time));
+			var value = _pipMovementAverage.Process(new DecimalIndicatorValue(_pipMovementAverage, pipMovement, time.UtcDateTime));
 
 			if (value.IsFinal)
 			{
@@ -159,7 +159,7 @@ public class AveragePipMovementTickSecondsStrategy : Strategy
 		}
 
 		var spreadPips = spread / _pipSize;
-		var value = _spreadAverage.Process(new DecimalIndicatorValue(_spreadAverage, spreadPips, time));
+		var value = _spreadAverage.Process(new DecimalIndicatorValue(_spreadAverage, spreadPips, time.UtcDateTime));
 
 		if (value.IsFinal)
 		{

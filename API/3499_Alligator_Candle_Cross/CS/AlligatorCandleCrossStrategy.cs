@@ -224,11 +224,11 @@ public class AlligatorCandleCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_jaw = new SmoothedMovingAverage { Length = JawPeriod };
 		_teeth = new SmoothedMovingAverage { Length = TeethPeriod };
@@ -301,9 +301,9 @@ public class AlligatorCandleCrossStrategy : Strategy
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var jawValue = _jaw.Process(median, candle.OpenTime, true);
-		var teethValue = _teeth.Process(median, candle.OpenTime, true);
-		var lipsValue = _lips.Process(median, candle.OpenTime, true);
+		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.OpenTime));
+		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.OpenTime));
+		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.OpenTime));
 
 		if (!jawValue.IsFinal || !teethValue.IsFinal || !lipsValue.IsFinal)
 		{

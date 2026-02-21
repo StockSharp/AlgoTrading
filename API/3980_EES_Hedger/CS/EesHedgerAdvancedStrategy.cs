@@ -119,27 +119,27 @@ public class EesHedgerAdvancedStrategy : Strategy
 	{
 		_hedgeVolume = Param(nameof(HedgeVolume), 0.1m)
 		.SetDisplay("Hedge Volume", "Volume used for hedge orders", "General")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance applied to hedges", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 		.SetDisplay("Take Profit (pips)", "Take-profit distance applied to hedges", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 25)
 		.SetDisplay("Trailing Stop (pips)", "Trailing distance maintained once profit grows", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_trailingActivationPips = Param(nameof(TrailingActivationPips), 0)
 		.SetDisplay("Trailing Activation (pips)", "Minimum profit before trailing stop updates", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_breakEvenPips = Param(nameof(BreakEvenPips), 25)
 		.SetDisplay("Break-even (pips)", "Profit required before the stop is moved to the entry price", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_originalOrderComment = Param(nameof(OriginalOrderComment), string.Empty)
 		.SetDisplay("Original Comment", "Filter external trades by comment", "Filters");
@@ -164,9 +164,9 @@ public class EesHedgerAdvancedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 		{

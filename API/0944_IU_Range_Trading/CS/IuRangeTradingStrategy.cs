@@ -91,25 +91,25 @@ public class IuRangeTradingStrategy : Strategy
 		_rangeLength = Param(nameof(RangeLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Length", "Lookback period for range detection", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_atrTargetFactor = Param(nameof(AtrTargetFactor), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Target Factor", "Multiplier for trailing stop step", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_atrRangeFactor = Param(nameof(AtrRangeFactor), 1.75m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Range Factor", "ATR multiplier to validate range", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.25m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -137,9 +137,9 @@ public class IuRangeTradingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = RangeLength };
 		_lowest = new Lowest { Length = RangeLength };

@@ -38,12 +38,12 @@ public class HpcsInter7Strategy : Strategy
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Length", "Number of candles included in the Bollinger Bands calculation", "Indicators")
-		.SetCanOptimize(true);
+		;
 		
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for the Bollinger Bands", "Indicators")
-		.SetCanOptimize(true);
+		;
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for Bollinger Bands", "General");
@@ -51,7 +51,7 @@ public class HpcsInter7Strategy : Strategy
 		_protectionDistancePoints = Param(nameof(ProtectionDistancePoints), 10m)
 		.SetNotNegative()
 		.SetDisplay("Protection Distance (pts)", "Distance for stop loss and take profit expressed in price steps", "Risk")
-		.SetCanOptimize(true);
+		;
 	}
 	
 	/// <summary>
@@ -108,11 +108,11 @@ public class HpcsInter7Strategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		var bollinger = new BollingerBands
 		{

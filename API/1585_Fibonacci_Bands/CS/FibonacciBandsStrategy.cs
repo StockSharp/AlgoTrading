@@ -28,7 +28,7 @@ public class FibonacciBandsStrategy : Strategy
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _ma;
+	private DecimalLengthIndicator _ma;
 	private AverageTrueRange _atr;
 	private RelativeStrengthIndex _rsi;
 	private decimal _prevSrc;
@@ -128,34 +128,34 @@ public class FibonacciBandsStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 233)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average length", "General")
-			.SetCanOptimize(true);
+			;
 
 		_fib1 = Param(nameof(Fib1), 1.618m)
 			.SetDisplay("Fib Level 1", "Fibonacci level 1", "Levels")
-			.SetCanOptimize(true);
+			;
 
 		_fib2 = Param(nameof(Fib2), 2.618m)
 			.SetDisplay("Fib Level 2", "Fibonacci level 2", "Levels")
-			.SetCanOptimize(true);
+			;
 
 		_fib3 = Param(nameof(Fib3), 4.236m)
 			.SetDisplay("Fib Level 3", "Fibonacci level 3", "Levels")
-			.SetCanOptimize(true);
+			;
 
 		_kcMultiplier = Param(nameof(KcMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("KC Multiplier", "Keltner multiplier", "Keltner")
-			.SetCanOptimize(true);
+			;
 
 		_kcLength = Param(nameof(KcLength), 89)
 			.SetGreaterThanZero()
 			.SetDisplay("KC Length", "ATR length", "Keltner")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI length", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
@@ -168,14 +168,14 @@ public class FibonacciBandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = MaType switch
 		{
-			"SMA" => new SimpleMovingAverage { Length = MaLength },
-			"EMA" => new ExponentialMovingAverage { Length = MaLength },
+			"SMA" => new SMA { Length = MaLength },
+			"EMA" => new EMA { Length = MaLength },
 			"WMA" => new WeightedMovingAverage { Length = MaLength },
 			"HMA" => new HullMovingAverage { Length = MaLength },
 			_ => new WeightedMovingAverage { Length = MaLength }
@@ -202,9 +202,9 @@ public class FibonacciBandsStrategy : Strategy
 			return;
 
 		var src = (candle.HighPrice + candle.LowPrice) / 2m;
-		var maVal = _ma.Process(src, candle.ServerTime, true).ToDecimal();
-		var atrVal = _atr.Process(candle).ToDecimal();
-		var rsiVal = _rsi.Process(src, candle.ServerTime, true).ToDecimal();
+		var maVal = _ma.Process(new DecimalIndicatorValue(_ma, src, candle.ServerTime)).ToDecimal();
+		var atrVal = _atr.Process(new DecimalIndicatorValue(_atr, candle).ToDecimal();
+		var rsiVal = _rsi.Process(src, candle.ServerTime)).ToDecimal();
 
 		if (!_ma.IsFormed || !_atr.IsFormed || !_rsi.IsFormed)
 		{

@@ -59,21 +59,21 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		_moneyManagement = Param(nameof(MoneyManagement), 0.1m)
 			.SetDisplay("Money Management", "Base value used for position sizing.", "Trading")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_moneyMode = Param(nameof(MoneyMode), MoneyManagementModes.Lot)
 			.SetDisplay("Money Mode", "Position sizing model replicated from the MetaTrader expert.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 			.SetDisplay("Stop Loss (points)", "Distance between entry price and stop loss expressed in price points.", "Risk")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetDisplay("Take Profit (points)", "Distance between entry price and take profit expressed in price points.", "Risk")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_deviationPoints = Param(nameof(DeviationPoints), 10)
 			.SetDisplay("Allowed Deviation", "Maximum price deviation tolerated by the MetaTrader order logic.", "Risk")
@@ -97,7 +97,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		_holdingMinutes = Param(nameof(HoldingMinutes), 960)
 			.SetDisplay("Holding Minutes", "Maximum lifetime of an open position in minutes.", "Risk")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series processed by the strategy.", "General");
@@ -105,7 +105,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 50.01m)
 			.SetDisplay("PEMA Length", "Base length used for each exponential average in the Pentuple EMA stack.", "Indicator")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_appliedPrice = Param(nameof(PriceMode), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source used to feed the Pentuple EMA calculation.", "Indicator");
@@ -117,7 +117,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Number of completed candles to wait before reacting to an indicator color change.", "Indicator")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 	}
 
 	public decimal MoneyManagement
@@ -221,15 +221,15 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var length = Math.Max(1, (int)Math.Round(EmaLength));
-		_emaStages = new ExponentialMovingAverage[8];
+		_emaStages = new EMA[8];
 		for (var i = 0; i < _emaStages.Length; i++)
 		{
-			_emaStages[i] = new ExponentialMovingAverage
+			_emaStages[i] = new EMA
 			{
 				Length = length
 			};
@@ -293,7 +293,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		for (var i = 0; i < _emaStages.Length; i++)
 		{
 			var ema = _emaStages[i];
-			var value = ema.Process(stageInput, candle.CloseTime, true);
+			var value = ema.Process(new DecimalIndicatorValue(ema, stageInput, candle.CloseTime));
 			if (!ema.IsFormed)
 				return;
 

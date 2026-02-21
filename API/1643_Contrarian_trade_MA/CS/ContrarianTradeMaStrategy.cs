@@ -62,18 +62,18 @@ public class ContrarianTradeMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_highest = new Highest { Length = CalcPeriod, CandlePrice = CandlePrice.High };
-		_lowest = new Lowest { Length = CalcPeriod, CandlePrice = CandlePrice.Low };
+		_highest = new Highest { Length = CalcPeriod };
+		_lowest = new Lowest { Length = CalcPeriod };
 		_sma = new SMA { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_highest, _lowest, _sma, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest, decimal sma)

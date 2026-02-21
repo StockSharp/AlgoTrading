@@ -124,19 +124,19 @@ public class BasicAtrStopTakeStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Lookback period for the Average True Range", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 1);
 
 		_stopLossFactor = Param(nameof(StopLossFactor), 1.5m)
 			.SetNotNegative()
 			.SetDisplay("Stop Factor", "ATR multiplier applied to the stop-loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3.0m, 0.5m);
 
 		_takeProfitFactor = Param(nameof(TakeProfitFactor), 2.0m)
 			.SetNotNegative()
 			.SetDisplay("Take Factor", "ATR multiplier applied to the take-profit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 4.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -157,9 +157,9 @@ public class BasicAtrStopTakeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange
 		{
@@ -171,7 +171,7 @@ public class BasicAtrStopTakeStrategy : Strategy
 			.Bind(_atr, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

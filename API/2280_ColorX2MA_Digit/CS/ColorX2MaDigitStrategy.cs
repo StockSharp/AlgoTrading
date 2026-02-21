@@ -63,13 +63,13 @@ public class ColorX2MaDigitStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Length of the first smoothing", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_slowLength = Param(nameof(SlowLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Length of the second smoothing", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -91,13 +91,13 @@ public class ColorX2MaDigitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create moving average indicators.
-		var fastMa = new SimpleMovingAverage { Length = FastLength };
-		var slowMa = new SimpleMovingAverage { Length = SlowLength };
+		var fastMa = new SMA { Length = FastLength };
+		var slowMa = new SMA { Length = SlowLength };
 
 		// Subscribe to candle data and bind indicators.
 		var subscription = SubscribeCandles(CandleType);

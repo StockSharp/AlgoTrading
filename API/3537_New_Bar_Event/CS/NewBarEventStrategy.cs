@@ -57,9 +57,9 @@ public class NewBarEventStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to candle updates for the selected timeframe.
 		var subscription = SubscribeCandles(CandleType);

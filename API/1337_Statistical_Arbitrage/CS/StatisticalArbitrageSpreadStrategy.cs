@@ -76,13 +76,13 @@ public class StatisticalArbitrageSpreadStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for mean and std dev", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_stdMultiplier = Param(nameof(StdMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Std Multiplier", "Standard deviation multiplier", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -113,9 +113,9 @@ public class StatisticalArbitrageSpreadStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (SecondSecurity == null)
 			throw new InvalidOperationException("Second security is not specified.");
@@ -155,8 +155,8 @@ public class StatisticalArbitrageSpreadStrategy : Strategy
 			return;
 
 		var spread = candle.ClosePrice - _lastSecondPrice;
-		var maValue = _spreadMa.Process(spread, candle.ServerTime, true).ToDecimal();
-		var stdValue = _spreadStd.Process(spread, candle.ServerTime, true).ToDecimal();
+		var maValue = _spreadMa.Process(new DecimalIndicatorValue(_spreadMa, spread, candle.ServerTime)).ToDecimal();
+		var stdValue = _spreadStd.Process(new DecimalIndicatorValue(_spreadStd, spread, candle.ServerTime)).ToDecimal();
 
 		if (!_spreadMa.IsFormed || !_spreadStd.IsFormed)
 			return;

@@ -13,7 +13,7 @@
   - `VolatilityLookback = 24`
   - `EntryStdDevMultiplier = 1.6m`
   - `ExitStdDevMultiplier = 1.4m`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **过滤器**:
   - 分类: 均值回归
   - 方向: 多头

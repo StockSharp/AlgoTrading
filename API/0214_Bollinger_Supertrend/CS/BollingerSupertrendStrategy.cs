@@ -87,25 +87,25 @@ public class BollingerSupertrendStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 			
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 			
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Period", "ATR period for Supertrend calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 14, 1);
 			
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Multiplier", "ATR multiplier for Supertrend calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2.0m, 4.0m, 0.5m);
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -131,9 +131,9 @@ public class BollingerSupertrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 // Initialize indicators
 		_bollinger = new BollingerBands

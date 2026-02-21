@@ -64,9 +64,9 @@ public class RiskFixedMarginStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to Level1 data to receive bid/ask updates required for risk calculations.
 		SubscribeLevel1()

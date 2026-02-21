@@ -64,17 +64,17 @@ public class MoneyFixedRiskStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 25)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_riskPercent = Param(nameof(RiskPercent), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk %", "Percent of equity risked per trade", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_ticksInterval = Param(nameof(TicksInterval), 980)
 		.SetGreaterThanZero()
 		.SetDisplay("Ticks Interval", "Ticks between position size checks", "General")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <inheritdoc />
@@ -95,9 +95,9 @@ public class MoneyFixedRiskStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var priceStep = Security.PriceStep ?? 0m;
 		if (priceStep <= 0m)
@@ -113,7 +113,7 @@ public class MoneyFixedRiskStrategy : Strategy
 		.Bind(ProcessTrade)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 		private void ProcessTrade(ITickTradeMessage trade)

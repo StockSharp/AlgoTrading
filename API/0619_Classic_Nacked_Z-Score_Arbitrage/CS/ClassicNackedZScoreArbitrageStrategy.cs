@@ -75,16 +75,16 @@ public class ClassicNackedZScoreArbitrageStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 33)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for spread mean and std deviation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 5);
 
 		_zScoreThreshold = Param(nameof(ZScoreThreshold), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Z-Score Threshold", "Threshold for spread Z-Score", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_secondSecurity = Param<Security>(nameof(SecondSecurity))
@@ -113,9 +113,9 @@ public class ClassicNackedZScoreArbitrageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (SecondSecurity == null)
 			throw new InvalidOperationException("Second security is not specified.");
@@ -134,7 +134,7 @@ public class ClassicNackedZScoreArbitrageStrategy : Strategy
 			.Bind(ProcessSecondSecurityCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -154,8 +154,8 @@ public class ClassicNackedZScoreArbitrageStrategy : Strategy
 
 		var spread = candle.ClosePrice - _lastSecondPrice;
 
-		var maValue = _spreadMa.Process(spread, candle.ServerTime, candle.State == CandleStates.Finished);
-		var stdValue = _spreadStdDev.Process(spread, candle.ServerTime, candle.State == CandleStates.Finished);
+		var maValue = _spreadMa.Process(new DecimalIndicatorValue(_spreadMa, spread, candle.ServerTime));
+		var stdValue = _spreadStdDev.Process(new DecimalIndicatorValue(_spreadStdDev, spread, candle.ServerTime));
 
 		if (!_spreadMa.IsFormed || !_spreadStdDev.IsFormed)
 			return;

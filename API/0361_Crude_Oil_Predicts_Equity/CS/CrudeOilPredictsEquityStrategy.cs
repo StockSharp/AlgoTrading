@@ -84,7 +84,7 @@ public class CrudeOilPredictsEquityStrategy : Strategy
 		_cash = Param<Security>(nameof(CashEtf), null)
 			.SetDisplay("Cash ETF", "Cash ETF when not invested", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 
 		_lookback = Param(nameof(Lookback), 22)
@@ -111,9 +111,9 @@ public class CrudeOilPredictsEquityStrategy : Strategy
 		_lastDay = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var securities = GetWorkingSecurities().ToArray();
 		if (securities.Length == 0)

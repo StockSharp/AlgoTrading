@@ -72,13 +72,13 @@ public class Ema102050AlignmentStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema10 = new ExponentialMovingAverage { Length = 10 };
-		var ema20 = new ExponentialMovingAverage { Length = 20 };
-		var ema50 = new ExponentialMovingAverage { Length = 50 };
+		var ema10 = new EMA { Length = 10 };
+		var ema20 = new EMA { Length = 20 };
+		var ema50 = new EMA { Length = 50 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

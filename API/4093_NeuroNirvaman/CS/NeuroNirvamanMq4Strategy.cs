@@ -335,9 +335,9 @@ public class NeuroNirvamanMq4Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Synchronize the base volume property with the parameter used by the expert.
 		Volume = TradeVolume;
@@ -418,8 +418,8 @@ public class NeuroNirvamanMq4Strategy : Strategy
 		// Update SilverTrend calculations for both perceptrons.
 		_silverTrend1State.Length = SilverTrend1Length;
 		_silverTrend2State.Length = SilverTrend2Length;
-		var silver1 = _silverTrend1State.Process(candle.HighPrice, candle.LowPrice, candle.ClosePrice);
-		var silver2 = _silverTrend2State.Process(candle.HighPrice, candle.LowPrice, candle.ClosePrice);
+		var silver1 = _silverTrend1State.Process(new DecimalIndicatorValue(_silverTrend1State, candle.HighPrice, candle.LowPrice));
+		var silver2 = _silverTrend2State.Process(new DecimalIndicatorValue(_silverTrend2State, candle.HighPrice, candle.LowPrice));
 
 		if (!laguerre1Value.IsFinal || !laguerre2Value.IsFinal || !laguerre3Value.IsFinal || !laguerre4Value.IsFinal)
 		{

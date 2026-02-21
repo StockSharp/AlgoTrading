@@ -53,13 +53,13 @@ public class DslStrategy : Strategy
 
 	public DslStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
-		_length = Param(nameof(Length), 34).SetDisplay("Length");
-		_offset = Param(nameof(Offset), 30).SetDisplay("Offset");
-		_bandWidth = Param(nameof(BandsWidth), 1m).SetDisplay("Bands Width");
-		_riskReward = Param(nameof(RiskReward), 1.5m).SetDisplay("Risk Reward");
-		_belugaLength = Param(nameof(BelugaLength), 10).SetDisplay("Beluga Length");
-		_dslFastMode = Param(nameof(DslFastMode), true).SetDisplay("DSL Fast Mode");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
+		_length = Param(nameof(Length), 34).SetDisplay("Length", "Length", "General");
+		_offset = Param(nameof(Offset), 30).SetDisplay("Offset", "Offset", "General");
+		_bandWidth = Param(nameof(BandsWidth), 1m).SetDisplay("Bands Width", "Bands Width", "General");
+		_riskReward = Param(nameof(RiskReward), 1.5m).SetDisplay("Risk Reward", "Risk Reward", "General");
+		_belugaLength = Param(nameof(BelugaLength), 10).SetDisplay("Beluga Length", "Beluga Length", "General");
+		_dslFastMode = Param(nameof(DslFastMode), true).SetDisplay("DSL Fast Mode", "DSL Fast Mode", "General");
 	}
 
 	public DataType CandleType
@@ -105,9 +105,9 @@ public class DslStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_sma = new() { Length = Length };
 		_highest = new() { Length = Length };
@@ -123,7 +123,7 @@ public class DslStrategy : Strategy
 		.Bind(_sma, _highest, _lowest, _atr, _rsi, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal highestValue, decimal lowestValue, decimal atrValue, decimal rsiValue)

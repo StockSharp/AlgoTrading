@@ -15,7 +15,7 @@
 - **Параметры по умолчанию**:
   - `Region` = "US"
   - `Lookback` = 2
-  - `CandleType` = TimeSpan.FromDays(1).TimeFrame()
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
 - **Фильтры**:
   - Категория: Other
   - Направление: Оба

@@ -91,27 +91,27 @@ public class AtrExhaustionStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 			.SetRange(7, 21)
-			.SetCanOptimize(true);
+			;
 			
 		_atrAvgPeriod = Param(nameof(AtrAvgPeriod), 20)
 			.SetDisplay("ATR Average Period", "Period for ATR average calculation", "Indicators")
 			.SetRange(10, 30)
-			.SetCanOptimize(true);
+			;
 			
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 			.SetDisplay("ATR Multiplier", "Multiplier to determine ATR spike", "Indicators")
 			.SetRange(1.3m, 2.0m)
-			.SetCanOptimize(true);
+			;
 			
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetDisplay("MA Period", "Period for moving average", "Indicators")
 			.SetRange(10, 50)
-			.SetCanOptimize(true);
+			;
 			
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 			.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
 			.SetRange(1m, 3m)
-			.SetCanOptimize(true);
+			;
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -124,9 +124,9 @@ public class AtrExhaustionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Enable position protection using stop-loss
 		StartProtection(
@@ -136,10 +136,10 @@ public class AtrExhaustionStrategy : Strategy
 			useMarketOrders: true
 		);
 
-		_atrAvg = new SimpleMovingAverage { Length = AtrAvgPeriod };
+		_atrAvg = new SMA { Length = AtrAvgPeriod };
 
 		// Create indicators
-		var ma = new SimpleMovingAverage { Length = MaPeriod };
+		var ma = new SMA { Length = MaPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		// Create subscription
@@ -178,7 +178,7 @@ public class AtrExhaustionStrategy : Strategy
 			return;
 
 		// Update ATR average
-		var atrAvgValue = _atrAvg.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var atrAvgValue = _atrAvg.Process(new DecimalIndicatorValue(_atrAvg, atrValue, candle.ServerTime)).ToDecimal();
 
 		// Determine candle direction
 		bool isBullishCandle = candle.ClosePrice > candle.OpenPrice;

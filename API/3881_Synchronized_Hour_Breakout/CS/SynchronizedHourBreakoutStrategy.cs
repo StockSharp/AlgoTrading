@@ -150,19 +150,19 @@ public class SynchronizedHourBreakoutStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pts)", "Primary take-profit distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 200m, 10m);
 
 		_secondaryTakeProfitPoints = Param(nameof(SecondaryTakeProfitPoints), 36m)
 			.SetGreaterThanZero()
 			.SetDisplay("Secondary TP (pts)", "Early take-profit distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 80m, 4m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 82m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pts)", "Stop-loss distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40m, 160m, 10m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 30m)
@@ -211,9 +211,9 @@ public class SynchronizedHourBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 		_volumeStep = Security?.VolumeStep ?? 0.01m;
@@ -227,7 +227,7 @@ public class SynchronizedHourBreakoutStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

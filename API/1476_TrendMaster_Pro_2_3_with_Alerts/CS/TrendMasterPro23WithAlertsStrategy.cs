@@ -175,13 +175,13 @@ public class TrendMasterPro23WithAlertsStrategy : Strategy
 
 	private IIndicator CreateMa(MaTypes type, int length)
 	{
-		return type == MaTypes.Sma ? new SimpleMovingAverage { Length = length } : new ExponentialMovingAverage { Length = length };
+		return type == MaTypes.Sma ? new SMA { Length = length } : new EMA { Length = length };
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		_prevShort = _prevLong = 0m;
 		var shortMa = CreateMa(MovingAverageType, ShortLength);
 		var longMa = CreateMa(MovingAverageType, LongLength);

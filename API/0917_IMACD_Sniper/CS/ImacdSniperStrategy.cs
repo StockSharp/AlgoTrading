@@ -137,55 +137,55 @@ public class ImacdSniperStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast Length", "MACD fast period", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 24, 2);
 
 		_slowLength = Param(nameof(SlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow Length", "MACD slow period", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_signalLength = Param(nameof(SignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal Length", "MACD signal smoothing", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_macdDeltaMin = Param(nameof(MacdDeltaMin), 0.03m)
 			.SetGreaterThanZero()
 			.SetDisplay("Min MACD Delta", "Minimum MACD difference for entry", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_macdZeroLimit = Param(nameof(MacdZeroLimit), 0.05m)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Zero Limit", "Minimum distance from zero for entry", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_rangeLength = Param(nameof(RangeLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Length", "Number of candles for range average", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_rangeMultiplierTp = Param(nameof(RangeMultiplierTp), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Multiplier TP", "TP multiplier of range", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 6m, 1m);
 
 		_rangeMultiplierSl = Param(nameof(RangeMultiplierSl), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Multiplier SL", "SL multiplier of range", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_emaLength = Param(nameof(EmaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -216,13 +216,13 @@ public class ImacdSniperStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_rangeMa = new SimpleMovingAverage { Length = RangeLength };
+		_rangeMa = new SMA { Length = RangeLength };
 
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new EMA { Length = EmaLength };
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = FastLength,
-			LongPeriod = SlowLength,
+			ShortMa = { Length = FastLength },
+			LongMa = { Length = SlowLength },
 			SignalPeriod = SignalLength
 		};
 

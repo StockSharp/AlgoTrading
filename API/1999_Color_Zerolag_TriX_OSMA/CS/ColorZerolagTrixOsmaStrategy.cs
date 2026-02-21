@@ -174,18 +174,18 @@ public class ColorZerolagTrixOsmaStrategy : Strategy
 	/// </summary>
 	public ColorZerolagTrixOsmaStrategy()
 	{
-	_smoothing1 = Param(nameof(Smoothing1), 15).SetDisplay("Smoothing1", "Slow trend smoothing", "Indicator").SetCanOptimize(true);
-	_smoothing2 = Param(nameof(Smoothing2), 7).SetDisplay("Smoothing2", "OSMA smoothing", "Indicator").SetCanOptimize(true);
-	_factor1 = Param(nameof(Factor1), 0.05m).SetDisplay("Factor1", "Weight for first TRIX", "Indicator").SetCanOptimize(true);
-	_period1 = Param(nameof(Period1), 8).SetDisplay("Period1", "TRIX 1 period", "Indicator").SetCanOptimize(true);
-	_factor2 = Param(nameof(Factor2), 0.10m).SetDisplay("Factor2", "Weight for second TRIX", "Indicator").SetCanOptimize(true);
-	_period2 = Param(nameof(Period2), 21).SetDisplay("Period2", "TRIX 2 period", "Indicator").SetCanOptimize(true);
-	_factor3 = Param(nameof(Factor3), 0.16m).SetDisplay("Factor3", "Weight for third TRIX", "Indicator").SetCanOptimize(true);
-	_period3 = Param(nameof(Period3), 34).SetDisplay("Period3", "TRIX 3 period", "Indicator").SetCanOptimize(true);
-	_factor4 = Param(nameof(Factor4), 0.26m).SetDisplay("Factor4", "Weight for fourth TRIX", "Indicator").SetCanOptimize(true);
-	_period4 = Param(nameof(Period4), 55).SetDisplay("Period4", "TRIX 4 period", "Indicator").SetCanOptimize(true);
-	_factor5 = Param(nameof(Factor5), 0.43m).SetDisplay("Factor5", "Weight for fifth TRIX", "Indicator").SetCanOptimize(true);
-	_period5 = Param(nameof(Period5), 89).SetDisplay("Period5", "TRIX 5 period", "Indicator").SetCanOptimize(true);
+	_smoothing1 = Param(nameof(Smoothing1), 15).SetDisplay("Smoothing1", "Slow trend smoothing", "Indicator");
+	_smoothing2 = Param(nameof(Smoothing2), 7).SetDisplay("Smoothing2", "OSMA smoothing", "Indicator");
+	_factor1 = Param(nameof(Factor1), 0.05m).SetDisplay("Factor1", "Weight for first TRIX", "Indicator");
+	_period1 = Param(nameof(Period1), 8).SetDisplay("Period1", "TRIX 1 period", "Indicator");
+	_factor2 = Param(nameof(Factor2), 0.10m).SetDisplay("Factor2", "Weight for second TRIX", "Indicator");
+	_period2 = Param(nameof(Period2), 21).SetDisplay("Period2", "TRIX 2 period", "Indicator");
+	_factor3 = Param(nameof(Factor3), 0.16m).SetDisplay("Factor3", "Weight for third TRIX", "Indicator");
+	_period3 = Param(nameof(Period3), 34).SetDisplay("Period3", "TRIX 3 period", "Indicator");
+	_factor4 = Param(nameof(Factor4), 0.26m).SetDisplay("Factor4", "Weight for fourth TRIX", "Indicator");
+	_period4 = Param(nameof(Period4), 55).SetDisplay("Period4", "TRIX 4 period", "Indicator");
+	_factor5 = Param(nameof(Factor5), 0.43m).SetDisplay("Factor5", "Weight for fifth TRIX", "Indicator");
+	_period5 = Param(nameof(Period5), 89).SetDisplay("Period5", "TRIX 5 period", "Indicator");
 	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
 }
 
@@ -214,9 +214,9 @@ public class ColorZerolagTrixOsmaStrategy : Strategy
 }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_tema1 = new TripleExponentialMovingAverage { Length = Period1 };
 	_tema2 = new TripleExponentialMovingAverage { Length = Period2 };
@@ -236,7 +236,7 @@ public class ColorZerolagTrixOsmaStrategy : Strategy
 	var subscription = SubscribeCandles(CandleType);
 	subscription.Bind(ProcessCandle).Start();
 
-	StartProtection();
+	StartProtection(null, null);
 }
 
 	private void ProcessCandle(ICandleMessage candle)

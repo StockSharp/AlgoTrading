@@ -81,22 +81,22 @@ public class MacdHistogramReversalStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetDisplay("Fast Period", "Fast period for MACD calculation", "MACD Settings")
 			.SetRange(8, 16)
-			.SetCanOptimize(true);
+			;
 			
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
 			.SetDisplay("Slow Period", "Slow period for MACD calculation", "MACD Settings")
 			.SetRange(20, 30)
-			.SetCanOptimize(true);
+			;
 			
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetDisplay("Signal Period", "Signal period for MACD calculation", "MACD Settings")
 			.SetRange(7, 13)
-			.SetCanOptimize(true);
+			;
 			
 		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 			.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
 			.SetRange(1m, 3m)
-			.SetCanOptimize(true);
+			;
 			
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -117,9 +117,9 @@ public class MacdHistogramReversalStrategy : Strategy
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnStarted2(DateTime time)
 		{
-				base.OnStarted(time);
+				base.OnStarted2(time);
 
 				// Enable position protection using stop-loss
 				StartProtection(

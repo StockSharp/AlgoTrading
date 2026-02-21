@@ -56,54 +56,54 @@ public class ZeeZeeLevelStrategy : Strategy
 		_zigZagDepth = Param(nameof(ZigZagDepth), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("ZigZag Depth", "Number of candles used to confirm pivots", "ZigZag")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 1);
 
 		_zigZagDeviation = Param(nameof(ZigZagDeviation), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("ZigZag Deviation", "Minimum distance between pivots in price steps", "ZigZag")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 25m, 1m);
 
 		_zigZagBackstep = Param(nameof(ZigZagBackstep), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("ZigZag Backstep", "Bars required before switching pivot direction", "ZigZag")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 15, 1);
 
 		_zigZagIdInterval = Param(nameof(ZigZagIdInterval), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("ZigZag ID Interval", "Maximum bars used to locate the last swings", "ZigZag")
-			.SetCanOptimize(false);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 100m, 5m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 30m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 150m, 5m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 60m, 5m);
 
 		_initialVolume = Param(nameof(InitialVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Base trade volume", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 1m, 0.01m);
 
 		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 2.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Martingale Multiplier", "Volume multiplier after losing trade", "Money Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -227,9 +227,9 @@ public class ZeeZeeLevelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 		if (_priceStep <= 0m)

@@ -102,12 +102,12 @@ public class ExchangePriceStrategy : Strategy
 		_shortPeriod = Param(nameof(ShortPeriod), 96)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Period", "Bars for short lookback", "General")
-			.SetCanOptimize(true);
+			;
 
 		_longPeriod = Param(nameof(LongPeriod), 288)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Period", "Bars for long lookback", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -142,12 +142,12 @@ public class ExchangePriceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

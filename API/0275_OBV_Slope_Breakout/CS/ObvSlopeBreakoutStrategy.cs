@@ -82,25 +82,25 @@ public class ObvSlopeBreakoutStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for calculating average and standard deviation of OBV slope", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_slopeLength = Param(nameof(SlopeLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Slope Length", "Period for calculating slope using linear regression", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Std Dev Multiplier", "Multiplier for standard deviation to determine breakout threshold", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_stopLoss = Param(nameof(StopLoss), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop-loss as a percentage of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -124,15 +124,15 @@ public class ObvSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 
 		// Initialize indicators
 		_obv = new OnBalanceVolume();
 		_obvSlope = new LinearRegression { Length = SlopeLength };
-		_obvSlopeAvg = new SimpleMovingAverage { Length = LookbackPeriod };
+		_obvSlopeAvg = new SMA { Length = LookbackPeriod };
 		_obvSlopeStdDev = new StandardDeviation { Length = LookbackPeriod };
 
 		// Create subscription and bind indicators
@@ -160,7 +160,7 @@ public class ObvSlopeBreakoutStrategy : Strategy
 			return;
 
 		// Calculate OBV slope
-		var slopeTyped = (LinearRegressionValue)_obvSlope.Process(obvValue, candle.ServerTime, candle.State == CandleStates.Finished);
+		var slopeTyped = (LinearRegressionValue)_obvSlope.Process(new DecimalIndicatorValue(_obvSlope, obvValue, candle.ServerTime));
 		if (!slopeTyped.IsFinal)
 			return;
 
@@ -170,8 +170,8 @@ public class ObvSlopeBreakoutStrategy : Strategy
 		_lastObvSlope = slopeValue;
 
 		// Calculate slope average and standard deviation
-		var avgValue = _obvSlopeAvg.Process(slopeValue, candle.ServerTime, candle.State == CandleStates.Finished);
-		var stdDevValue = _obvSlopeStdDev.Process(slopeValue, candle.ServerTime, candle.State == CandleStates.Finished);
+		var avgValue = _obvSlopeAvg.Process(new DecimalIndicatorValue(_obvSlopeAvg, slopeValue, candle.ServerTime));
+		var stdDevValue = _obvSlopeStdDev.Process(new DecimalIndicatorValue(_obvSlopeStdDev, slopeValue, candle.ServerTime));
 		
 		// Store values for decision making
 		_lastObvValue = obvValue;

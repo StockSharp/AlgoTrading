@@ -84,22 +84,22 @@ public class Gm8AdxSecondEmaStrategy : Strategy
 	{
 		_gmPeriod = Param(nameof(GmPeriod), 15)
 			.SetDisplay("GM Period", "SMA period for GM-8", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_secondEmaPeriod = Param(nameof(SecondEmaPeriod), 59)
 			.SetDisplay("Second EMA Period", "Period for secondary EMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 5);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 8)
 			.SetDisplay("ADX Period", "Period for ADX indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 34m)
 			.SetDisplay("ADX Threshold", "Minimum ADX level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 50m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -125,13 +125,13 @@ public class Gm8AdxSecondEmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
-		_gmSma = new SimpleMovingAverage { Length = GmPeriod };
-		_secondEma = new ExponentialMovingAverage { Length = SecondEmaPeriod };
+		_gmSma = new SMA { Length = GmPeriod };
+		_secondEma = new EMA { Length = SecondEmaPeriod };
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

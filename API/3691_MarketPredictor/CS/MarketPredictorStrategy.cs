@@ -113,36 +113,36 @@ public class MarketPredictorStrategy : Strategy
 	{
 		_initialAlpha = Param(nameof(InitialAlpha), 0.1m)
 			.SetDisplay("Initial Alpha", "Default amplitude before ATR is formed", "Prediction")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_initialBeta = Param(nameof(InitialBeta), 0.1m)
 			.SetDisplay("Initial Beta", "Fractal weight placeholder", "Prediction")
-			.SetCanOptimize(false);
+			;
 
 		_initialGamma = Param(nameof(InitialGamma), 0.1m)
 			.SetDisplay("Initial Gamma", "Fractal damping placeholder", "Prediction")
-			.SetCanOptimize(false);
+			;
 
 		_kappa = Param(nameof(Kappa), 1.0m)
 			.SetDisplay("Kappa", "Sigmoid sensitivity placeholder", "Prediction")
-			.SetCanOptimize(false);
+			;
 
 		_initialMu = Param(nameof(InitialMu), 1.0m)
 			.SetDisplay("Initial Mu", "Fallback mean price", "Prediction")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2.0m, 0.25m);
 
 		_sigma = Param(nameof(Sigma), 10.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Sigma", "Deviation threshold for trades", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 30.0m, 1.0m);
 
 		_monteCarloSimulations = Param(nameof(MonteCarloSimulations), 1000)
 			.SetGreaterThanZero()
 			.SetDisplay("Monte Carlo Simulations", "Number of simulations per candle", "Prediction")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 2000, 100);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -159,9 +159,9 @@ public class MarketPredictorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_alpha = InitialAlpha;
 		_mu = InitialMu;

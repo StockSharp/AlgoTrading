@@ -28,7 +28,7 @@ public class NovaBarraStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame that drives bar detection.", "General")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <summary>
@@ -41,9 +41,9 @@ public class NovaBarraStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

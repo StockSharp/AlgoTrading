@@ -69,19 +69,19 @@ public class EfficientWorkStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Base moving average period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_mediumMultiplier = Param(nameof(MediumMultiplier), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Medium TF Multiplier", "Multiplier for medium timeframe MA", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 10, 1);
 
 		_highMultiplier = Param(nameof(HighMultiplier), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("High TF Multiplier", "Multiplier for high timeframe MA", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -95,9 +95,9 @@ public class EfficientWorkStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastMa = new SMA { Length = MaPeriod };
 		var mediumMa = new SMA { Length = MaPeriod * MediumMultiplier };

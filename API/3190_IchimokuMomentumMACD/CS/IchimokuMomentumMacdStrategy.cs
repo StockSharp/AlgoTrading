@@ -69,73 +69,73 @@ public class IchimokuMomentumMacdStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average", "Trend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 120, 5);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Lookback used by the momentum oscillator", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 2);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 			.SetNotNegative()
 			.SetDisplay("Momentum Threshold", "Minimum distance from 100 for bullish/bearish momentum", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1.0m, 0.1m);
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA period for MACD filter", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 1);
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA period for MACD filter", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal EMA period for MACD filter", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Tenkan Period", "Conversion line length of Ichimoku", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 13, 1);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Kijun Period", "Base line length of Ichimoku", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 30, 1);
 
 		_senkouBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 			.SetGreaterThanZero()
 			.SetDisplay("Senkou Span B", "Span B length of Ichimoku", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 60, 2);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance measured in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 100m, 10m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance measured in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 60m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -307,8 +307,8 @@ public class IchimokuMomentumMacdStrategy : Strategy
 		var momentum = new Momentum { Length = MomentumPeriod };
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 		var ichimoku = new Ichimoku

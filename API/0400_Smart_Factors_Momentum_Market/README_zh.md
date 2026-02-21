@@ -9,7 +9,7 @@
 - **出场条件**：当因子动量或市场趋势转负时退出。
 - **止损**：无显式止损。
 - **默认值**：
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **筛选**：
   - 分类：动量
   - 方向：多头

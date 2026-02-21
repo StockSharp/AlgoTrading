@@ -57,15 +57,15 @@ public class H4L4BreakoutStrategy : Strategy
 	{
 		_takeProfit = Param(nameof(TakeProfit), 57m)
 			.SetDisplay("Take Profit", "Take profit in ticks", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 100m, 10m);
 
 		_stopLoss = Param(nameof(StopLoss), 7m)
 			.SetDisplay("Stop Loss", "Stop loss in ticks", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 20m, 5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 	}
 
@@ -76,9 +76,9 @@ public class H4L4BreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var step = Security.PriceStep ?? 1m;
 

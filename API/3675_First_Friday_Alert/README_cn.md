@@ -14,7 +14,7 @@
 ## 参数
 | 名称 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
-| `CandleType` | `DataType` | 日线时间框架（`TimeSpan.FromDays(1).TimeFrame()`） | 指定用于检测首个星期五的蜡烛类型。如需使用自定义日线或其他周期，可调整该参数。 |
+| `CandleType` | `DataType` | 日线时间框架（`TimeSpan.FromMinutes(5).TimeFrame()`） | 指定用于检测首个星期五的蜡烛类型。如需使用自定义日线或其他周期，可调整该参数。 |
 
 ## 实现说明
 - 采用高级 StockSharp API（`SubscribeCandles().Bind(...)`）来接收蜡烛更新。

@@ -91,27 +91,27 @@ public class AutoPendingByRsiStrategy : Strategy
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 			.SetDisplay("RSI Overbought", "Overbought level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
 			.SetDisplay("RSI Oversold", "Oversold level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_pendingOffset = Param(nameof(PendingOffset), 10m)
 			.SetDisplay("Pending Offset", "Offset for limit order in points", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 30m, 5m);
 
 		_matchCount = Param(nameof(MatchCount), 5)
 			.SetDisplay("Match Count", "Consecutive candles before placing order", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -119,9 +119,9 @@ public class AutoPendingByRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new Rsi { Length = RsiPeriod };
 		var subscription = SubscribeCandles(CandleType);

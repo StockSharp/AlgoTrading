@@ -92,7 +92,7 @@ public class TrendArrowsStrategy : Strategy
 		_period = Param(nameof(Period), 15)
 			 .SetGreaterThanZero()
 			 .SetDisplay("Period", "Number of bars for extreme calculation", "Parameters")
-			 .SetCanOptimize(true)
+			 
 			 .SetOptimize(5, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -126,9 +126,9 @@ public class TrendArrowsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var highest = new Highest { Length = Period };
 		var lowest = new Lowest { Length = Period };

@@ -132,7 +132,7 @@ public class FiveMinsEnvelopesStrategy : Strategy
 
 		_distancePoints = Param(nameof(DistancePoints), 140)
 			.SetDisplay("Distance", "Minimal distance from envelope to trigger entries", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_envelopePeriod = Param(nameof(EnvelopePeriod), 3)
 			.SetDisplay("Envelope Period", "Length of the LWMA basis", "Indicator")
@@ -175,16 +175,15 @@ public class FiveMinsEnvelopesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 
 		_medianLwma = new WeightedMovingAverage
 		{
-			Length = EnvelopePeriod,
-			CandlePrice = CandlePrice.Median,
+			Length = EnvelopePeriod
 		};
 
 		var subscription = SubscribeCandles(CandleType);

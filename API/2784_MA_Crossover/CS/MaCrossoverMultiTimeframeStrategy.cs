@@ -34,8 +34,8 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 	private readonly StrategyParam<bool> _closeOnMinEquity;
 	private readonly StrategyParam<decimal> _minimumEquityPercent;
 
-	private LengthIndicator<decimal> _currentMaIndicator;
-	private LengthIndicator<decimal> _previousMaIndicator;
+	private DecimalLengthIndicator _currentMaIndicator;
+	private DecimalLengthIndicator _previousMaIndicator;
 
 	private readonly Queue<decimal> _currentShiftBuffer = new();
 	private readonly Queue<decimal> _previousShiftBuffer = new();
@@ -236,13 +236,13 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 		_currentPeriod = Param(nameof(CurrentMaPeriod), 42)
 			.SetGreaterThanZero()
 			.SetDisplay("Current MA Period", "Length of the faster moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 120, 5);
 
 		_previousPeriodAdd = Param(nameof(PreviousPeriodAddition), 10)
 			.SetNotNegative()
 			.SetDisplay("Previous MA Extra Length", "Additional length added to the slower moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 50, 5);
 
 		_currentShift = Param(nameof(CurrentShift), 0)
@@ -253,28 +253,28 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Previous MA Shift", "Number of bars to shift the slower moving average", "Indicators");
 
-		_currentCandleType = Param(nameof(CurrentCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_currentCandleType = Param(nameof(CurrentCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Current Candle", "Timeframe used for the faster moving average", "Data");
 
-		_previousCandleType = Param(nameof(PreviousCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_previousCandleType = Param(nameof(PreviousCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Previous Candle", "Timeframe used for the slower moving average", "Data");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop-loss percentage from the entry price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 10m, 1m);
 
 		_trailingStopPercent = Param(nameof(TrailingStopPercent), 0m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop %", "Trailing stop percentage applied to the best price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 10m, 1m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit %", "Take-profit percentage from the entry price", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 20m, 1m);
 
 		_startDay = Param(nameof(StartDay), DayOfWeek.Monday)
@@ -295,7 +295,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 		_minimumEquityPercent = Param(nameof(MinimumEquityPercent), 0m)
 			.SetNotNegative()
 			.SetDisplay("Minimum Equity %", "Minimum equity percentage relative to the initial value", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 100m, 5m);
 	}
 
@@ -331,9 +331,9 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_initialPortfolioValue = Portfolio?.CurrentValue;
 		// Remember the starting equity for the guard logic.
@@ -647,15 +647,15 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 		return buffer.Count == shift + 1 ? buffer.Peek() : null;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypeOptions type, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageTypeOptions type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeOptions.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeOptions.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypeOptions.Simple => new SMA { Length = length },
+			MovingAverageTypeOptions.Exponential => new EMA { Length = length },
 			MovingAverageTypeOptions.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypeOptions.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

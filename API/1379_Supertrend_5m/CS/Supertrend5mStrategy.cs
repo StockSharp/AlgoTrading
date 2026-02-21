@@ -48,12 +48,12 @@ public class Supertrend5mStrategy : Strategy
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetDisplay("ATR Period", "ATR period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 2);
 
 		_multiplier = Param(nameof(Multiplier), 3m)
 			.SetDisplay("Multiplier", "ATR multiplier", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 4m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -76,9 +76,9 @@ public class Supertrend5mStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var subscription = SubscribeCandles(CandleType);

@@ -39,13 +39,13 @@ public class BullishBearishEngulfingStrategy : Strategy
 		_shift = Param(nameof(Shift), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Shift", "Number of completed candles to skip", "Pattern")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_distanceInPips = Param(nameof(DistanceInPips), 0m)
 			.SetNotNegative()
 			.SetDisplay("Distance (pips)", "Additional filter expressed in pips", "Pattern")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 10m, 1m);
 
 		_closeOpposite = Param(nameof(CloseOppositePositions), true)
@@ -123,16 +123,16 @@ public class BullishBearishEngulfingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_candles.Clear();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

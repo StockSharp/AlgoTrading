@@ -37,11 +37,11 @@ public class BlauTviTimedReversalStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private LengthIndicator<decimal> _upTicksMa1 = null!;
-	private LengthIndicator<decimal> _downTicksMa1 = null!;
-	private LengthIndicator<decimal> _upTicksMa2 = null!;
-	private LengthIndicator<decimal> _downTicksMa2 = null!;
-	private LengthIndicator<decimal> _tviMa = null!;
+	private DecimalLengthIndicator _upTicksMa1 = null!;
+	private DecimalLengthIndicator _downTicksMa1 = null!;
+	private DecimalLengthIndicator _upTicksMa2 = null!;
+	private DecimalLengthIndicator _downTicksMa2 = null!;
+	private DecimalLengthIndicator _tviMa = null!;
 
 	private readonly List<decimal> _tviHistory = new();
 
@@ -212,17 +212,17 @@ public class BlauTviTimedReversalStrategy : Strategy
 		_length1 = Param(nameof(Length1), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Stage 1 Length", "First smoothing stage length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_length2 = Param(nameof(Length2), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Stage 2 Length", "Second smoothing stage length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_length3 = Param(nameof(Length3), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Stage 3 Length", "Final smoothing stage length", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetNotNegative()
@@ -278,9 +278,9 @@ public class BlauTviTimedReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_upTicksMa1 = CreateMovingAverage(MaType, Length1);
 		_downTicksMa1 = CreateMovingAverage(MaType, Length1);
@@ -300,7 +300,7 @@ public class BlauTviTimedReversalStrategy : Strategy
 		}
 		else
 		{
-			StartProtection();
+			StartProtection(null, null);
 		}
 
 		var area = CreateChartArea();
@@ -461,15 +461,15 @@ public class BlauTviTimedReversalStrategy : Strategy
 		BuyMarket(Math.Abs(Position));
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(BlauTviMaTypes type, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(BlauTviMaTypes type, int length)
 	{
 		return type switch
 		{
-			BlauTviMaTypes.Simple => new SimpleMovingAverage { Length = length },
+			BlauTviMaTypes.Simple => new SMA { Length = length },
 			BlauTviMaTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			BlauTviMaTypes.Weighted => new WeightedMovingAverage { Length = length },
 			BlauTviMaTypes.Jurik => new JurikMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			_ => new EMA { Length = length },
 		};
 	}
 

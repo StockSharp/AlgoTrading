@@ -88,9 +88,9 @@ public class Acb2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_activeCandleType = CandleType;
 		_frameTimeSpan = GetTimeFrame(_activeCandleType);
@@ -262,7 +262,7 @@ public class Acb2Strategy : Strategy
 		if (frame <= TimeSpan.Zero)
 		return time;
 
-		var utc = time.UtcDateTime;
+		var utc = time;
 		var ticks = utc.Ticks / frame.Ticks * frame.Ticks;
 		var alignedUtc = new DateTime(ticks, DateTimeKind.Utc);
 		var aligned = new DateTimeOffset(alignedUtc);

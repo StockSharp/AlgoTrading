@@ -308,8 +308,8 @@ public class FuturePatternMemoryStrategy : Strategy
 		_slowSmma = new SmoothedMovingAverage { Length = SlowMaLength };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = MacdFastLength,
-			LongPeriod = MacdSlowLength,
+			ShortMa = { Length = MacdFastLength },
+			LongMa = { Length = MacdSlowLength },
 			SignalPeriod = MacdSignalLength
 		};
 
@@ -382,8 +382,8 @@ public class FuturePatternMemoryStrategy : Strategy
 		case PatternSources.MaSpread:
 			{
 				var median = (candle.HighPrice + candle.LowPrice) / 2m;
-				var fastValue = _fastSmma.Process(median, candle.OpenTime, true);
-				var slowValue = _slowSmma.Process(median, candle.OpenTime, true);
+				var fastValue = _fastSmma.Process(new DecimalIndicatorValue(_fastSmma, median, candle.OpenTime));
+				var slowValue = _slowSmma.Process(new DecimalIndicatorValue(_slowSmma, median, candle.OpenTime));
 
 				if (!_fastSmma.IsFormed || !_slowSmma.IsFormed)
 					return false;
@@ -394,7 +394,7 @@ public class FuturePatternMemoryStrategy : Strategy
 
 		case PatternSources.MacdHistogram:
 			{
-				var macdValue = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(candle.ClosePrice, candle.OpenTime, true);
+				var macdValue = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(new DecimalIndicatorValue(_macd, candle.ClosePrice, candle.OpenTime));
 
 				if (!_macd.IsFormed)
 					return false;

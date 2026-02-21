@@ -238,9 +238,9 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 		_pendingDirection = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highSmoother = CreateSmoother();
 		_lowSmoother = CreateSmoother();
@@ -255,7 +255,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	protected override void OnPositionReceived(Position position)
@@ -565,17 +565,17 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 		// Build the smoothing engine requested by the user.
 		return SmoothingMethod switch
 		{
-			ExpSslNrtrSmoothingMethods.Sma => new IndicatorSmoother(new SimpleMovingAverage { Length = Length }),
-			ExpSslNrtrSmoothingMethods.Ema => new IndicatorSmoother(new ExponentialMovingAverage { Length = Length }),
+			ExpSslNrtrSmoothingMethods.Sma => new IndicatorSmoother(new SMA { Length = Length }),
+			ExpSslNrtrSmoothingMethods.Ema => new IndicatorSmoother(new EMA { Length = Length }),
 			ExpSslNrtrSmoothingMethods.Smma => new IndicatorSmoother(new SmoothedMovingAverage { Length = Length }),
 			ExpSslNrtrSmoothingMethods.Lwma => new IndicatorSmoother(new WeightedMovingAverage { Length = Length }),
 			ExpSslNrtrSmoothingMethods.Jjma => new IndicatorSmoother(new JurikMovingAverage { Length = Length }),
 			ExpSslNrtrSmoothingMethods.Jurx => new IndicatorSmoother(new JurikMovingAverage { Length = Length }), // Fallback to Jurik MA.
-			ExpSslNrtrSmoothingMethods.Parma => new IndicatorSmoother(new ExponentialMovingAverage { Length = Length }), // Approximated with EMA.
+			ExpSslNrtrSmoothingMethods.Parma => new IndicatorSmoother(new EMA { Length = Length }), // Approximated with EMA.
 			ExpSslNrtrSmoothingMethods.T3 => new TillsonT3Smoother(Length, Phase / 100m),
 			ExpSslNrtrSmoothingMethods.Vidya => new VidyaSmoother(Length, Math.Max(1, Phase)),
 			ExpSslNrtrSmoothingMethods.Ama => new AmaSmoother(Length, Math.Max(1, Phase)),
-			_ => new IndicatorSmoother(new ExponentialMovingAverage { Length = Length }),
+			_ => new IndicatorSmoother(new EMA { Length = Length }),
 		};
 	}
 

@@ -64,62 +64,62 @@ public class TurtleTraderStrategy : Strategy
 	{
 		_riskPercent = Param(nameof(RiskPercent), 1m)
 		.SetDisplay("Risk Percent", "Capital risk percent", "General")
-		.SetCanOptimize(true);
+		;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "ATR length", "General")
-		.SetCanOptimize(true);
+		;
 
 		_stopMultiplier = Param(nameof(StopMultiplier), 1.5m)
 		.SetDisplay("Stop Multiplier", "ATR multiplier for stop", "General")
-		.SetCanOptimize(true);
+		;
 
 		_pyramidProfit = Param(nameof(PyramidProfit), 0.5m)
 		.SetDisplay("Pyramid Profit", "ATR move to add", "General")
-		.SetCanOptimize(true);
+		;
 
 		_s1Long = Param(nameof(S1Long), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("S1 Long", "System1 long breakout", "General")
-		.SetCanOptimize(true);
+		;
 
 		_s2Long = Param(nameof(S2Long), 55)
 		.SetGreaterThanZero()
 		.SetDisplay("S2 Long", "System2 long breakout", "General")
-		.SetCanOptimize(true);
+		;
 
 		_s1LongExit = Param(nameof(S1LongExit), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("S1 Long Exit", "System1 long exit", "General")
-		.SetCanOptimize(true);
+		;
 
 		_s2LongExit = Param(nameof(S2LongExit), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("S2 Long Exit", "System2 long exit", "General")
-		.SetCanOptimize(true);
+		;
 
 		_s1Short = Param(nameof(S1Short), 15)
 		.SetGreaterThanZero()
 		.SetDisplay("S1 Short", "System1 short breakout", "General")
-		.SetCanOptimize(true);
+		;
 
 		_s2Short = Param(nameof(S2Short), 55)
 		.SetGreaterThanZero()
 		.SetDisplay("S2 Short", "System2 short breakout", "General")
-		.SetCanOptimize(true);
+		;
 
 		_s1ShortExit = Param(nameof(S1ShortExit), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("S1 Short Exit", "System1 short exit", "General")
-		.SetCanOptimize(true);
+		;
 
 		_s2ShortExit = Param(nameof(S2ShortExit), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("S2 Short Exit", "System2 short exit", "General")
-		.SetCanOptimize(true);
+		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -152,9 +152,9 @@ public class TurtleTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 		_dayHighS1 = new Highest { Length = S1Long };

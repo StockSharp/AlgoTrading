@@ -62,9 +62,9 @@ public class RsiBollingerBandsStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerWidth };
@@ -74,7 +74,7 @@ public class RsiBollingerBandsStrategy : Strategy
 			.Bind(_rsi, _bollinger, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal middle, decimal upper, decimal lower)

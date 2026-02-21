@@ -74,18 +74,18 @@ public class BullsBearsEyesStrategy : Strategy {
 		_period = Param(nameof(Period), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "Indicator averaging period", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_highLevel = Param(nameof(HighLevel), 75m)
 			.SetDisplay("High Level", "Overbought level", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_middleLevel = Param(nameof(MiddleLevel), 50m)
 			.SetDisplay("Middle Level", "Middle threshold", "Parameters");
 
 		_lowLevel = Param(nameof(LowLevel), 25m)
 			.SetDisplay("Low Level", "Oversold level", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for analysis", "General");
@@ -106,10 +106,10 @@ public class BullsBearsEyesStrategy : Strategy {
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
-		base.OnStarted(time);
+	protected override void OnStarted2(DateTime time) {
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_bulls = new BullPower { Length = Period };
 		_bears = new BearPower { Length = Period };

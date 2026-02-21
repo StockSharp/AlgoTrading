@@ -110,20 +110,20 @@ public class LbsV12Strategy : Strategy
 
 		_triggerHour = Param(nameof(TriggerHour), 9)
 			.SetDisplay("Trigger Hour", "Hour when stop orders are sent", "Execution")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
 			.SetDisplay("Take Profit", "Take profit distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 20m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in points", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_atrPeriod = Param(nameof(AtrPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Average True Range length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), DataType.CreateCandleTimeFrame(TimeSpan.FromMinutes(15)))
 			.SetDisplay("Signal Candles", "Candle type used for signals", "Data");
@@ -136,9 +136,9 @@ public class LbsV12Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var security = Security ?? throw new InvalidOperationException("Security is not set.");
 
@@ -154,7 +154,7 @@ public class LbsV12Strategy : Strategy
 			.Bind(_atr, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
@@ -162,7 +162,7 @@ public class LbsV12Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var candleTime = candle.OpenTime.UtcDateTime;
+		var candleTime = candle.OpenTime;
 		var date = candleTime.Date;
 
 		if (_currentDate == null || _currentDate.Value != date)

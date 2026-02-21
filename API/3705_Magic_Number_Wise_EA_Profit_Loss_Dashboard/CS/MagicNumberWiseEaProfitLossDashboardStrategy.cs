@@ -83,9 +83,9 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (RefreshInterval <= TimeSpan.Zero)
 			throw new InvalidOperationException("Refresh interval must be positive.");

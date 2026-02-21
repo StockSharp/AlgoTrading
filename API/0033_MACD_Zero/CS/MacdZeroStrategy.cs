@@ -80,22 +80,22 @@ public class MacdZeroStrategy : Strategy
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetDisplay("Fast EMA Period", "Fast EMA period for MACD calculation", "MACD Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 2);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
 			.SetDisplay("Slow EMA Period", "Slow EMA period for MACD calculation", "MACD Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 30, 2);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetDisplay("Signal Period", "Signal line period for MACD calculation", "MACD Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 12, 1);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

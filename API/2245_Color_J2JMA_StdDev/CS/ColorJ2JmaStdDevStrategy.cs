@@ -101,25 +101,25 @@ public class ColorJ2JmaStdDevStrategy : Strategy
 		_jmaLength = Param(nameof(JmaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("JMA Length", "Period of JMA", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_stdDevPeriod = Param(nameof(StdDevPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("StdDev Period", "Period of standard deviation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_k1 = Param(nameof(K1), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("K1", "First threshold multiplier", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_k2 = Param(nameof(K2), 2.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("K2", "Second threshold multiplier", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -128,13 +128,13 @@ public class ColorJ2JmaStdDevStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 2000m, 500m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1000m, 4000m, 500m);
 
 		_jma = new JurikMovingAverage();
@@ -142,9 +142,9 @@ public class ColorJ2JmaStdDevStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_jma.Length = JmaLength;
 		_stdDev.Length = StdDevPeriod;

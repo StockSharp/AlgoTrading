@@ -63,13 +63,13 @@ public class SmuStdevCandlesStrategy : Strategy
 		_length = Param(nameof(Length), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("STDEV Length", "Calculation length", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_scale = Param(nameof(Scale), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Scale", "Value multiplier", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -83,9 +83,9 @@ public class SmuStdevCandlesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_openStd = new StandardDeviation { Length = Length };
 		_highStd = new StandardDeviation { Length = Length };
@@ -98,7 +98,7 @@ public class SmuStdevCandlesStrategy : Strategy
 				.Bind(ProcessCandle)
 				.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -106,10 +106,10 @@ public class SmuStdevCandlesStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 				return;
 
-		_ = _openStd.Process(candle.OpenPrice, candle.OpenTime, true).ToDecimal() * Scale;
-		_ = _highStd.Process(candle.HighPrice, candle.OpenTime, true).ToDecimal() * Scale;
-		_ = _lowStd.Process(candle.LowPrice, candle.OpenTime, true).ToDecimal() * Scale;
-		var closeStd = _closeStd.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal() * Scale;
+		_ = _openStd.Process(new DecimalIndicatorValue(_openStd, candle.OpenPrice, candle.OpenTime)).ToDecimal() * Scale;
+		_ = _highStd.Process(new DecimalIndicatorValue(_highStd, candle.HighPrice, candle.OpenTime)).ToDecimal() * Scale;
+		_ = _lowStd.Process(new DecimalIndicatorValue(_lowStd, candle.LowPrice, candle.OpenTime)).ToDecimal() * Scale;
+		var closeStd = _closeStd.Process(new DecimalIndicatorValue(_closeStd, candle.ClosePrice, candle.OpenTime)).ToDecimal() * Scale;
 
 		if (_prevCloseStd is null)
 		{

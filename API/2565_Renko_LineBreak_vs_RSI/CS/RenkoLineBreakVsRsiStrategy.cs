@@ -127,31 +127,31 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 		_boxSize = Param(nameof(BoxSize), 500m)
 		.SetGreaterThanZero()
 		.SetDisplay("Renko Box Size", "Renko brick size in price units", "Renko")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 1000m, 100m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Relative Strength Index period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 20, 1);
 
 		_rsiShift = Param(nameof(RsiShift), 20m)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Shift", "Distance from the 50 level to detect pullbacks", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 5m);
 
 		_takeProfit = Param(nameof(TakeProfit), 1000m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit", "Take profit distance in price units", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(200m, 2000m, 200m);
 
 		_indentFromHighLow = Param(nameof(IndentFromHighLow), 50m)
 		.SetGreaterThanZero()
 		.SetDisplay("Indent", "Indent applied to breakout and stop levels", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 200m, 10m);
 
 
@@ -198,9 +198,9 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex
 		{
@@ -225,7 +225,7 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessRenkoCandle(ICandleMessage candle)

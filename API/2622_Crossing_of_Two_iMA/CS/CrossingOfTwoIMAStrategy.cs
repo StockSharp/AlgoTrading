@@ -69,9 +69,9 @@ public class CrossingOfTwoIMAStrategy : Strategy
 	private readonly StrategyParam<int> _trailingStepPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _firstMa;
-	private LengthIndicator<decimal> _secondMa;
-	private LengthIndicator<decimal> _thirdMa;
+	private DecimalLengthIndicator _firstMa;
+	private DecimalLengthIndicator _secondMa;
+	private DecimalLengthIndicator _thirdMa;
 
 	private readonly List<decimal> _firstValues = new();
 	private readonly List<decimal> _secondValues = new();
@@ -112,7 +112,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 		_firstPeriod = Param(nameof(FirstMaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("First MA Period", "Period of the first moving average", "First Moving Average")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 30, 1);
 
 		_firstShift = Param(nameof(FirstMaShift), 3)
@@ -125,7 +125,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 		_secondPeriod = Param(nameof(SecondMaPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Second MA Period", "Period of the second moving average", "Second Moving Average")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 60, 1);
 
 		_secondShift = Param(nameof(SecondMaShift), 5)
@@ -367,9 +367,9 @@ public class CrossingOfTwoIMAStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_firstMa = CreateMovingAverage(FirstMaMethod, FirstMaPeriod);
 		_secondMa = CreateMovingAverage(SecondMaMethod, SecondMaPeriod);
@@ -810,15 +810,15 @@ public class CrossingOfTwoIMAStrategy : Strategy
 		return _openTimes[targetIndex];
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
-		LengthIndicator<decimal> ma = method switch
+		DecimalLengthIndicator ma = method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage(),
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage(),
+			MovingAverageMethods.Simple => new SMA(),
+			MovingAverageMethods.Exponential => new EMA(),
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage(),
 			MovingAverageMethods.Weighted => new WeightedMovingAverage(),
-			_ => new SimpleMovingAverage(),
+			_ => new SMA(),
 		};
 
 		ma.Length = Math.Max(1, length);

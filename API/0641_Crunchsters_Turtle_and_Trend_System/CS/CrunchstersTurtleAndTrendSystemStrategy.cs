@@ -151,12 +151,12 @@ public class CrunchstersTurtleAndTrendSystemStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = FastEmaPeriod * 5 };
+		_fastEma = new EMA { Length = FastEmaPeriod };
+		_slowEma = new EMA { Length = FastEmaPeriod * 5 };
 		_breakDonchian = new DonchianChannels { Length = BreakoutPeriod };
 		_trailDonchian = new DonchianChannels { Length = TrailPeriod };
 		_atr = new AverageTrueRange { Length = 14 };

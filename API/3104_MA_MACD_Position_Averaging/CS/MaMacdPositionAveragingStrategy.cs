@@ -51,7 +51,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bufferCapacity;
 
-	private LengthIndicator<decimal> _ma = null!;
+	private DecimalLengthIndicator _ma = null!;
 	private MovingAverageConvergenceDivergence _macd = null!;
 
 	private readonly List<decimal> _maValues = new();
@@ -252,37 +252,37 @@ public class MaMacdPositionAveragingStrategy : Strategy
 	{
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Order Volume", "Base trade size", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Take Profit (pips)", "Profit target distance", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop offset", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Trailing Step (pips)", "Additional move before trailing stop updates", "Risk");
 
 		_stepLossingPips = Param(nameof(StepLossingPips), 30)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Averaging Step (pips)", "Loss in pips that triggers averaging", "Risk");
 
 		_lotCoefficient = Param(nameof(LotCoefficient), 2m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("Lot Coefficient", "Multiplier for averaging trades", "Risk");
 
 		_signalBar = Param(nameof(SignalBar), 0)
@@ -291,7 +291,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 
 		_maPeriod = Param(nameof(MaPeriod), 15)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("MA Period", "Moving average length", "Indicators");
 
 		_maShift = Param(nameof(MaShift), 0)
@@ -306,22 +306,22 @@ public class MaMacdPositionAveragingStrategy : Strategy
 
 		_indentPips = Param(nameof(IndentPips), 4)
 			.SetNotNegative()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("MA Indent (pips)", "Minimum gap between price and MA", "Signals");
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("MACD Fast", "Fast EMA length", "Indicators");
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("MACD Slow", "Slow EMA length", "Indicators");
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("MACD Signal", "Signal line length", "Indicators");
 
 		_macdAppliedPrice = Param(nameof(MacdAppliedPrice), AppliedPriceTypes.Weighted)
@@ -329,7 +329,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 
 		_macdRatio = Param(nameof(MacdRatio), 0.9m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetDisplay("MACD Ratio", "Required MACD main/signal ratio", "Signals");
 
 		_bufferCapacity = Param(nameof(BufferCapacity), 512)
@@ -424,7 +424,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		ApplyTrailing(candle);
 
 		var maInput = GetAppliedPrice(candle, MaAppliedPrice);
-		var maValue = _ma.Process(maInput, candle.OpenTime, true).ToDecimal();
+		var maValue = _ma.Process(new DecimalIndicatorValue(_ma, maInput, candle.OpenTime)).ToDecimal();
 
 		if (!_ma.IsFormed)
 			return;
@@ -432,7 +432,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		PushValue(_maValues, maValue);
 
 		var macdInput = GetAppliedPrice(candle, MacdAppliedPrice);
-		var macdValue = (MovingAverageConvergenceDivergenceValue)_macd.Process(macdInput, candle.OpenTime, true);
+		var macdValue = (MovingAverageConvergenceDivergenceValue)_macd.Process(new DecimalIndicatorValue(_macd, macdInput, candle.OpenTime));
 
 		if (!_macd.IsFormed)
 			return;
@@ -768,12 +768,12 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		return true;
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period)
+	private DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int period)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = period },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MovingAverageMethods.Simple => new SMA { Length = period },
+			MovingAverageMethods.Exponential => new EMA { Length = period },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			_ => new WeightedMovingAverage { Length = period },
 		};

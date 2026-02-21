@@ -70,22 +70,22 @@ public class LunarCalendarDayCryptoTradingStrategy : Strategy
 	{
 		_buyDay = Param(nameof(BuyDay), 12)
 		.SetDisplay("Buy Day", "Lunar day to enter long", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 30, 1);
 		
 		_sellDay = Param(nameof(SellDay), 26)
 		.SetDisplay("Sell Day", "Lunar day to exit", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 30, 1);
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -92,27 +92,27 @@ public class IchimokuHurstStrategy : Strategy
 	{
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 		.SetDisplay("Tenkan Period", "Tenkan-sen (conversion line) period", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 15, 1);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 		.SetDisplay("Kijun Period", "Kijun-sen (base line) period", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 2);
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 		.SetDisplay("Senkou Span B Period", "Senkou Span B (leading span B) period", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40, 70, 5);
 
 		_hurstPeriod = Param(nameof(HurstPeriod), 100)
 		.SetDisplay("Hurst Period", "Hurst exponent calculation period", "Hurst Exponent")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 200, 10);
 
 		_hurstThreshold = Param(nameof(HurstThreshold), 0.5m)
 		.SetDisplay("Hurst Threshold", "Hurst exponent threshold for trend strength", "Hurst Exponent")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.45m, 0.6m, 0.05m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -135,9 +135,9 @@ public class IchimokuHurstStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Ichimoku indicator
 		_ichimoku = new Ichimoku

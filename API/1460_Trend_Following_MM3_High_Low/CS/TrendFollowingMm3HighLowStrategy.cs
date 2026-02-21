@@ -50,7 +50,7 @@ public class TrendFollowingMm3HighLowStrategy : Strategy
 	{
 		_length = Param(nameof(Length), 3)
 			.SetDisplay("SMA Length", "Period for moving averages", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -64,12 +64,12 @@ public class TrendFollowingMm3HighLowStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_maHigh = new SimpleMovingAverage { Length = Length };
-		_maLow = new SimpleMovingAverage { Length = Length };
+		_maHigh = new SMA { Length = Length };
+		_maLow = new SMA { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -83,7 +83,7 @@ public class TrendFollowingMm3HighLowStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -94,8 +94,8 @@ public class TrendFollowingMm3HighLowStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		var highMa = _maHigh.Process(candle.HighPrice, candle.OpenTime, true).ToDecimal();
-		var lowMa = _maLow.Process(candle.LowPrice, candle.OpenTime, true).ToDecimal();
+		var highMa = _maHigh.Process(new DecimalIndicatorValue(_maHigh, candle.HighPrice, candle.OpenTime)).ToDecimal();
+		var lowMa = _maLow.Process(new DecimalIndicatorValue(_maLow, candle.LowPrice, candle.OpenTime)).ToDecimal();
 
 		if (candle.ClosePrice > highMa && Position <= 0)
 		{

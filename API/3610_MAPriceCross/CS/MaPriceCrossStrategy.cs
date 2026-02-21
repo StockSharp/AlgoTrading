@@ -67,11 +67,11 @@ public class MaPriceCrossStrategy : Strategy
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
 		.SetDisplay("MA Method", "Moving average calculation method", "Moving Average")
-		.SetCanOptimize(true);
+		;
 
 		_priceType = Param(nameof(PriceType), AppliedPrices.Close)
 		.SetDisplay("Applied Price", "Price source forwarded to the moving average", "Moving Average")
-		.SetCanOptimize(true);
+		;
 
 		_startTime = Param(nameof(StartTime), new TimeSpan(1, 0, 0))
 		.SetDisplay("Start Time", "Time of day when order processing becomes active", "Trading Window");
@@ -82,17 +82,17 @@ public class MaPriceCrossStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 200m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss Points", "Protective stop distance expressed in price points", "Protection")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 600m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit Points", "Target distance expressed in price points", "Protection")
-		.SetCanOptimize(true);
+		;
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Default volume for market orders", "Orders")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>
@@ -190,9 +190,9 @@ public class MaPriceCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_movingAverage = CreateMovingAverage(MaMethod, MaPeriod);
 
@@ -217,7 +217,7 @@ public class MaPriceCrossStrategy : Strategy
 			return;
 
 		var currentPrice = GetAppliedPrice(candle, PriceType);
-		var maValue = _movingAverage.Process(currentPrice, candle.OpenTime, true);
+		var maValue = _movingAverage.Process(new DecimalIndicatorValue(_movingAverage, currentPrice, candle.OpenTime));
 
 		if (!maValue.IsFinal || !_movingAverage.IsFormed)
 			return;
@@ -289,11 +289,11 @@ public class MaPriceCrossStrategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

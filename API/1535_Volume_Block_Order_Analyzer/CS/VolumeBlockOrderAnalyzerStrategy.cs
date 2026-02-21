@@ -51,9 +51,9 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).Set
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var avgVolume = new SMA { Length = LookbackPeriod };
 var subscription = SubscribeCandles(CandleType);

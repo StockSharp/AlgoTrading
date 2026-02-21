@@ -96,12 +96,12 @@ public class OsHmaStrategy : Strategy
 	{
 		_fastHma = Param(nameof(FastHma), 13)
 		.SetDisplay("Fast HMA", "Length of fast Hull Moving Average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 20, 1);
 
 		_slowHma = Param(nameof(SlowHma), 26)
 		.SetDisplay("Slow HMA", "Length of slow Hull Moving Average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 2);
 
 		_mode = Param(nameof(Mode), OsHmaModes.Twist)
@@ -112,12 +112,12 @@ public class OsHmaStrategy : Strategy
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 		.SetDisplay("Take Profit", "Target profit in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(500m, 4000m, 500m);
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 		.SetDisplay("Stop Loss", "Loss limit in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(300m, 3000m, 300m);
 	}
 
@@ -136,9 +136,9 @@ public class OsHmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	var fastHma = new HullMovingAverage { Length = FastHma };
 	var slowHma = new HullMovingAverage { Length = SlowHma };

@@ -175,7 +175,7 @@ public class DeepDrawdownMaStrategy : Strategy
 		_maxPositions = Param(nameof(MaxPositions), 5)
 			.SetDisplay("Max Positions", "Maximum number of aggregated entries", "Trading")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_closeLosses = Param(nameof(CloseLosses), false)
@@ -184,7 +184,7 @@ public class DeepDrawdownMaStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
 			.SetDisplay("Fast MA Period", "Length of the fast moving average", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_fastMaShift = Param(nameof(FastMaShift), 3)
@@ -197,7 +197,7 @@ public class DeepDrawdownMaStrategy : Strategy
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 30)
 			.SetDisplay("Slow MA Period", "Length of the slow moving average", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 90, 5);
 
 		_slowMaShift = Param(nameof(SlowMaShift), 0)
@@ -237,9 +237,9 @@ public class DeepDrawdownMaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Align the default volume with the configured parameter.
 		Volume = OrderVolume;
@@ -263,7 +263,7 @@ public class DeepDrawdownMaStrategy : Strategy
 		}
 
 		// Enable default position protection helpers.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -282,8 +282,8 @@ public class DeepDrawdownMaStrategy : Strategy
 		var fastPrice = GetPrice(candle, FastPriceType);
 		var slowPrice = GetPrice(candle, SlowPriceType);
 
-		var fastRaw = _fastMa!.Process(fastPrice, candle.OpenTime, true).ToDecimal();
-		var slowRaw = _slowMa!.Process(slowPrice, candle.OpenTime, true).ToDecimal();
+		var fastRaw = _fastMa!.Process(new DecimalIndicatorValue(_fastMa, fastPrice, candle.OpenTime)).ToDecimal();
+		var slowRaw = _slowMa!.Process(new DecimalIndicatorValue(_slowMa, slowPrice, candle.OpenTime)).ToDecimal();
 
 		var fastValue = GetShiftedValue(_fastValues, fastRaw, FastMaShift);
 		var slowValue = GetShiftedValue(_slowValues, slowRaw, SlowMaShift);
@@ -405,11 +405,11 @@ public class DeepDrawdownMaStrategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Sma => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Sma => new SMA { Length = length },
+			MovingAverageMethods.Ema => new EMA { Length = length },
 			MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

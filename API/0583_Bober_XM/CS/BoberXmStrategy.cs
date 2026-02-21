@@ -86,15 +86,15 @@ public class BoberXmStrategy : Strategy
 	    return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 
-	    var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+	    var ema = new EMA { Length = EmaPeriod };
 	    var atr = new AverageTrueRange { Length = AtrPeriod };
 	    var wma = new WeightedMovingAverage { Length = WmaPeriod };
 	    var obv = new OnBalanceVolume();
-	    var obvMa = new SimpleMovingAverage { Length = ObvMaPeriod };
+	    var obvMa = new SMA { Length = ObvMaPeriod };
 	    var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
 	    var subscription = SubscribeCandles(CandleType);

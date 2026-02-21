@@ -56,7 +56,7 @@ public TrendVanguardStrategy()
 {
 _depth = Param(nameof(Depth), 21)
 .SetDisplay("ZigZag Depth", "Lookback for highs/lows", "Indicators")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
@@ -83,9 +83,9 @@ _prevOsc = default;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var highest = new Highest { Length = Depth };
 var lowest = new Lowest { Length = Depth };

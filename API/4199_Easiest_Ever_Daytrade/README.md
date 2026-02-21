@@ -22,7 +22,7 @@
 | `EntryHourLimit` | Latest hour (exclusive) when a new trade can be initiated. Values outside `[0, 23]` are clamped via validation. | `1` |
 | `MarketCloseHour` | Hour when the strategy forcefully closes any open position. Applies daily. | `20` |
 | `IntradayCandleType` | Timeframe used for trade execution logic and position management. | `TimeSpan.FromMinutes(1).TimeFrame()` |
-| `DailyCandleType` | Timeframe used to read the previous day's open and close prices. | `TimeSpan.FromDays(1).TimeFrame()` |
+| `DailyCandleType` | Timeframe used to read the previous day's open and close prices. | `TimeSpan.FromMinutes(5).TimeFrame()` |
 
 All parameters are registered through `Param()` and can be optimized in the StockSharp optimizer.
 

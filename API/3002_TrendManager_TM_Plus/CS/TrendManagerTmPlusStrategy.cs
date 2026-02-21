@@ -73,19 +73,19 @@ public class TrendManagerTmPlusStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 23)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Period for fast moving average", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 60, 5);
 
 		_slowLength = Param(nameof(SlowLength), 84)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Period for slow moving average", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 200, 10);
 
 		_dvLimit = Param(nameof(DvLimit), 0.0007m)
 			.SetGreaterThanZero()
 			.SetDisplay("Distance Threshold", "Minimum fast-slow distance to trigger a signal", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0001m, 0.01m, 0.0001m);
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -218,9 +218,9 @@ public class TrendManagerTmPlusStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = CreateMovingAverage(FastMethod, FastLength);
 		_slowMa = CreateMovingAverage(SlowMethod, SlowLength);
@@ -230,7 +230,7 @@ public class TrendManagerTmPlusStrategy : Strategy
 			.Bind(_fastMa, _slowMa, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private IIndicator CreateMovingAverage(SmoothingMethods method, int length)
@@ -238,13 +238,13 @@ public class TrendManagerTmPlusStrategy : Strategy
 		// Map the selected smoothing method to a StockSharp indicator implementation.
 		return method switch
 		{
-			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SMA { Length = length },
+			SmoothingMethods.Exponential => new EMA { Length = length },
 			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
 			SmoothingMethods.Jurik => new JurikMovingAverage { Length = length },
 			SmoothingMethods.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

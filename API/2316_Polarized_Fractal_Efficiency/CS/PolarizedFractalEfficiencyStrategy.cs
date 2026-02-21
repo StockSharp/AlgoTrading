@@ -62,7 +62,7 @@ public class PolarizedFractalEfficiencyStrategy : Strategy
 
 		_pfePeriod = Param(nameof(PfePeriod), 5)
 			.SetDisplay("PFE Period", "Indicator calculation period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -89,9 +89,9 @@ public class PolarizedFractalEfficiencyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var pfe = new PolarizedFractalEfficiency { Length = PfePeriod };
 
@@ -101,7 +101,7 @@ public class PolarizedFractalEfficiencyStrategy : Strategy
 		if (TakeProfit > 0 || StopLoss > 0)
 			StartProtection(new Unit(TakeProfit, UnitTypes.Step), new Unit(StopLoss, UnitTypes.Step));
 		else
-			StartProtection();
+			StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

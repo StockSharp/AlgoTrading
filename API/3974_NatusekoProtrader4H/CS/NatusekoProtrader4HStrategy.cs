@@ -319,14 +319,14 @@ public class NatusekoProtrader4HStrategy : Strategy
 
 		Volume = TradeVolume;
 
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
-		_trendEma = new ExponentialMovingAverage { Length = TrendEmaPeriod };
+		_fastEma = new EMA { Length = FastEmaPeriod };
+		_slowEma = new EMA { Length = SlowEmaPeriod };
+		_trendEma = new EMA { Length = TrendEmaPeriod };
 
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 
@@ -336,7 +336,7 @@ public class NatusekoProtrader4HStrategy : Strategy
 			Width = BollingerWidth
 		};
 
-		_macdSma = new SimpleMovingAverage { Length = MacdSmaPeriod };
+		_macdSma = new SMA { Length = MacdSmaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_parabolicSar = new ParabolicSar
 		{
@@ -389,29 +389,29 @@ public class NatusekoProtrader4HStrategy : Strategy
 			return;
 		}
 
-		var fastEmaValue = _fastEma.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
-		var slowEmaValue = _slowEma.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
-		var trendEmaValue = _trendEma.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
-		var rsiValue = _rsi.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
+		var fastEmaValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var slowEmaValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var trendEmaValue = _trendEma.Process(new DecimalIndicatorValue(_trendEma, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.OpenTime)).ToDecimal();
 
 		var sarRaw = _parabolicSar.Process(new CandleIndicatorValue(_parabolicSar, candle));
 		if (!sarRaw.IsFinal)
 			return;
 		var sarValue = sarRaw.ToDecimal();
 
-		var macdRaw = _macd.Process(candle.ClosePrice, candle.OpenTime, true);
+		var macdRaw = _macd.Process(new DecimalIndicatorValue(_macd, candle.ClosePrice, candle.OpenTime));
 		if (!macdRaw.IsFinal || macdRaw is not MovingAverageConvergenceDivergenceValue macdValue ||
 				macdValue.Macd is not decimal macdLine)
 		{
 			return;
 		}
 
-		var macdSmaRaw = _macdSma.Process(macdLine, candle.OpenTime, true);
+		var macdSmaRaw = _macdSma.Process(new DecimalIndicatorValue(_macdSma, macdLine, candle.OpenTime));
 		if (!macdSmaRaw.IsFinal)
 			return;
 		var macdSmaValue = macdSmaRaw.ToDecimal();
 
-		var bandsRaw = _macdBands.Process(macdLine, candle.OpenTime, true);
+		var bandsRaw = _macdBands.Process(new DecimalIndicatorValue(_macdBands, macdLine, candle.OpenTime));
 		if (!bandsRaw.IsFinal || bandsRaw is not BollingerBandsValue bandsValue ||
 				bandsValue.MovingAverage is not decimal macdMiddle)
 		{

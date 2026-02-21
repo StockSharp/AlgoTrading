@@ -116,7 +116,7 @@ public class SmallInsideBarStrategy : Strategy
 		_rangeRatioThreshold = Param(nameof(RangeRatioThreshold), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Ratio", "Minimum mother-to-inside bar range ratio", "Pattern")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3m, 0.25m);
 
 		_enableLong = Param(nameof(EnableLong), true)
@@ -148,11 +148,11 @@ public class SmallInsideBarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 

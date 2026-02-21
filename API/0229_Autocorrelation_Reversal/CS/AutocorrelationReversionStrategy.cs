@@ -73,17 +73,17 @@ public class AutocorrelationReversionStrategy : Strategy
 	{
 		_autoCorrPeriod = Param(nameof(AutoCorrPeriod), 20)
 			.SetDisplay("Autocorrelation period", "Period for autocorrelation calculation", "Strategy parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_autoCorrThreshold = Param(nameof(AutoCorrThreshold), -0.3m)
 			.SetDisplay("Autocorr threshold", "Threshold for autocorrelation signals", "Strategy parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-0.5m, -0.1m, 0.1m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop-loss %", "Stop-loss as percentage from entry price", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -107,12 +107,12 @@ public class AutocorrelationReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize the SMA indicator (using same period as autocorrelation for simplicity)
-		_sma = new SimpleMovingAverage { Length = AutoCorrPeriod };
+		_sma = new SMA { Length = AutoCorrPeriod };
 
 		// Create a subscription to candlesticks
 		var subscription = SubscribeCandles(CandleType);

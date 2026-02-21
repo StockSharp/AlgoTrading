@@ -94,7 +94,7 @@ public class GlobalIndexSpreadRsiStrategy : Strategy
 		_overbought = Param(nameof(OverboughtThreshold), 78m)
 			.SetDisplay("Overbought", "RSI overbought level", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Data");
 	}
 
@@ -121,12 +121,12 @@ public class GlobalIndexSpreadRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (GlobalSecurity == null)
 			throw new InvalidOperationException("Global security must be set.");
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi.Length = RsiLength;
 

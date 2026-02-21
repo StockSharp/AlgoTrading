@@ -131,19 +131,19 @@ public class TrendRdsStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 30)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 65)
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetDisplay("Trailing Step (pips)", "Trailing step increment", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_riskPercent = Param(nameof(RiskPercent), 3m)
 			.SetDisplay("Risk %", "Percent of equity to risk", "Risk")
@@ -183,9 +183,9 @@ public class TrendRdsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
 		{

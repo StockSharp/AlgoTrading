@@ -78,29 +78,29 @@ public class BollingerBandsFibonacciStrategy : Strategy
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Length", "Period for Bollinger Bands", "Bollinger Bands")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier", "Bollinger Bands")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_fibonacciLength = Param(nameof(FibonacciLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Fibonacci Length", "Lookback for Fibonacci levels", "Fibonacci")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_fibonacciLevel0 = Param(nameof(FibonacciLevel0), 0m)
 			.SetDisplay("Fibonacci Level 0", "Top retracement level", "Fibonacci")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-0.5m, 0.5m, 0.1m);
 
 		_fibonacciLevel100 = Param(nameof(FibonacciLevel100), 1m)
 			.SetDisplay("Fibonacci Level 100", "Bottom retracement level", "Fibonacci")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 1.5m, 0.1m);
 	}
 
@@ -123,9 +123,9 @@ public class BollingerBandsFibonacciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bollinger = new BollingerBands { Length = BollingerLength, Width = BollingerMultiplier };
 		_highest = new Highest { Length = FibonacciLength };

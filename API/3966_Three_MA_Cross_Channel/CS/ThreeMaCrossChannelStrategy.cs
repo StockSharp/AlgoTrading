@@ -32,9 +32,9 @@ private readonly StrategyParam<decimal> _stopLoss;
 private readonly StrategyParam<bool> _useChannelStop;
 private readonly StrategyParam<DataType> _candleType;
 
-private LengthIndicator<decimal> _fastMa = null!;
-private LengthIndicator<decimal> _mediumMa = null!;
-private LengthIndicator<decimal> _slowMa = null!;
+private DecimalLengthIndicator _fastMa = null!;
+private DecimalLengthIndicator _mediumMa = null!;
+private DecimalLengthIndicator _slowMa = null!;
 private DonchianChannels _channel = null!;
 
 private bool? _prevFastAboveSlow;
@@ -172,12 +172,12 @@ _slowType = Param(nameof(SlowType), MovingAverageTypes.EMA)
 
 _takeProfit = Param(nameof(TakeProfit), 0m)
 .SetDisplay("Take Profit", "Distance to close profitable trades", "Risk Management")
-.SetCanOptimize(true)
+
 .SetOptimize(0m, 3m, 0.1m);
 
 _stopLoss = Param(nameof(StopLoss), 0m)
 .SetDisplay("Stop Loss", "Distance to limit losses", "Risk Management")
-.SetCanOptimize(true)
+
 .SetOptimize(0m, 3m, 0.1m);
 
 _useChannelStop = Param(nameof(UseChannelStop), true)
@@ -203,9 +203,9 @@ _entryPrice = null;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _fastMa = CreateMovingAverage(FastType, FastLength);
 _mediumMa = CreateMovingAverage(MediumType, MediumLength);
@@ -228,7 +228,7 @@ DrawIndicator(area, _channel);
 DrawOwnTrades(area);
 }
 
-StartProtection();
+StartProtection(null, null);
 }
 
 private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal mediumValue, decimal slowValue, decimal middleBand, decimal upperBand, decimal lowerBand)
@@ -315,12 +315,12 @@ _entryPrice = candle.ClosePrice;
 }
 }
 
-private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
+private static DecimalLengthIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 {
 return type switch
 {
-MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
-MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
+MovingAverageTypes.SMA => new SMA { Length = length },
+MovingAverageTypes.EMA => new EMA { Length = length },
 MovingAverageTypes.SMMA => new SmoothedMovingAverage { Length = length },
 MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
 _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unsupported moving average type."),

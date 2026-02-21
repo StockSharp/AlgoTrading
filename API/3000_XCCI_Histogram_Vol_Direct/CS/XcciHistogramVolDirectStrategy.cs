@@ -233,7 +233,7 @@ public XcciHistogramVolDirectStrategy()
 _cciPeriod = Param(nameof(CciPeriod), 14)
 .SetGreaterThanZero()
 .SetDisplay("CCI Period", "Length for Commodity Channel Index", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(10, 40, 2);
 
 _smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.T3)
@@ -242,7 +242,7 @@ _smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.T3)
 _smoothingLength = Param(nameof(SmoothingLength), 12)
 .SetGreaterThanZero()
 .SetDisplay("Smoothing Length", "Number of periods for smoothing filters", "Indicators")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 30, 1);
 
 _smoothingPhase = Param(nameof(SmoothingPhase), 15)
@@ -309,9 +309,9 @@ _volumeSmoother?.Reset();
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _cci = new CommodityChannelIndex { Length = CciPeriod };
 _cciVolumeSmoother = CreateSmoother(Smoothing, SmoothingLength, SmoothingPhase);
@@ -472,15 +472,15 @@ offset = Math.Max(0m, Math.Min(1m, offset));
 
 return method switch
 {
-SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
-SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+SmoothingMethods.Sma => new SMA { Length = length },
+SmoothingMethods.Ema => new EMA { Length = length },
 SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
 SmoothingMethods.Lwma => new WeightedMovingAverage { Length = length },
 SmoothingMethods.Jjma => new JurikMovingAverage { Length = length },
 SmoothingMethods.Jurx => new ZeroLagExponentialMovingAverage { Length = length },
 SmoothingMethods.Parabolic => new ArnaudLegouxMovingAverage { Length = length, Offset = offset, Sigma = 6m },
 SmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = length },
-SmoothingMethods.Vidya => new ExponentialMovingAverage { Length = length },
+SmoothingMethods.Vidya => new EMA { Length = length },
 SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
 _ => new TripleExponentialMovingAverage { Length = length }
 };

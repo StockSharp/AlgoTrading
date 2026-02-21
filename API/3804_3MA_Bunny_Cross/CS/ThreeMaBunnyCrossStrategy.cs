@@ -63,8 +63,8 @@ public class ThreeMaBunnyCrossStrategy : Strategy
 	public ThreeMaBunnyCrossStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
-		_fastPeriod = Param(nameof(FastPeriod), 5).SetDisplay("Fast LWMA").SetCanOptimize(true);
-		_slowPeriod = Param(nameof(SlowPeriod), 20).SetDisplay("Slow LWMA").SetCanOptimize(true);
+		_fastPeriod = Param(nameof(FastPeriod), 5).SetDisplay("Fast LWMA", "Fast LWMA", "General");
+		_slowPeriod = Param(nameof(SlowPeriod), 20).SetDisplay("Slow LWMA", "Slow LWMA", "General");
 	}
 
 	/// <inheritdoc />
@@ -78,20 +78,18 @@ public class ThreeMaBunnyCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = new WeightedMovingAverage
 		{
-			Length = FastPeriod,
-			CandlePrice = CandlePrice.Close,
+			Length = FastPeriod
 		};
 
 		_slowMa = new WeightedMovingAverage
 		{
-			Length = SlowPeriod,
-			CandlePrice = CandlePrice.Close,
+			Length = SlowPeriod
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -99,7 +97,7 @@ public class ThreeMaBunnyCrossStrategy : Strategy
 			.Bind(_fastMa, _slowMa, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

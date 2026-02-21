@@ -33,7 +33,7 @@ public class ExpTemaStrategy : Strategy
 	{
 		_temaPeriod = Param(nameof(TemaPeriod), 15)
 			.SetDisplay("TEMA period", "Length of the Triple Exponential Moving Average.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 5);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -42,12 +42,12 @@ public class ExpTemaStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetDisplay("Stop-loss distance", "Protective stop distance expressed in price steps.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 2000, 100);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 			.SetDisplay("Take-profit distance", "Profit target distance expressed in price steps.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200, 3000, 100);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -101,9 +101,9 @@ public class ExpTemaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 

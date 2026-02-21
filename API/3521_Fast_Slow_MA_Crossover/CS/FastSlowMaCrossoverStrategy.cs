@@ -45,22 +45,22 @@ public class FastSlowMaCrossoverStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Period", "Length of the fast moving average", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Period", "Length of the slow moving average", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Distance in pips for profit taking", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Distance in pips for protective stop", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_startTime = Param(nameof(StartTime), new TimeSpan(0, 0, 0))
 			.SetDisplay("Start Time", "Start of the allowed trading window", "Schedule");
@@ -74,7 +74,7 @@ public class FastSlowMaCrossoverStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Volume of each market order", "Trading")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -171,9 +171,9 @@ public class FastSlowMaCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 		_pipSize = CalculatePipSize();

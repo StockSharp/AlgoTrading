@@ -103,9 +103,9 @@ _currentMarketState = MarketStates.Neutral;
 		_volumeData.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Vwap indicator
 		var vwap = new VolumeWeightedMovingAverage();

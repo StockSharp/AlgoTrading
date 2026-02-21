@@ -112,9 +112,9 @@ public class SpectrAnalysisChaikinStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var ad = new AccumulationDistributionLine();
 		_fastWma = new WeightedMovingAverage { Length = FastMaPeriod };
@@ -139,8 +139,8 @@ public class SpectrAnalysisChaikinStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		var fast = _fastWma.Process(new DecimalIndicatorValue(_fastWma, adValue, candle.Time));
-		var slow = _slowWma.Process(new DecimalIndicatorValue(_slowWma, adValue, candle.Time));
+		var fast = _fastWma.Process(new DecimalIndicatorValue(_fastWma, adValue, candle.ServerTime));
+		var slow = _slowWma.Process(new DecimalIndicatorValue(_slowWma, adValue, candle.ServerTime));
 		
 		if (!fast.IsFinal || !slow.IsFinal)
 		return;

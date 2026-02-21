@@ -13,7 +13,7 @@ Positions are sized equally and rebalanced monthly, capturing the tendency for p
 - **Default Values**:
   - `Decile = 10`
   - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Fundamental
   - Direction: Both

@@ -70,17 +70,17 @@ public class AtrExpansionStrategy : Strategy
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Technical Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Technical Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop-loss calculation", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -103,13 +103,13 @@ public class AtrExpansionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
+		var sma = new SMA { Length = MAPeriod };
 
 		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);

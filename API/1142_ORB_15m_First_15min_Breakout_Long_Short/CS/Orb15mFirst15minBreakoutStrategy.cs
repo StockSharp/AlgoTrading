@@ -72,11 +72,11 @@ public class Orb15mFirst15minBreakoutStrategy : Strategy
 	=> [(Security, CandleType)];
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(OnProcessCandle).Start();
@@ -87,7 +87,7 @@ public class Orb15mFirst15minBreakoutStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		var localTime = TimeZoneInfo.ConvertTime(candle.OpenTime.UtcDateTime, _tz);
+		var localTime = TimeZoneInfo.ConvertTime(candle.OpenTime, _tz);
 		var todayYmd = localTime.Year * 10000 + localTime.Month * 100 + localTime.Day;
 		var tradedToday = _lastTradeYmd == todayYmd;
 		
@@ -131,7 +131,7 @@ public class Orb15mFirst15minBreakoutStrategy : Strategy
 			}
 		}
 		
-		var endTime = TimeZoneInfo.ConvertTime(candle.CloseTime.UtcDateTime, _tz);
+		var endTime = TimeZoneInfo.ConvertTime(candle.CloseTime, _tz);
 		if (endTime.Hour == SessionEndHour && endTime.Minute == SessionEndMinute && Position != 0)
 		CloseAll();
 	}

@@ -60,7 +60,7 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 		_bbLength = Param(nameof(BbLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("BB Breakout Length", "Length for Bollinger breakout calculation", "BB Breakout")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 2);
 		
 		_bbMultiplier = Param(nameof(BbMultiplier), 1.0m)
@@ -159,20 +159,20 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_bbBreakout = new BollingerBands { Length = BbLength, Width = BbMultiplier };
 		_squeezeBb = new BollingerBands { Length = SqueezeLength, Width = SqueezeBbMultiplier };
 		_keltner = new KeltnerChannels { Length = SqueezeLength, Multiplier = KcMultiplier };
 		_atr = new AverageTrueRange { Length = AtrLength };
-		_bullNum = new SimpleMovingAverage { Length = BbLength };
-		_bullDen = new SimpleMovingAverage { Length = BbLength };
-		_bearNum = new SimpleMovingAverage { Length = BbLength };
-		_bearDen = new SimpleMovingAverage { Length = BbLength };
-		_upperBandMa = new SimpleMovingAverage { Length = 3 };
-		_lowerBandMa = new SimpleMovingAverage { Length = 3 };
+		_bullNum = new SMA { Length = BbLength };
+		_bullDen = new SMA { Length = BbLength };
+		_bearNum = new SMA { Length = BbLength };
+		_bearDen = new SMA { Length = BbLength };
+		_upperBandMa = new SMA { Length = 3 };
+		_lowerBandMa = new SMA { Length = 3 };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -209,11 +209,12 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 		return;
 		
 		var close = candle.ClosePrice;
-		
-		var bullNumVal = _bullNum.Process(Math.Max(close - breakoutUpper, 0m)).ToNullableDecimal();
-		var bullDenVal = _bullDen.Process(Math.Abs(close - breakoutUpper)).ToNullableDecimal();
-		var bearNumVal = _bearNum.Process(Math.Max(breakoutLower - close, 0m)).ToNullableDecimal();
-		var bearDenVal = _bearDen.Process(Math.Abs(breakoutLower - close)).ToNullableDecimal();
+		var time = candle.ServerTime;
+
+		var bullNumVal = _bullNum.Process(new DecimalIndicatorValue(_bullNum, Math.Max(close - breakoutUpper, 0m), time)).ToNullableDecimal();
+		var bullDenVal = _bullDen.Process(new DecimalIndicatorValue(_bullDen, Math.Abs(close - breakoutUpper), time)).ToNullableDecimal();
+		var bearNumVal = _bearNum.Process(new DecimalIndicatorValue(_bearNum, Math.Max(breakoutLower - close, 0m), time)).ToNullableDecimal();
+		var bearDenVal = _bearDen.Process(new DecimalIndicatorValue(_bearDen, Math.Abs(breakoutLower - close), time)).ToNullableDecimal();
 		
 		if (bullNumVal is not decimal bullNum || bullDenVal is not decimal bullDen ||
 		bearNumVal is not decimal bearNum || bearDenVal is not decimal bearDen)
@@ -233,8 +234,8 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 		
 		var squeezeDotGreen = squeezeLower < kcLower || squeezeUpper > kcUpper;
 		
-		var upperBandVal = _upperBandMa.Process(close + atr * AtrMultiplier).ToNullableDecimal();
-		var lowerBandVal = _lowerBandMa.Process(close - atr * AtrMultiplier).ToNullableDecimal();
+		var upperBandVal = _upperBandMa.Process(new DecimalIndicatorValue(_upperBandMa, close + atr * AtrMultiplier, time)).ToNullableDecimal();
+		var lowerBandVal = _lowerBandMa.Process(new DecimalIndicatorValue(_lowerBandMa, close - atr * AtrMultiplier, time)).ToNullableDecimal();
 		
 		if (upperBandVal is not decimal upperBand || lowerBandVal is not decimal lowerBand)
 		return;

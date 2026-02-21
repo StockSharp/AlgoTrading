@@ -103,25 +103,25 @@ public class ParabolicSarBug2Strategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 90)
 			.SetDisplay("Stop-Loss Points", "Stop-loss distance measured in price points", "Risk Management")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 150, 10);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20)
 			.SetDisplay("Take-Profit Points", "Take-profit distance measured in price points", "Risk Management")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 80, 10);
 
 		_sarStep = Param(nameof(SarStep), 0.001m)
 			.SetDisplay("SAR Step", "Initial acceleration factor for Parabolic SAR", "Indicator")
 			.SetRange(0.001m, 0.05m)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.02m, 0.001m);
 
 		_sarMaximum = Param(nameof(SarMaximum), 0.2m)
 			.SetDisplay("SAR Maximum", "Maximum acceleration factor for Parabolic SAR", "Indicator")
 			.SetRange(0.1m, 0.6m)
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.4m, 0.05m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -150,9 +150,9 @@ public class ParabolicSarBug2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = GetPriceStep();
 

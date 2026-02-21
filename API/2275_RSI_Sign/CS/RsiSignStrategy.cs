@@ -121,23 +121,23 @@ public class RsiSignStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Length of RSI indicator", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Length of ATR indicator", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_upLevel = Param(nameof(UpLevel), 70m)
 			.SetDisplay("RSI Upper Level", "Sell when RSI falls below this value", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 80m, 5m);
 
 		_downLevel = Param(nameof(DownLevel), 30m)
 			.SetDisplay("RSI Lower Level", "Buy when RSI rises above this value", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 40m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -171,9 +171,9 @@ public class RsiSignStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };

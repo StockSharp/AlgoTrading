@@ -75,17 +75,17 @@ public class ExpMovingAverageFnStrategy : Strategy
 		_length = Param(nameof(Length), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Period of the exponential moving average", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetDisplay("Stop Loss", "Absolute stop-loss in price units", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 2000m, 500m);
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetDisplay("Take Profit", "Absolute take-profit in price units", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1000m, 4000m, 500m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -103,9 +103,9 @@ public class ExpMovingAverageFnStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ema = new EMA { Length = Length };
 		var subscription = SubscribeCandles(CandleType);

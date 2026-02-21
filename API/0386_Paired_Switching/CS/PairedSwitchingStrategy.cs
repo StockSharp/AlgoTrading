@@ -80,7 +80,7 @@ public class PairedSwitchingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
 
-		_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_tf = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles time frame", "General");
 	}
 

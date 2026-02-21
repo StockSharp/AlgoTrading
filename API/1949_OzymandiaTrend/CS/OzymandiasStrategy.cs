@@ -93,7 +93,7 @@ public class OzymandiasStrategy : Strategy
 	_length = Param(nameof(Length), 2)
 	.SetGreaterThanZero()
 	.SetDisplay("Length", "Lookback period", "Indicator")
-	.SetCanOptimize(true);
+	;
 	
 	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 	.SetDisplay("Candle Type", "Timeframe for candles", "General");
@@ -139,14 +139,14 @@ public class OzymandiasStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 	
 	_highest = new Highest { Length = Length };
 	_lowest = new Lowest { Length = Length };
-	_hma = new SimpleMovingAverage { Length = Length };
-	_lma = new SimpleMovingAverage { Length = Length };
+	_hma = new SMA { Length = Length };
+	_lma = new SMA { Length = Length };
 	_atr = new AverageTrueRange { Length = 100 };
 	
 	var subscription = SubscribeCandles(CandleType);
@@ -171,10 +171,10 @@ public class OzymandiasStrategy : Strategy
 	if (candle.State != CandleStates.Finished)
 	return;
 	
-	var hh = _highest.Process(candle).ToDecimal();
+	var hh = _highest.Process(new DecimalIndicatorValue(_highest, candle).ToDecimal();
 	var ll = _lowest.Process(candle).ToDecimal();
-	var hma = _hma.Process(candle.HighPrice, candle.OpenTime, true).ToDecimal();
-	var lma = _lma.Process(candle.LowPrice, candle.OpenTime, true).ToDecimal();
+	var hma = _hma.Process(candle.HighPrice, candle.OpenTime)).ToDecimal();
+	var lma = _lma.Process(new DecimalIndicatorValue(_lma, candle.LowPrice, candle.OpenTime)).ToDecimal();
 	var atrHalf = _atr.Process(candle).ToDecimal() / 2m;
 	
 	if (_prevHigh == 0m && _prevLow == 0m)

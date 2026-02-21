@@ -79,22 +79,22 @@ public class SessionBreakoutScalperTradingBotStrategy : Strategy
 	/// </summary>
 	public SessionBreakoutScalperTradingBotStrategy()
 	{
-		_sessionStart = Param(nameof(SessionStart), TimeSpan.FromHours(1)).SetDisplay("Session Start").SetCanOptimize(true);
-		_sessionEnd = Param(nameof(SessionEnd), TimeSpan.FromHours(2)).SetDisplay("Session End").SetCanOptimize(true);
-		_takeProfit = Param(nameof(TakeProfit), 100m).SetDisplay("Take Profit").SetCanOptimize(true);
-		_stopLoss = Param(nameof(StopLoss), 50m).SetDisplay("Stop Loss").SetCanOptimize(true);
-		_useAtrStop = Param(nameof(UseAtrStop), true).SetDisplay("Use ATR Stop").SetCanOptimize(true);
-		_atrLength = Param(nameof(AtrLength), 14).SetDisplay("ATR Length").SetCanOptimize(true);
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m).SetDisplay("ATR Multiplier").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type").SetCanOptimize(true);
+		_sessionStart = Param(nameof(SessionStart), TimeSpan.FromHours(1)).SetDisplay("Session Start", "Session Start", "General");
+		_sessionEnd = Param(nameof(SessionEnd), TimeSpan.FromHours(2)).SetDisplay("Session End", "Session End", "General");
+		_takeProfit = Param(nameof(TakeProfit), 100m).SetDisplay("Take Profit", "Take Profit", "General");
+		_stopLoss = Param(nameof(StopLoss), 50m).SetDisplay("Stop Loss", "Stop Loss", "General");
+		_useAtrStop = Param(nameof(UseAtrStop), true).SetDisplay("Use ATR Stop", "Use ATR Stop", "General");
+		_atrLength = Param(nameof(AtrLength), 14).SetDisplay("ATR Length", "ATR Length", "General");
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m).SetDisplay("ATR Multiplier", "ATR Multiplier", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
 		var atr = new AverageTrueRange { Length = AtrLength };
 		

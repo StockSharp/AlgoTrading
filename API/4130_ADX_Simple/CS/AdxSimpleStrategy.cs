@@ -49,7 +49,7 @@ public class AdxSimpleStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Average Directional Index lookback length.", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candles used for signal calculations.", "General");
@@ -71,9 +71,9 @@ public class AdxSimpleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Prepare the ADX indicator that supplies DI+ and DI- series.
 		var adx = new AverageDirectionalIndex

@@ -79,13 +79,13 @@ public class IUGapFillStrategy : Strategy
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation period", "ATR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_atrFactor = Param(nameof(AtrFactor), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Factor", "ATR multiplier", "ATR")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -112,10 +112,10 @@ public class IUGapFillStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var subscription = SubscribeCandles(CandleType);
@@ -135,7 +135,7 @@ public class IUGapFillStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var day = candle.OpenTime.UtcDateTime.Date;
+		var day = candle.OpenTime.Date;
 
 		if (_currentDay != day)
 		{

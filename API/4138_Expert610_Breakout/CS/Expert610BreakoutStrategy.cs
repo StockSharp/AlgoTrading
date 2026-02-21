@@ -47,7 +47,7 @@ public class Expert610BreakoutStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 1m)
 			.SetNotNegative()
 			.SetDisplay("Risk Percent", "Portion of free capital allocated to a single trade.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_minimumVolume = Param(nameof(MinimumVolume), 0.1m)
 			.SetGreaterThanZero()
@@ -56,22 +56,22 @@ public class Expert610BreakoutStrategy : Strategy
 		_thresholdPips = Param(nameof(ThresholdPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Volatility Threshold (pips)", "Minimum distance between last close and the previous candle extremes.", "Setup")
-			.SetCanOptimize(true);
+			;
 
 		_breakoutOffsetPips = Param(nameof(BreakoutOffsetPips), 2m)
 			.SetNotNegative()
 			.SetDisplay("Breakout Offset (pips)", "Additional buffer added to the previous candle high/low when placing stops.", "Setup")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective distance applied after a pending order is triggered.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance applied after execution.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to evaluate the previous bar breakout pattern.", "Data");
@@ -180,9 +180,9 @@ public class Expert610BreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 

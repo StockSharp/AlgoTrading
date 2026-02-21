@@ -26,8 +26,8 @@ public class MaBbSupertrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _supertrendFactor;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal> _maBasis;
-	private LengthIndicator<decimal> _maSignal;
+	private DecimalLengthIndicator _maBasis;
+	private DecimalLengthIndicator _maSignal;
 	private BollingerBands _bollinger;
 	private SuperTrend _supertrend;
 
@@ -106,37 +106,37 @@ public class MaBbSupertrendStrategy : Strategy
 		_maSignalLength = Param(nameof(MaSignalLength), 89)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Signal Length", "Length of the signal moving average", "MA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 150, 10);
 
 		_maRatio = Param(nameof(MaRatio), 1.08m)
 			.SetRange(0.5m, 3m)
 			.SetDisplay("MA Ratio", "Basis length = Signal length * Ratio", "MA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.1m);
 
 		_bbLength = Param(nameof(BbLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Length", "Bollinger Bands period", "Bollinger")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_bbMultiplier = Param(nameof(BbMultiplier), 3m)
 			.SetRange(1m, 10m)
 			.SetDisplay("BB Width", "Bollinger Bands width", "Bollinger")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("SuperTrend Period", "ATR period for SuperTrend", "SuperTrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 5);
 
 		_supertrendFactor = Param(nameof(SupertrendFactor), 4m)
 			.SetRange(1m, 10m)
 			.SetDisplay("SuperTrend Factor", "ATR multiplier for SuperTrend", "SuperTrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 8m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -150,9 +150,9 @@ public class MaBbSupertrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var basisLength = (int)Math.Round(MaSignalLength * MaRatio);
 
@@ -163,7 +163,7 @@ public class MaBbSupertrendStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_maBasis, _maSignal, _supertrend, _bollinger, ProcessCandle)
+			.BindEx([_maBasis, _maSignal, _supertrend, _bollinger], ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -178,8 +178,7 @@ public class MaBbSupertrendStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal basis, decimal signal,
-		decimal supertrendValue, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -188,6 +187,14 @@ public class MaBbSupertrendStrategy : Strategy
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var basis = values[0].ToDecimal();
+		var signal = values[1].ToDecimal();
+		var supertrendValue = values[2].ToDecimal();
+
+		var bbTyped = (BollingerBandsValue)values[3];
+		if (bbTyped.UpBand is not decimal upper || bbTyped.LowBand is not decimal lower)
 			return;
 
 		if (!_isInitialized)

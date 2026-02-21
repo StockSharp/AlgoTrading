@@ -75,12 +75,12 @@ public class MamCrossoverTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_closeSma = new SimpleMovingAverage { Length = MaPeriod };
-		_openSma = new SimpleMovingAverage { Length = MaPeriod };
+		_closeSma = new SMA { Length = MaPeriod };
+		_openSma = new SMA { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

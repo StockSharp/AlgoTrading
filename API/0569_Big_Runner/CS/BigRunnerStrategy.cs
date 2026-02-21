@@ -96,13 +96,13 @@ public class BigRunnerStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Fast SMA period", "SMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_slowLength = Param(nameof(SlowLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow SMA period", "SMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 30, 1);
 
 		_useStopTake = Param(nameof(UseStopTake), true)
@@ -111,37 +111,37 @@ public class BigRunnerStrategy : Strategy
 		_takeProfitLongPercent = Param(nameof(TakeProfitLongPercent), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("TP Long %", "Take profit percent for long", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 8m, 1m);
 
 		_takeProfitShortPercent = Param(nameof(TakeProfitShortPercent), 7m)
 			.SetGreaterThanZero()
 			.SetDisplay("TP Short %", "Take profit percent for short", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4m, 10m, 1m);
 
 		_stopLossLongPercent = Param(nameof(StopLossLongPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("SL Long %", "Stop loss percent for long", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_stopLossShortPercent = Param(nameof(StopLossShortPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("SL Short %", "Stop loss percent for short", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 1m);
 
 		_percentOfPortfolio = Param(nameof(PercentOfPortfolio), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Portfolio %", "Percent of portfolio per trade", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 20m, 5m);
 
 		_leverage = Param(nameof(Leverage), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Leverage", "Position leverage", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -166,9 +166,9 @@ public class BigRunnerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastMa = new SMA { Length = FastLength };
 		var slowMa = new SMA { Length = SlowLength };

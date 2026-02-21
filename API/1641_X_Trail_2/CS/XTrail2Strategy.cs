@@ -147,11 +147,11 @@ public class XTrail2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_ma1 = CreateMa(Ma1Type, Ma1Length);
 		_ma2 = CreateMa(Ma2Type, Ma2Length);
@@ -173,8 +173,8 @@ public class XTrail2Strategy : Strategy
 		var price1 = GetPrice(candle, Ma1PriceType);
 		var price2 = GetPrice(candle, Ma2PriceType);
 
-		var ma1 = _ma1.Process(price1, candle.OpenTime, true).ToDecimal();
-		var ma2 = _ma2.Process(price2, candle.OpenTime, true).ToDecimal();
+		var ma1 = _ma1.Process(new DecimalIndicatorValue(_ma1, price1, candle.OpenTime)).ToDecimal();
+		var ma2 = _ma2.Process(new DecimalIndicatorValue(_ma2, price2, candle.OpenTime)).ToDecimal();
 
 		if (_ma1Prev2 != null && _ma2Prev2 != null)
 		{
@@ -200,10 +200,10 @@ public class XTrail2Strategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

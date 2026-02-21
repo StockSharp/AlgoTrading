@@ -54,11 +54,11 @@ public class SetupSmoothGaussianAdaptiveSupertrendManualVolStrategy : Strategy
 		_trendLength = Param(nameof(TrendLength), 75)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend Length", "Smooth Gaussian trend length", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_volatility = Param(nameof(Volatility), 2)
 			.SetDisplay("Volatility", "Manual volatility value", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_enableVolatilityFilter = Param(nameof(EnableVolatilityFilter), true)
 			.SetDisplay("Enable Volatility Filter", "Use manual volatility filter", "Parameters");
@@ -82,12 +82,12 @@ public class SetupSmoothGaussianAdaptiveSupertrendManualVolStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma1 = new SimpleMovingAverage { Length = TrendLength };
-		_sma2 = new SimpleMovingAverage { Length = TrendLength };
+		_sma1 = new SMA { Length = TrendLength };
+		_sma2 = new SMA { Length = TrendLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -109,7 +109,7 @@ public class SetupSmoothGaussianAdaptiveSupertrendManualVolStrategy : Strategy
 			return;
 
 		var sma1Value = _sma1.Process(candle);
-		var trendValue = _sma2.Process(candle.Time, sma1Value.GetValue<decimal>());
+		var trendValue = _sma2.Process(candle.ServerTime, sma1Value.GetValue<decimal>());
 		if (!trendValue.IsFinal)
 			return;
 

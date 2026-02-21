@@ -112,7 +112,7 @@ public class MonthlyDayLongVixStrategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 5m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_vixSecurity = Param(nameof(VixSecurity), new Security { Id = "CBOE:VIX" })
@@ -135,9 +135,9 @@ public class MonthlyDayLongVixStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(
 			new Unit(TakeProfitPercent, UnitTypes.Percent),

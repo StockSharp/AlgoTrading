@@ -131,31 +131,31 @@ public class TrailSlManagerStrategy : Strategy
 	{
 		_enableBreakEven = Param(nameof(EnableBreakEven), true)
 		.SetDisplay("Break Even", "Enable break-even stop adjustment", "Risk")
-		.SetCanOptimize(true);
+		;
 		_breakEvenTriggerPoints = Param(nameof(BreakEvenTriggerPoints), 20)
 		.SetDisplay("Break Even Trigger", "Points required before moving to break-even", "Risk")
-		.SetCanOptimize(true);
+		;
 		_breakEvenOffsetPoints = Param(nameof(BreakEvenOffsetPoints), 10)
 		.SetDisplay("Break Even Offset", "Extra points locked when break-even triggers", "Risk")
-		.SetCanOptimize(true);
+		;
 		_enableTrailing = Param(nameof(EnableTrailing), true)
 		.SetDisplay("Trailing", "Enable trailing stop management", "Risk")
-		.SetCanOptimize(true);
+		;
 		_trailAfterBreakEven = Param(nameof(TrailAfterBreakEven), true)
 		.SetDisplay("Trail After Break Even", "Start trailing only after break-even", "Risk")
-		.SetCanOptimize(true);
+		;
 		_trailStartPoints = Param(nameof(TrailStartPoints), 40)
 		.SetDisplay("Trail Start", "Points of profit before trailing is considered", "Risk")
-		.SetCanOptimize(true);
+		;
 		_trailStepPoints = Param(nameof(TrailStepPoints), 10)
 		.SetDisplay("Trail Step", "Price step that triggers a new trailing recalculation", "Risk")
-		.SetCanOptimize(true);
+		;
 		_trailOffsetPoints = Param(nameof(TrailOffsetPoints), 10)
 		.SetDisplay("Trail Offset", "Points added to the stop on every trailing step", "Risk")
-		.SetCanOptimize(true);
+		;
 		_initialStopPoints = Param(nameof(InitialStopPoints), 200)
 		.SetDisplay("Initial Stop", "Initial stop distance used before trailing", "Risk")
-		.SetCanOptimize(true);
+		;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Candle subscription for monitoring", "Data");
 	}
@@ -168,9 +168,9 @@ public class TrailSlManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 0m;
 		if (_priceStep <= 0m)
@@ -200,12 +200,12 @@ public class TrailSlManagerStrategy : Strategy
 
 		if (trade.Order.Direction == Sides.Buy && Position > 0)
 		{
-			_longStop = InitialStopPoints > 0 ? PositionAvgPrice - InitialStopPoints * _priceStep : 0m;
+			_longStop = InitialStopPoints > 0 ? PositionPrice - InitialStopPoints * _priceStep : 0m;
 			_longBreakEvenActive = false;
 		}
 		else if (trade.Order.Direction == Sides.Sell && Position < 0)
 		{
-			_shortStop = InitialStopPoints > 0 ? PositionAvgPrice + InitialStopPoints * _priceStep : 0m;
+			_shortStop = InitialStopPoints > 0 ? PositionPrice + InitialStopPoints * _priceStep : 0m;
 			_shortBreakEvenActive = false;
 		}
 	}
@@ -228,7 +228,7 @@ public class TrailSlManagerStrategy : Strategy
 			return;
 		}
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -313,7 +313,7 @@ public class TrailSlManagerStrategy : Strategy
 			return;
 		}
 
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		if (entryPrice <= 0m)
 			return;
 

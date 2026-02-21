@@ -100,45 +100,45 @@ public class SimpleFibonacciRetracementStrategy : Strategy
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("Lookback Period", "Period for highest/lowest", "General")
-		.SetCanOptimize(true);
+		;
 		
 		_fibDirection = Param(nameof(Direction), FibDirections.TopToBottom)
 		.SetDisplay("Fibonacci Direction", "Direction of calculation", "General")
-		.SetCanOptimize(true);
+		;
 		
 		_fibLevel236 = Param(nameof(FibLevel236), 0.236m)
 		.SetDisplay("Fib 23.6%", "Fibonacci 23.6% level", "Fibonacci")
-		.SetCanOptimize(true);
+		;
 		
 		_fibLevel382 = Param(nameof(FibLevel382), 0.382m)
 		.SetDisplay("Fib 38.2%", "Fibonacci 38.2% level", "Fibonacci")
-		.SetCanOptimize(true);
+		;
 		
 		_fibLevel50 = Param(nameof(FibLevel50), 0.5m)
 		.SetDisplay("Fib 50%", "Fibonacci 50% level", "Fibonacci")
-		.SetCanOptimize(true);
+		;
 		
 		_fibLevel618 = Param(nameof(FibLevel618), 0.618m)
 		.SetDisplay("Fib 61.8%", "Fibonacci 61.8% level", "Fibonacci")
-		.SetCanOptimize(true);
+		;
 		
 		_buyEntryLevel = Param(nameof(BuyEntryLevel), FibLevels.Fib618)
 		.SetDisplay("Buy Entry Level", "Fibonacci level for longs", "Entries")
-		.SetCanOptimize(true);
+		;
 		
 		_sellEntryLevel = Param(nameof(SellEntryLevel), FibLevels.Fib382)
 		.SetDisplay("Sell Entry Level", "Fibonacci level for shorts", "Entries")
-		.SetCanOptimize(true);
+		;
 		
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit (pips)", "Take profit in pips", "Risk")
-		.SetCanOptimize(true);
+		;
 		
 		_stopLossPips = Param(nameof(StopLossPips), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (pips)", "Stop loss in pips", "Risk")
-		.SetCanOptimize(true);
+		;
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -160,9 +160,9 @@ public class SimpleFibonacciRetracementStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_highest = new Highest { Length = LookbackPeriod };
 		_lowest = new Lowest { Length = LookbackPeriod };

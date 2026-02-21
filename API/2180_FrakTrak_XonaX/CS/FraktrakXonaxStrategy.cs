@@ -123,14 +123,14 @@ public class FraktrakXonaxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tickSize = Security?.PriceStep ?? 1m;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -191,7 +191,7 @@ public class FraktrakXonaxStrategy : Strategy
 
 			if (_stopPrice is decimal sl && candle.LowPrice <= sl)
 				SellMarket(Position);
-			else if (TrailingStop > 0 && candle.ClosePrice - PositionAvgPrice > TrailingStop * _tickSize)
+			else if (TrailingStop > 0 && candle.ClosePrice - PositionPrice > TrailingStop * _tickSize)
 			{
 				var newStop = candle.ClosePrice - TrailingStop * _tickSize - TrailingCorrection * _tickSize;
 				if (_stopPrice is null || newStop > _stopPrice)
@@ -205,7 +205,7 @@ public class FraktrakXonaxStrategy : Strategy
 
 			if (_stopPrice is decimal sl && candle.HighPrice >= sl)
 				BuyMarket(-Position);
-			else if (TrailingStop > 0 && PositionAvgPrice - candle.ClosePrice > TrailingStop * _tickSize)
+			else if (TrailingStop > 0 && PositionPrice - candle.ClosePrice > TrailingStop * _tickSize)
 			{
 				var newStop = candle.ClosePrice + TrailingStop * _tickSize + TrailingCorrection * _tickSize;
 				if (_stopPrice is null || newStop < _stopPrice)

@@ -100,19 +100,19 @@ public class MacdAlertStrategy : Strategy
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 		.SetDisplay("MACD Fast Period", "Fast EMA length for the MACD calculation", "Indicator")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(6, 18, 1);
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 		.SetDisplay("MACD Slow Period", "Slow EMA length for the MACD calculation", "Indicator")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(18, 34, 1);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 		.SetDisplay("MACD Signal Period", "Signal smoothing length for the MACD calculation", "Indicator")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 15, 1);
 
 		_upperThreshold = Param(nameof(UpperThreshold), 0.00060m)

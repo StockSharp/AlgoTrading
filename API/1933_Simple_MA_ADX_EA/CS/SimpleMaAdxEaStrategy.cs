@@ -92,23 +92,23 @@ public class SimpleMaAdxEaStrategy : Strategy
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 8)
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maPeriod = Param(nameof(MaPeriod), 8)
 			.SetDisplay("MA Period", "EMA calculation period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_adxThreshold = Param(nameof(AdxThreshold), 22m)
 			.SetDisplay("ADX Threshold", "Minimum ADX level", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 30m)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 100m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -122,11 +122,11 @@ public class SimpleMaAdxEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = MaPeriod };
+		var ema = new EMA { Length = MaPeriod };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

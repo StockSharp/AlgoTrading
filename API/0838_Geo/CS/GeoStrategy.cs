@@ -57,13 +57,13 @@ public class GeoStrategy : Strategy
 	_tolerance = Param(nameof(Tolerance), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Tolerance", "Tolerance percent for phi ratio", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 	_phi = Param(nameof(Phi), 1.61803398875m)
 			.SetGreaterThanZero()
 			.SetDisplay("Phi", "Golden ratio value", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.4m, 1.8m, 0.01m);
 
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -77,11 +77,11 @@ public class GeoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
-	StartProtection();
+	StartProtection(null, null);
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription.Bind(ProcessCandle).Start();

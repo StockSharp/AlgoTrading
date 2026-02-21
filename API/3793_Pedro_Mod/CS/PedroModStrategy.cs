@@ -151,37 +151,37 @@ public class PedroModStrategy : Strategy
 		_lots = Param(nameof(Lots), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Fixed Volume", "Lot size when money management is disabled.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_stopLoss = Param(nameof(StopLoss), 30)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in MetaTrader pips.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_takeProfit = Param(nameof(TakeProfit), 50)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance in MetaTrader pips.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 150, 10);
 
 		_gapPips = Param(nameof(Gap), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Gap (pips)", "Required movement before opening the first trade.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_maxTrades = Param(nameof(MaxTrades), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum number of simultaneously open trades.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 15, 1);
 
 		_reEntryGap = Param(nameof(ReEntryGap), 1)
 			.SetNotNegative()
 			.SetDisplay("Re-entry Gap (pips)", "Distance between averaging trades in MetaTrader pips.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 10, 1);
 
 		_moneyManagement = Param(nameof(MoneyManagement), true)
@@ -190,22 +190,22 @@ public class PedroModStrategy : Strategy
 		_maxLots = Param(nameof(MaxLots), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Lots", "Upper cap for automatically calculated volume.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 100, 5);
 
 		_startHour = Param(nameof(StartHour), 1)
 			.SetDisplay("Start Hour", "First trading hour (server time).", "Schedule")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 12, 1);
 
 		_endHour = Param(nameof(EndHour), 23)
 			.SetDisplay("End Hour", "Last trading hour (server time).", "Schedule")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(12, 23, 1);
 
 		_startYear = Param(nameof(StartYear), 2006)
 			.SetDisplay("Start Year", "The first calendar year when trading is enabled.", "Schedule")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2000, 2030, 1);
 	}
 
@@ -232,9 +232,9 @@ public class PedroModStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = CalculatePointValue();
 
@@ -242,7 +242,7 @@ public class PedroModStrategy : Strategy
 			.Bind(ProcessLevel1)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />

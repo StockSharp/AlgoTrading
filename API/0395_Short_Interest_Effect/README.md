@@ -9,7 +9,7 @@ The **Short Interest Effect** strategy uses short interest levels to predict sto
 - **Exit Criteria**: Monthly rebalance.
 - **Stops**: No explicit stop.
 - **Default Values**:
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Fundamental
   - Direction: Both

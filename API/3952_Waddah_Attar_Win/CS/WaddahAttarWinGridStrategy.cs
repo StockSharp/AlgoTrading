@@ -78,7 +78,7 @@ public class WaddahAttarWinGridStrategy : Strategy
 		_stepPoints = Param(nameof(StepPoints), 120)
 		.SetGreaterThanZero()
 		.SetDisplay("Step (Points)", "Distance between grid levels in points", "Grid")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 400, 10);
 
 		_firstVolume = Param(nameof(FirstVolume), 0.1m)
@@ -109,9 +109,9 @@ public class WaddahAttarWinGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_referenceBalance = Portfolio?.CurrentValue ?? 0m;
 
@@ -119,7 +119,7 @@ public class WaddahAttarWinGridStrategy : Strategy
 		.Bind(ProcessOrderBook)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessOrderBook(IOrderBookMessage depth)

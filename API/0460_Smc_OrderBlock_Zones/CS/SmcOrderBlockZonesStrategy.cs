@@ -137,11 +137,11 @@ public class SmcOrderBlockZonesStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_sma = new SimpleMovingAverage { Length = SmaLength };
+		_sma = new SMA { Length = SmaLength };
 		_swingHighIndicator = new Highest { Length = SwingHighLength };
 		_swingLowIndicator = new Lowest { Length = SwingLowLength };
 		_orderBlockHighIndicator = new Highest { Length = OrderBlockLength };
@@ -169,10 +169,10 @@ public class SmcOrderBlockZonesStrategy : Strategy
 		return;
 		
 		var smaValue = _sma.Process(candle).ToNullableDecimal();
-		var swingHighValue = _swingHighIndicator.Process(new DecimalIndicatorValue(_swingHighIndicator, candle.HighPrice)).ToNullableDecimal();
-		var swingLowValue = _swingLowIndicator.Process(new DecimalIndicatorValue(_swingLowIndicator, candle.LowPrice)).ToNullableDecimal();
-		var orderBlockHigh = _orderBlockHighIndicator.Process(new DecimalIndicatorValue(_orderBlockHighIndicator, candle.HighPrice)).ToNullableDecimal();
-		var orderBlockLow = _orderBlockLowIndicator.Process(new DecimalIndicatorValue(_orderBlockLowIndicator, candle.LowPrice)).ToNullableDecimal();
+		var swingHighValue = _swingHighIndicator.Process(new DecimalIndicatorValue(_swingHighIndicator, candle.HighPrice, candle.ServerTime)).ToNullableDecimal();
+		var swingLowValue = _swingLowIndicator.Process(new DecimalIndicatorValue(_swingLowIndicator, candle.LowPrice, candle.ServerTime)).ToNullableDecimal();
+		var orderBlockHigh = _orderBlockHighIndicator.Process(new DecimalIndicatorValue(_orderBlockHighIndicator, candle.HighPrice, candle.ServerTime)).ToNullableDecimal();
+		var orderBlockLow = _orderBlockLowIndicator.Process(new DecimalIndicatorValue(_orderBlockLowIndicator, candle.LowPrice, candle.ServerTime)).ToNullableDecimal();
 		
 		if (smaValue is not decimal sma ||
 		swingHighValue is not decimal swingHighCurr ||

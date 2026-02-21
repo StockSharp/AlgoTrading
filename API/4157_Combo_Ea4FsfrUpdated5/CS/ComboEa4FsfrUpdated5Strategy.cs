@@ -622,11 +622,11 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	{
 		_useMa = Param(nameof(UseMa), true).SetDisplay("Use MA", "Enable moving averages", "Entries");
 		_maMode = Param(nameof(MaMode), MaSignalModes.AllCombined).SetDisplay("MA Mode", "Moving average mode", "Entries");
-		_ma1Period = Param(nameof(Ma1Period), 5).SetDisplay("MA1 Period", "Fast MA length", "Indicators").SetCanOptimize(true);
-		_ma2Period = Param(nameof(Ma2Period), 13).SetDisplay("MA2 Period", "Medium MA length", "Indicators").SetCanOptimize(true);
-		_ma3Period = Param(nameof(Ma3Period), 62).SetDisplay("MA3 Period", "Slow MA length", "Indicators").SetCanOptimize(true);
-		_ma1BufferPeriod = Param(nameof(Ma1BufferPeriod), 14).SetDisplay("MA1 Buffer", "ATR buffer for MA1", "Indicators").SetCanOptimize(true);
-		_ma2BufferPeriod = Param(nameof(Ma2BufferPeriod), 14).SetDisplay("MA2 Buffer", "ATR buffer for MA2", "Indicators").SetCanOptimize(true);
+		_ma1Period = Param(nameof(Ma1Period), 5).SetDisplay("MA1 Period", "Fast MA length", "Indicators");
+		_ma2Period = Param(nameof(Ma2Period), 13).SetDisplay("MA2 Period", "Medium MA length", "Indicators");
+		_ma3Period = Param(nameof(Ma3Period), 62).SetDisplay("MA3 Period", "Slow MA length", "Indicators");
+		_ma1BufferPeriod = Param(nameof(Ma1BufferPeriod), 14).SetDisplay("MA1 Buffer", "ATR buffer for MA1", "Indicators");
+		_ma2BufferPeriod = Param(nameof(Ma2BufferPeriod), 14).SetDisplay("MA2 Buffer", "ATR buffer for MA2", "Indicators");
 		_ma1Method = Param(nameof(Ma1Method), MovingAverageMethods.Exponential).SetDisplay("MA1 Method", "Fast MA method", "Indicators");
 		_ma2Method = Param(nameof(Ma2Method), MovingAverageMethods.Exponential).SetDisplay("MA2 Method", "Medium MA method", "Indicators");
 		_ma3Method = Param(nameof(Ma3Method), MovingAverageMethods.Exponential).SetDisplay("MA3 Method", "Slow MA method", "Indicators");
@@ -635,17 +635,17 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		_ma3Price = Param(nameof(Ma3Price), AppliedPrices.Close).SetDisplay("MA3 Price", "Slow MA price", "Indicators");
 
 		_useRsi = Param(nameof(UseRsi), true).SetDisplay("Use RSI", "Enable RSI", "Entries");
-		_rsiPeriod = Param(nameof(RsiPeriod), 21).SetDisplay("RSI Period", "RSI length", "Indicators").SetCanOptimize(true);
+		_rsiPeriod = Param(nameof(RsiPeriod), 21).SetDisplay("RSI Period", "RSI length", "Indicators");
 		_rsiMode = Param(nameof(RsiMode), RsiSignalModes.OverboughtOversold).SetDisplay("RSI Mode", "RSI logic", "Entries");
-		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 12m).SetDisplay("RSI Buy", "Oversold threshold", "Entries").SetCanOptimize(true);
-		_rsiSellLevel = Param(nameof(RsiSellLevel), 88m).SetDisplay("RSI Sell", "Overbought threshold", "Entries").SetCanOptimize(true);
+		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 12m).SetDisplay("RSI Buy", "Oversold threshold", "Entries");
+		_rsiSellLevel = Param(nameof(RsiSellLevel), 88m).SetDisplay("RSI Sell", "Overbought threshold", "Entries");
 		_rsiBuyZone = Param(nameof(RsiBuyZone), 55m).SetDisplay("RSI Buy Zone", "Upper zone", "Entries");
 		_rsiSellZone = Param(nameof(RsiSellZone), 45m).SetDisplay("RSI Sell Zone", "Lower zone", "Entries");
 
 		_useStochastic = Param(nameof(UseStochastic), true).SetDisplay("Use Stochastic", "Enable stochastic", "Entries");
-		_stochasticK = Param(nameof(StochasticK), 5).SetDisplay("Stochastic %K", "K period", "Indicators").SetCanOptimize(true);
-		_stochasticD = Param(nameof(StochasticD), 3).SetDisplay("Stochastic %D", "D period", "Indicators").SetCanOptimize(true);
-		_stochasticSlowing = Param(nameof(StochasticSlowing), 3).SetDisplay("Stochastic Slowing", "Slowing", "Indicators").SetCanOptimize(true);
+		_stochasticK = Param(nameof(StochasticK), 5).SetDisplay("Stochastic %K", "K period", "Indicators");
+		_stochasticD = Param(nameof(StochasticD), 3).SetDisplay("Stochastic %D", "D period", "Indicators");
+		_stochasticSlowing = Param(nameof(StochasticSlowing), 3).SetDisplay("Stochastic Slowing", "Slowing", "Indicators");
 		_useStochasticHighLow = Param(nameof(UseStochasticHighLow), false).SetDisplay("Use Stoch Bands", "Require bands", "Entries");
 		_stochasticHigh = Param(nameof(StochasticHigh), 80m).SetDisplay("Stoch High", "Upper band", "Entries");
 		_stochasticLow = Param(nameof(StochasticLow), 20m).SetDisplay("Stoch Low", "Lower band", "Entries");
@@ -655,9 +655,9 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		_sarMax = Param(nameof(SarMax), 0.2m).SetDisplay("SAR Max", "Maximum acceleration", "Indicators");
 
 		_useMacd = Param(nameof(UseMacd), true).SetDisplay("Use MACD", "Enable MACD", "Entries");
-		_macdFast = Param(nameof(MacdFast), 12).SetDisplay("MACD Fast", "Fast period", "Indicators").SetCanOptimize(true);
-		_macdSlow = Param(nameof(MacdSlow), 24).SetDisplay("MACD Slow", "Slow period", "Indicators").SetCanOptimize(true);
-		_macdSignal = Param(nameof(MacdSignal), 9).SetDisplay("MACD Signal", "Signal period", "Indicators").SetCanOptimize(true);
+		_macdFast = Param(nameof(MacdFast), 12).SetDisplay("MACD Fast", "Fast period", "Indicators");
+		_macdSlow = Param(nameof(MacdSlow), 24).SetDisplay("MACD Slow", "Slow period", "Indicators");
+		_macdSignal = Param(nameof(MacdSignal), 9).SetDisplay("MACD Signal", "Signal period", "Indicators");
 		_macdPrice = Param(nameof(MacdPrice), AppliedPrices.Close).SetDisplay("MACD Price", "Applied price", "Indicators");
 		_macdMode = Param(nameof(MacdMode), MacdSignalModes.ZeroCross).SetDisplay("MACD Mode", "MACD logic", "Entries");
 
@@ -668,8 +668,8 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		_staticVolume = Param(nameof(StaticVolume), 0.1m).SetDisplay("Volume", "Fixed volume", "Risk");
 		_riskPercent = Param(nameof(RiskPercent), 5m).SetDisplay("Risk %", "Risk percentage", "Risk");
 
-		_atrPeriod = Param(nameof(AtrPeriod), 191).SetDisplay("ATR Period", "ATR length", "Risk").SetCanOptimize(true);
-		_atrMultiplier = Param(nameof(AtrMultiplier), 7m).SetDisplay("ATR Mult", "ATR multiplier", "Risk").SetCanOptimize(true);
+		_atrPeriod = Param(nameof(AtrPeriod), 191).SetDisplay("ATR Period", "ATR length", "Risk");
+		_atrMultiplier = Param(nameof(AtrMultiplier), 7m).SetDisplay("ATR Mult", "ATR multiplier", "Risk");
 
 		_autoClose = Param(nameof(AutoClose), true).SetDisplay("Auto Close", "Enable exit confirmations", "Exits");
 		_openOppositeAfterClose = Param(nameof(OpenOppositeAfterClose), false).SetDisplay("Flip Position", "Open opposite after exit", "Exits");
@@ -692,7 +692,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_ma1 = CreateMovingAverage(Ma1Method, Ma1Period);
 		_ma2 = CreateMovingAverage(Ma2Method, Ma2Period);
@@ -702,8 +702,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		_ma2BufferAtr = new AverageTrueRange { Length = Ma2BufferPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochasticK,
+		{ K = { Length = StochasticK },
 			K = { Length = StochasticK },
 			D = { Length = StochasticD },
 			Slowing = StochasticSlowing
@@ -715,15 +714,15 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		};
 		_fastZlema = new ZeroLagExponentialMovingAverage { Length = MacdFast };
 		_slowZlema = new ZeroLagExponentialMovingAverage { Length = MacdSlow };
-		_macdEma1 = new ExponentialMovingAverage { Length = MacdSignal };
-		_macdEma2 = new ExponentialMovingAverage { Length = MacdSignal };
+		_macdEma1 = new EMA { Length = MacdSignal };
+		_macdEma2 = new EMA { Length = MacdSignal };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 		.Bind(ProcessCandle)
 		.Start();
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	/// <inheritdoc />
@@ -826,28 +825,28 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		var ma2Price = GetAppliedPrice(candle, Ma2Price);
 		var ma3Price = GetAppliedPrice(candle, Ma3Price);
 
-		var ma1Value = _ma1.Process(ma1Price, time, true);
+		var ma1Value = _ma1.Process(new DecimalIndicatorValue(_ma1, ma1Price, time));
 		if (ma1Value.IsFinal)
 		{
 			_ma1Previous = _ma1Current;
 			_ma1Current = ma1Value.ToDecimal();
 		}
 
-		var ma2Value = _ma2.Process(ma2Price, time, true);
+		var ma2Value = _ma2.Process(new DecimalIndicatorValue(_ma2, ma2Price, time));
 		if (ma2Value.IsFinal)
 		{
 			_ma2Previous = _ma2Current;
 			_ma2Current = ma2Value.ToDecimal();
 		}
 
-		var ma3Value = _ma3.Process(ma3Price, time, true);
+		var ma3Value = _ma3.Process(new DecimalIndicatorValue(_ma3, ma3Price, time));
 		if (ma3Value.IsFinal)
 		{
 			_ma3Previous = _ma3Current;
 			_ma3Current = ma3Value.ToDecimal();
 		}
 
-		var atrValue = _atr.Process(candle);
+		var atrValue = _atr.Process(new DecimalIndicatorValue(_atr, candle);
 		if (atrValue.IsFinal)
 		_atrValue = atrValue.ToDecimal();
 
@@ -859,7 +858,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		if (buffer2.IsFinal)
 		_ma2BufferValue = buffer2.ToDecimal();
 
-		var rsiValue = _rsi.Process(candle.ClosePrice, time, true);
+		var rsiValue = _rsi.Process(candle.ClosePrice, time));
 		if (rsiValue.IsFinal)
 		{
 			_rsiPrevious = _rsiCurrent;
@@ -878,15 +877,15 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		_sarValue = sarValue.ToDecimal();
 
 		var macdInput = GetAppliedPrice(candle, MacdPrice);
-		var fastValue = _fastZlema.Process(macdInput, time, true);
-		var slowValue = _slowZlema.Process(macdInput, time, true);
+		var fastValue = _fastZlema.Process(new DecimalIndicatorValue(_fastZlema, macdInput, time));
+		var slowValue = _slowZlema.Process(new DecimalIndicatorValue(_slowZlema, macdInput, time));
 		if (fastValue.IsFinal && slowValue.IsFinal)
 		{
 			var fast = fastValue.ToDecimal();
 			var slow = slowValue.ToDecimal();
 			var macdLine = fast - slow;
-			var ema1 = _macdEma1.Process(macdLine, time, true).ToDecimal();
-			var ema2 = _macdEma2.Process(ema1, time, true).ToDecimal();
+			var ema1 = _macdEma1.Process(new DecimalIndicatorValue(_macdEma1, macdLine, time)).ToDecimal();
+			var ema2 = _macdEma2.Process(new DecimalIndicatorValue(_macdEma2, ema1, time)).ToDecimal();
 			var signal = 2m * ema1 - ema2;
 
 			_macdLinePrevious = _macdLineCurrent;
@@ -1331,11 +1330,11 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = period },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MovingAverageMethods.Simple => new SMA { Length = period },
+			MovingAverageMethods.Exponential => new EMA { Length = period },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
-			_ => new SimpleMovingAverage { Length = period }
+			_ => new SMA { Length = period }
 		};
 	}
 

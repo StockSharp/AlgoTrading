@@ -201,9 +201,9 @@ public class BillyExpertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (StochasticTimeFrame1 >= StochasticTimeFrame2)
 		{
@@ -214,8 +214,8 @@ public class BillyExpertStrategy : Strategy
 
 		Volume = TradeVolume;
 
-		_fastStochastic = new StochasticOscillator { KPeriod = 5, DPeriod = 3, Smooth = 3 };
-		_slowStochastic = new StochasticOscillator { KPeriod = 5, DPeriod = 3, Smooth = 3 };
+		_fastStochastic = new StochasticOscillator {, D = {  K = { Length = 3 } }, Smooth = 3 };
+		_slowStochastic = new StochasticOscillator {, D = {  K = { Length = 3 } }, Smooth = 3 };
 
 		var candleSubscription = SubscribeCandles(CandleType);
 		candleSubscription

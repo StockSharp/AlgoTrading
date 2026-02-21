@@ -129,72 +129,72 @@ public class ScalpingEmaRsiMacdStrategy : Strategy
 	{
 		_fastEmaLength = Param(nameof(FastEmaLength), 12)
 		.SetDisplay("Fast EMA Length", "Length for fast EMA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 20, 1);
 		
 		_slowEmaLength = Param(nameof(SlowEmaLength), 26)
 		.SetDisplay("Slow EMA Length", "Length for slow EMA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 1);
 		
 		_trendEmaLength = Param(nameof(TrendEmaLength), 55)
 		.SetDisplay("Trend EMA Length", "Length for trend EMA", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40, 80, 5);
 		
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetDisplay("RSI Length", "Length for RSI", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 20, 1);
 		
 		_rsiOverbought = Param(nameof(RsiOverbought), 65)
 		.SetDisplay("RSI Overbought", "Upper RSI bound", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60, 80, 5);
 		
 		_rsiOversold = Param(nameof(RsiOversold), 35)
 		.SetDisplay("RSI Oversold", "Lower RSI bound", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 5);
 		
 		_macdFast = Param(nameof(MacdFast), 12)
 		.SetDisplay("MACD Fast", "Fast period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 16, 1);
 		
 		_macdSlow = Param(nameof(MacdSlow), 26)
 		.SetDisplay("MACD Slow", "Slow period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 40, 1);
 		
 		_macdSignal = Param(nameof(MacdSignal), 9)
 		.SetDisplay("MACD Signal", "Signal period for MACD", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 15, 1);
 		
 		_atrLength = Param(nameof(AtrLength), 14)
 		.SetDisplay("ATR Length", "Length for ATR", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 20, 1);
 		
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 		.SetDisplay("ATR Multiplier", "Multiplier for stop-loss", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 		
 		_riskReward = Param(nameof(RiskReward), 2m)
 		.SetDisplay("Risk Reward", "Take profit multiplier", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 		
 		_volumeMaLength = Param(nameof(VolumeMaLength), 20)
 		.SetDisplay("Volume MA Length", "Length for volume average", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 		
 		_volumeThreshold = Param(nameof(VolumeThreshold), 1.3m)
 		.SetDisplay("Volume Threshold", "Volume multiplier", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 2m, 0.1m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -229,9 +229,9 @@ public class ScalpingEmaRsiMacdStrategy : Strategy
 	{
 		base.OnStarted(time);
 		
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
-		_trendEma = new ExponentialMovingAverage { Length = TrendEmaLength };
+		_fastEma = new EMA { Length = FastEmaLength };
+		_slowEma = new EMA { Length = SlowEmaLength };
+		_trendEma = new EMA { Length = TrendEmaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_macd = new MovingAverageConvergenceDivergence
 		{
@@ -240,7 +240,7 @@ public class ScalpingEmaRsiMacdStrategy : Strategy
 			Signal = MacdSignal
 		};
 		_atr = new AverageTrueRange { Length = AtrLength };
-		_volumeSma = new SimpleMovingAverage { Length = VolumeMaLength };
+		_volumeSma = new SMA { Length = VolumeMaLength };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -264,7 +264,7 @@ public class ScalpingEmaRsiMacdStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 		
-		var volMa = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var volMa = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 		var highVol = candle.TotalVolume > volMa * VolumeThreshold;
 		
 		var upTrend = candle.ClosePrice > trendEma && fastEma > slowEma;

@@ -92,28 +92,28 @@ public class DBotAlphaRsiBreakoutStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Period for simple moving average", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 10);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Period for relative strength index", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_rsiEntry = Param(nameof(RsiEntry), 34m)
 			.SetDisplay("RSI Entry", "RSI entry level", "Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 50m, 1m);
 
 		_rsiStopLoss = Param(nameof(RsiStopLoss), 30m)
 			.SetDisplay("RSI Stop Loss", "RSI stop loss level", "Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 1m);
 
 		_rsiTakeProfit = Param(nameof(RsiTakeProfit), 50m)
 			.SetDisplay("RSI Take Profit", "RSI take profit level", "Levels")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40m, 80m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -138,9 +138,9 @@ public class DBotAlphaRsiBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var sma = new SMA { Length = SmaLength };
 		var rsi = new RSI { Length = RsiLength };

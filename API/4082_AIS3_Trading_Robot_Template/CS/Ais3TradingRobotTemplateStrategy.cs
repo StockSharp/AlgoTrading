@@ -232,9 +232,9 @@ public class Ais3TradingRobotTemplateStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		OnReseted();
 
@@ -266,7 +266,7 @@ public class Ais3TradingRobotTemplateStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessPrimaryCandle(ICandleMessage candle)

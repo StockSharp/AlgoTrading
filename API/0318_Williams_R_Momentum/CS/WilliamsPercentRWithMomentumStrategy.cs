@@ -81,23 +81,23 @@ public class WilliamsPercentRWithMomentumStrategy : Strategy
 		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Period for Williams %R calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Period for Momentum calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_williamsROversold = Param(nameof(WilliamsROversold), -80m)
 			.SetDisplay("Williams %R Oversold", "Williams %R oversold level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-90, -70, 5);
 
 		_williamsROverbought = Param(nameof(WilliamsROverbought), -20m)
 			.SetDisplay("Williams %R Overbought", "Williams %R overbought level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-30, -10, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -121,14 +121,14 @@ public class WilliamsPercentRWithMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_williamsR = new WilliamsR { Length = WilliamsRPeriod };
 		_momentum = new Momentum { Length = MomentumPeriod };
-		_momentumSma = new SimpleMovingAverage { Length = MomentumPeriod };
+		_momentumSma = new SMA { Length = MomentumPeriod };
 
 		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
@@ -137,7 +137,7 @@ public class WilliamsPercentRWithMomentumStrategy : Strategy
 			 .Bind(_williamsR, _momentum, (candle, williamsRValue, momentumValue) =>
 			{
 				// Calculate momentum average
-				var momentumAvg = _momentumSma.Process(momentumValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+				var momentumAvg = _momentumSma.Process(new DecimalIndicatorValue(_momentumSma, momentumValue, candle.ServerTime)).ToDecimal();
 				
 				// Process the strategy logic
 				ProcessStrategy(candle, williamsRValue, momentumValue, momentumAvg);

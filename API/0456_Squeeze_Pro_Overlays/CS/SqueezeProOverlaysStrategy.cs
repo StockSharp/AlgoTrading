@@ -59,7 +59,7 @@ public class SqueezeProOverlaysStrategy : Strategy
 		_squeezeLength = Param(nameof(SqueezeLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Squeeze Length", "Calculation length", "Squeeze")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 	}
 
@@ -79,9 +79,9 @@ public class SqueezeProOverlaysStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bollingerBands = new BollingerBands { Length = SqueezeLength, Width = 2m };
 		_keltnerLow = new KeltnerChannels { Length = SqueezeLength, Multiplier = 2m };

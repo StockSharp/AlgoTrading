@@ -97,36 +97,36 @@ public class XrpAi15mAdaptiveV31Strategy : Strategy
 	{
 		_riskMult = Param(nameof(RiskMult), 1.1m)
 			.SetDisplay("Risk Mult", "ATR multiplier for stop", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_tpSmall = Param(nameof(TpSmall), 2.5m)
 			.SetDisplay("Small TP", "ATR multiplier for small target", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_tpMed = Param(nameof(TpMed), 3.5m)
 			.SetDisplay("Med TP", "ATR multiplier for medium target", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_tpLarge = Param(nameof(TpLarge), 5m)
 			.SetDisplay("Large TP", "ATR multiplier for large target", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_volMult = Param(nameof(VolMult), 5m)
 			.SetDisplay("Volume Mult", "Volume spike multiplier", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_trailPct = Param(nameof(TrailPct), 0.6m)
 			.SetDisplay("Trail Percent", "Trailing stop percent of ATR", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_trailArm = Param(nameof(TrailArm), 1m)
 			.SetDisplay("Trail Arm", "ATR gain before trailing", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_maxBars = Param(nameof(MaxBars), 48)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Bars", "Maximum bars to hold", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Main candle type", "Parameters");
@@ -158,25 +158,25 @@ public class XrpAi15mAdaptiveV31Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var atr = new AverageTrueRange { Length = 14 };
-		var ema13 = new ExponentialMovingAverage { Length = 13 };
-		var ema34 = new ExponentialMovingAverage { Length = 34 };
+		var ema13 = new EMA { Length = 13 };
+		var ema34 = new EMA { Length = 34 };
 		var rsi = new RelativeStrengthIndex { Length = 14 };
 		var roc = new RateOfChange { Length = 5 };
-		var volSma = new SimpleMovingAverage { Length = 20 };
+		var volSma = new SMA { Length = 20 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(atr, ema13, ema34, rsi, roc, volSma, ProcessCandle).Start();
 
-		var ema13Trend = new ExponentialMovingAverage { Length = 13 };
-		var ema34Trend = new ExponentialMovingAverage { Length = 34 };
+		var ema13Trend = new EMA { Length = 13 };
+		var ema34Trend = new EMA { Length = 34 };
 		var trendSub = SubscribeCandles(TrendCandleType);
 		trendSub.Bind(ema13Trend, ema34Trend, ProcessTrend).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessTrend(ICandleMessage candle, decimal ema13, decimal ema34)

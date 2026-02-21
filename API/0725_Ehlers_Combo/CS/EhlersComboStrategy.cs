@@ -62,13 +62,13 @@ public class EhlersComboStrategy : Strategy
 	public int ExitLength { get => _exitLength.Value; set => _exitLength.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_stdDev = new StandardDeviation { Length = Length };
 		_atr = new AverageTrueRange { Length = Length };
-		_rmsMa = new ExponentialMovingAverage { Length = RmsLength };
+		_rmsMa = new EMA { Length = RmsLength };
 		_ssWma = new WeightedMovingAverage { Length = Length };
 
 		var pi = Math.PI;

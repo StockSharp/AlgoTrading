@@ -286,9 +286,9 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy
 		_tpPrice = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var ma = CreateMa(TrendMaType, TrendMaLength);
@@ -313,7 +313,7 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsi,
@@ -417,7 +417,7 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy
 
 		if (Position > 0)
 		{
-			var entryPrice = PositionAvgPrice;
+			var entryPrice = PositionPrice;
 			decimal slCalc;
 			decimal tpCalc;
 			decimal rr;
@@ -460,7 +460,7 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			var entryPrice = PositionAvgPrice;
+			var entryPrice = PositionPrice;
 			decimal slCalc;
 			decimal tpCalc;
 			decimal rr;
@@ -503,16 +503,16 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MaTypes type, int length)
+	private static DecimalLengthIndicator CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaTypes.Sma => new SimpleMovingAverage { Length = length },
-			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
+			MaTypes.Sma => new SMA { Length = length },
+			MaTypes.Ema => new EMA { Length = length },
 			MaTypes.Smma => new SmoothedMovingAverage { Length = length },
 			MaTypes.Wma => new WeightedMovingAverage { Length = length },
 			MaTypes.Vwma => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 }

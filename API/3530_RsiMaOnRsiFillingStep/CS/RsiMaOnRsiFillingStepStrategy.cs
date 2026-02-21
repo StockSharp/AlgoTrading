@@ -62,7 +62,7 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _sessionEnd;
 
 	private RelativeStrengthIndex _rsi;
-	private LengthIndicator<decimal> _signalMa;
+	private DecimalLengthIndicator _signalMa;
 	private decimal? _previousRsi;
 	private decimal? _previousSignal;
 	private DateTimeOffset? _lastSignalBarTime;
@@ -78,13 +78,13 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Number of bars for the RSI smoothing window.", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 1);
 
 		_maPeriod = Param(nameof(MaPeriod), 21)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Length of the moving average applied to the RSI.", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 60, 1);
 
 		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
@@ -92,7 +92,7 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 
 		_middleLevel = Param(nameof(MiddleLevel), 50m)
 		.SetDisplay("Middle Level", "Central RSI level used by the strategy.", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30m, 70m, 1m);
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
@@ -244,9 +244,9 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_signalMa = new MovingAverage { Length = MaPeriod, Type = MaType };

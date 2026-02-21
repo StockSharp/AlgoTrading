@@ -214,12 +214,12 @@ public class NyFirstCandleBreakAndRetestStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new EMA { Length = EmaLength };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription

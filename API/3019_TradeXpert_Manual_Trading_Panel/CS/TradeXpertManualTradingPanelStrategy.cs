@@ -90,7 +90,7 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trade Volume", "Volume used for every market and pending order.", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 10m, 0.1m);
 
 		_useStopLoss = Param(nameof(UseStopLoss), false)
@@ -103,7 +103,7 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 		_stopLossOffset = Param(nameof(StopLossOffset), 0m)
 		.SetRange(0m, 100000000m)
 		.SetDisplay("Stop Loss Offset", "Distance from entry price used when absolute level is missing.", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 50m, 0.5m);
 
 		_useTakeProfit = Param(nameof(UseTakeProfit), false)
@@ -116,7 +116,7 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 		_takeProfitOffset = Param(nameof(TakeProfitOffset), 0m)
 		.SetRange(0m, 100000000m)
 		.SetDisplay("Take Profit Offset", "Distance from entry price used when absolute level is missing.", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 50m, 0.5m);
 
 		_closePositionRequest = Param(nameof(ClosePositionRequest), false)
@@ -128,7 +128,7 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 		_reverseVolume = Param(nameof(ReverseVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Reverse Volume", "Volume opened after reversing the current position.", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 10m, 0.1m);
 	}
 
@@ -289,9 +289,9 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 

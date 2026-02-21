@@ -100,37 +100,37 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 _pivotPeriod = Param(nameof(PivotPeriod), 2)
 .SetGreaterThanZero()
 .SetDisplay("Pivot Period", "Lookback for pivot detection", "Pivot")
-.SetCanOptimize(true)
+
 .SetOptimize(1, 10, 1);
 
 _factor = Param(nameof(Factor), 3m)
 .SetGreaterThanZero()
 .SetDisplay("ATR Factor", "ATR multiplier", "Pivot")
-.SetCanOptimize(true)
+
 .SetOptimize(1m, 5m, 0.5m);
 
 _atrPeriod = Param(nameof(AtrPeriod), 10)
 .SetGreaterThanZero()
 .SetDisplay("ATR Period", "ATR length", "Pivot")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 20, 1);
 
 _trendAtrPeriod = Param(nameof(TrendAtrPeriod), 10)
 .SetGreaterThanZero()
 .SetDisplay("Trend ATR Period", "ATR period for trend filter", "Trend Filter")
-.SetCanOptimize(true)
+
 .SetOptimize(5, 20, 1);
 
 _trendMultiplier = Param(nameof(TrendMultiplier), 3m)
 .SetGreaterThanZero()
 .SetDisplay("Trend Multiplier", "ATR multiplier for trend filter", "Trend Filter")
-.SetCanOptimize(true)
+
 .SetOptimize(1m, 5m, 0.5m);
 
 _maPeriod = Param(nameof(MaPeriod), 20)
 .SetGreaterThanZero()
 .SetDisplay("MA Period", "Moving average period", "Trend Filter")
-.SetCanOptimize(true)
+
 .SetOptimize(10, 50, 5);
 
 _startDate = Param(nameof(StartDate), new DateTimeOffset(2018, 9, 1, 0, 0, 0, TimeSpan.Zero))
@@ -159,13 +159,13 @@ _prevTrendDir = 1;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _atr = new AverageTrueRange { Length = AtrPeriod };
 _trend = new SuperTrend { Length = TrendAtrPeriod, Multiplier = TrendMultiplier };
-_ma = new SimpleMovingAverage { Length = MaPeriod };
+_ma = new SMA { Length = MaPeriod };
 
 var subscription = SubscribeCandles(CandleType);
 subscription

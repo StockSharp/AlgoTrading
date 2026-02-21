@@ -93,9 +93,9 @@ public class KaufWmaCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var kama = new KaufmanAdaptiveMovingAverage
 		{
@@ -111,7 +111,7 @@ public class KaufWmaCrossStrategy : Strategy
 			.Bind(kama, wma, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

@@ -78,12 +78,12 @@ public class DaydreamChannelBreakoutStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Virtual take profit distance in pips", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_channelPeriod = Param(nameof(ChannelPeriod), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Channel Period", "Number of completed candles for channel calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to subscribe", "General");
@@ -109,9 +109,9 @@ public class DaydreamChannelBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 

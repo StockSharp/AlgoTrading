@@ -121,37 +121,37 @@ public class StochasticRsiOhlcStrategy : Strategy
 		_kLength = Param(nameof(KLength), 14)
 			.SetRange(5, 30)
 			.SetDisplay("K Length", "%K length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_dLength = Param(nameof(DLength), 3)
 			.SetRange(1, 10)
 			.SetDisplay("D Length", "%D length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetRange(5, 30)
 			.SetDisplay("RSI Length", "RSI length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_longEntry = Param(nameof(LongEntry), 30m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Enter Long", "Long entry", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_shortEntry = Param(nameof(ShortEntry), 60m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Enter Short", "Short entry", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_longPivot = Param(nameof(LongPivot), 2m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Long Pivot", "Long pivot", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_shortPivot = Param(nameof(ShortPivot), 98m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Short Pivot", "Short pivot", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
@@ -164,9 +164,9 @@ public class StochasticRsiOhlcStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsiClose = new RelativeStrengthIndex { Length = RsiLength };
 		_rsiHigh = new RelativeStrengthIndex { Length = RsiLength };
@@ -212,13 +212,13 @@ public class StochasticRsiOhlcStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var rsiClose = _rsiClose.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
-		var rsiHigh = _rsiHigh.Process(candle.HighPrice, candle.OpenTime, true).ToDecimal();
-		var rsiLow = _rsiLow.Process(candle.LowPrice, candle.OpenTime, true).ToDecimal();
+		var rsiClose = _rsiClose.Process(new DecimalIndicatorValue(_rsiClose, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var rsiHigh = _rsiHigh.Process(new DecimalIndicatorValue(_rsiHigh, candle.HighPrice, candle.OpenTime)).ToDecimal();
+		var rsiLow = _rsiLow.Process(new DecimalIndicatorValue(_rsiLow, candle.LowPrice, candle.OpenTime)).ToDecimal();
 
-		var stochCloseVal = (StochasticOscillatorValue)_stochClose.Process(rsiClose, candle.OpenTime, true);
-		var stochHighVal = (StochasticOscillatorValue)_stochHigh.Process(rsiHigh, candle.OpenTime, true);
-		var stochLowVal = (StochasticOscillatorValue)_stochLow.Process(rsiLow, candle.OpenTime, true);
+		var stochCloseVal = (StochasticOscillatorValue)_stochClose.Process(new DecimalIndicatorValue(_stochClose, rsiClose, candle.OpenTime));
+		var stochHighVal = (StochasticOscillatorValue)_stochHigh.Process(new DecimalIndicatorValue(_stochHigh, rsiHigh, candle.OpenTime));
+		var stochLowVal = (StochasticOscillatorValue)_stochLow.Process(new DecimalIndicatorValue(_stochLow, rsiLow, candle.OpenTime));
 
 		if (stochCloseVal.K is not decimal stochClose ||
 			stochHighVal.K is not decimal stochHigh ||

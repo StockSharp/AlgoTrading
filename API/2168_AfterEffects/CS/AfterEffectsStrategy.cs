@@ -69,19 +69,19 @@ public class AfterEffectsStrategy : Strategy
 
 	public AfterEffectsStrategy()
 	{
-		_stopLoss = this.Param(nameof(StopLoss), 500m).SetDisplay("Stop Loss");
-		_period = this.Param(nameof(Period), 3).SetDisplay("Bar Period").SetCanOptimize(true);
-		_random = this.Param(nameof(Random), false).SetDisplay("Random Range");
-		_volume = this.Param(nameof(Volume), 1m).SetDisplay("Volume");
-		_candleType = this.Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
+		_stopLoss = this.Param(nameof(StopLoss), 500m).SetDisplay("Stop Loss", "Stop Loss", "General");
+		_period = this.Param(nameof(Period), 3).SetDisplay("Bar Period", "Bar Period", "General");
+		_random = this.Param(nameof(Random), false).SetDisplay("Random Range", "Random Range", "General");
+		_volume = this.Param(nameof(Volume), 1m).SetDisplay("Volume", "Volume", "General");
+		_candleType = this.Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

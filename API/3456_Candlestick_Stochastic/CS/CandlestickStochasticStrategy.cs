@@ -51,45 +51,45 @@ public class CandlestickStochasticStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Body Average Period", "Number of candles used for average body calculations", "Pattern Detection")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(6, 24, 2);
 
 		_kPeriod = Param(nameof(KPeriod), 33)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %K", "%K lookback period", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 
 		_dPeriod = Param(nameof(DPeriod), 37)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %D", "Smoothing period for %D", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 5);
 
 		_slowingPeriod = Param(nameof(SlowingPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic Smoothing", "Additional smoothing period applied to %K", "Stochastic")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 5);
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
 		.SetDisplay("Oversold Threshold", "Value of %D considered oversold", "Trading Rules")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 5m);
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
 		.SetDisplay("Overbought Threshold", "Value of %D considered overbought", "Trading Rules")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60m, 90m, 5m);
 
 		_closeLowerLevel = Param(nameof(CloseLowerLevel), 20m)
 		.SetDisplay("Lower Exit Level", "Lower crossover level used to exit short positions", "Trading Rules")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 5m);
 
 		_closeUpperLevel = Param(nameof(CloseUpperLevel), 80m)
 		.SetDisplay("Upper Exit Level", "Upper crossover level used to exit long positions", "Trading Rules")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60m, 90m, 5m);
 	}
 
@@ -196,14 +196,14 @@ public class CandlestickStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_stochastic = new StochasticOscillator
 		{
 			KPeriod = KPeriod,
-			DPeriod = DPeriod,
+			D = {  K = { Length = DPeriod } },
 			Smooth = SlowingPeriod,
 		};
 
@@ -367,12 +367,12 @@ public class CandlestickStochasticStrategy : Strategy
 
 	private static decimal MidPoint(CandleInfo candle)
 	{
-		return (candle.High + candle.Low) / 2m;
+		return (candle.HighPrice + candle.LowPrice) / 2m;
 	}
 
 	private static decimal MidOpenClose(CandleInfo candle)
 	{
-		return (candle.Open + candle.Close) / 2m;
+		return (candle.OpenPrice + candle.ClosePrice) / 2m;
 	}
 
 	private bool CheckThreeBlackCrows()

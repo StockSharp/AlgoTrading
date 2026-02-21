@@ -151,16 +151,16 @@ return [(Security, CandleType)];
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _atr = new AverageTrueRange { Length = VolatilityPeriod };
-_atrMa = new SimpleMovingAverage { Length = 10 };
-_volumeSma = new SimpleMovingAverage { Length = LiquidityPeriod };
+_atrMa = new SMA { Length = 10 };
+_volumeSma = new SMA { Length = LiquidityPeriod };
 
-var fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
-var slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
+var fastMa = new SMA { Length = FastMaPeriod };
+var slowMa = new SMA { Length = SlowMaPeriod };
 var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 var subscription = SubscribeCandles(CandleType);
@@ -192,8 +192,8 @@ return;
 if (!IsFormedAndOnlineAndAllowTrading())
 return;
 
-var atrMaValue = _atrMa.Process(new DecimalIndicatorValue(_atrMa, atrValue, candle.Time)).ToDecimal();
-var volumeSmaValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.Time)).ToDecimal();
+var atrMaValue = _atrMa.Process(new DecimalIndicatorValue(_atrMa, atrValue, candle.ServerTime)).ToDecimal();
+var volumeSmaValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 
 var priceChange = 100m * (candle.HighPrice - candle.LowPrice) / candle.LowPrice;
 var highLiquidity = candle.TotalVolume > volumeSmaValue * LiquidityThreshold;

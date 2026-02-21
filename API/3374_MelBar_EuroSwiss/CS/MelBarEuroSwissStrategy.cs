@@ -51,43 +51,43 @@ public class MelBarEuroSwissStrategy : Strategy
 		_tradeVolumeParam = Param(nameof(TradeVolume), 0.2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trade Volume", "Default trade volume per entry", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_bollingerPeriodParam = Param(nameof(BollingerPeriod), 18)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Period", "Number of candles for Bollinger Bands", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 2);
 
 		_bollingerDeviationParam = Param(nameof(BollingerDeviation), 2.75m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Deviation", "Standard deviation multiplier", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.5m, 3.5m, 0.25m);
 
 		_rviPeriodParam = Param(nameof(RviPeriod), 15)
 		.SetGreaterThanZero()
 		.SetDisplay("RVI Period", "Length for Relative Vigor Index", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 25, 1);
 
 		_rviLevelParam = Param(nameof(RviLevel), 0.3m)
 		.SetGreaterThanZero()
 		.SetDisplay("RVI Level", "Threshold for closing positions", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 0.6m, 0.05m);
 
 		_stopLossPipsParam = Param(nameof(StopLossPips), 13m)
 		.SetRange(0m, decimal.MaxValue)
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 30m, 1m);
 
 		_takeProfitPipsParam = Param(nameof(TakeProfitPips), 61m)
 		.SetRange(0m, decimal.MaxValue)
 		.SetDisplay("Take Profit (pips)", "Target distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30m, 120m, 5m);
 
 		_pipSizeParam = Param(nameof(PipSize), 0.0001m)
@@ -208,9 +208,9 @@ public class MelBarEuroSwissStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Prepare indicators for Bollinger breakout and RVI exit logic.
 		_bollinger = new BollingerBands

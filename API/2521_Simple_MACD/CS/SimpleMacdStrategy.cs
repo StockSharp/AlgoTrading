@@ -81,22 +81,22 @@ public class SimpleMacdStrategy : Strategy
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetDisplay("MACD Fast Period", "Fast EMA length for MACD calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 2);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
 			.SetDisplay("MACD Slow Period", "Slow EMA length for MACD calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetDisplay("MACD Signal Period", "Signal EMA length maintained for compatibility", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(6, 18, 1);
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetDisplay("Trade Volume", "Order volume used for each signal", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -126,8 +126,8 @@ public class SimpleMacdStrategy : Strategy
 		// Configure MACD indicator to match the source MQL strategy settings.
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = FastPeriod,
-			LongPeriod = SlowPeriod,
+			ShortMa = { Length = FastPeriod },
+			LongMa = { Length = SlowPeriod },
 			SignalPeriod = SignalPeriod
 		};
 

@@ -56,12 +56,12 @@ public PipsoNightBreakoutStrategy()
 		_breakoutPeriod = Param(nameof(BreakoutPeriod), 36)
 			.SetDisplay("Breakout Period", "Number of completed candles used to build the breakout channel", "Signals")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 3m)
 			.SetDisplay("Stop Multiplier", "Multiplier applied to the price range to calculate the protective stop", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_minStopDistance = Param(nameof(MinStopDistance), 0m)
 			.SetDisplay("Minimum Stop Distance", "Absolute minimum distance between entry and stop in price units", "Risk")
@@ -166,9 +166,9 @@ public PipsoNightBreakoutStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Keep the strategy volume in sync with the configured order size.
 		Volume = OrderVolume;
@@ -176,14 +176,12 @@ public PipsoNightBreakoutStrategy()
 		// Initialize breakout indicators for the high and low channel bounds.
 		_highest = new Highest
 		{
-			Length = BreakoutPeriod,
-			CandlePrice = CandlePrice.High
+			Length = BreakoutPeriod
 		};
 
 		_lowest = new Lowest
 		{
-			Length = BreakoutPeriod,
-			CandlePrice = CandlePrice.Low
+			Length = BreakoutPeriod
 		};
 
 		// Subscribe to the main candle stream and process breakout signals.

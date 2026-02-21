@@ -79,25 +79,25 @@ public class VwapEmaAtrPullbackStrategy : Strategy
 	_fastEmaLength = Param(nameof(FastEmaLength), 30)
 	    .SetGreaterThanZero()
 	    .SetDisplay("Fast EMA", "Fast EMA length", "Trend")
-	    .SetCanOptimize(true)
+	    
 	    .SetOptimize(10, 60, 5);
 
 	_slowEmaLength = Param(nameof(SlowEmaLength), 200)
 	    .SetGreaterThanZero()
 	    .SetDisplay("Slow EMA", "Slow EMA length", "Trend")
-	    .SetCanOptimize(true)
+	    
 	    .SetOptimize(100, 300, 20);
 
 	_atrLength = Param(nameof(AtrLength), 14)
 	    .SetGreaterThanZero()
 	    .SetDisplay("ATR Length", "ATR period", "Volatility")
-	    .SetCanOptimize(true)
+	    
 	    .SetOptimize(5, 30, 1);
 
 	_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 	    .SetGreaterThanZero()
 	    .SetDisplay("ATR Mult", "ATR multiplier", "Volatility")
-	    .SetCanOptimize(true)
+	    
 	    .SetOptimize(1m, 3m, 0.5m);
 
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -117,9 +117,9 @@ public class VwapEmaAtrPullbackStrategy : Strategy
     }
 
     /// <inheritdoc />
-    protected override void OnStarted(DateTimeOffset time)
+    protected override void OnStarted2(DateTime time)
     {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	var emaFast = new EMA { Length = FastEmaLength };
 	var emaSlow = new EMA { Length = SlowEmaLength };

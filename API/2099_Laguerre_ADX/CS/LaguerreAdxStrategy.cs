@@ -68,12 +68,12 @@ public class LaguerreAdxStrategy : Strategy
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 1);
 
 		_gamma = Param(nameof(Gamma), 0.764m)
 			.SetDisplay("Gamma", "Laguerre smoothing factor", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 0.9m, 0.02m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -98,9 +98,9 @@ public class LaguerreAdxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
@@ -109,7 +109,7 @@ public class LaguerreAdxStrategy : Strategy
 			.BindEx(adx, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	// Calculates Laguerre RSI value for a single data point.

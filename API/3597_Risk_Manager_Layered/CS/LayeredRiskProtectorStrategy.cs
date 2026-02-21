@@ -326,9 +326,9 @@ public class LayeredRiskProtectorStrategy : Strategy
         }
 
         /// <inheritdoc />
-        protected override void OnStarted(DateTimeOffset time)
+        protected override void OnStarted2(DateTime time)
         {
-                base.OnStarted(time);
+                base.OnStarted2(time);
 
                 var portfolio = Portfolio ?? throw new InvalidOperationException("Portfolio must be assigned.");
                 var equity = portfolio.CurrentValue ?? portfolio.BeginValue ?? 0m;

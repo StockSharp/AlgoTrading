@@ -107,9 +107,9 @@ public class VolumeTraderV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to candles and process them with the same granularity as the original indicator buffers.
 		var subscription = SubscribeCandles(CandleType);
@@ -117,7 +117,7 @@ public class VolumeTraderV2Strategy : Strategy
 		.Bind(ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

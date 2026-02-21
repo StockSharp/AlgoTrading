@@ -104,37 +104,37 @@ public class MacdBreakoutStrategy : Strategy
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Period", "Period for MACD fast EMA", "MACD Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 20, 4);
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Period", "Period for MACD slow EMA", "MACD Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 4);
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Period", "Period for MACD signal line", "MACD Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 2);
 
 		_smaPeriod = Param(nameof(SmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Period for MACD Histogram moving average", "Indicator Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for breakout threshold", "Breakout Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 4.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -170,7 +170,7 @@ public class MacdBreakoutStrategy : Strategy
 			},
 			SignalMa = { Length = SignalPeriod }
 		};
-		_macdHistSma = new SimpleMovingAverage { Length = SmaPeriod };
+		_macdHistSma = new SMA { Length = SmaPeriod };
 		_macdHistStdDev = new StandardDeviation { Length = SmaPeriod };
 
 		// Create subscription and bind indicators
@@ -216,8 +216,8 @@ public class MacdBreakoutStrategy : Strategy
 		}
 
 		// Process indicators for MACD histogram
-		var macdHistSmaValue = _macdHistSma.Process(macd, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-		var macdHistStdDevValue = _macdHistStdDev.Process(macd, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var macdHistSmaValue = _macdHistSma.Process(new DecimalIndicatorValue(_macdHistSma, macd, candle.ServerTime)).ToDecimal();
+		var macdHistStdDevValue = _macdHistStdDev.Process(new DecimalIndicatorValue(_macdHistStdDev, macd, candle.ServerTime)).ToDecimal();
 		
 		// Store previous values on first call
 		if (_prevMacdHistValue == 0 && _prevMacdHistSmaValue == 0)

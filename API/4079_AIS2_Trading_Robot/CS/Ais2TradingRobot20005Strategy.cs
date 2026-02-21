@@ -61,13 +61,13 @@ public class Ais2TradingRobot20005Strategy : Strategy
 		.SetDisplay("Account Reserve", "Fraction of equity locked as capital reserve", "Risk")
 		.SetNotNegative()
 		.SetLessOrEquals(0.95m)
-		.SetCanOptimize(true);
+		;
 
 		_orderReserve = Param(nameof(OrderReserve), 0.04m)
 		.SetDisplay("Order Reserve", "Fraction of equity committed per trade", "Risk")
 		.SetNotNegative()
 		.SetLessOrEquals(0.5m)
-		.SetCanOptimize(true);
+		;
 
 		_primaryCandleType = Param(nameof(PrimaryCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Primary Candle", "Primary timeframe used for entries", "General");
@@ -78,17 +78,17 @@ public class Ais2TradingRobot20005Strategy : Strategy
 		_takeFactor = Param(nameof(TakeFactor), 1.7m)
 		.SetDisplay("Take Factor", "Multiplier applied to the primary range for targets", "Targets")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_stopFactor = Param(nameof(StopFactor), 1.7m)
 		.SetDisplay("Stop Factor", "Multiplier applied to the primary range for stops", "Targets")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_trailFactor = Param(nameof(TrailFactor), 0.5m)
 		.SetDisplay("Trail Factor", "Multiplier applied to the secondary range for trailing", "Targets")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true);
+		;
 
 		_baseVolume = Param(nameof(BaseVolume), 1m)
 		.SetDisplay("Base Volume", "Fallback volume if risk sizing is not available", "Risk")
@@ -109,7 +109,7 @@ public class Ais2TradingRobot20005Strategy : Strategy
 		_tradingPauseSeconds = Param(nameof(TradingPauseSeconds), 5)
 		.SetDisplay("Trading Pause", "Cooldown between consecutive trades in seconds", "Execution")
 		.SetNotNegative()
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>
@@ -255,9 +255,9 @@ public class Ais2TradingRobot20005Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		OnReseted();
 
@@ -286,7 +286,7 @@ public class Ais2TradingRobot20005Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessPrimaryCandle(ICandleMessage candle)

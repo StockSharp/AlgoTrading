@@ -75,7 +75,7 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 	{
 		_rmiLength = Param(nameof(RmiLength), 21)
 			.SetDisplay("RMI Length", "Period for RSI and MFI", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5)
 			.SetGreaterThanZero();
 
@@ -119,14 +119,14 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var rsi = new RelativeStrengthIndex { Length = RmiLength };
 		var mfi = new MoneyFlowIndex { Length = RmiLength };
-		var ema = new ExponentialMovingAverage { Length = 5 };
+		var ema = new EMA { Length = 5 };
 		var superTrend = new SuperTrend { Length = SuperTrendLength, Multiplier = SuperTrendMultiplier };
 
 		var subscription = SubscribeCandles(CandleType);

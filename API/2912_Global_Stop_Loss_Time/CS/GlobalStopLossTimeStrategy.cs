@@ -55,7 +55,7 @@ public class GlobalStopLossTimeStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Loss threshold that triggers position closing", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), true)
 			.SetDisplay("Use Time Filter", "Enable restriction of trading hours", "Timing");
@@ -140,9 +140,9 @@ public class GlobalStopLossTimeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_baselinePnL = PnL;
 

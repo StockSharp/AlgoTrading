@@ -60,12 +60,12 @@ public class VwapWilliamsRStrategy : Strategy
 		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
 			.SetRange(5, 50)
 			.SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -86,9 +86,9 @@ public class VwapWilliamsRStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	
 		// Initialize indicators
 		var vwap = new VolumeWeightedMovingAverage();

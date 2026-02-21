@@ -87,17 +87,17 @@ public class CommitmentOfTraderRStrategy : Strategy
 		_williamsPeriod = Param(nameof(WilliamsPeriod), 252)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Lookback period for Williams %R", "Williams %R")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 10);
 
 		_upperThreshold = Param(nameof(UpperThreshold), -10m)
 			.SetDisplay("Upper Threshold", "Upper threshold for Williams %R", "Williams %R")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-20m, -5m, 5m);
 
 		_lowerThreshold = Param(nameof(LowerThreshold), -90m)
 			.SetDisplay("Lower Threshold", "Lower threshold for Williams %R", "Williams %R")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-95m, -70m, 5m);
 
 		_smaEnabled = Param(nameof(SmaEnabled), true)
@@ -106,10 +106,10 @@ public class CommitmentOfTraderRStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "SMA period for trend filter", "SMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -120,11 +120,11 @@ public class CommitmentOfTraderRStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var williams = new WilliamsR { Length = WilliamsPeriod };
 		var sma = new SMA { Length = SmaLength };

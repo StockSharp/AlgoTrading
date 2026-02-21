@@ -70,7 +70,7 @@ public class JmaCandleSignStrategy : Strategy
 		_jmaLength = Param(nameof(JmaLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("JMA Length", "Period for Jurik moving averages", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -78,30 +78,28 @@ public class JmaCandleSignStrategy : Strategy
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetDisplay("Take Profit", "Profit target in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 5000m, 500m);
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetDisplay("Stop Loss", "Maximum loss in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(500m, 5000m, 500m);
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var jmaOpen = new JurikMovingAverage
 		{
-			Length = JmaLength,
-			CandlePrice = CandlePrice.Open
+			Length = JmaLength
 		};
 
 		var jmaClose = new JurikMovingAverage
 		{
-			Length = JmaLength,
-			CandlePrice = CandlePrice.Close
+			Length = JmaLength
 		};
 
 		SubscribeCandles(CandleType)

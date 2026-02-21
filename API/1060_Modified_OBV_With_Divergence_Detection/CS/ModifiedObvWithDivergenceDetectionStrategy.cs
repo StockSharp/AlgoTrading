@@ -121,27 +121,27 @@ public class ModifiedObvWithDivergenceDetectionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var obv = new OnBalanceVolume();
 
 		IIndicator obvMa = MaType switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage(),
+			MovingAverageTypes.Simple => new SMA(),
 			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage(),
 			MovingAverageTypes.Weighted => new WeightedMovingAverage(),
-			_ => new ExponentialMovingAverage(),
+			_ => new EMA(),
 		};
 		obvMa.Length = ObvMaLength;
 
 		IIndicator signalMa = MaType switch
 		{
-			MovingAverageTypes.Simple => new SimpleMovingAverage(),
+			MovingAverageTypes.Simple => new SMA(),
 			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage(),
 			MovingAverageTypes.Weighted => new WeightedMovingAverage(),
-			_ => new ExponentialMovingAverage(),
+			_ => new EMA(),
 		};
 		signalMa.Length = SignalLength;
 

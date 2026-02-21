@@ -42,11 +42,11 @@ private readonly StrategyParam<Sides?> _direction;
 
 		_length = Param(nameof(Length), 14)
 			.SetDisplay("Length", "ATR and oscillator period.", "PresentTrend")
-			.SetCanOptimize(true);
+			;
 
 		_multiplier = Param(nameof(Multiplier), 1.618m)
 			.SetDisplay("Multiplier", "ATR multiplier.", "PresentTrend")
-			.SetCanOptimize(true);
+			;
 
 		_useRsi = Param(nameof(UseRsi), false)
 			.SetDisplay("Use RSI", "Use RSI instead of MFI.", "PresentTrend");
@@ -62,9 +62,9 @@ _direction = Param(nameof(Direction), (Sides?)null)
 public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new() { Length = Length };
 		_rsi = new() { Length = Length };

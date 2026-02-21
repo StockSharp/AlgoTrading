@@ -65,13 +65,13 @@ public BreakevenTrailingStopTickStrategy()
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Trailing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 30m, 5m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 1m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Additional pips required before stop moves again", "Trailing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_enableDemoEntries = Param(nameof(EnableDemoEntries), false)
@@ -97,9 +97,9 @@ public BreakevenTrailingStopTickStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 			throw new InvalidOperationException("Trailing step must be greater than zero when trailing stop is enabled.");
@@ -159,7 +159,7 @@ public BreakevenTrailingStopTickStrategy()
 
 	private void UpdateLongTrailing(decimal currentPrice)
 	{
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -189,7 +189,7 @@ public BreakevenTrailingStopTickStrategy()
 
 	private void UpdateShortTrailing(decimal currentPrice)
 	{
-		var entryPrice = PositionAvgPrice;
+		var entryPrice = PositionPrice;
 		if (entryPrice <= 0m)
 			return;
 

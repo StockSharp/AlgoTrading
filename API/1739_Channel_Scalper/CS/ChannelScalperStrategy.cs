@@ -48,17 +48,17 @@ public class ChannelScalperStrategy : Strategy
 	/// </summary>
 	public ChannelScalperStrategy()
 	{
-		_atrPeriod = Param(nameof(AtrPeriod), 11).SetDisplay("ATR Period").SetCanOptimize(true);
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.28m).SetDisplay("ATR Multiplier").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
+		_atrPeriod = Param(nameof(AtrPeriod), 11).SetDisplay("ATR Period", "ATR Period", "General");
+		_atrMultiplier = Param(nameof(AtrMultiplier), 1.28m).SetDisplay("ATR Multiplier", "ATR Multiplier", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var atr = new AverageTrueRange
 		{

@@ -244,7 +244,7 @@ public class OneHrStocTraderStrategy : Strategy
 		.SetDisplay("Stoch %K", "Stochastic %K period", "Indicator")
 		.SetGreaterThanZero();
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 		.SetDisplay("Stoch %D", "Stochastic %D period", "Indicator")
 		.SetGreaterThanZero();
 
@@ -293,9 +293,9 @@ public class OneHrStocTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 		_pipSize = GetPipSize();
@@ -309,7 +309,7 @@ public class OneHrStocTraderStrategy : Strategy
 		var stochastic = new StochasticOscillator
 		{
 			KPeriod = StochasticKPeriod,
-			DPeriod = StochasticDPeriod,
+			D = {  K = { Length = StochasticDPeriod } },
 			Smooth = StochasticSlowing
 		};
 
@@ -330,7 +330,7 @@ public class OneHrStocTraderStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue stochasticValue)

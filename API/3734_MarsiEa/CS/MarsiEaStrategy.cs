@@ -114,13 +114,13 @@ public class MarsiEaStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Simple moving average length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 1);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI lookback length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 1);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
@@ -149,17 +149,17 @@ public class MarsiEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = MaPeriod };
+		_sma = new SMA { Length = MaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_sma, _rsi, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

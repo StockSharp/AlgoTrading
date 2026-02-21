@@ -78,9 +78,9 @@ public class SvmTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators with constants similar to original strategy
 		_bears = new BearPower { Length = 13 };
@@ -97,9 +97,8 @@ public class SvmTraderStrategy : Strategy
 			SignalMa = { Length = 9 }
 		};
 		_stochastic = new StochasticOscillator
-		{
-			KPeriod = 5,
-			DPeriod = 3,
+		{,
+			D = {  K = { Length = 3 } },
 			Smooth = 3
 		};
 		_force = new ForceIndex { Length = 13 };

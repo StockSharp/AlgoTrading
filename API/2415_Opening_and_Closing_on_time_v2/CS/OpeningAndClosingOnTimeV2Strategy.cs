@@ -132,12 +132,12 @@ public class OpeningAndClosingOnTimeV2Strategy : Strategy
 		_opened = false;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_slowMa = new ExponentialMovingAverage { Length = SlowPeriod };
-		_fastMa = new ExponentialMovingAverage { Length = FastPeriod };
+		_slowMa = new EMA { Length = SlowPeriod };
+		_fastMa = new EMA { Length = FastPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -83,7 +83,7 @@ public class RrsChaoticStrategy : Strategy
 
 		_slippagePoints = Param(nameof(SlippagePoints), 3)
 			.SetDisplay("Slippage", "Slippage tolerance in points (informational only).", "Trading")
-			.SetCanOptimize(false);
+			;
 
 		_riskMode = Param(nameof(RiskModes), RiskModes.BalancePercentage)
 			.SetDisplay("Risk Mode", "Choose between fixed cash or balance percentage drawdown control.", "Risk");
@@ -93,7 +93,7 @@ public class RrsChaoticStrategy : Strategy
 
 		_tradeComment = Param(nameof(TradeComment), "RRS")
 			.SetDisplay("Trade Comment", "Tag attached to generated orders for traceability.", "General")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <summary>
@@ -214,11 +214,11 @@ public class RrsChaoticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 		_initialEquity = GetPortfolioValue();
 
 		var subscription = SubscribeCandles(CandleType);
@@ -480,7 +480,7 @@ public class RrsChaoticStrategy : Strategy
 		if (Position == 0m)
 			return 0m;
 
-		var entry = PositionAvgPrice;
+		var entry = PositionPrice;
 		if (entry == 0m)
 			return 0m;
 

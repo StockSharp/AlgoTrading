@@ -110,7 +110,7 @@ public class VrZverV2Strategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %K", "Number of periods for %K", "Indicators");
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 5)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %D", "Smoothing period for %D", "Indicators");
 
@@ -287,9 +287,9 @@ public class VrZverV2Strategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Prepare pip size once the security is available.
 		_pipSize = CalculatePipSize();
@@ -297,13 +297,13 @@ public class VrZverV2Strategy : Strategy
 		ResetTradeState();
 
 		// Instantiate indicators with the configured lengths.
-		_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
-		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
-		_verySlowMa = new ExponentialMovingAverage { Length = VerySlowMaPeriod };
+		_fastMa = new EMA { Length = FastMaPeriod };
+		_slowMa = new EMA { Length = SlowMaPeriod };
+		_verySlowMa = new EMA { Length = VerySlowMaPeriod };
 		_stochastic = new StochasticOscillator
 		{
 			KPeriod = StochasticKPeriod,
-			DPeriod = StochasticDPeriod,
+			D = {  K = { Length = StochasticDPeriod } },
 			Smooth = StochasticSmooth,
 		};
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };

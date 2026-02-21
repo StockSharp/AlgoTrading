@@ -52,34 +52,34 @@ public class MultiMartinStrategy : Strategy
 
 		_hourStart = Param(nameof(HourStart), 2)
 		.SetDisplay("Hour Start", "Inclusive start hour of the trading window", "Timing")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 23, 1);
 
 		_hourEnd = Param(nameof(HourEnd), 22)
 		.SetDisplay("Hour End", "Exclusive end hour of the trading window", "Timing")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 24, 1);
 
 
 		_factor = Param(nameof(Factor), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Martingale Factor", "Multiplier applied after losing trades", "Trading")
-		.SetCanOptimize(true);
+		;
 
 		_limit = Param(nameof(Limit), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Multiplications", "Maximum number of consecutive volume multiplications", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price points", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Target profit distance expressed in price points", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_startDirection = Param(nameof(StartDirection), StartDirectionOptions.Buy)
 		.SetDisplay("Start Direction", "Direction of the very first position", "Trading");
@@ -218,9 +218,9 @@ public class MultiMartinStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_maxVolume = CalculateMaxVolume();
 		_lastEntryVolume = Volume;

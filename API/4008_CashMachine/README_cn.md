@@ -37,7 +37,7 @@ CashMachine 策略复刻自原始的 MQL4 智能交易系统，该系统通过 E
 | `RsiOverbought` | `decimal` | `70` | 判定超买、允许做空的 RSI 阈值。 |
 | `CorrelationLookback` | `int` | `60` | 参与皮尔逊相关计算的日线偏差数量。 |
 | `CandleType` | `DataType` | `TimeSpan.FromHours(1).TimeFrame()` | 盘中计算 EMA/RSI 的蜡烛类型。 |
-| `DailyCandleType` | `DataType` | `TimeSpan.FromDays(1).TimeFrame()` | 构建相关性所需的高周期蜡烛类型。 |
+| `DailyCandleType` | `DataType` | `TimeSpan.FromMinutes(5).TimeFrame()` | 构建相关性所需的高周期蜡烛类型。 |
 | `HedgeSecurity` | `Security` | `null` | 对冲品种。启动前必须指定。 |
 
 > **交易量说明：** 策略使用 StockSharp 的 `Volume` 属性作为两腿下单手数。程序会根据各品种的 `VolumeStep`、`VolumeMin` 与 `VolumeMax` 自动调整手数；当 `Volume` 未设置时默认使用 `0.1`。

@@ -67,7 +67,7 @@ public class Ilan14GridStrategy : Strategy
 		_initialVolume = Param(nameof(InitialVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial volume", "Base volume used for the first trade in a basket.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 1m, 0.01m);
 
 		_volumeDigits = Param(nameof(VolumeDigits), 2)
@@ -80,7 +80,7 @@ public class Ilan14GridStrategy : Strategy
 		_lotExponent = Param(nameof(LotExponent), 1.667m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot exponent", "Multiplier applied when calculating the next position size.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.1m, 2m, 0.1m);
 
 		_useCloseBeforeAdding = Param(nameof(UseCloseBeforeAdding), false)
@@ -92,13 +92,13 @@ public class Ilan14GridStrategy : Strategy
 		_pipStep = Param(nameof(PipStep), 30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Pip step", "Distance in price steps that triggers a new averaging trade.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 5m);
 
 		_takeProfit = Param(nameof(TakeProfit), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take profit", "Distance from the average price where the basket is closed in profit.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 50m, 5m);
 
 		_stopLoss = Param(nameof(StopLoss), 500m)
@@ -119,7 +119,7 @@ public class Ilan14GridStrategy : Strategy
 		_maxTrades = Param(nameof(MaxTrades), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Max trades", "Maximum number of averaging orders allowed in one basket.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 15, 1);
 
 		_useEquityStop = Param(nameof(UseEquityStop), false)
@@ -250,11 +250,11 @@ public class Ilan14GridStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		ResetState();
 		_previousClose = null;

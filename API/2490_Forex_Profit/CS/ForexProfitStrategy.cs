@@ -170,52 +170,52 @@ public class ForexProfitStrategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA Length", "Length of the fast EMA", "Averages")
-		.SetCanOptimize(true);
+		;
 
 		_mediumEmaLength = Param(nameof(MediumEmaLength), 25)
 		.SetGreaterThanZero()
 		.SetDisplay("Medium EMA Length", "Length of the medium EMA", "Averages")
-		.SetCanOptimize(true);
+		;
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA Length", "Length of the slow EMA", "Averages")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitBuyPoints = Param(nameof(TakeProfitBuyPoints), 55m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit Long", "Take profit distance for buys (points)", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitSellPoints = Param(nameof(TakeProfitSellPoints), 65m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit Short", "Take profit distance for sells (points)", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossBuyPoints = Param(nameof(StopLossBuyPoints), 60m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss Long", "Stop loss distance for buys (points)", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossSellPoints = Param(nameof(StopLossSellPoints), 85m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss Short", "Stop loss distance for sells (points)", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 74m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance (points)", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 5m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Minimal trailing step (points)", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_profitThreshold = Param(nameof(ProfitThreshold), 10m)
 		.SetNotNegative()
 		.SetDisplay("Profit Threshold", "Profit required for EMA exit", "Risk")
-		.SetCanOptimize(true);
+		;
 
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -224,12 +224,12 @@ public class ForexProfitStrategy : Strategy
 		_sarAcceleration = Param(nameof(SarAcceleration), 0.02m)
 		.SetGreaterThanZero()
 		.SetDisplay("SAR Start", "Initial SAR acceleration", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_sarMaxAcceleration = Param(nameof(SarMaxAcceleration), 0.2m)
 		.SetGreaterThanZero()
 		.SetDisplay("SAR Max", "Maximum SAR acceleration", "Indicators")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <inheritdoc />
@@ -251,13 +251,13 @@ public class ForexProfitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_emaFast = new ExponentialMovingAverage { Length = FastEmaLength };
-		_emaMedium = new ExponentialMovingAverage { Length = MediumEmaLength };
-		_emaSlow = new ExponentialMovingAverage { Length = SlowEmaLength };
+		_emaFast = new EMA { Length = FastEmaLength };
+		_emaMedium = new EMA { Length = MediumEmaLength };
+		_emaSlow = new EMA { Length = SlowEmaLength };
 		_sar = new ParabolicSar
 		{
 			Acceleration = SarAcceleration,
@@ -266,7 +266,7 @@ public class ForexProfitStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.WhenNew(ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -290,9 +290,9 @@ public class ForexProfitStrategy : Strategy
 		var ema10PrevPrev = _ema10PrevPrev;
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-		var ema10Value = _emaFast.Process(median, candle.OpenTime, true).ToDecimal();
-		var ema25Value = _emaMedium.Process(median, candle.OpenTime, true).ToDecimal();
-		var ema50Value = _emaSlow.Process(median, candle.OpenTime, true).ToDecimal();
+		var ema10Value = _emaFast.Process(new DecimalIndicatorValue(_emaFast, median, candle.OpenTime)).ToDecimal();
+		var ema25Value = _emaMedium.Process(new DecimalIndicatorValue(_emaMedium, median, candle.OpenTime)).ToDecimal();
+		var ema50Value = _emaSlow.Process(new DecimalIndicatorValue(_emaSlow, median, candle.OpenTime)).ToDecimal();
 		var sarValue = _sar.Process(candle).ToDecimal();
 
 		if (!_emaSlow.IsFormed || !_sar.IsFormed)

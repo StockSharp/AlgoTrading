@@ -69,15 +69,15 @@ public class VolumeSupportedLinearRegressionTrendModifiedStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "General")
-			.SetCanOptimize(true);
+			;
 
 		_entryLevel = Param(nameof(EntryLevel), 30m)
 			.SetDisplay("Entry Level", "RSI value to enter long", "General")
-			.SetCanOptimize(true);
+			;
 
 		_exitLevel = Param(nameof(ExitLevel), 70m)
 			.SetDisplay("Exit Level", "RSI value to close long", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -88,9 +88,9 @@ public class VolumeSupportedLinearRegressionTrendModifiedStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 

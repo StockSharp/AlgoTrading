@@ -158,16 +158,16 @@ _takePrice = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-_emaFast = new ExponentialMovingAverage { Length = 9 };
-_emaSlow = new ExponentialMovingAverage { Length = 21 };
+_emaFast = new EMA { Length = 9 };
+_emaSlow = new EMA { Length = 21 };
 _rsi = new RelativeStrengthIndex { Length = 14 };
 _atr = new AverageTrueRange { Length = 14 };
-_atrAvg = new SimpleMovingAverage { Length = 50 };
-_volumeSma = new SimpleMovingAverage { Length = 20 };
+_atrAvg = new SMA { Length = 50 };
+_volumeSma = new SMA { Length = 20 };
 _adx = new AverageDirectionalIndex { Length = 14 };
 _highest = new Highest { Length = PivotLength };
 _lowest = new Lowest { Length = PivotLength };
@@ -224,7 +224,7 @@ var avoidEmaSqueeze = emaSpread > 0.003m;
 var touchedSupport = candle.LowPrice <= lowest * (1 + TouchBufferPercent / 100m);
 var touchedResistance = candle.HighPrice >= highest * (1 - TouchBufferPercent / 100m);
 
-var time = candle.OpenTime.LocalDateTime;
+var time = candle.OpenTime;
 var avoidTimeWindow = (time.Hour >= 11 && time.Hour <= 13) || (time.Hour >= 15 && time.Minute >= 45);
 var avoidMorningShorts = time.Hour == 9 && time.Minute < 30;
 

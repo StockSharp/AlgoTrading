@@ -165,7 +165,7 @@ public class IndicatorTestWithConditionsTableStrategy : Strategy
 			.SetDisplay("Long Operator", group: "Long Entry");
 		_longValue = Param(nameof(LongValue), 0m)
 			.SetDisplay("Long Value", group: "Long Entry")
-			.SetCanOptimize(true);
+			;
 
 		_enableCloseLongCond = Param(nameof(EnableCloseLongCond), false)
 			.SetDisplay("Enable Close Long", group: "Close Long");
@@ -173,7 +173,7 @@ public class IndicatorTestWithConditionsTableStrategy : Strategy
 			.SetDisplay("Close Long Operator", group: "Close Long");
 		_closeLongValue = Param(nameof(CloseLongValue), 0m)
 			.SetDisplay("Close Long Value", group: "Close Long")
-			.SetCanOptimize(true);
+			;
 
 		_enableShortCond = Param(nameof(EnableShortCond), false)
 			.SetDisplay("Enable Short Condition", group: "Short Entry");
@@ -181,7 +181,7 @@ public class IndicatorTestWithConditionsTableStrategy : Strategy
 			.SetDisplay("Short Operator", group: "Short Entry");
 		_shortValue = Param(nameof(ShortValue), 0m)
 			.SetDisplay("Short Value", group: "Short Entry")
-			.SetCanOptimize(true);
+			;
 
 		_enableCloseShortCond = Param(nameof(EnableCloseShortCond), false)
 			.SetDisplay("Enable Close Short", group: "Close Short");
@@ -189,7 +189,7 @@ public class IndicatorTestWithConditionsTableStrategy : Strategy
 			.SetDisplay("Close Short Operator", group: "Close Short");
 		_closeShortValue = Param(nameof(CloseShortValue), 0m)
 			.SetDisplay("Close Short Value", group: "Close Short")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", group: "General");
@@ -202,9 +202,9 @@ public class IndicatorTestWithConditionsTableStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

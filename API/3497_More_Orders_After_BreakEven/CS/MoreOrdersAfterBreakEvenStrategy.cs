@@ -123,25 +123,25 @@ public MoreOrdersAfterBreakEvenStrategy()
 _maximumOrders = Param(nameof(MaximumOrders), 1)
 .SetGreaterThanZero()
 .SetDisplay("Maximum Orders", "Maximum number of pre-break-even positions allowed.", "Trading")
-.SetCanOptimize(true)
+
 .SetOptimize(1, 5, 1);
 
 _takeProfitPips = Param(nameof(TakeProfitPips), 100m)
 .SetNotNegative()
 .SetDisplay("Take Profit (pips)", "Take-profit distance in MetaTrader pips.", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(0m, 300m, 10m);
 
 _stopLossPips = Param(nameof(StopLossPips), 200m)
 .SetNotNegative()
 .SetDisplay("Stop Loss (pips)", "Stop-loss distance in MetaTrader pips.", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(0m, 400m, 10m);
 
 _breakEvenPips = Param(nameof(BreakEvenPips), 10m)
 .SetNotNegative()
 .SetDisplay("Break-Even (pips)", "Distance before the stop is moved to the entry price.", "Risk")
-.SetCanOptimize(true)
+
 .SetOptimize(0m, 50m, 5m);
 
 _tradeVolume = Param(nameof(TradeVolume), 0.01m)
@@ -166,12 +166,12 @@ _pipSize = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 EnsurePipSize();
-StartProtection();
+StartProtection(null, null);
 
 SubscribeLevel1()
 .Bind(ProcessLevel1)

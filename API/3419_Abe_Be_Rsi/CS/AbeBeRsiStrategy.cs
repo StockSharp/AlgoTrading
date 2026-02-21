@@ -165,15 +165,15 @@ public class AbeBeRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_closeAverage = new SimpleMovingAverage { Length = MovingAveragePeriod };
-		_bodyAverage = new SimpleMovingAverage { Length = MovingAveragePeriod };
+		_closeAverage = new SMA { Length = MovingAveragePeriod };
+		_bodyAverage = new SMA { Length = MovingAveragePeriod };
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -195,8 +195,8 @@ public class AbeBeRsiStrategy : Strategy
 
 		// Feed the moving averages with the newly completed candle.
 		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var bodyAverageValue = _bodyAverage.Process(body, candle.OpenTime, true).ToNullableDecimal();
-		var closeAverageValue = _closeAverage.Process(candle.ClosePrice, candle.OpenTime, true).ToNullableDecimal();
+		var bodyAverageValue = _bodyAverage.Process(new DecimalIndicatorValue(_bodyAverage, body, candle.OpenTime)).ToNullableDecimal();
+		var closeAverageValue = _closeAverage.Process(new DecimalIndicatorValue(_closeAverage, candle.ClosePrice, candle.OpenTime)).ToNullableDecimal();
 
 		// Cache previously stored candle and indicator values for clarity.
 		var prevOpen = _prevOpen;

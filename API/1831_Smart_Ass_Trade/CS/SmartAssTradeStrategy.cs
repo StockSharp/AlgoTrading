@@ -105,7 +105,7 @@ public class SmartAssTradeStrategy : Strategy
 		_lots = Param(nameof(Lots), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Lots", "Fixed trading volume", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 5m, 0.1m);
 		
 		_automaticTakeProfit = Param(nameof(AutomaticTakeProfit), false)
@@ -114,7 +114,7 @@ public class SmartAssTradeStrategy : Strategy
 		_minimumTakeProfit = Param(nameof(MinimumTakeProfit), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Minimum Take Profit", "Fallback profit target in points", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 100m, 5m);
 		
 		_automaticStopLoss = Param(nameof(AutomaticStopLoss), true)
@@ -123,7 +123,7 @@ public class SmartAssTradeStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 350m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss", "Fallback stop loss in points", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50m, 500m, 10m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -136,21 +136,21 @@ public class SmartAssTradeStrategy : Strategy
 		yield return (Security, CandleType);
 		yield return (Security, TimeSpan.FromMinutes(15).TimeFrame());
 		yield return (Security, TimeSpan.FromMinutes(30).TimeFrame());
-		yield return (Security, TimeSpan.FromDays(1).TimeFrame());
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 		
 		_macd5 = new MovingAverageConvergenceDivergence();
 		_macd15 = new MovingAverageConvergenceDivergence();
 		_macd30 = new MovingAverageConvergenceDivergence();
-		_sma5 = new SimpleMovingAverage { Length = 20 };
-		_sma15 = new SimpleMovingAverage { Length = 20 };
-		_sma30 = new SimpleMovingAverage { Length = 20 };
+		_sma5 = new SMA { Length = 20 };
+		_sma15 = new SMA { Length = 20 };
+		_sma30 = new SMA { Length = 20 };
 		_wpr = new WilliamsR { Length = 26 };
 		
 		var sub5 = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
@@ -162,7 +162,7 @@ public class SmartAssTradeStrategy : Strategy
 		var sub30 = SubscribeCandles(TimeSpan.FromMinutes(30).TimeFrame());
 		sub30.Bind(_macd30, _sma30, Process30).Start();
 		
-		var subDay = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var subDay = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		subDay.Bind(_wpr, ProcessDaily).Start();
 	}
 	

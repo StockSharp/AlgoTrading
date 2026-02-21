@@ -139,9 +139,9 @@ public class SimplePullBackTjlv26Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var longSma = new SMA { Length = LongMaPeriod };
 		var shortSma = new SMA { Length = ShortMaPeriod };
@@ -152,7 +152,7 @@ public class SimplePullBackTjlv26Strategy : Strategy
 		.Bind(longSma, shortSma, rsi, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal longSma, decimal shortSma, decimal rsi)

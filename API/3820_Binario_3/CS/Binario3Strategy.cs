@@ -151,12 +151,12 @@ public class Binario3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_emaHigh = new ExponentialMovingAverage { Length = EmaPeriod };
-		_emaLow = new ExponentialMovingAverage { Length = EmaPeriod };
+		_emaHigh = new EMA { Length = EmaPeriod };
+		_emaLow = new EMA { Length = EmaPeriod };
 
 		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)
@@ -191,8 +191,8 @@ public class Binario3Strategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var highValue = _emaHigh.Process(candle.HighPrice, candle.OpenTime, true).ToDecimal();
-		var lowValue = _emaLow.Process(candle.LowPrice, candle.OpenTime, true).ToDecimal();
+		var highValue = _emaHigh.Process(new DecimalIndicatorValue(_emaHigh, candle.HighPrice, candle.OpenTime)).ToDecimal();
+		var lowValue = _emaLow.Process(new DecimalIndicatorValue(_emaLow, candle.LowPrice, candle.OpenTime)).ToDecimal();
 
 		if (!_emaHigh.IsFormed || !_emaLow.IsFormed)
 			return;

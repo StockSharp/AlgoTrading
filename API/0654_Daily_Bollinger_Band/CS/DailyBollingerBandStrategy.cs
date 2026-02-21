@@ -88,33 +88,33 @@ public class DailyBollingerBandStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Bollinger Bands period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Multiplier", "Deviation multiplier", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_trendFilterLength = Param(nameof(TrendFilterLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend Filter Length", "Long MA period", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrLength = Param(nameof(AtrLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation period", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_riskRate = Param(nameof(RiskRate), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Rate (%)", "Risk percentage of capital", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_unit = Param(nameof(Unit), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Unit", "Volume unit step", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_startTime = Param(nameof(StartTime), new DateTimeOffset(new DateTime(2000, 1, 4), TimeSpan.Zero))
@@ -143,11 +143,11 @@ public class DailyBollingerBandStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var bollinger = new BollingerBands
 		{
@@ -155,11 +155,11 @@ public class DailyBollingerBandStrategy : Strategy
 			Width = BollingerMultiplier
 		};
 
-		var ma = new SimpleMovingAverage { Length = TrendFilterLength };
+		var ma = new SMA { Length = TrendFilterLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(bollinger, ma, atr, ProcessCandle).Start();
+		subscription.BindEx(bollinger, ma, atr, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -171,33 +171,40 @@ public class DailyBollingerBandStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal maValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue maValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var bb = (BollingerBandsValue)bollingerValue;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal middle)
+			return;
+
+		var ma = maValue.ToDecimal();
+		var atr = atrValue.ToDecimal();
 
 		if (!_isInitialized)
 		{
 			_prevMiddle = middle;
 			_prevUpper = upper;
 			_prevLower = lower;
-			_prevMa = maValue;
+			_prevMa = ma;
 			_prevClose = candle.ClosePrice;
 			_isInitialized = true;
 			return;
 		}
 
-		var withinPeriod = candle.Time >= StartTime && candle.Time <= EndTime;
+		var withinPeriod = candle.ServerTime >= StartTime && candle.ServerTime <= EndTime;
 
 		var bbSlope = middle - _prevMiddle;
-		var tfSlope = maValue - _prevMa;
+		var tfSlope = ma - _prevMa;
 
 		var crossUpper = _prevClose <= _prevUpper && candle.ClosePrice > upper;
 		var crossLower = _prevClose >= _prevLower && candle.ClosePrice < lower;
 		var crossDownMiddle = _prevClose >= _prevMiddle && candle.ClosePrice < middle;
 		var crossUpMiddle = _prevClose <= _prevMiddle && candle.ClosePrice > middle;
 
-		var size = CalculatePositionSize(atrValue);
+		var size = CalculatePositionSize(atr);
 
 		if (withinPeriod && Position == 0 && size > 0m)
 		{
@@ -218,7 +225,7 @@ public class DailyBollingerBandStrategy : Strategy
 		_prevMiddle = middle;
 		_prevUpper = upper;
 		_prevLower = lower;
-		_prevMa = maValue;
+		_prevMa = ma;
 		_prevClose = candle.ClosePrice;
 	}
 

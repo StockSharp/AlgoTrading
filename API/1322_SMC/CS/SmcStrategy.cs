@@ -44,22 +44,22 @@ public class SmcStrategy : Strategy
 		_swingHighLength = Param(nameof(SwingHighLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Swing High Length", "Period to detect swing highs", "General")
-			.SetCanOptimize(true);
+			;
 
 		_swingLowLength = Param(nameof(SwingLowLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Swing Low Length", "Period to detect swing lows", "General")
-			.SetCanOptimize(true);
+			;
 
 		_smaLength = Param(nameof(SmaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Length for trend SMA", "General")
-			.SetCanOptimize(true);
+			;
 
 		_orderBlockLength = Param(nameof(OrderBlockLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Block Length", "Lookback for order blocks", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -83,13 +83,13 @@ public class SmcStrategy : Strategy
 		_swingLow = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_swingHighIndicator = new Highest { Length = SwingHighLength };
 		_swingLowIndicator = new Lowest { Length = SwingLowLength };
-		_sma = new SimpleMovingAverage { Length = SmaLength };
+		_sma = new SMA { Length = SmaLength };
 		_orderBlockHighIndicator = new Highest { Length = OrderBlockLength };
 		_orderBlockLowIndicator = new Lowest { Length = OrderBlockLength };
 

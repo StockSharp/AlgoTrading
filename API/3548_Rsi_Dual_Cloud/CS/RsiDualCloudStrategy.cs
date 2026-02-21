@@ -180,23 +180,23 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 _fastLength = Param(nameof(FastLength), 5)
 .SetGreaterThanZero()
 .SetDisplay("Fast RSI", "Fast RSI period", "RSI")
-.SetCanOptimize(true)
+
 .SetOptimize(3, 15, 2);
 
 _slowLength = Param(nameof(SlowLength), 15)
 .SetGreaterThanZero()
 .SetDisplay("Slow RSI", "Slow RSI period", "RSI")
-.SetCanOptimize(true)
+
 .SetOptimize(10, 30, 5);
 
 _levelUp = Param(nameof(LevelUp), 75m)
 .SetDisplay("Upper Level", "RSI upper threshold", "Levels")
-.SetCanOptimize(true)
+
 .SetOptimize(60m, 90m, 5m);
 
 _levelDown = Param(nameof(LevelDown), 25m)
 .SetDisplay("Lower Level", "RSI lower threshold", "Levels")
-.SetCanOptimize(true)
+
 .SetOptimize(10m, 40m, 5m);
 
 _orderVolume = Param(nameof(OrderVolume), 1m)
@@ -243,9 +243,9 @@ _isInitialized = false;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 // Initialize indicators for fast and slow RSI clouds.
 _fastRsi = new RelativeStrengthIndex { Length = FastLength };

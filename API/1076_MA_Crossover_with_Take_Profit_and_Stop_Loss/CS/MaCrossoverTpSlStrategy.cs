@@ -42,37 +42,37 @@ public class MaCrossoverTpSlStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Period of the fast moving average", "MA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_slowLength = Param(nameof(SlowLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Period of the slow moving average", "MA Settings")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 20m, 1m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_takeProfitDynamicPercent = Param(nameof(TakeProfitDynamicPercent), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Dynamic Take Profit %", "Take profit percentage after price move", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 50m, 5m);
 
 		_stopLossDynamicPercent = Param(nameof(StopLossDynamicPercent), 2.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Dynamic Stop Loss %", "Stop loss percentage after price move", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 10m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -94,10 +94,10 @@ public class MaCrossoverTpSlStrategy : Strategy
 		_initialized = false;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var fastMa = new SMA { Length = FastLength };
 		var slowMa = new SMA { Length = SlowLength };

@@ -90,13 +90,13 @@ public class ZeroLagMacdCrossoverStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA", "Fast EMA period", "MACD")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 10, 1);
 
 		_slowLength = Param(nameof(SlowLength), 34)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA", "Slow EMA period", "MACD")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 60, 2);
 
 		_useFreshSignal = Param(nameof(UseFreshSignal), true)
@@ -104,22 +104,22 @@ public class ZeroLagMacdCrossoverStrategy : Strategy
 
 		_startHour = Param(nameof(StartHour), 9)
 		.SetDisplay("Start Hour", "Trading start hour (UTC)", "Time")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 23, 1);
 
 		_endHour = Param(nameof(EndHour), 15)
 		.SetDisplay("End Hour", "Trading end hour (UTC)", "Time")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 24, 1);
 
 		_killDay = Param(nameof(KillDay), 5)
 		.SetDisplay("Kill Day", "Week day for forced close", "Time")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 6, 1);
 
 		_killHour = Param(nameof(KillHour), 21)
 		.SetDisplay("Kill Hour", "Hour for forced close", "Time")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 23, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -143,7 +143,7 @@ public class ZeroLagMacdCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_fastZlema = new ZeroLagExponentialMovingAverage { Length = FastLength };
 		_slowZlema = new ZeroLagExponentialMovingAverage { Length = SlowLength };
@@ -153,9 +153,9 @@ public class ZeroLagMacdCrossoverStrategy : Strategy
 		.Bind(_fastZlema, _slowZlema, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)

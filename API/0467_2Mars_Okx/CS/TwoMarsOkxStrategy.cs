@@ -88,49 +88,49 @@ public class TwoMarsOkxStrategy : Strategy
 		_basisLength = Param(nameof(BasisLength), 96)
 		.SetGreaterThanZero()
 		.SetDisplay("Basis MA Length", "Length of basis moving average", "MA Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 200, 10);
 		
 		_signalLength = Param(nameof(SignalLength), 89)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal MA Length", "Length of signal moving average", "MA Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 200, 10);
 		
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("SuperTrend Period", "Period of SuperTrend", "Trend Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 		
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 4m)
 		.SetGreaterThanZero()
 		.SetDisplay("SuperTrend Multiplier", "Multiplier for SuperTrend", "Trend Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 6m, 0.5m);
 		
 		_bbLength = Param(nameof(BbLength), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("BB Length", "Bollinger Bands period", "Take Profit")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 60, 5);
 		
 		_bbMultiplier = Param(nameof(BbMultiplier), 3m)
 		.SetGreaterThanZero()
 		.SetDisplay("BB Multiplier", "Bollinger Bands width", "Take Profit")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 0.5m);
 		
 		_atrPeriod = Param(nameof(AtrPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "ATR length", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 		
 		_atrMultiplier = Param(nameof(AtrMultiplier), 6m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "ATR multiplier for stop loss", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 10m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -149,9 +149,9 @@ public class TwoMarsOkxStrategy : Strategy
 		_isInitialized = false;
 	}
 	
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var basisMa = new EMA { Length = BasisLength };
 		var signalMa = new EMA { Length = SignalLength };
@@ -161,7 +161,7 @@ public class TwoMarsOkxStrategy : Strategy
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(basisMa, signalMa, supertrend, bollinger, atr, ProcessCandle)
+		.BindEx([basisMa, signalMa, supertrend, bollinger, atr], ProcessCandle)
 		.Start();
 		
 		var area = CreateChartArea();
@@ -176,29 +176,31 @@ public class TwoMarsOkxStrategy : Strategy
 		}
 	}
 	
-	private void ProcessCandle(
-	ICandleMessage candle,
-	decimal basis,
-	decimal signal,
-	decimal trend,
-	decimal middle,
-	decimal upper,
-	decimal lower,
-	decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
-		
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
-		
+
+		var basis = values[0].ToDecimal();
+		var signal = values[1].ToDecimal();
+		var trend = values[2].ToDecimal();
+
+		var bbTyped = (BollingerBandsValue)values[3];
+		if (bbTyped.UpBand is not decimal upper || bbTyped.LowBand is not decimal lower)
+			return;
+
+		var atrValue = values[4].ToDecimal();
+
 		if (!_isInitialized)
 		{
 			_wasSignalBelowBasis = signal < basis;
 			_isInitialized = true;
 			return;
 		}
-		
+
 		var isSignalBelowBasis = signal < basis;
 		var isUpTrend = candle.ClosePrice > trend;
 		var isDownTrend = candle.ClosePrice < trend;

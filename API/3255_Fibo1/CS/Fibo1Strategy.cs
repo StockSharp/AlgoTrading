@@ -300,42 +300,42 @@ _equityRiskPercent = Param(nameof(EquityRiskPercent), 1m)
 
 _tradeVolume = Param(nameof(TradeVolume), 1m)
 .SetDisplay("Trade Volume", "Base volume for market orders", "Trading")
-.SetCanOptimize(true)
+
 .SetNotNegative();
 
 _fastMaPeriod = Param(nameof(FastMaPeriod), 20)
 .SetDisplay("Fast LWMA", "Period of the fast linear weighted moving average", "Indicators")
-.SetCanOptimize(true);
+;
 
 _slowMaPeriod = Param(nameof(SlowMaPeriod), 100)
 .SetDisplay("Slow LWMA", "Period of the slow linear weighted moving average", "Indicators")
-.SetCanOptimize(true);
+;
 
 _momentumPeriod = Param(nameof(MomentumPeriod), 14)
 .SetDisplay("Momentum Period", "Length of the momentum indicator", "Indicators")
-.SetCanOptimize(true);
+;
 
 _momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
 .SetDisplay("Momentum Buy Threshold", "Minimum deviation from 100 required for long signals", "Indicators")
-.SetCanOptimize(true)
+
 .SetNotNegative();
 
 _momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
 .SetDisplay("Momentum Sell Threshold", "Minimum deviation from 100 required for short signals", "Indicators")
-.SetCanOptimize(true)
+
 .SetNotNegative();
 
 _macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 .SetDisplay("MACD Fast Period", "Short moving average inside MACD", "Indicators")
-.SetCanOptimize(true);
+;
 
 _macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 .SetDisplay("MACD Slow Period", "Long moving average inside MACD", "Indicators")
-.SetCanOptimize(true);
+;
 
 _macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 .SetDisplay("MACD Signal Period", "Signal moving average inside MACD", "Indicators")
-.SetCanOptimize(true);
+;
 
 _takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 .SetDisplay("Take Profit (pips)", "Distance of the protective take profit", "Risk")
@@ -358,7 +358,7 @@ _useCandleTrailing = Param(nameof(UseCandleTrailing), true)
 
 _candleTrailingLength = Param(nameof(CandleTrailingLength), 3)
 .SetDisplay("Candle Trailing Length", "Number of finished candles used for trailing", "Risk")
-.SetCanOptimize(true)
+
 .SetNotNegative();
 
 _candleTrailingOffsetPips = Param(nameof(CandleTrailingOffsetPips), 3m)
@@ -378,7 +378,7 @@ _breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 30m)
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 .SetDisplay("Signal Candle", "Primary candle series used by the strategy", "Data")
-.SetCanOptimize(true);
+;
 
 _momentumCandleType = Param(nameof(MomentumCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 .SetDisplay("Momentum Candle", "Candle series for the momentum filter", "Data");
@@ -424,13 +424,13 @@ _initialEquity = GetPortfolioValue();
 _equityPeak = _initialEquity;
 _moneyTrailPeak = 0m;
 
-_fastMa = new WeightedMovingAverage { Length = FastMaPeriod, CandlePrice = CandlePrice.Typical };
-_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod, CandlePrice = CandlePrice.Typical };
+_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 _momentumIndicator = new Momentum { Length = MomentumPeriod };
 _macdIndicator = new MovingAverageConvergenceDivergenceSignal
 {
-ShortPeriod = MacdFastPeriod,
-LongPeriod = MacdSlowPeriod,
+ShortMa = { Length = MacdFastPeriod },
+LongMa = { Length = MacdSlowPeriod },
 SignalPeriod = MacdSignalPeriod
 };
 _lowestIndicator = new Lowest { Length = Math.Max(1, CandleTrailingLength) };
@@ -480,7 +480,7 @@ _moneyTrailPeak = 0m;
 return;
 }
 
-var entryPrice = PositionAvgPrice;
+var entryPrice = PositionPrice;
 var stopDistance = ConvertPipsToPrice(StopLossPips);
 var takeDistance = ConvertPipsToPrice(TakeProfitPips);
 
@@ -821,7 +821,7 @@ private decimal GetUnrealizedPnL(ICandleMessage candle)
 if (Position == 0m)
 return 0m;
 
-var entry = PositionAvgPrice;
+var entry = PositionPrice;
 if (entry == 0m)
 return 0m;
 

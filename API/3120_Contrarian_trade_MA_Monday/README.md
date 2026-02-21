@@ -38,7 +38,7 @@ The logic relies on finished candles only. A daily series (default) drives entri
 | `MaShift` | `int` | `0` | Forward shift of the moving average in bars. Mirrors the MetaTrader MA shift parameter. |
 | `MaMethod` | `MovingAverageMethod` | `LinearWeighted` | Moving average calculation method (`Simple`, `Exponential`, `Smoothed`, `LinearWeighted`). |
 | `AppliedPrice` | `AppliedPriceType` | `Weighted` | Price source fed into the moving average (`Close`, `Open`, `High`, `Low`, `Median`, `Typical`, `Weighted`). |
-| `TradeCandleType` | `DataType` | `TimeSpan.FromDays(1).TimeFrame()` | Primary timeframe that triggers entries and manages stops/exits. |
+| `TradeCandleType` | `DataType` | `TimeSpan.FromMinutes(5).TimeFrame()` | Primary timeframe that triggers entries and manages stops/exits. |
 | `MaCandleType` | `DataType` | `TimeSpan.FromDays(7).TimeFrame()` | Higher timeframe used for the moving average and for calculating extremes. |
 
 ## Notes

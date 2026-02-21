@@ -115,12 +115,12 @@ public class PsarTraderV2Strategy : Strategy
 
 		_step = Param(nameof(Step), 0.001m)
 			.SetDisplay("PSAR Step", "Acceleration step for PSAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.001m, 0.02m, 0.001m);
 
 		_maximum = Param(nameof(Maximum), 0.2m)
 			.SetDisplay("PSAR Maximum", "Maximum acceleration for PSAR", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 0.5m, 0.1m);
 
 		_takeProfit = Param(nameof(TakeProfit), 100m)
@@ -151,9 +151,9 @@ public class PsarTraderV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var psar = new ParabolicSar
 		{

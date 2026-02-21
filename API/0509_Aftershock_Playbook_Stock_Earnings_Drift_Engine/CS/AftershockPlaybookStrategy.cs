@@ -54,7 +54,7 @@ public class AftershockPlaybookStrategy : Strategy
 		_reverse = Param(nameof(ReverseSignals), false).SetDisplay("Reverse signals", "Flip long/short polarity", "General");
 		_timeExit = Param(nameof(UseTimeExit), false).SetDisplay("Time exit", "Use time based exit", "Risk");
 		_holdDays = Param(nameof(HoldDays), 45).SetDisplay("Hold Days", "Calendar days to hold", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles to process", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -71,9 +71,9 @@ public class AftershockPlaybookStrategy : Strategy
 		_lastDir = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		var atr = new Atr { Length = AtrLength };
 		SubscribeCandles(CandleType).Bind(atr, ProcessCandle).Start();
 	}

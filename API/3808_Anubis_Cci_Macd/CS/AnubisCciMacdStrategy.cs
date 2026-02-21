@@ -230,25 +230,25 @@ public AnubisCciMacdStrategy()
 	_volume = Param(nameof(VolumeValue), 1m)
 	.SetGreaterThanZero()
 	.SetDisplay("Volume", "Base order volume", "Trading")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(0.1m, 5m, 0.1m);
 
 	_cciThreshold = Param(nameof(CciThreshold), 80m)
 	.SetGreaterThanZero()
 	.SetDisplay("CCI Threshold", "Absolute threshold for 4H CCI filter", "Filters")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(40m, 200m, 10m);
 
 	_cciPeriod = Param(nameof(CciPeriod), 11)
 	.SetGreaterThanZero()
 	.SetDisplay("CCI Period", "Period for 4H CCI", "Filters")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(5, 40, 1);
 
 	_stopLossPoints = Param(nameof(StopLossPoints), 100)
 	.SetGreaterThanZero()
 	.SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(20, 300, 10);
 
 	_breakevenPoints = Param(nameof(BreakevenPoints), 65)
@@ -258,19 +258,19 @@ public AnubisCciMacdStrategy()
 	_macdFastPeriod = Param(nameof(MacdFastPeriod), 20)
 	.SetGreaterThanZero()
 	.SetDisplay("MACD Fast", "Fast EMA period for MACD", "MACD")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(5, 40, 1);
 
 	_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 50)
 	.SetGreaterThanZero()
 	.SetDisplay("MACD Slow", "Slow EMA period for MACD", "MACD")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(10, 120, 5);
 
 	_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 2)
 	.SetGreaterThanZero()
 	.SetDisplay("MACD Signal", "Signal EMA period for MACD", "MACD")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(1, 10, 1);
 
 	_lossFactor = Param(nameof(LossFactor), 0.6m)
@@ -367,8 +367,8 @@ public AnubisCciMacdStrategy()
 
 	_macd = new MovingAverageConvergenceDivergenceSignal
 	{
-	ShortPeriod = MacdFastPeriod,
-	LongPeriod = MacdSlowPeriod,
+	ShortMa = { Length = MacdFastPeriod },
+	LongMa = { Length = MacdSlowPeriod },
 	SignalPeriod = MacdSignalPeriod
 	};
 

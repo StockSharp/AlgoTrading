@@ -128,32 +128,32 @@ public class FastSlowRviCrossoverStrategy : Strategy
 		_rviPeriod = Param(nameof(RviPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Period", "Period for the Relative Vigor Index", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 10m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 2m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Trailing step distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles used for analysis", "General");
@@ -185,9 +185,9 @@ public class FastSlowRviCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -196,7 +196,7 @@ public class FastSlowRviCrossoverStrategy : Strategy
 			Length = RviPeriod
 		};
 
-		_signal = new SimpleMovingAverage
+		_signal = new SMA
 		{
 			Length = 4
 		};

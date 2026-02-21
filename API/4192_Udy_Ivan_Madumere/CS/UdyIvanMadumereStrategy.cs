@@ -53,7 +53,7 @@ public class UdyIvanMadumereStrategy : Strategy
 
 	_tradeHour = Param(nameof(TradeHour), 18)
 	.SetDisplay("Trade hour", "Hour of the day (0-23) when the entry rules are evaluated.", "Trading")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(0, 23, 1);
 
 	_firstLookback = Param(nameof(FirstLookback), 6)
@@ -223,9 +223,9 @@ public class UdyIvanMadumereStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_currentBaseVolume = BaseVolume;
 	Volume = _currentBaseVolume;

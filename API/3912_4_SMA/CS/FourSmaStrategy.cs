@@ -44,37 +44,37 @@ public class FourSmaStrategy : Strategy
 
 		_takeProfit = Param(nameof(TakeProfit), 50m)
 			.SetDisplay("Take Profit", "Take profit distance in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_stopLoss = Param(nameof(StopLoss), 50m)
 			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_trailingStop = Param(nameof(TrailingStop), 11m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 100m, 5m);
 
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetDisplay("Fast SMA Length", "Length of the fast moving average", "Trend Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 1);
 
 		_mediumLength = Param(nameof(MediumLength), 20)
 			.SetDisplay("Medium SMA Length", "Length of the medium moving average", "Trend Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 1);
 
 		_slowLength = Param(nameof(SlowLength), 40)
 			.SetDisplay("Slow SMA Length", "Length of the slow moving average", "Trend Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 1);
 
 		_verySlowLength = Param(nameof(VerySlowLength), 60)
 			.SetDisplay("Very Slow SMA Length", "Length of the very slow moving average", "Trend Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 120, 1);
 	}
 
@@ -144,21 +144,21 @@ public class FourSmaStrategy : Strategy
 		_shortTake = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastSma = new SimpleMovingAverage { Length = FastLength };
-		_mediumSma = new SimpleMovingAverage { Length = MediumLength };
-		_slowSma = new SimpleMovingAverage { Length = SlowLength };
-		_verySlowSma = new SimpleMovingAverage { Length = VerySlowLength };
+		_fastSma = new SMA { Length = FastLength };
+		_mediumSma = new SMA { Length = MediumLength };
+		_slowSma = new SMA { Length = SlowLength };
+		_verySlowSma = new SMA { Length = VerySlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -170,10 +170,10 @@ public class FourSmaStrategy : Strategy
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 
 		// Update every moving average with the latest price sample.
-		var fastValue = _fastSma.Process(median, candle.OpenTime, true);
-		var mediumValue = _mediumSma.Process(median, candle.OpenTime, true);
-		var slowValue = _slowSma.Process(median, candle.OpenTime, true);
-		var verySlowValue = _verySlowSma.Process(median, candle.OpenTime, true);
+		var fastValue = _fastSma.Process(new DecimalIndicatorValue(_fastSma, median, candle.OpenTime));
+		var mediumValue = _mediumSma.Process(new DecimalIndicatorValue(_mediumSma, median, candle.OpenTime));
+		var slowValue = _slowSma.Process(new DecimalIndicatorValue(_slowSma, median, candle.OpenTime));
+		var verySlowValue = _verySlowSma.Process(new DecimalIndicatorValue(_verySlowSma, median, candle.OpenTime));
 
 		if (!fastValue.IsFinal || !mediumValue.IsFinal || !slowValue.IsFinal || !verySlowValue.IsFinal)
 		{

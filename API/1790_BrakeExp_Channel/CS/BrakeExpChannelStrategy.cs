@@ -57,9 +57,9 @@ public class BrakeExpChannelStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var indicator = new BrakeExp { A = A, B = B };
 		SubscribeCandles(CandleType)
@@ -99,7 +99,7 @@ public class BrakeExpChannelStrategy : Strategy
 		}
 	}
 
-	private class BrakeExp : BaseIndicator<decimal>
+	private class BrakeExp : BaseIndicator
 	{
 		public decimal A { get; set; } = 3m;
 		public decimal B { get; set; } = 1m;

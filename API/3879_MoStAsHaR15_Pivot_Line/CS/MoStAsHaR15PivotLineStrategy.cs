@@ -144,40 +144,40 @@ public class MoStAsHaR15PivotLineStrategy : Strategy
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetDisplay("Stop Loss (pips)", "Initial stop distance in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop size in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetDisplay("Trailing Step (pips)", "Minimum move before adjusting the trailing stop", "Risk")
-			.SetCanOptimize(true);
+			;
 		_minimumDistancePips = Param(nameof(MinimumDistancePips), 14m)
 			.SetDisplay("Minimum Distance (pips)", "Required distance to the pivot target", "Filters")
-			.SetCanOptimize(true);
+			;
 		_emaSpreadPips = Param(nameof(EmaSpreadPips), 5m)
 			.SetDisplay("EMA Spread (pips)", "Minimum spread between close/open EMAs", "Filters")
-			.SetCanOptimize(true);
+			;
 		_adxThreshold = Param(nameof(AdxThreshold), 20)
 			.SetDisplay("ADX Threshold", "Minimum ADX value", "Filters")
-			.SetCanOptimize(true);
+			;
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "ADX calculation period", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_emaClosePeriod = Param(nameof(EmaClosePeriod), 5)
 			.SetDisplay("EMA Close Period", "Length for EMA on closes", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_emaOpenPeriod = Param(nameof(EmaOpenPeriod), 8)
 			.SetDisplay("EMA Open Period", "Length for EMA on opens", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetDisplay("MACD Fast Period", "Fast EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetDisplay("MACD Slow Period", "Slow EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetDisplay("MACD Signal Period", "Signal EMA length", "Indicators")
-			.SetCanOptimize(true);
+			;
 		_hourlyCandleType = Param(nameof(HourlyCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Trading Candle Type", "Intraday candle type", "Data");
 		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())

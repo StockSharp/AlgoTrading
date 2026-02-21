@@ -288,7 +288,7 @@ public class MultiEaV12Strategy : Strategy
 		_pipSize = CalculatePipSize();
 
 		_ao = new AwesomeOscillator();
-		_aoSma = new SimpleMovingAverage { Length = 5 };
+		_aoSma = new SMA { Length = 5 };
 
 		_adx = new AverageDirectionalIndex { Length = _adxPeriod.Value };
 		_demarker = new DeMarker { Length = _demPeriod.Value };
@@ -301,15 +301,14 @@ public class MultiEaV12Strategy : Strategy
 		_mfi = new MoneyFlowIndex { Length = _mfiPeriod.Value };
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			LongPeriod = _macdSlow.Value,
-			ShortPeriod = _macdFast.Value,
+			LongMa = { Length = _macdSlow }.Value,
+			ShortMa = { Length = _macdFast }.Value,
 			SignalPeriod = _macdSignal.Value
 		};
 		_stochastic = new StochasticOscillator
-		{
-			Length = _stochasticPeriod.Value,
+		{ K = { Length = _stochasticPeriod }.Value,
 			KPeriod = _stochasticPeriod.Value,
-			DPeriod = _stochasticSignal.Value,
+			D = { Length = _stochasticSignal }.Value,
 			Slowing = _stochasticSlowing.Value
 		};
 

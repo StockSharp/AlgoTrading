@@ -56,7 +56,7 @@ public class TcpFloorPivotBreakoutStrategy : Strategy
 
 		_takeProfitTarget = Param(nameof(TakeProfitTarget), 1)
 			.SetDisplay("Target Level", "Selects which support/resistance tier becomes the take profit.", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 3, 1);
 
 		_closeAtSessionEnd = Param(nameof(CloseAtSessionEnd), false)
@@ -103,9 +103,9 @@ public class TcpFloorPivotBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TakeProfitTarget is < 1 or > 3)
 			throw new InvalidOperationException("Take profit target must be between 1 and 3.");

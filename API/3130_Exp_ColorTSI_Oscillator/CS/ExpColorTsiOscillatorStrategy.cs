@@ -68,7 +68,7 @@ public class ExpColorTsiOscillatorStrategy : Strategy
 		_firstLength = Param(nameof(FirstLength), 12)
 		.SetDisplay("Momentum Length", "Length of the first smoothing stage", "Indicator")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 60, 1);
 
 		_firstPhase = Param(nameof(FirstPhase), 15)
@@ -81,7 +81,7 @@ public class ExpColorTsiOscillatorStrategy : Strategy
 		_secondLength = Param(nameof(SecondLength), 12)
 		.SetDisplay("Signal Length", "Length of the second smoothing stage", "Indicator")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 60, 1);
 
 		_secondPhase = Param(nameof(SecondPhase), 15)
@@ -266,9 +266,9 @@ set => _takeProfitPoints.Value = value;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 ResetState();
 
@@ -492,17 +492,17 @@ offset = Math.Max(0m, Math.Min(1m, offset));
 
 return method switch
 {
-ColorTsiSmoothingMethods.Sma => new SimpleMovingAverage { Length = normalizedLength },
-ColorTsiSmoothingMethods.Ema => new ExponentialMovingAverage { Length = normalizedLength },
+ColorTsiSmoothingMethods.Sma => new SMA { Length = normalizedLength },
+ColorTsiSmoothingMethods.Ema => new EMA { Length = normalizedLength },
 ColorTsiSmoothingMethods.Smma => new SmoothedMovingAverage { Length = normalizedLength },
 ColorTsiSmoothingMethods.Lwma => new WeightedMovingAverage { Length = normalizedLength },
 ColorTsiSmoothingMethods.Jjma => CreateJurik(normalizedLength, phase),
 ColorTsiSmoothingMethods.Jurx => new ZeroLagExponentialMovingAverage { Length = normalizedLength },
 ColorTsiSmoothingMethods.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = offset, Sigma = 6m },
 ColorTsiSmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
-ColorTsiSmoothingMethods.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
+ColorTsiSmoothingMethods.Vidya => new EMA { Length = normalizedLength },
 ColorTsiSmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
-_ => new SimpleMovingAverage { Length = normalizedLength },
+_ => new SMA { Length = normalizedLength },
 };
 }
 

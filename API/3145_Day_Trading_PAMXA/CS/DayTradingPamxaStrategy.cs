@@ -215,25 +215,25 @@ public class DayTradingPamxaStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 150, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 25)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 100, 5);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Additional pips required before trailing adjusts", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 50, 1);
 
 		_moneyMode = Param(nameof(MoneyMode), PositionSizingModes.FixedVolume)
@@ -242,41 +242,41 @@ public class DayTradingPamxaStrategy : Strategy
 		_moneyValue = Param(nameof(MoneyValue), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Money Value", "Lot size or risk percentage depending on Money Mode", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Base trade volume in lots", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "%K calculation length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 21, 1);
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "%D smoothing length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_stochasticSlowing = Param(nameof(StochasticSlowing), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Slow", "Final smoothing applied to stochastic", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_stochasticLevelUp = Param(nameof(StochasticLevelUp), 75m)
 			.SetDisplay("Level Up", "Upper stochastic threshold", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 5m);
 
 		_stochasticLevelDown = Param(nameof(StochasticLevelDown), 25m)
 			.SetDisplay("Level Down", "Lower stochastic threshold", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -285,19 +285,19 @@ public class DayTradingPamxaStrategy : Strategy
 		_stochasticCandleType = Param(nameof(StochasticCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Stochastic Candles", "Timeframe feeding the stochastic oscillator", "General");
 
-		_aoCandleType = Param(nameof(AoCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_aoCandleType = Param(nameof(AoCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("AO Candles", "Timeframe feeding the Awesome Oscillator", "General");
 
-		_aoShortPeriod = Param(nameof(AoShortPeriod), 5)
+		_aoShortMa = { Length = Param }(nameof(AoShortPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("AO Fast", "Short period for Awesome Oscillator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 21, 1);
 
-		_aoLongPeriod = Param(nameof(AoLongPeriod), 34)
+		_aoLongMa = { Length = Param }(nameof(AoLongPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("AO Slow", "Long period for Awesome Oscillator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(21, 55, 1);
 	}
 
@@ -337,9 +337,9 @@ public class DayTradingPamxaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
 			throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");
@@ -353,16 +353,15 @@ public class DayTradingPamxaStrategy : Strategy
 		_trailingStepDistance = TrailingStepPips * _pipValue;
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = Math.Max(1, StochasticSlowing),
+		{ K = { Length = Math }.Max(1, StochasticSlowing),
 			KPeriod = StochasticKPeriod,
-			DPeriod = StochasticDPeriod
+			D = { Length = StochasticDPeriod }
 		};
 
 		_awesome = new AwesomeOscillator
 		{
-			ShortPeriod = AoShortPeriod,
-			LongPeriod = AoLongPeriod
+			ShortMa = { Length = AoShortPeriod },
+			LongMa = { Length = AoLongPeriod }
 		};
 
 		var signalSubscription = SubscribeCandles(SignalCandleType);
@@ -393,7 +392,7 @@ public class DayTradingPamxaStrategy : Strategy
 			DrawIndicator(stochasticArea ?? priceArea, _stochastic);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessAwesome(ICandleMessage candle, decimal aoValue)

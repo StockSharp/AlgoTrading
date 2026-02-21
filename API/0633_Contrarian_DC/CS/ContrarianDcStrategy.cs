@@ -65,25 +65,25 @@ public class ContrarianDcStrategy : Strategy
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Donchian Period", "Period for Donchian Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_riskRewardRatio = Param(nameof(RiskRewardRatio), 1.7m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk/Reward", "Risk to reward ratio", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop-loss %", "Stop-loss percentage", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_pauseCandles = Param(nameof(PauseCandles), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Pause Candles", "Bars to wait after stop-loss", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -110,9 +110,9 @@ public class ContrarianDcStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = DonchianPeriod };
 		_lowest = new Lowest { Length = DonchianPeriod };

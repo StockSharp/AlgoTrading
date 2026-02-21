@@ -104,25 +104,25 @@ public class FullDumpBbRsiStrategy : Strategy
 		_bandsPeriod = Param(nameof(BandsPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Length for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 1);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Averaging length for RSI", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 1);
 
 		_depth = Param(nameof(Depth), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("Depth", "Number of candles for checks", "Logic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 12, 1);
 
 		_indentInPoints = Param(nameof(IndentInPoints), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Indent", "Additional offset in price steps", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 30m, 5m);
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
@@ -140,9 +140,9 @@ public class FullDumpBbRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bollingerBands = new BollingerBands
 		{

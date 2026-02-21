@@ -63,17 +63,17 @@ public class EnhancedIchimokuCloudStrategy : Strategy
 	{
 		_conversionPeriods = Param(nameof(ConversionPeriods), 7)
 			.SetDisplay("Conversion Line Periods", "Tenkan-sen period", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 9, 1);
 
 		_basePeriods = Param(nameof(BasePeriods), 211)
 			.SetDisplay("Base Line Periods", "Kijun-sen period", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(180, 240, 10);
 
 		_laggingSpan2Periods = Param(nameof(LaggingSpan2Periods), 120)
 			.SetDisplay("Lagging Span 2 Periods", "Senkou Span B period", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 140, 10);
 
 		_displacement = Param(nameof(Displacement), 41)
@@ -81,7 +81,7 @@ public class EnhancedIchimokuCloudStrategy : Strategy
 
 		_emaPeriod = Param(nameof(EmaPeriod), 171)
 			.SetDisplay("EMA Period", "EMA filter period", "EMA")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(150, 200, 5);
 
 		_modeParam = Param(nameof(Mode), TradeModes.Ichi)
@@ -93,7 +93,7 @@ public class EnhancedIchimokuCloudStrategy : Strategy
 		_endDate = Param(nameof(EndDate), new DateTimeOffset(2069, 12, 31, 23, 59, 0, TimeSpan.Zero))
 			.SetDisplay("End Date", "End", "Date Range");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -114,9 +114,9 @@ public class EnhancedIchimokuCloudStrategy : Strategy
 		_sellMem = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ichimoku = new Ichimoku
 		{
@@ -125,7 +125,7 @@ public class EnhancedIchimokuCloudStrategy : Strategy
 			SenkouB = { Length = LaggingSpan2Periods }
 		};
 
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var ema = new EMA { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

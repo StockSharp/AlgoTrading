@@ -267,9 +267,9 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 	}
 
 	// Initialize indicators and subscriptions when the strategy starts.
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = CreateMovingAverage(FastType, FastPeriod);
 		_slowMa = CreateMovingAverage(SlowType, SlowPeriod);
@@ -583,11 +583,11 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

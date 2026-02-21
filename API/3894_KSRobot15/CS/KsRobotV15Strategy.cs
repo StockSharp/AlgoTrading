@@ -171,55 +171,55 @@ public class KsRobotV15Strategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Tenkan Period", "Period for Ichimoku Tenkan line", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 12, 1);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Kijun Period", "Period for Ichimoku Kijun line", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 20, 1);
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 24)
 		.SetGreaterThanZero()
 		.SetDisplay("Senkou Span B Period", "Period for Ichimoku Senkou Span B", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(18, 30, 1);
 
 		_lwmaPeriod = Param(nameof(LwmaPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("LWMA Period", "Length of the confirmation LWMA", "Trend Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 2);
 
 		_maFilterPips = Param(nameof(MaFilterPips), 6m)
 		.SetNotNegative()
 		.SetDisplay("LWMA Filter (pips)", "Minimum distance between price and Kijun required by the LWMA", "Trend Filter")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 20m, 1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Initial protective stop distance", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 100m, 5m);
 
 		_breakEvenPips = Param(nameof(BreakEvenPips), 9m)
 		.SetNotNegative()
 		.SetDisplay("Break-even Trigger (pips)", "Profit distance required to protect the position", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 20m, 1m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Distance for the trailing stop after the position moves in profit", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5m, 30m, 1m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 120m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Optional fixed profit target", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(40m, 200m, 10m);
 
 		_tradingStartHour = Param(nameof(TradingStartHour), 7)
@@ -260,9 +260,9 @@ public class KsRobotV15Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ichimoku = new Ichimoku
 		{

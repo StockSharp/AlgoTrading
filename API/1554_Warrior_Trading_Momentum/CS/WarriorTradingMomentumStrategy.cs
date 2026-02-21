@@ -54,37 +54,37 @@ public class WarriorTradingMomentumStrategy : Strategy
 	{
 		_gapThreshold = Param(nameof(GapThreshold), 2m)
 			.SetDisplay("Gap %", "Minimum gap percent", "Gap")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_gapVolumeMultiplier = Param(nameof(GapVolumeMultiplier), 2m)
 			.SetDisplay("Gap Vol Mult", "Volume multiplier", "Gap")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 4m, 0.5m);
 
 		_vwapDistance = Param(nameof(VwapDistance), 0.5m)
 			.SetDisplay("VWAP Dist %", "Distance from VWAP", "VWAP")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_minRedCandles = Param(nameof(MinRedCandles), 3)
 			.SetDisplay("Min Red", "Red candles", "Momentum")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 6, 1);
 
 		_riskRewardRatio = Param(nameof(RiskRewardRatio), 2m)
 			.SetDisplay("Risk Reward", "Risk reward", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_trailingStopTrigger = Param(nameof(TrailingStopTrigger), 1m)
 			.SetDisplay("Trail Trigger %", "Trigger percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_maxDailyTrades = Param(nameof(MaxDailyTrades), 2)
 			.SetDisplay("Max Trades", "Daily trade limit", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 3, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -111,13 +111,13 @@ public class WarriorTradingMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		_volumeMa = new SimpleMovingAverage { Length = 20 };
+		base.OnStarted2(time);
+		_volumeMa = new SMA { Length = 20 };
 		_atr = new AverageTrueRange { Length = 14 };
 		_rsi = new RelativeStrengthIndex { Length = 14 };
-		_ema20 = new ExponentialMovingAverage { Length = 20 };
+		_ema20 = new EMA { Length = 20 };
 		_vwap = new VolumeWeightedMovingAverage();
 
 		var subscription = SubscribeCandles(CandleType);

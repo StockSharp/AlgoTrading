@@ -57,12 +57,12 @@ public class CciBreakoutStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetRange(10, 50)
 			.SetDisplay("CCI Period", "Period for CCI calculation", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.5m, 5m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -75,9 +75,9 @@ public class CciBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create CCI indicator
 		var cci = new CommodityChannelIndex { Length = CciPeriod };

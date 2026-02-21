@@ -188,11 +188,11 @@ public class TurtleTradingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var entryLen = UseMode2 ? EntryLengthMode2 : EntryLength;
 		var exitLen = UseMode2 ? ExitLengthMode2 : ExitLength;

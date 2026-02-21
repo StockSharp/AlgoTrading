@@ -112,7 +112,7 @@ public class PricerEaStrategy : Strategy
 
 		_riskFactor = Param(nameof(RiskFactor), 1m)
 			.SetDisplay("Risk Factor", "Multiplier applied when automatic sizing is enabled", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_manualVolume = Param(nameof(ManualVolume), 0.01m)
 			.SetDisplay("Manual Volume", "Fixed order volume when manual sizing is active", "Risk")
@@ -252,9 +252,9 @@ public class PricerEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		PlaceInitialPendingOrders(time);
 

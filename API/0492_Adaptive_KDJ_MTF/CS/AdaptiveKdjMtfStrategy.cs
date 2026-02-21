@@ -57,22 +57,22 @@ public class AdaptiveKdjMtfStrategy : Strategy
 
 		_kdjLength = Param(nameof(KdjLength), 9)
 			.SetDisplay("KDJ Length", "Base length for KDJ", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 3);
 
 		_smoothingLength = Param(nameof(SmoothingLength), 5)
 			.SetDisplay("Smoothing Length", "EMA smoothing length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 15, 2);
 
 		_trendLength = Param(nameof(TrendLength), 40)
 			.SetDisplay("Trend Length", "Periods for trend definition", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 10);
 
 		_weightOption = Param(nameof(WeightOption), 1)
 			.SetDisplay("Weight Option", "Weight distribution between timeframes", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 	}
 
@@ -99,9 +99,9 @@ public class AdaptiveKdjMtfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_emaK.Length = SmoothingLength;
 		_emaD.Length = SmoothingLength;
@@ -109,9 +109,9 @@ public class AdaptiveKdjMtfStrategy : Strategy
 		_emaTotal.Length = SmoothingLength;
 		_trendSma.Length = TrendLength;
 
-		var stoch1 = new Stochastic { Length = KdjLength, KPeriod = 3, DPeriod = 3 };
-		var stoch2 = new Stochastic { Length = KdjLength, KPeriod = 3, DPeriod = 3 };
-		var stoch3 = new Stochastic { Length = KdjLength, KPeriod = 3, DPeriod = 3 };
+		var stoch1 = new Stochastic { Length = KdjLength, D = { Length = 3 } };
+		var stoch2 = new Stochastic { Length = KdjLength, D = { Length = 3 } };
+		var stoch3 = new Stochastic { Length = KdjLength, D = { Length = 3 } };
 
 		var sub1 = SubscribeCandles(TimeFrame1);
 		var sub2 = SubscribeCandles(TimeFrame2);

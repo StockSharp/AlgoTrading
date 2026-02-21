@@ -73,11 +73,11 @@ public class NarrowRangeStrategy : Strategy
 		_length = Param(nameof(Length), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Narrow range length", "Narrow Range")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.35m)
 			.SetDisplay("Stop Loss Percent", "Stop loss percent of range", "Narrow Range")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -105,11 +105,11 @@ public class NarrowRangeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

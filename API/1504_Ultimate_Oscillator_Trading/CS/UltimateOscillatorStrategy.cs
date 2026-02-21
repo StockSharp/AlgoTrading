@@ -81,25 +81,25 @@ public class UltimateOscillatorStrategy : Strategy
 		_shortPeriod = Param(nameof(ShortPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Short Period", "Short-term period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 10, 2);
 		
 		_mediumPeriod = Param(nameof(MediumPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Medium Period", "Medium-term period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 20, 2);
 		
 		_longPeriod = Param(nameof(LongPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Long Period", "Long-term period", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(12, 30, 2);
 		
 		_buyThreshold = Param(nameof(BuyThreshold), 30m)
 		.SetNotNegative()
 		.SetDisplay("Buy Threshold", "Buy when oscillator below", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 40m, 5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -113,15 +113,15 @@ public class UltimateOscillatorStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var uo = new UltimateOscillator
 		{
-			ShortPeriod = ShortPeriod,
+			ShortMa = { Length = ShortPeriod },
 			MediumPeriod = MediumPeriod,
-			LongPeriod = LongPeriod
+			LongMa = { Length = LongPeriod }
 			};
 			
 			var subscription = SubscribeCandles(CandleType);

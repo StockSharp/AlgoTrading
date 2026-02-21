@@ -66,31 +66,31 @@ public class LongShortExpertMacdStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast MACD EMA length", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 2);
 
 		_slowLength = Param(nameof(SlowLength), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow MACD EMA length", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 2);
 
 		_signalLength = Param(nameof(SignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal EMA", "MACD signal EMA length", "MACD")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in price points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 150, 10);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance in price points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 100, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -344,16 +344,16 @@ public class LongShortExpertMacdStrategy : Strategy
 		if (Position > 0)
 		{
 			var step = GetPriceStep();
-			_longStopPrice = StopLossPoints > 0 ? PositionAvgPrice - StopLossPoints * step : 0m;
-			_longTakePrice = TakeProfitPoints > 0 ? PositionAvgPrice + TakeProfitPoints * step : 0m;
+			_longStopPrice = StopLossPoints > 0 ? PositionPrice - StopLossPoints * step : 0m;
+			_longTakePrice = TakeProfitPoints > 0 ? PositionPrice + TakeProfitPoints * step : 0m;
 			_shortStopPrice = 0m;
 			_shortTakePrice = 0m;
 		}
 		else if (Position < 0)
 		{
 			var step = GetPriceStep();
-			_shortStopPrice = StopLossPoints > 0 ? PositionAvgPrice + StopLossPoints * step : 0m;
-			_shortTakePrice = TakeProfitPoints > 0 ? PositionAvgPrice - TakeProfitPoints * step : 0m;
+			_shortStopPrice = StopLossPoints > 0 ? PositionPrice + StopLossPoints * step : 0m;
+			_shortTakePrice = TakeProfitPoints > 0 ? PositionPrice - TakeProfitPoints * step : 0m;
 			_longStopPrice = 0m;
 			_longTakePrice = 0m;
 		}

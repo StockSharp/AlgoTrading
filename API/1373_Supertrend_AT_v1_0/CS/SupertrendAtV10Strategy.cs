@@ -48,13 +48,13 @@ public class SupertrendAtV10Strategy : Strategy
 		_supertrendLength = Param(nameof(SupertrendLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "ATR period for Supertrend", "Supertrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "ATR multiplier for Supertrend", "Supertrend")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_riskPerTrade = Param(nameof(RiskPerTrade), 2m)
@@ -96,9 +96,9 @@ public class SupertrendAtV10Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_supertrend = new SuperTrend
 		{

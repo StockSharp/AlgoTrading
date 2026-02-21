@@ -108,17 +108,17 @@ public class RenkoTrendReversalV2Strategy : Strategy
 		_renkoAtrLength = Param(nameof(RenkoAtrLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period for renko brick size", "Renko")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPct = Param(nameof(StopLossPct), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPct = Param(nameof(TakeProfitPct), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percentage", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(new DateTime(2023, 7, 1)))
 			.SetDisplay("Start Date", "Start date", "General");
@@ -147,9 +147,9 @@ public class RenkoTrendReversalV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(_renkoType);
 		subscription.Bind(ProcessCandle).Start();
@@ -161,7 +161,7 @@ public class RenkoTrendReversalV2Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

@@ -160,9 +160,9 @@ public VectorBasketTrendStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 			throw new InvalidOperationException("Primary security is not specified.");
@@ -222,8 +222,8 @@ public VectorBasketTrendStrategy()
 		if (_contexts.ContainsKey(security))
 			return;
 
-		var fast = new SmoothedMovingAverage { Length = 3, CandlePrice = CandlePrice.Median };
-		var slow = new SmoothedMovingAverage { Length = 7, CandlePrice = CandlePrice.Median };
+		var fast = new SmoothedMovingAverage { Length = 3 };
+		var slow = new SmoothedMovingAverage { Length = 7 };
 		var context = new InstrumentContext(security, fast, slow, GetPipSize(security));
 		_contexts.Add(security, context);
 		_lastPositions[security] = GetPositionVolume(security);

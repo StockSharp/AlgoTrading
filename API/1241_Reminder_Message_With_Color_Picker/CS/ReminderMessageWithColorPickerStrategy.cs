@@ -41,11 +41,11 @@ public class ReminderMessageWithColorPickerStrategy : Strategy
 	{
 		_message = Param(nameof(Message),
 			"If you don't see an obvious trade, there probably isn't one.")
-			.SetDisplay("Reminder to display");
+			.SetDisplay("Reminder to display", "Reminder to display", "General");
 
 		_frequency = Param(nameof(Frequency), 1)
-			.SetDisplay("Only display every x bars", "Trading parameters")
-			.SetCanOptimize(true)
+			.SetDisplay("Only display every x bars", "Trading parameters", "General")
+			
 			.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -61,9 +61,9 @@ public class ReminderMessageWithColorPickerStrategy : Strategy
 	private int _bars;
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeCandles(CandleType)
 			.Bind(OnCandle)

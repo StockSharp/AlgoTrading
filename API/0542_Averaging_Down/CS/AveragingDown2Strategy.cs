@@ -63,13 +63,13 @@ public class AveragingDown2Strategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation length", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_rsiBuyThreshold = Param(nameof(RsiBuyThreshold), 33m)
 			.SetRange(0m, 100m)
 			.SetDisplay("RSI Buy Threshold", "Buy when RSI is below this level", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 50m, 5m);
 	}
 
@@ -87,9 +87,9 @@ public class AveragingDown2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 

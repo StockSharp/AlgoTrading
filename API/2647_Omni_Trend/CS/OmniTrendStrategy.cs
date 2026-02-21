@@ -50,39 +50,39 @@ public class OmniTrendStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to build Omni Trend signals", "General")
-			.SetCanOptimize(true);
+			;
 
 		_maLength = Param(nameof(MaLength), 13)
 			.SetDisplay("MA Length", "Moving average period", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_maType = Param(nameof(MaType), MovingAverageMethods.Exponential)
 			.SetDisplay("MA Type", "Moving average calculation method", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Applied Price", "Price field used by the moving average", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_atrLength = Param(nameof(AtrLength), 11)
 			.SetDisplay("ATR Length", "ATR period for volatility bands", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_volatilityFactor = Param(nameof(VolatilityFactor), 1.3m)
 			.SetDisplay("Volatility Factor", "Multiplier applied to ATR", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_moneyRisk = Param(nameof(MoneyRisk), 0.15m)
 			.SetDisplay("Money Risk", "Offset factor used to position trend bands", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Delay in bars before acting on a signal", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_enableBuyOpen = Param(nameof(EnableBuyOpen), true)
 			.SetDisplay("Enable Long Entries", "Allow opening long positions", "Trading");
@@ -211,9 +211,9 @@ public class OmniTrendStrategy : Strategy
 		_shortEntryPrice = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ma = CreateMovingAverage(MaType, MaLength);
 		_atr = new AverageTrueRange
@@ -227,7 +227,7 @@ public class OmniTrendStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -468,11 +468,11 @@ public class OmniTrendStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length }
+			_ => new EMA { Length = length }
 		};
 	}
 

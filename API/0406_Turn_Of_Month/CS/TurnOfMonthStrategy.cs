@@ -82,7 +82,7 @@ public class TurnOfMonthStrategy : Strategy
 
 		_minUsd = Param(nameof(MinTradeUsd), 200m)
 			.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -106,12 +106,12 @@ public class TurnOfMonthStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Security == null)
 			throw new InvalidOperationException("ETF must be set.");
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeCandles(CandleType, true, Security)
 			.Bind(c => ProcessCandle(c, Security))

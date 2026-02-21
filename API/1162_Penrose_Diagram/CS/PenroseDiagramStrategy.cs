@@ -64,10 +64,10 @@ public class PenroseDiagramStrategy : Strategy
 		_period = Param(nameof(Period), 48)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Period", "Number of periods for averages", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Source candle timeframe", "General");
 
 		_extend = Param(nameof(Extend), true)
@@ -81,14 +81,14 @@ public class PenroseDiagramStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_avgHigh = new SimpleMovingAverage { Length = Period };
-		_avgHighTrue = new SimpleMovingAverage { Length = Period };
-		_avgLow = new SimpleMovingAverage { Length = Period };
-		_avgLowTrue = new SimpleMovingAverage { Length = Period };
+		_avgHigh = new SMA { Length = Period };
+		_avgHighTrue = new SMA { Length = Period };
+		_avgLow = new SMA { Length = Period };
+		_avgLowTrue = new SMA { Length = Period };
 		_maxHigh = new Highest { Length = Period };
 		_maxLow = new Highest { Length = Period };
 

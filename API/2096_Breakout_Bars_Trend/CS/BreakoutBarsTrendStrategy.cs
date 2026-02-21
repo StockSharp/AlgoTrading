@@ -111,25 +111,25 @@ public class BreakoutBarsTrendStrategy : Strategy
 		_delta = Param(nameof(Delta), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Delta", "Minimal distance between reversals", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_negatives = Param(nameof(Negatives), 1)
 			.SetNotNegative()
 			.SetDisplay("Negative Signals", "Number of negative reversals before entry", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 5, 1);
 
 		_stopLoss = Param(nameof(StopLoss), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop-loss distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_takeProfit = Param(nameof(TakeProfit), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take-profit distance", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 6m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -155,11 +155,11 @@ public class BreakoutBarsTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var parabolic = new ParabolicSar();
 		var subscription = SubscribeCandles(CandleType);

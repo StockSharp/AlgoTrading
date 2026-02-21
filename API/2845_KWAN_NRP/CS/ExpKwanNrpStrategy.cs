@@ -196,31 +196,31 @@ public class ExpKwanNrpStrategy : Strategy
 		_kPeriod = Param(nameof(KPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "Stochastic %K period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 21, 2);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Stochastic %D period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 9, 1);
 
 		_slowingPeriod = Param(nameof(SlowingPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Slowing", "Smoothing applied to %K", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 9, 1);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 1);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Momentum length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 1);
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethodOptions.Simple)
@@ -229,7 +229,7 @@ public class ExpKwanNrpStrategy : Strategy
 		_smoothingLength = Param(nameof(SmoothingLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Length", "Moving average length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 15, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -274,9 +274,9 @@ public class ExpKwanNrpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex
 		{
@@ -284,8 +284,7 @@ public class ExpKwanNrpStrategy : Strategy
 		};
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = KPeriod
+		{ K = { Length = KPeriod }
 		};
 
 		_stochastic.K.Length = Math.Max(1, SlowingPeriod);
@@ -343,7 +342,7 @@ public class ExpKwanNrpStrategy : Strategy
 		var rawKwan = stochSignal * rsi / momentum;
 
 		// Smooth the ratio with the selected moving average.
-		var smoothedValue = _smoother.Process(rawKwan, candle.OpenTime, true);
+		var smoothedValue = _smoother.Process(new DecimalIndicatorValue(_smoother, rawKwan, candle.OpenTime));
 
 		if (!smoothedValue.IsFinal)
 			return;
@@ -402,11 +401,11 @@ public class ExpKwanNrpStrategy : Strategy
 	{
 		return method switch
 		{
-			SmoothingMethodOptions.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethodOptions.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethodOptions.Simple => new SMA { Length = length },
+			SmoothingMethodOptions.Exponential => new EMA { Length = length },
 			SmoothingMethodOptions.Smoothed => new SmoothedMovingAverage { Length = length },
 			SmoothingMethodOptions.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

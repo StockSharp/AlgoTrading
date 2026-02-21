@@ -96,31 +96,31 @@ public class BreakTheRangeBoundStrategy : Strategy
 		_fastSma = Param(nameof(FastSma), 38)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Fast moving average period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_midSma = Param(nameof(MidSma), 140)
 			.SetGreaterThanZero()
 			.SetDisplay("Mid SMA", "Middle moving average period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 10);
 
 		_slowSma = Param(nameof(SlowSma), 210)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Slow moving average period", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 300, 10);
 
 		_shakeThreshold = Param(nameof(ShakeThreshold), 250m)
 			.SetGreaterThanZero()
 			.SetDisplay("Shake Threshold", "Max SMA spread to treat as range", "Range")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 500m, 50m);
 
 		_rangeLength = Param(nameof(RangeLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Length", "Number of candles in range", "Range")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 50);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -143,13 +143,13 @@ public class BreakTheRangeBoundStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastMa = new SimpleMovingAverage { Length = FastSma };
-		var midMa = new SimpleMovingAverage { Length = MidSma };
-		var slowMa = new SimpleMovingAverage { Length = SlowSma };
+		var fastMa = new SMA { Length = FastSma };
+		var midMa = new SMA { Length = MidSma };
+		var slowMa = new SMA { Length = SlowSma };
 
 		_diffHighest = new Highest { Length = RangeLength };
 		_rangeHigh = new Highest { Length = RangeLength };
@@ -168,7 +168,7 @@ public class BreakTheRangeBoundStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal mid, decimal slow)

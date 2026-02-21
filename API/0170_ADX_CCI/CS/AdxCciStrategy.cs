@@ -72,19 +72,19 @@ public class AdxCciStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 1);
 
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Period for CCI indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(14, 30, 1);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -107,9 +107,9 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	}
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 		// Create indicators
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };

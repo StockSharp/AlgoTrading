@@ -59,7 +59,7 @@ public class DowTheoryTrendStrategy : Strategy
 		_pivotLookback = Param(nameof(PivotLookback), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Pivot Lookback", "Bars on each side for pivot detection", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -91,9 +91,9 @@ public class DowTheoryTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var size = PivotLookback * 2 + 1;
 		_highBuffer = new decimal[size];

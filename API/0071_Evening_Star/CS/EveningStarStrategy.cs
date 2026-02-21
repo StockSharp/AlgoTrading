@@ -54,7 +54,7 @@ public class EveningStarStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage above the second candle's high", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3.0m, 0.5m);
 	}
 
@@ -74,9 +74,9 @@ public class EveningStarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create subscription
 		var subscription = SubscribeCandles(CandleType);

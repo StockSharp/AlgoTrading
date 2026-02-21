@@ -59,12 +59,12 @@ public class StopreversalTrailingStrategy : Strategy
 		_stopLossSteps = Param(nameof(StopLossSteps), 1000)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss Steps", "Stop loss distance in price steps", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 2000)
 		.SetNotNegative()
 		.SetDisplay("Take Profit Steps", "Take profit distance in price steps", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_buyPositionOpen = Param(nameof(BuyPositionOpen), true)
 		.SetDisplay("Open Long", "Allow opening long positions", "Trading");
@@ -81,7 +81,7 @@ public class StopreversalTrailingStrategy : Strategy
 		_npips = Param(nameof(Npips), 0.004m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Offset", "Fractional offset applied to the stop line", "Indicator")
-		.SetCanOptimize(true);
+		;
 
 		_priceMode = Param(nameof(PriceMode), AppliedPriceModes.Close)
 		.SetDisplay("Applied Price", "Price source used by the trailing stop", "Indicator");
@@ -89,7 +89,7 @@ public class StopreversalTrailingStrategy : Strategy
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Bar delay before acting on a signal", "Indicator")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>
@@ -198,9 +198,9 @@ public class StopreversalTrailingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange
 		{
@@ -220,7 +220,7 @@ public class StopreversalTrailingStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue)

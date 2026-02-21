@@ -28,7 +28,7 @@ public class FirstFridayStrategy : Strategy
 	/// </summary>
 	public FirstFridayStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for first Friday detection", "General");
 	}
 
@@ -56,9 +56,9 @@ public class FirstFridayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to the configured timeframe and listen for new candles.
 		var subscription = SubscribeCandles(CandleType);

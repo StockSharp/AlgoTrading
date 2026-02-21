@@ -87,19 +87,19 @@ public class DonchianWidthBreakoutStrategy : Strategy
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Donchian Period", "Period for the Donchian Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 			
 		_avgPeriod = Param(nameof(AvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Average Period", "Period for width average calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 		
 		_multiplier = Param(nameof(Multiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -108,7 +108,7 @@ public class DonchianWidthBreakoutStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
 	}
 	
@@ -127,15 +127,15 @@ public class DonchianWidthBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		
 		// Create indicators for Donchian Channel components
 		_highest = new Highest { Length = DonchianPeriod };
 		_lowest = new Lowest { Length = DonchianPeriod };
-		_widthAverage = new SimpleMovingAverage { Length = AvgPeriod };
+		_widthAverage = new SMA { Length = AvgPeriod };
 		
 		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
@@ -166,14 +166,14 @@ public class DonchianWidthBreakoutStrategy : Strategy
 			return;
 		
 		// Process candle through Highest and Lowest indicators
-		var highestValue = _highest.Process(candle).ToDecimal();
+		var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, candle).ToDecimal();
 		var lowestValue = _lowest.Process(candle).ToDecimal();
 		
 		// Calculate Donchian Channel width
 		var width = highestValue - lowestValue;
 		
 		// Process width through average
-		var widthAvgValue = _widthAverage.Process(width, candle.ServerTime, candle.State == CandleStates.Finished);
+		var widthAvgValue = _widthAverage.Process(width, candle.ServerTime));
 		var avgWidth = widthAvgValue.ToDecimal();
 		
 		// For first values, just save and skip

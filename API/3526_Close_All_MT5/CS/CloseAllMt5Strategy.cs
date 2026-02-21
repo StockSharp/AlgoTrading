@@ -158,7 +158,7 @@ public class CloseAllMt5Strategy : Strategy
 
 		_profitThreshold = Param(nameof(ProfitThreshold), 3m)
 			.SetDisplay("Profit Threshold", "Target profit or loss that triggers closing", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-20m, 20m, 1m);
 
 		_closeMode = Param(nameof(CloseMode), CloseRequestModes.CloseAll)
@@ -201,11 +201,11 @@ public class CloseAllMt5Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		InitializeSubscriptions();
 		EvaluateAllPositions();

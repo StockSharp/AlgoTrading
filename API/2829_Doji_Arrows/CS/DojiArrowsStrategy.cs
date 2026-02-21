@@ -76,27 +76,27 @@ public class DojiArrowsStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss Points", "Stop loss distance in price steps.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 90m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit Points", "Take profit distance in price steps.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 15m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop Points", "Trailing distance in price steps.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step Points", "Minimum profit before the trailing stop moves.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_dojiBodyPoints = Param(nameof(DojiBodyPoints), 1m)
 			.SetNotNegative()
 			.SetDisplay("Doji Body Points", "Maximum difference between open and close to treat the candle as a doji.", "Pattern")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for signal generation.", "General");
@@ -109,9 +109,9 @@ public class DojiArrowsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)

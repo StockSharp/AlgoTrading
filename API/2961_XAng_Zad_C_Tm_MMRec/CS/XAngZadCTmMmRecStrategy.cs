@@ -189,32 +189,32 @@ public class XAngZadCTmMmRecStrategy : Strategy
 		_normalVolume = Param(nameof(NormalVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Normal Volume", "Default order size", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_reducedVolume = Param(nameof(ReducedVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Reduced Volume", "Volume used after losing streak", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_buyTotalTrigger = Param(nameof(BuyTotalTrigger), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy Total Trigger", "Number of past buy trades to inspect", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_buyLossTrigger = Param(nameof(BuyLossTrigger), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy Loss Trigger", "Losing buy trades required to reduce volume", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_sellTotalTrigger = Param(nameof(SellTotalTrigger), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Sell Total Trigger", "Number of past sell trades to inspect", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_sellLossTrigger = Param(nameof(SellLossTrigger), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Sell Loss Trigger", "Losing sell trades required to reduce volume", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_enableBuyEntries = Param(nameof(EnableBuyEntries), true)
 			.SetDisplay("Enable Buy Entries", "Allow long entries", "Logic");
@@ -245,7 +245,7 @@ public class XAngZadCTmMmRecStrategy : Strategy
 
 		_signalShift = Param(nameof(SignalShift), 1)
 			.SetDisplay("Signal Shift", "Number of closed bars used for signal comparison", "Logic")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Indicator Timeframe", "Candle type used for the indicator", "Data");
@@ -286,9 +286,9 @@ public class XAngZadCTmMmRecStrategy : Strategy
 		_entryVolume = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var indicator = new XAngZadCIndicator
 		{
@@ -570,7 +570,7 @@ private decimal GetBuyVolume()
 /// Indicator that replicates the MQL5 XAng Zad C channel calculation.
 /// Produces adaptive upper and lower envelopes smoothed by a configurable moving average.
 /// </summary>
-public class XAngZadCIndicator : BaseIndicator<decimal>
+public class XAngZadCIndicator : BaseIndicator
 {
 	public enum SmoothMethods
 	{
@@ -675,10 +675,10 @@ public class XAngZadCIndicator : BaseIndicator<decimal>
 		// the ones that do not have direct equivalents in StockSharp.
 		return Method switch
 		{
-			SmoothMethods.Sma => new SimpleMovingAverage { Length = Length },
+			SmoothMethods.Sma => new SMA { Length = Length },
 			SmoothMethods.Smma => new SmoothedMovingAverage { Length = Length },
 			SmoothMethods.Lwma => new WeightedMovingAverage { Length = Length },
-			_ => new ExponentialMovingAverage { Length = Length }
+			_ => new EMA { Length = Length }
 		};
 	}
 

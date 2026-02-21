@@ -521,16 +521,16 @@ public class TengriStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 	_silenceAtr1 = new AverageTrueRange { Length = SilencePeriod1 };
-	_silenceSmooth1 = new ExponentialMovingAverage { Length = Math.Max(1, SilenceInterpolation1) };
+	_silenceSmooth1 = new EMA { Length = Math.Max(1, SilenceInterpolation1) };
 	_silenceAtr2 = new AverageTrueRange { Length = SilencePeriod2 };
-	_silenceSmooth2 = new ExponentialMovingAverage { Length = Math.Max(1, SilenceInterpolation2) };
-	_ema = new ExponentialMovingAverage { Length = MaPeriod };
+	_silenceSmooth2 = new EMA { Length = Math.Max(1, SilenceInterpolation2) };
+	_ema = new EMA { Length = MaPeriod };
 
 	ResetPositionTracking();
 
@@ -551,7 +551,7 @@ public class TengriStrategy : Strategy
 	SubscribeCandles(Silence2CandleType).Bind(ProcessSilence2).Start();
 	SubscribeCandles(TimeSpan.FromHours(1).TimeFrame()).Bind(_rsi, ProcessRsi).Start();
 
-	StartProtection();
+	StartProtection(null, null);
 	}
 
 	private void ProcessLevel1(Level1ChangeMessage message)
@@ -582,11 +582,11 @@ public class TengriStrategy : Strategy
 
 	private void ProcessSilence1(ICandleMessage candle)
 	{
-	var atrValue = _silenceAtr1.Process(candle).ToNullableDecimal();
+	var atrValue = _silenceAtr1.Process(new DecimalIndicatorValue(_silenceAtr1, candle).ToNullableDecimal();
 	if (atrValue == null)
 	return;
 
-	var smoothed = _silenceSmooth1.Process(atrValue.Value, candle.OpenTime, candle.State == CandleStates.Finished).ToNullableDecimal();
+	var smoothed = _silenceSmooth1.Process(atrValue.Value, candle.OpenTime)).ToNullableDecimal();
 	if (smoothed == null)
 	return;
 
@@ -596,11 +596,11 @@ public class TengriStrategy : Strategy
 
 	private void ProcessSilence2(ICandleMessage candle)
 	{
-	var atrValue = _silenceAtr2.Process(candle).ToNullableDecimal();
+	var atrValue = _silenceAtr2.Process(new DecimalIndicatorValue(_silenceAtr2, candle).ToNullableDecimal();
 	if (atrValue == null)
 	return;
 
-	var smoothed = _silenceSmooth2.Process(atrValue.Value, candle.OpenTime, candle.State == CandleStates.Finished).ToNullableDecimal();
+	var smoothed = _silenceSmooth2.Process(atrValue.Value, candle.OpenTime)).ToNullableDecimal();
 	if (smoothed == null)
 	return;
 

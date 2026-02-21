@@ -146,25 +146,25 @@ public class TtmTrendReopenStrategy : Strategy
 		_compBars = Param(nameof(CompBars), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Comparison Bars", "Heikin-Ashi bars stored for the color smoothing", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 12, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Offset of the bar used for trading decisions", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 3, 1);
 
 		_priceStepPoints = Param(nameof(PriceStepPoints), 300m)
 		.SetNotNegative()
 		.SetDisplay("Re-entry Step", "Minimum favorable move (in points) before pyramiding", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 600m, 100m);
 
 		_maxPositions = Param(nameof(MaxPositions), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Entries", "Maximum number of stacked entries per direction", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_enableLongEntries = Param(nameof(EnableLongEntries), true)
@@ -182,13 +182,13 @@ public class TtmTrendReopenStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Protective stop distance in price points", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(200m, 2000m, 200m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Profit target distance in price points", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(500m, 4000m, 500m);
 	}
 
@@ -199,9 +199,9 @@ public class TtmTrendReopenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_colorHistory.Clear();
 		_longEntries = 0;
@@ -336,7 +336,7 @@ public class TtmTrendReopenStrategy : Strategy
 	/// <summary>
 	/// Internal indicator reproducing the MetaTrader TTM Trend color output.
 	/// </summary>
-	private sealed class TtmTrendIndicator : BaseIndicator<decimal>
+	private sealed class TtmTrendIndicator : BaseIndicator
 	{
 		private readonly LinkedList<TtmEntry> _history = new();
 

@@ -83,19 +83,19 @@ public class AoLightningStrategy : Strategy
 	{
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetDisplay("Trade Volume", "Order size per entry", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_maxPositions = Param(nameof(MaxPositions), 10)
 			.SetDisplay("Max Positions", "Maximum entries per side", "Trading")
-			.SetCanOptimize(true);
+			;
 
-		_aoShortPeriod = Param(nameof(AoShortPeriod), 5)
+		_aoShortMa = { Length = Param }(nameof(AoShortPeriod), 5)
 			.SetDisplay("AO Fast", "Short SMA period for Awesome Oscillator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
-		_aoLongPeriod = Param(nameof(AoLongPeriod), 34)
+		_aoLongMa = { Length = Param }(nameof(AoLongPeriod), 34)
 			.SetDisplay("AO Slow", "Long SMA period for Awesome Oscillator", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles", "General");
@@ -110,14 +110,14 @@ public class AoLightningStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_awesomeOscillator = new AwesomeOscillator
 		{
-			ShortPeriod = AoShortPeriod,
-			LongPeriod = AoLongPeriod
+			ShortMa = { Length = AoShortPeriod },
+			LongMa = { Length = AoLongPeriod }
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -135,7 +135,7 @@ public class AoLightningStrategy : Strategy
 		}
 
 		// Enable built-in protections (e.g. stop-loss management) once at start.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal aoValue)

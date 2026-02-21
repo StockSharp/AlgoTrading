@@ -94,7 +94,7 @@ public class ScaleInScaleOutStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Buy Value", "Minimum cash value per buy", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -111,9 +111,9 @@ public class ScaleInScaleOutStrategy : Strategy
 		_totalCost = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_deployableCash = 1_000_000m;
 

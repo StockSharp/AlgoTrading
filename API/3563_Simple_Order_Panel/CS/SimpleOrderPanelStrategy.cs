@@ -87,84 +87,84 @@ public class SimpleOrderPanelStrategy : Strategy
 	{
 		_riskCalculationMode = Param(nameof(RiskCalculation), RiskModes.FixedVolume)
 		.SetDisplay("Risk Mode", "Choose between fixed lots or balance percentage sizing.", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_riskValue = Param(nameof(RiskValue), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk Value", "Lot size or balance percent depending on the selected mode.", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_stopTakeMode = Param(nameof(StopTakeCalculation), StopTakeModes.PointOffsets)
 		.SetDisplay("Stop/Take Mode", "Interpret stop-loss and take-profit values as absolute prices or MetaTrader points.", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_stopLossValue = Param(nameof(StopLossValue), 300m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Absolute price or MetaTrader points depending on the stop/take mode.", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_takeProfitValue = Param(nameof(TakeProfitValue), 300m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit", "Absolute price or MetaTrader points depending on the stop/take mode.", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_buyMarketRequest = Param(nameof(BuyMarketRequest), false)
 		.SetDisplay("Buy", "Set to true to send a market buy order using the configured risk.", "Controls")
-		.SetCanOptimize(false);
+		;
 
 		_sellMarketRequest = Param(nameof(SellMarketRequest), false)
 		.SetDisplay("Sell", "Set to true to send a market sell order using the configured risk.", "Controls")
-		.SetCanOptimize(false);
+		;
 
 		_breakEvenRequest = Param(nameof(BreakEvenRequest), false)
 		.SetDisplay("Break-even", "Set to true to move the protective stop to the average entry price.", "Controls")
-		.SetCanOptimize(false);
+		;
 
 		_modifyStopRequest = Param(nameof(ModifyStopRequest), false)
 		.SetDisplay("Apply Stop", "Reapply the stop-loss configuration to the open position.", "Controls")
-		.SetCanOptimize(false);
+		;
 
 		_modifyTakeRequest = Param(nameof(ModifyTakeRequest), false)
 		.SetDisplay("Apply Take", "Reapply the take-profit configuration to the open position.", "Controls")
-		.SetCanOptimize(false);
+		;
 
 		_closeAllRequest = Param(nameof(CloseAllRequest), false)
 		.SetDisplay("Close All", "Close every open position managed by the strategy.", "Controls")
-		.SetCanOptimize(false);
+		;
 
 		_closeBuyRequest = Param(nameof(CloseBuyRequest), false)
 		.SetDisplay("Close Buys", "Close the long position if it exists.", "Controls")
-		.SetCanOptimize(false);
+		;
 
 		_closeSellRequest = Param(nameof(CloseSellRequest), false)
 		.SetDisplay("Close Sells", "Close the short position if it exists.", "Controls")
-		.SetCanOptimize(false);
+		;
 
 		_partialCloseRequest = Param(nameof(PartialCloseRequest), false)
 		.SetDisplay("Close Partial", "Close a portion of the current position using the partial volume parameter.", "Controls")
-		.SetCanOptimize(false);
+		;
 
 		_partialVolume = Param(nameof(PartialVolume), 0.05m)
 		.SetGreaterThanZero()
 		.SetDisplay("Partial Volume", "Volume used when closing a portion of the position.", "Risk")
-		.SetCanOptimize(false);
+		;
 
 		_placeBuyPendingRequest = Param(nameof(PlaceBuyPendingRequest), false)
 		.SetDisplay("Arm Buy Pending", "Reserve a pending buy entry at the configured price.", "Pending")
-		.SetCanOptimize(false);
+		;
 
 		_placeSellPendingRequest = Param(nameof(PlaceSellPendingRequest), false)
 		.SetDisplay("Arm Sell Pending", "Reserve a pending sell entry at the configured price.", "Pending")
-		.SetCanOptimize(false);
+		;
 
 		_pendingPrice = Param(nameof(PendingPrice), 0m)
 		.SetNotNegative()
 		.SetDisplay("Pending Price", "Trigger price used for pending entries.", "Pending")
-		.SetCanOptimize(false);
+		;
 
 		_cancelPendingRequest = Param(nameof(CancelPendingRequest), false)
 		.SetDisplay("Cancel Pending", "Remove armed pending entries.", "Pending")
-		.SetCanOptimize(false);
+		;
 
 		_pointSize = 0m;
 		_stepPrice = 0m;
@@ -378,9 +378,9 @@ public class SimpleOrderPanelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = CalculatePointSize();
 		_stepPrice = Security?.StepPrice ?? 0m;

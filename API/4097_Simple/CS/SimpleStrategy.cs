@@ -75,7 +75,7 @@ public class SimpleStrategy : Strategy
 		_numOrders = Param(nameof(NumOrders), 1)
 			.SetDisplay("Number of Orders", "Maximum number of volume blocks replicated from the original EA", "Trading")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_stopLossMoney = Param(nameof(StopLossMoney), 0m)
@@ -93,13 +93,13 @@ public class SimpleStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 50)
 			.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 10);
 
 		_slowLength = Param(nameof(SlowLength), 200)
 			.SetDisplay("Slow SMA", "Length of the slow simple moving average", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 400, 20);
 
 		_enableTrading = Param(nameof(EnableTrading), false)
@@ -225,9 +225,9 @@ public class SimpleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = new WeightedMovingAverage { Length = FastLength };
 		_slowMa = new SMA { Length = SlowLength };
@@ -246,7 +246,7 @@ public class SimpleStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)

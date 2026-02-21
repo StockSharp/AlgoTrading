@@ -119,37 +119,37 @@ public class SteppedTrailingExampleStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Fast SMA length", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_slowLength = Param(nameof(SlowLength), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Slow SMA length", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 1);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_takeProfit1Percent = Param(nameof(TakeProfit1Percent), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit 1 %", "First take profit percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_takeProfit2Percent = Param(nameof(TakeProfit2Percent), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit 2 %", "Second take profit percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 20m, 1m);
 
 		_takeProfit3Percent = Param(nameof(TakeProfit3Percent), 15m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit 3 %", "Third take profit percent", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 30m, 1m);
 
 		_activateTrailingOnThirdStep = Param(nameof(ActivateTrailingOnThirdStep), false)
@@ -179,10 +179,10 @@ public class SteppedTrailingExampleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		_fast = new SMA { Length = FastLength };
 		_slow = new SMA { Length = SlowLength };

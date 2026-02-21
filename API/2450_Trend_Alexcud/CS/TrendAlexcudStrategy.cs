@@ -103,9 +103,9 @@ public class TrendAlexcudStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		InitContext(_ctx1, MaPeriod1, MaPeriod2, MaPeriod3, MaPeriod4, MaPeriod5);
 		InitContext(_ctx2, MaPeriod1, MaPeriod2, MaPeriod3, MaPeriod4, MaPeriod5);
@@ -115,7 +115,7 @@ public class TrendAlexcudStrategy : Strategy
 		Subscribe(Timeframe2, _ctx2, ProcessTf2);
 		Subscribe(Timeframe3, _ctx3, ProcessTf3);
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void Subscribe(DataType timeframe, TimeframeContext ctx, Action<ICandleMessage, IIndicatorValue, IIndicatorValue, IIndicatorValue, IIndicatorValue, IIndicatorValue, IIndicatorValue> handler)
@@ -128,13 +128,13 @@ public class TrendAlexcudStrategy : Strategy
 
 	private static void InitContext(TimeframeContext ctx, int p1, int p2, int p3, int p4, int p5)
 	{
-		ctx.Ma1 = new SimpleMovingAverage { Length = p1 };
-		ctx.Ma2 = new SimpleMovingAverage { Length = p2 };
-		ctx.Ma3 = new SimpleMovingAverage { Length = p3 };
-		ctx.Ma4 = new SimpleMovingAverage { Length = p4 };
-		ctx.Ma5 = new SimpleMovingAverage { Length = p5 };
+		ctx.Ma1 = new SMA { Length = p1 };
+		ctx.Ma2 = new SMA { Length = p2 };
+		ctx.Ma3 = new SMA { Length = p3 };
+		ctx.Ma4 = new SMA { Length = p4 };
+		ctx.Ma5 = new SMA { Length = p5 };
 		ctx.Ao = new AwesomeOscillator();
-		ctx.AoSma = new SimpleMovingAverage { Length = p1 }; // Smoothing period for AC
+		ctx.AoSma = new SMA { Length = p1 }; // Smoothing period for AC
 	}
 
 	private void ProcessTf1(ICandleMessage candle, IIndicatorValue ma1, IIndicatorValue ma2, IIndicatorValue ma3, IIndicatorValue ma4, IIndicatorValue ma5, IIndicatorValue ao, IIndicatorValue aoSma)

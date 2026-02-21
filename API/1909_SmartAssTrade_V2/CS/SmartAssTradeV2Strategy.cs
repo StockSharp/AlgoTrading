@@ -110,7 +110,7 @@ public class SmartAssTradeV2Strategy : Strategy
 				SignalLength = 9
 			};
 
-			var ma = new SimpleMovingAverage
+			var ma = new SMA
 			{
 				Length = 20
 			};

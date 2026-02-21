@@ -73,15 +73,15 @@ public class WprCustomCloudSimpleStrategy : Strategy
 		_wprPeriod = Param(nameof(WprPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Period", "Williams %R lookback length", "Williams %R")
-			.SetCanOptimize(true);
+			;
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), -20m)
 			.SetDisplay("Overbought Level", "%R level that marks overbought conditions", "Williams %R")
-			.SetCanOptimize(true);
+			;
 
 		_oversoldLevel = Param(nameof(OversoldLevel), -80m)
 			.SetDisplay("Oversold Level", "%R level that marks oversold conditions", "Williams %R")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for Williams %R", "Data");
@@ -94,9 +94,9 @@ public class WprCustomCloudSimpleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_williamsR = new WilliamsR
 		{

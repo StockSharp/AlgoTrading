@@ -73,13 +73,13 @@ public class VolumeMeanReversionStrategy : Strategy
 	{
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10)
 			.SetDisplay("Average Period", "Period for calculating Volume average and standard deviation", "Settings");
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3m, 0.5m)
 			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation", "Settings");
 
@@ -88,7 +88,7 @@ public class VolumeMeanReversionStrategy : Strategy
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m)
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management");
 	}
@@ -113,7 +113,7 @@ public class VolumeMeanReversionStrategy : Strategy
 
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		// Create Volume indicator (for visualization)
 		var volume = new VolumeIndicator();
@@ -144,7 +144,7 @@ public class VolumeMeanReversionStrategy : Strategy
 			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
 		);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

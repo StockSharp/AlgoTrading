@@ -158,15 +158,15 @@ public class EnvelopeMaShortStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
-		_envelopeMa = new ExponentialMovingAverage { Length = EnvelopePeriod };
-		_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
-		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
+		_envelopeMa = new EMA { Length = EnvelopePeriod };
+		_fastMa = new EMA { Length = FastMaPeriod };
+		_slowMa = new EMA { Length = SlowMaPeriod };
 
 		_sarYellow = new ParabolicSar
 		{

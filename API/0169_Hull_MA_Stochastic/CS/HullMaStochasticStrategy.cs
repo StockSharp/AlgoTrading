@@ -96,25 +96,25 @@ public class HullMaStochasticStrategy : Strategy
 		_hmaPeriod = Param(nameof(HmaPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("HMA Period", "Hull Moving Average period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 30, 2);
 
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Stochastic oscillator period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_stochK = Param(nameof(StochK), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "Stochastic %K period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_stochD = Param(nameof(StochD), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Stochastic %D period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -123,7 +123,7 @@ public class HullMaStochasticStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2.0m, 0.5m);
 	}
 
@@ -145,9 +145,9 @@ public class HullMaStochasticStrategy : Strategy
 	}
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	// Create indicators
 	_hma = new HullMovingAverage { Length = HmaPeriod };

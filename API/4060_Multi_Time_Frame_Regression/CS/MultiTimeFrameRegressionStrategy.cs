@@ -56,7 +56,7 @@ public MultiTimeFrameRegressionStrategy()
 		_barsToCount = Param(nameof(BarsToCount), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Bars To Count", "Regression lookback for every timeframe", "Regression")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 10);
 
 		_volume = Param(nameof(Volume), 0.01m)
@@ -106,7 +106,7 @@ public MultiTimeFrameRegressionStrategy()
 		(Security, TimeSpan.FromMinutes(30).TimeFrame()),
 		(Security, TimeSpan.FromHours(1).TimeFrame()),
 		(Security, TimeSpan.FromHours(4).TimeFrame()),
-		(Security, TimeSpan.FromDays(1).TimeFrame()),
+		(Security, TimeSpan.FromMinutes(5).TimeFrame()),
 		(Security, TimeSpan.FromDays(7).TimeFrame()),
 		(Security, TimeSpan.FromDays(30).TimeFrame())
 		];
@@ -131,9 +131,9 @@ public MultiTimeFrameRegressionStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_m1Channel = new RegressionChannelState("M1", TimeSpan.FromMinutes(1));
 		_m5Channel = new RegressionChannelState("M5", TimeSpan.FromMinutes(5));

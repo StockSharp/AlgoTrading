@@ -70,19 +70,19 @@ public class HullMaWithVolumeSpikeStrategy : Strategy
 		_hmaPeriod = Param(nameof(HmaPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("HMA Period", "Period for Hull Moving Average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Avg Period", "Period for volume moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_volumeThresholdFactor = Param(nameof(VolumeThresholdFactor), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Threshold Factor", "Factor for volume spike detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -104,13 +104,13 @@ public class HullMaWithVolumeSpikeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var hma = new HullMovingAverage { Length = HmaPeriod };
-		var volumeSma = new SimpleMovingAverage { Length = VolumeAvgPeriod };
+		var volumeSma = new SMA { Length = VolumeAvgPeriod };
 		var volumeStdDev = new StandardDeviation { Length = VolumeAvgPeriod };
 
 		// Subscribe to candles and bind indicators
@@ -120,8 +120,8 @@ public class HullMaWithVolumeSpikeStrategy : Strategy
 			.BindEx(hma, (candle, hmaValue) => 
 			{
 				// Process volume indicators
-				var volumeSmaValue = volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished);
-				var volumeStdDevValue = volumeStdDev.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished);
+				var volumeSmaValue = volumeSma.Process(new DecimalIndicatorValue(volumeSma, candle.TotalVolume, candle.ServerTime));
+				var volumeStdDevValue = volumeStdDev.Process(new DecimalIndicatorValue(volumeStdDev, candle.TotalVolume, candle.ServerTime));
 				
 				// Process the strategy logic
 				ProcessStrategy(

@@ -216,77 +216,77 @@ public class PerceptronAdaptiveStrategy : Strategy
 		_stopLossOffset = Param(nameof(StopLossOffset), 0.001m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss Offset", "Stop-loss distance in absolute price units", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0005m, 0.005m, 0.0005m);
 
 		_takeProfitOffset = Param(nameof(TakeProfitOffset), 0.0004m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit Offset", "Take-profit distance in absolute price units", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.0004m, 0.006m, 0.0004m);
 
 		_sinMax = Param(nameof(SinMax), 5)
 			.SetDisplay("Synapse Upper Bound", "Maximum value for neuron bias weights", "Neural Network")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_sinMin = Param(nameof(SinMin), 0)
 			.SetDisplay("Synapse Lower Bound", "Minimum value for neuron bias weights", "Neural Network")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(-5, 0, 1);
 
 		_sinPlus = Param(nameof(SinPlusStep), 0.03m)
 			.SetGreaterThanZero()
 			.SetDisplay("Positive Adjustment", "Increment applied when trade result is favorable", "Neural Network")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_sinMinus = Param(nameof(SinMinusStep), 0.03m)
 			.SetGreaterThanZero()
 			.SetDisplay("Negative Adjustment", "Decrement applied when trade result is unfavorable", "Neural Network")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_fastMaLength = Param(nameof(FastMaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Fast simple moving average length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Slow simple moving average length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 40, 1);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Relative Strength Index period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 30, 1);
 
 		_cciLength = Param(nameof(CciLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Length", "Commodity Channel Index period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 40, 1);
 
 		_slopeMaLength = Param(nameof(SlopeMaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Slope MA Length", "Simple moving average used for slope detection", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_aoShortLength = Param(nameof(AoShortLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("AO Short Length", "Short period for the Awesome Oscillator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_aoLongLength = Param(nameof(AoLongLength), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("AO Long Length", "Long period for the Awesome Oscillator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -309,19 +309,19 @@ public class PerceptronAdaptiveStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastMa = new SimpleMovingAverage { Length = FastMaLength };
-		_slowMa = new SimpleMovingAverage { Length = SlowMaLength };
+		_fastMa = new SMA { Length = FastMaLength };
+		_slowMa = new SMA { Length = SlowMaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_cci = new CommodityChannelIndex { Length = CciLength };
-		_slopeMa = new SimpleMovingAverage { Length = SlopeMaLength };
+		_slopeMa = new SMA { Length = SlopeMaLength };
 		_ao = new AwesomeOscillator
 		{
-			ShortPeriod = AoShortLength,
-			LongPeriod = AoLongLength,
+			ShortMa = { Length = AoShortLength },
+			LongMa = { Length = AoLongLength },
 		};
 
 		var subscription = SubscribeCandles(CandleType);

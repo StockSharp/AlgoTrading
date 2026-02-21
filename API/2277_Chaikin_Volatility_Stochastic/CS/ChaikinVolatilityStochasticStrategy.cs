@@ -40,15 +40,15 @@ public class ChaikinVolatilityStochasticStrategy : Strategy
 
 		_emaLength = Param(nameof(EmaLength), 10)
 			.SetDisplay("EMA Length", "Length for smoothing high-low range.", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_stochLength = Param(nameof(StochLength), 5)
 			.SetDisplay("Stochastic Length", "Lookback for stochastic calculation.", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_wmaLength = Param(nameof(WmaLength), 5)
 			.SetDisplay("WMA Length", "Weighted moving average period.", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_enableLongs = Param(nameof(EnableLongs), true)
 			.SetDisplay("Enable Longs", "Allow long entries.", "Trading");
@@ -65,11 +65,11 @@ public class ChaikinVolatilityStochasticStrategy : Strategy
 	public bool EnableShorts { get => _enableShorts.Value; set => _enableShorts.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_rangeEma = new ExponentialMovingAverage { Length = EmaLength };
+		_rangeEma = new EMA { Length = EmaLength };
 		_highest = new Highest { Length = StochLength };
 		_lowest = new Lowest { Length = StochLength };
 		_wma = new WeightedMovingAverage { Length = WmaLength };

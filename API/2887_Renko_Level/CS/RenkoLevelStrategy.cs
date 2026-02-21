@@ -72,7 +72,7 @@ public class RenkoLevelStrategy : Strategy
 		_blockSize = Param(nameof(BlockSize), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Block Size", "Renko block size in pips", "Renko")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 5);
 
 		_reverse = Param(nameof(Reverse), false)
@@ -92,14 +92,14 @@ public class RenkoLevelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

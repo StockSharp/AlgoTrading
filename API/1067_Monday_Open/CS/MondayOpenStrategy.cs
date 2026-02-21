@@ -58,15 +58,15 @@ public class MondayOpenStrategy : Strategy
 	{
 		_startYear = Param(nameof(StartYear), 2023)
 			.SetDisplay("Start Year", "First year to trade", "General")
-			.SetCanOptimize(true)
+			
 			.SetRange(1900, 2100);
 
 		_endYear = Param(nameof(EndYear), 2025)
 			.SetDisplay("End Year", "Last year to trade", "General")
-			.SetCanOptimize(true)
+			
 			.SetRange(1900, 2100);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -84,10 +84,10 @@ public class MondayOpenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

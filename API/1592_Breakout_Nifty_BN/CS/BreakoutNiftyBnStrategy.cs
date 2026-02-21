@@ -113,9 +113,9 @@ public class BreakoutNiftyBnStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_volumeSma = new SMA { Length = VolumeMaLength };
 		_atr = new ATR { Length = AtrLength };
@@ -123,7 +123,7 @@ public class BreakoutNiftyBnStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_atr, ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -164,7 +164,7 @@ public class BreakoutNiftyBnStrategy : Strategy
 		var afterRange = time >= _rangeEnd;
 		var targetRange = _firstRangeHigh - _firstRangeLow;
 
-		var volumeMa = _volumeSma.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+		var volumeMa = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
 		var volumeOk = candle.TotalVolume > volumeMa;
 
 		var trailOffset = atr * AtrMultiplier;

@@ -72,19 +72,19 @@ public class EmaStickerStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Period", "Length of the EMA", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 50, 5);
 
 		_takeProfit = Param(nameof(TakeProfit), 0.001m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit", "Take profit in price units", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.0005m, 0.005m, 0.0005m);
 
 		_stopLoss = Param(nameof(StopLoss), 0.001m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss", "Stop loss in price units", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.0005m, 0.005m, 0.0005m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -104,11 +104,11 @@ public class EmaStickerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 	var ema = new EMA { Length = MaPeriod };
 

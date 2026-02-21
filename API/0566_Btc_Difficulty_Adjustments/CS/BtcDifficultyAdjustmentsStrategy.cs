@@ -60,7 +60,7 @@ public class BtcDifficultyAdjustmentsStrategy : Strategy
 	/// </summary>
 	public BtcDifficultyAdjustmentsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_thresholdMode = Param(nameof(ThresholdMode), false)
@@ -68,7 +68,7 @@ public class BtcDifficultyAdjustmentsStrategy : Strategy
 
 		_threshold = Param(nameof(Threshold), 10m)
 			.SetDisplay("Threshold %", "Minimum percentage change", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 20m, 5m);
 	}
 
@@ -79,11 +79,11 @@ public class BtcDifficultyAdjustmentsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

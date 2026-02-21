@@ -77,22 +77,22 @@ public class ColorHmaStDevStrategy : Strategy
 	{
 		_hmaPeriod = Param(nameof(HmaPeriod), 13)
 			.SetDisplay("HMA Period", "Hull Moving Average period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 2);
 
 		_stdPeriod = Param(nameof(StdPeriod), 9)
 			.SetDisplay("StdDev Period", "Standard deviation period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_k1 = Param(nameof(K1), 1.5m)
 			.SetDisplay("Entry Multiplier", "Deviation multiplier for entry", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_k2 = Param(nameof(K2), 2.5m)
 			.SetDisplay("Exit Multiplier", "Deviation multiplier for exit", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -100,9 +100,9 @@ public class ColorHmaStDevStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var hma = new HullMovingAverage { Length = HmaPeriod };
 		var std = new StandardDeviation { Length = StdPeriod };

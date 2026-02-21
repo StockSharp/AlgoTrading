@@ -85,22 +85,22 @@ public class MaDeltaStrategy : Strategy
 	{
 		_delta = Param(nameof(Delta), 195)
 			.SetDisplay("Delta (pips)", "Hi-Lo threshold in pips", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 300, 5);
 
 		_multiplier = Param(nameof(Multiplier), 392)
 			.SetDisplay("Multiplier", "Amplifier for MA difference", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100, 500, 10);
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 26)
 			.SetDisplay("Fast MA Period", "Period for fast moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 51)
 			.SetDisplay("Slow MA Period", "Period for slow moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 1);
 
 
@@ -125,17 +125,17 @@ public class MaDeltaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Precalculate scaled parameters
 		_deltaStep = Delta * 0.00001m;
 		_multiplierFactor = Multiplier * 0.1m;
 
 		// Create indicators
-		var fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
-		var slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
+		var fastMa = new SMA { Length = FastMaPeriod };
+		var slowMa = new EMA { Length = SlowMaPeriod };
 
 		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);

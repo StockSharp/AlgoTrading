@@ -55,12 +55,12 @@ public class EurGbpEaStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 75)
 			.SetDisplay("Stop Loss", "Stop loss distance in points", "Protection")
 			.SetGreaterOrEqualToZero()
-			.SetCanOptimize(true);
+			;
 
 		_takeProfit = Param(nameof(TakeProfit), 46)
 			.SetDisplay("Take Profit", "Take profit distance in points", "Protection")
 			.SetGreaterOrEqualToZero()
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -140,7 +140,7 @@ public class EurGbpEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (Security == null)
 			throw new InvalidOperationException("Trading security must be specified.");
@@ -148,9 +148,9 @@ public class EurGbpEaStrategy : Strategy
 		if (EurUsdSecurity == null || GbpUsdSecurity == null)
 			throw new InvalidOperationException("Reference securities must be specified.");
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_eurMacd = CreateMacd();
 		_gbpMacd = CreateMacd();
@@ -176,8 +176,8 @@ public class EurGbpEaStrategy : Strategy
 	{
 		return new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = 12,
-			LongPeriod = 26,
+			ShortMa = { Length = 12 },
+			LongMa = { Length = 26 },
 			SignalPeriod = 9
 		};
 	}

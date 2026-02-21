@@ -83,31 +83,31 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 		_factor = Param(nameof(Factor), 0.5m)
 			.SetDisplay("Smoothing Factor", "Multiplier used for trend filtering", "General")
 			.SetRange(0.01m, 5m)
-			.SetCanOptimize(true);
+			;
 
 		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Long Candle", "Time-frame used for the long indicator", "Long")
-			.SetCanOptimize(false);
+			;
 
 		_longTotalTrigger = Param(nameof(LongTotalTrigger), 5)
 			.SetDisplay("Long Total Trigger", "Number of recent long trades to inspect", "Long")
 			.SetRange(1, 20)
-			.SetCanOptimize(true);
+			;
 
 		_longLossTrigger = Param(nameof(LongLossTrigger), 3)
 			.SetDisplay("Long Loss Trigger", "Losses required to scale long position size down", "Long")
 			.SetRange(1, 10)
-			.SetCanOptimize(true);
+			;
 
 		_longSmallMm = Param(nameof(LongSmallMm), 0.01m)
 			.SetDisplay("Long Reduced Multiplier", "Multiplier applied after repeated long losses", "Long")
 			.SetRange(0.001m, 1m)
-			.SetCanOptimize(true);
+			;
 
 		_longMm = Param(nameof(LongMm), 0.1m)
 			.SetDisplay("Long Base Multiplier", "Default long position size multiplier", "Long")
 			.SetRange(0.001m, 2m)
-			.SetCanOptimize(true);
+			;
 
 		_longEnableOpen = Param(nameof(LongEnableOpen), true)
 			.SetDisplay("Long Entries", "Enable opening long positions", "Long");
@@ -118,54 +118,54 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 		_longFast = Param(nameof(LongFastLength), 23)
 			.SetDisplay("Long Fast Length", "Fast RSX approximation period", "Long")
 			.SetRange(5, 100)
-			.SetCanOptimize(true);
+			;
 
 		_longSlow = Param(nameof(LongSlowLength), 50)
 			.SetDisplay("Long Slow Length", "Slow RSX approximation period", "Long")
 			.SetRange(5, 150)
-			.SetCanOptimize(true);
+			;
 
 		_longSmooth = Param(nameof(LongSmooth), 8)
 			.SetDisplay("Long Smoothing", "Exponential smoothing applied to RSX values", "Long")
 			.SetRange(1, 50)
-			.SetCanOptimize(true);
+			;
 
 		_longCycle = Param(nameof(LongCycleLength), 10)
 			.SetDisplay("Long Cycle", "Window used for Schaff normalization", "Long")
 			.SetRange(3, 50)
-			.SetCanOptimize(true);
+			;
 
 		_longSignalBar = Param(nameof(LongSignalBar), 1)
 			.SetDisplay("Long Signal Bar", "Shift used when evaluating long signals", "Long")
 			.SetRange(0, 5)
-			.SetCanOptimize(true);
+			;
 
 		_longPriceType = Param(nameof(LongAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Long Applied Price", "Price source for the long indicator", "Long");
 
 		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Short Candle", "Time-frame used for the short indicator", "Short")
-			.SetCanOptimize(false);
+			;
 
 		_shortTotalTrigger = Param(nameof(ShortTotalTrigger), 5)
 			.SetDisplay("Short Total Trigger", "Number of recent short trades to inspect", "Short")
 			.SetRange(1, 20)
-			.SetCanOptimize(true);
+			;
 
 		_shortLossTrigger = Param(nameof(ShortLossTrigger), 3)
 			.SetDisplay("Short Loss Trigger", "Losses required to scale short position size down", "Short")
 			.SetRange(1, 10)
-			.SetCanOptimize(true);
+			;
 
 		_shortSmallMm = Param(nameof(ShortSmallMm), 0.01m)
 			.SetDisplay("Short Reduced Multiplier", "Multiplier applied after repeated short losses", "Short")
 			.SetRange(0.001m, 1m)
-			.SetCanOptimize(true);
+			;
 
 		_shortMm = Param(nameof(ShortMm), 0.1m)
 			.SetDisplay("Short Base Multiplier", "Default short position size multiplier", "Short")
 			.SetRange(0.001m, 2m)
-			.SetCanOptimize(true);
+			;
 
 		_shortEnableOpen = Param(nameof(ShortEnableOpen), true)
 			.SetDisplay("Short Entries", "Enable opening short positions", "Short");
@@ -176,27 +176,27 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 		_shortFast = Param(nameof(ShortFastLength), 23)
 			.SetDisplay("Short Fast Length", "Fast RSX approximation period", "Short")
 			.SetRange(5, 100)
-			.SetCanOptimize(true);
+			;
 
 		_shortSlow = Param(nameof(ShortSlowLength), 50)
 			.SetDisplay("Short Slow Length", "Slow RSX approximation period", "Short")
 			.SetRange(5, 150)
-			.SetCanOptimize(true);
+			;
 
 		_shortSmooth = Param(nameof(ShortSmooth), 8)
 			.SetDisplay("Short Smoothing", "Exponential smoothing applied to RSX values", "Short")
 			.SetRange(1, 50)
-			.SetCanOptimize(true);
+			;
 
 		_shortCycle = Param(nameof(ShortCycleLength), 10)
 			.SetDisplay("Short Cycle", "Window used for Schaff normalization", "Short")
 			.SetRange(3, 50)
-			.SetCanOptimize(true);
+			;
 
 		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
 			.SetDisplay("Short Signal Bar", "Shift used when evaluating short signals", "Short")
 			.SetRange(0, 5)
-			.SetCanOptimize(true);
+			;
 
 		_shortPriceType = Param(nameof(ShortAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Short Applied Price", "Price source for the short indicator", "Short");
@@ -477,9 +477,9 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_longIndicator = new ColorSchaffJjrsxTrendCycleIndicator
 		{
@@ -725,7 +725,7 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 /// Simplified approximation of the ColorSchaffJJRSXTrendCycle oscillator.
 /// Combines RSI-style momentum with Schaff Trend Cycle normalization.
 /// </summary>
-public class ColorSchaffJjrsxTrendCycleIndicator : BaseIndicator<decimal>
+public class ColorSchaffJjrsxTrendCycleIndicator : BaseIndicator
 {
 	private readonly SimpleRsi _fastRsi = new();
 	private readonly SimpleRsi _slowRsi = new();

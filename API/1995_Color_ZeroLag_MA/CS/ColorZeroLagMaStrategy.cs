@@ -88,7 +88,7 @@ public class ColorZeroLagMaStrategy : Strategy
 	/// </summary>
 	public ColorZeroLagMaStrategy()
 	{
-		_length = Param(nameof(Length), 12).SetDisplay("Length", "Zero lag length", "Indicators").SetCanOptimize(true);
+		_length = Param(nameof(Length), 12).SetDisplay("Length", "Zero lag length", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 		_buyOpen = Param(nameof(BuyOpen), true).SetDisplay("Open Buy", "Allow opening long", "Trading");
 		_sellOpen = Param(nameof(SellOpen), true).SetDisplay("Open Sell", "Allow opening short", "Trading");
@@ -97,7 +97,7 @@ public class ColorZeroLagMaStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		_zlma = new ZeroLagExponentialMovingAverage { Length = Length };
 		
@@ -106,7 +106,7 @@ public class ColorZeroLagMaStrategy : Strategy
 		.Bind(_zlma, ProcessCandle)
 		.Start();
 		
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, decimal zlma)

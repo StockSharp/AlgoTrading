@@ -194,19 +194,19 @@ public class RubberBandsGridStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.02m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume used for every market order", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 0.2m, 0.01m);
 
 		_maxTrades = Param(nameof(MaxTrades), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum simultaneously open trades", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_gridStepPoints = Param(nameof(GridStepPoints), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Grid Step (points)", "Distance between consecutive grid entries", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 200, 10);
 
 		_quiesceMode = Param(nameof(QuiesceMode), false)
@@ -227,7 +227,7 @@ public class RubberBandsGridStrategy : Strategy
 		_sessionTakeProfitPerLot = Param(nameof(SessionTakeProfitPerLot), 1000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Session TP", "Floating profit target per one lot", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 2000m, 100m);
 
 		_useSessionStopLoss = Param(nameof(UseSessionStopLoss), false)
@@ -236,7 +236,7 @@ public class RubberBandsGridStrategy : Strategy
 		_sessionStopLossPerLot = Param(nameof(SessionStopLossPerLot), 300m)
 			.SetGreaterThanZero()
 			.SetDisplay("Session SL", "Floating loss threshold per one lot", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 1000m, 50m);
 
 		_useInitialValues = Param(nameof(UseInitialValues), false)
@@ -281,9 +281,9 @@ public class RubberBandsGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 

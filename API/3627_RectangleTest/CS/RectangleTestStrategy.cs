@@ -225,14 +225,14 @@ public class RectangleTestStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
-		_sma = new SimpleMovingAverage { Length = SmaPeriod };
-		_highest = new Highest { Length = RangeCandles, CandlePrice = CandlePrice.High };
-		_lowest = new Lowest { Length = RangeCandles, CandlePrice = CandlePrice.Low };
+		_ema = new EMA { Length = EmaPeriod };
+		_sma = new SMA { Length = SmaPeriod };
+		_highest = new Highest { Length = RangeCandles };
+		_lowest = new Lowest { Length = RangeCandles };
 
 		Volume = FixedVolume;
 
@@ -395,7 +395,7 @@ public class RectangleTestStrategy : Strategy
 
 	private bool IsWithinTradingTime(DateTimeOffset time)
 	{
-		var localTime = time.LocalDateTime.TimeOfDay;
+		var localTime = time.TimeOfDay;
 		var start = TradeStartTime;
 		var end = TradeEndTime;
 
@@ -407,7 +407,7 @@ public class RectangleTestStrategy : Strategy
 
 	private bool IsLiquidationTime(DateTimeOffset time)
 	{
-		var localTime = time.LocalDateTime.TimeOfDay;
+		var localTime = time.TimeOfDay;
 		return localTime >= TimeClose;
 	}
 

@@ -56,12 +56,12 @@ public class TwoMaBunnyCrossStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Length of fast moving average", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_slowLength = Param(nameof(SlowLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Length of slow moving average", "Parameters")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -80,12 +80,12 @@ public class TwoMaBunnyCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastSma = new SimpleMovingAverage { Length = FastLength };
-		_slowSma = new SimpleMovingAverage { Length = SlowLength };
+		_fastSma = new SMA { Length = FastLength };
+		_slowSma = new SMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -101,7 +101,7 @@ public class TwoMaBunnyCrossStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)

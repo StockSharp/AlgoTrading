@@ -112,13 +112,13 @@ public class BitexOneMarketMakerStrategy : Strategy
 		_maxVolumePerLevel = Param(nameof(MaxVolumePerLevel), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume per Level", "Maximum volume that can be quoted at a single price level.", "Orders")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 5m, 0.5m);
 
 		_shiftCoefficient = Param(nameof(ShiftCoefficient), 0.001m)
 		.SetGreaterThanZero()
 		.SetDisplay("Shift Coefficient", "Relative displacement from the lead price applied to each level.", "Orders")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.0005m, 0.005m, 0.0005m);
 
 		_levelCount = Param(nameof(LevelCount), 1)
@@ -174,9 +174,9 @@ public class BitexOneMarketMakerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 		throw new InvalidOperationException("Strategy security is not specified.");

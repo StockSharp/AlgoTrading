@@ -72,7 +72,7 @@ public TcpPivotStopStrategy()
 {
 _targetLevel = Param(nameof(TargetLevel), 3)
 .SetDisplay("Target Level", "Pivot level used for take profit and stop loss (1-3)", "General")
-.SetCanOptimize(true)
+
 .SetOptimize(1, 3, 1);
 
 _intradayOnly = Param(nameof(IntradayOnly), false)
@@ -85,7 +85,7 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 /// <inheritdoc />
 public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 {
-return [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
+return [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
 }
 
 /// <inheritdoc />
@@ -100,13 +100,13 @@ _stopPrice = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
-StartProtection();
+StartProtection(null, null);
 
-var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 
 dailySubscription
 .Bind(candle =>

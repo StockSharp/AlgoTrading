@@ -178,19 +178,19 @@ public class VarMovAvgStrategy : Strategy
 		_amaPeriod = Param(nameof(AmaPeriod), 52)
 			.SetGreaterThanZero()
 			.SetDisplay("VMA Length", "Adaptive moving average period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 120, 10);
 
 		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast smoothing period for VMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 15, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow smoothing period for VMA", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15, 60, 5);
 
 		_smoothingPower = Param(nameof(SmoothingPower), 1m)
@@ -250,11 +250,11 @@ public class VarMovAvgStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_vma = new VariableMovingAverage
 		{
@@ -292,9 +292,9 @@ public class VarMovAvgStrategy : Strategy
 			return;
 
 		var time = candle.CloseTime;
-		var vmaValue = _vma.Process(candle.ClosePrice, time, true).GetValue<decimal>();
-		var lowMaRaw = _stopLowMa.Process(candle.LowPrice, time, true).GetValue<decimal>();
-		var highMaRaw = _stopHighMa.Process(candle.HighPrice, time, true).GetValue<decimal>();
+		var vmaValue = _vma.Process(new DecimalIndicatorValue(_vma, candle.ClosePrice, time)).GetValue<decimal>();
+		var lowMaRaw = _stopLowMa.Process(new DecimalIndicatorValue(_stopLowMa, candle.LowPrice, time)).GetValue<decimal>();
+		var highMaRaw = _stopHighMa.Process(new DecimalIndicatorValue(_stopHighMa, candle.HighPrice, time)).GetValue<decimal>();
 
 		var lowMa = GetShiftedValue(_lowMaValues, lowMaRaw, StopMaShift);
 		var highMa = GetShiftedValue(_highMaValues, highMaRaw, StopMaShift);
@@ -403,10 +403,10 @@ public class VarMovAvgStrategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length }
+			_ => new EMA { Length = length }
 		};
 	}
 
@@ -546,7 +546,7 @@ public class VarMovAvgStrategy : Strategy
 		}
 	}
 
-	private sealed class VariableMovingAverage : LengthIndicator<decimal>
+	private sealed class VariableMovingAverage : DecimalLengthIndicator
 	{
 		private readonly Queue<decimal> _closes = new();
 		private decimal? _previousAma;

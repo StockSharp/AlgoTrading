@@ -47,7 +47,7 @@ public class DualStoplossStrategy : Strategy
 	{
 		_whenToClosePoints = Param(nameof(WhenToClosePoints), 10m)
 			.SetDisplay("Close distance (points)", "Distance from stop loss to trigger early exit (MetaTrader points).", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetMinValue(0m);
 	}
 
@@ -69,11 +69,11 @@ public class DualStoplossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_pointValue = CalculatePointValue();
 

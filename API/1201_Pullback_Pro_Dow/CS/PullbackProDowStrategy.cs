@@ -101,19 +101,19 @@ public class PullbackProDowStrategy : Strategy
 		_pivotLookback = Param(nameof(PivotLookback), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Pivot Lookback", "Bars on each side for pivot detection", "Dow Theory")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 5);
 		
 		_emaLength = Param(nameof(EmaLength), 21)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Length", "Pullback EMA length", "Entry")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 		
 		_riskReward1 = Param(nameof(RiskReward1), 1.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("TP1 R:R", "Risk-reward for first target", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 2m, 0.25m);
 		
 		_tp1Percent = Param(nameof(Tp1Percent), 50)
@@ -123,7 +123,7 @@ public class PullbackProDowStrategy : Strategy
 		_riskReward2 = Param(nameof(RiskReward2), 3m)
 		.SetGreaterThanZero()
 		.SetDisplay("TP2 R:R", "Risk-reward for second target", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2m, 4m, 0.5m);
 		
 		_useAdxFilter = Param(nameof(UseAdxFilter), true)
@@ -165,9 +165,9 @@ public class PullbackProDowStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var size = PivotLookback * 2 + 1;
 		_highBuffer = new decimal[size];
@@ -175,7 +175,7 @@ public class PullbackProDowStrategy : Strategy
 		_bufferIndex = 0;
 		_bufferCount = 0;
 		
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new EMA { Length = EmaLength };
 		var adx = new AverageDirectionalIndex { Length = AdxLength };
 		
 		var subscription = SubscribeCandles(CandleType);
@@ -191,7 +191,7 @@ public class PullbackProDowStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue adxValue)

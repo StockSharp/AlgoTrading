@@ -43,13 +43,13 @@ public class SmartMaCrossoverBacktesterStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA Length", "Period of the fast moving average", "MA Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 		
 		_slowLength = Param(nameof(SlowLength), 21)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA Length", "Period of the slow moving average", "MA Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 60, 1);
 		
 		_trendLength = Param(nameof(TrendLength), 200)
@@ -63,7 +63,7 @@ public class SmartMaCrossoverBacktesterStrategy : Strategy
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Multiplier", "Multiplier for ATR based stop", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 4m, 0.5m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -83,9 +83,9 @@ public class SmartMaCrossoverBacktesterStrategy : Strategy
 		_stop = null;
 		_target = null;
 	}
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var fastMa = new SMA { Length = FastLength };
 		var slowMa = new SMA { Length = SlowLength };

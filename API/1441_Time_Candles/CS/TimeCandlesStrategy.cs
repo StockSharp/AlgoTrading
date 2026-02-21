@@ -64,12 +64,12 @@ public class TimeCandlesStrategy : Strategy
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_smaLength = Param(nameof(SmaLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Average period", "Parameters")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -88,12 +88,12 @@ public class TimeCandlesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_sma = new SimpleMovingAverage { Length = SmaLength };
+		_sma = new SMA { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_rsi, _sma, ProcessCandle).Start();

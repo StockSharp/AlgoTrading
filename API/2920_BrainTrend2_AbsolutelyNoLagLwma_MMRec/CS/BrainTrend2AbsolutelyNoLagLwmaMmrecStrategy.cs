@@ -148,10 +148,10 @@ public class BrainTrend2AbsolutelyNoLagLwmaMmrecStrategy : Strategy
 		_brainAtrPeriod = Param(nameof(BrainAtrPeriod), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("Brain ATR", "ATR length for BrainTrend2", "BrainTrend2")
-		.SetCanOptimize(true);
+		;
 		_brainSignalBar = Param(nameof(BrainSignalBar), 1)
 		.SetDisplay("Brain Signal Shift", "Bars to delay BrainTrend2 signal", "BrainTrend2")
-		.SetCanOptimize(true);
+		;
 		_brainBuyOpen = Param(nameof(BrainEnableBuyOpen), true)
 		.SetDisplay("Brain Buy", "Enable BrainTrend2 buy entries", "BrainTrend2");
 		_brainSellOpen = Param(nameof(BrainEnableSellOpen), true)
@@ -174,12 +174,12 @@ public class BrainTrend2AbsolutelyNoLagLwmaMmrecStrategy : Strategy
 		_absLength = Param(nameof(AbsLength), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("Abs Length", "LWMA length", "AbsolutelyNoLag")
-		.SetCanOptimize(true);
+		;
 		_absPriceMode = Param(nameof(AbsPriceMode), AppliedPrices.Close)
 		.SetDisplay("Abs Price", "Price source", "AbsolutelyNoLag");
 		_absSignalBar = Param(nameof(AbsSignalBar), 1)
 		.SetDisplay("Abs Signal Shift", "Bars to delay AbsolutelyNoLagLWMA signal", "AbsolutelyNoLag")
-		.SetCanOptimize(true);
+		;
 		_absBuyOpen = Param(nameof(AbsEnableBuyOpen), true)
 		.SetDisplay("Abs Buy", "Enable AbsolutelyNoLagLWMA buy entries", "AbsolutelyNoLag");
 		_absSellOpen = Param(nameof(AbsEnableSellOpen), true)
@@ -217,9 +217,9 @@ public class BrainTrend2AbsolutelyNoLagLwmaMmrecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 

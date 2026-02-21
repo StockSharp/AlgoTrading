@@ -180,17 +180,17 @@ public Sides? Direction
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		var ma = MaType switch
 		{
-			MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = MaLength },
+			MovingAverageTypes.EMA => new EMA { Length = MaLength },
 			MovingAverageTypes.WMA => new WeightedMovingAverage { Length = MaLength },
 			MovingAverageTypes.VWMA => new VolumeWeightedMovingAverage { Length = MaLength },
-			_ => new SimpleMovingAverage { Length = MaLength }
+			_ => new SMA { Length = MaLength }
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -212,7 +212,7 @@ public Sides? Direction
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var nyTime = TimeZoneInfo.ConvertTime(candle.OpenTime.UtcDateTime, _nyTimeZone);
+		var nyTime = TimeZoneInfo.ConvertTime(candle.OpenTime, _nyTimeZone);
 
 		if (_currentDay != nyTime.Date)
 		{
@@ -235,7 +235,7 @@ public Sides? Direction
 		}
 
 		var pastCutoffCurrent = PastCutoff(nyTime);
-		var pastCutoffPrev = _prevCandle is not null && PastCutoff(TimeZoneInfo.ConvertTime(_prevCandle.OpenTime.UtcDateTime, _nyTimeZone));
+		var pastCutoffPrev = _prevCandle is not null && PastCutoff(TimeZoneInfo.ConvertTime(_prevCandle.OpenTime, _nyTimeZone));
 	 var prevLongBreakout = false;
 	var prevShortBreakout = false;
 	var allowLong = Direction is null || Direction == Sides.Buy;

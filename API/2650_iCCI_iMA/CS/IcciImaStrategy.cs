@@ -52,19 +52,19 @@ public class IcciImaStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI Period", "Length of the main CCI indicator", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 100, 1);
 
 		_cciClosePeriod = Param(nameof(CciClosePeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI Close Period", "Length of the CCI used for overbought and oversold exits", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 100, 1);
 
 		_maPeriod = Param(nameof(MaPeriod), 15)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI EMA Period", "Length of the EMA applied to the CCI values", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 100, 1);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
@@ -83,7 +83,7 @@ public class IcciImaStrategy : Strategy
 		_lotSize = Param(nameof(LotSize), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Lot Size", "Base trading volume in lots", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 1m, 0.01m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -185,25 +185,23 @@ public class IcciImaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 
 		_cci = new CommodityChannelIndex
 		{
-			Length = CciPeriod,
-			CandlePrice = CandlePrice.Typical,
+			Length = CciPeriod
 		};
 
 		_cciClose = new CommodityChannelIndex
 		{
-			Length = CciClosePeriod,
-			CandlePrice = CandlePrice.Typical,
+			Length = CciClosePeriod
 		};
 
-		_cciMa = new ExponentialMovingAverage
+		_cciMa = new EMA
 		{
 			Length = MaPeriod,
 		};
@@ -215,7 +213,7 @@ public class IcciImaStrategy : Strategy
 		.Bind(_cci, _cciClose, ProcessCandle)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal cciValue, decimal cciCloseValue)
@@ -223,7 +221,7 @@ public class IcciImaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var maValue = _cciMa.Process(cciValue, candle.OpenTime, true).ToDecimal();
+		var maValue = _cciMa.Process(new DecimalIndicatorValue(_cciMa, cciValue, candle.OpenTime)).ToDecimal();
 
 		if (!_cci.IsFormed || !_cciClose.IsFormed || !_cciMa.IsFormed)
 		{

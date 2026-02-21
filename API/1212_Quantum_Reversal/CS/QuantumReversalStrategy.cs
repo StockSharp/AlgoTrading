@@ -55,10 +55,10 @@ public class QuantumReversalStrategy : Strategy
 	
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 	
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		_sma = new SimpleMovingAverage { Length = RsiSmoothLength };
+		base.OnStarted2(time);
+		_sma = new SMA { Length = RsiSmoothLength };
 		var bb = new BollingerBands { Length = BollingerLength, Width = BollingerMultiplier };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var sub = SubscribeCandles(CandleType);
@@ -77,7 +77,7 @@ public class QuantumReversalStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished || !IsFormedAndOnlineAndAllowTrading())
 		return;
-		var rsiSmooth = _sma.Process(rsi, candle.ServerTime, true).ToDecimal();
+		var rsiSmooth = _sma.Process(new DecimalIndicatorValue(_sma, rsi, candle.ServerTime)).ToDecimal();
 		if ((candle.ClosePrice <= lower || rsiSmooth < RsiOversold) && Position <= 0)
 		{
 			BuyMarket();

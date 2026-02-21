@@ -35,19 +35,19 @@ public class KeltnerChannelBasedGridStrategy : Strategy
 		_length = Param(nameof(Length), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Length", "MA and ATR period", "Keltner")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 5);
 
 		_gridCoefficient = Param(nameof(GridCoefficient), 1.33m)
 		.SetGreaterThanZero()
 		.SetDisplay("Grid coeff", "Multiplier for channel width", "Keltner")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 2m, 0.1m);
 
 		_numGrids = Param(nameof(NumGrids), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Grids", "Number of grid levels", "Strategy")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_useExponential = Param(nameof(UseExponential), true)
@@ -64,11 +64,11 @@ public class KeltnerChannelBasedGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		IIndicator ma = UseExponential ? new ExponentialMovingAverage { Length = Length } : new SimpleMovingAverage { Length = Length };
+		IIndicator ma = UseExponential ? new EMA { Length = Length } : new SMA { Length = Length };
 		var atr = new AverageTrueRange { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);

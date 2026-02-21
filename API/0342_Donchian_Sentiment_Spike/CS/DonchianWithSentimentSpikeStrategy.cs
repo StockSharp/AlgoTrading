@@ -94,25 +94,25 @@ public class DonchianWithSentimentSpikeStrategy : Strategy
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Donchian Period", "Donchian channel period", "Donchian Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 		_sentimentPeriod = Param(nameof(SentimentPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Sentiment Period", "Sentiment averaging period", "Sentiment Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 		_sentimentMultiplier = Param(nameof(SentimentMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Sentiment StdDev Multiplier", "Multiplier for sentiment standard deviation", "Sentiment Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 
 		_stopLoss = Param(nameof(StopLoss), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (%)", "Stop Loss percentage from entry price", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -135,9 +135,9 @@ public class DonchianWithSentimentSpikeStrategy : Strategy
 		_sentimentHistory.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Donchian Channel indicator
 		var donchian = new DonchianChannels { Length = DonchianPeriod };

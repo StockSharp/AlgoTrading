@@ -105,37 +105,37 @@ public class AdxExpertStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade volume", "Order volume used for entries", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX period", "Smoothing length for the ADX indicator", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 28, 7);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX threshold", "Upper ADX limit that allows trades", "Signals")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(15m, 35m, 5m);
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 20m)
 			.SetNotNegative()
 			.SetDisplay("Max spread (points)", "Maximum allowed bid-ask spread in points", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 40m, 5m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 200m)
 			.SetNotNegative()
 			.SetDisplay("Stop loss (points)", "Protective stop distance in price points", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(100m, 400m, 50m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400m)
 			.SetNotNegative()
 			.SetDisplay("Take profit (points)", "Target distance in price points", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(200m, 600m, 100m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -161,9 +161,9 @@ public class AdxExpertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize ADX indicator with the selected period.
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };

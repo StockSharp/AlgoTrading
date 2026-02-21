@@ -103,49 +103,49 @@ namespace StockSharp.Samples.Strategies;
 	_maTrendPeriod = Param(nameof(MaTrendPeriod), 26)
 	.SetGreaterThanZero()
 	.SetDisplay("EMA Period", "EMA trend filter period", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(10, 50, 5);
 	
 	_macdOpenLevel = Param(nameof(MacdOpenLevel), 3m)
 	.SetGreaterThanZero()
 	.SetDisplay("MACD Open", "MACD distance from zero for entry", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(1m, 5m, 0.5m);
 	
 	_macdCloseLevel = Param(nameof(MacdCloseLevel), 2m)
 	.SetGreaterThanZero()
 	.SetDisplay("MACD Close", "MACD distance from zero for exit", "Indicators")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(1m, 4m, 0.5m);
 	
 	_takeProfitLong = Param(nameof(TakeProfitLong), 50m)
 	.SetGreaterThanZero()
 	.SetDisplay("Long Take Profit", "Take profit distance for longs", "Risk")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(20m, 100m, 10m);
 	
 	_takeProfitShort = Param(nameof(TakeProfitShort), 75m)
 	.SetGreaterThanZero()
 	.SetDisplay("Short Take Profit", "Take profit distance for shorts", "Risk")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(20m, 100m, 10m);
 	
 	_stopLossLong = Param(nameof(StopLossLong), 80m)
 	.SetGreaterThanZero()
 	.SetDisplay("Long Stop Loss", "Stop loss distance for longs", "Risk")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(20m, 100m, 10m);
 	
 	_stopLossShort = Param(nameof(StopLossShort), 50m)
 	.SetGreaterThanZero()
 	.SetDisplay("Short Stop Loss", "Stop loss distance for shorts", "Risk")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(20m, 100m, 10m);
 	
 	_trailingStop = Param(nameof(TrailingStop), 30m)
 	.SetGreaterThanZero()
 	.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk")
-	.SetCanOptimize(true)
+	
 	.SetOptimize(10m, 60m, 10m);
 	
 	_startHour = Param(nameof(StartHour), 4)
@@ -173,9 +173,9 @@ namespace StockSharp.Samples.Strategies;
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 	
 	var macd = new MovingAverageConvergenceDivergenceSignal();
 	var ema = new EMA { Length = MaTrendPeriod };
@@ -209,7 +209,7 @@ namespace StockSharp.Samples.Strategies;
 	var signal = macdTyped.Signal;
 	var ema = emaValue.GetValue<decimal>();
 	
-	var hour = candle.OpenTime.UtcDateTime.Hour;
+	var hour = candle.OpenTime.Hour;
 	var inHours = hour >= StartHour && hour <= EndHour;
 	
 	if (!inHours)

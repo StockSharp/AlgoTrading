@@ -210,9 +210,9 @@ public class CycleMarketOrderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
 		_pipSize = CalculatePipSize();
@@ -519,7 +519,7 @@ public class CycleMarketOrderStrategy : Strategy
 
 	private bool IsWeekendRestricted(DateTimeOffset time)
 	{
-		var local = time.LocalDateTime;
+		var local = time;
 		return local.DayOfWeek switch
 		{
 			DayOfWeek.Saturday when local.Hour >= WeekendHour => true,

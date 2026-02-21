@@ -156,32 +156,32 @@ public class TrailingActivateCloseAllStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 150m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Distance to stop-loss in MetaTrader points.", "Protection")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 460m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Distance to take-profit in MetaTrader points.", "Protection")
-		.SetCanOptimize(true);
+		;
 
 		_trailingActivatePoints = Param(nameof(TrailingActivatePoints), 70m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Activate (points)", "Profit in points required before trailing begins.", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 250m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop (points)", "Trailing stop distance in points.", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 50m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Step (points)", "Minimum improvement in points before moving the stop again.", "Trailing")
-		.SetCanOptimize(true);
+		;
 
 		_targetProfit = Param(nameof(TargetProfit), 5m)
 		.SetNotNegative()
 		.SetDisplay("Target Profit", "Profit level that closes all positions.", "Targets")
-		.SetCanOptimize(true);
+		;
 
 		_freezeCoefficient = Param(nameof(FreezeCoefficient), 1m)
 		.SetNotNegative()
@@ -220,9 +220,9 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Security == null)
 		{

@@ -33,11 +33,11 @@ public class XdpoHistogramStrategy : Strategy
 	{
 	    _firstMaLength = Param(nameof(FirstMaLength), 12)
 	        .SetDisplay("First MA Length", "Length of the initial moving average.", "Indicators")
-	        .SetCanOptimize(true);
+	        ;
 
 	    _secondMaLength = Param(nameof(SecondMaLength), 5)
 	        .SetDisplay("Second MA Length", "Length of the moving average applied to the difference.", "Indicators")
-	        .SetCanOptimize(true);
+	        ;
 
 	    _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 	        .SetDisplay("Candle Type", "Type of candles for strategy calculations.", "General");
@@ -78,9 +78,9 @@ public class XdpoHistogramStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 
 	    _ma1.Length = FirstMaLength;
 	    _ma2.Length = SecondMaLength;

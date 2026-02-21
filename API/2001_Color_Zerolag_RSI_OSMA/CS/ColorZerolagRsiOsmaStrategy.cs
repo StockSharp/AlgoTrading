@@ -125,10 +125,10 @@ public class ColorZerolagRsiOsmaStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
 		_smoothConst1 = (Smoothing1 - 1m) / Smoothing1;
 		_smoothConst2 = (Smoothing2 - 1m) / Smoothing2;

@@ -41,9 +41,9 @@ public class InstantaneousTrendFilterStrategy : Strategy
 	public decimal Alpha { get => _alpha.Value; set => _alpha.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var a2 = Alpha * Alpha;
 		_k0 = Alpha - a2 / 4m;

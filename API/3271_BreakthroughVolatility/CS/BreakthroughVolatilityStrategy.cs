@@ -150,19 +150,19 @@ public class BreakthroughVolatilityStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Base trade volume", "Orders")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 1m, 0.05m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 5);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 25)
@@ -214,9 +214,9 @@ public class BreakthroughVolatilityStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

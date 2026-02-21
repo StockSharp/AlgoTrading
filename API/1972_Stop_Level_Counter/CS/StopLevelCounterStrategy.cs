@@ -47,9 +47,9 @@ public class StopLevelCounterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize level with current bid if not set.
 		if (Level == 0m && Security.BestBid != null)

@@ -42,38 +42,38 @@ public class KarakaticaStrategy : Strategy
 	public KarakaticaStrategy()
 	{
 		_risk = Param(nameof(Risk), 0.5m)
-		.SetCanOptimize(true)
-		.SetDisplay("Risk percent (per 1000 balance units)");
+		
+		.SetDisplay("Risk percent (per 1000 balance units)", "Risk percent (per 1000 balance units)", "General");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50)
-		.SetCanOptimize(true)
-		.SetDisplay("Stop-loss in points");
+		
+		.SetDisplay("Stop-loss in points", "Stop-loss in points", "General");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150)
-		.SetCanOptimize(true)
-		.SetDisplay("Take-profit in points");
+		
+		.SetDisplay("Take-profit in points", "Take-profit in points", "General");
 
 		_period = Param(nameof(Period), 70)
-		.SetCanOptimize(true)
-		.SetDisplay("Signal period");
+		
+		.SetDisplay("Signal period", "Signal period", "General");
 
 		_optimizationDepth = Param(nameof(OptimizationDepth), 250)
-		.SetDisplay("Bars used for optimization");
+		.SetDisplay("Bars used for optimization", "Bars used for optimization", "General");
 
 		_reoptimizeEvery = Param(nameof(ReoptimizeEvery), 50)
-		.SetDisplay("Recalculate parameters every N bars");
+		.SetDisplay("Recalculate parameters every N bars", "Recalculate parameters every N bars", "General");
 
 		_optimizationStart = Param(nameof(OptimizationStart), 10)
-		.SetDisplay("Optimization start period");
+		.SetDisplay("Optimization start period", "Optimization start period", "General");
 
 		_optimizationStep = Param(nameof(OptimizationStep), 5)
-		.SetDisplay("Optimization step");
+		.SetDisplay("Optimization step", "Optimization step", "General");
 
 		_optimizationEnd = Param(nameof(OptimizationEnd), 150)
-		.SetDisplay("Optimization end period");
+		.SetDisplay("Optimization end period", "Optimization end period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Primary candle type");
+		.SetDisplay("Primary candle type", "Primary candle type", "General");
 	}
 
 	public decimal Risk
@@ -137,9 +137,9 @@ public class KarakaticaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var priceStep = GetPriceStep();
 
@@ -305,14 +305,14 @@ public class KarakaticaStrategy : Strategy
 
 			if (orderType == 1 && sellSignal)
 			{
-				var result = candle.Open - entryPrice - spread;
+				var result = candle.OpenPrice - entryPrice - spread;
 				buyProfit += result;
 				profit += result;
 				orderType = 0;
 			}
 			else if (orderType == 2 && buySignal)
 			{
-				var result = entryPrice - candle.Open - spread;
+				var result = entryPrice - candle.OpenPrice - spread;
 				sellProfit += result;
 				profit += result;
 				orderType = 0;
@@ -324,12 +324,12 @@ public class KarakaticaStrategy : Strategy
 			if (buySignal)
 			{
 				orderType = 1;
-				entryPrice = candle.Open;
+				entryPrice = candle.OpenPrice;
 			}
 			else if (sellSignal)
 			{
 				orderType = 2;
-				entryPrice = candle.Open;
+				entryPrice = candle.OpenPrice;
 			}
 		}
 

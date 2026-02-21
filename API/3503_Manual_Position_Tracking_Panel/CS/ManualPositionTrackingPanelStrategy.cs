@@ -54,7 +54,7 @@ public class ManualPositionTrackingPanelStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 460)
 			.SetNotNegative()
 			.SetDisplay("Take profit distance (pips)", "MetaTrader pips added to the entry price when creating a take-profit.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_enableTakeProfitFromOpen = Param(nameof(EnableTakeProfitFromOpen), true)
 			.SetDisplay("Enable entry-based take profit", "Automatically register a take-profit order at entry price ± distance.", "Automation");
@@ -65,7 +65,7 @@ public class ManualPositionTrackingPanelStrategy : Strategy
 		_breakEvenActivationPoints = Param(nameof(BreakEvenActivationPoints), 0)
 			.SetNotNegative()
 			.SetDisplay("Break-even trigger (pips)", "Minimum favorable distance in MetaTrader pips before moving to break-even.", "Automation")
-			.SetCanOptimize(true);
+			;
 
 		_manageBuyPositions = Param(nameof(ManageBuyPositions), true)
 			.SetDisplay("Manage long positions", "Apply the management rules to buy positions.", "Filters");
@@ -202,9 +202,9 @@ public class ManualPositionTrackingPanelStrategy : Strategy
 	=> [(Security, DataType.Level1)];
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = CalculatePointValue();
 		_priceStep = GetPriceStep();

@@ -37,7 +37,7 @@ public class RapidDojiStrategy : Strategy
 
 	public RapidDojiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Entry Candle", "Timeframe used for identifying doji candles.", "General");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
@@ -112,9 +112,9 @@ public class RapidDojiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange
 		{

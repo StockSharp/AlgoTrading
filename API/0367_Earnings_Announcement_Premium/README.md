@@ -11,7 +11,7 @@ The **Earnings Announcement Premium** strategy buys stocks a few days before ear
 - **Default Values**:
   - `DaysBefore = 5`
   - `DaysAfter = 1`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Event-driven
   - Direction: Long

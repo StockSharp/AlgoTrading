@@ -267,11 +267,11 @@ public class NovaFuturesProSafeV6Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 		_adx = new AverageDirectionalIndex { Length = DmiLength };
 		_di = new DirectionalIndex { Length = DmiLength };
 		_bb = new BollingerBands { Length = BbLength, Width = BbMultiplier };
@@ -286,7 +286,7 @@ public class NovaFuturesProSafeV6Strategy : Strategy
 
 		if (UseHtf)
 		{
-			_htfEma = new ExponentialMovingAverage { Length = HtfEmaLength };
+			_htfEma = new EMA { Length = HtfEmaLength };
 			_htfAdx = new AverageDirectionalIndex { Length = DmiLength };
 
 			var htfSub = SubscribeCandles(HtfCandleType);

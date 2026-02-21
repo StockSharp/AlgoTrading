@@ -269,13 +269,13 @@ public class UniversalMaCrossStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Period", "Fast moving average length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 80)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Period", "Slow moving average length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 200, 5);
 
 		_fastMaType = Param(nameof(FastMaType), MovingAverageMethods.Exponential)
@@ -357,9 +357,9 @@ public class UniversalMaCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = CreateMovingAverage(FastMaType, FastMaPeriod);
 		_slowMa = CreateMovingAverage(SlowMaType, SlowMaPeriod);
@@ -378,7 +378,7 @@ public class UniversalMaCrossStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -394,8 +394,8 @@ public class UniversalMaCrossStrategy : Strategy
 		var fastPrice = GetPrice(candle, FastPriceType);
 		var slowPrice = GetPrice(candle, SlowPriceType);
 
-		var fastValue = _fastMa.Process(fastPrice, candle.OpenTime, true).ToDecimal();
-		var slowValue = _slowMa.Process(slowPrice, candle.OpenTime, true).ToDecimal();
+		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, fastPrice, candle.OpenTime)).ToDecimal();
+		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, slowPrice, candle.OpenTime)).ToDecimal();
 
 		var prevFast = _fastPrev;
 		var prevSlow = _slowPrev;
@@ -586,11 +586,11 @@ public class UniversalMaCrossStrategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 

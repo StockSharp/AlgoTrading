@@ -77,31 +77,31 @@ public class DivergenceForManyIndicatorsStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Period for RSI", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 1);
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast period for MACD", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(8, 16, 1);
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow period for MACD", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 34, 1);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal period for MACD", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_minDivergence = Param(nameof(MinDivergence), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Divergence", "Minimum indicators confirming divergence", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 2, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -110,7 +110,7 @@ public class DivergenceForManyIndicatorsStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop-loss percentage", "Protection")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 	}
 
@@ -122,9 +122,12 @@ public class DivergenceForManyIndicatorsStrategy : Strategy
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
-			SignalPeriod = MacdSignalPeriod
+			Macd =
+			{
+				ShortMa = { Length = MacdFastPeriod },
+				LongMa = { Length = MacdSlowPeriod },
+			},
+			SignalMa = { Length = MacdSignalPeriod }
 		};
 
 		var subscription = SubscribeCandles(CandleType);

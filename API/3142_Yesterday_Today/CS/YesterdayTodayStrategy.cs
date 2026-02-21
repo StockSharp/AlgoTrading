@@ -75,17 +75,17 @@ public class YesterdayTodayStrategy : Strategy
 	{
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetDisplay("Trade Volume", "Volume used for new market orders", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 150m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -95,7 +95,7 @@ public class YesterdayTodayStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, SignalCandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
+		return [(Security, SignalCandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
 	}
 
 	/// <inheritdoc />
@@ -113,21 +113,21 @@ public class YesterdayTodayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 
 		// Enable account protection (for example margin call prevention).
-		StartProtection();
+		StartProtection(null, null);
 
 		var signalSubscription = SubscribeCandles(SignalCandleType);
 		signalSubscription
 			.Bind(ProcessSignalCandle)
 			.Start();
 
-		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		dailySubscription
 			.Bind(ProcessDailyCandle)
 			.Start();

@@ -77,10 +77,10 @@ public class HelloSmartStrategy : Strategy
 			.SetDisplay("Maximum Lot", "Maximum allowed volume per order", "Volume");
 		_profitTarget = Param(nameof(ProfitTarget), 60m)
 			.SetDisplay("Profit Target", "Close all positions on this profit", "Risk")
-			.SetCanOptimize(true);
+			;
 		_lossLimit = Param(nameof(LossLimit), 5100m)
 			.SetDisplay("Loss Limit", "Close all positions on this loss", "Risk")
-			.SetCanOptimize(true);
+			;
 		_multiplier = Param(nameof(Multiplier), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Multiplier", "Factor applied when total volume reaches threshold", "Volume");
@@ -95,9 +95,9 @@ public class HelloSmartStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_currentLot = Lot;
 		_lastPrice = 0m;

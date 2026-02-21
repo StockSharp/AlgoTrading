@@ -107,12 +107,12 @@ public class ColorZerolagRviStrategy : Strategy
 		_rviLength = Param(nameof(RviLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Length", "Length for RVI calculation", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_signalLength = Param(nameof(SignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "Length for RVI signal line", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_buyOpen = Param(nameof(BuyOpen), true)
 			.SetDisplay("Buy Open", "Allow opening long positions", "Trading");
@@ -144,17 +144,17 @@ public class ColorZerolagRviStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rvi = new RelativeVigorIndex { Length = RviLength };
-		_signal = new SimpleMovingAverage { Length = SignalLength };
+		_signal = new SMA { Length = SignalLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

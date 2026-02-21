@@ -99,37 +99,37 @@ public class IchimokuStochasticStrategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Tenkan-sen Period", "Period for Tenkan-sen line", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 12, 1);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Kijun-sen Period", "Period for Kijun-sen line", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 30, 2);
 
 		_senkouPeriod = Param(nameof(SenkouPeriod), 52)
 			.SetGreaterThanZero()
 			.SetDisplay("Senkou Span Period", "Period for Senkou Span B line", "Ichimoku")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40, 60, 5);
 
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Period for Stochastic Oscillator", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 20, 2);
 			
 		_stochK = Param(nameof(StochK), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "Smoothing for Stochastic %K line", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 			
 		_stochD = Param(nameof(StochD), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Period for Stochastic %D line", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -149,9 +149,9 @@ public class IchimokuStochasticStrategy : Strategy
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnStarted2(DateTime time)
 		{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		var ichimoku = new Ichimoku

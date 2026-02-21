@@ -90,7 +90,7 @@ public class HeikinAshiTraderStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "Main period of the stochastic oscillator", "Indicators");
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 5)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Signal period of the stochastic oscillator", "Indicators");
 
@@ -451,14 +451,12 @@ public class HeikinAshiTraderStrategy : Strategy
 
 		_fastMa = new WeightedMovingAverage
 		{
-			Length = FastMaPeriod,
-			CandlePrice = CandlePrice.Typical
+			Length = FastMaPeriod
 		};
 
 		_slowMa = new WeightedMovingAverage
 		{
-			Length = SlowMaPeriod,
-			CandlePrice = CandlePrice.Typical
+			Length = SlowMaPeriod
 		};
 
 		_stochastic = new StochasticOscillator

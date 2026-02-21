@@ -60,8 +60,8 @@ private readonly StrategyParam<decimal> _riskPercent;
 private readonly StrategyParam<int> _maxPositions;
 private readonly StrategyParam<decimal> _profitClose;
 
-private LengthIndicator<decimal> _fastMa;
-private LengthIndicator<decimal> _slowMa;
+private DecimalLengthIndicator _fastMa;
+private DecimalLengthIndicator _slowMa;
 private ShiftBuffer _fastBuffer;
 private ShiftBuffer _slowBuffer;
 
@@ -303,14 +303,14 @@ _shortTrailingPrice = null;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _pipSize = GetPipSize();
 
-LengthIndicator<decimal> fast = null;
-LengthIndicator<decimal> slow = null;
+DecimalLengthIndicator fast = null;
+DecimalLengthIndicator slow = null;
 
 var useMaFilter = FastPeriod > 0 && SlowPeriod > 0;
 
@@ -774,15 +774,15 @@ return priceStep * 10m;
 return priceStep;
 }
 
-private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
+private static DecimalLengthIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 {
 return type switch
 {
-MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+MovingAverageTypes.Simple => new SMA { Length = length },
+MovingAverageTypes.Exponential => new EMA { Length = length },
 MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
-_ => new SimpleMovingAverage { Length = length }
+_ => new SMA { Length = length }
 };
 }
 

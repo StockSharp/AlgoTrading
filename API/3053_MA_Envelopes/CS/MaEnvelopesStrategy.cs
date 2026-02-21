@@ -217,7 +217,7 @@ public class MaEnvelopesStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 109)
 			.SetDisplay("MA Period", "Moving average period", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_maShift = Param(nameof(MaShift), 0)
 			.SetDisplay("MA Shift", "Bars to shift the moving average", "Indicators")
@@ -232,7 +232,7 @@ public class MaEnvelopesStrategy : Strategy
 		_envelopeDeviation = Param(nameof(EnvelopeDeviation), 0.05m)
 			.SetDisplay("Envelope Deviation", "Envelope width in percent", "Indicators")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for analysis", "General");
@@ -255,9 +255,9 @@ public class MaEnvelopesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetInternalState();
 		_maIndicator = CreateMovingAverage(MaMethodType, MaPeriod);
@@ -353,7 +353,7 @@ public class MaEnvelopesStrategy : Strategy
 			return;
 
 		var price = GetAppliedPrice(candle, AppliedPrice);
-		var maValue = _maIndicator.Process(price, candle.OpenTime, true);
+		var maValue = _maIndicator.Process(new DecimalIndicatorValue(_maIndicator, price, candle.OpenTime));
 
 		if (!_maIndicator.IsFormed)
 		{
@@ -798,11 +798,11 @@ public class MaEnvelopesStrategy : Strategy
 	{
 		return method switch
 		{
-			MaMethods.Simple => new SimpleMovingAverage { Length = period },
-			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MaMethods.Simple => new SMA { Length = period },
+			MaMethods.Exponential => new EMA { Length = period },
 			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
-			_ => new ExponentialMovingAverage { Length = period }
+			_ => new EMA { Length = period }
 		};
 	}
 

@@ -69,14 +69,14 @@ public class TpcXauusdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ema200 = new EMA { Length = Ema200Length };
 		_ema21 = new EMA { Length = Ema21Length };
 		_rsi = new RSI { Length = RsiLength };
-		_macd = new MACD { ShortPeriod = MacdFast, LongPeriod = MacdSlow, SignalPeriod = MacdSignal };
+		_macd = new MACD { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow }, SignalPeriod = MacdSignal };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_ema200, _ema21, _rsi, _macd, Process).Start();

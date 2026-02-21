@@ -118,37 +118,37 @@ public class ThreeSoldiersStochasticStrategy : Strategy
 
 		_stochKPeriod = Param(nameof(StochKPeriod), 47)
 			.SetDisplay("%K Period", "Lookback period for %K line", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 80, 5);
 
-		_stochDPeriod = Param(nameof(StochDPeriod), 9)
+		_stochD = { Length = Param }(nameof(StochDPeriod), 9)
 			.SetDisplay("%D Period", "Smoothing period for %K line", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_stochSlowing = Param(nameof(StochSlowing), 13)
 			.SetDisplay("Slowing", "Additional slowing applied to %K", "Stochastic")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 20, 1);
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
 			.SetDisplay("Oversold Level", "Stochastic signal level for bullish confirmation", "Thresholds")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
 			.SetDisplay("Overbought Level", "Stochastic signal level for bearish confirmation", "Thresholds")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 5m);
 
 		_exitLowerLevel = Param(nameof(ExitLowerLevel), 20m)
 			.SetDisplay("Exit Lower Level", "Lower crossover level for closing long positions", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_exitUpperLevel = Param(nameof(ExitUpperLevel), 80m)
 			.SetDisplay("Exit Upper Level", "Upper crossover level for closing short positions", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 5m);
 	}
 
@@ -171,15 +171,15 @@ public class ThreeSoldiersStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Configure the Stochastic oscillator with parameters matching the MetaTrader template.
 		var stochastic = new StochasticOscillator
 		{
 			KPeriod = StochKPeriod,
-			DPeriod = StochDPeriod,
+			D = {  K = { Length = StochDPeriod } },
 			Smooth = StochSlowing
 		};
 
@@ -190,7 +190,7 @@ public class ThreeSoldiersStochasticStrategy : Strategy
 			.Start();
 
 		// Enable default position protection (no stops are set but risk control stays active).
-		StartProtection();
+		StartProtection(null, null);
 
 		// Setup visualization when running inside the Strategy Designer.
 		var area = CreateChartArea();

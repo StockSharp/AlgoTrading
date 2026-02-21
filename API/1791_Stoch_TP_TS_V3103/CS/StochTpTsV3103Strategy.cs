@@ -70,14 +70,13 @@ public class StochTpTsV3103Strategy : Strategy
 		_shortStopPrice = _shortTakeProfit = 0m;
 	}
 	
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 		
 		_stochastic = new StochasticOscillator
-		{
-			Length = StochLength,
+		{ K = { Length = StochLength },
 			K = { Length = KPeriod },
 			D = { Length = DPeriod }
 		};

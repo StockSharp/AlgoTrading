@@ -186,9 +186,9 @@ public class CorrelationMatrixHeatmapStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		AddSecurity(Security1);
 		AddSecurity(Security2);
@@ -224,7 +224,7 @@ public class CorrelationMatrixHeatmapStrategy : Strategy
 		return;
 
 		var sma = _smas[index];
-		var value = sma.Process(candle.ClosePrice, candle.OpenTime, true);
+		var value = sma.Process(new DecimalIndicatorValue(sma, candle.ClosePrice, candle.OpenTime));
 		if (!sma.IsFormed)
 		return;
 

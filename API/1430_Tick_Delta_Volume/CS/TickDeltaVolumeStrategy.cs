@@ -64,7 +64,7 @@ public class TickDeltaVolumeStrategy : Strategy
 		_length = Param(nameof(Length), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Length", "Lookback for average and deviation", "Indicators")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <inheritdoc />
@@ -83,11 +83,11 @@ public class TickDeltaVolumeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_mean = new ExponentialMovingAverage { Length = Length };
+		_mean = new EMA { Length = Length };
 		_stdev = new StandardDeviation { Length = Length };
 
 		SubscribeTicks()
@@ -108,8 +108,8 @@ public class TickDeltaVolumeStrategy : Strategy
 			_ => volumeDelta
 		};
 
-		var meanVal = _mean.Process(vpd, trade.ServerTime, true).ToDecimal();
-		var stdVal = _stdev.Process(vpd, trade.ServerTime, true).ToDecimal();
+		var meanVal = _mean.Process(new DecimalIndicatorValue(_mean, vpd, trade.ServerTime)).ToDecimal();
+		var stdVal = _stdev.Process(new DecimalIndicatorValue(_stdev, vpd, trade.ServerTime)).ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

@@ -123,12 +123,12 @@ public class Ma2CciEmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
-		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
+		_fastMa = new EMA { Length = FastMaPeriod };
+		_slowMa = new EMA { Length = SlowMaPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 

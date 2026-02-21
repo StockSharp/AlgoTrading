@@ -91,31 +91,31 @@ public class EngulfingWithTrendStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period for SuperTrend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "ATR multiplier for SuperTrend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_boringThreshold = Param(nameof(BoringThreshold), 25m)
 			.SetGreaterThanZero()
 			.SetDisplay("Boring Threshold", "Body percentage to skip previous candle", "Pattern")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 50m, 5m);
 
 		_engulfingThreshold = Param(nameof(EngulfingThreshold), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Engulfing Threshold", "Body percentage for current candle", "Pattern")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 80m, 5m);
 
 		_stopLevel = Param(nameof(StopLevel), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Level", "Offset in ticks for stop and target", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 400m, 50m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -138,9 +138,9 @@ public class EngulfingWithTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var supertrend = new SuperTrend { Length = AtrPeriod, Multiplier = AtrMultiplier };
 

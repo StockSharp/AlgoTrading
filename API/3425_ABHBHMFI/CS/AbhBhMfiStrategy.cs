@@ -53,33 +53,33 @@ public class AbhBhMfiStrategy : Strategy
 		_mfiPeriod = Param(nameof(MfiPeriod), 37)
 			.SetGreaterThanZero()
 			.SetDisplay("MFI Period", "Lookback for the Money Flow Index", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 80, 1);
 
 		_bodyAveragePeriod = Param(nameof(BodyAveragePeriod), 11)
 			.SetGreaterThanZero()
 			.SetDisplay("Body SMA", "Moving average length used by the Harami filter", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 1);
 
 		_bullishThreshold = Param(nameof(BullishThreshold), 40m)
 			.SetDisplay("Long Threshold", "Maximum MFI value to validate bullish Harami entries", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 60m, 5m);
 
 		_bearishThreshold = Param(nameof(BearishThreshold), 60m)
 			.SetDisplay("Short Threshold", "Minimum MFI value to validate bearish Harami entries", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(40m, 80m, 5m);
 
 		_exitLowerLevel = Param(nameof(ExitLowerLevel), 30m)
 			.SetDisplay("Lower Exit", "MFI threshold used for both bullish and bearish exit rules", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_exitUpperLevel = Param(nameof(ExitUpperLevel), 70m)
 			.SetDisplay("Upper Exit", "MFI threshold confirming exhausted momentum", "Filters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 5m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
@@ -191,13 +191,13 @@ public class AbhBhMfiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_mfi = new MoneyFlowIndex { Length = MfiPeriod };
-		_bodyAverage = new SimpleMovingAverage { Length = BodyAveragePeriod };
-		_closeAverage = new SimpleMovingAverage { Length = BodyAveragePeriod };
+		_bodyAverage = new SMA { Length = BodyAveragePeriod };
+		_closeAverage = new SMA { Length = BodyAveragePeriod };
 
 		var step = Security?.PriceStep ?? 0m;
 		Unit stopLoss = null;
@@ -215,7 +215,7 @@ public class AbhBhMfiStrategy : Strategy
 		if (stopLoss != null || takeProfit != null)
 			StartProtection(takeProfit: takeProfit, stopLoss: stopLoss);
 		else
-			StartProtection();
+			StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -337,122 +337,122 @@ public class NeuroNirvamanEa2Strategy : Strategy
 		_risk1 = Param(nameof(Risk1), 3)
 			.SetRange(1, 33)
 			.SetDisplay("Risk #1", "SilverTrend risk parameter for the first signal", "SilverTrend #1")
-			.SetCanOptimize(true);
+			;
 
 		_laguerre1Period = Param(nameof(Laguerre1Period), 14)
 			.SetRange(1, 100)
 			.SetDisplay("Laguerre #1 Period", "ADX length for Laguerre #1", "Laguerre Filters")
-			.SetCanOptimize(true);
+			;
 
 		_laguerre1Distance = Param(nameof(Laguerre1Distance), 0m)
 			.SetRange(0m, 50m)
 			.SetDisplay("Laguerre #1 Distance", "Distance threshold in percent", "Laguerre Filters")
-			.SetCanOptimize(true);
+			;
 
 		_x11 = Param(nameof(X11), 100m)
 			.SetRange(0m, 200m)
 			.SetDisplay("X11", "Weight for tension signal in perceptron #1", "Perceptron #1")
-			.SetCanOptimize(true);
+			;
 
 		_x12 = Param(nameof(X12), 100m)
 			.SetRange(0m, 200m)
 			.SetDisplay("X12", "Weight for SilverTrend signal in perceptron #1", "Perceptron #1")
-			.SetCanOptimize(true);
+			;
 
 		_tp1 = Param(nameof(TakeProfit1), 100m)
 			.SetRange(10m, 500m)
 			.SetDisplay("Take Profit #1", "Profit target in price steps for perceptron #1", "Perceptron #1")
-			.SetCanOptimize(true);
+			;
 
 		_sl1 = Param(nameof(StopLoss1), 50m)
 			.SetRange(5m, 500m)
 			.SetDisplay("Stop Loss #1", "Stop distance in price steps for perceptron #1", "Perceptron #1")
-			.SetCanOptimize(true);
+			;
 
 		_risk2 = Param(nameof(Risk2), 9)
 			.SetRange(1, 33)
 			.SetDisplay("Risk #2", "SilverTrend risk parameter for the second signal", "SilverTrend #2")
-			.SetCanOptimize(true);
+			;
 
 		_laguerre2Period = Param(nameof(Laguerre2Period), 14)
 			.SetRange(1, 100)
 			.SetDisplay("Laguerre #2 Period", "ADX length for Laguerre #2", "Laguerre Filters")
-			.SetCanOptimize(true);
+			;
 
 		_laguerre2Distance = Param(nameof(Laguerre2Distance), 0m)
 			.SetRange(0m, 50m)
 			.SetDisplay("Laguerre #2 Distance", "Distance threshold in percent", "Laguerre Filters")
-			.SetCanOptimize(true);
+			;
 
 		_x21 = Param(nameof(X21), 100m)
 			.SetRange(0m, 200m)
 			.SetDisplay("X21", "Weight for tension signal in perceptron #2", "Perceptron #2")
-			.SetCanOptimize(true);
+			;
 
 		_x22 = Param(nameof(X22), 100m)
 			.SetRange(0m, 200m)
 			.SetDisplay("X22", "Weight for SilverTrend signal in perceptron #2", "Perceptron #2")
-			.SetCanOptimize(true);
+			;
 
 		_tp2 = Param(nameof(TakeProfit2), 100m)
 			.SetRange(10m, 500m)
 			.SetDisplay("Take Profit #2", "Profit target in price steps for perceptron #2", "Perceptron #2")
-			.SetCanOptimize(true);
+			;
 
 		_sl2 = Param(nameof(StopLoss2), 50m)
 			.SetRange(5m, 500m)
 			.SetDisplay("Stop Loss #2", "Stop distance in price steps for perceptron #2", "Perceptron #2")
-			.SetCanOptimize(true);
+			;
 
 		_laguerre3Period = Param(nameof(Laguerre3Period), 14)
 			.SetRange(1, 100)
 			.SetDisplay("Laguerre #3 Period", "ADX length feeding perceptron #3", "Laguerre Filters")
-			.SetCanOptimize(true);
+			;
 
 		_laguerre3Distance = Param(nameof(Laguerre3Distance), 0m)
 			.SetRange(0m, 50m)
 			.SetDisplay("Laguerre #3 Distance", "Distance threshold in percent", "Laguerre Filters")
-			.SetCanOptimize(true);
+			;
 
 		_laguerre4Period = Param(nameof(Laguerre4Period), 14)
 			.SetRange(1, 100)
 			.SetDisplay("Laguerre #4 Period", "ADX length feeding perceptron #3", "Laguerre Filters")
-			.SetCanOptimize(true);
+			;
 
 		_laguerre4Distance = Param(nameof(Laguerre4Distance), 0m)
 			.SetRange(0m, 50m)
 			.SetDisplay("Laguerre #4 Distance", "Distance threshold in percent", "Laguerre Filters")
-			.SetCanOptimize(true);
+			;
 
 		_x31 = Param(nameof(X31), 100m)
 			.SetRange(0m, 200m)
 			.SetDisplay("X31", "Weight for Laguerre #3 in perceptron #3", "Perceptron #3")
-			.SetCanOptimize(true);
+			;
 
 		_x32 = Param(nameof(X32), 100m)
 			.SetRange(0m, 200m)
 			.SetDisplay("X32", "Weight for Laguerre #4 in perceptron #3", "Perceptron #3")
-			.SetCanOptimize(true);
+			;
 
 		_laguerreGamma = Param(nameof(LaguerreGamma), 0.764m)
 			.SetRange(0.1m, 1m)
 			.SetDisplay("Laguerre Gamma", "Smoothing coefficient used in all Laguerre filters", "Laguerre Filters")
-			.SetCanOptimize(true);
+			;
 
 		_silverTrendLength = Param(nameof(SilverTrendLength), 9)
 			.SetRange(1, 100)
 			.SetDisplay("SilverTrend Length", "Lookback length for SilverTrend calculations", "SilverTrend")
-			.SetCanOptimize(true);
+			;
 
 		_pass = Param(nameof(Pass), 4)
 			.SetRange(1, 4)
 			.SetDisplay("Pass", "Selects which perceptrons drive orders", "Logic")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetRange(0.01m, 10m)
 			.SetDisplay("Trade Volume", "Base order volume", "General")
-			.SetCanOptimize(true);
+			;
 
 		_startHour = Param(nameof(StartHour), 9)
 			.SetRange(0, 23)
@@ -497,9 +497,9 @@ public class NeuroNirvamanEa2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -849,7 +849,7 @@ public class NeuroNirvamanEa2Strategy : Strategy
 		{
 			_highest = new Highest { Length = length };
 			_lowest = new Lowest { Length = length };
-			_rangeAverage = new SimpleMovingAverage { Length = length + 1 };
+			_rangeAverage = new SMA { Length = length + 1 };
 		}
 
 		public int Risk { get; set; }
@@ -857,9 +857,9 @@ public class NeuroNirvamanEa2Strategy : Strategy
 		public int Process(ICandleMessage candle)
 		{
 			var time = candle.OpenTime;
-			var highValue = _highest.Process(candle.HighPrice, time, true);
-			var lowValue = _lowest.Process(candle.LowPrice, time, true);
-			var rangeValue = _rangeAverage.Process(candle.HighPrice - candle.LowPrice, time, true);
+			var highValue = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, time.UtcDateTime));
+			var lowValue = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, time.UtcDateTime));
+			var rangeValue = _rangeAverage.Process(new DecimalIndicatorValue(_rangeAverage, candle.HighPrice - candle.LowPrice, time.UtcDateTime));
 
 			if (!highValue.IsFinal || !lowValue.IsFinal || !rangeValue.IsFinal)
 				return 0;

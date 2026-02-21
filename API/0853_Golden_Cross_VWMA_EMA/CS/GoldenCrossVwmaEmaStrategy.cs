@@ -77,12 +77,12 @@ public class GoldenCrossVwmaEmaStrategy : Strategy
 		_emaIsFormed = false;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_vwma = new VolumeWeightedMovingAverage { Length = VwmaLength };
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_ema = new EMA { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_vwma, ProcessBase).Start();
@@ -90,7 +90,7 @@ public class GoldenCrossVwmaEmaStrategy : Strategy
 		var higherSubscription = SubscribeCandles(HigherCandleType);
 		higherSubscription.Bind(_ema, ProcessHigher).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

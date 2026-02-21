@@ -92,12 +92,12 @@ public class MostPowerfulTqqqEmaCrossoverStrategy : Strategy
 		_initialized = false;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastLength };
-		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		var fastEma = new EMA { Length = FastLength };
+		var slowEma = new EMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 

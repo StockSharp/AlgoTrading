@@ -60,7 +60,7 @@ using StockSharp.Messages;
 			_period = Param(nameof(Period), 5)
 				.SetGreaterThanZero()
 				.SetDisplay("Smoothing Window", "Depth of the price smoothing window", "Indicator")
-				.SetCanOptimize(true);
+				;
 
 			_smoothingMethod = Param(nameof(SmoothingMethods), SmoothingMethods.JurikLike)
 				.SetDisplay("Smoothing Method", "Type of moving average approximation", "Indicator");
@@ -68,7 +68,7 @@ using StockSharp.Messages;
 			_smoothingLength = Param(nameof(SmoothingLength), 3)
 				.SetGreaterThanZero()
 				.SetDisplay("Smoothing Length", "Length used by the smoother", "Indicator")
-				.SetCanOptimize(true);
+				;
 
 			_smoothingPhase = Param(nameof(SmoothingPhase), 100)
 				.SetDisplay("Smoothing Phase", "Phase parameter for adaptive smoothers", "Indicator");
@@ -198,9 +198,9 @@ using StockSharp.Messages;
 			_closeSmoother = null;
 		}
 
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnStarted2(DateTime time)
 		{
-			base.OnStarted(time);
+			base.OnStarted2(time);
 
 			_openSmoother = CreateSmoother(Smoothing, SmoothingLength, SmoothingPhase);
 			_highSmoother = CreateSmoother(Smoothing, SmoothingLength, SmoothingPhase);
@@ -215,7 +215,7 @@ using StockSharp.Messages;
 			ApplyProtection();
 
 			var subscription = SubscribeCandles(CandleType);
-			subscription.WhenNew(ProcessCandle).Start();
+			subscription.Bind(ProcessCandle).Start();
 
 			var area = CreateChartArea();
 			if (area != null)

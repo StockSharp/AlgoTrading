@@ -43,22 +43,22 @@ public class MovingAveragePriceCrossStrategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("MA period", "Length of the simple moving average used for entries.", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order volume", "Volume submitted with each market order.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150)
 			.SetNotNegative()
 			.SetDisplay("Take profit (points)", "Distance to the profit target expressed in MetaTrader points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150)
 			.SetNotNegative()
 			.SetDisplay("Stop loss (points)", "Distance to the protective stop expressed in MetaTrader points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle type", "Primary timeframe processed by the strategy.", "General");
@@ -129,9 +129,9 @@ public class MovingAveragePriceCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 

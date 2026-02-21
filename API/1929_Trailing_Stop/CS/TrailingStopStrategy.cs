@@ -69,15 +69,15 @@ public class TrailingStopStrategy : Strategy
 	{
 		_takeProfit = Param(nameof(TakeProfit), 100m)
 		.SetDisplay("Take Profit", "Profit distance in price units", "Risk")
-		.SetCanOptimize(true);
+		;
 		
 		_stopLoss = Param(nameof(StopLoss), 20m)
 		.SetDisplay("Stop Loss", "Loss distance in price units", "Risk")
-		.SetCanOptimize(true);
+		;
 		
 		_trailing = Param(nameof(Trailing), 3m)
 		.SetDisplay("Trailing", "Trailing stop distance", "Risk")
-		.SetCanOptimize(true);
+		;
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles for price updates", "General");
@@ -90,9 +90,9 @@ public class TrailingStopStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

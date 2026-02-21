@@ -42,25 +42,25 @@ public VidyaAutoTradingReversalLogicStrategy()
 _vidyaLength = Param(nameof(VidyaLength), 10)
 .SetGreaterThanZero()
 .SetDisplay("VIDYA Length", "Length of VIDYA", "General")
-.SetCanOptimize(true);
+;
 
 _vidyaMomentum = Param(nameof(VidyaMomentum), 20)
 .SetGreaterThanZero()
 .SetDisplay("Momentum Length", "Length for momentum", "General")
-.SetCanOptimize(true);
+;
 
 _bandDistance = Param(nameof(BandDistance), 2m)
 .SetDisplay("Band Distance", "ATR multiplier for bands", "General")
-.SetCanOptimize(true);
+;
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 _cmo = new ChandeMomentumOscillator { Length = VidyaMomentum };
 _atr = new AverageTrueRange { Length = 200 };

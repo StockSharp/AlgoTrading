@@ -201,16 +201,16 @@ public MultiTraderStrategy()
 _universeParam = Param<IEnumerable<Security>>(nameof(Universe))
 .SetDisplay("Universe", "List of FX pairs used for calculations", "Data");
 
-_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Timeframe used for strength calculations", "Data");
 
 _buyLevelParam = Param(nameof(BuyLevel), 90)
 .SetDisplay("Buy Level", "Currency strength threshold considered overbought", "Signals")
-.SetCanOptimize(true);
+;
 
 _sellLevelParam = Param(nameof(SellLevel), 10)
 .SetDisplay("Sell Level", "Currency strength threshold considered oversold", "Signals")
-.SetCanOptimize(true);
+;
 
 _autoTradeParam = Param(nameof(EnableAutoTrading), false)
 .SetDisplay("Auto Trade", "Automatically execute trades on suggested pairs", "Trading");
@@ -255,9 +255,9 @@ _lastSignalSide = null;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var candleType = CandleType ?? throw new InvalidOperationException("CandleType must be configured before starting.");
 
@@ -287,7 +287,7 @@ SubscribeCandles(candleType, true, security)
 .Start();
 }
 
-StartProtection();
+StartProtection(null, null);
 }
 
 private void ProcessCandle(ICandleMessage candle, string canonicalPair)

@@ -160,67 +160,67 @@ public class ExplosionRangeExpansionStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for calculations", "General")
-			.SetCanOptimize(true);
+			;
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Trade volume in lots", "General")
-			.SetCanOptimize(true);
+			;
 
 		_ratio = Param(nameof(Ratio), 1.6m)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Ratio", "Current candle range must exceed previous range multiplied by this value", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_maxPositions = Param(nameof(MaxPositions), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum number of simultaneous positions", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_pauseSeconds = Param(nameof(PauseSeconds), 36000)
 			.SetNotNegative()
 			.SetDisplay("Pause (sec)", "Minimum time in seconds between entries", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_startHour = Param(nameof(StartHour), 1)
 			.SetNotNegative()
 			.SetDisplay("Start Hour", "Hour when trading becomes allowed", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_endHour = Param(nameof(EndHour), 23)
 			.SetNotNegative()
 			.SetDisplay("End Hour", "Hour when trading is no longer allowed", "Schedule")
-			.SetCanOptimize(true);
+			;
 
 		_oneTradePerDay = Param(nameof(OneTradePerDay), true)
 			.SetDisplay("One Trade Per Day", "Allow only one entry per calendar day", "Risk Management")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance expressed in price steps", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit distance expressed in price steps", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in price steps", "Protection")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 1m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Extra price movement required before trailing updates", "Protection")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (StartHour >= EndHour)
 			throw new InvalidOperationException("Trading window is invalid: start hour must be less than end hour.");

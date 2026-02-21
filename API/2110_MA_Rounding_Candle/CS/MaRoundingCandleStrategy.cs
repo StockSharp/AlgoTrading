@@ -39,12 +39,12 @@ public class MaRoundingCandleStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 
-	    _openMa = new SimpleMovingAverage { Length = MaLength };
-	    _closeMa = new SimpleMovingAverage { Length = MaLength };
+	    _openMa = new SMA { Length = MaLength };
+	    _closeMa = new SMA { Length = MaLength };
 
 	    var subscription = SubscribeCandles(CandleType);
 	    subscription.Bind(ProcessCandle).Start();
@@ -58,7 +58,7 @@ public class MaRoundingCandleStrategy : Strategy
 	        DrawOwnTrades(area);
 	    }
 
-	    StartProtection();
+	    StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -66,8 +66,8 @@ public class MaRoundingCandleStrategy : Strategy
 	    if (candle.State != CandleStates.Finished)
 	        return;
 
-	    var openVal = _openMa.Process(candle.OpenPrice, candle.OpenTime, true).ToDecimal();
-	    var closeVal = _closeMa.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
+	    var openVal = _openMa.Process(new DecimalIndicatorValue(_openMa, candle.OpenPrice, candle.OpenTime)).ToDecimal();
+	    var closeVal = _closeMa.Process(new DecimalIndicatorValue(_closeMa, candle.ClosePrice, candle.OpenTime)).ToDecimal();
 
 	    var color = openVal < closeVal ? 2 : openVal > closeVal ? 0 : 1;
 

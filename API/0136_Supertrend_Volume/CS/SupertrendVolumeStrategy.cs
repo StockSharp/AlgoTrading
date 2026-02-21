@@ -93,22 +93,22 @@ public class SupertrendVolumeStrategy : Strategy
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
 							.SetRange(5, 30)
 							.SetDisplay("Supertrend Period", "Period for Supertrend ATR calculation", "Supertrend Settings")
-							.SetCanOptimize(true);
+							;
 							
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
 								.SetRange(1.0m, 5.0m)
 								.SetDisplay("Supertrend Multiplier", "Multiplier for Supertrend ATR calculation", "Supertrend Settings")
-								.SetCanOptimize(true);
+								;
 								
 		_volumePeriod = Param(nameof(VolumePeriod), 20)
 						.SetRange(5, 50)
 						.SetDisplay("Volume Period", "Period for volume moving average calculation", "Volume Settings")
-						.SetCanOptimize(true);
+						;
 						
 		_volumeThreshold = Param(nameof(VolumeThreshold), 1.5m)
 						   .SetRange(1.0m, 3.0m)
 						   .SetDisplay("Volume Threshold", "Volume threshold multiplier for volume confirmation", "Volume Settings")
-						   .SetCanOptimize(true);
+						   ;
 	}
 	
 	/// <inheritdoc />
@@ -118,13 +118,13 @@ public class SupertrendVolumeStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		// Initialize indicators
 		_atr = new AverageTrueRange { Length = SupertrendPeriod };
-		_volumeSma = new SimpleMovingAverage { Length = VolumePeriod };
+		_volumeSma = new SMA { Length = VolumePeriod };
 		
 		// Reset Supertrend variables
 		_upperBand = null;
@@ -164,7 +164,7 @@ public class SupertrendVolumeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 			
-		var volumeSmaValue = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+		var volumeSmaValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime)).ToDecimal();
 		
 		if (!IsFormedAndOnlineAndAllowTrading() || !_atr.IsFormed || !_volumeSma.IsFormed)
 			return;

@@ -84,19 +84,19 @@ namespace StockSharp.Samples.Strategies
 		{
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
 				.SetGreaterThanZero()
-				.SetCanOptimize(true)
+				
 				.SetOptimize(10, 20, 5)
 				.SetDisplay("ATR Period", "Period for Average True Range indicator", "Indicators");
 
 			_averagePeriod = Param(nameof(AveragePeriod), 20)
 				.SetGreaterThanZero()
-				.SetCanOptimize(true)
+				
 				.SetOptimize(10, 50, 10)
 				.SetDisplay("Average Period", "Period for calculating ATR average and standard deviation", "Settings");
 
 			_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 				.SetGreaterThanZero()
-				.SetCanOptimize(true)
+				
 				.SetOptimize(1.5m, 3m, 0.5m)
 				.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation", "Settings");
 
@@ -106,7 +106,7 @@ namespace StockSharp.Samples.Strategies
 			_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 				.SetNotNegative()
 				.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(0.5m, 2.0m, 0.5m);
 		}
 
@@ -131,7 +131,7 @@ namespace StockSharp.Samples.Strategies
 
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnStarted2(DateTime time)
 		{
 			// Create ATR indicator
 			var atr = new AverageTrueRange { Length = AtrPeriod };
@@ -157,7 +157,7 @@ namespace StockSharp.Samples.Strategies
 				useMarketOrders: true
 			);
 
-			base.OnStarted(time);
+			base.OnStarted2(time);
 		}
 
 		private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue)

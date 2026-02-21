@@ -89,15 +89,14 @@ public class BuyOnlyEmaBbStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_bollinger = new BollingerBands
 		{
 			Length = EmaLength,
 			Width = BbStdDev,
-			MovingAverage = new ExponentialMovingAverage { Length = EmaLength }
 		};
 
 		var subscription = SubscribeCandles(CandleType);

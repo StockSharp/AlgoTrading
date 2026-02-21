@@ -74,13 +74,13 @@ public class BatmanAtrTrailingStopStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR indicator period", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 14, 1);
 
 		_factor = Param(nameof(Factor), 1.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Factor", "Multiplier for ATR distance", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3m, 0.1m);
 
 		_useTypicalPrice = Param(nameof(UseTypicalPrice), false)
@@ -107,11 +107,11 @@ public class BatmanAtrTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 

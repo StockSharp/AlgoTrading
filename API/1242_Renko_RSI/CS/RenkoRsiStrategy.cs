@@ -59,23 +59,23 @@ public class RenkoRsiStrategy : Strategy
 		_renkoAtrLength = Param(nameof(RenkoAtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period for renko brick size", "Renko")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_rsiLength = Param(nameof(RsiLength), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(2, 20, 1);
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 80m)
 			.SetDisplay("RSI Overbought", "RSI overbought level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(60m, 90m, 5m);
 
 		_rsiOversold = Param(nameof(RsiOversold), 20m)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 	}
 
@@ -92,9 +92,9 @@ public class RenkoRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
@@ -111,7 +111,7 @@ public class RenkoRsiStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsi)

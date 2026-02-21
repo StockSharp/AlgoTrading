@@ -79,22 +79,22 @@ public class NightStrategy : Strategy
 	{
 		_stopLossPoints = Param(nameof(StopLossPoints), 40)
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20)
 			.SetDisplay("Take Profit", "Take profit in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_stochOversold = Param(nameof(StochOversold), 30m)
 			.SetDisplay("Stochastic Oversold", "Oversold level for %K", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 50m, 5m);
 
 		_stochOverbought = Param(nameof(StochOverbought), 70m)
 			.SetDisplay("Stochastic Overbought", "Overbought level for %K", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 90m, 5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -107,12 +107,12 @@ public class NightStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Stochastic Oscillator with fixed periods
-		var stochastic = new StochasticOscillator { KPeriod = 5, DPeriod = 3, Smooth = 3 };
+		var stochastic = new StochasticOscillator {, D = {  K = { Length = 3 } }, Smooth = 3 };
 
 		// Subscribe to candles and bind indicator
 		var subscription = SubscribeCandles(CandleType);

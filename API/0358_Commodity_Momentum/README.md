@@ -16,7 +16,7 @@ Positions are adjusted monthly; no intraday signals are used.
 - **Default Values**:
   - `TopN = 5`
   - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromDays(1).TimeFrame()`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
 - **Filters**:
   - Category: Momentum
   - Direction: Long

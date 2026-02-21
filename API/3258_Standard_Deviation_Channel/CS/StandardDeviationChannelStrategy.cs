@@ -331,26 +331,22 @@ public class StandardDeviationChannelStrategy : Strategy
 
 		_channelBasis = new WeightedMovingAverage
 		{
-			Length = TrendLength,
-			CandlePrice = CandlePrice.Typical,
+			Length = TrendLength
 		};
 
 		_channelDeviation = new StandardDeviation
 		{
-			Length = TrendLength,
-			CandlePrice = CandlePrice.Typical,
+			Length = TrendLength
 		};
 
 		_fastTrend = new WeightedMovingAverage
 		{
-			Length = FastMaLength,
-			CandlePrice = CandlePrice.Typical,
+			Length = FastMaLength
 		};
 
 		_slowTrend = new WeightedMovingAverage
 		{
-			Length = SlowMaLength,
-			CandlePrice = CandlePrice.Typical,
+			Length = SlowMaLength
 		};
 
 		_momentum = new Momentum

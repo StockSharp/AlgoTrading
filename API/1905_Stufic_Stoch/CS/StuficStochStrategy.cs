@@ -113,43 +113,43 @@ public class StuficStochStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast moving average period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow moving average period", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 60, 10);
 
 		_stochKPeriod = Param(nameof(StochKPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Stoch %K", "%K period for Stochastic", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
-		_stochDPeriod = Param(nameof(StochDPeriod), 3)
+		_stochD = { Length = Param }(nameof(StochDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stoch %D", "%D period for Stochastic", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 5, 1);
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 80m)
 			.SetRange(50, 95)
 			.SetDisplay("Overbought", "Overbought level", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(70m, 90m, 5m);
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 20m)
 			.SetRange(5, 50)
 			.SetDisplay("Oversold", "Oversold level", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 30m, 5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -163,13 +163,13 @@ public class StuficStochStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
-		var fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
-		var slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
+		var fastMa = new SMA { Length = FastMaPeriod };
+		var slowMa = new SMA { Length = SlowMaPeriod };
 		var stochastic = new StochasticOscillator
 		{
 			K = { Length = StochKPeriod },

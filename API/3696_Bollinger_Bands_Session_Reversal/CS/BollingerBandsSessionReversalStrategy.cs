@@ -218,25 +218,25 @@ public class BollingerBandsSessionReversalStrategy : Strategy
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Length", "Moving average period for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 5);
 
 		_bollingerWidth = Param(nameof(BollingerWidth), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Width", "Band width multiplier", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.25m);
 
 		_dailyMaLength = Param(nameof(DailyMaLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Daily MA Length", "Length of the daily trend filter", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50, 200, 25);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (points)", "Risk distance used for money management", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 200m, 25m);
 
 		_useRiskVolume = Param(nameof(UseRiskVolume), true)
@@ -245,7 +245,7 @@ public class BollingerBandsSessionReversalStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 1.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk %", "Percentage of equity risked per trade", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 3.0m, 0.5m);
 
 		_fixedVolume = Param(nameof(FixedVolume), 0.1m)
@@ -267,7 +267,7 @@ public class BollingerBandsSessionReversalStrategy : Strategy
 		_trailingFactor = Param(nameof(TrailingFactor), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Factor", "Multiple of the stop distance required to trail", "Exits")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.0m, 0.25m);
 
 		_enableBreakEven = Param(nameof(EnableBreakEven), false)
@@ -276,7 +276,7 @@ public class BollingerBandsSessionReversalStrategy : Strategy
 		_breakEvenFactor = Param(nameof(BreakEvenFactor), 1.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Break Even Factor", "Multiple of the stop distance before moving to break even", "Exits")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 2.0m, 0.25m);
 
 		_closeLosingAfterMinutes = Param(nameof(CloseLosingAfterMinutes), 30)
@@ -287,7 +287,7 @@ public class BollingerBandsSessionReversalStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
+		return [(Security, CandleType), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
 	}
 
 	/// <inheritdoc />
@@ -323,9 +323,9 @@ public class BollingerBandsSessionReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_dayPnLBase = PnL;
 
@@ -346,7 +346,7 @@ public class BollingerBandsSessionReversalStrategy : Strategy
 			.Bind(_bollinger, ProcessIntradayCandle)
 			.Start();
 
-		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
+		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 
 		dailySubscription
 			.Bind(_dailySma, ProcessDailyCandle)

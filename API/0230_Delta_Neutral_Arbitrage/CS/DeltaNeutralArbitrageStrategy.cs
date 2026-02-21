@@ -101,17 +101,17 @@ public class DeltaNeutralArbitrageStrategy : Strategy
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetDisplay("Lookback period", "Period for spread statistics calculation", "Strategy parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_entryThreshold = Param(nameof(EntryThreshold), 2m)
 			.SetDisplay("Entry threshold", "Entry threshold in standard deviations", "Strategy parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3m, 0.5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop-loss %", "Stop-loss as percentage from entry spread", "Risk management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -141,9 +141,9 @@ public class DeltaNeutralArbitrageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Asset2Security == null)
 			throw new InvalidOperationException("Asset2Security is not specified.");
@@ -152,7 +152,7 @@ public class DeltaNeutralArbitrageStrategy : Strategy
 			throw new InvalidOperationException("Asset2Portfolio is not specified.");
 
 		// Initialize indicators for spread statistics
-		_spreadSma = new SimpleMovingAverage { Length = LookbackPeriod };
+		_spreadSma = new SMA { Length = LookbackPeriod };
 		_spreadStdDev = new StandardDeviation { Length = LookbackPeriod };
 
 		// Create subscriptions to both securities
@@ -223,8 +223,8 @@ public class DeltaNeutralArbitrageStrategy : Strategy
 		_currentSpread = _lastAsset1Price - _lastAsset2Price;
 
 		// Process the spread with our indicators
-		var spreadValue = _spreadSma.Process(_currentSpread, candle.ServerTime, candle.State == CandleStates.Finished);
-		var stdDevValue = _spreadStdDev.Process(_currentSpread, candle.ServerTime, candle.State == CandleStates.Finished);
+		var spreadValue = _spreadSma.Process(new DecimalIndicatorValue(_spreadSma, _currentSpread, candle.ServerTime));
+		var stdDevValue = _spreadStdDev.Process(new DecimalIndicatorValue(_spreadStdDev, _currentSpread, candle.ServerTime));
 
 		// Check if indicators are formed
 		if (!_spreadSma.IsFormed || !_spreadStdDev.IsFormed)

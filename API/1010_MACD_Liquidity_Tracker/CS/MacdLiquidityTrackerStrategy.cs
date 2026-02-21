@@ -160,18 +160,18 @@ public class MacdLiquidityTrackerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_macd = new()
 		{
 			Macd =
 			{
-				ShortMa = new ExponentialMovingAverage { Length = FastLength },
-				LongMa = new ExponentialMovingAverage { Length = SlowLength },
+				ShortMa = new EMA { Length = FastLength },
+				LongMa = new EMA { Length = SlowLength },
 			},
-			SignalMa = new ExponentialMovingAverage { Length = SignalLength }
+			SignalMa = new EMA { Length = SignalLength }
 		};
 
 		var subscription = SubscribeCandles(CandleType);

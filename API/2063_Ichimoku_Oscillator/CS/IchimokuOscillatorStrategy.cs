@@ -115,25 +115,25 @@ public class IchimokuOscillatorStrategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Tenkan Period", "Period for Tenkan-sen line", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("Kijun Period", "Period for Kijun-sen line", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 40, 1);
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 		.SetGreaterThanZero()
 		.SetDisplay("Senkou Span B Period", "Period for Senkou Span B", "Ichimoku")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 80, 1);
 
 		_smoothingPeriod = Param(nameof(SmoothingPeriod), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("Smoothing Period", "Period for Jurik moving average", "Oscillator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -142,7 +142,7 @@ public class IchimokuOscillatorStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss %", "Stop loss in percent", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 3m, 0.5m);
 
 		_enableStopLoss = Param(nameof(EnableStopLoss), true)
@@ -151,14 +151,14 @@ public class IchimokuOscillatorStrategy : Strategy
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit %", "Take profit in percent", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 1m);
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ichimoku = new Ichimoku
 		{

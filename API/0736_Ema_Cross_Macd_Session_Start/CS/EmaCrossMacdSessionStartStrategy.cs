@@ -91,31 +91,31 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 		_fastEmaLength = Param(nameof(FastEmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 40, 1);
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "MACD fast length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 1);
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "MACD slow length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 40, 1);
 
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "MACD signal length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 _direction = Param(nameof(Direction), (Sides?)null)
@@ -154,12 +154,12 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	{
 		base.OnStarted(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var fastEma = new EMA { Length = FastEmaLength };
+		var slowEma = new EMA { Length = SlowEmaLength };
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFastLength,
-			LongPeriod = MacdSlowLength,
+			ShortMa = { Length = MacdFastLength },
+			LongMa = { Length = MacdSlowLength },
 			SignalPeriod = MacdSignalLength
 		};
 

@@ -57,7 +57,7 @@ public class TwoMAOtherTimeFrameCorrectIntersectionStrategy : Strategy
 		_fastTimeFrame = Param(nameof(FastTimeFrame), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Fast MA Timeframe", "Timeframe used for the fast moving average", "Indicators");
 
-		_slowTimeFrame = Param(nameof(SlowTimeFrame), TimeSpan.FromDays(1).TimeFrame())
+		_slowTimeFrame = Param(nameof(SlowTimeFrame), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Slow MA Timeframe", "Timeframe used for the slow moving average", "Indicators");
 
 		_fastLength = Param(nameof(FastLength), 12)
@@ -224,12 +224,12 @@ public class TwoMAOtherTimeFrameCorrectIntersectionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
-		StartProtection();
+		StartProtection(null, null);
 
 		_fastShiftBuffer.Clear();
 		_slowShiftBuffer.Clear();
@@ -361,15 +361,15 @@ public class TwoMAOtherTimeFrameCorrectIntersectionStrategy : Strategy
 		return shiftedValue;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKinds kind, int length, CandlePrices price)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageKinds kind, int length, CandlePrices price)
 	{
 		return kind switch
 		{
-			MovingAverageKinds.Simple => new SimpleMovingAverage { Length = length, CandlePrice = price },
-			MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length, CandlePrice = price },
+			MovingAverageKinds.Simple => new SMA { Length = length, CandlePrice = price },
+			MovingAverageKinds.Exponential => new EMA { Length = length, CandlePrice = price },
 			MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length, CandlePrice = price },
 			MovingAverageKinds.LinearWeighted => new WeightedMovingAverage { Length = length, CandlePrice = price },
-			_ => new SimpleMovingAverage { Length = length, CandlePrice = price }
+			_ => new SMA { Length = length, CandlePrice = price }
 		};
 	}
 

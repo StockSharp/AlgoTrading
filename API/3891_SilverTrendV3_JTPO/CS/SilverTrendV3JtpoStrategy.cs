@@ -135,46 +135,46 @@ public class SilverTrendV3JtpoStrategy : Strategy
 		_silverTrendLookback = Param(nameof(SilverTrendLookback), 350)
 		.SetGreaterThanZero()
 		.SetDisplay("SilverTrend Lookback", "Number of candles for SilverTrend calculations", "SilverTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100, 600, 50);
 
 		_silverTrendWindow = Param(nameof(SilverTrendWindow), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("SilverTrend Window", "Sliding window size for extrema", "SilverTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 21, 2);
 
 		_defaultRisk = Param(nameof(DefaultRisk), 3)
 		.SetNotNegative()
 		.SetDisplay("Risk Coefficient", "Risk coefficient used in SilverTrend", "SilverTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 10, 1);
 
 		_jtpoLength = Param(nameof(JtpoDefaultLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("J TPO Length", "Lookback for J_TPO filter", "SilverTrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance in points", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in points", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_initialStopPoints = Param(nameof(InitialStopPoints), 0m)
 		.SetNotNegative()
 		.SetDisplay("Initial Stop", "Initial protective stop distance in points", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_fridayHour = Param(nameof(FridayCutoffHour), 16m)
 		.SetNotNegative()
 		.SetDisplay("Friday Cutoff", "Hour after which no new trades are allowed on Friday", "Risk Management")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe", "General");
@@ -206,16 +206,16 @@ public class SilverTrendV3JtpoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_point = Security.PriceStep ?? 0.0001m;
 		_trailingDistance = TrailingStopPoints * _point;
 		_takeProfitDistance = TakeProfitPoints * _point;
 		_initialStopDistance = InitialStopPoints * _point;
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

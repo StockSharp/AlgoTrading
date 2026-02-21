@@ -121,25 +121,25 @@ public class Aver4StochPostZigZagStrategy : Strategy
 	{
 		_shortLength = Param(nameof(ShortLength), 26)
 			.SetDisplay("Short Length", "%K period for fastest Stochastic", "Stochastic")
-			.SetCanOptimize(true);
+			;
 		_midLength1 = Param(nameof(MidLength1), 72)
 			.SetDisplay("Mid Length 1", "%K period for second Stochastic", "Stochastic")
-			.SetCanOptimize(true);
+			;
 		_midLength2 = Param(nameof(MidLength2), 144)
 			.SetDisplay("Mid Length 2", "%K period for third Stochastic", "Stochastic")
-			.SetCanOptimize(true);
+			;
 		_longLength = Param(nameof(LongLength), 288)
 			.SetDisplay("Long Length", "%K period for slowest Stochastic", "Stochastic")
-			.SetCanOptimize(true);
+			;
 		_zigZagDepth = Param(nameof(ZigZagDepth), 14)
 			.SetDisplay("ZigZag Depth", "Lookback for pivot detection", "ZigZag")
-			.SetCanOptimize(true);
+			;
 		_oversold = Param(nameof(Oversold), 5m)
 			.SetDisplay("Oversold", "Lower averaged Stochastic level", "Signals")
-			.SetCanOptimize(true);
+			;
 		_overbought = Param(nameof(Overbought), 95m)
 			.SetDisplay("Overbought", "Upper averaged Stochastic level", "Signals")
-			.SetCanOptimize(true);
+			;
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
@@ -163,14 +163,14 @@ public class Aver4StochPostZigZagStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_stoch1 = new StochasticOscillator { Length = ShortLength, K = { Length = 3 }, D = { Length = 3 } };
-		_stoch2 = new StochasticOscillator { Length = MidLength1, K = { Length = 3 }, D = { Length = 3 } };
-		_stoch3 = new StochasticOscillator { Length = MidLength2, K = { Length = 3 }, D = { Length = 3 } };
-		_stoch4 = new StochasticOscillator { Length = LongLength, K = { Length = 3 }, D = { Length = 3 } };
+		_stoch1 = new StochasticOscillator { K = { Length = ShortLength }, K = { Length = 3 }, D = { Length = 3 } };
+		_stoch2 = new StochasticOscillator { K = { Length = MidLength1 }, K = { Length = 3 }, D = { Length = 3 } };
+		_stoch3 = new StochasticOscillator { K = { Length = MidLength2 }, K = { Length = 3 }, D = { Length = 3 } };
+		_stoch4 = new StochasticOscillator { K = { Length = LongLength }, K = { Length = 3 }, D = { Length = 3 } };
 		_highest = new Highest { Length = ZigZagDepth };
 		_lowest = new Lowest { Length = ZigZagDepth };
 

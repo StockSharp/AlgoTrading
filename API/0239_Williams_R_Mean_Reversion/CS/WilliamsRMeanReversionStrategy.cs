@@ -84,19 +84,19 @@ public class WilliamsRMeanReversionStrategy : Strategy
 	{
 		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7)
 			.SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators");
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 10)
 			.SetDisplay("Average Period", "Period for calculating Williams %R average and standard deviation", "Settings");
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3m, 0.5m)
 			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation", "Settings");
 
@@ -105,7 +105,7 @@ public class WilliamsRMeanReversionStrategy : Strategy
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m)
 			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management");
 	}
@@ -130,7 +130,7 @@ public class WilliamsRMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		// Reset variables
 
@@ -158,7 +158,7 @@ public class WilliamsRMeanReversionStrategy : Strategy
 			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
 		);
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue williamsRValue)

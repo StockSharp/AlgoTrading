@@ -203,61 +203,61 @@ public class MacdStochastic2Strategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Default order volume", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossBuyPips = Param(nameof(StopLossBuyPips), 50)
 			.SetDisplay("Stop Loss Buy (pips)", "Stop loss distance for long trades", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossSellPips = Param(nameof(StopLossSellPips), 50)
 			.SetDisplay("Stop Loss Sell (pips)", "Stop loss distance for short trades", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitBuyPips = Param(nameof(TakeProfitBuyPips), 50)
 			.SetDisplay("Take Profit Buy (pips)", "Take profit distance for long trades", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitSellPips = Param(nameof(TakeProfitSellPips), 50)
 			.SetDisplay("Take Profit Sell (pips)", "Take profit distance for short trades", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance applied after profits", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetDisplay("Trailing Step (pips)", "Minimum advance to update the trailing stop", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast", "Fast EMA length for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA length for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal smoothing length for MACD", "MACD")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %K", "Lookback period for %K", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Smoothing period for %D", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_stochasticSlowing = Param(nameof(StochasticSlowing), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Slowing", "Slowing period applied to %K", "Stochastic")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for indicator calculations", "General");
@@ -292,14 +292,13 @@ public class MacdStochastic2Strategy : Strategy
 		// Initialize indicators that replicate the MetaTrader strategy.
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 
 		var stochastic = new StochasticOscillator
-		{
-			Length = StochasticKPeriod,
+		{ K = { Length = StochasticKPeriod },
 			K = { Length = StochasticSlowing },
 			D = { Length = StochasticDPeriod }
 		};

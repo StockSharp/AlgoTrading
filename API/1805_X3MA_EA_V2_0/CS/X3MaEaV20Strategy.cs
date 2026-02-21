@@ -98,15 +98,15 @@ public class X3MaEaV20Strategy : Strategy
 		
 		_fastMaLength = Param(nameof(FastMaLength), 2)
 		.SetDisplay("Fast MA Length", "Period of fast moving average", "Moving Averages")
-		.SetCanOptimize(true);
+		;
 		
 		_mediumMaLength = Param(nameof(MediumMaLength), 8)
 		.SetDisplay("Medium MA Length", "Period of medium moving average", "Moving Averages")
-		.SetCanOptimize(true);
+		;
 		
 		_slowMaLength = Param(nameof(SlowMaLength), 16)
 		.SetDisplay("Slow MA Length", "Period of slow moving average", "Moving Averages")
-		.SetCanOptimize(true);
+		;
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for candles", "General");
@@ -119,15 +119,15 @@ public class X3MaEaV20Strategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		StartProtection();
+		StartProtection(null, null);
 		
-		var fastMa = new SimpleMovingAverage { Length = FastMaLength };
-		var mediumMa = new SimpleMovingAverage { Length = MediumMaLength };
-		var slowMa = new SimpleMovingAverage { Length = SlowMaLength };
+		var fastMa = new SMA { Length = FastMaLength };
+		var mediumMa = new SMA { Length = MediumMaLength };
+		var slowMa = new SMA { Length = SlowMaLength };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription

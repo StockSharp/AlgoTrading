@@ -60,19 +60,19 @@ public class DonchianWmaCrossoverStrategy : Strategy
 		_donchianLength = Param(nameof(DonchianLength), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("Donchian Length", "Period for Donchian channel", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 		
 		_wmaLength = Param(nameof(WmaLength), 62)
 		.SetGreaterThanZero()
 		.SetDisplay("WMA Length", "Period for weighted moving average", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 100, 1);
 		
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit %", "Take profit as decimal", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.005m, 0.05m, 0.005m);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -95,9 +95,9 @@ public class DonchianWmaCrossoverStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var donchian = new DonchianChannels { Length = DonchianLength };
 		var wma = new WeightedMovingAverage { Length = WmaLength };

@@ -92,31 +92,31 @@ public class MacdVolumeClusterStrategy : Strategy
 		_fastMacdPeriod = Param(nameof(FastMacdPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MACD Period", "Period for fast EMA in MACD calculation", "MACD Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 16, 2);
 
 		_slowMacdPeriod = Param(nameof(SlowMacdPeriod), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MACD Period", "Period for slow EMA in MACD calculation", "MACD Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 30, 2);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal Period", "Period for signal line in MACD calculation", "MACD Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 12, 1);
 
 		_volumePeriod = Param(nameof(VolumePeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume Period", "Period for volume moving average calculation", "Volume Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 5);
 
 		_volumeDeviationFactor = Param(nameof(VolumeDeviationFactor), 2.0m)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume Deviation Factor", "Factor multiplied by standard deviation to detect volume spikes", "Volume Settings")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.5m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -155,7 +155,7 @@ public class MacdVolumeClusterStrategy : Strategy
 		};
 
 		// Create volume-based indicators
-		var smaVolume = new SimpleMovingAverage
+		var smaVolume = new SMA
 		{
 			Length = VolumePeriod
 		};

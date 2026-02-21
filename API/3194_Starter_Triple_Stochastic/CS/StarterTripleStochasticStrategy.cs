@@ -39,9 +39,9 @@ public class StarterTripleStochasticStrategy : Strategy
 	private readonly StrategyParam<bool> _reverseSignals;
 	private readonly StrategyParam<bool> _closeOpposite;
 
-	private LengthIndicator<decimal> _fastMa = null!;
-	private LengthIndicator<decimal> _normalMa = null!;
-	private LengthIndicator<decimal> _slowMa = null!;
+	private DecimalLengthIndicator _fastMa = null!;
+	private DecimalLengthIndicator _normalMa = null!;
+	private DecimalLengthIndicator _slowMa = null!;
 	private StochasticOscillator _fastStochastic = null!;
 	private StochasticOscillator _normalStochastic = null!;
 	private StochasticOscillator _slowStochastic = null!;
@@ -121,7 +121,7 @@ public class StarterTripleStochasticStrategy : Strategy
 		.SetRange(1, 200)
 		.SetDisplay("Stoch %K", "%K period for all stochastic oscillators", "Indicators");
 
-		_stochDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochD = { Length = Param }(nameof(StochasticDPeriod), 3)
 		.SetRange(1, 200)
 		.SetDisplay("Stoch %D", "%D period for stochastic smoothing", "Indicators");
 
@@ -299,9 +299,9 @@ public class StarterTripleStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = CalculatePipSize();
 
@@ -579,10 +579,10 @@ public class StarterTripleStochasticStrategy : Strategy
 		ResetTradeState();
 	}
 
-	private void ProcessMovingAverage(ICandleMessage candle, LengthIndicator<decimal> indicator, List<decimal> history, Action<decimal?> setter)
+	private void ProcessMovingAverage(ICandleMessage candle, DecimalLengthIndicator indicator, List<decimal> history, Action<decimal?> setter)
 	{
 		var price = GetAppliedPrice(candle, MaPriceType);
-		var value = indicator.Process(price, candle.OpenTime, candle.State == CandleStates.Finished);
+		var value = indicator.Process(new DecimalIndicatorValue(indicator, price, candle.OpenTime));
 
 		if (value == null || !value.IsFinal)
 		{
@@ -667,15 +667,15 @@ public class StarterTripleStochasticStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Exponential => new EMA { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length }
+			_ => new SMA { Length = length }
 		};
 	}
 
@@ -684,7 +684,7 @@ public class StarterTripleStochasticStrategy : Strategy
 		return new StochasticOscillator
 		{
 			KPeriod = StochasticKPeriod,
-			DPeriod = StochasticDPeriod,
+			D = {  K = { Length = StochasticDPeriod } },
 			Slowing = StochasticSlowing
 		};
 	}

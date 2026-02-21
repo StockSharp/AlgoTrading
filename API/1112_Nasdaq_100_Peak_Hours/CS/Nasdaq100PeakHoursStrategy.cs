@@ -155,9 +155,9 @@ public class Nasdaq100PeakHoursStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var longEma = new EMA { Length = LongEmaLength };
 		var shortEma = new EMA { Length = ShortEmaLength };

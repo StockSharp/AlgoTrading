@@ -46,19 +46,19 @@ public class GridRebalanceStrategy : Strategy
 
 		_startVolume = Param(nameof(StartVolume), 0.01m)
 		.SetDisplay("Start Volume", "Lot size of the very first order in a cycle", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_lotMultiplier = Param(nameof(LotMultiplier), 1m)
 		.SetDisplay("Lot Multiplier", "Multiplier applied to every additional grid order", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_gridStepPoints = Param(nameof(GridStepPoints), 400m)
 		.SetDisplay("Grid Step (pts)", "Distance between grid levels in points", "Grid")
-		.SetCanOptimize(true);
+		;
 
 		_targetPoints = Param(nameof(TargetPoints), 100m)
 		.SetDisplay("Target (pts)", "Take-profit distance from the average entry price in points", "Grid")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Candle subscription used for TP monitoring", "General");
@@ -133,13 +133,13 @@ public class GridRebalanceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 		UpdatePriceMetrics();
-		StartProtection();
+		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

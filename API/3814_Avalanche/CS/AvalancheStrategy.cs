@@ -196,7 +196,7 @@ public class AvalancheStrategy : Strategy
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Base order volume before multipliers", "Volume")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_towardMultiplier = Param(nameof(TowardMultiplier), 2m)
@@ -209,12 +209,12 @@ public class AvalancheStrategy : Strategy
 
 		_stopLossToward = Param(nameof(StopLossToward), 0m)
 			.SetDisplay("Toward Stop Loss", "Stop loss distance in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 200m, 20m);
 
 		_takeProfitToward = Param(nameof(TakeProfitToward), 10m)
 			.SetDisplay("Toward Take Profit", "Take profit distance in points", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 50m, 5m);
 
 		_intervalToward = Param(nameof(IntervalToward), 10m)
@@ -274,11 +274,11 @@ public class AvalancheStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_interestSide = ResolveInterestSide();
 		_pipSize = CalculatePipSize();

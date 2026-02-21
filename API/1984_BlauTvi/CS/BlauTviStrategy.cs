@@ -92,19 +92,19 @@ public class BlauTviStrategy : Strategy
 		_length1 = Param(nameof(Length1), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Length 1", "First smoothing length", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 50, 5);
 		
 		_length2 = Param(nameof(Length2), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Length 2", "Second smoothing length", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 50, 5);
 		
 		_length3 = Param(nameof(Length3), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Length 3", "Final smoothing length", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 20, 1);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -127,7 +127,7 @@ public class BlauTviStrategy : Strategy
 		
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 		.SetDisplay("Stop Loss", "Stop-loss in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 3000m, 100m);
 		
 		_enableTakeProfit = Param(nameof(EnableTakeProfit), true)
@@ -135,7 +135,7 @@ public class BlauTviStrategy : Strategy
 		
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 		.SetDisplay("Take Profit", "Take-profit in points", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100m, 5000m, 100m);
 		
 		_volume = Param(nameof(TradeVolume), 1m)
@@ -164,15 +164,15 @@ public class BlauTviStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		_emaUp1 = new ExponentialMovingAverage { Length = Length1 };
-		_emaDown1 = new ExponentialMovingAverage { Length = Length1 };
-		_emaUp2 = new ExponentialMovingAverage { Length = Length2 };
-		_emaDown2 = new ExponentialMovingAverage { Length = Length2 };
-		_emaTvi = new ExponentialMovingAverage { Length = Length3 };
+		_emaUp1 = new EMA { Length = Length1 };
+		_emaDown1 = new EMA { Length = Length1 };
+		_emaUp2 = new EMA { Length = Length2 };
+		_emaDown2 = new EMA { Length = Length2 };
+		_emaTvi = new EMA { Length = Length3 };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription

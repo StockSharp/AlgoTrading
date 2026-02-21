@@ -99,15 +99,15 @@ public class Nas100AndGoldSmartScalpingProEnhancedV2Strategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		var ema9 = new ExponentialMovingAverage { Length = 9 };
+		var ema9 = new EMA { Length = 9 };
 		var vwap = new VolumeWeightedMovingAverage();
 		var atr = new AverageTrueRange { Length = 14 };
 		var rsi = new RelativeStrengthIndex { Length = 14 };
-		var ema200 = new ExponentialMovingAverage { Length = 200 };
+		var ema200 = new EMA { Length = 200 };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ema9, vwap, atr, rsi, ProcessMain).Start();
@@ -145,7 +145,7 @@ public class Nas100AndGoldSmartScalpingProEnhancedV2Strategy : Strategy
 		
 		var volumeSpike = candle.TotalVolume > avgVol.Value * VolumeSpikeMultiplier;
 		
-		var hour = candle.OpenTime.UtcDateTime.Hour;
+		var hour = candle.OpenTime.Hour;
 		var inSession = hour >= StartHour && hour <= EndHour;
 		
 		var bodyStrength = Math.Abs(candle.ClosePrice - candle.OpenPrice) > atr * 0.3m;

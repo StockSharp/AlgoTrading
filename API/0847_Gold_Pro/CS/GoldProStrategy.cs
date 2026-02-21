@@ -106,12 +106,12 @@ public class GoldProStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		var emaFast = new ExponentialMovingAverage { Length = EmaFastLen };
-		var emaSlow = new ExponentialMovingAverage { Length = EmaSlowLen };
+		var emaFast = new EMA { Length = EmaFastLen };
+		var emaSlow = new EMA { Length = EmaSlowLen };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
@@ -138,7 +138,7 @@ public class GoldProStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 		
-		StartProtection();
+		StartProtection(null, null);
 	}
 	private void ProcessCandle(
 	ICandleMessage candle,

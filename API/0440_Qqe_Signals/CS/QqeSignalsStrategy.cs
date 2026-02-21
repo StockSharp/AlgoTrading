@@ -94,18 +94,18 @@ public class QqeSignalsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Initialize indicators
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiMa = new ExponentialMovingAverage { Length = RsiSmoothing };
+		_rsiMa = new EMA { Length = RsiSmoothing };
 		
 		var wildersPeriod = RsiPeriod * 2 - 1;
-		_atrRsi = new ExponentialMovingAverage { Length = 1 }; // For calculating absolute difference
-		_maAtrRsi = new ExponentialMovingAverage { Length = wildersPeriod };
-		_dar = new ExponentialMovingAverage { Length = wildersPeriod };
+		_atrRsi = new EMA { Length = 1 }; // For calculating absolute difference
+		_maAtrRsi = new EMA { Length = wildersPeriod };
+		_dar = new EMA { Length = wildersPeriod };
 
 		// Subscribe to candles
 		var subscription = SubscribeCandles(CandleType)
@@ -144,7 +144,7 @@ public class QqeSignalsStrategy : Strategy
 		var atrRsiValue = Math.Abs(prevRsiMa - rsIndex);
 		
 		// Calculate MA of ATR RSI
-		var maAtrRsiValue = _maAtrRsi.Process(atrRsiValue, candle.ServerTime, candle.State == CandleStates.Finished);
+		var maAtrRsiValue = _maAtrRsi.Process(new DecimalIndicatorValue(_maAtrRsi, atrRsiValue, candle.ServerTime));
 		if (!_maAtrRsi.IsFormed)
 			return;
 

@@ -117,9 +117,9 @@ public class SilverMidnightCandleColorStrategy : Strategy
 
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tickSize = Security.PriceStep ?? 1m;
 
@@ -139,7 +139,7 @@ public class SilverMidnightCandleColorStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var nyTime = candle.OpenTime.UtcDateTime.AddHours(TimezoneOffset);
+		var nyTime = candle.OpenTime.AddHours(TimezoneOffset);
 
 		if (nyTime.Hour == 0 && nyTime.Minute == 0)
 		{

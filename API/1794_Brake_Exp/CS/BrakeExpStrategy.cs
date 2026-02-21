@@ -58,12 +58,12 @@ public class BrakeExpStrategy : Strategy
 	{
 		_a = Param(nameof(A), 3m)
 		.SetDisplay("A", "A parameter of BrakeExp indicator", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1m, 5m, 1m);
 
 		_b = Param(nameof(B), 1m)
 		.SetDisplay("B", "B parameter of BrakeExp indicator", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 2m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -77,9 +77,9 @@ public class BrakeExpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var indicator = new BrakeExpIndicator
 		{
@@ -126,7 +126,7 @@ public class BrakeExpStrategy : Strategy
 	/// <summary>
 	/// Custom BrakeExp indicator implementation.
 	/// </summary>
-	private class BrakeExpIndicator : Indicator<ICandleMessage>
+	private class BrakeExpIndicator : BaseIndicator
 	{
 		private int _barIndex;
 		private decimal _maxPrice = decimal.MinValue;

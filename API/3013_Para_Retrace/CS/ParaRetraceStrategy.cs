@@ -97,27 +97,27 @@ public class ParaRetraceStrategy : Strategy
 		_sarStep = Param(nameof(SarStep), 0.01m)
 			.SetDisplay("SAR Step", "Acceleration step for Parabolic SAR", "Indicators")
 			.SetRange(0.005m, 0.05m)
-			.SetCanOptimize(true);
+			;
 
 		_sarMax = Param(nameof(SarMax), 0.2m)
 			.SetDisplay("SAR Max", "Maximum acceleration for Parabolic SAR", "Indicators")
 			.SetRange(0.1m, 0.5m)
-			.SetCanOptimize(true);
+			;
 
 		_retraceOffsetPips = Param(nameof(RetraceOffsetPips), 30m)
 			.SetDisplay("Retrace Offset", "Pip distance between price and SAR to trigger entries", "Entries")
 			.SetRange(0m, 200m)
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 30m)
 			.SetDisplay("Stop Loss", "Protective stop distance in pips", "Risk")
 			.SetRange(0m, 300m)
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 30m)
 			.SetDisplay("Take Profit", "Profit target distance in pips", "Risk")
 			.SetRange(0m, 400m)
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
@@ -143,9 +143,9 @@ public class ParaRetraceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Estimate pip size from the security metadata (defaulting to one if unavailable).
 		var priceStep = Security?.PriceStep ?? 1m;

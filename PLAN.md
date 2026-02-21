@@ -1,0 +1,4090 @@
+# Plan: Fix All AlgoTrading Strategies
+
+## Overview
+
+- **Total C# strategies**: ~4049 (in API/*/CS/*.cs)
+- **Approach**: Standalone Runner app compiles and backtests ONE strategy at a time
+
+## Runner App
+
+**Location**: `D:\stocksharp\AlgoTrading\Runner\`
+
+### Runner.csproj
+
+- Based on `04_Testing.HistoryConsole_fromsrc.csproj`
+- Imports `common_samples_net.props` (net10.0, Algo.csproj)
+- ProjectReference: `Algo.Indicators`, `Algo.Strategies`
+- PackageReference: `StockSharp.Samples.HistoryData`
+- Single `<Compile Include="..."/>` pointing to current strategy .cs file
+
+### Program.cs
+
+- Directly instantiates the strategy class (no reflection)
+- Creates Security from `Paths.HistoryDefaultSecurity`
+- Creates `HistoryEmulationConnector` with `StorageRegistry` + `LocalMarketDataDrive`
+- Sets Level1 info (MinPrice, MaxPrice, MarginBuy, MarginSell)
+- Runs backtest with 30s timeout
+- Prints orders/trades/PnL, exit code 0 or 1
+
+### Working Process (per strategy)
+
+1. Edit `Runner.csproj` — change `<Compile Include="..."/>` to point to strategy .cs
+2. Edit `Program.cs` — change strategy class instantiation
+3. `dotnet build Runner.csproj` — fix compilation errors
+4. `dotnet run --project Runner.csproj` — fix runtime/logic errors, ensure trades
+5. Mark `[x]` in Progress Tracker below
+6. Move to next strategy
+
+## Progress Tracker
+
+- [x] 0001_MA_CrossOver — MaCrossoverStrategy
+- [x] 0002_NDay_Breakout — NdayBreakoutStrategy
+- [x] 0003_ADX_Trend — AdxTrendStrategy
+- [x] 0004_Parabolic_SAR_Trend — ParabolicSarTrendStrategy
+- [x] 0005_Donchian_Channel — DonchianChannelStrategy
+- [x] 0006_Tripple_MA — TripleMAStrategy
+- [x] 0007_Keltner_Channel_Breakout — KeltnerChannelBreakoutStrategy
+- [x] 0008_Hull_MA_Trend — HullMaTrendStrategy
+- [x] 0009_MACD_Trend — MacdTrendStrategy
+- [x] 0010_Super_Trend — SupertrendStrategy
+- [x] 0011_Ichimoku_Kumo_Breakout — IchimokuKumoBreakoutStrategy
+- [x] 0012_Heikin_Ashi_Consecutive — HeikinAshiConsecutiveStrategy
+- [x] 0013_DMI_Power_Move — DmiPowerMoveStrategy
+- [x] 0014_TradingView_Supertrend_Flip — TradingViewSupertrendFlipStrategy
+- [x] 0015_Gann_Swing_Breakout — GannSwingBreakoutStrategy
+- [x] 0016_RSI_Divergence — RsiDivergenceStrategy
+- [x] 0017_Williams_R — WilliamsPercentRStrategy
+- [x] 0018_ROC_Impulce — RocImpulseStrategy
+- [x] 0019_CCI_Breakout — CciBreakoutStrategy
+- [x] 0020_Momentum_Percentage — MomentumPercentageStrategy
+- [x] 0021_Bollinger_Squeeze — BollingerSqueezeStrategy
+- [x] 0022_ADX_DI — AdxDiStrategy
+- [x] 0023_Elder_Impulse — ElderImpulseStrategy
+- [x] 0024_RSI_Laguerre — LaguerreRsiStrategy
+- [x] 0025_Stochastic_RSI_Cross — StochasticRsiCrossStrategy
+- [x] 0026_RSI_Reversion — RsiReversionStrategy
+- [x] 0027_Bollinger_Reversion — BollingerReversionStrategy
+- [x] 0028_ZScore — ZScoreStrategy
+- [x] 0029_MA_Deviation — MADeviationStrategy
+- [x] 0030_VWAP_Reversion — VwapReversionStrategy
+- [x] 0031_Keltner_Reversion — KeltnerReversionStrategy
+- [x] 0032_ATR_Reversion — AtrReversionStrategy
+- [x] 0033_MACD_Zero — MacdZeroStrategy
+- [x] 0034_Low_Vol_Reversion — LowVolReversionStrategy
+- [x] 0035_Bollinger_B_Reversion — BollingerPercentBStrategy
+- [x] 0036_ATR_Expansion — AtrExpansionStrategy
+- [x] 0037_VIX_Trigger — VixTriggerStrategy
+- [x] 0038_BB_Width — BollingerBandWidthStrategy
+- [x] 0039_HV_Breakout — HvBreakoutStrategy
+- [x] 0040_ATR_Trailing — AtrTrailingStrategy
+- [x] 0041_Vol_Adjusted_MA — VolAdjustedMaStrategy
+- [x] 0042_IV_Spike — IvSpikeStrategy
+- [ ] 0043_VCP — VcpStrategy
+- [x] 0044_ATR_Range — AtrRangeStrategy
+- [x] 0045_Choppiness_Index_Breakout — ChoppinessIndexBreakoutStrategy
+- [x] 0046_Volume_Spike — VolumeSpikeStrategy
+- [ ] 0047_OBV_Breakout — ObvBreakoutStrategy
+- [x] 0048_VWAP_Breakout — VWAPBreakoutStrategy
+- [x] 0049_VWMA — VWMAStrategy
+- [x] 0050_AD — ADStrategy
+- [x] 0051_Volume_Weighted_Price_Breakout — VolumeWeightedPriceBreakoutStrategy
+- [x] 0052_Volume_Divergence — VolumeDivergenceStrategy
+- [x] 0053_Volume_MA_Cross — VolumeMAXrossStrategy
+- [ ] 0054_Cumulative_Delta_Breakout — CumulativeDeltaBreakoutStrategy
+- [x] 0055_Volume_Surge — VolumeSurgeStrategy
+- [x] 0056_Double_Bottom — DoubleBottomStrategy
+- [x] 0057_Double_Top — DoubleTopStrategy
+- [x] 0058_RSI_Overbought_Oversold — RsiOverboughtOversoldStrategy
+- [x] 0059_Hammer_Candle — HammerCandleStrategy
+- [x] 0060_Shooting_Star — ShootingStarStrategy
+- [x] 0061_MACD_Divergence — MacdDivergenceStrategy
+- [x] 0062_Stochastic_Overbought_Oversold — StochasticOverboughtOversoldStrategy
+- [ ] 0063_Engulfing_Bullish — EngulfingBullishStrategy
+- [ ] 0064_Engulfing_Bearish — EngulfingBearishStrategy
+- [x] 0065_Pinbar_Reversal — PinbarReversalStrategy
+- [x] 0066_Three_Bar_Reversal_Up — ThreeBarReversalUpStrategy
+- [x] 0067_Three_Bar_Reversal_Down — ThreeBarReversalDownStrategy
+- [x] 0068_CCI_Divergence — CciDivergenceStrategy
+- [x] 0069_Bollinger_Band_Reversal — BollingerBandReversalStrategy
+- [x] 0070_Morning_Star — MorningStarStrategy
+- [x] 0071_Evening_Star — EveningStarStrategy
+- [x] 0072_Doji_Reversal — DojiReversalStrategy
+- [x] 0073_Keltner_Channel_Reversal — KeltnerChannelReversalStrategy
+- [x] 0074_Williams_R_Divergence — WilliamsPercentRDivergenceStrategy
+- [x] 0075_OBV_Divergence — ObvDivergenceStrategy
+- [x] 0076_Fibonacci_Retracement_Reversal — FibonacciRetracementReversalStrategy
+- [x] 0077_Inside_Bar_Breakout — InsideBarBreakoutStrategy
+- [x] 0078_Outside_Bar_Reversal — OutsideBarReversalStrategy
+- [x] 0079_Trendline_Bounce — TrendlineBounceStrategy
+- [x] 0080_Pivot_Point_Reversal — PivotPointReversalStrategy
+- [x] 0081_VWAP_Bounce — VwapBounceStrategy
+- [ ] 0082_Volume_Exhaustion — VolumeExhaustionStrategy
+- [x] 0083_ADX_Weakening — AdxWeakeningStrategy
+- [x] 0084_ATR_Exhaustion — AtrExhaustionStrategy
+- [x] 0085_Ichimoku_Tenkan — IchimokuTenkanKijunStrategy
+- [x] 0086_Heikin_Ashi_Reversal — HeikinAshiReversalStrategy
+- [x] 0087_Parabolic_SAR_Reversal — ParabolicSarReversalStrategy
+- [x] 0088_Supertrend_Reversal — SupertrendReversalStrategy
+- [x] 0089_Hull_MA_Reversal — HullMaReversalStrategy
+- [ ] 0090_Donchian_Reversal — DonchianReversalStrategy
+- [x] 0091_MACD_Histogram_Reversal — MacdHistogramReversalStrategy
+- [x] 0092_RSI_Hook_Reversal — RsiHookReversalStrategy
+- [x] 0093_Stochastic_Hook_Reversal — StochasticHookReversalStrategy
+- [x] 0094_CCI_Hook_Reversal — CciHookReversalStrategy
+- [x] 0095_Williams_R_Hook_Reversal — WilliamsRHookReversalStrategy
+- [x] 0096_Three_White_Soldiers — ThreeWhiteSoldiersStrategy
+- [x] 0097_Three_Black_Crows — ThreeBlackCrowsStrategy
+- [x] 0098_Gap_Fill_Reversal — GapFillReversalStrategy
+- [x] 0099_Tweezer_Bottom — TweezerBottomStrategy
+- [x] 0100_Tweezer_Top — TweezerTopStrategy
+- [x] 0101_Harami_Bullish — HaramiBullishStrategy
+- [x] 0102_Harami_Bearish — HaramiBearishStrategy
+- [ ] 0103_Dark_Pool_Prints — DarkPoolPrintsStrategy
+- [x] 0104_Rejection_Candle — RejectionCandleStrategy
+- [x] 0105_False_Breakout_Trap — FalseBreakoutTrapStrategy
+- [x] 0106_Spring_Reversal — SpringReversalStrategy
+- [ ] 0107_Upthrust_Reversal — UpthrustReversalStrategy
+- [ ] 0108_Wyckoff_Accumulation — WyckoffAccumulationStrategy
+- [ ] 0109_Wyckoff_Distribution — WyckoffDistributionStrategy
+- [x] 0110_RSI_Failure_Swing — RsiFailureSwingStrategy
+- [x] 0111_Stochastic_Failure_Swing — StochasticFailureSwingStrategy
+- [x] 0112_CCI_Failure_Swing — CciFailureSwingStrategy
+- [x] 0113_Bullish_Abandoned_Baby — BullishAbandonedBabyStrategy
+- [x] 0114_Bearish_Abandoned_Baby — BearishAbandonedBabyStrategy
+- [x] 0115_Volume_Climax_Reversal — VolumeClimaxReversalStrategy
+- [x] 0116_Day_of_Week — DayOfWeekStrategy
+- [ ] 0117_Month_of_Year — MonthOfYearStrategy
+- [x] 0118_Turnaround_Tuesday — TurnaroundTuesdayStrategy
+- [ ] 0119_End_of_Month_Strength — EndOfMonthStrengthStrategy
+- [x] 0120_First_Day_of_Month — FirstDayOfMonthStrategy
+- [ ] 0121_Santa_Claus_Rally — SantaClausRallyStrategy
+- [ ] 0122_January_Effect — JanuaryEffectStrategy
+- [x] 0123_Monday_Weakness — MondayWeaknessStrategy
+- [ ] 0124_Pre-Holiday_Strength — PreHolidayStrengthStrategy
+- [ ] 0125_Post-Holiday_Weakness — PostHolidayWeaknessStrategy
+- [x] 0126_Quarterly_Expiry — QuarterlyExpiryStrategy
+- [x] 0127_Open_Drive — OpenDriveStrategy
+- [x] 0128_Midday_Reversal — MiddayReversalStrategy
+- [x] 0129_Overnight_Gap — OvernightGapStrategy
+- [x] 0130_Lunch_Break_Fade — LunchBreakFadeStrategy
+- [x] 0131_MACD_RSI — MacdRsiStrategy
+- [x] 0132_Bollinger_Stochastic — BollingerStochasticStrategy
+- [x] 0133_MA_Volume — MaVolumeStrategy
+- [x] 0134_ADX_MACD — AdxMacdStrategy
+- [x] 0135_Ichimoku_RSI — IchimokuRsiStrategy
+- [x] 0136_Supertrend_Volume — SupertrendVolumeStrategy
+- [x] 0137_Bollinger_RSI — BollingerRsiStrategy
+- [x] 0138_MA_Stochastic — MaStochasticStrategy
+- [x] 0139_ATR_MACD — AtrMacdStrategy
+- [x] 0140_VWAP_RSI — VwapRsiStrategy
+- [ ] 0141_Donchian_Volume — DonchianVolumeStrategy
+- [x] 0142_Keltner_Stochastic — KeltnerStochasticStrategy
+- [x] 0143_Parabolic_SAR_RSI — ParabolicSarRsiStrategy
+- [ ] 0144_Hull_MA_Volume — HullMaVolumeStrategy
+- [x] 0145_ADX_Stochastic — AdxStochasticStrategy
+- [ ] 0146_MACD_Volume — MacdVolumeStrategy
+- [x] 0147_Bollinger_Volume — BollingerVolumeStrategy
+- [x] 0148_RSI_Stochastic — RsiStochasticStrategy
+- [x] 0149_MA_ADX — MaAdxStrategy
+- [x] 0150_VWAP_Stochastic — VwapStochasticStrategy
+- [x] 0151_Ichimoku_Volume — IchimokuVolumeStrategy
+- [x] 0152_Supertrend_RSI — SupertrendRsiStrategy
+- [x] 0153_Bollinger_ADX — BollingerAdxStrategy
+- [x] 0154_MA_CCI — MaCciStrategy
+- [x] 0155_VWAP_Volume — VwapVolumeStrategy
+- [x] 0156_Donchian_RSI — DonchianRsiStrategy
+- [x] 0157_Keltner_Volume — KeltnerVolumeStrategy
+- [x] 0158_Parabolic_SAR_Stochastic — ParabolicSarStochasticStrategy
+- [x] 0159_Hull_MA_RSI — HullMaRsiStrategy
+- [x] 0160_ADX_Volume — AdxVolumeStrategy
+- [x] 0161_MACD_CCI — MacdCciStrategy
+- [ ] 0162_Bollinger_CCI — BollingerCciStrategy
+- [x] 0163_RSI_Williams_R — RsiWilliamsRStrategy
+- [x] 0164_MA_Williams_R — MaWilliamsRStrategy
+- [x] 0165_VWAP_CCI — VwapCciStrategy
+- [ ] 0166_Donchian_Stochastic — DonchianStochasticStrategy
+- [x] 0167_Keltner_RSI — KeltnerRsiStrategy
+- [x] 0169_Hull_MA_Stochastic — HullMaStochasticStrategy
+- [x] 0170_ADX_CCI — AdxCciStrategy
+- [x] 0171_MACD_Williams_R — MacdWilliamsRStrategy
+- [x] 0172_Bollinger_Williams_R — BollingerWilliamsRStrategy
+- [x] 0174_MACD_VWAP — MacdVwapStrategy
+- [x] 0175_RSI_Supertrend — RsiSupertrendStrategy
+- [x] 0176_ADX_Bollinger — AdxBollingerStrategy
+- [x] 0177_Ichimoku_Stochastic — IchimokuStochasticStrategy
+- [x] 0185_Supertrend_Stochastic — SupertrendStochasticStrategy
+- [x] 0187_Donchian_MACD — DonchianMacdStrategy
+- [x] 0188_Parabolic_SAR_Volume — ParabolicSarVolumeStrategy
+- [x] 0190_VWAP_ADX — VwapAdxStrategy
+- [x] 0193_Supertrend_ADX — SupertrendAdxStrategy
+- [x] 0194_Keltner_MACD — KeltnerMacdStrategy
+- [x] 0197_Hull_MA_ADX — HullMaAdxStrategy
+- [x] 0198_VWAP_MACD — VwapMacdStrategy
+- [x] 0200_Ichimoku_ADX — IchimokuAdxStrategy
+- [x] 0201_VWAP_Williams_R — VwapWilliamsRStrategy
+- [ ] 0202_Donchian_CCI — DonchianCciStrategy
+- [x] 0203_Keltner_Williams_R — KeltnerWilliamsRStrategy
+- [x] 0204_Parabolic_SAR_CCI — ParabolicSarCciStrategy
+- [x] 0205_Hull_MA_CCI — HullMaCciStrategy
+- [x] 0206_MACD_Bollinger — MacdBollingerStrategy
+- [x] 0207_RSI_Hull_MA — RsiHullMaStrategy
+- [x] 0208_Stochastic_Keltner — StochasticKeltnerStrategy
+- [x] 0209_Volume_Supertrend — VolumeSupertrendStrategy
+- [x] 0210_ADX_Donchian — AdxDonchianStrategy
+- [ ] 0211_CCI_VWAP — CciVwapStrategy
+- [x] 0212_Williams_R_Ichimoku — WilliamsIchimokuStrategy
+- [x] 0213_MA_Parabolic_SAR — MaParabolicSarStrategy
+- [ ] 0214_Bollinger_Supertrend — BollingerSupertrendStrategy
+- [ ] 0215_RSI_Donchian — RsiDonchianStrategy
+- [x] 0216_Mean_Reversion — MeanReversionStrategy
+- [ ] 0217_Pairs_Trading — PairsTradingStrategy
+- [x] 0218_ZScore_Reversal — ZScoreReversalStrategy
+- [ ] 0219_Statistical_Arbitrage — StatisticalArbitrageStrategy
+- [x] 0220_Volatility_Breakout — VolatilityBreakoutStrategy
+- [ ] 0221_Bollinger_Band_Squeeze — BollingerBandSqueezeStrategy
+- [ ] 0222_Cointegration_Pairs — CointegrationPairsStrategy
+- [x] 0223_Momentum_Divergence — MomentumDivergenceStrategy
+- [x] 0224_ATR_Mean_Reversion — AtrMeanReversionStrategy
+- [x] 0225_Kalman_Filter_Trend — KalmanFilterTrendStrategy
+- [x] 0226_Volatility_Adjusted_Mean_Reversion — VolatilityAdjustedMeanReversionStrategy
+- [x] 0227_Hurst_Exponent_Trend — HurstExponentTrendStrategy
+- [x] 0228_Hurst_Exponent_Reversion — HurstExponentReversionStrategy
+- [x] 0229_Autocorrelation_Reversal — AutocorrelationReversionStrategy
+- [ ] 0230_Delta_Neutral_Arbitrage — DeltaNeutralArbitrageStrategy
+- [ ] 0231_Volatility_Skew_Arbitrage — VolatilitySkewArbitrageStrategy
+- [ ] 0232_Correlation_Breakout — CorrelationBreakoutStrategy
+- [ ] 0233_Beta_Neutral_Arbitrage — BetaNeutralArbitrageStrategy
+- [x] 0235_VWAP_Mean_Reversion — VwapMeanReversionStrategy
+- [x] 0236_RSI_Mean_Reversion — RsiMeanReversionStrategy
+- [x] 0237_Stochastic_Mean_Reversion — StochasticMeanReversionStrategy
+- [x] 0238_CCI_Mean_Reversion — CciMeanReversionStrategy
+- [x] 0239_Williams_R_Mean_Reversion — WilliamsRMeanReversionStrategy
+- [x] 0240_MACD_Mean_Reversion — MacdMeanReversionStrategy
+- [x] 0241_ADX_Mean_Reversion — AdxMeanReversionStrategy
+- [x] 0242_Volatility_Mean_Reversion — VolatilityMeanReversionStrategy
+- [x] 0243_Volume_Mean_Reversion — VolumeMeanReversionStrategy
+- [x] 0244_OBV_Mean_Reversion — ObvMeanReversionStrategy
+- [x] 0245_Momentum_Breakout — MomentumBreakoutStrategy
+- [x] 0247_RSI_Breakout — RsiBreakoutStrategy
+- [x] 0248_Stochastic_Breakout — StochasticBreakoutStrategy
+- [ ] 0250_Williams_R_Breakout — WilliamsRBreakoutStrategy
+- [x] 0251_MACD_Breakout — MacdBreakoutStrategy
+- [ ] 0252_ADX_Breakout — ADXBreakoutStrategy
+- [x] 0254_Volume_Breakout — VolumeBreakoutStrategy
+- [ ] 0256_Bollinger_Band_Width_Breakout — BollingerWidthBreakoutStrategy
+- [ ] 0257_Keltner_Channel_Width_Breakout — KeltnerWidthBreakoutStrategy
+- [ ] 0258_Donchian_Channel_Width_Breakout — DonchianWidthBreakoutStrategy
+- [ ] 0259_Ichimoku_Cloud_Width_Breakout — IchimokuWidthBreakoutStrategy
+- [ ] 0260_Supertrend_Distance_Breakout — SupertrendDistanceBreakoutStrategy
+- [ ] 0261_Parabolic_SAR_Distance_Breakout — ParabolicSarDistanceBreakoutStrategy
+- [x] 0262_Hull_MA_Slope_Breakout — HullMaSlopeBreakoutStrategy
+- [x] 0263_MA_Slope_Breakout — MaSlopeBreakoutStrategy
+- [x] 0264_EMA_Slope_Breakout — EmaSlopeBreakoutStrategy
+- [x] 0265_Volatility_Adjusted_Momentum — VolatilityAdjustedMomentumStrategy
+- [x] 0266_VWAP_Slope_Breakout — VwapSlopeBreakoutStrategy
+- [x] 0267_RSI_Slope_Breakout — RsiSlopeBreakoutStrategy
+- [x] 0268_Stochastic_Slope_Breakout — StochasticSlopeBreakoutStrategy
+- [x] 0269_CCI_Slope_Breakout — CciSlopeBreakoutStrategy
+- [x] 0270_Williams_R_Slope_Breakout — WilliamsRSlopeBreakoutStrategy
+- [x] 0271_MACD_Slope_Breakout — MacdSlopeBreakoutStrategy
+- [x] 0272_ADX_Slope_Breakout — AdxSlopeBreakoutStrategy
+- [x] 0273_ATR_Slope_Breakout — AtrSlopeBreakoutStrategy
+- [x] 0274_Volume_Slope_Breakout — VolumeSlopeBreakoutStrategy
+- [x] 0275_OBV_Slope_Breakout — ObvSlopeBreakoutStrategy
+- [x] 0276_Bollinger_Width_Mean_Reversion — BollingerWidthMeanReversionStrategy
+- [x] 0277_Keltner_Width_Mean_Reversion — KeltnerWidthMeanReversionStrategy
+- [x] 0278_Donchian_Width_Mean_Reversion — DonchianWidthMeanReversionStrategy
+- [ ] 0279_Ichimoku_Cloud_Width_Mean_Reversion — IchimokuCloudWidthMeanReversionStrategy
+- [x] 0280_Supertrend_Distance_Mean_Reversion — SupertrendDistanceMeanReversionStrategy
+- [x] 0281_Parabolic_SAR_Distance_Mean_Reversion — ParabolicSarDistanceMeanReversionStrategy
+- [x] 0282_Hull_MA_Slope_Mean_Reversion — HullMaSlopeMeanReversionStrategy
+- [x] 0283_MA_Slope_Mean_Reversion — MaSlopeMeanReversionStrategy
+- [x] 0284_EMA_Slope_Mean_Reversion — EmaSlopeMeanReversionStrategy
+- [x] 0285_VWAP_Slope_Mean_Reversion — VwapSlopeMeanReversionStrategy
+- [x] 0286_RSI_Slope_Mean_Reversion — RsiSlopeMeanReversionStrategy
+- [x] 0287_Stochastic_Slope_Mean_Reversion — StochasticSlopeMeanReversionStrategy
+- [x] 0288_CCI_Slope_Mean_Reversion — CciSlopeMeanReversionStrategy
+- [x] 0289_Williams_R_Slope_Mean_Reversion — WilliamsRSlopeMeanReversionStrategy
+- [x] 0290_MACD_Slope_Mean_Reversion — MacdSlopeMeanReversionStrategy
+- [x] 0291_ADX_Slope_Mean_Reversion — AdxSlopeMeanReversionStrategy
+- [x] 0292_ATR_Slope_Mean_Reversion — AtrSlopeMeanReversionStrategy
+- [ ] 0293_Volume_Slope_Mean_Reversion — VolumeSlopeMeanReversionStrategy
+- [x] 0294_OBV_Slope_Mean_Reversion — ObvSlopeMeanReversionStrategy
+- [ ] 0295_Pairs_Trading_Volatility_Filter — PairsTradingVolatilityFilterStrategy
+- [x] 0296_Z-Score_Volume_Filter — ZScoreVolumeFilterStrategy
+- [ ] 0298_Correlation_Mean_Reversion — CorrelationMeanReversionStrategy
+- [ ] 0299_Beta_Adjusted_Pairs_Trading — BetaAdjustedPairsStrategy
+- [ ] 0300_Hurst_Exponent_Volatility_Filter — HurstVolatilityFilterStrategy
+- [x] 0301_Adaptive_EMA_Breakout — AdaptiveEmaBreakoutStrategy
+- [x] 0302_Volatility_Cluster_Breakout — VolatilityClusterBreakoutStrategy
+- [ ] 0303_Seasonality_Adjusted_Momentum — SeasonalityAdjustedMomentumStrategy
+- [x] 0305_RSI_Dynamic_Overbought_Oversold — RsiDynamicOverboughtOversoldStrategy
+- [x] 0306_Bollinger_Volatility_Breakout — BollingerVolatilityBreakoutStrategy
+- [x] 0307_MACD_Adaptive_Histogram — MacdAdaptiveHistogramStrategy
+- [x] 0308_Ichimoku_Volume_Cluster — IchimokuVolumeClusterStrategy
+- [x] 0309_Supertrend_Momentum_Filter — SupertrendWithMomentumStrategy
+- [ ] 0310_Donchian_Volatility_Contraction — DonchianWithVolatilityContractionStrategy
+- [ ] 0311_Keltner_RSI_Divergence — KeltnerWithRsiDivergenceStrategy
+- [x] 0312_Hull_MA_Volume_Spike — HullMaWithVolumeSpikeStrategy
+- [x] 0313_VWAP_ADX_Trend_Strength — VwapWithAdxTrendStrengthStrategy
+- [x] 0314_Parabolic_SAR_Volatility_Expansion — ParabolicSarWithVolatilityExpansionStrategy
+- [x] 0315_Stochastic_Dynamic_Zones — StochasticWithDynamicZonesStrategy
+- [x] 0316_ADX_Volume_Breakout — AdxWithVolumeBreakoutStrategy
+- [x] 0317_CCI_Volatility_Filter — CciWithVolatilityFilterStrategy
+- [x] 0318_Williams_R_Momentum — WilliamsPercentRWithMomentumStrategy
+- [x] 0319_Bollinger_K-Means_Cluster — BollingerKMeansStrategy
+- [x] 0320_MACD_Hidden_Markov_Model — MacdHmmStrategy
+- [x] 0321_Ichimoku_Hurst_Exponent — IchimokuHurstStrategy
+- [ ] 0322_Supertrend_RSI_Divergence — SupertrendRsiDivergenceStrategy
+- [ ] 0323_Donchian_Seasonal_Filter — DonchianSeasonalStrategy
+- [x] 0324_Keltner_Kalman_Filter — KeltnerKalmanStrategy
+- [x] 0325_Hull_MA_Volatility_Contraction — HullMaVolatilityContractionStrategy
+- [x] 0326_VWAP_Stochastic_Divergence — VwapAdxTrendStrategy
+- [ ] 0327_Parabolic_SAR_Hurst_Filter — ParabolicSarHurstStrategy
+- [x] 0328_Bollinger_Kalman_Filter — BollingerKalmanFilterStrategy
+- [x] 0329_MACD_Volume_Cluster — MacdVolumeClusterStrategy
+- [ ] 0330_Ichimoku_Volatility_Contraction — IchimokuVolatilityContractionStrategy
+- [ ] 0332_Donchian_Hurst_Exponent — DonchianHurstStrategy
+- [ ] 0333_Keltner_Seasonal_Filter — KeltnerSeasonalStrategy
+- [x] 0334_Hull_MA_K-Means_Cluster — HullKMeansClusterStrategy
+- [x] 0335_VWAP_Hidden_Markov_Model — VwapHiddenMarkovModelStrategy
+- [ ] 0336_Parabolic_SAR_RSI_Divergence — ParabolicSarRsiDivergenceStrategy
+- [x] 0337_Adaptive_RSI_Volume_Filter — AdaptiveRsiVolumeStrategy
+- [x] 0338_Adaptive_Bollinger_Breakout — AdaptiveBollingerBreakoutStrategy
+- [x] 0339_MACD_Sentiment_Filter — MacdWithSentimentFilterStrategy
+- [x] 0340_Ichimoku_Implied_Volatility — IchimokuWithImpliedVolatilityStrategy
+- [x] 0341_Supertrend_Put_Call_Ratio — SupertrendWithPutCallRatioStrategy
+- [ ] 0342_Donchian_Sentiment_Spike — DonchianWithSentimentSpikeStrategy
+- [x] 0343_Keltner_Reinforcement_Learning_Signal — KeltnerWithRLSignalStrategy
+- [x] 0344_Hull_MA_Implied_Volatility_Breakout — HullMAWithImpliedVolatilityBreakoutStrategy
+- [x] 0345_VWAP_Behavioral_Bias_Filter — VwapWithBehavioralBiasFilterStrategy
+- [x] 0346_Parabolic_SAR_Sentiment_Divergence — ParabolicSarSentimentDivergenceStrategy
+- [x] 0347_RSI_Option_Open_Interest — RsiWithOptionOpenInterestStrategy
+- [x] 0348_Stochastic_Implied_Volatility_Skew — StochasticImpliedVolatilitySkewStrategy
+- [x] 0349_ADX_Sentiment_Momentum — AdxSentimentMomentumStrategy
+- [x] 0350_CCI_Put_Call_Ratio_Divergence — CciPutCallRatioDivergenceStrategy
+- [ ] 0351_Accrual_Anomaly — AccrualAnomalyStrategy
+- [ ] 0352_Asset_Class_Trend_Following — AssetClassTrendFollowingStrategy
+- [ ] 0353_Asset_Growth_Effect — AssetGrowthEffectStrategy
+- [ ] 0354_Betting_Against_Beta_Stocks — BettingAgainstBetaStocksStrategy
+- [ ] 0355_Betting_Against_Beta — BettingAgainstBetaStrategy
+- [ ] 0356_Bitcoin_Intraday_Seasonality — BitcoinIntradaySeasonalityStrategy
+- [ ] 0357_Book_To_Market_Value — BookToMarketValueStrategy
+- [ ] 0358_Commodity_Momentum — CommodityMomentumStrategy
+- [ ] 0359_Consistent_Momentum — ConsistentMomentumStrategy
+- [ ] 0360_Country_Value_Factor — CountryValueFactorStrategy
+- [ ] 0361_Crude_Oil_Predicts_Equity — CrudeOilPredictsEquityStrategy
+- [ ] 0362_Crypto_Rebalancing_Premium — CryptoRebalancingPremiumStrategy
+- [ ] 0363_Currency_Momentum_Factor — CurrencyMomentumFactorStrategy
+- [ ] 0364_Currency_PPPValue — CurrencyPPPValueStrategy
+- [ ] 0365_Dispersion_Trading — DispersionTradingStrategy
+- [ ] 0366_Dollar_Carry_Trade — DollarCarryTradeStrategy
+- [ ] 0367_Earnings_Announcement_Premium — EarningsAnnouncementPremiumStrategy
+- [ ] 0368_Earnings_Announcement_Reversal — EarningsAnnouncementReversalStrategy
+- [ ] 0369_Earnings_Announcements_With_Buybacks — EarningsAnnouncementsWithBuybacksStrategy
+- [ ] 0370_Earnings_Quality_Factor — EarningsQualityFactorStrategy
+- [ ] 0371_ESGFactor_Momentum — ESGFactorMomentumStrategy
+- [ ] 0372_Fed_Model — FedModelStrategy
+- [ ] 0373_FScore_Reversal — FScoreReversalStrategy
+- [ ] 0374_FXCarry_Trade — FXCarryTradeStrategy
+- [ ] 0375_January_Barometer — JanuaryBarometerStrategy
+- [ ] 0376_Lexical_Density_Filings — LexicalDensityFilingsStrategy
+- [ ] 0377_Low_Volatility_Stocks — LowVolatilityStocksStrategy
+- [ ] 0378_Momentum_Asset_Growth — MomentumAssetGrowthStrategy
+- [ ] 0379_Momentum_Factor_Stocks — MomentumFactorStocksStrategy
+- [ ] 0380_Momentum_Rev_Vol — MomentumRevVolStrategy
+- [ ] 0381_Momentum_Style_Rotation — MomentumStyleRotationStrategy
+- [ ] 0382_Month12Cycle — Month12CycleStrategy
+- [ ] 0383_Mutual_Fund_Momentum — MutualFundMomentumStrategy
+- [ ] 0384_Option_Expiration_Week — OptionExpirationWeekStrategy
+- [ ] 0385_Overnight_Sentiment_Anomaly — OvernightSentimentAnomalyStrategy
+- [ ] 0386_Paired_Switching — PairedSwitchingStrategy
+- [ ] 0387_Pairs_Trading_Country_ETFs — PairsTradingCountryETFsStrategy
+- [ ] 0388_Pairs_Trading_Stocks — PairsTradingStocksStrategy
+- [ ] 0389_Payday_Anomaly — PaydayAnomalyStrategy
+- [ ] 0390_RDExpenditures — RDExpendituresStrategy
+- [ ] 0391_Residual_Momentum_Factor — ResidualMomentumFactorStrategy
+- [ ] 0392_Return_Asymmetry_Commodity — ReturnAsymmetryCommodityStrategy
+- [ ] 0393_ROAEffect_Stocks — ROAEffectStocksStrategy
+- [ ] 0394_Sector_Momentum_Rotation — SectorMomentumRotationStrategy
+- [ ] 0395_Short_Interest_Effect — ShortInterestEffectStrategy
+- [ ] 0396_Short_Term_Reversal_Futures — ShortTermReversalFuturesStrategy
+- [ ] 0397_Short_Term_Reversal_Stocks — ShortTermReversalStocksStrategy
+- [ ] 0398_Skewness_Commodity — SkewnessCommodityStrategy
+- [ ] 0399_Small_Cap_Premium — SmallCapPremiumStrategy
+- [ ] 0400_Smart_Factors_Momentum_Market — SmartFactorsMomentumMarketStrategy
+- [ ] 0401_Soccer_Clubs_Arbitrage — SoccerClubsArbitrageStrategy
+- [ ] 0402_Synthetic_Lending_Rates — SyntheticLendingRatesStrategy
+- [ ] 0403_Term_Structure_Commodities — TermStructureCommoditiesStrategy
+- [ ] 0404_Time_Series_Momentum — TimeSeriesMomentumStrategy
+- [ ] 0405_Trend_Following_Stocks — TrendFollowingStocksStrategy
+- [x] 0406_Turn_Of_Month — TurnOfMonthStrategy
+- [ ] 0407_Value_Momentum_Across_Assets — ValueMomentumAcrossAssetsStrategy
+- [ ] 0408_Volatility_Risk_Premium — VolatilityRiskPremiumStrategy
+- [ ] 0409_Weeks52High — Weeks52HighStrategy
+- [ ] 0410_WTIBrent_Spread — WTIBrentSpreadStrategy
+- [ ] 0411_Asset_Class_Momentum_Rotational — AssetClassMomentumRotationalStrategy
+- [x] 0412_Bollinger_Aroon — BollingerAroonStrategy
+- [ ] 0413_Bollinger_Divergence — BollingerDivergenceStrategy
+- [x] 0414_Bollinger_Winner_Lite — BollingerWinnerLiteStrategy
+- [x] 0415_Bollinger_Winner_Pro — BollingerWinnerProStrategy
+- [x] 0416_Bollinger_Breakout — BollingerBreakoutStrategy
+- [x] 0417_Dmi_Winner — DmiWinnerStrategy
+- [x] 0418_Double_Rsi — DoubleRsiStrategy
+- [x] 0419_Double_Supertrend — DoubleSupertrendStrategy
+- [ ] 0420_Ema_Moving_Away — EmaMovingAwayStrategy
+- [x] 0421_Ema_Sma_Rsi — EmaSmaRsiStrategy
+- [x] 0422_Exceeded_Candle — ExceededCandleStrategy
+- [x] 0423_Flawless_Victory — FlawlessVictoryStrategy
+- [x] 0424_Full_Candle — FullCandleStrategy
+- [ ] 0425_Grid_Bot — GridBotStrategy
+- [ ] 0426_Ha_Universal — HaUniversalStrategy
+- [x] 0427_Heikin_Ashi_V2 — HeikinAshiV2Strategy
+- [x] 0428_Improvisando — ImprovisandoStrategy
+- [x] 0429_Javo_V1 — JavoV1Strategy
+- [x] 0430_Macd_Bb_Rsi — MacdBbRsiStrategy
+- [x] 0432_Macd_Dmi — MacdDmiStrategy
+- [x] 0433_Macd_Long — MacdLongStrategy
+- [x] 0435_Ma_Cross_Dmi — MaCrossDmiStrategy
+- [x] 0436_Mema_Bb_Rsi — MemaBbRsiStrategy
+- [x] 0437_Mtf_Bb — MtfBbStrategy
+- [ ] 0438_Omar_Mmr — OmarMmrStrategy
+- [x] 0439_Pin_Bar_Magic — PinBarMagicStrategy
+- [ ] 0440_Qqe_Signals — QqeSignalsStrategy
+- [x] 0441_Rsi_Plus_1200 — RsiPlus1200Strategy
+- [x] 0442_Rsi_Ema — RsiEmaStrategy
+- [x] 0443_Stoch_Rsi_Crossover — StochRsiCrossoverStrategy
+- [ ] 0444_Stoch_Rsi_Supertrend — StochRsiSupertrendStrategy
+- [x] 0445_ADX_Tester — AdxTesterStrategy
+- [ ] 0446_Strat_Base — StratBaseStrategy
+- [x] 0447_Supertrend_Ema_Rebound — SupertrendEmaReboundStrategy
+- [x] 0450_Tendency_Ema_Rsi — TendencyEmaRsiStrategy
+- [x] 0451_Three_Ema_Cross — ThreeEmaCrossStrategy
+- [x] 0452_Ttm_Squeeze — TtmSqueezeStrategy
+- [x] 0453_Vela_Superada — VelaSuperadaStrategy
+- [x] 0454_Williams_Vix_Fix — WilliamsVixFixStrategy
+- [ ] 0455_Golden_Ratio_Cubes — GoldenRatioCubesStrategy
+- [x] 0456_Squeeze_Pro_Overlays — SqueezeProOverlaysStrategy
+- [x] 0457_Averaging_Down — AveragingDownStrategy
+- [x] 0458_Smc_Bb_Breakout — SmcBbBreakoutStrategy
+- [x] 0459_OneTwoThree_Reversal — OneTwoThreeReversalStrategy
+- [x] 0459_Opening_Range_Breakout — OpeningRangeBreakoutStrategy
+- [ ] 0460_Smc_OrderBlock_Zones — SmcOrderBlockZonesStrategy
+- [ ] 0461_Ema_Macd_Rsi — EmaMacdRsiStrategy
+- [x] 0462_Liquidity_Swings — LiquiditySwingsStrategy
+- [ ] 0463_Candle245_Breakout — Candle245BreakoutStrategy
+- [x] 0464_MA_PSAR_ATR_Trend — MaPsarAtrTrendStrategy
+- [ ] 0465_200_SMA_Buffer — SmaBufferStrategy
+- [ ] 0466_MA_BB_Supertrend — MaBbSupertrendStrategy
+- [ ] 0467_2Mars_Okx — TwoMarsOkxStrategy
+- [ ] 0468_Two_X_Spy_Tips — TwoXSpyTipsStrategy
+- [x] 0469_Three_Down_Three_Up — ThreeDownThreeUpStrategy
+- [x] 0470_Three_Red_Green_Volatility — ThreeRedGreenVolatilityStrategy
+- [x] 0471_Three_Bar_Low — ThreeBarLowStrategy
+- [ ] 0472_Three_Signal_Directional_Trend — ThreeSignalDirectionalTrendStrategy
+- [x] 0473_Rsi_30_70 — Rsi3070Strategy
+- [x] 0474_30_Minute_Candle — ThirtyMinuteCandleStrategy
+- [ ] 0475_Scalping_Ema_Rsi_Macd — ScalpingEmaRsiMacdStrategy
+- [x] 0476_3Commas_Bot — ThreeCommasBotStrategy
+- [ ] 0477_3D_Wave_PM — ThreeDWavePmStrategy
+- [ ] 0478_ThreeKilos_Btc_15m — ThreeKilosBtc15mStrategy
+- [x] 0479_3x_Supertrend — TripleSupertrendStrategy
+- [ ] 0480_Four_Bar_Momentum_Reversal — FourBarMomentumReversalStrategy
+- [ ] 0481_Bollinger_Breakout — BollingerBreakout2Strategy
+- [x] 0482_Vietnamese_3x_Supertrend — Vietnamese3xSupertrendStrategy
+- [x] 0483_Five_Ema_NoTouch_Breakout — FiveEmaNoTouchBreakoutStrategy
+- [ ] 0484_Five_Ema — FiveEmaStrategy
+- [ ] 0485_Ema50_Crossover_Monthly_Dca — Ema50CrossoverMonthlyDcaStrategy
+- [ ] 0486_Adaptive_HMA_Plus — AdaptiveHmaPlusStrategy
+- [ ] 0487_Sma_Pullback_Atr_Exits — SmaPullbackAtrExitsStrategy
+- [x] 0488_80_20 — EightyTwentyStrategy
+- [x] 0489_Beta_Weighted_MA — BetaWeightedMaStrategy
+- [x] 0490_Adaptive_Fibonacci_Pullback_System — AdaptiveFibonacciPullbackStrategy
+- [x] 0491_Adaptive_Fractal_Grid_Scalping — AdaptiveFractalGridScalpingStrategy
+- [ ] 0492_Adaptive_KDJ_MTF — AdaptiveKdjMtfStrategy
+- [x] 0493_Adaptive_Rsi — AdaptiveRsiStrategy
+- [ ] 0494_Adaptive_Smi_Ergodic — AdaptiveSmiErgodicStrategy
+- [x] 0495_Adaptive_Squeeze_Momentum — AdaptiveSqueezeMomentumStrategy
+- [x] 0496_Adaptive_Trend_Flow — AdaptiveTrendFlowStrategy
+- [ ] 0497_Adjustable_Ma_Alternating_Extremities — AdjustableMaAlternatingExtremitiesStrategy
+- [ ] 0498_Advanced_Adaptive_Grid — AdvancedAdaptiveGridStrategy
+- [ ] 0499_Advanced_Ema_Cross — AdvancedEmaCrossStrategy
+- [ ] 0500_Gold_Rsi_Divergence — GoldRsiDivergenceStrategy
+- [ ] 0501_Advanced_Multi_Seasonality — AdvancedMultiSeasonalityStrategy
+- [x] 0502_Fib_Hurst_Breakout — FibHurstBreakoutStrategy
+- [x] 0503_Advanced_Position_Management — AdvancedPositionManagementStrategy
+- [x] 0504_Advanced_Supertrend — AdvancedSupertrendStrategy
+- [ ] 0505_ADX_CCI_MA — AdxCciMaStrategy
+- [x] 0506_ADX_Volume_Multiplier — AdxVolumeMultiplierStrategy
+- [x] 0507_ADX_Range_Breakout — AdxRangeBreakoutStrategy
+- [ ] 0508_ADX_for_BTC — AdxForBtcStrategy
+- [ ] 0509_Aftershock_Playbook_Stock_Earnings_Drift_Engine — AftershockPlaybookStrategy
+- [ ] 0510_Aggregate_Btc_Candles — AggregateBtcCandlesStrategy
+- [x] 0511_Aggressive_High_IV — AggressiveHighIvStrategy
+- [ ] 0512_Williams_Alligator_ATR — WilliamsAlligatorAtrStrategy
+- [ ] 0513_AI_SuperTrend — AiSuperTrendStrategy
+- [x] 0514_Ai_Supertrend_Pivot_Percentile — AiSupertrendPivotPercentileStrategy
+- [ ] 0515_AI_Volume — AiVolumeStrategy
+- [ ] 0516_All_Divergences — AllDivergencesStrategy
+- [ ] 0517_Alligator_Ma_Trend_Catcher — AlligatorMaTrendCatcherStrategy
+- [ ] 0518_ALMA_UT_Bot_Confluence — AlmaUtBotConfluenceStrategy
+- [ ] 0519_ALMA_Optimized — AlmaOptimizedStrategy
+- [x] 0520_Altcoin_Index_Correlation — AltcoinIndexCorrelationStrategy
+- [x] 0521_Anands — AnandsStrategy
+- [ ] 0522_Anomalous_Holonomy_Field_Theory — AnomalousHolonomyFieldTheoryStrategy
+- [x] 0523_Anomaly_Counter_Trend — AnomalyCounterTrendStrategy
+- [ ] 0524_Ao_Ac_Trading_Zones — AoAcTradingZonesStrategy
+- [x] 0525_AO_Divergence — AoDivergenceStrategy
+- [ ] 0526_Spot_Futures_Arbitrage — SpotFuturesArbitrageStrategy
+- [x] 0527_Arpeet_Macd — ArpeetMacdStrategy
+- [ ] 0528_Arpit_Bollinger_Band — ArpitBollingerBandStrategy
+- [x] 0529_ARSI_VWAP_ATR — ArsiVwapAtrStrategy
+- [ ] 0530_ATR_Based_Trendlines — AtrBasedTrendlinesStrategy
+- [x] 0531_ATR_God — AtrGodStrategy
+- [x] 0532_Atr_Stop_Loss_Double_Sma — AtrStopLossDoubleSmaStrategy
+- [ ] 0533_AudUsd_Scalping — AudUsdScalpingStrategy
+- [ ] 0534_Pearsons_R_Oscillator — PearsonsROscillatorStrategy
+- [ ] 0535_Auto_Fibo_Gann_Fan_Retracements — AutoFiboGannFanRetracementsStrategy
+- [x] 0536_State_Aware_MA_Cross — StateAwareMaCrossStrategy
+- [ ] 0537_AutoFib_Breakout — AutoFibBreakoutStrategy
+- [ ] 0538_Automatic_Trendlines — AutomaticTrendlinesStrategy
+- [ ] 0539_Autonomous_5_Minute_Robot — Autonomous5MinuteRobotStrategy
+- [ ] 0540_Average_Force — AverageForceStrategy
+- [x] 0541_Average_High_Low_Range_IBS_Reversal — AverageHighLowRangeIbsReversalStrategy
+- [x] 0542_Averaging_Down — AveragingDown2Strategy
+- [ ] 0543_BabyShark_VWAP — BabySharkVwapStrategy
+- [x] 0544_Backtesting_Module — BacktestingModuleStrategy
+- [x] 0545_Backward_Number_of_Bars — BackwardNumberOfBarsStrategy
+- [x] 0546_Balance_Of_Power — BalanceOfPowerStrategy
+- [ ] 0547_Bar_Balance — BarBalanceStrategy
+- [x] 0548_Bar_Range — BarRangeStrategy
+- [ ] 0549_Baseline2 — Baseline2Strategy
+- [x] 0550_Bayesian_Bbsma_Oscillator — BayesianBbsmaOscillatorStrategy
+- [x] 0551_BB_RSI_Trailing_Stop — BbRsiTrailingStopStrategy
+- [ ] 0552_BB_RSI — BbRsiStrategy
+- [ ] 0553_BB_Breakout_Momentum_Squeeze — BbBreakoutMomentumSqueezeStrategy
+- [ ] 0554_BB_Heikin_Ashi_Entry — BollingerHeikinAshiEntryStrategy
+- [ ] 0555_BB_HeikinAshi_Entry — BbHeikinAshiEntryStrategy
+- [ ] 0556_Bbsr_Extreme — BbsrExtremeStrategy
+- [ ] 0557_Bbtrend_Supertrend_Decision — BbtrendSupertrendDecisionStrategy
+- [ ] 0558_Bearish_Wick_Reversal — BearishWickReversalStrategy
+- [ ] 0559_Bedo_Osaimi_Istr — BedoOsaimiIstrStrategy
+- [x] 0560_Bot_For_Spot_Market_Custom_Grid — BotForSpotMarketCustomGridStrategy
+- [ ] 0561_Bench — BenchStrategy
+- [ ] 0561_Breadth_Thrust_Volatility_Stop — BreadthThrustVolatilityStopStrategy
+- [ ] 0562_Berlin_Candles — BerlinCandlesStrategy
+- [ ] 0562_Breakouts_With_Timefilter — BreakoutsWithTimeFilterStrategy
+- [ ] 0563_Berlin_Range_Index — BerlinRangeIndexStrategy
+- [x] 0563_Breaks_and_Retests — BreaksAndRetestsStrategy
+- [ ] 0564_Best_Dollar_Cost_Average — BestDollarCostAverageStrategy
+- [ ] 0564_Btc_Chop_Reversal — BtcChopReversalStrategy
+- [ ] 0565_Bias_Sentiment_Strength — BiasSentimentStrengthStrategy
+- [ ] 0565_Btc_Dca_Ahr999 — BtcDcaAhr999Strategy
+- [ ] 0566_Bias_Ratio — BiasRatioStrategy
+- [x] 0566_Btc_Difficulty_Adjustments — BtcDifficultyAdjustmentsStrategy
+- [ ] 0567_Big_Candle_Rsi_Divergence — BigCandleRsiDivergenceStrategy
+- [x] 0567_BTC_Future_Gamma_Weighted_Momentum_Model — BtcFutureGammaWeightedMomentumModelStrategy
+- [ ] 0568_Big_Mover_Catcher — BigMoverCatcherStrategy
+- [ ] 0568_Btc_Outperform — BtcOutperformStrategy
+- [x] 0569_Big_Runner — BigRunnerStrategy
+- [x] 0569_Btc_Seasonality — BtcSeasonalityStrategy
+- [ ] 0570_Binomial_Option_Pricing_Model — BinomialOptionPricingModelStrategy
+- [ ] 0570_Btc_Trading_Robot — BtcTradingRobotStrategy
+- [x] 0571_Bitcoin_1H15M_Breakout — Bitcoin1H15MBreakoutStrategy
+- [ ] 0571_BTCUSD_Momentum_After_Abnormal_Days — BtcusdMomentumAfterAbnormalDaysStrategy
+- [x] 0572_Bitcoin_Bullish_Percent_Index — BitcoinBullishPercentIndexStrategy
+- [x] 0572_BTCUSD_Adjustable_SLTP — BtcusdAdjustableSltpStrategy
+- [ ] 0573_Bitcoin_CME_Spot_Spread — BitcoinCmeSpotSpreadStrategy
+- [ ] 0573_BTFD — BtfdStrategy
+- [x] 0574_Bitcoin_Exponential_Profit — BitcoinExponentialProfitStrategy
+- [x] 0574_BuiltIn_Kelly_Ratio — BuiltInKellyRatioStrategy
+- [ ] 0575_Bitcoin_Futures_Spot_TriFrame — BitcoinFuturesSpotTriFrameStrategy
+- [ ] 0575_BullBear_Volume_Percentile_TP — BullBearVolumePercentileTpStrategy
+- [ ] 0576_Bitcoin_Leverage_Sentiment — BitcoinLeverageSentimentStrategy
+- [x] 0576_Bullish_Bs_Rsi_Divergence — BullishBsRsiDivergenceStrategy
+- [ ] 0577_Bitcoin_Liquidity_Breakout — BitcoinLiquidityBreakoutStrategy
+- [ ] 0577_Bullish_Divergence_Short_Term_Long_Trade_Finder — BullishDivergenceShortTermLongTradeFinderStrategy
+- [ ] 0578_Bitcoin_Momentum — BitcoinMomentumStrategy
+- [x] 0578_Bullish_Reversal_Bar — BullishReversalBarStrategy
+- [x] 0579_Bj_Candle_Patterns — BjCandlePatternsStrategy
+- [x] 0579_Buy_And_Hold — BuyAndHoldStrategy
+- [x] 0580_Bjorgum_Double_Tap — BjorgumDoubleTapStrategy
+- [ ] 0580_Buy_Sell_Renko_Based — BuySellRenkoBasedStrategy
+- [x] 0581_Black_Scholes_Delta_Hedge — BlackScholesDeltaHedgeStrategy
+- [ ] 0581_Buy_Dip_Multiple_Positions — BuyDipMultiplePositionsStrategy
+- [ ] 0582_Black_Scholes_Option_Pricing — BlackScholesOptionPricingStrategy
+- [x] 0582_Buy_On_5_Day_Low — BuyOn5DayLowStrategy
+- [x] 0583_Bober_XM — BoberXmStrategy
+- [x] 0583_ZScore_Buy_Sell — ZScoreBuySellStrategy
+- [ ] 0584_Blood_In_The_Streets — BloodInTheStreetsStrategy
+- [ ] 0584_Boilerplate_Configurable — BoilerplateConfigurableStrategy
+- [ ] 0585_Bollinger_Ema_Stats — BollingerEmaStatsStrategy
+- [ ] 0585_BuySell_Bullish_Engulfing — BuySellBullishEngulfingStrategy
+- [ ] 0586_Bollinger_Stochastic_Trailing_Stop — BollingerStochasticTrailingStopStrategy
+- [ ] 0586_Buying_Selling_Volume — BuyingSellingVolumeStrategy
+- [ ] 0587_Bollinger_Band_Touch_SMI_MACD_Angle — BollingerBandTouchSmiMacdAngleStrategy
+- [x] 0587_Buy_The_Dips_Trend — BuyTheDipsTrendStrategy
+- [ ] 0588_Bollinger_Bands_Fibonacci — BollingerBandsFibonacciStrategy
+- [ ] 0588_Buy_Only_EMA_BB — BuyOnlyEmaBbStrategy
+- [ ] 0589_Bollinger_Bands_RSI — BollingerBandsRsiStrategy
+- [ ] 0589_Candle_Body_Shapes — CandleBodyShapesStrategy
+- [ ] 0590_Bollinger_Bands_Enhanced — BollingerBandsEnhancedStrategy
+- [ ] 0591_Bollinger_Bands_Long — BollingerBandsLongStrategy
+- [ ] 0592_Bollinger_Bands_Mean_Reversion — BollingerBandsMeanReversionStrategy
+- [ ] 0593_Bollinger_Bands_Modified — BollingerBandsModifiedStrategy
+- [ ] 0594_Bollinger_Bands_SMA_20_2 — BollingerBandsSma202Strategy
+- [ ] 0595_Bollinger_Bands — BollingerBandsStrategy
+- [x] 0596_Bollinger_Bounce_Reversal — BollingerBounceReversalStrategy
+- [ ] 0597_Bollinger_Breakout_Direction — BollingerBreakoutDirectionStrategy
+- [ ] 0598_Bonk_Long_Volatility — BonkLongVolatilityStrategy
+- [ ] 0599_DCA_Dual_Trailing — DcaDualTrailingStrategy
+- [ ] 0600_CANX_MA_Crossover — CanxMaCrossoverStrategy
+- [x] 0601_Captain_Backtest_Model — CaptainBacktestModelStrategy
+- [x] 0602_CBC_Trend_Confirmation_Separate_Stop_Loss — CbcWithTrendConfirmationAndSeparateStopLossStrategy
+- [x] 0603_CC_Trend_Downtrend_Short — CCTrend2DowntrendShortStrategy
+- [ ] 0604_CCI_Support_Resistance — CciSupportResistanceStrategy
+- [x] 0605_CCI_Threshold — CciThresholdStrategy
+- [x] 0606_CCI_EMA_ATR_TP_SL — CciEmaAtrTpSlStrategy
+- [ ] 0607_CCI_MACD — CciMacdStrategy
+- [x] 0608_CE_XAU_USDT — CE_XAU_USDTStrategy
+- [ ] 0609_Ce_Zlsma_5Min_Candlechart — CeZlsma5MinCandlechartStrategy
+- [ ] 0610_Chaikin_Momentum_Scalper — ChaikinMomentumScalperStrategy
+- [ ] 0611_Chande_Kroll_Trend — ChandeKrollTrendStrategy
+- [ ] 0613_Chande_Momentum_Oscillator — ChandeMomentumOscillatorStrategy
+- [ ] 0614_Chandelier_Exit_With_200_EMA_Filter — ChandelierExitWith200EmaFilterStrategy
+- [ ] 0615_Channels_With_NVI — ChannelsWithNviStrategy
+- [ ] 0616_Chart_Oscillator — ChartOscillatorStrategy
+- [ ] 0617_ChartPatterns — ChartPatternsStrategy
+- [ ] 0618_ChopFlow_ATR_Scalp — ChopFlowAtrScalpStrategy
+- [ ] 0619_Classic_Nacked_Z-Score_Arbitrage — ClassicNackedZScoreArbitrageStrategy
+- [ ] 0620_Cleaner_Screeners_Library — CleanerScreenersLibraryStrategy
+- [ ] 0621_CME_Equity_Futures_Price_Limits — CmeEquityFuturesPriceLimitsStrategy
+- [ ] 0622_Cnagda_Fixed_Swing — CnagdaFixedSwingStrategy
+- [ ] 0623_Color_Code_Overlay — ColorCodeOverlayStrategy
+- [ ] 0624_Color_Gradient_Framework — ColorGradientFrameworkStrategy
+- [x] 0625_Color — ColorStrategy
+- [x] 0626_Combo_2_20_EMA_Bandpass_Filter — Combo220EmaBandpassFilterStrategy
+- [x] 0627_Combo_2_20_EMA_CCI — Combo220EmaCciStrategy
+- [ ] 0628_Combo_123_Reversal_Fractal_Chaos_Bands — Combo123ReversalFractalChaosBandsStrategy
+- [ ] 0629_Commitment_of_Trader_R — CommitmentOfTraderRStrategy
+- [x] 0630_Connors_VIX_Reversal_III — ConnorsVixReversalIIIStrategy
+- [ ] 0631_Consecutive_Bars_Above_Below_EMA_Buy_The_Dip — ConsecutiveBarsAboveBelowEMABuyTheDipStrategy
+- [x] 0632_Consecutive_Bearish_Candle — ConsecutiveBearishCandleStrategy
+- [x] 0633_Contrarian_DC — ContrarianDcStrategy
+- [ ] 0634_Correlation_Cycle — CorrelationCycleStrategy
+- [ ] 0635_Correlation_Matrix_Heatmap — CorrelationMatrixHeatmapStrategy
+- [ ] 0636_Correlation_Arrays — CorrelationArraysStrategy
+- [x] 0637_COSTAR — CostarStrategy
+- [ ] 0638_Covid_Statistics_Tracker — CovidStatisticsTrackerStrategy
+- [ ] 0639_CP_Strat_ORB — CpStratOrbStrategy
+- [x] 0640_Crunchsters_Normalised_Trend — CrunchstersNormalisedTrendStrategy
+- [ ] 0641_Crunchsters_Turtle_and_Trend_System — CrunchstersTurtleAndTrendSystemStrategy
+- [ ] 0642_Crypto_MVRV_ZScore — CryptoMvrvZScoreStrategy
+- [x] 0643_Crypto_SUSDT_10_min — CryptoSusdt10MinStrategy
+- [x] 0644_Crypto_Volatility_Bitcoin_Correlation — CryptoVolatilityBitcoinCorrelationStrategy
+- [ ] 0645_Cup_Finder — CupFinderStrategy
+- [x] 0646_Custom_Buy_BID — CustomBuyBidStrategy
+- [x] 0647_Custom_Signal_Oscillator — CustomSignalOscillatorStrategy
+- [x] 0648_Customizable_Btc_Seasonality — CustomizableBtcSeasonalityStrategy
+- [ ] 0649_CVD_Divergence_Volume_HMA_RSI_MACD — CvdDivergenceVolumeHmaRsiMacdStrategy
+- [ ] 0650_CVD_Divergence — CvdDivergenceStrategy
+- [x] 0651_Cycle_Biologique — CycleBiologiqueStrategy
+- [x] 0652_D-BoT_Alpha_Short_SMA_and_RSI — DBoTAlphaShortSmaAndRsiStrategy
+- [x] 0653_DBot_Alpha_RSI_Breakout — DBotAlphaRsiBreakoutStrategy
+- [ ] 0654_Daily_Bollinger_Band — DailyBollingerBandStrategy
+- [ ] 0655_Daily_Breakout_Daily_Shadow — DailyBreakoutDailyShadowStrategy
+- [x] 0656_Daily_Performance_Analysis — DailyPerformanceAnalysisStrategy
+- [ ] 0657_Daily_Play_Ace_Spectrum — DailyPlayAceSpectrumStrategy
+- [x] 0658_Daily_Supertrend_Ema_Crossover_Rsi_Filter — DailySupertrendEmaCrossoverRsiFilterStrategy
+- [ ] 0659_DataChart — DataChartStrategy
+- [x] 0660_Day_Trading_Risk_Management — DayTradingStrategy
+- [ ] 0661_Daytrading_ES_Wick_Length — DaytradingESWickLengthStrategy
+- [ ] 0662_DCA_Simulation_for_CryptoCommunity — DcaSimulationForCryptoCommunityStrategy
+- [ ] 0663_DCA_2 — Dca2Strategy
+- [x] 0664_DCA_with_Hedging — DcaWithHedgingStrategy
+- [ ] 0665_DCA_Mean_Reversion_Bollinger_Band — DcaMeanReversionBollingerBandStrategy
+- [x] 0666_DCA — DcaStrategy
+- [ ] 0667_DCA_Support_and_Resistance_with_RSI_and_Trend_Filter — DcaSupportAndResistanceWithRsiAndTrendFilterStrategy
+- [ ] 0668_DebugConsole — DebugConsoleStrategy
+- [ ] 0670_Dekidaka_Ashi_Candles_Volume — DekidakaAshiCandlesVolumeStrategy
+- [ ] 0671_Delta_SMA_1Year_High_Low — DeltaSma1YearHighLowStrategy
+- [ ] 0672_Delta_RSI_Oscillator — DeltaRsiOscillatorStrategy
+- [x] 0673_DEMA_Trend_Oscillator — DemaTrendOscillatorStrategy
+- [ ] 0674_Dema_RSI — DemaRsiStrategy
+- [x] 0675_Demo_GPT_Day_Trading_Scalping — DemoGptDayTradingScalpingStrategy
+- [ ] 0676_Directional_Index_K_xDMI — DirectionalIndexKxDMIStrategy
+- [ ] 0677_Distance_to_Demand_Vector — DistanceToDemandVectorStrategy
+- [ ] 0678_Divergence_For_Many_Indicators — DivergenceForManyIndicatorsStrategy
+- [ ] 0679_Divergence_for_Many_Indicators_v4 — DivergenceForManyIndicatorsV4Strategy
+- [ ] 0680_Divergence_Indicator_Any_Oscillator — DivergenceIndicatorAnyOscillatorStrategy
+- [x] 0681_Divergence — DivergenceStrategy
+- [x] 0682_Dkoderweb_Repainting_Issue_Fix — DkoderwebRepaintingIssueFixStrategy
+- [x] 0683_Doji_Trading — DojiTradingStrategy
+- [ ] 0684_Dominance_Tagcloud — DominanceTagcloudStrategy
+- [ ] 0685_Donchian_Breakout — DonchianBreakoutStrategy
+- [ ] 0686_Donchian_Quest_Research — DonchianQuestResearchStrategy
+- [ ] 0687_Donchian_WMA_Crossover — DonchianWmaCrossoverStrategy
+- [x] 0688_Donchian_Zig_Zag_LuxAlgo — DonchianZigZagLuxAlgoStrategy
+- [ ] 0689_Donky_MA_TP_SL — DonkyMaTpSlStrategy
+- [x] 0690_Dont_Make_Me_Cross — DontMakeMeCrossStrategy
+- [ ] 0691_Double_AI_Super_Trend_Trading — DoubleAiSuperTrendTradingStrategy
+- [ ] 0692_Double_Bollinger_Bands_Signals — DoubleBollingerBandsSignalsStrategy
+- [x] 0693_Double_Bottom_and_Top_Hunter — DoubleBottomAndTopHunterStrategy
+- [x] 0694_Double_CCI_Confirmed_Hull_Moving_Average_Reversal — DoubleCciConfirmedHullMovingAverageReversalStrategy
+- [ ] 0695_Double_Macd — DoubleMacdStrategy
+- [x] 0696_Double_Vegas_SuperTrend_Enhanced — DoubleVegasSuperTrendEnhancedStrategy
+- [x] 0697_Dow_Theory_Trend — DowTheoryTrendStrategy
+- [ ] 0698_Dskyz_DAFE_Adaptive_Regime_Quant_Machine_Pro — DskyzDafeAdaptiveRegimeQuantMachineProStrategy
+- [ ] 0699_Dskyz_AI_Adaptive_Regime_Beginners — DskyzAiAdaptiveRegimeBeginnersStrategy
+- [ ] 0700_Aurora_Divergence — AuroraDivergenceStrategy
+- [x] 0701_Dskyz_DAFE_GENESIS — DskyzDafeGenesisStrategy
+- [ ] 0702_Dskyz_DAFE_MAtrix_ATR_Precision — DskyzDafeMatrixAtrPrecisionStrategy
+- [x] 0703_Quantum_Sentiment_Flux_Beginners — QuantumSentimentFluxBeginnersStrategy
+- [x] 0704_Dskyz_Adaptive_Futures_Elite — DskyzAdaptiveFuturesEliteStrategy
+- [ ] 0705_DSL — DslStrategy
+- [x] 0706_Dual_Keltner_Channels — DualKeltnerChannelsStrategy
+- [x] 0707_Dual_MACD — DualMacdStrategy
+- [ ] 0708_Dual_Momentum — DualMomentumStrategy
+- [x] 0709_Dual_Rsi_Differential — DualRsiDifferentialStrategy
+- [ ] 0710_Dual_Selector_V2_Cryptogyani — DualSelectorV2CryptogyaniStrategy
+- [ ] 0711_Dual_SuperTrend_VIX_Filter — DualSuperTrendVixFilterStrategy
+- [ ] 0712_Dual_Phase_Trend_Regime — DualPhaseTrendRegimeStrategy
+- [ ] 0713_Dual_Supertrend_MACD — DualSupertrendMacdStrategy
+- [ ] 0714_Dubic_Ema — DubicEmaStrategy
+- [ ] 0715_Dynamic_Breakout_Master — DynamicBreakoutMasterStrategy
+- [x] 0716_Dynamic_Dots_Dashboard — DynamicDotsDashboardStrategy
+- [x] 0717_Dynamic_Support_and_Resistance_Pivot — DynamicSupportAndResistancePivotStrategy
+- [ ] 0718_Dynamic_Ticks_Oscillator_Model — DynamicTicksOscillatorModelStrategy
+- [ ] 0719_Dynamic_Volatility_Differential_Model — DynamicVolatilityDifferentialModelStrategy
+- [x] 0720_E9_Shark_32_Pattern — E9Shark32PatternStrategy
+- [ ] 0721_Earnings_Trading — EarningsTradingStrategy
+- [ ] 0722_Earnings_Splits_Dividends — EarningsSplitsDividendsStrategy
+- [x] 0723_Economic_Policy_Uncertainty — EconomicPolicyUncertaintyStrategy
+- [ ] 0724_Efficient_Work — EfficientWorkStrategy
+- [ ] 0725_Ehlers_Combo — EhlersComboStrategy
+- [ ] 0726_Eliora_Gold_1m_Heikin_Ashi — ElioraGold1mHeikinAshiStrategy
+- [x] 0727_Elliott_Wave_Supertrend_Exit — ElliottWaveSupertrendExitStrategy
+- [ ] 0728_Elliotts_Quadratic_Momentum — ElliottsQuadraticMomentumStrategy
+- [ ] 0729_EMA_MA_Crossover — EmaMaCrossoverStrategy
+- [ ] 0730_Ema_Rsi_Trail_Stop — EmaRsiTrailStopStrategy
+- [ ] 0731_EMA_10_20_50_Alignment — Ema102050AlignmentStrategy
+- [ ] 0732_EMA_10_55_200_Long_Only_MTF — Ema1055200LongOnlyMtfStrategy
+- [x] 0733_EMA_34_Crossover_with_Break_Even_Stop_Loss — Ema34CrossoverWithBreakEvenStopLossStrategy
+- [ ] 0734_EMA_5_Alert_Candle_Short — Ema5AlertCandleShortStrategy
+- [ ] 0735_EMA_Dow_Theory — EmaDowTheoryStrategy
+- [ ] 0736_Ema_Cross_Macd_Session_Start — EmaCrossMacdSessionStartStrategy
+- [ ] 0737_EMA_Crossover_Short_Focus_Trailing_Stop — EmaCrossoverShortFocusTrailingStopStrategy
+- [ ] 0738_Ema_Crossover_Filters — EmaCrossoverFiltersStrategy
+- [x] 0739_EMA_Crossover_Take_Profit — EMACrossoverTakeProfitStrategy
+- [x] 0740_Ema_Crossover_Trailing_Stop — EmaCrossoverTrailingStopStrategy
+- [ ] 0741_EMA_Crossover_RSI_Distance — EmaCrossoverRsiDistanceStrategy
+- [x] 0742_EMA_Crossover_Volume_Stacked_TP_Trailing_SL — EmaCrossoverVolumeStackedTpTrailingSlStrategy
+- [ ] 0743_Ema_Grid_Martingale_Cooldown — EmaGridMartingaleCooldownStrategy
+- [ ] 0744_Ema_Pullback_Speed — EmaPullbackSpeedStrategy
+- [x] 0745_Ema_Rsi_Trend_Reversal — EmaRsiTrendReversalStrategy
+- [ ] 0746_EMA_Scoring — EmaScoringStrategy
+- [ ] 0747_EMA_Shift_Parallel — EmaShiftParallelStrategy
+- [x] 0748_Ema_Rsi_Swing_Trend_Filter — EmaRsiSwingTrendFilterStrategy
+- [ ] 0749_EMATrend_Heikin_Ashi_Entry — EmaTrendHeikinAshiEntryStrategy
+- [ ] 0750_Energy_Advanced_Policy — EnergyAdvancedPolicyStrategy
+- [ ] 0751_Engulfing_Pin_Bar_Breakout — EngulfingPinBarBreakoutStrategy
+- [x] 0752_Engulfing_Candlestick — EngulfingCandlestickStrategy
+- [x] 0753_Engulfing_With_Trend — EngulfingWithTrendStrategy
+- [ ] 0754_Enhanced_BarUpDn — EnhancedBarUpDnStrategy
+- [ ] 0755_Enhanced_Bollinger_Bands_SL_TP — EnhancedBollingerBandsStrategy
+- [ ] 0756_Enhanced_Doji_Candle — EnhancedDojiCandleStrategy
+- [ ] 0757_Enhanced_Ichimoku_Cloud — EnhancedIchimokuCloudStrategy
+- [ ] 0758_Enhanced_Market_Structure — EnhancedMarketStructureStrategy
+- [ ] 0759_Enhanced_Range_Filter_ATR_TP_SL — EnhancedRangeFilterAtrTpSlStrategy
+- [x] 0760_Enhanced_Time_Segmented_Volume — EnhancedTimeSegmentedVolumeStrategy
+- [ ] 0761_Entry_Fragger — EntryFraggerStrategy
+- [ ] 0762_Equilibrium_Candles_Pattern — EquilibriumCandlesPatternStrategy
+- [ ] 0763_Equivolume_Bars — EquivolumeBarsStrategy
+- [ ] 0764_Equivolume_Overlay_Volume_Bars — EquivolumeOverlayVolumeBarsStrategy
+- [ ] 0766_NY_ORB_CP — NyOrbCpStrategy
+- [ ] 0767_Eth_Signal_15m — EthSignal15mStrategy
+- [x] 0768_ETH_USDT_EMA_Crossover — EthUsdtEmaCrossoverStrategy
+- [x] 0769_Rsi_Cci_WilliamsR — RsiCciWilliamsRStrategy
+- [x] 0770_EUR_USD_Multi_Layer_Statistical_Regression — EurUsdMultiLayerStatisticalRegressionStrategy
+- [x] 0771_Graph_Style_4th_Dimension_RSI — GraphStyle4thDimensionRSIStrategy
+- [ ] 0772_Exodus — ExodusStrategy
+- [ ] 0773_Express_Generator — ExpressGeneratorStrategy
+- [ ] 0774_External_Signals_Tester — ExternalSignalsTesterStrategy
+- [ ] 0776_Extrapolated_Pivot_Connector — ExtrapolatedPivotConnectorStrategy
+- [ ] 0777_Faith_Indicator — FaithIndicatorStrategy
+- [ ] 0778_Falcon_Liquidity_Grab — FalconLiquidityGrabStrategy
+- [ ] 0779_Fancy_Bollinger_Bands — FancyBollingerBandsStrategy
+- [ ] 0780_Fearzone_Panel — FearzonePanelStrategy
+- [ ] 0781_Fibonacci_Bollinger_Bands — FibonacciBollingerBandsStrategy
+- [ ] 0782_Fibonacci_TP_SL — FibonacciTpSlStrategy
+- [x] 0783_Fibonacci_ATR_Fusion — FibonacciAtrFusionStrategy
+- [ ] 0784_Fibonacci_Counter_Trend_Trading — FibonacciCounterTrendTradingStrategy
+- [ ] 0785_Fibonacci_Levels_High_Low — FibonacciLevelsHighLowStrategy
+- [x] 0786_Fibonacci_Retracement_Crypto — FibonacciRetracementCryptoStrategy
+- [ ] 0787_Fibonacci_Swing_Trading_Bot — FibonacciSwingTradingBotStrategy
+- [x] 0788_Fibonacci_Trend — FibonacciTrendStrategy
+- [ ] 0789_Fibonacci_Trend_Reversal — FibonacciTrendReversalStrategy
+- [x] 0790_Fibonacci_Only_V2 — FibonacciOnlyV2Strategy
+- [x] 0791_Fibonacci_Only — FibonacciOnlyStrategy
+- [ ] 0793_Financial_Ratios_Fundamental — FinancialRatiosFundamentalStrategy
+- [ ] 0794_Fine_Tune_Inputs_Fourier_Smoothed_Hybrid_Volume_Spread_Analysis — FineTuneInputsFourierSmoothedHybridVolumeSpreadAnalysisStrategy
+- [x] 0795_Fine-tune_Inputs_Fourier_Smoothed_Volume_zone_oscillator_WFSVZ0 — FourierSmoothedVzoStrategy
+- [ ] 0796_Fine_tune_Inputs_Gann_Laplace_Smooth_Volume_Zone_Oscillator — FineTuneGannLaplaceVzoStrategy
+- [ ] 0797_Finish_Renaming — FinishRenamingStrategy
+- [ ] 0798_Fisher_Crossover — FisherCrossoverStrategy
+- [ ] 0799_Flex_ATR — FlexAtrStrategy
+- [ ] 0800_Flexible_Moving_Average — FlexibleMovingAverageStrategy
+- [ ] 0801_FlexiMA_Variance_Tracker — FlexiMaVarianceTrackerStrategy
+- [ ] 0802_FlexiMA_x_FlexiST — FlexiMaXFlexiStStrategy
+- [ ] 0803_FlexiSuperTrend — FlexiSuperTrendStrategy
+- [ ] 0804_Follow_Line — FollowLineStrategy
+- [ ] 0805_FON60DK — Fon60DkStrategy
+- [ ] 0806_Footprint — FootprintStrategy
+- [ ] 0807_Forex_Fire_EMA_MA_RSI — ForexFireEmaMaRsiStrategy
+- [x] 0808_Forex_Hammer_and_Hanging_Man — ForexHammerAndHangingManStrategy
+- [ ] 0809_Forex_Pair_Yield_Momentum — ForexPairYieldMomentumStrategy
+- [ ] 0810_Four_WMA_TP_and_SL — FourWmaTpSlStrategy
+- [ ] 0811_Fractal_Breakout_Trend_Following — FractalBreakoutTrendFollowingStrategy
+- [x] 0812_FreedX_Grid_Backtest — FreedxGridBacktestStrategy
+- [ ] 0813_Friday_Bond_Short — FridayBondShortStrategy
+- [ ] 0814_FTMO_Rules_Monitor — FtmoRulesMonitorStrategy
+- [ ] 0815_Funamental_and_financials — FunamentalAndFinancialsStrategy
+- [ ] 0816_Function_Logistic_Equation — FunctionLogisticEquationStrategy
+- [ ] 0817_Function_Simple_Markov_Chain_Monte_Carlo_Simulation — FunctionSimpleMarkovChainMonteCarloSimulationStrategy
+- [ ] 0818_Function_Sorted_Indices — FunctionSortedIndicesStrategy
+- [ ] 0819_Weighted_Standard_Deviation — WeightedStandardDeviationStrategy
+- [ ] 0820_Function_Highest_Lowest — FunctionHighestLowestStrategy
+- [ ] 0821_Function_Adf — FunctionAdfStrategy
+- [ ] 0822_Function_Linear_Regression — FunctionLinearRegressionStrategy
+- [x] 0823_Futures_Engulfing_Candle_Size — FuturesEngulfingCandleSizeStrategy
+- [ ] 0824_Futures_Trading_Hours_Rsi — FuturesTradingHoursRsiStrategy
+- [ ] 0825_FVG_Breakout_Lite — FvgBreakoutLiteStrategy
+- [ ] 0826_FVG_Positioning_Average_with_200EMA_Auto_Trading — FvgPositioningAverageWith200EmaAutoTradingStrategy
+- [ ] 0827_G_Channel_Ema — GChannelEmaStrategy
+- [ ] 0828_Game_Theory_Trading — GameTheoryTradingStrategy
+- [ ] 0829_Gann_Laplace_Smoothed_Hybrid_VSA — GannLaplaceSmoothedHybridVsaStrategy
+- [ ] 0830_Gann_Swing_Multi_Layer — GannSwingMultiLayerStrategy
+- [x] 0831_Gap_Down_Reversal — GapDownReversalStrategy
+- [ ] 0832_Gap_Filling — GapFillingStrategy
+- [ ] 0833_Gartley_222 — Gartley222Strategy
+- [ ] 0834_Gaussian_Channel — GaussianChannelStrategy
+- [ ] 0835_Gaussian_Detrended_Reversion — GaussianDetrendedReversionStrategy
+- [ ] 0836_GC_with_Trend_Filter_and_Sudden_Move_Profit_Taking — GcWithTrendFilterAndSuddenMoveProfitTakingStrategy
+- [ ] 0837_Gemini_Trend_Following_System — GeminiTrendFollowingSystemStrategy
+- [ ] 0838_Geo — GeoStrategy
+- [ ] 0839_Get_Value_From_N_Years_Ago — GetValueFromNYearsAgoStrategy
+- [ ] 0840_Global_Index_Spread_RSI — GlobalIndexSpreadRsiStrategy
+- [x] 0841_Macd_Momentum_Reversal — MacdMomentumReversalStrategy
+- [ ] 0842_GM8_ADX_Second_Ema — Gm8AdxSecondEmaStrategy
+- [ ] 0843_Gold_EUR_USD — GoldEurUsdStrategy
+- [ ] 0844_Gold_Breakout_RR_4 — GoldBreakoutRr4Strategy
+- [ ] 0845_Gold_Friday_Anomaly — GoldFridayAnomalyStrategy
+- [x] 0846_Gold_ORB — GoldOrbStrategy
+- [ ] 0847_Gold_Pro — GoldProStrategy
+- [ ] 0848_Gold_Pullback — GoldPullbackStrategy
+- [ ] 0849_Gold_Scalping_BOS_CHoCH — GoldScalpingBosChochStrategy
+- [ ] 0850_Gold_Scalping_with_Precise_Entries — GoldScalpingWithPreciseEntriesStrategy
+- [ ] 0851_Gold_Trade_Setup — GoldTradeSetupStrategy
+- [ ] 0852_Gold_Volume_Based_Entry — GoldVolumeBasedEntryStrategy
+- [ ] 0853_Golden_Cross_VWMA_EMA — GoldenCrossVwmaEmaStrategy
+- [ ] 0854_Golden_Transform — GoldenTransformStrategy
+- [x] 0855_Good_Mode_Rsi_V2 — GoodModeRsiV2Strategy
+- [ ] 0856_Volume_Support_Resistance_Zones — VolumeSupportResistanceZonesStrategy
+- [ ] 0857_Gradient_Trend_Filter — GradientTrendFilterStrategy
+- [x] 0858_Grease_Trap — GreaseTrapStrategy
+- [ ] 0859_Grid_Bot_Backtesting — GridBotBacktestingStrategy
+- [ ] 0860_Grid_Like — GridLikeStrategy
+- [ ] 0861_Grid_Tendence_V1 — GridTendenceV1Strategy
+- [ ] 0862_Grid_TLong_V1 — GridTLongV1Strategy
+- [ ] 0863_Grim_Slash — GrimSlashStrategy
+- [ ] 0864_Grim309_CallPut — Grim309CallPutStrategy
+- [ ] 0865_Grover_Llorens_Activator — GroverLlorensActivatorStrategy
+- [x] 0866_Guage — GuageStrategy
+- [ ] 0867_Hammer_Shooting_Star — HammerShootingStarStrategy
+- [x] 0868_Hammer_Ema_Tick_Sl_Tp — HammerEmaTickSlTpStrategy
+- [ ] 0869_Hamster_Bot_MRS_2 — HamsterBotMrs2Strategy
+- [ ] 0870_Hancock_Rsi_Volume — HancockRsiVolumeStrategy
+- [ ] 0871_HarmonicPattern — HarmonicPatternStrategy
+- [ ] 0872_Harmony_Signal_Flow_By_Arun — HarmonySignalFlowByArunStrategy
+- [ ] 0873_Heatmap_MACD — HeatmapMacdStrategy
+- [ ] 0874_Heatmap_Macd — HeatmapMacd2Strategy
+- [x] 0875_Heiken_Ashi_Supertrend_ADX — HeikenAshiSupertrendAdxStrategy
+- [ ] 0876_Heiken_Ashi_Supertrend_ATR_SL — HeikenAshiSupertrendAtrSlStrategy
+- [x] 0877_Heikin_Ashi_ROC_Percentile — HeikinAshiRocPercentileStrategy
+- [ ] 0878_Hierarchical_K_Means_Clustering — HierarchicalKMeansClusteringStrategy
+- [x] 0879_High_Low_Breakout_Statistical_Analysis — HighLowBreakoutStatisticalAnalysisStrategy
+- [ ] 0880_High_Yield_Spread_SMA_Filter — HighYieldSpreadSmaFilterStrategy
+- [x] 0880_High_Yield_Spread_with_SMA_Filter — HighYieldSpreadWithSmaFilterStrategy
+- [ ] 0881_High_Low_Breakout_ATR_Trailing — HighLowBreakoutAtrTrailingStopStrategy
+- [ ] 0882_Higher_Order_Pivots — HigherOrderPivotsStrategy
+- [ ] 0883_Highs_Lows — HighsLowsStrategy
+- [x] 0884_Hma200_Ema20_Crossover — Hma200Ema20CrossoverStrategy
+- [ ] 0885_Hma_Crossover_Atr_Curvature — HmaCrossoverAtrCurvatureStrategy
+- [ ] 0886_HMA_Crossover_RSI_Stochastic_Trailing_Stop — HmaCrossoverRsiStochasticTrailingStopStrategy
+- [x] 0887_HOD_LOD_PMH_PML_PDH_PDL — HodLodPmhPmlPdhPdlStrategy
+- [ ] 0888_Hoffman_Heiken_Bias — HoffmanHeikenBiasStrategy
+- [ ] 0889_Honest_Volatility_Grid — HonestVolatilityGridStrategy
+- [ ] 0890_Stochastic_Exit_Alerts — StochasticExitAlertsStrategy
+- [x] 0891_How_To_Set_Backtest_Time_Ranges — HowToSetBacktestTimeRangesStrategy
+- [ ] 0892_How_to_use_Leverage_and_Margin — HowToUseLeverageAndMarginStrategy
+- [ ] 0893_HSI_First_30m_Candle — HsiFirst30mCandleStrategy
+- [ ] 0894_Hsv_And_Hsl_Gradient_Tools — HsvAndHslGradientToolsStrategy
+- [ ] 0895_HTF_Candles_Lib — HtfCandlesLibStrategy
+- [ ] 0896_Hulk_Grid_Algorithm_V2 — HulkGridAlgorithmV2Strategy
+- [ ] 0897_Hull_Candles — HullCandlesStrategy
+- [ ] 0898_Hull_Suite_by_MRS — HullSuiteByMRSStrategy
+- [ ] 0899_Hull_Suite_1_Risk_No_SL_TP — HullSuite1RiskNoSlTpStrategy
+- [ ] 0900_Hull_Suite_No_SL_TP — HullSuiteNoSlTpStrategy
+- [x] 0901_Hurst_Exponent — HurstExponentStrategy
+- [ ] 0902_Hurst_Future_Lines_of_Demarcation — HurstFutureLinesOfDemarcationStrategy
+- [ ] 0903_Hybrid_RSI_Breakout_Dashboard — HybridRsiBreakoutDashboardStrategy
+- [x] 0904_Ibs_Internal_Bar_Strength — IbsInternalBarStrengthStrategy
+- [ ] 0905_Ichimoku_Daily_Candle_X_Hull_Ma_X_Macd — IchimokuDailyCandleXHullMaXMacdStrategy
+- [x] 0906_Ichimoku_Rsi_Macd — IchimokuRsiMacdStrategy
+- [ ] 0907_Ichimoku_by_FarmerBTC — IchimokuByFarmerBtcStrategy
+- [x] 0908_Ichimoku_Cloud_Breakout_Only_Long — IchimokuCloudBreakoutOnlyLongStrategy
+- [x] 0909_Ichimoku_Cloud_Buy_Custom_EMA_Exit — IchimokuCloudBuyCustomEmaExitStrategy
+- [ ] 0910_Ichimoku_Cloud_Buy_Sell — IchimokuCloudBuySellStrategy
+- [ ] 0911_Ichimoku_Clouds_Long_and_Short — IchimokuCloudsLongAndShortStrategy
+- [ ] 0912_ICT_Bread_and_Butter_Sell_Setup — IctBreadAndButterSellSetupStrategy
+- [ ] 0913_ICT_Indicator_with_Paper_Trading — IctIndicatorWithPaperTradingStrategy
+- [ ] 0914_ICT_Master_Suite_Trading_IQ — IctMasterSuiteTradingIqStrategy
+- [x] 0915_Ict_Ny_Kill_Zone_Auto_Trading — IctNyKillZoneAutoTradingStrategy
+- [ ] 0916_iD_EMARSI_on_Chart — IdEmarsiOnChartStrategy
+- [ ] 0917_IMACD_Sniper — ImacdSniperStrategy
+- [ ] 0918_Imlib — ImlibStrategy
+- [ ] 0919_Improved_Ema_Cdc_Trailing_Stop — ImprovedEmaCdcTrailingStopStrategy
+- [ ] 0921_Indicator_Panel — IndicatorPanelStrategy
+- [ ] 0922_Indicator_Test_With_Conditions_Table — IndicatorTestWithConditionsTableStrategy
+- [ ] 0923_Indices_Sector_SigmaSpikes — IndicesSectorSigmaSpikesStrategy
+- [ ] 0924_Innocent_Heikin_Ashi_Ethereum — InnocentHeikinAshiEthereumStrategy
+- [ ] 0925_Inside_Candle — InsideCandleStrategy
+- [ ] 0926_Intelle_city_World_Cycle_Ath_Atl_Logarithmic — IntelleCityWorldCycleAthAtlLogarithmicStrategy
+- [ ] 0927_Internal_Bar_Strength_IBS — InternalBarStrengthIbsStrategy
+- [ ] 0928_Intra_Bullish_Profit_Ping_v4_0 — IntraBullishProfitPingV40Strategy
+- [ ] 0929_Intraday_Combo_HH — IntradayComboHHStrategy
+- [ ] 0930_Intraday_Momentum — IntradayMomentumStrategy
+- [ ] 0931_Intraday_Volume_Swings — IntradayVolumeSwingsStrategy
+- [ ] 0932_InwCoin_Martingale — InwCoinMartingaleStrategy
+- [ ] 0933_Iron_Bot_Statistical_Trend_Filter — IronBotStatisticalTrendFilterStrategy
+- [ ] 0934_is — IsStrategy
+- [x] 0935_IU_4_Bar_UP — Iu4BarUpStrategy
+- [ ] 0936_IU_BBB_Big_Body_Bar — IuBbbBigBodyBarStrategy
+- [ ] 0937_IU_Bigger_Than_Range — IuBiggerThanRangeStrategy
+- [ ] 0938_IU_Break_Of_Any_Session — IUBreakOfAnySessionStrategy
+- [ ] 0939_Iu_Ema_Channel — IuEmaChannelStrategy
+- [ ] 0940_IU_Gap_Fill — IUGapFillStrategy
+- [ ] 0941_IU_Higher_Timeframe_MA_Cross — IUHigherTimeframeMACrossStrategy
+- [ ] 0942_IU_Open_Equal_To_High_Low — IuOpenEqualToHighLowStrategy
+- [ ] 0943_IU_Opening_Range_Breakout — IUOpeningRangeBreakoutStrategy
+- [ ] 0944_IU_Range_Trading — IuRangeTradingStrategy
+- [ ] 0945_JLines_Ribbon_4_Cycle_Engine — JLinesRibbon4CycleEngineStrategy
+- [x] 0946_JMA_Quantum_Edge — JmaQuantumEdgeStrategy
+- [ ] 0947_John_Bob_Trading_Bot — JohnBobTradingBotStrategy
+- [x] 0948_The_Price_Radio — ThePriceRadioStrategy
+- [ ] 0949_Kaito_Box_with_Rsi_Div — KaitoBoxWithRsiDivStrategy
+- [ ] 0950_Kaufman_Adaptive_Moving_Average — KaufmanAdaptiveMovingAverageStrategy
+- [ ] 0951_Kaufman_Trend — KaufmanTrendStrategy
+- [ ] 0952_Keltner_Channel_Based_Grid — KeltnerChannelBasedGridStrategy
+- [x] 0953_Keltner_Channel_by_Kevin_Davey — KeltnerChannelByKevinDaveyStrategy
+- [ ] 0954_Keltner_Channel_Golden_Cross — KeltnerChannelGoldenCrossStrategy
+- [ ] 0955_Keltner_Channel — KeltnerChannelStrategy
+- [ ] 0956_Khaled_Tamims_Avellaneda_Stoikov — KhaledTamimsAvellanedaStoikovStrategy
+- [ ] 0957_KST_Skyrexio — KstSkyrexioStrategy
+- [ ] 0958_KumoTrade_Ichimoku — KumoTradeIchimokuStrategy
+- [ ] 0959_Kyrie_Crossover — KyrieCrossoverStrategy
+- [ ] 0960_Lanz_1_0_Backtest — Lanz10BacktestStrategy
+- [ ] 0961_LANZ_2_0_Backtest — Lanz20BacktestStrategy
+- [ ] 0962_Lanz_3_0_Backtest — Lanz30BacktestStrategy
+- [ ] 0963_Lanz_4_0_Backtest — Lanz40BacktestStrategy
+- [x] 0964_Lanz_50 — Lanz50Strategy
+- [ ] 0965_Lanz_6_0_Backtest — Lanz60BacktestStrategy
+- [ ] 0966_Larry_Conners_SMTP — LarryConnersSmtpStrategy
+- [x] 0967_Larry_Conners_Vix_Reversal_II — LarryConnersVixReversalIIStrategy
+- [ ] 0968_Larry_Connors_Bollinger_PercentB — LarryConnorsPercentBStrategy
+- [ ] 0969_Larry_Connors_3_Day_High_Low — LarryConnors3DayHighLowStrategy
+- [x] 0970_Larry_Connors_Rsi_3 — LarryConnorsRsi3Strategy
+- [ ] 0971_Let_It_Snow — LetItSnowStrategy
+- [ ] 0972_LibraryCOT — LibraryCOTStrategy
+- [ ] 0973_Linear_Continuation — LinearContinuationStrategy
+- [ ] 0974_Linear_Correlation_Oscillator — LinearCorrelationOscillatorStrategy
+- [ ] 0975_Linear_Cross_Trading — LinearCrossTradingStrategy
+- [ ] 0976_Linear_Mean_Reversion — LinearMeanReversionStrategy
+- [ ] 0977_Linear_On_MACD — LinearOnMacdStrategy
+- [ ] 0978_Linear_Regression_All_Data — LinearRegressionAllDataStrategy
+- [x] 0979_Linear_Regression_Channel — LinearRegressionChannelStrategy
+- [ ] 0980_Liquid_Pulse — LiquidPulseStrategy
+- [ ] 0981_Liquidity_Engulfment — LiquidityEngulfmentStrategy
+- [ ] 0982_Liquidity_Internal_Market_Shift — LiquidityInternalMarketShiftStrategy
+- [ ] 0983_Liquidity_Breakout — LiquidityBreakoutStrategy
+- [ ] 0984_Liquidity_Grab_Volume_Trap — LiquidityGrabVolumeTrapStrategy
+- [ ] 0985_Liquidity_Sweep_Filter — LiquiditySweepFilterStrategy
+- [x] 0986_Litecoin_Trailing_Stop — LitecoinTrailingStopStrategy
+- [ ] 0987_Livermore_Seykota_Breakout — LivermoreSeykotaBreakoutStrategy
+- [ ] 0988_Logistic_RSI_STOCH_ROC_AO — LogisticRsiStochRocAoStrategy
+- [ ] 0989_London_BreakOut_Classic — LondonBreakOutClassicStrategy
+- [x] 0990_Long_and_Short_with_Multi_Indicators — LongAndShortWithMultiIndicatorsStrategy
+- [ ] 0991_Long_EMA_Advanced_Exit — LongEmaAdvancedExitStrategy
+- [ ] 0992_Long_Explosive_V1 — LongExplosiveV1Strategy
+- [ ] 0993_Long_Short_Exit_Risk_Management — LongShortExitRiskManagementStrategy
+- [x] 0994_Long_Term_Profitable_Swing_Abbas — LongTermProfitableSwingAbbasStrategy
+- [ ] 0995_Long_Leg_Doji_Breakout — LongLegDojiBreakoutStrategy
+- [ ] 0996_Long_Only_MTF_EMA_Cloud — LongOnlyMtfEmaCloudStrategy
+- [ ] 0997_Long_Only_Opening_Range_Breakout_ORB_with_Pivot_Points — LongOnlyOpeningRangeBreakoutWithPivotPointsStrategy
+- [x] 0998_LSMA_Fast_Simple_Alternative_Calculation — LsmaFastSimpleAlternativeCalculationStrategy
+- [ ] 0999_Lube — LubeStrategy
+- [ ] 1000_Lunar_calendar_day_Crypto_Trading — LunarCalendarDayCryptoTradingStrategy
+- [x] 1001_Lux_Clara_Ema_Vwap — LuxClaraEmaVwapStrategy
+- [ ] 1002_MA_Crossover_with_TP_SL_5_EMA_Filter — MaCrossoverTpSl5EmaFilterStrategy
+- [ ] 1003_MA_Crossover_Demand_Supply_Zones_SLTP — MaCrossoverDemandSupplyZonesSltpStrategy
+- [ ] 1004_MA_MACD_BB_BackTester — MaMacdBbBackTesterStrategy
+- [ ] 1005_MA_With_Logistic — MaWithLogisticStrategy
+- [ ] 1006_Macd_Rsi_Ema_Bb_Atr_Day_Trading — MacdRsiEmaBbAtrDayTradingStrategy
+- [ ] 1007_MACD_Aggressive_Scalp_Simple — MacdAggressiveScalpSimpleStrategy
+- [ ] 1008_MACD_Crossover — MacdCrossoverStrategy
+- [ ] 1009_MACD_Enhanced_MTF_With_Stop_Loss — MacdEnhancedMtfWithStopLossStrategy
+- [ ] 1010_MACD_Liquidity_Tracker — MacdLiquidityTrackerStrategy
+- [ ] 1011_MACD_of_Relative_Strenght — MacdOfRelativeStrenghtStrategy
+- [ ] 1012_MACD_Volume_BBO_Reversal — MacdVolumeBboReversalStrategy
+- [ ] 1013_Macd_Volume_Xauusd — MacdVolumeXauusdStrategy
+- [x] 1014_MACD_with_1D_Stochastic_Confirmation_Reversal — MacdStochasticConfirmationReversalStrategy
+- [ ] 1015_Machine_Learning_Logistic_Regression — MachineLearningLogisticRegressionStrategy
+- [x] 1016_Machine_Learning_SuperTrend_TP_SL — MachineLearningSuperTrendStrategy
+- [ ] 1017_Magic_Wand_STSM — MagicWandStsmStrategy
+- [ ] 1018_Manadi_Buy_Sell_Ema_Macd_Rsi — ManadiBuySellStrategy
+- [ ] 1019_Markdown_The_Pine_Editors_Hidden_Gem — MarkdownThePineEditorsHiddenGemStrategy
+- [ ] 1020_Market_EKG — MarketEKGStrategy
+- [ ] 1021_Market_Slayer — MarketSlayerStrategy
+- [ ] 1022_Market_Trend_Levels_Non_Repainting — MarketTrendLevelsNonRepaintingStrategy
+- [ ] 1023_MarketHolidays — MarketHolidaysStrategy
+- [ ] 1024_Martin_No_Loss_Exit_V3 — MartinNoLossExitV3Strategy
+- [ ] 1025_Martingale_with_MACD_KDJ_opening_conditions — MartingaleWithMacdKdjOpeningConditionsStrategy
+- [ ] 1026_Mateos_Time_of_Day_Analysis_LE — MateosTimeOfDayAnalysisLeStrategy
+- [ ] 1027_MathConstants — MathConstantsStrategy
+- [ ] 1028_MathSpecialFunctionsConvolve1D — MathSpecialFunctionsConvolve1DStrategy
+- [ ] 1029_MathStatisticsKernelFunctions — MathStatisticsKernelFunctionsStrategy
+- [ ] 1030_Matrix_Functions — MatrixFunctionsStrategy
+- [ ] 1031_Function_Matrix_Library — FunctionMatrixLibraryStrategy
+- [ ] 1032_Mawreez_RSI_Divergence_Detector — MawreezRsiDivergenceDetectorStrategy
+- [ ] 1033_Max_Drawdown_Calculating_Functions_Optimized — MaxDrawdownCalculatingFunctionsOptimizedStrategy
+- [ ] 1034_Max_Gain — MaxGainStrategy
+- [ ] 1035_Max_Pain — MaxPainStrategy
+- [ ] 1036_Max_Profit_Min_Loss_Options — MaxProfitMinLossOptionsStrategy
+- [x] 1037_McClellan_AD_Volume_Integration_Model — McClellanAdVolumeIntegrationModelStrategy
+- [ ] 1038_McGinley_Dynamic_Improved — McGinleyDynamicImprovedStrategy
+- [ ] 1039_MCOTs_Intuition — McotsIntuitionStrategy
+- [ ] 1040_Mean_Deviation_Index — MeanDeviationIndexStrategy
+- [ ] 1041_Mean_Reversion_Pro — MeanReversionProStrategy
+- [ ] 1042_Mean_Reversion_V_F — MeanReversionVFStrategy
+- [ ] 1043_Mean_Reversion_With_Incremental_Entry — MeanReversionWithIncrementalEntryStrategy
+- [x] 1044_Mechanical_Trading — MechanicalTradingStrategy
+- [ ] 1045_Medico_Action_Zone_Self_Adjust_TF_Version_2 — MedicoActionZoneSelfAdjustTfVersion2Strategy
+- [ ] 1046_Megabar_Breakout_Range_Volume_Rsi — MegabarBreakoutStrategy
+- [ ] 1047_Merovinh_Mean_Reversion_Lowest_Low — MerovinhMeanReversionLowestLowStrategy
+- [ ] 1048_MESA_Stochastic_Multi_Length — MesaStochasticMultiLengthStrategy
+- [x] 1049_MFI_with_Oversold_Zone_Exit_and_Averaging — MfiWithOversoldZoneExitAndAveragingStrategy
+- [ ] 1050_MFS_3_Bars_Pattern — Mfs3BarsPatternStrategy
+- [x] 1051_MH_Hull_Moving_Average_Based_Trading — MhHullMovingAverageBasedTradingStrategy
+- [ ] 1052_MicuRobert_Ema_Cross — MicuRobertEmaCrossStrategy
+- [ ] 1053_Mikuls_Ichimoku_Cloud_v2 — MikulsIchimokuCloudV2Strategy
+- [ ] 1054_MK_Custome_Adaptive_SuperTrend — MKCustomeAdaptiveSuperTrendStrategy
+- [ ] 1055_MM_Fibonacci — MmFibonacciStrategy
+- [ ] 1056_MNQ_EMA — MNQEMAStrategy
+- [ ] 1057_MOC_Delta_MOO_Entry_V2_REVERSE — MocDeltaMooEntryV2ReverseStrategy
+- [ ] 1058_MOC_Delta_MOO_Entry_v2 — MocDeltaMooEntryV2Strategy
+- [ ] 1059_MOC_Delta_MOO_Entry — MocDeltaMooEntryStrategy
+- [ ] 1060_Modified_OBV_With_Divergence_Detection — ModifiedObvWithDivergenceDetectionStrategy
+- [ ] 1061_Modular_Range_Trading — ModularRangeTradingStrategy
+- [ ] 1062_MollyETF_EMA_Crossover — MollyEtfEmaCrossoverStrategy
+- [x] 1063_Momentum_Keltner_Stochastic_Combo — MomentumKeltnerStochasticComboStrategy
+- [ ] 1064_Momentum_Alligator_4h_Bitcoin — MomentumAlligator4hBitcoinStrategy
+- [ ] 1065_Momentum_Long_Short — MomentumLongShortStrategy
+- [x] 1066_MomentumSync_PSAR_RSI_ADX_Filtered_3_Tier_Exit — MomentumSyncPsarRsiAdxFiltered3TierExitStrategy
+- [ ] 1067_Monday_Open — MondayOpenStrategy
+- [ ] 1068_Monte_Carlo_Range_Forecast — MonteCarloRangeForecastStrategy
+- [ ] 1069_Monte_Carlo_Simulation_Random_Walk — MonteCarloSimulationRandomWalkStrategy
+- [ ] 1070_Monthly_Breakout — MonthlyBreakoutStrategy
+- [ ] 1071_Monthly_Day_Long_VIX — MonthlyDayLongVixStrategy
+- [x] 1072_Monthly_Performance_Table — MonthlyPerformanceTableStrategy
+- [ ] 1073_Monthly_Purchase_with_Dynamic_Contract_Size — MonthlyPurchaseWithDynamicContractSizeStrategy
+- [x] 1074_Monthly_Returns — MonthlyReturnsStrategy
+- [ ] 1075_Motion — MotionStrategy
+- [ ] 1076_MA_Crossover_with_Take_Profit_and_Stop_Loss — MaCrossoverTpSlStrategy
+- [x] 1077_Moving_Average_Crossover — MovingAverageCrossoverStrategy
+- [ ] 1078_Moving_Average_Crossover_Swing — MovingAverageCrossoverSwingStrategy
+- [x] 1079_Moving_Average_Entanglement — MovingAverageEntanglementStrategy
+- [ ] 1080_Moving_Average_Rainbow_Stormer — MovingAverageRainbowStormerStrategy
+- [ ] 1081_Moving_Average_Shift_WaveTrend — MovingAverageShiftWaveTrendStrategy
+- [ ] 1082_Moving_Average — MovingAverageStrategy
+- [x] 1083_Moving_Regression — MovingRegressionStrategy
+- [ ] 1084_MTF_Oscillator_Framework — MtfOscillatorFrameworkStrategy
+- [ ] 1085_MTF_Seconds_Values_JD — MtfSecondsValuesJDStrategy
+- [ ] 1086_Multi_Conditions_Curve_Fitting — MultiConditionsCurveFittingStrategy
+- [ ] 1087_Multi_Time_Frame_Candles_with_Volume_Info_3D — MultiTimeFrameCandlesWithVolumeInfo3DStrategy
+- [ ] 1088_Multi_Time_Frame_Candles — MultiTimeFrameCandlesStrategy
+- [x] 1089_Multi_Timeframe_RSI_Buy_Sell — MultiTimeframeRsiBuySellStrategy
+- [ ] 1090_Multi_Band_Comparison — MultiBandComparisonStrategy
+- [ ] 1091_Multi_Confluence_Swing_Hunter_V1 — MultiConfluenceSwingHunterV1Strategy
+- [ ] 1092_Multi_EMA_Crossover — MultiEmaCrossoverStrategy
+- [x] 1093_Multi-Factor — MultiFactorStrategy
+- [ ] 1094_Multi_Indicator_Swing — MultiIndicatorSwingStrategy
+- [ ] 1095_Multi_Indicator_Trend_Following — MultiIndicatorTrendFollowingStrategy
+- [ ] 1096_Multi_Regression — MultiRegressionStrategy
+- [ ] 1097_Multi_Step_FlexiMA — MultiStepFlexiMaStrategy
+- [ ] 1098_Multi_Step_FlexiSuperTrend — MultiStepFlexiSuperTrendStrategy
+- [ ] 1099_Multi-Step_Vegas_SuperTrend — MultiStepVegasSuperTrendStrategy
+- [ ] 1100_Multi_TF_AI_SuperTrend_with_ADX — MultiTfAiSuperTrendWithAdxStrategy
+- [ ] 1101_Multi_Timeframe_MACD — MultiTimeframeMacdStrategy
+- [ ] 1102_Multi_Timeframe_Parabolic_SAR — MultiTimeframeParabolicSarStrategy
+- [ ] 1103_Multi_Timeframe_RSI_Grid_with_Arrows — MultiTimeframeRsiGridWithArrowsStrategy
+- [x] 1104_Multi_Timeframe_Trend_200_EMA_Filter_Longs_Only — MultiTimeframeTrend200EmaFilterLongsOnlyStrategy
+- [ ] 1105_MultiLayer_Acceleration_Deceleration — MultiLayerAccelerationDecelerationStrategy
+- [ ] 1106_MultiLayer_Awesome_Oscillator_Saucer — MultiLayerAwesomeOscillatorSaucerStrategy
+- [x] 1107_Mutanabby_AI_Algo_Pro — MutanabbyAiAlgoProStrategy
+- [ ] 1108_MVO_MA_Signal — MvoMaSignalStrategy
+- [ ] 1109_Nadaraya_Watson_Envelope — NadarayaWatsonEnvelopeStrategy
+- [ ] 1110_Narrow_Range — NarrowRangeStrategy
+- [ ] 1111_NAS100_and_gold_Smart_Scalping_PRO_Enhanced_v2 — Nas100AndGoldSmartScalpingProEnhancedV2Strategy
+- [ ] 1112_Nasdaq_100_Peak_Hours — Nasdaq100PeakHoursStrategy
+- [ ] 1113_Nasdaq_Day_and_Night_Breakdown — NasdaqDayAndNightBreakdownStrategy
+- [ ] 1114_Negroni_Opening_Range — NegroniOpeningRangeStrategy
+- [ ] 1115_NEO_IMACD_SL_y_TP — NeoImacdSlTpStrategy
+- [x] 1116_Neon_Momentum_Waves — NeonMomentumWavesStrategy
+- [ ] 1117_New_Intraday_High_With_Weak_Bar — NewIntradayHighWithWeakBarStrategy
+- [ ] 1118_Nifty_50_5mint — Nifty505mintStrategy
+- [ ] 1119_Nifty_Options_Trendy_Markets_with_TSL — NiftyOptionsTrendyMarketsWithTslStrategy
+- [ ] 1120_Non_Repainting_Renko_Emulation — NonRepaintingRenkoEmulationStrategy
+- [ ] 1121_Normalized_Oscillators_Spider_Chart — NormalizedOscillatorsSpiderChartStrategy
+- [ ] 1122_Nova_Futures_Pro_Safe_v6 — NovaFuturesProSafeV6Strategy
+- [ ] 1123_NQ_Phantom_Scalper_Pro — NqPhantomScalperProStrategy
+- [ ] 1124_NSE_Index_with_Entry_Exit_Markers — NseIndexWithEntryExitMarkersStrategy
+- [ ] 1125_Nunchucks — NunchucksStrategy
+- [ ] 1126_NY_First_Candle_Break_and_Retest — NyFirstCandleBreakAndRetestStrategy
+- [ ] 1127_NY_Opening_Range_Breakout_MA_Stop — NyOpeningRangeBreakoutMaStopStrategy
+- [ ] 1128_NY_Breakout — NyBreakoutStrategy
+- [x] 1129_OBV_ATR — ObvAtrStrategy
+- [ ] 1130_OBV_Traffic_Lights — ObvTrafficLightsStrategy
+- [ ] 1131_Obvious_MA — ObviousMaStrategy
+- [ ] 1132_Octopus_Nest — OctopusNestStrategy
+- [ ] 1133_OKX_MA_Crossover — OkxMaCrossoverStrategy
+- [ ] 1134_Omega_Galsky — OmegaGalskyStrategy
+- [ ] 1135_Opening_Range_Breakout — OpeningRangeBreakout2Strategy
+- [ ] 1136_Optimized_Auto_Detect — OptimizedAutoDetectStrategy
+- [ ] 1137_Optimized_Grid_with_KNN — OptimizedGridWithKnnStrategy
+- [ ] 1138_Optimized_Heikin_Ashi_Buy_Sell — OptimizedHeikinAshiBuySellStrategy
+- [ ] 1139_Lorenzo_Super_Scalp — LorenzoSuperScalpStrategy
+- [ ] 1140_Options_V13 — OptionsV13Strategy
+- [ ] 1141_Options_V2_0 — OptionsV20Strategy
+- [ ] 1142_ORB_15m_First_15min_Breakout_Long_Short — Orb15mFirst15minBreakoutStrategy
+- [ ] 1143_ORB_VWAP_Braid_Filter — OrbVwapBraidFilterStrategy
+- [ ] 1144_ORB_Heikin_Ashi_SPY_Correlation — OrbHeikinAshiSpyCorrelationStrategy
+- [x] 1145_Order_Block_Finder — OrderBlockFinderStrategy
+- [ ] 1146_Oscillator_Evaluator — OscillatorEvaluatorStrategy
+- [ ] 1147_Out_of_the_Noise_Intraday_with_VWAP — OutOfTheNoiseIntradayWithVwapStrategy
+- [ ] 1148_Outlier_Detector_with_N_Sigma_Confidence_Intervals — OutlierDetectorWithNSigmaConfidenceIntervalsStrategy
+- [ ] 1149_Outside_Bar — OutsideBarStrategy
+- [ ] 1150_Overnight_Effect_High_Volatility_Crypto — OvernightEffectHighVolatilityCryptoStrategy
+- [ ] 1151_Overnight_Positioning_EMA — OvernightPositioningEmaStrategy
+- [ ] 1152_P_Square_Nth_Percentile — PSquareNthPercentileStrategy
+- [ ] 1153_Pairs — PairsStrategy
+- [ ] 1154_Parabolic_RSI — ParabolicRsiStrategy
+- [x] 1155_Parabolic_SAR_MACD_Trend_Zone — ParabolicSarMacdTrendZoneStrategy
+- [x] 1156_Parabolic_SAR_Early_Buy_MA_Exit — ParabolicSarEarlyBuyMaExitStrategy
+- [x] 1157_Parabolic_SAR_Early_Buy_MA_Based_Exit — ParabolicSarEarlyBuyMaBasedExitStrategy
+- [ ] 1158_Parent_Session_Sweeps_Alert — ParentSessionSweepsAlertStrategy
+- [ ] 1159_Pavan_CPR — PavanCprStrategy
+- [ ] 1160_Payday_Anomaly — PaydayAnomaly2Strategy
+- [ ] 1161_PEAD — PeadStrategy
+- [ ] 1162_Penrose_Diagram — PenroseDiagramStrategy
+- [ ] 1163_PercentX_Trend_Follower — PercentXTrendFollowerStrategy
+- [ ] 1164_Phase_Cross_with_Zone — PhaseCrossWithZoneStrategy
+- [ ] 1165_Pin_Bar_Reversal — PinBarReversalStrategy
+- [ ] 1166_Pineconnector_Template — PineconnectorTemplateStrategy
+- [ ] 1167_Common_Label_Line_Array_Functions — CommonLabelLineArrayFunctionsStrategy
+- [ ] 1168_Pivot_Percentile_Trend — PivotPercentileTrendStrategy
+- [x] 1169_Pivot_Point_SuperTrend_TrendFilter — PivotPointSuperTrendTrendFilterStrategy
+- [x] 1170_Pivot_Point_Supertrend — PivotPointSupertrendStrategy
+- [ ] 1171_Pixel_Art — PixelArtStrategy
+- [ ] 1172_Polynomial_Regression_Bands_Channel — PolynomialRegressionBandsChannelStrategy
+- [ ] 1173_Portfolio_Alpha_Beta_Stdev_Variance_Mean_Max_Drawdown — PortfolioAlphaBetaStdevVarianceMeanMaxDrawdownStrategy
+- [ ] 1174_Portfolio_Tracker_v2 — PortfolioTrackerV2Strategy
+- [ ] 1175_Post_Open_Long_ATR_Stop_Loss_Take_Profit — PostOpenLongAtrStopLossTakeProfitStrategy
+- [ ] 1176_Power_Hour_Money — PowerHourMoneyStrategy
+- [ ] 1177_PowerHouse_SwiftEdge_AI_v2_10 — PowerHouseSwiftEdgeAiV210Strategy
+- [ ] 1178_Powertrend_Volume_Range_Filter — PowertrendVolumeRangeFilterStrategy
+- [ ] 1179_PowerZone — PowerZoneStrategy
+- [x] 1180_Precision_Trading_Golden_Edge — PrecisionTradingGoldenEdgeStrategy
+- [ ] 1181_Premarket_Gap_MomoTrader — PremarketGapMomoTraderStrategy
+- [ ] 1182_PresentTrend — PresentTrendStrategy
+- [ ] 1183_PresentTrend_RMI_Synergy — PresentTrendRmiSynergyStrategy
+- [ ] 1184_Previous_Day_High_Low_Long — PreviousDayHighLowLongStrategy
+- [ ] 1185_Previous_Period_Levels_X_Alerts — PreviousPeriodLevelsXAlertsStrategy
+- [ ] 1186_Price_and_Volume_Breakout_Buy — PriceAndVolumeBreakoutBuyStrategy
+- [x] 1187_Price_Based_Z_Trend — PriceBasedZTrendStrategy
+- [x] 1188_Price_Convergence — PriceConvergenceStrategy
+- [ ] 1189_Price_Flip — PriceFlipStrategy
+- [x] 1190_Price_Statistical_ZScore — PriceStatisticalZScoreStrategy
+- [ ] 1191_Probability_of_ATR_Index — ProbabilityOfAtrIndexStrategy
+- [ ] 1192_Professional_ORB — ProfessionalOrbStrategy
+- [x] 1193_Profitable_Pullback_Mark804 — ProfitablePullbackMark804Strategy
+- [ ] 1194_Profitable_SuperTrend_MA_Stoch — ProfitableSuperTrendMAStochStrategy
+- [x] 1195_ProfitView_Template — ProfitViewTemplateStrategy
+- [ ] 1196_Projection — ProjectionStrategy
+- [ ] 1197_Prop_Firm_Business_Simulator — PropFirmBusinessSimulatorStrategy
+- [ ] 1198_Proxy_Financial_Stress_Index — ProxyFinancialStressIndexStrategy
+- [ ] 1199_PS_January_Barometer_Backtester — PSJanuaryBarometerBacktesterStrategy
+- [ ] 1200_Bollinger_Bands_Trailing_Stop — BollingerBandsTrailingStopStrategy
+- [ ] 1201_Pullback_Pro_Dow — PullbackProDowStrategy
+- [ ] 1202_PulseWave_Markking77 — PulseWaveStrategy
+- [ ] 1203_Pure_Price_Action_Breakout_with_1_5_RR — PurePriceActionBreakoutWith15RRStrategy
+- [ ] 1204_Pure_Price_Action — PurePriceActionStrategy
+- [ ] 1205_PVSRA_v5 — PvsraV5Strategy
+- [x] 1206_PVT_Crossover — PvtCrossoverStrategy
+- [ ] 1207_PyMath — PyMathStrategy
+- [ ] 1208_QQQ_v2_ESL_easy_peasy_x — QqqV2EslEasyPeasyXStrategy
+- [x] 1209_Quadratic_Regression — QuadraticRegressionStrategy
+- [ ] 1210_Quality_Screen — QualityScreenStrategy
+- [x] 1211_Quantitative_Trend_Uptrend_Long — QuantitativeTrendUptrendLongStrategy
+- [ ] 1212_Quantum_Reversal — QuantumReversalStrategy
+- [ ] 1213_Quatro_SMA — QuatroSmaStrategy
+- [ ] 1214_R_Based_Template — RBasedTemplateStrategy
+- [ ] 1215_Rally_Base_Drop_SND_Pivots — RallyBaseDropSndPivotsStrategy
+- [ ] 1216_Random_ATR_Bybit — RandomAtrBybitStrategy
+- [ ] 1217_Random_Coin_Toss — RandomCoinTossStrategy
+- [ ] 1218_Random_Entry_and_Exit — RandomEntryAndExitStrategy
+- [ ] 1219_Random_State_Machine — RandomStateMachineStrategy
+- [ ] 1220_Random_Synthetic_Asset_Generation — RandomSyntheticAssetGenerationStrategy
+- [ ] 1221_Range_Filter_ATR_Low_Drawdown — RangeFilterAtrLowDrawdownStrategy
+- [x] 1222_Range_Filter_ATR_TP_SL — RangeFilterAtrTpSlStrategy
+- [ ] 1224_Range_Filter — RangeFilterStrategy
+- [ ] 1225_Range_Filter_DW — RangeFilterDwStrategy
+- [x] 1226_Rate_of_Change — RateOfChangeStrategy
+- [ ] 1227_Rawstocks_15_Minute_Model — Rawstocks15MinuteModelStrategy
+- [ ] 1228_RCI — RciStrategy
+- [ ] 1229_Realtime_Delta_Volume_Action — RealtimeDeltaVolumeActionStrategy
+- [ ] 1230_RedK_Compound_Ratio_MA — RedkCompoundRatioMaStrategy
+- [ ] 1231_RedK_Slow_Smooth_Average_RSS_WMA — RedkSlowSmoothAverageRssWmaStrategy
+- [ ] 1232_Refined_MA_Engulfing — RefinedMaEngulfingStrategy
+- [x] 1233_Refined_SMA_EMA_Crossover_with_Ichimoku_and_200_SMA_Filter — RefinedSmaEmaCrossoverWithIchimokuAnd200SmaFilterStrategy
+- [ ] 1234_Reflected_Ema_Difference_RED — ReflectedEmaDifferenceRedStrategy
+- [ ] 1235_Reflex_Oscillator — ReflexOscillatorStrategy
+- [ ] 1236_Relative_Candle — RelativeCandleStrategy
+- [x] 1237_Relative_Currency_Strength — RelativeCurrencyStrengthStrategy
+- [ ] 1238_Relative_Strength_RSMK_Plus_Perk — RelativeStrengthRsmkPlusPerkStrategy
+- [ ] 1239_Relative_Strength — RelativeStrengthStrategy
+- [ ] 1240_Relative_Volume_at_Time — RelativeVolumeAtTimeStrategy
+- [ ] 1241_Reminder_Message_With_Color_Picker — ReminderMessageWithColorPickerStrategy
+- [ ] 1242_Renko_RSI — RenkoRsiStrategy
+- [ ] 1243_Renko — RenkoStrategy
+- [ ] 1244_Resampling_Filter_Pack — ResamplingFilterPackStrategy
+- [ ] 1245_Resampling_Reverse_Engineering_Bands — ResamplingReverseEngineeringBandsStrategy
+- [x] 1246_Responsive_Linear_Regression_Channels — ResponsiveLinearRegressionChannelsStrategy
+- [ ] 1247_Revelations — RevelationsStrategy
+- [ ] 1248_Reversal_Breakout_ORB — ReversalBreakoutOrbStrategy
+- [ ] 1249_Reversal_Finder — ReversalFinderStrategy
+- [ ] 1250_Reversal_Trading_Bot — ReversalTradingBotStrategy
+- [x] 1251_Reversal_Trap_Sniper — ReversalTrapSniperStrategy
+- [ ] 1252_Reverse_Keltner_Channel — ReverseKeltnerChannelStrategy
+- [ ] 1253_Revolution_Volatility_Bands_With_Range_Contraction_Signal_VII — RevolutionVolatilityBandsWithRangeContractionSignalVIIStrategy
+- [ ] 1254_Risk_Management_and_Positionsize_MACD_Example — RiskManagementAndPositionsizeMacdExampleStrategy
+- [ ] 1255_Risk_to_Reward_FIXED_SL_Backtester — RiskToRewardFixedSlBacktesterStrategy
+- [ ] 1256_RKs_Framework_Auto_Color_Gradient — RksFrameworkAutoColorGradientStrategy
+- [ ] 1257_RMI_Trend_Sync — RmiTrendSyncStrategy
+- [ ] 1258_RSI_ADX_Long_Short — RsiAdxLongShortStrategy
+- [ ] 1259_RSI_Backed_Weighted_MA — RsiBackedWeightedMaStrategy
+- [ ] 1260_RSI_MACD_Long_Only — RsiMacdLongOnlyStrategy
+- [ ] 1261_RSI_Stochastic_WMA — RsiStochasticWmaStrategy
+- [x] 1262_RSI_and_ATR_Trend_Reversal_SL_TP — RsiAndAtrTrendReversalSlTpStrategy
+- [x] 1263_RSI_Box_Pseudo_Grid_Bot — RsiBoxPseudoGridBotStrategy
+- [ ] 1264_RSI_Buy_Sell_Force — RsiBuySellForceStrategy
+- [ ] 1265_RSI_Crossover_with_Compounding_Monthly — RsiCrossoverWithCompoundingMonthlyStrategy
+- [x] 1266_RSI_Cyclic_Smoothed — RsiCyclicSmoothedStrategy
+- [ ] 1267_RSI_Divergence_AliferCrypto — RsiDivergenceAliferCryptoStrategy
+- [ ] 1268_RSI_Divergence — RsiDivergence2Strategy
+- [ ] 1269_RSI_Long_Only_with_Confirmed_Crossbacks — RsiLongOnlyWithConfirmedCrossbacksStrategy
+- [x] 1270_Rsi_Long_Term_15min — RsiLongTerm15minStrategy
+- [ ] 1271_RSI_ProPlus_Bear_Market — RsiProPlusBearMarketStrategy
+- [x] 1272_RSI_Long_Position_DAX_2_hours_Dow_Jones_1_hour — RsiLongPositionDax2HoursDowJones1HourStrategy
+- [x] 1273_RSI_with_Adjustable_RSI_and_Stop_Loss — RsiWithAdjustableRsiAndStopLossStrategy
+- [x] 1274_RSI_with_Manual_TP_and_SL — RsiWithManualTpAndSlStrategy
+- [ ] 1275_RSI_With_TP_SL_Lower_TF — RsiWithTpSlLowerTfStrategy
+- [x] 1276_RSI — RsiStrategy
+- [ ] 1277_RSI_Swing_Radar — RsiSwingRadarStrategy
+- [ ] 1278_RSI_Trend_Following — RsiTrendFollowingStrategy
+- [ ] 1279_RSI_Volume_MACD_EMA_Combo — RsiVolumeMacdEmaComboStrategy
+- [ ] 1280_RSI_Adaptive_T3_Squeeze_Momentum — RsiAdaptiveT3SqueezeMomentumStrategy
+- [ ] 1281_RSI_Adaptive_T3 — RsiAdaptiveT3Strategy
+- [ ] 1282_RSI_CCI_Fusion — RsiCciFusionStrategy
+- [ ] 1283_RTB_Momentum_Breakout — RtbMomentumBreakoutStrategy
+- [ ] 1284_RVI_Crossover — RviCrossoverStrategy
+- [ ] 1285_SP_100_Option_Expiration_Week — SP100OptionExpirationWeekStrategy
+- [ ] 1286_S4_IBS_Mean_Rev_3candleExit — S4IBSMeanRev3candleExitStrategy
+- [ ] 1287_Safa_Bot_Alert — SafaBotAlertStrategy
+- [x] 1288_Scale_In_Scale_Out — ScaleInScaleOutStrategy
+- [ ] 1289_Scalping_15min_EMA_MACD_RSI_ATR — Scalping15minEmaMacdRsiAtrStrategy
+- [x] 1290_Scalping_By_TradingConToto — ScalpingByTradingConTotoStrategy
+- [ ] 1291_Scalping_With_Williams_R_MACD_and_SMA — ScalpingWithWilliamsRMacdAndSmaStrategy
+- [ ] 1292_Screener_Mean_Reversion_Channel — ScreenerMeanReversionChannelStrategy
+- [x] 1293_Security_Free_MTF_Example — SecurityFreeMtfExampleStrategy
+- [ ] 1294_Separated_Moving_Average — SeparatedMovingAverageStrategy
+- [ ] 1295_Session_Breakout_Scalper_Trading_Bot — SessionBreakoutScalperTradingBotStrategy
+- [ ] 1296_Setup_Smooth_Gaussian_Adaptive_Supertrend_Manual_Vol — SetupSmoothGaussianAdaptiveSupertrendManualVolStrategy
+- [ ] 1297_Sharpe_Ratio_Forced_Selling — SharpeRatioForcedSellingStrategy
+- [ ] 1298_Sigma_Spike_Filtered_Binned_OPR — SigmaSpikeFilteredBinnedOprStrategy
+- [ ] 1299_Signal_Tester — SignalTesterStrategy
+- [ ] 1300_SILVER_Midnight_Candle_Color_1_Hour_Delay_and_SL_TP — SilverMidnightCandleColorStrategy
+- [ ] 1301_SimilarityMeasures — SimilarityMeasuresStrategy
+- [ ] 1302_Simple_APF_Backtesting — SimpleApfBacktestingStrategy
+- [ ] 1303_Simple_DCA — SimpleDcaStrategy
+- [ ] 1304_Simple_Fibonacci_Retracement — SimpleFibonacciRetracementStrategy
+- [ ] 1305_Simple_Pull_Back_TJlv26 — SimplePullBackTjlv26Strategy
+- [ ] 1306_Simple_RSI_Stock_1D — SimpleRsiStock1DStrategy
+- [ ] 1307_Simple_Trendlines — SimpleTrendlinesStrategy
+- [ ] 1308_Simplified_Gap_with_SMA_Filter — SimplifiedGapWithSmaFilterStrategy
+- [ ] 1309_SJ_NIFTY — SjNiftyStrategy
+- [ ] 1310_SMA_RSI_Volume_ATR — SmaRsiVolumeAtrStrategy
+- [x] 1311_SMA_Slope_Dynamic_TP_SL — SmaSlopeDynamicTpSlStrategy
+- [x] 1312_SMA_Crossover — SmaCrossoverStrategy
+- [ ] 1313_SMA_Directional_Matrix_LuxAlgo — SMADirectionalMatrixLuxAlgoStrategy
+- [ ] 1314_Smart_Fib — SmartFibStrategy
+- [ ] 1315_Smart_Grid_Scalping_Pullback — SmartGridScalpingPullbackStrategy
+- [ ] 1316_Smart_MA_Crossover_Backtester — SmartMaCrossoverBacktesterStrategy
+- [ ] 1317_Smart_Money_Concept_Uncle_Sam — SmartMoneyConceptUncleSamStrategy
+- [ ] 1318_Smart_Money_Pivot — SmartMoneyPivotStrategy
+- [ ] 1319_SmartScale_Envelope_DCA — SmartScaleEnvelopeDcaStrategy
+- [ ] 1320_SMB_Magic — SmbMagicStrategy
+- [ ] 1321_SMC_BTC_1H_OB_FVG — SmcBtc1HObFvgStrategy
+- [x] 1322_SMC — SmcStrategy
+- [x] 1323_Smoothed_Heiken_Ashi_Long_Only — SmoothedHeikenAshiLongOnlyStrategy
+- [ ] 1324_Smoothed_Heiken_Ashi — SmoothedHeikenAshiStrategy
+- [ ] 1325_SMU_STDEV_Candles — SmuStdevCandlesStrategy
+- [ ] 1326_Sniper_Trade_Pro_ES_15_Min_Topstep_Optimized — SniperTradeProStrategy
+- [ ] 1327_Source — SourceStrategy
+- [x] 1328_SOXL_Trend_Surge_Profit_Only_Runner — SoxlTrendSurgeProfitOnlyRunnerStrategy
+- [ ] 1329_Spearman_Rank_Correlation_Coefficient — SpearmanRankCorrelationCoefficientStrategy
+- [ ] 1330_SpeedBullish_Confirm_V62 — SpeedBullishConfirmV62Strategy
+- [ ] 1331_Speedometer_Toolbox — SpeedometerToolboxStrategy
+- [x] 1332_Spread_by — SpreadByStrategy
+- [ ] 1333_SPY_TLT — SpyTltStrategy
+- [ ] 1334_Squeeze_Momentum_Indicator — SqueezeMomentumIndicatorStrategy
+- [ ] 1335_Starter_Edge — StarterEdgeStrategy
+- [ ] 1336_Statistical_Arbitrage_Pairs_Trading_Long_Side_Only — StatisticalArbitragePairsTradingLongSideOnlyStrategy
+- [ ] 1337_Statistical_Arbitrage — StatisticalArbitrageSpreadStrategy
+- [ ] 1338_Stepped_Trailing_Example — SteppedTrailingExampleStrategy
+- [ ] 1339_Stochastic_Heat_Map — StochasticHeatMapStrategy
+- [x] 1340_Stochastic_RSI_OHLC — StochasticRsiOhlcStrategy
+- [ ] 1341_Stochastic — StochasticStrategy
+- [ ] 1342_Stochastic_Z_Score_Oscillator — StochasticZScoreOscillatorStrategy
+- [ ] 1343_Stochastic_Dynamic_Volatility_Band_Model — StochasticDynamicVolatilityBandModelStrategy
+- [ ] 1344_VWAP_Pro_V21 — VwapProV21Strategy
+- [x] 1345_Stop_Loss_Take_Profit_Money — StopLossTakeProfitMoneyStrategy
+- [ ] 1346_Strategic_Multi_Step_Supertrend — StrategicMultiStepSupertrendStrategy
+- [ ] 1347_Connectable — ConnectableStrategy
+- [ ] 1348_Builder_With_Indicators — BuilderWithIndicatorsStrategy
+- [ ] 1349_Chameleon — ChameleonStrategy
+- [ ] 1350_Fibonacci_Levels_With_High_Low_Criteria_Aynet — FibonacciLevelsWithHighLowCriteriaAynetStrategy
+- [ ] 1351_Gaussian_Anomaly_Derivative — GaussianAnomalyDerivativeStrategy
+- [ ] 1352_Reversal_Catcher — ReversalCatcherStrategy
+- [ ] 1353_SEMA_SDI_Webhook — SemaSdiWebhookStrategy
+- [ ] 1354_Stats_PresentTrading — StatsPresentTradingStrategy
+- [ ] 1355_SuperTrend_SDI_Webhook — SuperTrendSdiWebhookStrategy
+- [x] 1356_Percent_Stop_TakeProfit — PercentStopTakeProfitStrategy
+- [ ] 1357_Bollinger_Channel_Rebound — BollingerChannelReboundStrategy
+- [ ] 1358_Streak_Based_Trading — StreakBasedTradingStrategy
+- [ ] 1359_Stx_Monthly_Trades_Profit — StxMonthlyTradesProfitStrategy
+- [ ] 1360_Sunil_2_Bar_Breakout — Sunil2BarBreakoutStrategy
+- [ ] 1361_Sunil_BB_Blast_Heikin_Ashi — SunilBbBlastHeikinAshiStrategy
+- [ ] 1362_Sunil_High_Frequency_with_Simple_MACD_and_RSI — SunilHighFrequencyMacdRsiStrategy
+- [ ] 1363_SuperATR_7Step_Profit — SuperAtr7StepProfitStrategy
+- [x] 1364_SuperTrade_Ichimoku_Cloud — SuperTradeIchimokuCloudStrategy
+- [ ] 1365_SuperTrade_ST1 — SuperTradeSt1Strategy
+- [ ] 1366_Supertrade_RVI_LongOnly — SupertradeRviLongOnlyStrategy
+- [ ] 1367_Supertrend_CCI_Scalp — SupertrendCciScalpStrategy
+- [x] 1368_Supertrend_Macd_Crossover — SupertrendMacdCrossoverStrategy
+- [ ] 1369_Supertrend_Ssl_Toggle — SupertrendSslToggleStrategy
+- [ ] 1370_Supertrend_Advance_Pullback — SupertrendAdvancePullbackStrategy
+- [ ] 1371_SuperTrend_AI_Oscillator — SuperTrendAiOscillatorStrategy
+- [ ] 1372_Supertrend_And_MACD — SupertrendAndMacdStrategy
+- [ ] 1373_Supertrend_AT_v1_0 — SupertrendAtV10Strategy
+- [ ] 1374_Supertrend_Ema_Vol — SupertrendEmaVolStrategy
+- [ ] 1375_SuperTrend_Enhanced_Pivot_Reversal — SuperTrendEnhancedPivotReversalStrategy
+- [x] 1376_Supertrend_Fixed_TP_Unified_with_Time_Filter_MSK — SupertrendFixedTpUnifiedWithTimeFilterMskStrategy
+- [ ] 1377_Supertrend_Hombrok_Bot — SupertrendHombrokBotStrategy
+- [x] 1378_Supertrend_Long-Only_for_QQQ — SupertrendLongOnlyForQqqStrategy
+- [x] 1379_Supertrend_5m — Supertrend5mStrategy
+- [x] 1380_Supertrend_nitin — SupertrendNitinStrategy
+- [x] 1381_Supertrend_with_Money_Ocean_Trade — SupertrendWithMoneyOceanTradeStrategy
+- [ ] 1382_Supertrend_Cross_RSI — SupertrendCrossRsiStrategy
+- [ ] 1383_Supertrend_TP_SL_PRO — SupertrendTpSlProStrategy
+- [x] 1384_Supertrend_Target_Stoploss — SupertrendTargetStopStrategy
+- [ ] 1385_Supply_Demand_Order_Block — SupplyDemandOrderBlockStrategy
+- [ ] 1386_Supply_Demand_Engulfment — SupplyDemandEngulfmentStrategy
+- [ ] 1387_Support_Resistance_MTF — SupportResistanceMtfStrategy
+- [ ] 1388_Swing_Breakout_PRO — SwingBreakoutProStrategy
+- [ ] 1389_Swing_FX_Pro_Panel_v1 — SwingFxProPanelV1Strategy
+- [ ] 1390_Swing_High_Low_Anchored_Spiral — SwingHighLowAnchoredSpiralStrategy
+- [ ] 1391_Swing_High_Low_Pivots_LV — SwingHighLowPivotsLvStrategy
+- [ ] 1392_SwingArm_ATR_Trend_Indicator — SwingArmAtrTrendIndicatorStrategy
+- [ ] 1396_Ta — TaStrategy
+- [ ] 1397_ta — TaLibraryStrategy
+- [ ] 1398_Table_to_filter_trades_per_day — TableToFilterTradesPerDayStrategy
+- [ ] 1399_MADH_Moving_Average_Difference_Hann — MadhMovingAverageDifferenceHannStrategy
+- [ ] 1400_The_Weekly_Factor — TheWeeklyFactorStrategy
+- [ ] 1401_Gap_Momentum_System — GapMomentumSystemStrategy
+- [ ] 1402_REIT_ETF_Trading_System — ReitEtfTradingSystemStrategy
+- [ ] 1403_Volume_Confirmation_For_A_Trend_System — VolumeConfirmationForATrendSystemStrategy
+- [ ] 1404_Adaptive_Oscillator_Threshold — AdaptiveOscillatorThresholdStrategy
+- [x] 1405_Trading_The_Channel — TradingTheChannelStrategy
+- [x] 1406_Technical_Rank — TechnicalRankStrategy
+- [ ] 1407_Technical_Ratings_on_Multi_frames_Assets — TechnicalRatingsOnMultiFramesAssetsStrategy
+- [ ] 1408_Tema_Obos_Pakun — TemaObosPakunStrategy
+- [ ] 1409_Template_Trailing_Backtester — TemplateTrailingBacktesterStrategy
+- [ ] 1410_Temporary_Help_Services_Jobs_Trend_Allocation — TemporaryHelpServicesJobsTrendAllocationStrategy
+- [ ] 1411_Test_Bot_Bearish_Buy_Bullish_Sell — TestBotBearishBuyBullishSellStrategy
+- [ ] 1412_Text — TextStrategy
+- [x] 1413_HSI1_First_30m_Candle — Hsi1First30mCandleStrategy
+- [ ] 1414_TF_Segmented_Linear_Regression — TfSegmentedLinearRegressionStrategy
+- [ ] 1415_TFM — TfmStrategy
+- [ ] 1416_The_950_Bar — The950BarStrategy
+- [ ] 1417_Bar_Counter_Trend_Reversal — BarCounterTrendReversalStrategy
+- [ ] 1418_Flash_Minervini_Qualifier — FlashMinerviniQualifierStrategy
+- [x] 1420_Most_Powerful_Tqqq_Ema_Crossover — MostPowerfulTqqqEmaCrossoverStrategy
+- [ ] 1421_VoVix_Experiment — VoVixExperimentStrategy
+- [x] 1422_Z_Score — ZScore2Strategy
+- [x] 1423_ThinkTech_AI_Signals — ThinkTechAISignalsStrategy
+- [ ] 1424_Three_Candle_Bullish_Engulfing — ThreeCandleBullishEngulfingStrategy
+- [x] 1425_Three_Moving_Averages — ThreeMovingAveragesStrategy
+- [ ] 1426_Three_Supertrend_EMA — ThreeSupertrendEmaStrategy
+- [ ] 1427_Tian_Di_Grid_Merge — TianDiGridMergeStrategy
+- [ ] 1428_Tick_Chart — TickChartStrategy
+- [ ] 1429_Tick_Data_Detailed — TickDataDetailedStrategy
+- [ ] 1430_Tick_Delta_Volume — TickDeltaVolumeStrategy
+- [ ] 1431_Tick_Marubozu — TickMarubozuStrategy
+- [ ] 1432_Ticker_Pulse_Meter_Fear_EKG — TickerPulseMeterFearEkgStrategy
+- [ ] 1433_Time_of_Day_Day_of_Week_Sigma_Spike — TimeOfDayDayOfWeekSigmaSpikeStrategy
+- [ ] 1434_Time_Range_Statistics — TimeRangeStatisticsStrategy
+- [ ] 1435_Time_Series_Lag_Reduction_Filter_by_Cryptorhythms — TimeSeriesLagReductionFilterStrategy
+- [x] 1436_Time_Session_Filter_MACD_example — TimeSessionFilterMacdExampleStrategy
+- [ ] 1437_Time — TimeStrategy
+- [x] 1438_Timeframe — TimeframeStrategy
+- [ ] 1439_Timeshifter_Triple_Timeframe_w_Sessions — TimeshifterTripleTimeframeStrategy
+- [ ] 1441_Time_Candles — TimeCandlesStrategy
+- [x] 1442_TMA — TmaStrategy
+- [ ] 1443_Tomas_Ratio_with_Multi-Timeframe_Analysis — TomasRatioWithMultiTimeFrameAnalysisStrategy
+- [x] 1444_TOT_ORB_Titan — TotOrbTitanStrategy
+- [ ] 1445_TPC_XAUUSD_M5 — TpcXauusdStrategy
+- [x] 1446_Tps_Short_Larry_Conners — TpsShortLarryConnersStrategy
+- [ ] 1447_Trade_Entry_Detector_Wick_to_Body_Ratio — TradeEntryDetectorWickToBodyRatioStrategy
+- [ ] 1448_Trading_ABC — TradingABCStrategy
+- [ ] 1450_TradingToolsLibrary — TradingToolsLibraryStrategy
+- [ ] 1451_TradingViewTo_Template_With_Dynamic_Alerts — TradingViewToTemplateWithDynamicAlertsStrategy
+- [ ] 1452_Trailing_Monster — TrailingMonsterStrategy
+- [ ] 1453_Trailing_Stop_with_RSI_Momentum_Based — TrailingStopWithRsiMomentumBasedStrategy
+- [x] 1454_Trailing_Take_Profit_Close_Based — TrailingTakeProfitCloseBasedStrategy
+- [x] 1455_Trailing_TP_Bot — TrailingTpBotStrategy
+- [x] 1456_TrailingTakeProfit_Example — TrailingTakeProfitExampleStrategy
+- [ ] 1457_TRAX_Detrended_Price — TraxDetrendedPriceStrategy
+- [ ] 1458_Trend_Confirmation — TrendConfirmationStrategy
+- [ ] 1459_Trend_Deviation_BTC — TrendDeviationBtcStrategy
+- [ ] 1460_Trend_Following_MM3_High_Low — TrendFollowingMm3HighLowStrategy
+- [ ] 1461_Trend_Following_ADX_Parabolic_SAR — TrendFollowingAdxParabolicSarStrategy
+- [x] 1462_Trend_Following_MAs_3D — TrendFollowingMas3DStrategy
+- [ ] 1463_Trend_Following_Moving_Averages — TrendFollowingMovingAveragesStrategy
+- [ ] 1464_Trend_Following_Parabolic_Buy_Sell — TrendFollowingParabolicBuySellStrategy
+- [ ] 1465_Trend_Following_KNN — TrendFollowingKnnStrategy
+- [x] 1466_Trend_Following_Candles — TrendFollowingCandlesStrategy
+- [ ] 1467_Trend_Impulse_Tester — TrendImpulseTesterStrategy
+- [x] 1468_Trend_Magic_with_EMA_SMA_and_AutoTrading — TrendMagicWithEmaSmaAndAutoTradingStrategy
+- [ ] 1469_Trend_Signals_with_TP_SL_UAlgo — TrendSignalsWithTpSlUAlgoStrategy
+- [x] 1470_Trend_Trader_Remastered — TrendTraderRemasteredStrategy
+- [ ] 1471_Trend_Type_Indicator — TrendTypeIndicatorStrategy
+- [x] 1472_Trend_Vanguard — TrendVanguardStrategy
+- [ ] 1473_TrendGuard_Flag_Finder — TrendGuardFlagFinderStrategy
+- [ ] 1474_TrendGuard_Scalper_SSL_Hama_Candle_with_Consolidation_Zones — TrendGuardScalperSslHamaCandleWithConsolidationZonesStrategy
+- [ ] 1475_Trendline_Breaks_with_Multi_Fibonacci_Supertrend — TrendlineBreaksWithMultiFibonacciSupertrendStrategy
+- [x] 1476_TrendMaster_Pro_2_3_with_Alerts — TrendMasterPro23WithAlertsStrategy
+- [x] 1477_TrendSync_Pro_SMC — TrendSyncProSmcStrategy
+- [ ] 1478_TrendTwisterV1_5_Forex_Ready_Indicators — TrendTwisterV15Strategy
+- [ ] 1479_Trend_Switch — TrendSwitchStrategy
+- [ ] 1480_Tri_Monthly_BTC_Swing — TriMonthlyBtcSwingStrategy
+- [ ] 1481_Triangle_Breakout_for_BTC_MARK804 — TriangleBreakoutBtcMark804Strategy
+- [x] 1482_Triangle_Breakout_with_TP_SL_EMA_Filter — TriangleBreakoutTpSlEmaFilterStrategy
+- [x] 1483_Triangular_Hull_Moving_Average — TriangularHullMovingAverageStrategy
+- [ ] 1484_TRIN_Arms_Index — TrinArmsIndexStrategy
+- [x] 1485_Triple_CCI_MFI_Confirmed — TripleCciMfiConfirmedStrategy
+- [ ] 1486_Triple_EMA_QQE_Trend_Following — TripleEmaQqeTrendFollowingStrategy
+- [x] 1487_Triple_EMA_Crossover — TripleEmaCrossoverStrategy
+- [x] 1488_Triple_MA_HTF_Dynamic_Smoothing — TripleMaHtfDynamicSmoothingStrategy
+- [ ] 1489_Tripple_MACD — TrippleMacdStrategy
+- [ ] 1490_TSI_Long_Short_for_BTC_2H — TsiLongShortForBtc2HStrategy
+- [ ] 1491_TSI_w_SuperTrend_decision_presentTrading — TsiSuperTrendDecisionStrategy
+- [ ] 1492_TTM_Grid — TTMGridStrategy
+- [ ] 1493_Ttp_Intelligent_Accumulator — TtpIntelligentAccumulatorStrategy
+- [x] 1494_Tuga_Supertrend — TugaSupertrendStrategy
+- [x] 1495_Turn_Around_Tuesday_on_Steroids — TurnAroundTuesdayOnSteroidsStrategy
+- [ ] 1496_Turn_of_the_Month_on_Steroids — TurnOfTheMonthOnSteroidsStrategy
+- [ ] 1497_Turn_of_the_Month_Honestcowboy — TurnOfTheMonthHonestcowboyStrategy
+- [ ] 1498_Turtle_Trader — TurtleTraderStrategy
+- [ ] 1499_Turtle_Trading — TurtleTradingStrategy
+- [ ] 1500_Tutorial_Adding_Sessions_To_Strategies — TutorialAddingSessionsToStrategiesStrategy
+- [ ] 1501_Twisted_SMA_4h — TwistedSma4hStrategy
+- [ ] 1502_Uhl_MA_Crossover_System — UhlMaCrossoverSystemStrategy
+- [ ] 1503_Ultimate_Balance — UltimateBalanceStrategy
+- [ ] 1504_Ultimate_Oscillator_Trading — UltimateOscillatorStrategy
+- [ ] 1505_Ultimate_Scalping_v2 — UltimateScalpingV2Strategy
+- [ ] 1506_Ultimate_Stochastics — UltimateStochasticsStrategy
+- [x] 1507_Ultimate_Template — UltimateTemplateStrategy
+- [ ] 1508_Ultimate_Trading_Bot — UltimateTradingBotStrategy
+- [ ] 1509_Unicode_font_function_-_JD — UnicodeFontFunctionJdStrategy
+- [ ] 1510_Unicode_Font_Function_V2_JD — UnicodeFontFunctionV2JdStrategy
+- [ ] 1511_Up_Gap_With_Delay — UpGapWithDelayStrategy
+- [ ] 1512_Uptrick_Intensity_Index — UptrickIntensityIndexStrategy
+- [x] 1513_Uptrick_X_PineIndicators_Z_Score_Flow — UptrickXPineIndicatorsZScoreFlowStrategy
+- [ ] 1514_US_30_Daily_Breakout — Us30DailyBreakoutStrategy
+- [x] 1515_US_Index_First_30m_Candle — UsIndexFirst30mCandleStrategy
+- [ ] 1516_US30_Stealth — Us30StealthStrategy
+- [ ] 1517_Varanormal_Mac_N_Cheez — VaranormalMacNCheezStrategy
+- [x] 1518_Vawsi_Trend_Persistance_Reversal — VawsiTrendPersistanceReversalStrategy
+- [x] 1519_Vector3 — Vector3Strategy
+- [x] 1520_Vegas_SuperTrend_Enhanced_presentTrading — VegasSuperTrendEnhancedStrategy
+- [ ] 1521_Vegas_Tunnel — VegasTunnelStrategy
+- [ ] 1522_Vicious_Mortgage_Rates_V1_0 — ViciousMortgageRatesV1Strategy
+- [x] 1523_VIDYA_Auto_Trading_Reversal_Logic — VidyaAutoTradingReversalLogicStrategy
+- [ ] 1524_VIDYA_ProTrend_Multi_Tier_Profit — VidyaProTrendMultiTierProfitStrategy
+- [x] 1525_Vinicius_Setup_ATR — ViniciusSetupATRStrategy
+- [x] 1526_VisibleChart — VisibleChartStrategy
+- [x] 1527_VIX_Futures_Basis — VixFuturesBasisStrategy
+- [ ] 1528_VIX_Spike — VixSpikeStrategy
+- [ ] 1529_Volatility_Arbitrage_Spread_Oscillator_Model_VASOM — VolatilityArbitrageSpreadOscillatorModelStrategy
+- [x] 1530_Volatility_Bias_Model — VolatilityBiasModelStrategy
+- [ ] 1531_Volatility_Capture_RSI_Bollinger — VolatilityCaptureRsiBollingerStrategy
+- [ ] 1532_Volatility_Momentum_Breakout — VolatilityMomentumBreakoutStrategy
+- [ ] 1533_Volatility_Pulse_with_Dynamic_Exit — VolatilityPulseWithDynamicExitStrategy
+- [ ] 1534_Volume_and_Volatility_Ratio_Indicator_WODI — VolumeAndVolatilityRatioIndicatorWodiStrategy
+- [ ] 1535_Volume_Block_Order_Analyzer — VolumeBlockOrderAnalyzerStrategy
+- [ ] 1536_Volume_by_Session — VolumeBySessionStrategy
+- [x] 1537_Volume_per_Point — VolumePerPointStrategy
+- [x] 1538_Volume_Profile_Makit0 — VolumeProfileMakit0Strategy
+- [x] 1539_Volume_ValueWhen_Velocity — VolumeValueWhenVelocityStrategy
+- [x] 1540_Volume_Supported_Linear_Regression_Trend_Modified — VolumeSupportedLinearRegressionTrendModifiedStrategy
+- [ ] 1541_Volume_Weighted_Supertrend — VolumeWeightedSupertrendStrategy
+- [ ] 1542_Vortex_Cross_MA_Confirmation — VortexCrossMaConfirmationStrategy
+- [ ] 1543_Vortex_MTF — VortexMtfStrategy
+- [x] 1544_Voss_Predictor — VossPredictorStrategy
+- [ ] 1545_VoVix_DEVMA — VoVixDevmaStrategy
+- [x] 1546_VQZL_Z_Score — VqzlZScoreStrategy
+- [x] 1547_VRS_Vegas_Reversal — VrsVegasReversalStrategy
+- [x] 1548_VWAP_EMA_ATR_Pullback — VwapEmaAtrPullbackStrategy
+- [ ] 1549_VWAP_Breakout_EMAs_Clean_Cycle_TP_SL_Plots — VwapBreakoutAtrStrategy
+- [ ] 1550_VWAP_Stdev_Bands_Long_Only — VwapStdevBandsLongStrategy
+- [ ] 1551_VWAP — VwapStrategy
+- [ ] 1552_VWAP_RSI_Scalper_FINAL_v1 — VwapRsiScalperFinalV1Strategy
+- [x] 1553_Waindrops_Makit0 — WaindropsMakit0Strategy
+- [ ] 1554_Warrior_Trading_Momentum — WarriorTradingMomentumStrategy
+- [ ] 1555_Weighted_Harrell_Davis_Quantile_Estimator_with_AbsoluteDeviation — WeightedHarrellDavisQuantileEstimatorWithAbsoluteDeviationStrategy
+- [ ] 1556_Weighted_Ichimoku — WeightedIchimokuStrategy
+- [ ] 1557_Williams_R_Cross_with_200_MA_Filter — WilliamsRCrossWith200MaFilterStrategy
+- [ ] 1558_Williams_R — WilliamsRStrategy
+- [x] 1559_Williams_Fractal_Trailing_Stops — WilliamsFractalTrailingStopsStrategy
+- [x] 1560_Williams_R_Zone_Scalper — WilliamsRZoneScalperStrategy
+- [x] 1561_WODIsMA_3_MA_Crossover_Bull_Bear_Trend_Confirmation — WodismaTripleMaCrossoverStrategy
+- [ ] 1562_XAU_USD_with_Correct_ADX_and_Bollinger_Bands_Fill — XauUsdAdxBollingerStrategy
+- [ ] 1563_XAUUSD_10_Minute — Xauusd10MinuteStrategy
+- [ ] 1564_XAUUSD_Simple_20_Profit_100_Loss — XauusdSimple20Profit100LossStrategy
+- [ ] 1565_XAUUSD_Trend — XauusdTrendStrategy
+- [ ] 1566_XRP_AI_15_m_Adaptive_v3_1 — XrpAi15mAdaptiveV31Strategy
+- [ ] 1567_Yeong_RRG — YeongRrgStrategy
+- [ ] 1568_Yesterdays_High — YesterdaysHighStrategy
+- [ ] 1569_YinYang_RSI_Volume_Trend — YinYangRsiVolumeTrendStrategy
+- [ ] 1570_Z-Score_Normalized_VIX — ZScoreNormalizedVixStrategy
+- [ ] 1571_Z-Score_RSI — ZScoreRsiStrategy
+- [ ] 1572_Z-Strike_Recovery — ZStrikeRecoveryStrategy
+- [ ] 1573_Zahorchak_Measure — ZahorchakMeasureStrategy
+- [x] 1574_ZapTeam_Pro_v6_EMA — ZapTeamProV6EmaStrategy
+- [ ] 1575_Zero_Lag_Macd_Kijun_Sen_Eom — ZeroLagMacdKijunSenEomStrategy
+- [x] 1576_Zero_Lag_Ma_Trend_Following — ZeroLagMaTrendFollowingStrategy
+- [x] 1577_Zero_Lag_Tema_Crosses_Pakun — ZeroLagTemaCrossesPakunStrategy
+- [x] 1578_Zero_Lag_Volatility_Breakout_Ema_Trend — ZeroLagVolatilityBreakoutEmaTrendStrategy
+- [ ] 1579_Zig_Zag_Aroon — ZigZagAroonStrategy
+- [ ] 1580_Zigzag_Candles — ZigzagCandlesStrategy
+- [ ] 1581_3Commas_HA_MA — ThreeCommasHaMaStrategy
+- [ ] 1582_3Commas_Turtle — ThreeCommasTurtleStrategy
+- [ ] 1583_MartinGale_Scalping — MartinGaleScalpingStrategy
+- [x] 1584_Ehlers_SwamiCharts_RSI — EhlersSwamiChartsRsiStrategy
+- [ ] 1585_Fibonacci_Bands — FibonacciBandsStrategy
+- [ ] 1586_Drawing_Library_Horizontal_Ray — HorizontalRayStrategy
+- [ ] 1587_Reflex_Trendflex — ReflexTrendflexStrategy
+- [ ] 1588_ATR_Exit — AtrExitStrategy
+- [ ] 1589_Post_Earnings_Announcement_Drift — PostEarningsAnnouncementDriftStrategy
+- [ ] 1590_Tape — TapeStrategy
+- [ ] 1591_Mustang_Algo_Channel — MustangAlgoChannelStrategy
+- [ ] 1592_Breakout_Nifty_BN — BreakoutNiftyBnStrategy
+- [ ] 1593_External_Level — ExternalLevelStrategy
+- [ ] 1594_Donchian_HL_Width_Cycle_Information — DonchianHlWidthCycleInformationStrategy
+- [ ] 1595_Majors_Volume_Sum — MajorsVolumeSumStrategy
+- [ ] 1596_Simple_Forecast_Keltner_Worms — SimpleForecastKeltnerWormsStrategy
+- [ ] 1597_Simplistic_Automatic_Growth_Models — SimplisticAutomaticGrowthModelsStrategy
+- [ ] 1598_10_Bar_Low_Pullback — ShortOnly10BarLowPullbackStrategy
+- [ ] 1599_ATR_Sell_the_Rip_Mean_Reversion — AtrSellTheRipMeanReversionStrategy
+- [ ] 1600_Consecutive_Bars_Above_MA — ConsecutiveBarsAboveMaStrategy
+- [ ] 1601_Consecutive_Close_High1_Mean_Reversion — ConsecutiveCloseHigh1MeanReversionStrategy
+- [ ] 1602_Internal_Bar_Strength_IBS_Mean_Reversion — InternalBarStrengthIbsMeanReversionStrategy
+- [ ] 1603_Fibonacci_Auto_Trend_Scouter — FibonacciAutoTrendScouterStrategy
+- [ ] 1604_Ema_5_8_13_Adx_Filter — Ema5813AdxFilterStrategy
+- [ ] 1605_Vwap_Mean_Magnet_V2_Vol_Filter — VwapMeanMagnetV2VolFilterStrategy
+- [ ] 1606_Vwap_Mean_Magnet_V9_Simple_Alert — VwapMeanMagnetV9SimpleAlertStrategy
+- [ ] 1607_Renko_Trend_Reversal_V2 — RenkoTrendReversalV2Strategy
+- [ ] 1608_Renko_Trend_Reversal — RenkoTrendReversalStrategy
+- [ ] 1609_Session_Input_Parser — SessionInputParserStrategy
+- [ ] 1610_Security_Revisited — SecurityRevisitedStrategy
+- [ ] 1611_Calculation_Position_Size_Based_on_Risk — CalculationPositionSizeBasedOnRiskStrategy
+- [x] 1612_BACKTEST_UT_Bot_RSI — BacktestUtBotRsiStrategy
+- [ ] 1613_Bollinger_RSI_Countertrend_SOL — BollingerRsiCountertrendSolStrategy
+- [ ] 1614_UNMITIGATED_LEVELS_ACCUMULATION — UnmitigatedLevelsAccumulationStrategy
+- [ ] 1615_Hybrid_Scalping_Bot — HybridScalpingBotStrategy
+- [x] 1616_Yuri_Garcia_Smart_Money — YuriGarciaSmartMoneyStrategy
+- [x] 1617_Ultimate_T3_Fibonacci_BTC_Scalping — UltimateT3FibonacciBtcScalpingStrategy
+- [x] 1618_DNSE_VN301_SMA_EMA_Cross — DnseVn301SmaEmaCrossStrategy
+- [ ] 1619_FT_CCI — FtCciStrategy
+- [ ] 1620_MSL_EA — MsleaStrategy
+- [ ] 1621_Sea_Dragon2_v1 — SeaDragon2Strategy
+- [ ] 1622_TPSL_Insert — TpslInsertStrategy
+- [ ] 1623_Fxscalper — FxscalperStrategy
+- [ ] 1624_Parabolic_SAR_MultiTimeframe — ParabolicSarMultiTimeframeStrategy
+- [ ] 1625_Scalp_Rsi — ScalpRsiStrategy
+- [ ] 1626_Parabolic_SAR_Bug5 — ParabolicSarBug5Strategy
+- [ ] 1627_ZeroLag_MACD — ZeroLagMacdStrategy
+- [ ] 1628_MAM_Crossover_Trader — MamCrossoverTraderStrategy
+- [ ] 1629_Move_Cross — MoveCrossStrategy
+- [ ] 1630_EMA_WPR_Retracement — EmaWprRetracementStrategy
+- [ ] 1631_Blonde_Trader — BlondeTraderStrategy
+- [ ] 1632_VisualTrader_Simulator_Edition — VisualTraderSimulatorEditionStrategy
+- [ ] 1633_Breakdown_Level_Day — BreakdownLevelDayStrategy
+- [ ] 1634_MTrainer — MTrainerStrategy
+- [ ] 1635_Exp_ATR_Trailing — ExpAtrTrailingStrategy
+- [x] 1636_Good_Gbbi — GoodGbbiStrategy
+- [ ] 1637_X_Trail — XTrailStrategy
+- [ ] 1638_ARD_Order_Management — ArdOrderManagementStrategy
+- [ ] 1639_EMA_WPR_Trend — EmaWprTrendStrategy
+- [ ] 1640_OCO_Order — OcoOrderStrategy
+- [ ] 1641_X_Trail_2 — XTrail2Strategy
+- [ ] 1643_Contrarian_trade_MA — ContrarianTradeMaStrategy
+- [ ] 1644_Artificial_Intelligence — ArtificialIntelligenceStrategy
+- [ ] 1645_Price_Quotes_By_Email — PriceQuotesByEmailStrategy
+- [ ] 1646_EMA_SAR_Power — EmaSarPowerStrategy
+- [ ] 1647_Stop_Loss_Mover — StopLossMoverStrategy
+- [x] 1648_EMA_SAR_Bulls_Bears — EmaSarBullsBearsStrategy
+- [ ] 1649_Line_Order — LineOrderStrategy
+- [x] 1650_Simple_Ema_Crossover — SimpleEmaCrossoverStrategy
+- [ ] 1651_Godbot — GodbotStrategy
+- [ ] 1652_AmlCandleCross — AmlCandleCrossStrategy
+- [ ] 1653_MACD_EMA_SAR_Bollinger_BullBear — MacdEmaSarBollingerBullBearStrategy
+- [ ] 1654_MACD_Sample — MacdSampleStrategy
+- [ ] 1656_EMA_Sticker — EmaStickerStrategy
+- [ ] 1657_ZMFX_Stolid_5a_EA — ZmfxStolid5aEaStrategy
+- [ ] 1658_MTF_RSI_SAR — MtfRsiSarStrategy
+- [x] 1659_MA2CCI — MA2CCIStrategy
+- [ ] 1660_Live_Alligator — LiveAlligatorStrategy
+- [ ] 1661_Symr_New_Bar — SymrNewBarStrategy
+- [ ] 1662_Live_RSI — LiveRSIStrategy
+- [ ] 1663_Psi_Proc_Ema_Macd — PsiProcEmaMacdStrategy
+- [ ] 1664_Intraday_v2 — IntradayV2Strategy
+- [ ] 1665_Fibo_Avg_001a — FiboAvg001aStrategy
+- [ ] 1666_AI_Grid — AiGridStrategy
+- [ ] 1667_Three_Level_Grid — ThreeLevelGridStrategy
+- [ ] 1668_Close_Orders — CloseOrdersStrategy
+- [ ] 1669_Tester_v0_14 — TesterV014Strategy
+- [ ] 1670_Ema_Plus_Wpr_V2 — EmaPlusWprV2Strategy
+- [ ] 1671_Aver4_Stoch_Post_ZigZag — Aver4StochPostZigZagStrategy
+- [ ] 1672_TradePad — TradePadStrategy
+- [ ] 1673_Ride_Alligator — RideAlligatorStrategy
+- [ ] 1674_Shuriken_Lite — ShurikenLiteStrategy
+- [ ] 1675_Lego_V3 — LegoV3Strategy
+- [ ] 1676_My_Line_Order — MyLineOrderStrategy
+- [ ] 1677_Averaged_Stoch_WPR — AveragedStochWprStrategy
+- [ ] 1678_Status_Mail_and_Alert_On_Order_Close — StatusMailAndAlertOnOrderCloseStrategy
+- [x] 1679_Psar_Bug_6 — PsarBug6Strategy
+- [ ] 1680_Xbug_Free — XbugFreeStrategy
+- [ ] 1681_MA2CCI — Ma2CciStrategy
+- [ ] 1682_X_Alert_3 — XAlert3Strategy
+- [ ] 1683_Parabolic_SAR_Alert — ParabolicSarAlertStrategy
+- [ ] 1684_Line_Order_Dual_Level — LineOrderDualLevelStrategy
+- [ ] 1685_Trade_Channel — TradeChannelStrategy
+- [ ] 1687_Scalping_EA — ScalpingEAStrategy
+- [ ] 1688_Manager_Trailing — ManagerTrailingStrategy
+- [ ] 1689_Hybrid_EA — HybridEaStrategy
+- [ ] 1690_News_Pending_Orders — NewsPendingOrdersStrategy
+- [ ] 1691_Lego_4_Beta — Lego4BetaStrategy
+- [x] 1692_Parabolic_SAR_Bug — ParabolicSarBugStrategy
+- [ ] 1693_Xbug_Free_V4 — XbugFreeV4Strategy
+- [ ] 1694_Marneni_Money_Tree — MarneniMoneyTreeStrategy
+- [ ] 1695_Close_vs_Previous_Open — CloseVsPreviousOpenStrategy
+- [ ] 1696_EPSI_MultiSET — EPSIMultiSetStrategy
+- [ ] 1697_Time_Trader — TimeTraderStrategy
+- [ ] 1698_TCPivot_Stop — TcpPivotStopStrategy
+- [ ] 1700_TCPivotLimit — TcpPivotLimitStrategy
+- [ ] 1701_Geedo — GeedoStrategy
+- [ ] 1702_Renko_Scalper — RenkoScalperStrategy
+- [ ] 1703_VR_MARS — VRMarsStrategy
+- [ ] 1704_Martini_Martingale — MartiniMartingaleStrategy
+- [ ] 1705_Sophia1_1 — Sophia11Strategy
+- [ ] 1706_Robot_Danu — RobotDanuStrategy
+- [ ] 1707_Intraday_Beta — IntradayBetaStrategy
+- [ ] 1708_Disturbed — DisturbedStrategy
+- [ ] 1709_MLTrendE — MLTrendEStrategy
+- [ ] 1711_High_Low_MA_Breakout — HighLowMaBreakoutStrategy
+- [ ] 1712_CloseAtProfit — CloseAtProfitStrategy
+- [x] 1713_Zig_Dan_Zag_Ultimate_Investment_Long_Term — ZigDanZagUltimateInvestmentLongTermStrategy
+- [x] 1714_LotScalp — LotScalpStrategy
+- [ ] 1715_Batman_Atr_Trailing_Stop — BatmanAtrTrailingStopStrategy
+- [ ] 1716_Time_Trader_Scheduled — ScheduledTimeTraderStrategy
+- [ ] 1717_Exp_X2MA — ExpX2MaStrategy
+- [ ] 1719_Adaptive_Cyber_Cycle — AdaptiveCyberCycleStrategy
+- [x] 1720_VR_Setka_P2 — VrSetkaP2Strategy
+- [ ] 1721_Volume_EA — VolumeEaStrategy
+- [x] 1722_AMkA_Signal — AmkaSignalStrategy
+- [ ] 1723_Candle_Trader — CandleTraderStrategy
+- [x] 1724_Pure_Martingale — PureMartingaleStrategy
+- [ ] 1725_Rampok_Scalp — RampokScalpStrategy
+- [ ] 1727_Three_Parabolic_SAR — ThreeParabolicSarStrategy
+- [ ] 1728_Autostop — AutostopStrategy
+- [ ] 1729_Third_Generation_XMA_Reversal — ThirdGenerationXmaReversalStrategy
+- [ ] 1730_BBands_Stop — BBandsStopStrategy
+- [ ] 1731_Emagic1 — Emagic1Strategy
+- [ ] 1732_BB_Squeeze — BbSqueezeStrategy
+- [ ] 1733_Break_the_Range_Bound — BreakTheRangeBoundStrategy
+- [ ] 1734_MACD_Cross_AUDUSD_D1 — MacdCrossAudusdD1Strategy
+- [ ] 1735_Line_Order_Single_Entry — LineOrderSingleEntryStrategy
+- [ ] 1736_RGT_EA_RSI — RgtEaRsiStrategy
+- [ ] 1737_RGT_RSI_Bollinger — RgtRsiBollingerStrategy
+- [x] 1738_MACFibo — MacfiboStrategy
+- [ ] 1739_Channel_Scalper — ChannelScalperStrategy
+- [ ] 1740_Snowieso_EA — SnowiesoStrategy
+- [x] 1741_Trend_Capture — TrendCaptureStrategy
+- [x] 1742_Rsi_Trader_V1 — RsiTraderV1Strategy
+- [ ] 1743_Universal_Investor — UniversalInvestorStrategy
+- [ ] 1744_Renko_Live_Chart — RenkoLiveChartStrategy
+- [x] 1745_Charles — CharlesStrategy
+- [ ] 1746_Up3x1 — Up3x1Strategy
+- [ ] 1747_Charles_137 — Charles137Strategy
+- [ ] 1748_EM_VOL — EmVolStrategy
+- [ ] 1749_Drag_SLTP — DragSlTpStrategy
+- [ ] 1750_PSAR_Trader — PsarTraderStrategy
+- [ ] 1751_Maximus_Vx_Lite — MaximusVxLiteStrategy
+- [ ] 1752_Charles_Breakout — CharlesBreakoutStrategy
+- [x] 1753_VrSetkaGrid — VrSetkaGridStrategy
+- [ ] 1754_Up3x1_Krohabor_D — Up3x1KrohaborDStrategy
+- [x] 1755_X_Trader — XTraderStrategy
+- [ ] 1756_Bullish_Reversal — BullishReversalStrategy
+- [x] 1757_PSAR_Trader_Ticks — PsarTraderTicksStrategy
+- [ ] 1758_Autostop_Cyriac — AutostopCyriacStrategy
+- [ ] 1759_Time_Trader_Intraday — TimeTraderIntradayStrategy
+- [ ] 1760_Charles_SMA_Trailing — CharlesSmaTrailingStrategy
+- [ ] 1762_RSI_Trend — RsiTrendStrategy
+- [ ] 1763_Mma_Breakout_Volume_I — MmaBreakoutVolumeIStrategy
+- [x] 1764_Divergence_Trader — DivergenceTraderStrategy
+- [ ] 1765_SHE_Kanskigor — SheKanskigorStrategy
+- [x] 1766_Laguerre_CCI_MA — LaguerreCciMaStrategy
+- [ ] 1767_Aeron_Robot — AeronRobotStrategy
+- [ ] 1769_Follow_Your_Heart — FollowYourHeartStrategy
+- [ ] 1770_Collector_v1_0 — CollectorV10Strategy
+- [x] 1771_X_Trader_V2 — XTraderV2Strategy
+- [x] 1772_PSAR_Trader_v2 — PsarTraderV2Strategy
+- [ ] 1773_Breakout_04 — Breakout04Strategy
+- [ ] 1774_MADX07_ADX_MA — Madx07AdxMaStrategy
+- [ ] 1776_AntiFragile_EA — AntiFragileStrategy
+- [ ] 1777_Binary_Wave — BinaryWaveStrategy
+- [x] 1778_C_Factor_HLH4_Buy_Only — CFactorHlh4BuyOnlyStrategy
+- [x] 1779_Pz_Reversal_Trend_Following — PzReversalTrendFollowingStrategy
+- [ ] 1780_PZ_Parabolic_SAR_EA — PzParabolicSarEaStrategy
+- [ ] 1781_Xmacd_Modes — XmacdModesStrategy
+- [ ] 1782_Hedger — HedgerStrategy
+- [ ] 1783_Arrows_Curves — ArrowsCurvesStrategy
+- [ ] 1784_X_trader_v3 — XTraderV3Strategy
+- [ ] 1785_Fracture — FractureStrategy
+- [ ] 1786_EURUSD_V2_0 — EurusdV20Strategy
+- [ ] 1787_Stop_Loss_To_BreakEven — StopLossToBreakEvenStrategy
+- [ ] 1788_Timer — TimerStrategy
+- [ ] 1789_BreakThrough — BreakThroughStrategy
+- [ ] 1790_BrakeExp_Channel — BrakeExpChannelStrategy
+- [ ] 1791_Stoch_TP_TS_V3103 — StochTpTsV3103Strategy
+- [ ] 1792_Magna_Rapax_Copper — MagnaRapaxCopperStrategy
+- [ ] 1793_News_Trading_EA — NewsTradingEaStrategy
+- [ ] 1794_Brake_Exp — BrakeExpStrategy
+- [ ] 1795_Close_Positions — ClosePositionsStrategy
+- [ ] 1796_Straddle_News — StraddleNewsStrategy
+- [ ] 1797_Brake_Parabolic — BrakeParabolicStrategy
+- [ ] 1798_Bulls_Bears_Power_Cross — BullsBearsPowerCrossStrategy
+- [ ] 1799_Milestone_Trend — MilestoneTrendStrategy
+- [x] 1800_Bulls_Bears_Eyes — BullsBearsEyesStrategy
+- [ ] 1801_Artificial_Intelligence_Perceptron — ArtificialIntelligencePerceptronStrategy
+- [x] 1802_E_TurboFx — ETurboFxStrategy
+- [ ] 1803_Unseasonalised_ATR_and_Forecast — UnseasonalisedAtrForecastStrategy
+- [x] 1804_Coensio_Swing_Trader — CoensioSwingTraderStrategy
+- [x] 1805_X3MA_EA_V2_0 — X3MaEaV20Strategy
+- [ ] 1806_Hardcore_FX — HardcoreFxStrategy
+- [ ] 1807_GO — GoStrategy
+- [ ] 1808_Close_Cross_Kijun_Sen — CloseCrossKijunSenStrategy
+- [ ] 1809_Lucky_Jump — LuckyJumpStrategy
+- [ ] 1810_Catcher_Profit_1_0 — CatcherProfit10Strategy
+- [ ] 1811_Obj_Label_Example — ObjLabelExampleStrategy
+- [x] 1813_Self_Learning_Experts — SelfLearningExpertsStrategy
+- [ ] 1814_A_Informer — AInformerStrategy
+- [ ] 1815_Close_Cross_MA — CloseCrossMaStrategy
+- [x] 1816_BuySell — BuySellStrategy
+- [ ] 1817_Liquidex_V1 — LiquidexV1Strategy
+- [ ] 1818_MadTrader — MadTraderStrategy
+- [x] 1819_Perceptron_AC — PerceptronAcStrategy
+- [ ] 1820_Price_Action — PriceActionStrategy
+- [ ] 1822_Elliott_Trader — ElliottTraderStrategy
+- [ ] 1823_Turtle_Trader_V1 — TurtleTraderV1Strategy
+- [ ] 1824_VR_Overturn — VROverturnStrategy
+- [ ] 1825_Simulator — SimulatorStrategy
+- [x] 1826_MACD_vs_Signal — MacdVsSignalStrategy
+- [ ] 1827_Terminator_V2z0 — TerminatorV2z0Strategy
+- [ ] 1828_SwingCyborg — SwingCyborgStrategy
+- [ ] 1829_Universal_EA — UniversalEaStrategy
+- [ ] 1830_CCI_COMA — CciComaStrategy
+- [ ] 1831_Smart_Ass_Trade — SmartAssTradeStrategy
+- [ ] 1832_Ema_2_35_Cross — Ema235CrossStrategy
+- [ ] 1833_RSI_Value — RsiValueStrategy
+- [ ] 1834_Virtual_Stop_Manager — VirtualStopManagerStrategy
+- [ ] 1835_SMA_Multi_Hedge2 — SmaMultiHedge2Strategy
+- [ ] 1836_Gap_Fill — GapFillStrategy
+- [ ] 1837_BWWiseMan2 — BWWiseMan2Strategy
+- [ ] 1838_Exp_Hull_Trend — ExpHullTrendStrategy
+- [ ] 1839_TSI_MACD_Crossover — TsiMacdCrossoverStrategy
+- [ ] 1840_Exp_TSI_CCI — ExpTsiCciStrategy
+- [ ] 1841_Order_Manager — OrderManagerStrategy
+- [ ] 1842_TSI_WPR_Cross — TsiWprCrossStrategy
+- [ ] 1843_Karpenko_Channel — KarpenkoChannelStrategy
+- [ ] 1844_SlopeDirectionLine — SlopeDirectionLineStrategy
+- [ ] 1845_TSI_DeMarker — TSIDeMarkerStrategy
+- [ ] 1846_MaRsi_Trigger — MaRsiTriggerStrategy
+- [ ] 1847_ADX_Stop_Order_Template — AdxStopOrderTemplateStrategy
+- [ ] 1848_MaByMa — MaByMaStrategy
+- [ ] 1849_Yuraz_Closeprc_V3 — YurazCloseprcV3Strategy
+- [ ] 1850_Combo_Right — ComboRightStrategy
+- [ ] 1851_Channel_Trailing_Stop — ChannelTrailingStopStrategy
+- [ ] 1852_Eugene_Candle_Pattern — EugeneCandlePatternStrategy
+- [ ] 1853_Exchange_Price — ExchangePriceStrategy
+- [ ] 1854_Heiken_Ashi_Simplified_EA — HeikenAshiSimplifiedEaStrategy
+- [ ] 1855_Center_Of_Gravity — CenterOfGravityStrategy
+- [ ] 1856_BnB — BnBStrategy
+- [ ] 1857_Signals_Demo — SignalsDemoStrategy
+- [ ] 1858_Signals_Subscription_Demo — SignalsSubscriptionDemoStrategy
+- [ ] 1859_CMO_Zero_Cross — CmoZeroCrossStrategy
+- [ ] 1862_Bulls_vs_Bears_Crossover — BullsVsBearsCrossoverStrategy
+- [ ] 1863_Kauf_WMA_Cross — KaufWmaCrossStrategy
+- [ ] 1864_Simple_Bars — SimpleBarsStrategy
+- [ ] 1865_Liquidex — LiquidexStrategy
+- [ ] 1867_MA_SAR_ADX — MaSarAdxStrategy
+- [ ] 1868_MA_L_World — MaLWorldStrategy
+- [ ] 1869_Bollinger_Breakout_Momentum — BollingerBreakoutMomentumStrategy
+- [ ] 1870_Close_At_Profit_Portfolio — CloseAtProfitPortfolioStrategy
+- [ ] 1871_Tiger_EMA_ADX_RSI — TigerEmaAdxRsiStrategy
+- [ ] 1872_T3MA_Alarm — T3MaAlarmStrategy
+- [ ] 1873_CoeffofLineTrue — CoeffofLineTrueStrategy
+- [ ] 1874_Color_BB_Candles — ColorBbCandlesStrategy
+- [ ] 1875_Genie — GenieStrategy
+- [ ] 1876_ProfitTrailing — ProfitTrailingStrategy
+- [ ] 1877_Two_Direction_Martin_Stylized — TwoDirectionMartinStylizedStrategy
+- [ ] 1878_Two_Pole_Ideal_MA — TwoPoleIdealMaStrategy
+- [ ] 1879_Ilan_1_6_Dynamic — Ilan16DynamicStrategy
+- [ ] 1880_Genie_Pivot — GeniePivotStrategy
+- [ ] 1881_Genie_Pivot_Fixed — GeniePivotFixedStrategy
+- [ ] 1882_20_200_Expert — Twenty200ExpertStrategy
+- [ ] 1884_Kloss — KlossStrategy
+- [ ] 1885_Genie_RSI — GenieRsiStrategy
+- [ ] 1886_Sma_Trend_Filter — SmaTrendFilterStrategy
+- [ ] 1887_Vlt_Trader — VltTraderStrategy
+- [ ] 1888_Genie_Stoch_RSI — GenieStochRsiStrategy
+- [ ] 1889_Analyze_History — AnalyzeHistoryStrategy
+- [ ] 1890_RoNz_Auto_SL_TS_TP — RoNzAutoSlTsTpStrategy
+- [ ] 1891_2pbIdealXOSMA — TwoPbIdealXosmaStrategy
+- [ ] 1892_Auto_Pending_By_RSI — AutoPendingByRsiStrategy
+- [ ] 1893_EA_Template — EaTemplateStrategy
+- [ ] 1894_Liquidex_Keltner — LiquidexKeltnerStrategy
+- [ ] 1895_Renko_Live_Charts_Pimped — RenkoLiveChartsPimpedStrategy
+- [ ] 1896_Double_Trading — DoubleTradingStrategy
+- [ ] 1897_ExpOracle — ExpOracleStrategy
+- [ ] 1898_Roboti_ADX_Profit — RobotiAdxProfitStrategy
+- [ ] 1899_AdaptiveRenko — AdaptiveRenkoStrategy
+- [ ] 1900_JBrainUltraRsi — JBrainUltraRsiStrategy
+- [ ] 1901_Coensio_Swing_Trader_V06 — CoensioSwingTraderV06Strategy
+- [ ] 1902_Exp_Candles_XSmoothed — ExpCandlesXSmoothedStrategy
+- [ ] 1903_Spread_Info — SpreadInfoStrategy
+- [ ] 1904_Bleris — BlerisStrategy
+- [ ] 1905_Stufic_Stoch — StuficStochStrategy
+- [ ] 1906_Auto_Trailing_Stop — AutoTrailingStopStrategy
+- [ ] 1907_Malr_Channel_Breakout — MalrChannelBreakoutStrategy
+- [ ] 1908_Random_Trailing_Stop — RandomTrailingStopStrategy
+- [ ] 1909_SmartAssTrade_V2 — SmartAssTradeV2Strategy
+- [ ] 1910_Knux_Multi_Indicator — KnuxStrategy
+- [ ] 1911_Exp_MAMA — ExpMamaStrategy
+- [ ] 1912_Auto_SLTP_Setter — AutoSlTpSetterStrategy
+- [ ] 1913_Fibo_Stop — FiboStopStrategy
+- [ ] 1914_RMACD_Reversal — RmacdReversalStrategy
+- [ ] 1915_Kolier_SuperTrend — KolierSuperTrendStrategy
+- [ ] 1916_Order_Expert — OrderExpertStrategy
+- [ ] 1918_Trend_Collector — TrendCollectorStrategy
+- [ ] 1919_Murrey_BBand_Stochastic — MurreyBBandStochasticStrategy
+- [ ] 1920_ZPF_Filter — ZpfStrategy
+- [ ] 1921_Trailing_Stop_EA — TrailingStopEAStrategy
+- [ ] 1922_Exp_MA_Rounding_Channel — ExpMaRoundingChannelStrategy
+- [ ] 1923_RoNz_Rapid_Fire — RoNzRapidFireStrategy
+- [ ] 1925_FMOne_Scalping — FmOneScalpingStrategy
+- [ ] 1926_Ilan_Dynamic_HT — IlanDynamicHtStrategy
+- [ ] 1927_Knux_Martingale — KnuxMartingaleStrategy
+- [ ] 1928_Exp_TrendValue — ExpTrendValueStrategy
+- [ ] 1929_Trailing_Stop — TrailingStopStrategy
+- [ ] 1931_SVM_Trader — SvmTraderStrategy
+- [ ] 1932_Hybrid_Scalper — HybridScalperStrategy
+- [ ] 1933_Simple_MA_ADX_EA — SimpleMaAdxEaStrategy
+- [ ] 1934_Linear_Regression_Slope_Trigger — LinearRegressionSlopeTriggerStrategy
+- [ ] 1935_Vortex_Indicator_Cross — VortexIndicatorCrossStrategy
+- [ ] 1936_Exp_Extremum — ExpExtremumStrategy
+- [ ] 1937_Syndicate_Trader — SyndicateTraderStrategy
+- [ ] 1938_Range_EA — RangeEaStrategy
+- [ ] 1939_Ultra_WPR_Cross — UltraWprCrossStrategy
+- [ ] 1940_CSPA_143 — Cspa143Strategy
+- [ ] 1941_MPM — MpmStrategy
+- [ ] 1942_Close_By_Equity_Percent — CloseByEquityPercentStrategy
+- [ ] 1943_Back_To_The_Future — BackToTheFutureStrategy
+- [ ] 1944_AnchoredMomentum — AnchoredMomentumStrategy
+- [ ] 1946_Fisher_Cyber_Cycle — FisherCyberCycleStrategy
+- [ ] 1947_Range_Expansion_Index — RangeExpansionIndexStrategy
+- [ ] 1948_GG_RSI_CCI — GgRsiCciStrategy
+- [ ] 1949_OzymandiaTrend — OzymandiasStrategy
+- [ ] 1950_Elder_Impulse_System — ElderImpulseSystemStrategy
+- [ ] 1951_Modified_Optimum_Elliptic_Filter — ModifiedOptimumEllipticFilterStrategy
+- [ ] 1952_DSS_Bressert — DssBressertStrategy
+- [ ] 1953_UltraFatl — UltraFatlStrategy
+- [ ] 1954_Exp_Leading — ExpLeadingStrategy
+- [ ] 1955_Exp_HLRSign — ExpHlrSignStrategy
+- [ ] 1956_FatlSatlOsma — FatlSatlOsmaStrategy
+- [ ] 1957_Simple_Trading_System — SimpleTradingSystemStrategy
+- [ ] 1958_Trendless_AG_Hist — TrendlessAgHistStrategy
+- [ ] 1959_NRatio_Sign — NRatioSignStrategy
+- [ ] 1960_Trendline_Alert — TrendlineAlertStrategy
+- [ ] 1961_Auto_KD_Crossover — AutoKdStrategy
+- [ ] 1962_AFL_Winner_Sign — AflWinnerSignStrategy
+- [ ] 1963_Risk_Manager — RiskManagerStrategy
+- [ ] 1964_XMA_Ichimoku_Channel — XmaIchimokuChannelStrategy
+- [ ] 1965_ForexProfitBoost — ForexProfitBoostStrategy
+- [ ] 1967_ExpXmaRangeBands — ExpXmaRangeBandsStrategy
+- [ ] 1968_Smoothing_Average — SmoothingAverageStrategy
+- [ ] 1969_Asimmetric_Stoch_NR — AsimmetricStochNrStrategy
+- [ ] 1971_ADX_Crossing — AdxCrossingStrategy
+- [ ] 1972_Stop_Level_Counter — StopLevelCounterStrategy
+- [ ] 1973_Angrybird_xScalpingn — AngrybirdXScalpingnStrategy
+- [ ] 1974_Jpalonso_Modoki — JpalonsoModokiStrategy
+- [ ] 1975_Parallel_Strategies — ParallelStrategiesStrategy
+- [ ] 1976_Exp_3XMA_Ishimoku — Exp3XmaIshimokuStrategy
+- [ ] 1977_ADX_Smoothed_Cross — AdxSmoothedCrossStrategy
+- [ ] 1979_Grid_Trading — GridStrategy
+- [ ] 1980_Adaptive_Market_Level — AdaptiveMarketLevelStrategy
+- [ ] 1981_ColorNonLagDotMACD — ColorNonLagDotMacdStrategy
+- [ ] 1982_Color_METRO — ColorMetroStrategy
+- [ ] 1983_Aeron_JJN — AeronJjnStrategy
+- [ ] 1984_BlauTvi — BlauTviStrategy
+- [ ] 1985_XRVI_Crossover — XrviCrossoverStrategy
+- [ ] 1986_Four_Screens — FourScreensStrategy
+- [ ] 1987_Color_Step_Xccx — ColorStepXccxStrategy
+- [ ] 1988_SuperTake — SuperTakeStrategy
+- [ ] 1989_Trailing_Stop_Activation — TrailingStopActivationStrategy
+- [ ] 1990_Color_J_Variation — ColorJVariationStrategy
+- [ ] 1991_Binario_31 — Binario31Strategy
+- [ ] 1992_Exp_MovingAverage_FN — ExpMovingAverageFnStrategy
+- [ ] 1993_Lacust_Stop_and_BE — LacustStopAndBeStrategy
+- [ ] 1994_Heiken_Ashi_No_Wick — HeikenAshiNoWickStrategy
+- [ ] 1995_Color_ZeroLag_MA — ColorZeroLagMaStrategy
+- [ ] 1996_Color_Zerolag_RVI — ColorZerolagRviStrategy
+- [ ] 1997_ColorZerolagTrix — ColorZerolagTrixStrategy
+- [ ] 1998_Center_Of_Gravity_OSMA — CenterOfGravityOsmaStrategy
+- [ ] 1999_Color_Zerolag_TriX_OSMA — ColorZerolagTrixOsmaStrategy
+- [ ] 2000_HFT_Spreader_for_FORTS — HftSpreaderForFortsStrategy
+- [ ] 2001_Color_Zerolag_RSI_OSMA — ColorZerolagRsiOsmaStrategy
+- [ ] 2002_WellMartin — WellMartinStrategy
+- [ ] 2003_Calc_Profit_Loss_On_LinePrice — CalcProfitLossOnLinePriceStrategy
+- [ ] 2004_Color_Zerolag_Momentum_OSMA — ColorZerolagMomentumOsmaStrategy
+- [ ] 2005_OsHma_Breakdown_Twist — OsHmaStrategy
+- [ ] 2006_Color_Zerolag_X10_Ma — ColorZerolagX10MaStrategy
+- [ ] 2007_ColorJMomentum — ColorJMomentumStrategy
+- [ ] 2008_Color_JLaguerre — ColorJLaguerreStrategy
+- [ ] 2009_Color_Stoch_NR — ColorStochNrStrategy
+- [ ] 2010_ColorMaRsi_Trigger — ColorMaRsiTriggerStrategy
+- [ ] 2011_Escort_Trend — EscortTrendStrategy
+- [ ] 2012_Random_Trader — RandomTraderStrategy
+- [ ] 2013_Mava_Xonax — MavaXonaxStrategy
+- [ ] 2014_ColorSchaffMfiTrendCycle — ColorSchaffMfiTrendCycleStrategy
+- [ ] 2015_Color_Schaff_Momentum_Trend_Cycle — ColorSchaffMomentumTrendCycleStrategy
+- [ ] 2016_ColorSchaffRsiTrendCycle — ColorSchaffRsiTrendCycleStrategy
+- [ ] 2017_ColorMomentum_Ama — ColorMomentumAmaStrategy
+- [ ] 2018_ColorSchaffRVITrendCycle — ColorSchaffRviTrendCycleStrategy
+- [ ] 2019_Color_SchaffTrix_Trend_Cycle — ColorSchaffTrixTrendCycleStrategy
+- [ ] 2020_Color_Schaff_WPR_Trend_Cycle — ColorSchaffWprTrendCycleStrategy
+- [ ] 2021_News_Hour_Trade — NewsHourTradeStrategy
+- [ ] 2022_Color_XXDPO — ColorXXDPOStrategy
+- [ ] 2023_ColorXdinMA — ColorXdinMAStrategy
+- [ ] 2024_ExpMartinV2 — ExpMartinV2Strategy
+- [ ] 2025_Coppock_Histogram — CoppockHistogramStrategy
+- [ ] 2026_Cronex_CCI — CronexCciStrategy
+- [ ] 2027_Exp_CyclePeriod — ExpCyclePeriodStrategy
+- [ ] 2028_Color_LeMan_Trend — ColorLemanTrendStrategy
+- [ ] 2029_DiNapoli_Stochastic — DiNapoliStochasticStrategy
+- [ ] 2030_ColorTrend_CF — ColorTrendCfStrategy
+- [ ] 2031_DigVariation — DigVariationStrategy
+- [ ] 2032_Previous_HighLow_Breakout — PreviousHighLowBreakoutStrategy
+- [ ] 2033_Ema_Crossover_Signal — EmaCrossoverSignalStrategy
+- [ ] 2034_Ema_Prediction — EmaPredictionStrategy
+- [ ] 2035_Personal_Assistant — PersonalAssistantStrategy
+- [ ] 2036_Ergodic_Ticks_Volume_Indicator — ErgodicTicksVolumeIndicatorStrategy
+- [ ] 2037_Ergodic_Ticks_Volume_OSMA — ErgodicTicksVolumeOsmaStrategy
+- [ ] 2038_MovingUp_MA — MovingUpStrategy
+- [ ] 2039_Fast2_Crossover — Fast2CrossoverStrategy
+- [ ] 2040_Personal_Assistant_Alerts — PersonalAssistantAlertStrategy
+- [ ] 2041_RSI_EA — RsiEaStrategy
+- [ ] 2042_Fatl_Macd — FatlMacdStrategy
+- [ ] 2043_Fine_Tuning_MA — FineTuningMaStrategy
+- [ ] 2044_CorrectedAverage_Breakout — CorrectedAverageBreakoutStrategy
+- [ ] 2045_Force_DiverSign — ForceDiverSignStrategy
+- [ ] 2046_Forecast_Oscillator — ForecastOscillatorStrategy
+- [ ] 2047_Forex_Fraus_4_For_M1s — ForexFraus4ForM1sStrategy
+- [ ] 2048_Fractal_Ama_Mbk — FractalAmaMbkStrategy
+- [ ] 2049_VininI_Trend — VininITrendStrategy
+- [ ] 2050_VininI_Trend_LRMA — VininITrendLrmaStrategy
+- [ ] 2051_Trend_Catcher — TrendCatcherStrategy
+- [ ] 2052_Negative_Spread — NegativeSpreadStrategy
+- [ ] 2053_Schnick_Demo — SchnickDemoStrategy
+- [ ] 2054_Color_HMA_Reversal — ColorHmaReversalStrategy
+- [ ] 2055_HVR — HvrStrategy
+- [ ] 2056_DecEMA — DecEmaStrategy
+- [ ] 2057_BandsPrice — BandsPriceStrategy
+- [ ] 2058_KlPrice_Reversal — KlPriceReversalStrategy
+- [ ] 2059_Simple_Trailing_Stop — SimpleTrailingStopStrategy
+- [ ] 2060_Order_Time_Alert — OrderTimeAlertStrategy
+- [ ] 2061_I_Trend — ITrendStrategy
+- [ ] 2062_Anchored_Momentum_Breakout — AnchoredMomentumBreakoutStrategy
+- [ ] 2063_Ichimoku_Oscillator — IchimokuOscillatorStrategy
+- [ ] 2064_Hull_Trend_OSMA — HullTrendOsmaStrategy
+- [ ] 2065_Color_Zerolag_HLR — ColorZerolagHlrStrategy
+- [ ] 2066_AMMA_Trend — AmmaTrendStrategy
+- [ ] 2067_Puria — PuriaStrategy
+- [ ] 2068_Traffic_Light — TrafficLightStrategy
+- [ ] 2070_RSI_Expert — RsiExpertStrategy
+- [ ] 2071_Daily_Breakpoint — DailyBreakpointStrategy
+- [ ] 2072_InstantaneousTrendFilter — InstantaneousTrendFilterStrategy
+- [ ] 2073_ColorXADX — ColorXAdxStrategy
+- [ ] 2074_ColorSchaffJJRSXTrendCycle — ColorSchaffJjrsxTrendCycleStrategy
+- [ ] 2075_Virtual_Trailing_Stop — VirtualTrailingStopStrategy
+- [ ] 2076_ColorZerolagJJRSX — ColorZerolagJjrsxStrategy
+- [ ] 2077_Bill_Williams — BillWilliamsStrategy
+- [ ] 2079_Color_Zerolag_JCCX — ColorZerolagJccxStrategy
+- [ ] 2080_ColorSchaffJCCX_Trend_Cycle — ColorSchaffJccxTrendCycleStrategy
+- [ ] 2081_EF_Distance — EfDistanceStrategy
+- [ ] 2082_Kalman_Filter_Signal — KalmanFilterSignalStrategy
+- [ ] 2083_Volatile_Action — VolatileActionStrategy
+- [ ] 2084_Basic_Trailing_Stop — BasicTrailingStopStrategy
+- [ ] 2085_Rijfie_Pyramid — RijfiePyramidStrategy
+- [ ] 2086_Derivative_Zero_Cross — DerivativeZeroCrossStrategy
+- [ ] 2087_Exp_Multitrend_Signal_Kvn — ExpMultitrendSignalKvnStrategy
+- [ ] 2088_KPrmSt_Cross — KPrmStCrossStrategy
+- [ ] 2090_Instant_Execution — InstantExecutionStrategy
+- [ ] 2091_Robust_EA_Template — RobustEaTemplateStrategy
+- [ ] 2092_Tema_Custom_Slope — TemaCustomSlopeStrategy
+- [ ] 2093_XDerivative — XDerivativeStrategy
+- [ ] 2094_RSI_Stochastic_MA — RsiStochasticMaStrategy
+- [ ] 2095_XKRI_Histogram — XkriHistogramStrategy
+- [ ] 2096_Breakout_Bars_Trend — BreakoutBarsTrendStrategy
+- [ ] 2097_Laguerre_Filter — LaguerreFilterStrategy
+- [ ] 2098_Millenium_Code — MilleniumCodeStrategy
+- [ ] 2099_Laguerre_ADX — LaguerreAdxStrategy
+- [ ] 2101_Linear_Regression_Slope_V1 — LinearRegressionSlopeV1Strategy
+- [ ] 2102_LSMA_Angle — LsmaAngleStrategy
+- [ ] 2103_ColorSchaffDeMarkerTrendCycle — ColorSchaffDeMarkerTrendCycleStrategy
+- [ ] 2104_Color_Zerolag_DeMarker — ColorZerolagDeMarkerStrategy
+- [ ] 2105_Ha_MaZi — HaMaZiStrategy
+- [ ] 2106_CandleStop_Trailing — CandleStopTrailingStrategy
+- [ ] 2107_TP_SL_Panel — TpSlPanelStrategy
+- [ ] 2109_RD_Trend_Trigger — RdTrendTriggerStrategy
+- [ ] 2110_MA_Rounding_Candle — MaRoundingCandleStrategy
+- [ ] 2111_Frama_Candle_Trend — FramaCandleTrendStrategy
+- [ ] 2112_Trix_Candle — TrixCandleStrategy
+- [ ] 2113_CHO_With_Flat — ChoWithFlatStrategy
+- [ ] 2114_Universal_Trailing_Stop — UniversalTrailingStopStrategy
+- [ ] 2115_Digital_Filter_T01 — DigitalFilterT01Strategy
+- [ ] 2116_Simple_Levels — SimpleLevelsStrategy
+- [ ] 2117_Step_Stochastic_Cross — StepStochasticCrossStrategy
+- [ ] 2118_Nevalyashka — NevalyashkaStrategy
+- [ ] 2119_Simple_News — SimpleNewsStrategy
+- [ ] 2120_Levels_With_Revolve — LevelsWithRevolveStrategy
+- [ ] 2121_Levels_With_Trail — LevelsWithTrailStrategy
+- [ ] 2122_Auto_Trade_With_Bollinger_Bands — AutoTradeWithBollingerBandsStrategy
+- [ ] 2124_JMA_Candle_Sign — JmaCandleSignStrategy
+- [ ] 2125_XMA_Range_Channel — XmaRangeChannelStrategy
+- [ ] 2126_Last_Price — LastPriceStrategy
+- [ ] 2127_Trend_Envelopes — TrendEnvelopesStrategy
+- [ ] 2128_Momentum_Candle_Sign — MomentumCandleSignStrategy
+- [ ] 2129_Color_Schaff_Trend_Cycle — ColorSchaffTrendCycleStrategy
+- [ ] 2130_Color_XCCX_Candle — ColorXccxCandleStrategy
+- [ ] 2131_Cidomo_V1 — CidomoV1Strategy
+- [ ] 2132_Exp_Super_Trend — ExpSuperTrendStrategy
+- [ ] 2133_Dots — DotsStrategy
+- [ ] 2134_Divergence_Expert — DivergenceExpertStrategy
+- [ ] 2135_Breakeven_Trailing_Stop — BreakevenTrailingStopStrategy
+- [ ] 2136_Coin_Flip — CoinFlipStrategy
+- [ ] 2137_Close_At_Time — CloseAtTimeStrategy
+- [ ] 2138_Session_Order_Sentiment — SessionOrderSentimentStrategy
+- [ ] 2139_MacdWaterlineCross — MacdWaterlineCrossExpectatorStrategy
+- [ ] 2140_Volatility_Quality — VolatilityQualityStrategy
+- [ ] 2141_Color_Bears — ColorBearsStrategy
+- [ ] 2142_Color_Bulls — ColorBullsStrategy
+- [ ] 2143_Kositbablo_10 — Kositbablo10Strategy
+- [ ] 2144_PA_Oscillator — PaOscillatorStrategy
+- [ ] 2145_I_Gap — IGapStrategy
+- [ ] 2146_LeMan_Trend — LeManTrendStrategy
+- [ ] 2147_Labouchere_EA — LabouchereEaStrategy
+- [ ] 2148_Buy_Sell_Grid — BuySellGridStrategy
+- [ ] 2149_Leman_Trend_Hist — LeManTrendHistStrategy
+- [ ] 2150_Laguerre_ROC — LaguerreRocStrategy
+- [ ] 2151_MACD_Candle — MacdCandleStrategy
+- [ ] 2152_Kalman_Filter_Candles — KalmanFilterCandlesStrategy
+- [ ] 2153_Anchored_Momentum_Candle — AnchoredMomentumCandleStrategy
+- [ ] 2154_MACD_Trend_Mode — MacdTrendModeStrategy
+- [ ] 2155_Loco — LocoStrategy
+- [ ] 2156_Beginner_Breakout — BeginnerBreakoutStrategy
+- [ ] 2157_Color_Bears_Gap — ColorBearsGapStrategy
+- [ ] 2158_Color_Bulls_Gap — ColorBullsGapStrategy
+- [ ] 2159_ColorMetro_DeMarker — ColorMetroDeMarkerStrategy
+- [ ] 2160_ColorMETRO_Stochastic — ColorMetroStochasticStrategy
+- [ ] 2161_Forex_Fraus_Slogger — ForexFrausSloggerStrategy
+- [ ] 2162_CCI_Normalized_Reversal — CciNormalizedReversalStrategy
+- [ ] 2163_RSI_MA_Trend — RsiMaTrendStrategy
+- [ ] 2164_Super_Woodies_CCI — SuperWoodiesCciStrategy
+- [ ] 2165_S7_Up_Bot — S7UpBotStrategy
+- [ ] 2166_Digital_CCI_Woodies — DigitalCciWoodiesStrategy
+- [ ] 2167_ColorMETRO_WPR — ColorMetroWprStrategy
+- [ ] 2168_AfterEffects — AfterEffectsStrategy
+- [ ] 2169_ScalpWiz_Bollinger — ScalpWizBollingerStrategy
+- [ ] 2170_Zonal_Trading — ZonalTradingStrategy
+- [ ] 2172_ColorMETRO_XRSX — ColorMetroXrsxStrategy
+- [ ] 2173_TMA_Breakout — TmaBreakoutStrategy
+- [ ] 2174_Hidden_SL — HiddenSlStrategy
+- [ ] 2175_Drawdown_Close_All — DdCloseAllStrategy
+- [ ] 2176_MBkasctrend3 — Mbkasctrend3Strategy
+- [ ] 2177_Zakryvator — ZakryvatorStrategy
+- [ ] 2178_Lossless_MA — LosslessMaStrategy
+- [ ] 2179_Quantum_Stochastic — QuantumStochasticStrategy
+- [ ] 2180_FrakTrak_XonaX — FraktrakXonaxStrategy
+- [ ] 2181_RSI_Bollinger_Bands — RsiBollingerBandsStrategy
+- [ ] 2182_Exp_Adx_Cross_Hull_Style — ExpAdxCrossHullStyleStrategy
+- [ ] 2183_Night — NightStrategy
+- [ ] 2184_Order_Example — OrderExampleStrategy
+- [ ] 2185_Simple_Multiple_Time_Frame_Moving_Average — SimpleMultipleTimeFrameMovingAverageStrategy
+- [ ] 2186_Droneox_Equity_Guardian — DroneoxEquityGuardianStrategy
+- [ ] 2187_Hawaiian_Tsunami_Surfer — HawaiianTsunamiSurferStrategy
+- [ ] 2188_RSI_Automated — RsiAutomatedStrategy
+- [ ] 2189_Bounce_Strength_Index — BounceStrengthIndexStrategy
+- [ ] 2190_Color_Coppock — ColorCoppockStrategy
+- [ ] 2192_Stochastic_Automated — StochasticAutomatedStrategy
+- [ ] 2194_Pending_Order — PendingOrderStrategy
+- [ ] 2195_Extrem_N — ExtremNStrategy
+- [ ] 2196_ForexLine — ForexLineStrategy
+- [ ] 2197_Ima_Expert — ImaExpertStrategy
+- [ ] 2198_Exp_Multic — ExpMulticStrategy
+- [ ] 2199_RSI_Histogram — RsiHistogramStrategy
+- [ ] 2200_MFI_Histogram — MfiHistogramStrategy
+- [ ] 2201_Wpr_Histogram — WprHistogramStrategy
+- [ ] 2202_MA_Oscillator_Histogram — MaOscillatorHistogramStrategy
+- [ ] 2203_Rvi_Histogram_Reversal — RviHistogramReversalStrategy
+- [ ] 2204_Color_XMACD_Candle — ColorXMacdCandleStrategy
+- [ ] 2205_Stochastic_Histogram — StochasticHistogramStrategy
+- [ ] 2206_Adam_and_Eve — AdamAndEveStrategy
+- [ ] 2207_Bollinger_Bands_Automated — BollingerBandsAutomatedStrategy
+- [ ] 2208_Hedge_Average — HedgeAverageStrategy
+- [ ] 2209_CCI_Histogram — CciHistogramStrategy
+- [ ] 2210_RoBoost — RoBoostStrategy
+- [ ] 2211_Positions_Change_Informer — PositionsChangeInformerStrategy
+- [ ] 2212_One_Click_Close_All — OneClickCloseAllStrategy
+- [ ] 2213_Color_Laguerre — ColorLaguerreStrategy
+- [ ] 2214_Auto_Trade_With_RSI — AutoTradeWithRsiStrategy
+- [ ] 2215_Three_Line_Break — ThreeLineBreakStrategy
+- [ ] 2216_ASCtrend — ASCtrendStrategy
+- [ ] 2217_BykovTrend — BykovTrendStrategy
+- [ ] 2218_Candles_Smoothed — CandlesSmoothedStrategy
+- [ ] 2219_Fibo_Candles_Trend — FiboCandlesTrendStrategy
+- [ ] 2220_Go_Candle_Body_Reversal — GoCandleBodyReversalStrategy
+- [ ] 2221_Cci_Automated — CciAutomatedStrategy
+- [ ] 2222_Heiken_Ashi_Smoothed_Trend — HeikenAshiSmoothedTrendStrategy
+- [ ] 2223_Karacatica — KaracaticaStrategy
+- [ ] 2224_LeMan_Signal — LeManSignalStrategy
+- [ ] 2225_NonLagDot — NonLagDotStrategy
+- [ ] 2226_PriceChannel_Stop — PriceChannelStopStrategy
+- [ ] 2228_Sidus — SidusStrategy
+- [ ] 2229_Silver_Trend — SilverTrendStrategy
+- [ ] 2230_Doctor — DoctorStrategy
+- [ ] 2231_Stalin — StalinStrategy
+- [ ] 2232_StepMA_NRTR — StepMaNrtrStrategy
+- [ ] 2233_Supertrend_Signal — SupertrendSignalStrategy
+- [ ] 2234_JMA_Slope — JmaSlopeStrategy
+- [ ] 2235_WPRSI_Signal — WprsiSignalStrategy
+- [ ] 2236_Panel_Joke — PanelJokeStrategy
+- [ ] 2237_NRTR_Trailing_Stop — NrtrTrailingStopStrategy
+- [ ] 2238_NRTR_Extr — NrtrExtrStrategy
+- [ ] 2239_Elliott_Wave_Oscillator — ElliottWaveOscillatorStrategy
+- [ ] 2240_XDPO_Histogram — XdpoHistogramStrategy
+- [ ] 2241_ColorXdinMA_StDev — ColorXdinMAStDevStrategy
+- [ ] 2242_Bezier_StDev — BezierStDevStrategy
+- [ ] 2243_Binary_Wave_StDev — BinaryWaveStdDevStrategy
+- [ ] 2244_Color_HMA_StDev — ColorHmaStDevStrategy
+- [ ] 2245_Color_J2JMA_StdDev — ColorJ2JmaStdDevStrategy
+- [ ] 2246_ColorJFatlStDev — ColorJFatlStDevStrategy
+- [ ] 2247_Aroon_Horn_Sign — AroonHornSignStrategy
+- [ ] 2248_Exp_To_Close_Profit — ExpToCloseProfitStrategy
+- [ ] 2249_Multicurrency_Trading_Panel — MulticurrencyTradingPanelStrategy
+- [ ] 2250_Close_On_Loss — CloseOnLossStrategy
+- [ ] 2251_Forex_Fraus_Portfolio — ForexFrausPortfolioStrategy
+- [ ] 2252_Reco_RSI_Grid — RecoRsiGridStrategy
+- [ ] 2253_Color_Xtrix_Histogram — ColorXtrixHistogramStrategy
+- [ ] 2254_Martingale_MACD — MartingaleMacdStrategy
+- [ ] 2256_XDPO_Candle — XdpoCandleStrategy
+- [ ] 2258_Sar_Automated — SarAutomatedStrategy
+- [ ] 2259_MaDelta — MaDeltaStrategy
+- [ ] 2260_Trend_Arrows — TrendArrowsStrategy
+- [ ] 2261_VWAP_Close — VwapCloseStrategy
+- [ ] 2262_Directed_Movement — DirectedMovementStrategy
+- [ ] 2263_CCI_Woodies — CCI_WoodiesStrategy
+- [ ] 2264_Indicator_Buffers — IndicatorBuffersStrategy
+- [ ] 2265_Q2MA_Cross — Q2maCrossStrategy
+- [ ] 2266_Ma_Channel — MaChannelStrategy
+- [ ] 2267_ROC2_VG — Roc2VgStrategy
+- [ ] 2268_TSI_Cloud_Cross — TsiCloudCrossStrategy
+- [ ] 2269_AutoTraderRus — AutoTraderRusStrategy
+- [ ] 2270_Arb_Synthetic — ArbSyntheticStrategy
+- [ ] 2273_Color_Rsi_Macd — ColorRsiMacdStrategy
+- [ ] 2274_Directed_Movement_Candle — DirectedMovementCandleStrategy
+- [ ] 2275_RSI_Sign — RsiSignStrategy
+- [ ] 2277_Chaikin_Volatility_Stochastic — ChaikinVolatilityStochasticStrategy
+- [ ] 2278_StochKomposter — StochKomposterStrategy
+- [ ] 2279_ColorJFatl_Digit — ColorJFatlDigitStrategy
+- [ ] 2280_ColorX2MA_Digit — ColorX2MaDigitStrategy
+- [ ] 2281_Multik_SMA_Exp — MultikSmaExpStrategy
+- [ ] 2282_DeMarker_Sign — DeMarkerSignStrategy
+- [ ] 2283_FRASMAv2 — FrasmaV2Strategy
+- [ ] 2284_Jupiter_M — JupiterMStrategy
+- [ ] 2285_Volume_Weighted_MA_Slope — VolumeWeightedMaSlopeStrategy
+- [ ] 2286_Nevalyashka_Stopup — NevalyashkaStopupStrategy
+- [ ] 2287_Universal_Trailing_Stop_Hedge — UniversalTrailingStopHedgeStrategy
+- [ ] 2288_Timer_Trade — TimerTradeStrategy
+- [ ] 2289_Volume_Weighted_MA_StDev — VolumeWeightedMaStDevStrategy
+- [ ] 2290_AcceleratorBot_USDJPYH4 — AcceleratorBotUsdJpyH4Strategy
+- [ ] 2291_Fisher_Org_V1 — FisherOrgV1Strategy
+- [ ] 2292_Fisher_Org_Sign — FisherOrgSignStrategy
+- [ ] 2293_JFatl_Digit_System — JfatlDigitSystemStrategy
+- [ ] 2294_Volume_Weighted_MA_Digit_System — VolumeWeightedMaDigitSystemStrategy
+- [ ] 2295_Trade_Panel_With_Autopilot — TradePanelWithAutopilotStrategy
+- [ ] 2296_Volume_Weighted_MA_Candle — VolumeWeightedMaCandleStrategy
+- [ ] 2297_Random_Coin_Toss_Baseline — RandomCoinTossBaselineStrategy
+- [ ] 2298_Donchian_Channels_System — DonchianChannelsSystemStrategy
+- [ ] 2299_PChannel_System — PChannelSystemStrategy
+- [ ] 2300_DarvasBoxes_System — DarvasBoxesSystemStrategy
+- [ ] 2302_Trade_Panel_Autopilot — TradePanelAutopilotStrategy
+- [ ] 2303_ADX_DMI — AdxDmiStrategy
+- [ ] 2304_Aroon_Oscillator_Sign_Alert — AroonOscillatorSignAlertStrategy
+- [ ] 2305_SAW_System_1 — SawSystem1Strategy
+- [ ] 2306_Cm_Fishing — CmFishingStrategy
+- [ ] 2307_Trend_Continuation — TrendContinuationStrategy
+- [ ] 2308_ICAi — ICaiStrategy
+- [ ] 2310_SMI_Correct — SmiCorrectStrategy
+- [ ] 2312_CAi_Standard_Deviation — CaiStandardDeviationStrategy
+- [ ] 2313_ZZFiboTrader — ZZFiboTraderStrategy
+- [ ] 2314_CAiChannel_System_Digit — CaiChannelSystemDigitStrategy
+- [ ] 2315_Limits_Martin — LimitsMartinStrategy
+- [ ] 2316_Polarized_Fractal_Efficiency — PolarizedFractalEfficiencyStrategy
+- [ ] 2317_PFE_Extremes — PfeExtremesStrategy
+- [ ] 2318_ASCTrendND — AscTrendNdStrategy
+- [ ] 2319_PPO_Cloud — PpoCloudStrategy
+- [ ] 2320_Cm_RSI — CmRsiStrategy
+- [ ] 2321_CandlesticksBW — CandlesticksBwStrategy
+- [ ] 2322_SAR_Trailing_System — SarTrailingSystemStrategy
+- [ ] 2323_Cm_Manual_Grid — CmManualGridStrategy
+- [ ] 2324_RAVI_Histogram — RaviHistogramStrategy
+- [ ] 2325_Spectral_RVI_Crossover — SpectralRviStrategy
+- [ ] 2326_SpectrAnalysis_WPR — SpectrAnalysisWprStrategy
+- [ ] 2327_WlxBW5Zone — WlxBw5ZoneStrategy
+- [ ] 2328_Trailing_Master — TrailingMasterStrategy
+- [ ] 2329_Break_Even_Master — BreakEvenMasterStrategy
+- [ ] 2332_Balance_Of_Power_Histogram — BalanceOfPowerHistogramStrategy
+- [ ] 2333_SpectrAnalysis_Chaikin — SpectrAnalysisChaikinStrategy
+- [ ] 2334_RVI_Diff_Reversal — RviDiffReversalStrategy
+- [ ] 2335_Fibonacci_Retracement — FibonacciRetracementStrategy
+- [ ] 2336_STLMCandle — StlmCandleStrategy
+- [ ] 2337_Stochastic_Diff — StochasticDiffStrategy
+- [ ] 2338_Limits_Bot — LimitsBotStrategy
+- [ ] 2339_News_EA — NewsEAStrategy
+- [ ] 2340_Sync_Charts — SyncChartsStrategy
+- [ ] 2341_ColorXvaMA_Digit — ColorXvaMADigitStrategy
+- [ ] 2342_HelloSmart — HelloSmartStrategy
+- [ ] 2343_Night_Scalper — NightScalperStrategy
+- [ ] 2344_AFL_Winner_V2 — AflWinnerV2Strategy
+- [ ] 2345_JSatl_Digit_System — JSatlDigitSystemStrategy
+- [ ] 2346_JSatl_Digit_System — JsAtlDigitSystemStrategy
+- [ ] 2347_Renko_Chart_From_Ticks — RenkoChartFromTicksStrategy
+- [ ] 2348_TralingLine — TralingLineStrategy
+- [ ] 2349_Candle_Trend — CandleTrendStrategy
+- [ ] 2350_ColorJSatl_Digit — ColorJsatlDigitStrategy
+- [ ] 2351_Waddah_Attar_Trend — WaddahAttarTrendStrategy
+- [ ] 2352_Figurelli_Series — FigurelliSeriesStrategy
+- [ ] 2353_I4_DRF_v2 — I4DrfV2Strategy
+- [ ] 2355_JSatl_Candle — JSatlCandleStrategy
+- [ ] 2356_Bear_Bulls_Power — BearBullsPowerStrategy
+- [ ] 2357_I4_DRF — I4DrfStrategy
+- [ ] 2358_Exp_QqeCloud — ExpQqeCloudStrategy
+- [ ] 2360_ColorXvaMA_Digit_StDev — ColorXvaMaDigitStDevStrategy
+- [ ] 2361_Color_3rdGen_XMA — Color3rdGenXmaStrategy
+- [ ] 2362_Delta_RSI — DeltaRsiStrategy
+- [ ] 2363_Rock_Trader_Neuro — RockTraderNeuroStrategy
+- [ ] 2364_Trix_Crossover — TrixCrossoverStrategy
+- [ ] 2365_Delta_MFI — DeltaMfiStrategy
+- [ ] 2366_Delta_Wpr — DeltaWprStrategy
+- [ ] 2367_RSI_Slowdown — RsiSlowdownStrategy
+- [ ] 2368_F2a_Ao — F2aAoStrategy
+- [ ] 2369_WPR_Slowdown — WprSlowdownStrategy
+- [ ] 2370_MFI_Slowdown — MfiSlowdownStrategy
+- [ ] 2371_Limits_Rsi_Momentum_Bot — LimitsRsiMomentumBotStrategy
+- [ ] 2372_Bollinger_Bands_DEMA — BollingerBandsDemaStrategy
+- [ ] 2373_Trigger_Line — TriggerLineStrategy
+- [ ] 2374_XMACandles — XMACandlesStrategy
+- [ ] 2375_X2MA_JFatl — X2MaJfatlStrategy
+- [ ] 2377_X2MA_JJRSX — X2maJjrsxStrategy
+- [ ] 2378_X2MA_Digit_DM_361 — X2MADigitDm361Strategy
+- [ ] 2379_CyberiaTrader — CyberiaTraderStrategy
+- [ ] 2380_Day_Trading_Indicator_Fusion — DayTradingIndicatorFusionStrategy
+- [ ] 2381_20_200_Expert_AutoLot — Twenty200ExpertAutoLotStrategy
+- [ ] 2382_Regression_Channel_Breakout — RegressionChannelBreakoutStrategy
+- [ ] 2383_The_MasterMind_2 — TheMasterMind2Strategy
+- [ ] 2384_Artificial_Intelligence_Accelerator — ArtificialIntelligenceAcceleratorStrategy
+- [ ] 2385_Opening_Closing_On_Time — OpeningClosingOnTimeStrategy
+- [ ] 2386_TripleStochasticMTF — Exp3StoStrategy
+- [ ] 2387_Triple_RVI — TripleRviStrategy
+- [ ] 2388_RobotPowerM5 — RobotPowerM5Strategy
+- [ ] 2390_Exp_MUV_NorDIFF_Cloud — ExpMuvNorDiffCloudStrategy
+- [ ] 2391_Global_Take_Profit — GlobalTakeProfitStrategy
+- [ ] 2392_MTC_Combo_v2 — MtcComboV2Strategy
+- [ ] 2393_Pivot_Heiken — PivotHeikenStrategy
+- [ ] 2394_Exp_GStop — ExpGStopStrategy
+- [ ] 2395_2MA_Bunny_Cross_Expert — TwoMaBunnyCrossStrategy
+- [ ] 2396_CenterOfGravityCandle — CenterOfGravityCandleStrategy
+- [ ] 2398_Times_Direction — TimesDirectionStrategy
+- [ ] 2399_Zero_Filling_Stop — ZeroFillingStopStrategy
+- [ ] 2400_DVD_Level — DvdLevelStrategy
+- [ ] 2401_Scalpel_EA — ScalpelEaStrategy
+- [ ] 2402_Trailing_Stop_Points — TrailingStopPointsStrategy
+- [ ] 2403_ReOpen_Positions — ReOpenPositionsStrategy
+- [ ] 2404_EMA_Cross — EmaCrossStrategy
+- [ ] 2405_Fibo_iSAR — FiboIsarStrategy
+- [ ] 2406_RSIThreshold — RsiThresholdStrategy
+- [ ] 2407_MFI_Level_Cross — MfiLevelCrossStrategy
+- [ ] 2408_Candels_High_Open — CandelsHighOpenStrategy
+- [ ] 2409_Turtle_Trader_SAR — TurtleTraderSarStrategy
+- [ ] 2410_Wpr_Level_Cross — WprLevelCrossStrategy
+- [ ] 2411_Exp_Fishing — ExpFishingStrategy
+- [ ] 2412_ColorJFatl_Digit_ReOpen — ColorJFatlDigitReOpenStrategy
+- [ ] 2413_Simple_FX — SimpleFxStrategy
+- [ ] 2414_Bezier_ReOpen — BezierReOpenStrategy
+- [ ] 2415_Opening_and_Closing_on_time_v2 — OpeningAndClosingOnTimeV2Strategy
+- [ ] 2416_DoubleUp2 — DoubleUp2Strategy
+- [ ] 2417_JBrainTrend_ReOpen — JBrainTrendReopenStrategy
+- [ ] 2418_VR_Setka_3 — VRSetka3Strategy
+- [ ] 2419_Expert_NEWS — ExpertNewsStrategy
+- [ ] 2420_MACD_Stochastic_2 — MacdStochastic2Strategy
+- [ ] 2423_Frank_Ud — FrankUdStrategy
+- [ ] 2424_Limit_Orders_Control — LimitOrdersControlStrategy
+- [ ] 2425_Adaptive_CG_Oscillator_X2 — AdaptiveCgOscillatorX2Strategy
+- [ ] 2426_Fractal_RSI — FractalRsiStrategy
+- [ ] 2427_Fisher_Transform_X2 — FisherTransformX2Strategy
+- [ ] 2428_CrossMA — CrossMAStrategy
+- [ ] 2429_JS_MA_Day — JsMaDayStrategy
+- [ ] 2430_2pbIdealMA_ReOpen — TwoPbIdealMaReOpenStrategy
+- [ ] 2431_Expert_MACD_EURUSD_1_Hour — ExpertMacdEurusd1HourStrategy
+- [ ] 2432_GO_Risk_Managed — GoRiskManagedStrategy
+- [ ] 2433_Ichimoku_Chinkou_Cross — IchimokuChinkouCrossStrategy
+- [ ] 2434_Color_Zerolag_Momentum_X2 — ColorZerolagMomentumX2Strategy
+- [ ] 2435_H4L4Breakout — H4L4BreakoutStrategy
+- [ ] 2436_Stochastic_Three_Periods — StochasticThreePeriodsStrategy
+- [ ] 2437_Zonal_Trading_Oscillator — ZonalTradingOscillatorStrategy
+- [ ] 2438_Bollinger_Bands_Distance — BollingerBandsDistanceStrategy
+- [ ] 2439_MasterMind — TheMasterMindStrategy
+- [ ] 2440_VR_Steals_2 — VRSteals2Strategy
+- [ ] 2441_MasterMind_3 — MasterMind3Strategy
+- [ ] 2442_Fractal_WPR — FractalWprStrategy
+- [ ] 2443_Escape — EscapeStrategy
+- [ ] 2444_Very_Blonde_System — VeryBlondeSystemStrategy
+- [ ] 2445_EliteEFiboTrader — EliteEFiboTraderStrategy
+- [ ] 2446_MA_Cross — MaCrossStrategy
+- [ ] 2447_PROphet — PROphetStrategy
+- [ ] 2448_Fractal_ADX_Cloud — FractalAdxCloudStrategy
+- [ ] 2449_ADX_System — AdxSystemStrategy
+- [ ] 2450_Trend_Alexcud — TrendAlexcudStrategy
+- [ ] 2451_10_Pips — TenPipsStrategy
+- [ ] 2452_Fractal_Force_Index — FractalForceIndexStrategy
+- [ ] 2453_Exp_Price_Position — ExpPricePositionStrategy
+- [ ] 2454_Exp_RSIOMA — ExpRsiomaStrategy
+- [ ] 2455_EMA_WMA_Crossover — EmaWmaCrossoverStrategy
+- [ ] 2457_Breakdown_Level_Intraday — BreakdownLevelIntradayStrategy
+- [ ] 2458_BykovTrend_ReOpen — BykovTrendReOpenStrategy
+- [ ] 2459_SilverTrend_Signal_ReOpen — SilverTrendSignalReOpenStrategy
+- [ ] 2460_Price_Rollback — PriceRollbackStrategy
+- [ ] 2461_Ilan14 — Ilan14Strategy
+- [ ] 2462_Weight_Oscillator — WeightOscillatorStrategy
+- [ ] 2463_Universum_3_0 — Universum30Strategy
+- [ ] 2464_MACD_Signal — MacdSignalStrategy
+- [ ] 2465_Stochastic_Martingale — StochasticMartingaleStrategy
+- [ ] 2466_Heiken_Ashi_Waves — HeikenAshiWavesStrategy
+- [ ] 2467_Bill_Williams_Trader — BillWilliamsTraderStrategy
+- [ ] 2468_ZeroLag_MACD_Crossover — ZeroLagMacdCrossoverStrategy
+- [ ] 2469_MACD_CCI_Lotfy — MacdCciLotfyStrategy
+- [ ] 2470_Ride_Alligator_Williams — RideAlligatorWilliamsStrategy
+- [ ] 2471_Fractal_MFI — FractalMfiStrategy
+- [ ] 2472_Angry_Bird_Scalping — AngryBirdScalpingStrategy
+- [ ] 2473_Macd_Pattern_Trader_All — MacdPatternTraderAllStrategy
+- [ ] 2474_Neural_Network_MACD — NeuralNetworkMacdStrategy
+- [ ] 2475_ExpBuySellSide — ExpBuySellSideStrategy
+- [ ] 2476_Straddle_Trail_Manager — StraddleTrailStrategy
+- [ ] 2477_Alligator_Fractal_Martingale — AlligatorFractalMartingaleStrategy
+- [ ] 2478_WOC012Momentum — Woc012Strategy
+- [ ] 2479_Pipsover — PipsoverStrategy
+- [ ] 2480_10_Pips_EURUSD — TenPipsEurusdStrategy
+- [ ] 2481_CashMachine_5min — CashMachine5minStrategy
+- [ ] 2482_JK_BullPower_AutoTrader — JkBullPowerAutoTraderStrategy
+- [ ] 2483_Gandalf_Pro — GandalfProStrategy
+- [ ] 2484_The_Puncher — PuncherStrategy
+- [ ] 2485_Hercules_ATC_2006 — HerculesATC2006Strategy
+- [ ] 2486_MoneyFixedRisk — MoneyFixedRiskStrategy
+- [ ] 2487_Example_of_MACD_Automated — ExampleOfMacdAutomatedStrategy
+- [ ] 2488_Big_Bar_Sound — BigBarSoundStrategy
+- [ ] 2489_Master_MM_Droid — MasterMmDroidStrategy
+- [ ] 2490_Forex_Profit — ForexProfitStrategy
+- [ ] 2491_SendClose — SendCloseStrategy
+- [ ] 2492_Gazonkos_Rollback — GazonkosStrategy
+- [ ] 2493_Altarius_RSI_Stochastic — AltariusRsiStochasticStrategy
+- [ ] 2494_Two_MA_Four_Level — TwoMaFourLevelStrategy
+- [ ] 2495_Autotrade_Pending_Stops — AutotradePendingStopsStrategy
+- [ ] 2496_Big_Dog — BigDogStrategy
+- [ ] 2497_Trailing_Stop_Manager — TrailingStopManagerStrategy
+- [ ] 2498_AIS1_EURUSD_Breakout — Ais1EurUsdBreakoutStrategy
+- [ ] 2499_SimpleTrade — SimpleTradeStrategy
+- [ ] 2500_YenTrader051 — YenTrader051Strategy
+- [ ] 2501_Lucky — LuckyStrategy
+- [ ] 2502_21Hour_Session_Breakout — TwentyOneHourSessionBreakoutStrategy
+- [ ] 2503_Money_Fixed_Margin — MoneyFixedMarginStrategy
+- [ ] 2504_RSI_EA_Crossover — RsiCrossoverEaStrategy
+- [ ] 2506_e_TurboFx_Steps — ETurboFxStepsStrategy
+- [ ] 2507_Previous_Candle_Breakout — PreviousCandleBreakoutStrategy
+- [ ] 2508_Waddah_Attar_Win — WaddahAttarWinStrategy
+- [ ] 2509_Up3x1_Premium — Up3x1PremiumStrategy
+- [ ] 2510_Bull_vs_Medved — BullVsMedvedStrategy
+- [ ] 2511_True_Scalper_Profit_Lock — TrueScalperProfitLockStrategy
+- [ ] 2512_Up3x1_Dynamic_Sizing — Up3x1DynamicSizingStrategy
+- [ ] 2513_MACD_Parabolic_SAR_Wizard — MacdParabolicSarWizardStrategy
+- [ ] 2514_MACD_Zero_Filter_Take_Profit — MacdZeroFilterTakeProfitStrategy
+- [ ] 2515_Proper_Bot — ProperBotStrategy
+- [ ] 2516_Trend_Catcher_Breakout — TrendCatcherBreakoutStrategy
+- [ ] 2517_BollTradeBreakout — BollTradeStrategy
+- [ ] 2518_Moving_Average_Trade_System — MovingAverageTradeSystemStrategy
+- [ ] 2520_TDS_Global — TdsGlobalStrategy
+- [ ] 2521_Simple_MACD — SimpleMacdStrategy
+- [ ] 2522_MARE51_Shifted_MA — Mare51Strategy
+- [ ] 2523_Fractal_Weight_Oscillator — FractalWeightOscillatorStrategy
+- [ ] 2524_New_Martin — NewMartinStrategy
+- [ ] 2525_Silver_Trend_V3 — SilverTrendV3Strategy
+- [ ] 2526_TDI_2_ReOpen — Tdi2ReOpenStrategy
+- [ ] 2527_Kijun_Sen_Robot — KijunSenRobotStrategy
+- [ ] 2528_5_8_MA_Cross — FiveEightMaCrossStrategy
+- [ ] 2529_V1N1_Lonny_Breakout — V1n1LonnyBreakoutStrategy
+- [ ] 2531_E_Skoch_Open — ESkochOpenStrategy
+- [ ] 2532_e-Smart_Trailing — ESmartTrailingStrategy
+- [ ] 2533_Polish_Layer — PolishLayerStrategy
+- [ ] 2534_MA_RSI_Wizard — MaRsiWizardStrategy
+- [ ] 2535_Backbone — BackboneStrategy
+- [ ] 2536_Currency_Strength_v1_1 — CurrencyStrengthV11Strategy
+- [ ] 2537_FuzzyLogic — FuzzyLogicStrategy
+- [ ] 2538_ADX_MA_Crossover — AdxMaCrossoverStrategy
+- [ ] 2539_Ma2Cci_Ema — Ma2CciEmaStrategy
+- [ ] 2540_Rabbit3 — Rabbit3Strategy
+- [ ] 2541_IBS_RSI_CCI_v4 — IbsRsiCciV4Strategy
+- [ ] 2542_High_and_Low_Last_24_Hours — HighAndLowLast24HoursStrategy
+- [ ] 2543_Weight_Oscillator_Direct — WeightOscillatorDirectStrategy
+- [ ] 2544_Order_Escort — OrderEscortStrategy
+- [ ] 2545_Eugene_Inside_Breakout — EugeneInsideBreakoutStrategy
+- [ ] 2546_Macd_Pattern_Trader_Session — MacdPatternTraderSessionStrategy
+- [ ] 2546_MacdPatternTrader_Advanced_MultiPattern — MacdPatternTraderAdvancedMultiPatternStrategy
+- [ ] 2547_UmnickTrader — UmnickTraderStrategy
+- [ ] 2548_Get_Trend — GetTrendStrategy
+- [ ] 2549_Money_Rain — MoneyRainStrategy
+- [ ] 2550_SupportResistTrade — SupportResistTradeStrategy
+- [ ] 2551_T3MA_Direction_Change — T3MaDirectionChangeStrategy
+- [ ] 2552_BrakeoutTraderV1 — BrakeoutTraderV1Strategy
+- [ ] 2553_Order_Notify — OrderNotifyStrategy
+- [ ] 2554_TypePendingOrderTriggered — TypePendingOrderTriggeredStrategy
+- [ ] 2555_ChandelExit_ReOpen — ChandelExitReopenStrategy
+- [ ] 2556_Currencyprofits_HighLow_Channel — CurrencyprofitsHighLowChannelStrategy
+- [ ] 2557_Ttm_Trend_Reopen — TtmTrendReopenStrategy
+- [ ] 2558_CGOscillator_X2 — CGOscillatorX2Strategy
+- [ ] 2559_XOSignal_ReOpen — XoSignalReopenStrategy
+- [ ] 2560_IBS_RSI_CCI_v4_X2 — IbsRsiCciV4X2Strategy
+- [ ] 2561_Three_Candles_Reversal — ThreeCandlesReversalStrategy
+- [ ] 2562_Ivan_CCI_Averaging — IvanCciAveragingStrategy
+- [ ] 2563_Simple_Hedge_Panel — SimpleHedgePanelStrategy
+- [ ] 2564_Ichi_Oscillator — IchiOscillatorStrategy
+- [ ] 2565_Renko_LineBreak_vs_RSI — RenkoLineBreakVsRsiStrategy
+- [ ] 2566_EMA_Barabashkakvn_Edition — EmaBarabashkakvnEditionStrategy
+- [ ] 2567_Pinball_Machine — PinballMachineStrategy
+- [ ] 2568_DoubleMA_Crossover — DoubleMaCrossoverStrategy
+- [ ] 2569_ElliIchimokuADX — ElliIchimokuAdxStrategy
+- [ ] 2570_Multi_Hedging_Scheduler — MultiHedgingSchedulerStrategy
+- [ ] 2571_MACD_AO_Pattern — MacdAoPatternStrategy
+- [ ] 2572_Nevalyashka_Martingale — NevalyashkaMartingaleStrategy
+- [ ] 2573_eRP250ReversePoint — ERp250Strategy
+- [ ] 2574_NUp1Down — NUp1DownStrategy
+- [ ] 2575_RSI_Trader — RsiTraderStrategy
+- [ ] 2578_Trade_on_Qualified_RSI — TradeOnQualifiedRSIStrategy
+- [ ] 2579_20PRExp_3 — TwentyPrExpThreeStrategy
+- [ ] 2581_ClosePositionsByTime — ClosePositionsByTimeStrategy
+- [ ] 2582_Close_All_Positions_By_Time — CloseAllPositionsByTimeStrategy
+- [ ] 2584_Time_Object_Text_Display — TimeObjectTextDisplayStrategy
+- [ ] 2585_Candle_Shadow_Percent — CandleShadowPercentStrategy
+- [ ] 2586_Pending_Order_Grid — PendingOrderGridStrategy
+- [ ] 2587_List_Positions — ListPositionsStrategy
+- [ ] 2588_Candle — CandleStrategy
+- [ ] 2589_Bollinger_Breakout_DC2008 — BollingerBreakoutDc2008Strategy
+- [ ] 2590_Heiken_Ashi_Idea — HeikenAshiIdeaStrategy
+- [ ] 2591_N_Candles — NCandlesStrategy
+- [ ] 2592_Exp_Breakout_Signals — ExpBreakoutSignalsStrategy
+- [ ] 2593_Stochastic_Chaikins_Volatility — StochasticChaikinsVolatilityStrategy
+- [ ] 2595_Inverse_Reaction — InverseReactionStrategy
+- [ ] 2596_Max_Lot_Size_Display — MaxLotSizeDisplayStrategy
+- [ ] 2597_Morse_Code — MorseCodeStrategy
+- [ ] 2598_Sound_Alert_Entry_Out — SoundAlertEntryOutStrategy
+- [ ] 2599_Trailing_Stop_Manager_Step — TrailingStopStepManagerStrategy
+- [ ] 2600_Simple_Trade_Copier — TradeCopierStrategy
+- [ ] 2601_Ma_Sar_Adx_Bind — MaSarAdxBindStrategy
+- [ ] 2602_XFatl_XSatl_Cloud — XFatlXSatlCloudStrategy
+- [ ] 2603_Dual_MA_Trend_Confirmation — DualMaTrendConfirmationStrategy
+- [ ] 2604_Piano_Multi_Timeframe_Bar_State — PianoMultiTimeframeBarStateStrategy
+- [ ] 2605_Kolier_SuperTrend_X2 — KolierSuperTrendX2Strategy
+- [ ] 2606_Statistics_Repeating_Behavior — StatisticsRepeatingBehaviorStrategy
+- [ ] 2607_N_Candles_v2 — NCandlesV2Strategy
+- [ ] 2608_Breakthrough_BB — BreakthroughBbStrategy
+- [ ] 2609_HTH_Trader — HthTraderStrategy
+- [ ] 2610_Vector — VectorStrategy
+- [ ] 2611_RSI_Bollinger_Fractal_Breakout — RsiBollingerFractalBreakoutStrategy
+- [ ] 2613_Cheduecoglioni_Alternating — CheduecoglioniAlternatingStrategy
+- [ ] 2614_Bollinger_Bands_N_Positions — BollingerBandsNPositionsStrategy
+- [ ] 2615_Total_Power_Indicator_X — TotalPowerIndicatorXStrategy
+- [ ] 2616_Percentage_Crossover — PercentageCrossoverStrategy
+- [ ] 2617_Fractals_Minimum_Distance — FractalsMinimumDistanceStrategy
+- [ ] 2618_Pipso_Range_Reversal — PipsoStrategy
+- [ ] 2619_Percentage_Crossover_Channel_System — PercentageCrossoverChannelSystemStrategy
+- [ ] 2620_Color_JFatl_Digit_Tm — ColorJfatlDigitTmStrategy
+- [ ] 2621_Color_Xmuv_Time — ColorXmuvTimeStrategy
+- [ ] 2622_Crossing_of_Two_iMA — CrossingOfTwoIMAStrategy
+- [ ] 2623_Amstell_Grid_Manager — AmstellGridManagerStrategy
+- [ ] 2624_NRTR_ATR_Stop — NRTRATRStopStrategy
+- [ ] 2625_VLT_Trader_Filter — VltTraderFilterStrategy
+- [ ] 2626_Bullish_Bearish_Engulfing — BullishBearishEngulfingStrategy
+- [ ] 2627_EES_Hedger — EesHedgerStrategy
+- [ ] 2628_Evening_Star_Reversal — EveningStarReversalStrategy
+- [ ] 2629_XROC2_VG_Tm — Xroc2VgTmStrategy
+- [ ] 2630_XROC2_VG_X2 — Xroc2VgX2Strategy
+- [ ] 2631_N_Candles_v3 — NCandlesV3Strategy
+- [ ] 2632_Ema_Crossover_Trailing — EmaCrossoverTrailingStrategy
+- [ ] 2633_IStochastic_Trading — IStochasticTradingStrategy
+- [ ] 2634_ProMart_MACD_Martingale — ProMartMacdMartingaleStrategy
+- [ ] 2635_N_Candles_Sequence_Entries — NCandlesSequenceStrategy
+- [ ] 2636_MultiCurrEA — MultiCurrEAStrategy
+- [ ] 2637_Double_ZigZag_Alignment — DoubleZigZagStrategy
+- [ ] 2638_Rabbit_M2 — RabbitM2Strategy
+- [ ] 2639_Expert_RSI_Stochastic_MA — ExpertRsiStochasticMaStrategy
+- [ ] 2640_ExpertClor_Close_Manager — ExpertClorCloseManagerStrategy
+- [ ] 2641_EurUsd_Session_Breakout — EurUsdSessionBreakoutStrategy
+- [ ] 2642_Trailing_Profit — TrailingProfitStrategy
+- [ ] 2643_Get_Rich_or_Die_Trying_GBP — GetRichOrDieTryingGbpStrategy
+- [ ] 2644_Multi_Arbitration — MultiArbitrationStrategy
+- [ ] 2646_Color_Pema_Envelopes_Digit_System — ColorPemaEnvelopesDigitSystemStrategy
+- [ ] 2647_Omni_Trend — OmniTrendStrategy
+- [ ] 2648_Multi_Arbitration_1_1xx — MultiArbitration11xxStrategy
+- [ ] 2649_Stop_Loss_Take_Profit — StopLossTakeProfitStrategy
+- [ ] 2650_iCCI_iMA — IcciImaStrategy
+- [ ] 2651_AFStar — AfStarStrategy
+- [ ] 2652_ColorFisher_M11 — ColorFisherM11Strategy
+- [ ] 2653_Martin_Martingale — MartinMartingaleStrategy
+- [ ] 2654_Tipu_EA — TipuEaStrategy
+- [ ] 2655_Force_Trend — ForceTrendStrategy
+- [ ] 2656_Trade_in_Channel — TradeInChannelStrategy
+- [ ] 2657_OzFx_Accelerator_Stochastic — OzFxAcceleratorStochasticStrategy
+- [ ] 2658_Nevalyashka_Flip — NevalyashkaFlipStrategy
+- [ ] 2659_Last_ZZ50 — LastZz50Strategy
+- [ ] 2661_New_Random — NewRandomStrategy
+- [ ] 2662_Up3x1_Investor — Up3x1InvestorStrategy
+- [ ] 2664_Stopreversal_Trailing — StopreversalTrailingStrategy
+- [ ] 2665_Long_Short_Expert_MACD — LongShortExpertMacdStrategy
+- [ ] 2666_Hidden_StopLoss_TakeProfit_Manager — HiddenStopLossTakeProfitStrategy
+- [ ] 2667_Slime_Mold_RSI — SlimeMoldRsiStrategy
+- [ ] 2668_Button_Close_Buy_Sell — ButtonCloseBuySellStrategy
+- [ ] 2669_ChaosTraderLite — ChaosTraderLiteStrategy
+- [ ] 2670_Burg_Extrapolator — BurgExtrapolatorStrategy
+- [ ] 2671_Carbophos_Grid — CarbophosGridStrategy
+- [ ] 2672_Open_Two_Pending_Orders — OpenTwoPendingOrdersStrategy
+- [ ] 2673_EA_Trix — EaTrixStrategy
+- [ ] 2674_Pending_Orders_By_Time — PendingOrdersByTimeStrategy
+- [ ] 2675_Open_Time — OpenTimeStrategy
+- [ ] 2676_Anubis — AnubisStrategy
+- [ ] 2677_II_Outbreak — IiOutbreakStrategy
+- [ ] 2678_MT45 — MT45Strategy
+- [ ] 2679_Multicurrency_Overlay_Hedge — MulticurrencyOverlayHedgeStrategy
+- [ ] 2680_Multi_Time_Frame_Trader — MultiTimeFrameTraderStrategy
+- [ ] 2681_Multi_Stochastic — MultiStochasticStrategy
+- [ ] 2682_Vortex_Indicator_System — VortexIndicatorSystemStrategy
+- [ ] 2683_TradeEATemplateNews — TradeEaTemplateForNewsStrategy
+- [ ] 2684_Flat_Channel — FlatChannelStrategy
+- [ ] 2685_HarVesteR — HarVesteRStrategy
+- [ ] 2686_Alligator_Trend — AlligatorTrendStrategy
+- [ ] 2687_Locker — LockerStrategy
+- [ ] 2688_Super_Simple_RSI_Engulfing — SuperSimpleRsiEngulfingStrategy
+- [ ] 2689_E_Skoch_Pending_Orders — ESkochPendingOrdersStrategy
+- [ ] 2690_Moving_Averages — MovingAveragesStrategy
+- [ ] 2691_Nova — NovaStrategy
+- [ ] 2692_MACD_Stochastic — MacdStochasticStrategy
+- [ ] 2693_Pattern_Template — PatternTemplateStrategy
+- [ ] 2694_Perceptron_Adaptive — PerceptronAdaptiveStrategy
+- [ ] 2695_Exp_BlauCMI — ExpBlauCmiStrategy
+- [ ] 2696_MAMACD — MamAcdStrategy
+- [ ] 2698_NRTR_ATR_Stop — NrtrAtrStopStrategy
+- [ ] 2699_ColorJFatl_Digit_Duplex — ColorJfatlDigitDuplexStrategy
+- [ ] 2700_Blau_C_Momentum — BlauCMomentumStrategy
+- [ ] 2701_Jims_Close_Positions — JimsClosePositionsStrategy
+- [ ] 2702_JS_Chaos — JSChaosStrategy
+- [ ] 2703_Self_Optimizing_RSI_or_MFI_Trader_v3 — SelfOptimizingRsiOrMfiTraderV3Strategy
+- [ ] 2704_N_Seconds_N_Points — NSecondsNPointsStrategy
+- [ ] 2705_Spreader_2 — Spreader2Strategy
+- [ ] 2706_OsMaSter_v0 — OsMaSterV0Strategy
+- [ ] 2707_RSI_Eraser — RsiEraserStrategy
+- [ ] 2708_Stopreversal_Tm — StopreversalTmStrategy
+- [ ] 2709_Risk_Fixed_Margin — RiskFixedMarginStrategy
+- [ ] 2710_VR_Overturn — VrOverturnStrategy
+- [ ] 2711_Bollinger_Bands_Rsi_Zones — BollingerBandsRsiZonesStrategy
+- [ ] 2712_Vortex_Oscillator_System — VortexOscillatorSystemStrategy
+- [ ] 2713_Martin_1 — Martin1Strategy
+- [ ] 2714_Billy_Expert — BillyExpertStrategy
+- [ ] 2715_GreenTrade — GreenTradeStrategy
+- [ ] 2716_KDJ_Expert_Advisor — KdjExpertAdvisorStrategy
+- [ ] 2717_Daily_BreakPoint — DailyBreakPointStrategy
+- [ ] 2718_20_Pips_Opposite_Last_N_Hour_Trend — 20PipsOppositeLastNHourTrendStrategy
+- [ ] 2720_CMO_Duplex — CmoDuplexStrategy
+- [ ] 2721_Larry_Conners_RSI2 — LarryConnersRsi2Strategy
+- [ ] 2722_N_Candles_v5 — NCandlesV5Strategy
+- [ ] 2723_BeerGod_EMA_Timing — BeerGodEmaTimingStrategy
+- [ ] 2724_Precipice_Martin — PrecipiceMartinStrategy
+- [ ] 2725_Triple_MA_Channel_Crossover — TripleMaChannelCrossoverStrategy
+- [ ] 2726_EA_Breakeven_Stop_Manager — EaBreakevenStopManagerStrategy
+- [ ] 2727_Dealers_Trade_MACD — DealersTradeMacdStrategy
+- [ ] 2728_Exp_Blau_CSI — ExpBlauCsiStrategy
+- [ ] 2729_Show_Pips — ShowPipsStrategy
+- [ ] 2730_VR_ZVER — VrZverStrategy
+- [ ] 2731_Dual_Lot_Step_Hedge — DualLotStepHedgeStrategy
+- [ ] 2732_Forex_Currency_Power — ForexCurrencyPowerStrategy
+- [ ] 2733_FORTS_Currency_Power — FortsCurrencyPowerStrategy
+- [ ] 2734_EMA_612_Crossover — Ema612CrossoverStrategy
+- [ ] 2735_Starter_V6Mod — StarterV6ModStrategy
+- [ ] 2736_Ichimoku_Cloud_Retrace — IchimokuCloudRetraceStrategy
+- [ ] 2737_Momo_Trades — MomoTradesStrategy
+- [ ] 2738_Ma_Shift_Puria_Method — MaShiftPuriaMethodStrategy
+- [ ] 2739_DealersTradeZeroLagMACD — DealersTradeZeroLagMacdStrategy
+- [ ] 2740_Doji_Trader — DojiTraderStrategy
+- [ ] 2741_SAR_Trading_v2_0 — SarTradingV20Strategy
+- [ ] 2742_XFatlXSatlCloud_Duplex — XFatlXSatlCloudDuplexStrategy
+- [ ] 2743_JS_Sistem_2 — JsSistem2Strategy
+- [ ] 2744_Martin_For_Small_Deposits — MartinForSmallDepositsStrategy
+- [ ] 2745_Arrows_and_Curves — ArrowsAndCurvesStrategy
+- [ ] 2746_Expert_ZZLWA — ExpertZzlwaStrategy
+- [ ] 2747_XDidi_Index_Cloud_Duplex — XDidiIndexCloudDuplexStrategy
+- [ ] 2748_ColorJFatl_Digit_Tm_Plus — ColorJfatlDigitTmPlusStrategy
+- [ ] 2749_Galactic_Explosion — GalacticExplosionStrategy
+- [ ] 2750_ColorJjrsxTimePlus — ColorJjrsxTimePlusStrategy
+- [ ] 2751_Ytg_Adx_Level_Cross — YtgAdxLevelCrossStrategy
+- [ ] 2752_Reduce_Risks — ReduceRisksStrategy
+- [ ] 2753_Trade_Panel — TradePanelStrategy
+- [ ] 2754_ZigZag_EvgeTrofi — ZigZagEvgeTrofiStrategy
+- [ ] 2755_Lacus_Trailing_Stop_and_Breakeven — LacusTrailingStopAndBreakevenStrategy
+- [ ] 2756_VR_ZVER_v2 — VrZverV2Strategy
+- [ ] 2757_Price_Extreme — PriceExtremeStrategy
+- [ ] 2758_Fractals_At_Close_Prices — FractalsAtClosePricesStrategy
+- [ ] 2759_Coin_Flipping — CoinFlippingStrategy
+- [ ] 2760_Blau_Ergodic_MDI — BlauErgodicMdiStrategy
+- [ ] 2761_Diff_TF_MA — DiffTfMaStrategy
+- [ ] 2762_Percentage_Crossover_Channel_EA — PercentageCrossoverChannelStrategy
+- [ ] 2763_NTK_07_Range_Trader — Ntk07RangeTraderStrategy
+- [ ] 2764_TimeEA — TimeEaStrategy
+- [ ] 2765_Trailing_Take_Profit — TrailingTakeProfitStrategy
+- [ ] 2766_Rnd_Trade — RndTradeStrategy
+- [ ] 2767_Ambush — AmbushStrategy
+- [ ] 2768_SAR_RSI_MTS — SarRsiMtsStrategy
+- [ ] 2769_EMA_Cross_Contest_Hedged — EmaCrossContestHedgedStrategy
+- [ ] 2770_Trend_Me_Leave_Me — TrendMeLeaveMeStrategy
+- [ ] 2771_Trailing_Stop_And_Take — TrailingStopAndTakeStrategy
+- [ ] 2772_Invest_System_45 — InvestSystem45Strategy
+- [ ] 2773_Channels_Envelope_Cross — ChannelsEnvelopeCrossStrategy
+- [ ] 2774_MACD_Simple_Reshetov — MacdSimpleReshetovStrategy
+- [ ] 2775_Pipsover_Chaikin_Hedge — PipsoverChaikinHedgeStrategy
+- [ ] 2776_CH2010_Structure — Ch2010StructureStrategy
+- [ ] 2777_N_Candles_v6 — NCandlesV6Strategy
+- [ ] 2779_MACD_EA — MacdEaStrategy
+- [ ] 2780_Patterns_EA — PatternsEaStrategy
+- [ ] 2781_Open_Time_Two_Sessions — OpenTimeTwoStrategy
+- [ ] 2782_Serial_MA_Swing — SerialMASwingStrategy
+- [ ] 2783_Blau_TStoch_Indicator — BlauTStochIndicatorStrategy
+- [ ] 2784_MA_Crossover — MaCrossoverMultiTimeframeStrategy
+- [ ] 2785_Fractured_Fractals — FracturedFractalsStrategy
+- [ ] 2786_BHS_System — BhsSystemStrategy
+- [ ] 2787_Blau_SM_Stochastic — BlauSmStochasticStrategy
+- [ ] 2788_Ichimoku_Barabashkakvn — IchimokuBarabashkakvnStrategy
+- [ ] 2789_Hans123_Trader — Hans123TraderStrategy
+- [ ] 2790_AlexavSpeedUpM1 — AlexavSpeedUpM1Strategy
+- [ ] 2791_Cross_Line_Trader — CrossLineTraderStrategy
+- [ ] 2792_FarhadCrab1 — FarhadCrab1Strategy
+- [ ] 2793_Trend_RDS — TrendRdsStrategy
+- [ ] 2794_Aeron_JJN_Scalper_EA — AeronJjnScalperEaStrategy
+- [ ] 2795_Two_MA_RSI — TwoMaRsiStrategy
+- [ ] 2796_Parabolic_Trailing_Stop — ParabolicTrailingStopStrategy
+- [ ] 2797_SV_Daily_Breakout — SvDailyBreakoutStrategy
+- [ ] 2798_Improve_MA_RSI_Hedge — ImproveMaRsiHedgeStrategy
+- [ ] 2799_MACD_Multi_Timeframe_Expert — MacdMultiTimeframeExpertStrategy
+- [ ] 2800_CoensioTrader1V06 — CoensioTrader1V06Strategy
+- [ ] 2801_Martingale_Bone_Crusher — MartingaleBoneCrusherStrategy
+- [ ] 2802_Zone_Recovery_Area — ZoneRecoveryAreaStrategy
+- [ ] 2804_ADX_Expert — AdxExpertStrategy
+- [ ] 2805_Channel_EA_Limits — ChannelEaLimitsStrategy
+- [ ] 2806_Blau_TS_Stochastic — BlauTsStochasticStrategy
+- [ ] 2807_Bollinger_Bands_N_Positions_V2 — BollingerBandsNPositionsV2Strategy
+- [ ] 2808_Multi_Pair_Closer — MultiPairCloserStrategy
+- [ ] 2809_Hans123_Trader_v2 — Hans123TraderV2Strategy
+- [ ] 2810_Crossing_of_two_iMA_v2 — CrossingOfTwoIMaV2Strategy
+- [ ] 2811_UniversalTrailingManager — UniversalTrailingManagerStrategy
+- [ ] 2812_Donchain_Counter — DonchainCounterStrategy
+- [ ] 2813_FuturesPortfolioControlExpiration — FuturesPortfolioControlExpirationStrategy
+- [ ] 2814_Maximus_VX_Lite — MaximusVXLiteStrategy
+- [ ] 2815_Poker_Show — PokerShowStrategy
+- [ ] 2816_True_Sort_Trend — TrueSortTrendStrategy
+- [ ] 2817_EMA_WMA_Contrarian — EmaWmaContrarianStrategy
+- [ ] 2818_ChannelEA2 — ChannelEa2Strategy
+- [ ] 2819_Small_Inside_Bar — SmallInsideBarStrategy
+- [ ] 2820_NCandlesSequence_Streak — NCandlesSequenceStreakStrategy
+- [ ] 2821_Price_Impulse — PriceImpulseStrategy
+- [ ] 2822_FX_CHAOS_SCALP — FxChaosScalpStrategy
+- [ ] 2823_Momentum_M15 — MomentumM15Strategy
+- [ ] 2824_Brandy — BrandyStrategy
+- [ ] 2825_Firebird_Channel_Averaging — FirebirdChannelAveragingStrategy
+- [ ] 2826_Blau_Ergodic — BlauErgodicStrategy
+- [ ] 2827_Absorption — AbsorptionStrategy
+- [ ] 2828_Gold_Warrior02b — GoldWarrior02bStrategy
+- [ ] 2829_Doji_Arrows — DojiArrowsStrategy
+- [ ] 2830_BSS_Triple_EMA_Separation — BssTripleEmaSeparationStrategy
+- [ ] 2831_VR_Moving_Distance — VrMovingDistanceStrategy
+- [ ] 2832_Universal_MA_Cross — UniversalMaCrossStrategy
+- [ ] 2833_EAMovingAverage — EaMovingAverageStrategy
+- [ ] 2835_Exp_Sar_Tm_Plus — ExpSarTmPlusStrategy
+- [ ] 2836_Amstell_Grid — AmstellGridStrategy
+- [ ] 2838_Breakeven_Trailing_Stop_Tick — BreakevenTrailingStopTickStrategy
+- [ ] 2839_E_News_Lucky — ENewsLuckyStrategy
+- [ ] 2841_Static_Arrow_EA — StaticArrowEaStrategy
+- [ ] 2842_Binary_Option_Symbol_Scanner — BinaryOptionSymbolScannerStrategy
+- [ ] 2844_Timed_Buy_Order — TimedBuyOrderStrategy
+- [ ] 2845_KWAN_NRP — ExpKwanNrpStrategy
+- [ ] 2846_PLC — PlcStrategy
+- [ ] 2847_Kwan_Ccc — KwanCccStrategy
+- [ ] 2848_Kwan_Rdp — KwanRdpStrategy
+- [ ] 2849_Spasm — SpasmStrategy
+- [ ] 2850_AO_Lightning — AoLightningStrategy
+- [ ] 2851_Expotest — ExpotestStrategy
+- [ ] 2852_Surefirething — SurefirethingStrategy
+- [ ] 2853_AlliHeik — AlliHeikStrategy
+- [ ] 2854_Rsi_Bollinger_Bands_Ea — RsiBollingerBandsEaStrategy
+- [ ] 2855_NeuroNirvaman — NeuroNirvamanStrategy
+- [ ] 2856_Rollback_Rebound — RollbackReboundStrategy
+- [ ] 2857_Exp_2XMA_Ichimoku_Oscillator — Exp2XmaIchimokuOscillatorStrategy
+- [ ] 2858_XRSIDeMarker_Histogram — XrsidDeMarkerHistogramStrategy
+- [ ] 2859_Average_Change_Candle — AverageChangeCandleStrategy
+- [ ] 2860_Bands_Pending_Breakout — BandsPendingBreakoutStrategy
+- [ ] 2861_Martingale_MA_Breakout — MartingaleMaBreakoutStrategy
+- [ ] 2862_AIS2_Trading_Robot — Ais2TradingRobotStrategy
+- [ ] 2863_Lock — LockStrategy
+- [ ] 2864_Absolutely_No_Lag_LWMA — AbsolutelyNoLagLwmaStrategy
+- [ ] 2865_Night_Flat_Trade — NightFlatTradeStrategy
+- [ ] 2866_Executor_Candles — ExecutorCandlesStrategy
+- [ ] 2867_MACD_and_SAR — MacdAndSarStrategy
+- [ ] 2868_ATR_Normalize_Histogram — AtrNormalizeHistogramStrategy
+- [ ] 2869_Coin_Flip_Martingale — CoinFlipMartingaleStrategy
+- [ ] 2870_Binario — BinarioStrategy
+- [ ] 2872_Trading_Boxing — TradingBoxingStrategy
+- [ ] 2873_BrainTrend2_V2_Duplex — BrainTrend2V2DuplexStrategy
+- [ ] 2874_Deep_Drawdown_MA — DeepDrawdownMaStrategy
+- [ ] 2875_Previous_Candle_Breakdown — PreviousCandleBreakdownStrategy
+- [ ] 2876_Close_By_Equity_Percent_Lock — EquityPercentLockStrategy
+- [ ] 2877_EA_Stochastic — EaStochasticStrategy
+- [ ] 2878_Martingale_VI_Hybrid — MartingaleViHybridStrategy
+- [ ] 2879_SilverTrend_CrazyChart — SilverTrendCrazyChartStrategy
+- [ ] 2880_Two_MA_One_RSI — TwoMaOneRsiStrategy
+- [ ] 2881_On_Tick_Market_Watch — OnTickMarketWatchStrategy
+- [ ] 2882_Exp_CandlesticksBW_Tm — ExpCandlesticksBwTimeStrategy
+- [ ] 2883_Interceptor — InterceptorStrategy
+- [ ] 2884_SilverTrend_Duplex — SilverTrendDuplexStrategy
+- [ ] 2885_Exp_Sinewave2_X2 — ExpSinewave2X2Strategy
+- [ ] 2887_Renko_Level — RenkoLevelStrategy
+- [ ] 2887_Renko_Level_EA — RenkoLevelEaStrategy
+- [ ] 2888_Exp_ColorX2MA_X2 — ExpColorX2MaX2Strategy
+- [ ] 2889_BlauErgodicMDITime — BlauErgodicMdiTimeStrategy
+- [ ] 2890_Blau_TVI_Timed_Reversal — BlauTviTimedReversalStrategy
+- [ ] 2891_FullDump_BBands_RSI — FullDumpBbRsiStrategy
+- [ ] 2892_UltraAbsolutelyNoLagLwma — UltraAbsolutelyNoLagLwmaStrategy
+- [ ] 2893_Volume_Trader — VolumeTraderStrategy
+- [ ] 2894_Color_X_Derivative — ColorXDerivativeStrategy
+- [ ] 2895_ExFractals — ExFractalsStrategy
+- [ ] 2896_WAMI_Cloud_X2 — WamiCloudX2Strategy
+- [ ] 2897_Caudate_X_Period_Candle_TM_Plus — CaudateXPeriodCandleTmPlusStrategy
+- [ ] 2898_Exp_XPeriodCandle — ExpXPeriodCandleStrategy
+- [ ] 2900_Area_MACD — AreaMacdStrategy
+- [ ] 2901_Exp_XPeriodCandle_X2 — ExpXPeriodCandleX2Strategy
+- [ ] 2902_Candle_Shadows_V1 — CandleShadowsV1Strategy
+- [ ] 2903_Alexav_D1_Profit_GBPUSD — AlexavD1ProfitGbpUsdStrategy
+- [ ] 2904_BrainTrend2_AbsolutelyNoLagLwma — BrainTrend2AbsolutelyNoLagLwmaStrategy
+- [ ] 2905_SilverTrend_ColorJFatl_Digit — SilverTrendColorJFatlDigitStrategy
+- [ ] 2906_BykovTrend_ColorX2MA — BykovTrendColorX2MaStrategy
+- [ ] 2907_CCFp_Currency_Strength — CcfpCurrencyStrengthStrategy
+- [ ] 2908_Auto_ADX — AutoAdxStrategy
+- [ ] 2909_Bollinger_Band_Two_MA_ZigZag — BollingerBandTwoMaZigZagStrategy
+- [ ] 2910_Urdala_Trol — UrdalaTrolStrategy
+- [ ] 2911_Martingail_Expert — MartingailExpertStrategy
+- [ ] 2912_Global_Stop_Loss_Time — GlobalStopLossTimeStrategy
+- [ ] 2913_TakeProfitTimeGuard — TakeProfitTimeGuardStrategy
+- [ ] 2914_Global_Stop_Timer — GlobalStopTimerStrategy
+- [ ] 2915_AOCCI — AocciStrategy
+- [ ] 2916_Clouds_Trade_2 — CloudsTrade2Strategy
+- [ ] 2917_BykovTrend_ColorX2MA_MMRec — BykovTrendColorX2MaMmRecStrategy
+- [ ] 2918_SilverTrendColorJFatlDigitMMRec — SilverTrendColorJfatlDigitMmrecStrategy
+- [ ] 2919_Virtual_Trailing_Stop_Level1 — VirtualTrailingStopLevel1Strategy
+- [ ] 2920_BrainTrend2_AbsolutelyNoLagLwma_MMRec — BrainTrend2AbsolutelyNoLagLwmaMmrecStrategy
+- [ ] 2921_Simple_Pivot — SimplePivotStrategy
+- [ ] 2922_CloseProfit_v2 — CloseProfitV2Strategy
+- [ ] 2923_Arttrader_v1_5 — ArttraderV15Strategy
+- [ ] 2924_MostasHar15_Pivot — MostasHar15PivotStrategy
+- [ ] 2925_Twenty_200_Pips — Twenty200PipsStrategy
+- [ ] 2926_ColorJFatl_Digit_NN3_MMRec — ColorJFatlDigitNn3MmRecStrategy
+- [ ] 2927_ColorX2MA_Digit_NN3_MMRec — ColorX2MaDigitNn3MmrecStrategy
+- [ ] 2928_OverHedgeV2 — OverHedgeV2Strategy
+- [ ] 2929_Absolutely_NoLag_Lwma_Digit_MMRec — AbsolutelyNoLagLwmaDigitMmRecStrategy
+- [ ] 2930_Ang_Zad_C_Time_MM_Recovery — AngZadCTimeMMRecoveryStrategy
+- [ ] 2931_Return — ReturnStrategy
+- [ ] 2932_ZigZag_EA — ZigZagEAStrategy
+- [ ] 2933_Breakdown_Pending_Stop — BreakdownPendingStopStrategy
+- [ ] 2934_Triple_SMA_Spread — TripleSmaSpreadStrategy
+- [ ] 2935_One_MA_Channel_Breakout — OneMaChannelBreakoutStrategy
+- [ ] 2936_MCM_Control_Panel — McmControlPanelStrategy
+- [ ] 2937_CCI_and_Martin — CCIAndMartinStrategy
+- [ ] 2938_Crossing_Moving_Average — CrossingMovingAverageStrategy
+- [ ] 2939_Separate_Trade — SeparateTradeStrategy
+- [ ] 2940_XPeriodCandleSystem_Tm_Plus — XPeriodCandleSystemTmPlusStrategy
+- [ ] 2941_MACD_Sample_Trend_Filter — MacdSampleTrendFilterStrategy
+- [ ] 2942_AbsolutelyNoLagLwma_Range_Channel_Tm_Plus — AbsolutelyNoLagLwmaRangeChannelTmPlusStrategy
+- [ ] 2943_CandleStop_System_Tm_Plus — CandleStopSystemTmPlusStrategy
+- [ ] 2944_Rj_SlidingRange_Digit_System_Tm_Plus — ExpRjSlidingRangeRjDigitSystemTmPlusStrategy
+- [ ] 2945_Exp_Dema_Range_Channel_Tm_Plus — ExpDemaRangeChannelTmPlusStrategy
+- [ ] 2946_Exp_T3_TRIX — ExpT3TrixStrategy
+- [ ] 2947_Market_Capture — MarketCaptureStrategy
+- [ ] 2948_Exp_RSIOMA_V2 — ExpRsiomaV2Strategy
+- [ ] 2949_Exp_Digital_MACD — ExpDigitalMacdStrategy
+- [ ] 2950_GBP_9AM_Breakout — Gbp9AmBreakoutStrategy
+- [ ] 2951_Open_Oscillator_Cloud_MMRec — OpenOscillatorCloudMmrecStrategy
+- [ ] 2952_Wajdyss_Ichimoku_Candle_MMRec — WajdyssIchimokuCandleMmrecStrategy
+- [ ] 2953_Freeman — FreemanStrategy
+- [ ] 2954_Gaps — GapsStrategy
+- [ ] 2955_MARSIEA — MaRsiEaStrategy
+- [ ] 2956_Exp_XWAMI_MMRec — ExpXwamiMmRecStrategy
+- [ ] 2957_Sidus_Alligator — SidusAlligatorStrategy
+- [ ] 2958_Dematus — DematusStrategy
+- [ ] 2959_AltrTrend_Signal — AltrTrendSignalStrategy
+- [ ] 2960_OHLC_Check — OhlcCheckStrategy
+- [ ] 2961_XAng_Zad_C_Tm_MMRec — XAngZadCTmMmRecStrategy
+- [ ] 2962_Xwami_MultiLayer_Mmrec — XwamiMultiLayerMmrecStrategy
+- [ ] 2963_Expert_Ichimoku — ExpertIchimokuStrategy
+- [ ] 2964_1H_EUR_USD — OneHourEurUsdStrategy
+- [ ] 2965_Forex_Fraus_M1 — ForexFrausM1Strategy
+- [ ] 2966_Xit_Three_Ma_Cross — XitThreeMaCrossStrategy
+- [ ] 2967_Bw_Wiseman_1 — BwWiseman1Strategy
+- [ ] 2968_ColorXPWMA_Digit_MMRec — ColorXpWmaDigitMmRecStrategy
+- [ ] 2969_Avalanche_AV — AvalancheAvStrategy
+- [ ] 2970_Above_Below_MA — AboveBelowMaStrategy
+- [ ] 2971_55_MA_Bar_Comparison — FiftyFiveMaBarComparisonStrategy
+- [ ] 2972_RSI_Expert_Breakout — RsiExpertBreakoutStrategy
+- [ ] 2973_Renko_Fractals_Grid — RenkoFractalsGridStrategy
+- [ ] 2974_DLMv_FX_Fish_Grid — DlmvFxFishGridStrategy
+- [ ] 2975_NextBar_Momentum — NextBarMomentumStrategy
+- [ ] 2976_Ultra_MFI_MMRec — UltraMfiMmRecStrategy
+- [ ] 2977_ColorXPWMA_Digit_MTF — ColorXpWmaDigitMultiTimeframeStrategy
+- [ ] 2978_FatPanel_Visual_Builder — FatPanelVisualBuilderStrategy
+- [ ] 2979_Exp_Trend_Intensity_Index — ExpTrendIntensityIndexStrategy
+- [ ] 2980_Exp_Trading_Channel_Index — ExpTradingChannelIndexStrategy
+- [ ] 2981_Slow_Stochastic_Mode — SlowStochasticModeStrategy
+- [ ] 2982_Russian20_Momentum_MA — Russian20MomentumMaStrategy
+- [ ] 2983_AnyRange_Cloud_Tail_System_Tm_Plus — AnyRangeCloudTailSystemTmPlusStrategy
+- [ ] 2984_Gordago_EA — GordagoEaStrategy
+- [ ] 2985_Iin_MA_Signal — IinMaSignalStrategy
+- [ ] 2986_The_20s_Breakout — The20sBreakoutStrategy
+- [ ] 2987_Renko_Chart — RenkoChartStrategy
+- [ ] 2988_Flat_Trend_EA — FlatTrendEaStrategy
+- [ ] 2989_Trendline_Cross_Alert — TrendlineCrossAlertStrategy
+- [ ] 2990_SSB5_123 — Ssb5123Strategy
+- [ ] 2991_Pending_Orders_By_Time — PendingOrdersByTime2Strategy
+- [ ] 2992_XCCI_Histogram_Vol — XcciHistogramVolStrategy
+- [ ] 2993_Exp_XRSI_Histogram_Vol — ExpXrsiHistogramVolStrategy
+- [ ] 2994_Ravi_AO — RaviAoStrategy
+- [ ] 2995_VR_BUCH — VrBuchStrategy
+- [ ] 2996_ExpIinMASignalMMRec — ExpIinMaSignalMmrecStrategy
+- [ ] 2997_AMA_Trader — AmaTraderStrategy
+- [ ] 2998_Basic_CCI_RSI — BasicCciRsiStrategy
+- [ ] 2999_XRSI_Histogram_Vol_Direct — XrsiHistogramVolDirectStrategy
+- [ ] 3000_XCCI_Histogram_Vol_Direct — XcciHistogramVolDirectStrategy
+- [ ] 3001_Previous_Candle_Breakdown_2 — PreviousCandleBreakdown2Strategy
+- [ ] 3002_TrendManager_TM_Plus — TrendManagerTmPlusStrategy
+- [ ] 3003_EInTradePanel — EInTradePanelStrategy
+- [ ] 3004_Roman_Direction_Flip — RomanDirectionFlipStrategy
+- [ ] 3005_TP_SL_Trailing — TpSlTrailingStrategy
+- [ ] 3006_Breadandbutter2_ADX_AMA — Breadandbutter2AdxAmaStrategy
+- [ ] 3007_NeuroNirvamanEA_2 — NeuroNirvamanEa2Strategy
+- [ ] 3008_OCO_Pending_Orders — OcoPendingOrdersStrategy
+- [ ] 3009_Bulls_Bears_Power_Average — BullsBearsPowerAverageStrategy
+- [ ] 3010_Daydream_Channel_Breakout — DaydreamChannelBreakoutStrategy
+- [ ] 3011_JS_MA_SAR_Trades — JsMaSarTradesStrategy
+- [ ] 3013_Para_Retrace — ParaRetraceStrategy
+- [ ] 3014_ASCV_BrainTrend_Signal — AscvBrainTrendSignalStrategy
+- [ ] 3015_XDeMarker_Histogram_Vol — XDeMarkerHistogramVolStrategy
+- [ ] 3016_ProffessorV3 — ProffessorV3Strategy
+- [ ] 3017_Sensitive_MACD_Trailing — SensitiveMacdTrailingStrategy
+- [ ] 3018_Ketty_Channel_Breakout — KettyChannelBreakoutStrategy
+- [ ] 3019_TradeXpert_Manual_Trading_Panel — TradeXpertManualTradingPanelStrategy
+- [ ] 3020_Sprut_Pending_Order_Grid — SprutPendingOrderGridStrategy
+- [ ] 3021_Exp_MA_Rounding_Candle_MMRec — ExpMaRoundingCandleMmrecStrategy
+- [ ] 3022_Exp_XHullTrend_Digit — ExpXHullTrendDigitStrategy
+- [ ] 3023_Exp_SSL_NRTR_Tm_Plus — ExpSslNrtrTmPlusStrategy
+- [ ] 3024_Tunnel_Method — TunnelMethodStrategy
+- [ ] 3025_One_Two_Three — OneTwoThreeStrategy
+- [ ] 3026_EA_Close — EaCloseStrategy
+- [ ] 3027_Rollback_System — RollbackSystemStrategy
+- [ ] 3028_Previous_Candle_Breakdown_Levels — PreviousCandleBreakdownLevelsStrategy
+- [ ] 3029_Trade_Control_Panel — ControlPanelStrategy
+- [ ] 3030_Color_JJRSX_Trend — ColorJjrsxTrendStrategy
+- [ ] 3031_ColorSchaffJCCXTrendCycle_MMRec_Duplex — ColorSchaffJccxTrendCycleMmrecDuplexStrategy
+- [ ] 3032_Color_Schaff_JJRSX_MMRec_Duplex — ColorSchaffJjrsxMmrecDuplexStrategy
+- [ ] 3033_XDeMarker_Histogram_Vol_Direct — XDeMarkerHistogramVolDirectStrategy
+- [ ] 3034_Freeman_ATR_MA_RSI_Grid — FreemanAtrMaRsiGridStrategy
+- [ ] 3035_Rsi_Cci_Divergence — RsiCciDivergenceStrategy
+- [ ] 3036_Fibonacci_Retracement_Momentum — FibonacciRetracementMomentumStrategy
+- [ ] 3037_Pinbar_Reversal_2 — PinbarReversalStrategy
+- [ ] 3038_Bollinger_Band_Squeeze_Breakout — BollingerBandSqueezeBreakoutStrategy
+- [ ] 3039_OHLC_Stochastic — OhlcStochasticStrategy
+- [ ] 3040_Exp_Skyscraper_Fix_Duplex — ExpSkyscraperFixDuplexStrategy
+- [ ] 3041_Virtual_TradePad_Signal — VirtualTradePadSignalStrategy
+- [ ] 3042_JFatl_Candle_MMRec — JfatlCandleMmRecStrategy
+- [ ] 3043_Technical_Trader — TechnicalTraderStrategy
+- [ ] 3044_Donchian_Channels — DonchianChannelsStrategy
+- [ ] 3045_Pull_Back — PullBackStrategy
+- [ ] 3046_Exp_X2MACandle_MMRec — ExpX2MaCandleMmRecStrategy
+- [ ] 3047_Little_EA — LittleEaStrategy
+- [ ] 3048_Ichimoku_Retracement — IchimokuRetracementStrategy
+- [ ] 3049_Signal_Count_With_Array — SignalCountWithArrayStrategy
+- [ ] 3050_Engulfing_Momentum_Filter — EngulfingMomentumStrategy
+- [ ] 3051_Exp_Skyscraper_Fix_ColorAML — ExpSkyscraperFixColorAmlStrategy
+- [ ] 3052_Trend_Finder — TrendFinderStrategy
+- [ ] 3053_MA_Envelopes — MaEnvelopesStrategy
+- [ ] 3054_Exp_FisherCG_Oscillator — ExpFisherCgOscillatorStrategy
+- [ ] 3055_Exp_Skyscraper_Fix_ColorAML_MMRec — ExpSkyscraperFixColorAmlMmrecStrategy
+- [ ] 3056_BARS_Alligator — BarsAlligatorStrategy
+- [ ] 3057_Exp_Skyscraper_Fix_ColorAML_X2MACandle_MMRec — ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy
+- [ ] 3058_Exp_BrainTrend2_AbsolutelyNoLagLwma_X2MACandle_MMRec — ExpBrainTrend2AbsolutelyNoLagLwmaX2MACandleMmrecStrategy
+- [ ] 3059_Volatility_HFT_EA — VolatilityHftEaStrategy
+- [ ] 3060_ReInitChart — ReInitChartStrategy
+- [ ] 3061_Autotrader_Momentum — AutotraderMomentumStrategy
+- [ ] 3062_Time_Zone_Pivots_Open_System — TimeZonePivotsOpenSystemStrategy
+- [ ] 3063_RSI_Expert_TrendFilter — RsiExpertTrendFilterStrategy
+- [ ] 3064_Two_PerBar — TwoPerBarStrategy
+- [ ] 3065_Probe — ProbeStrategy
+- [ ] 3066_Hans_Indicator_Cloud_System — HansIndicatorCloudSystemStrategy
+- [ ] 3067_Exp_Hans_Indicator_Cloud_System_Tm_Plus — ExpHansIndicatorCloudSystemTmPlusStrategy
+- [ ] 3068_TimeZonePivotsOpenSystem_Tm_Plus — ExpTimeZonePivotsOpenSystemTmPlusStrategy
+- [ ] 3069_Exp_XWPR_Histogram_Vol — ExpXwprHistogramVolStrategy
+- [ ] 3070_XWPR_Histogram_Vol_Direct — ExpXwprHistogramVolDirectStrategy
+- [ ] 3071_Vortex_Indicator_Duplex — VortexIndicatorDuplexStrategy
+- [ ] 3072_ColorMetroDuplex — ColorMetroDuplexStrategy
+- [ ] 3073_Color_Ma_Rsi_Trigger_Duplex — ColorMaRsiTriggerDuplexStrategy
+- [ ] 3074_Adaptive_Renko_Duplex — AdaptiveRenkoDuplexStrategy
+- [ ] 3075_Exp_UltraFatl_Duplex — ExpUltraFatlDuplexStrategy
+- [ ] 3076_Three_Indicators — ThreeIndicatorsStrategy
+- [ ] 3077_RNNProbability — RnnProbabilityStrategy
+- [ ] 3078_MAMy_Expert — MamyExpertStrategy
+- [ ] 3079_Constituents_EA — ConstituentsEAStrategy
+- [ ] 3080_Exp_XBullsBearsEyes_Vol — ExpXBullsBearsEyesVolStrategy
+- [ ] 3081_Exp_XBullsBearsEyes_Vol_Direct — ExpXBullsBearsEyesVolDirectStrategy
+- [ ] 3082_VR_Steals — VrStealsStrategy
+- [ ] 3083_Executor_AO — ExecutorAoStrategy
+- [ ] 3084_Starter — StarterStrategy
+- [ ] 3085_Smoothing_Average_Crossover — SmoothingAverageCrossoverStrategy
+- [ ] 3086_Tunnel_Gen4 — TunnelGen4Strategy
+- [ ] 3087_RSI_RFTL — RsiRftlStrategy
+- [ ] 3088_Cm_Panel — CmPanelStrategy
+- [ ] 3089_ScalpWiz_9001 — ScalpWiz9001Strategy
+- [ ] 3090_Perceptron_Mult — PerceptronMultStrategy
+- [ ] 3091_Extreme_EA — ExtremeEaStrategy
+- [ ] 3092_FxNode_Safe_Tunnel — FxNodeSafeTunnelStrategy
+- [ ] 3093_NRTR_Revers — NrtrReversStrategy
+- [ ] 3094_XD_Range_Switch — XdRangeSwitchStrategy
+- [ ] 3095_Volatility_Pivot — VolatilityPivotStrategy
+- [ ] 3096_Alligator_Simple — AlligatorSimpleStrategy
+- [ ] 3097_Fluctuate — FluctuateStrategy
+- [ ] 3098_Doubler — DoublerStrategy
+- [ ] 3099_Hedge_Any_Positions — HedgeAnyPositionsStrategy
+- [ ] 3100_Close_All_Positions — CloseAllPositionsStrategy
+- [ ] 3101_5Min_Scalping — FiveMinScalpingStrategy
+- [ ] 3102_15M_Scalper — FifteenMinuteScalperStrategy
+- [ ] 3103_Adx_Ea — AdxEaStrategy
+- [ ] 3104_MA_MACD_Position_Averaging — MaMacdPositionAveragingStrategy
+- [ ] 3105_One_Minute_Scalper — OneMinuteScalperStrategy
+- [ ] 3106_MA_MACD_Position_Averaging_v2 — MaMacdPositionAveragingV2Strategy
+- [ ] 3107_Exp_i_KlPrice_Vol — ExpIKlPriceVolStrategy
+- [ ] 3108_Bago_EA — BagoEaStrategy
+- [ ] 3109_i_KlPrice_Vol_Direct — ExpIKlPriceVolDirectStrategy
+- [ ] 3110_BitexOneMarketMaker — BitexOneMarketMakerStrategy
+- [ ] 3111_Exp_AFIRMA — ExpAfirmaStrategy
+- [ ] 3112_Fine_Tuning_MA_Candle — ExpFineTuningMaCandleStrategy
+- [ ] 3113_Exp_RJTX_Matches_Smoothed_Duplex — ExpRjtxMatchesSmoothedDuplexStrategy
+- [ ] 3114_LBS — LbsStrategy
+- [ ] 3115_Precipice — PrecipiceStrategy
+- [ ] 3116_FineTuning_MA_Candle_Duplex — FineTuningMaCandleDuplexStrategy
+- [ ] 3117_Lego_EA — LegoEaStrategy
+- [ ] 3118_GlamTrader — GlamTraderStrategy
+- [ ] 3119_Exp_XFisher_org_v1 — ExpXFisherOrgV1Strategy
+- [ ] 3120_Contrarian_trade_MA_Monday — ContrarianTradeMaMondayStrategy
+- [ ] 3121_Bruno — BrunoStrategy
+- [ ] 3122_Vlado — VladoStrategy
+- [ ] 3123_Secwenta_MultiBar_Signals — SecwentaMultiBarSignalsStrategy
+- [ ] 3124_Tengri — TengriStrategy
+- [ ] 3125_Pendulum — PendulumStrategy
+- [ ] 3126_BADX_ADX_Bollinger — BadxAdxBollingerStrategy
+- [ ] 3127_Breakeven_V3 — BreakevenV3Strategy
+- [ ] 3128_Parabolic_SAR_EA — ParabolicSarEaStrategy
+- [ ] 3129_Simple_EA_MA_plus_MACD — SimpleEaMaPlusMacdStrategy
+- [ ] 3130_Exp_ColorTSI_Oscillator — ExpColorTsiOscillatorStrategy
+- [ ] 3131_FT_CCI_MA — FtCciMaStrategy
+- [ ] 3132_Bronze_Warrioir — BronzeWarrioirStrategy
+- [ ] 3133_Executer_AC — ExecuterAcStrategy
+- [ ] 3134_Open_Close — OpenClose23090Strategy
+- [ ] 3135_AdvancedEAPanel — AdvancedEaPanelStrategy
+- [ ] 3136_E-Friday — EFridayStrategy
+- [ ] 3137_Stochastic_CG_Oscillator — StochasticCgOscillatorStrategy
+- [ ] 3138_Flat_Channel_Breakout — FlatChannelBreakoutStrategy
+- [ ] 3139_Exp_Highs_Lows_Signal — ExpHighsLowsSignalStrategy
+- [ ] 3140_Exp_Slow_Stoch_Duplex — ExpSlowStochDuplexStrategy
+- [ ] 3141_RSI_EA_v2 — RsiEaV2Strategy
+- [ ] 3142_Yesterday_Today — YesterdayTodayStrategy
+- [ ] 3143_Vortex_Indicator_MMRec_Duplex — VortexIndicatorMmrecDuplexStrategy
+- [ ] 3145_Day_Trading_PAMXA — DayTradingPamxaStrategy
+- [ ] 3146_Exp_ColorMETRO_MMRec_Duplex — ExpColorMetroMmrecDuplexStrategy
+- [ ] 3147_MACD_No_Sample — MacdNoSampleStrategy
+- [ ] 3148_Gold_Dust — GoldDustStrategy
+- [ ] 3149_Gap_DM — GapDMStrategy
+- [ ] 3150_BullsBearsEyes_EA — BullsBearsEyesEaStrategy
+- [ ] 3151_EMALWMARSI — EmaLwmaRsiStrategy
+- [ ] 3152_Macd_1_Min_Scalper — Macd1MinScalperStrategy
+- [ ] 3153_Puria_Method — PuriaMethodStrategy
+- [ ] 3154_TDS_Global_Pending — TdsGlobalPendingStrategy
+- [ ] 3155_TenPips_Momentum — TenPipsMomentumStrategy
+- [ ] 3156_SR_Rate_Indicator — SrRateIndicatorStrategy
+- [ ] 3157_BB_Swing — BbSwingStrategy
+- [ ] 3158_Cycle_Market_Order — CycleMarketOrderStrategy
+- [ ] 3159_Exp_SpearmanRankCorrelation_Histogram — ExpSpearmanRankCorrelationHistogramStrategy
+- [ ] 3160_Cidomo — CidomoStrategy
+- [ ] 3161_ColorMaRsiTrigger_MMRec_Duplex — ColorMaRsiTriggerMmRecDuplexStrategy
+- [ ] 3162_Hoop_Master — HoopMasterStrategy
+- [ ] 3163_FourHour_Swing — FourHourSwingStrategy
+- [ ] 3164_Price_Action_Fractal — PriceActionFractalStrategy
+- [ ] 3165_Dynamic_Averaging — DynamicAveragingStrategy
+- [ ] 3166_MACD_Cleaner — MacdCleanerStrategy
+- [ ] 3167_Daily_Range — DailyRangeStrategy
+- [ ] 3168_Three_Neural_Networks — ThreeNeuralNetworksStrategy
+- [ ] 3169_DynamicRS_C — DynamicRsCStrategy
+- [ ] 3170_SpearmanRankCorrelationHistogramTimeWeekPeriod — SpearmanRankCorrelationHistogramTimeWeekPeriodStrategy
+- [ ] 3171_Vhf_Sliding_Windows — VhfSlidingWindowsStrategy
+- [ ] 3172_Hoop_Master_Breakout — HoopMasterBreakoutStrategy
+- [ ] 3173_Spreader — SpreaderStrategy
+- [ ] 3174_Three_Typical_Candles — ThreeTypicalCandlesStrategy
+- [ ] 3175_Exp_Adaptive_Renko_MMRec_Duplex — ExpAdaptiveRenkoMmrecDuplexStrategy
+- [ ] 3176_IMA_ISAR_EA — ImaIsarEaStrategy
+- [ ] 3177_iMAiStochasticCustom — IMAIStochasticCustomStrategy
+- [ ] 3178_FitFul_13 — FitFul13Strategy
+- [ ] 3179_iCCI_iRSI — IcciIrsiStrategy
+- [ ] 3180_Fraktrak_Xonax — FraktrakXonaxAdvancedStrategy
+- [ ] 3181_Three_Timeframes — ThreeTimeframesStrategy
+- [ ] 3183_ColorPEMA_Digit_Tm_Plus — ExpColorPemaDigitTmPlusStrategy
+- [ ] 3184_Exp_ColorPEMA_Digit_Tm_Plus_MMRec_Duplex — ExpColorPemaDigitTmPlusMmrecDuplexStrategy
+- [ ] 3185_Breakdown_Catcher — BreakdownCatcherStrategy
+- [ ] 3186_AutoSet_StopLoss_TakeProfit — AutoSetStopLossTakeProfitStrategy
+- [ ] 3187_Close_Panel — ClosePanelStrategy
+- [ ] 3188_Bill_Williams_Alligator — BillWilliamsAlligatorStrategy
+- [ ] 3189_Demarker_Martingale — DemarkerMartingaleStrategy
+- [ ] 3190_IchimokuMomentumMACD — IchimokuMomentumMacdStrategy
+- [ ] 3191_Stochastic_Momentum_Filter — StochasticMomentumFilterStrategy
+- [ ] 3192_JS_Signal_Baes — JsSignalBaesStrategy
+- [ ] 3193_We_Trust_Channel — WeTrustChannelStrategy
+- [ ] 3194_Starter_Triple_Stochastic — StarterTripleStochasticStrategy
+- [ ] 3195_Ingrit — IngritStrategy
+- [ ] 3197_555_Scalper — Scalper555Strategy
+- [ ] 3198_Hedger_Drawdown — HedgerDrawdownStrategy
+- [ ] 3199_BladeRunner — BladeRunnerStrategy
+- [ ] 3200_1H_Bollinger_Bands — OneHBollingerBandsStrategy
+- [ ] 3201_Ilan_IMA — IlanImaStrategy
+- [ ] 3202_Plan_X — PlanXStrategy
+- [ ] 3203_Horizontal_Line_Levels — HorizontalLineLevelsStrategy
+- [ ] 3204_Plateau — PlateauStrategy
+- [ ] 3205_Fractals_Martingale — FractalsMartingaleStrategy
+- [ ] 3206_Risk_Reward_Ratio — RiskRewardRatioStrategy
+- [ ] 3207_MATrend — MaTrendStrategy
+- [ ] 3209_ADX_MACD_Deev — AdxMacdDeevStrategy
+- [ ] 3210_Back_Kick — BackKickStrategy
+- [ ] 3211_MA_Trend_2 — MaTrend2Strategy
+- [ ] 3212_MaRobot — MaRobotStrategy
+- [ ] 3213_Accelerator_Trailing_TP_SL — AcceleratorTrailingTPSLStrategy
+- [ ] 3214_Hedging_Martingale — HedgingMartingaleStrategy
+- [ ] 3215_Crypto_Scalper — CryptoScalperStrategy
+- [ ] 3216_Trend_Is_Your_Friend — TrendIsYourFriendStrategy
+- [ ] 3217_Harami — HaramiStrategy
+- [ ] 3218_Buy_Sell_Stop_Buttons — BuySellStopButtonsStrategy
+- [ ] 3219_Exp_CronexMFI — ExpCronexMfiStrategy
+- [ ] 3220_Cronex_RSI — CronexRsiStrategy
+- [ ] 3221_Fractals_Alligator — FractalsAlligatorStrategy
+- [ ] 3222_OneHrStocTrader — OneHrStocTraderStrategy
+- [ ] 3223_Heikin_Ashi_Trader — HeikinAshiTraderStrategy
+- [ ] 3224_Cronex_AC — CronexAcStrategy
+- [ ] 3225_Exp_CronexAO — ExpCronexAOStrategy
+- [ ] 3226_Cronex_DeMarker — CronexDeMarkerStrategy
+- [ ] 3227_Random_Hedg — RandomHedgStrategy
+- [ ] 3229_Macd_Power — MacdPowerStrategy
+- [ ] 3230_Candle_Trailing_Stop — CandleTrailingStopStrategy
+- [ ] 3231_Exp_CronexChaikin — ExpCronexChaikinStrategy
+- [ ] 3232_The_Predator — ThePredatorStrategy
+- [ ] 3233_Auto_Adjusting — AutoAdjustingStrategy
+- [ ] 3234_Aroon_WPR_Crossover — AroonWprCrossoverStrategy
+- [ ] 3235_Three_Breaky — ThreeBreakyStrategy
+- [ ] 3236_2DLimits — TwoDLimitsStrategy
+- [ ] 3237_Stoch_Sell_Grid — StochSellStrategy
+- [ ] 3238_JK_Synchro — JkSynchroStrategy
+- [ ] 3239_Exp_XPVT — ExpXpvtStrategy
+- [ ] 3240_Exp_BlauHlm — ExpBlauHlmStrategy
+- [ ] 3241_Pure_Price_Action_Fractal — PurePriceActionFractalStrategy
+- [ ] 3242_Day_Trading_Trend_Pullback — DayTradingTrendPullbackStrategy
+- [ ] 3243_JBrainTrend1Stop — JBrainTrend1StopStrategy
+- [ ] 3244_Grr_Al_Breakout — GrrAlBreakoutStrategy
+- [ ] 3245_Trading_Criteria — TradingCriteriaStrategy
+- [ ] 3246_Ea_Vishal_Eurgbp_H4 — EaVishalEurgbpH4Strategy
+- [ ] 3247_Personal_Assistant_MNS — PersonalAssistantMnsStrategy
+- [ ] 3248_Linear_Regression_Channel — LinearRegressionChannelFibStrategy
+- [ ] 3249_800BB — EightHundredBbStrategy
+- [ ] 3250_Gann_Fan — GannFanStrategy
+- [ ] 3251_Andrews_Pitchfork — AndrewsPitchforkStrategy
+- [ ] 3252_Trend_Line — TrendLineStrategy
+- [ ] 3253_MultiTrader_Currency_Strength — MultiTraderStrategy
+- [ ] 3254_CrossoverMA — CrossoverMaStrategy
+- [ ] 3255_Fibo1 — Fibo1Strategy
+- [ ] 3256_FiboChannel_Line — FiboChannelLineStrategy
+- [ ] 3257_Gann_Line — GannLineStrategy
+- [ ] 3258_Standard_Deviation_Channel — StandardDeviationChannelStrategy
+- [ ] 3259_AeroSpine — AeroSpineStrategy
+- [ ] 3260_Fibo_Arc_Momentum — FiboArcMomentumStrategy
+- [ ] 3261_Explosion — ExplosionStrategy
+- [ ] 3262_ThreeEMA — ThreeEMAStrategy
+- [ ] 3263_Explosion_Range — ExplosionRangeExpansionStrategy
+- [ ] 3264_Reverse_Day_Fractal — ReverseDayFractalStrategy
+- [ ] 3265_Gann_Grid — GannGridStrategy
+- [ ] 3266_Killer_Sell_2_0 — KillerSell20Strategy
+- [ ] 3267_Parallax_Sell — ParallaxSellStrategy
+- [ ] 3268_RSI_Booster — RsiBoosterStrategy
+- [ ] 3269_Cycle_Lines — CycleLinesStrategy
+- [ ] 3271_BreakthroughVolatility — BreakthroughVolatilityStrategy
+- [ ] 3272_Fibonacci_Time_Zones — FibonacciTimeZonesStrategy
+- [ ] 3273_Equidistant_Channel — EquidistantChannelStrategy
+- [ ] 3274_Trend_Line_By_Angle — TrendLineByAngleStrategy
+- [ ] 3275_Triangle — TriangleStrategy
+- [ ] 3276_Lavika100 — Lavika100Strategy
+- [ ] 3277_ZeeZee_Level — ZeeZeeLevelStrategy
+- [ ] 3278_Eliot_Waves — EliotWavesStrategy
+- [ ] 3279_Eliot_Wave — EliotWaveStrategy
+- [ ] 3280_Envelopes_EA — EnvelopesEaStrategy
+- [ ] 3281_Micro_Trend_Breakouts — MicroTrendBreakoutsStrategy
+- [ ] 3282_Trend_Reversal — TrendReversalStrategy
+- [ ] 3283_Simple_2MA_I — Simple2MaIStrategy
+- [ ] 3284_Consolidation_Breakout — ConsolidationBreakoutStrategy
+- [ ] 3285_Zone_Recovery_Formula — ZoneRecoveryFormulaStrategy
+- [ ] 3286_Zone_Recovery_Button — ZoneRecoveryButtonStrategy
+- [ ] 3287_Macd_Secrets — MacdSecretsStrategy
+- [ ] 3288_Williams_AO_AC — WilliamsAoAcStrategy
+- [ ] 3289_Pending_Stop_Grid — PendingStopGridStrategy
+- [ ] 3290_Awesome_Osc_Trader — AwesomeOscTraderStrategy
+- [ ] 3291_TargetEA_Manager — TargetEaManagerStrategy
+- [ ] 3292_CloseDeleteEA — CloseDeleteEaStrategy
+- [ ] 3293_Check_Execution — CheckExecutionStrategy
+- [ ] 3294_HistoryInfoEA — HistoryInfoEaStrategy
+- [ ] 3295_Virtual_Profit_Loss_Trail — VirtualProfitLossTrailStrategy
+- [ ] 3296_ProfitLossTrail — ProfitLossTrailStrategy
+- [ ] 3297_ITrade — ITradeStrategy
+- [ ] 3298_CryptocurrencyFibonacciMAs — CryptocurrencyFibonacciMasStrategy
+- [ ] 3299_JB — JBStrategy
+- [ ] 3300_Crypto_SR — CryptoSRStrategy
+- [ ] 3301_Crypto_Analysis — CryptoAnalysisStrategy
+- [ ] 3302_GBPCHFDualMACDCorrelation — GbpChfStrategy
+- [ ] 3303_Crypto_Scalper_Momentum — CryptoScalperMomentumStrategy
+- [ ] 3304_GbpChf_Correlation — GbpChfCorrelationStrategy
+- [ ] 3305_MA_Crossover_ADX — MaCrossoverAdxStrategy
+- [ ] 3306_Cryptocurrency_Divergence — CryptocurrencyDivergenceStrategy
+- [ ] 3308_EurGbp_EA — EurGbpEaStrategy
+- [ ] 3309_Reversals_With_Pin_Bars — ReversalsWithPinBarsStrategy
+- [ ] 3310_Broadening_Top — BroadeningTopStrategy
+- [ ] 3311_Triple_Top_Triple_Bottom — TripleTopTripleBottomStrategy
+- [ ] 3312_Awesome_Oscillator_Trader — AwesomeOscillatorTraderStrategy
+- [ ] 3313_ZigZag_Climber — ZigZagClimberStrategy
+- [ ] 3314_Head_And_Shoulders — HeadAndShouldersStrategy
+- [ ] 3315_WedgePattern — WedgePatternStrategy
+- [ ] 3316_Crossover_2EMA — Crossover2EmaStrategy
+- [ ] 3317_Virtual_Robot — VirtualRobotStrategy
+- [ ] 3318_Trader_Tool_Manager — TraderToolEaStrategy
+- [ ] 3319_CorrTime — CorrTimeStrategy
+- [ ] 3320_TestMACD — TestMacdStrategy
+- [ ] 3321_Bull_Bear_Candle_Martingale — BullBearCandleMartingaleStrategy
+- [ ] 3322_Auto_Trading_Publish — AutoTradingPublishStrategy
+- [ ] 3323_Moving_Averages_Crossover — MovingAveragesCrossoverStrategy
+- [ ] 3324_RSI_Levels — RsiLevelsStrategy
+- [ ] 3325_ReversingMartingale — ReversingMartingaleStrategy
+- [ ] 3326_Fly_System_Scalp — FlySystemScalpStrategy
+- [ ] 3327_Sail_System_EA — SailSystemEaStrategy
+- [ ] 3328_ParabolicSarCross — ParabolicSarCrossStrategy
+- [ ] 3329_News_Release — NewsReleaseStrategy
+- [ ] 3330_Gridder_EA — GridderEaStrategy
+- [ ] 3331_Boring_EA2 — BoringEa2Strategy
+- [ ] 3332_Two_EMA_Intraday_Filter — TwoEmaIntradayFilterStrategy
+- [ ] 3333_Grid_Rebalance — GridRebalanceStrategy
+- [ ] 3334_Range_Breakout — RangeBreakoutStrategy
+- [ ] 3335_Double_Channel_EA — DoubleChannelEaStrategy
+- [ ] 3336_Follow_Line_Trend — FollowLineTrendStrategy
+- [ ] 3337_5Minutes_Scalping_EA_V11 — FiveMinutesScalpingEaV11Strategy
+- [ ] 3338_Sudoku_UI — SudokuUiStrategy
+- [ ] 3339_Compass_Line — CompassLineStrategy
+- [ ] 3340_Expert_Alligator — ExpertAlligatorStrategy
+- [ ] 3341_Histo_Scalper — HistoScalperStrategy
+- [ ] 3342_GridTemplate — GridTemplateStrategy
+- [ ] 3343_Basic_Rsi_EA_Template — BasicRsiEaTemplateStrategy
+- [ ] 3344_Expert_Candles — ExpertCandlesStrategy
+- [ ] 3346_ROC — RocStrategy
+- [ ] 3347_Martingale_Smart — MartingaleSmartStrategy
+- [ ] 3348_Smart_AC_Trader — SmartAcTraderStrategy
+- [ ] 3349_N_Trades_Per_Set_Martingale — NTradesPerSetMartingaleStrategy
+- [ ] 3350_Gonna_Scalp — GonnaScalpStrategy
+- [ ] 3351_Roulette_Game — RouletteGameStrategy
+- [ ] 3352_Tokyo_Session — TokyoSessionStrategy
+- [ ] 3353_Multi_Martin — MultiMartinStrategy
+- [ ] 3354_Couple_Hedge — CoupleHedgeStrategy
+- [ ] 3355_VirtPO_TestBed_Scalp — VirtPoTestBedScalpStrategy
+- [ ] 3356_FXF_Fast_In_Fast_Out — FxfFastInFastOutStrategy
+- [ ] 3358_VR_Smart_Grid_Lite — VrSmartGridLiteStrategy
+- [ ] 3359_VR_Smart_Grid_Lite_Averaging — VrSmartGridLiteAveragingStrategy
+- [ ] 3360_MACD_Sample_Hedging_Grid — MacdSampleHedgingGridStrategy
+- [ ] 3361_X_MAN — XManStrategy
+- [ ] 3362_Bobnaley — BobnaleyStrategy
+- [ ] 3363_Timer_EA — TimerEaStrategy
+- [ ] 3364_Testinator — TestinatorStrategy
+- [ ] 3365_FXF_Safe_Trend_Scalp_V1 — FXFSafeTrendScalpV1Strategy
+- [ ] 3366_Cross — CrossStrategy
+- [ ] 3367_Sync_Charts_Confirmation — SyncChartsConfirmationStrategy
+- [ ] 3368_Dynamic_Stop_Loss — DynamicStopLossStrategy
+- [ ] 3369_Swap_Status — SwapStatusStrategy
+- [ ] 3370_Rapid_Doji — RapidDojiStrategy
+- [ ] 3371_PricerEA — PricerEaStrategy
+- [ ] 3372_Basic_MA_Template — BasicMaTemplateStrategy
+- [ ] 3373_MelBar_Take325 — MelBarTake325Strategy
+- [ ] 3374_MelBar_EuroSwiss — MelBarEuroSwissStrategy
+- [ ] 3375_OnTick_Multisymbol — OnTickMultisymbolStrategy
+- [ ] 3376_Position_Size_Calculator — PositionSizeCalculatorStrategy
+- [ ] 3378_eKeyboardTrader — EKeyboardTraderStrategy
+- [ ] 3379_No_Nonsense_Tester — NoNonsenseTesterStrategy
+- [ ] 3381_Multi_Currency_Template — MultiCurrencyTemplateStrategy
+- [ ] 3382_Basic_ATR_Stop_Take — BasicAtrStopTakeStrategy
+- [ ] 3383_Three_Soldiers_Stochastic — ThreeSoldiersStochasticStrategy
+- [ ] 3384_Refresh28ChartsV3 — Refresh28ChartsV3Strategy
+- [ ] 3385_AbcWsCci — AbcWsCciStrategy
+- [ ] 3386_Manual_Trading_Lightweight_Utility — ManualTradingLightweightUtilityStrategy
+- [ ] 3387_Manual_Trading_Lightweight_Utility_Panel — ManualTradingLightweightUtilityPanelStrategy
+- [ ] 3388_CBC_WS_RSI — CbcWsRsiStrategy
+- [ ] 3389_Demo_Create_Obj_Bitmap_Label_Ea — DemoCreateObjBitmapLabelEaStrategy
+- [ ] 3390_Ring_System_EA — RingSystemEaStrategy
+- [ ] 3391_Couple_Hedge_Basket — CoupleHedgeBasketStrategy
+- [ ] 3392_Ring_System — RingSystemStrategy
+- [ ] 3393_Easy_Robot — EasyRobotStrategy
+- [ ] 3394_Virtual_Profit_Close — VirtualProfitCloseStrategy
+- [ ] 3395_Demo_Resource_EA — DemoResourceEaStrategy
+- [ ] 3396_CCI_Expert — CciExpertStrategy
+- [ ] 3397_Currency_Strength_EA — CurrencyStrengthEaStrategy
+- [ ] 3399_Basket_Close — BasketCloseStrategy
+- [ ] 3400_Expert_ADC_PL_Stoch — ExpertAdcPlStochStrategy
+- [ ] 3401_My_TS15 — MyTs15Strategy
+- [ ] 3402_Dark_Cloud_Piercing_CCI — DarkCloudPiercingCciStrategy
+- [ ] 3403_CDC_PL_MFI — CdcPlMfiStrategy
+- [ ] 3404_CDC_PL_RSI — CdcPlRsiStrategy
+- [ ] 3405_Morning_Evening_Stochastic — MorningEveningStochasticStrategy
+- [ ] 3406_Range_Follower — RangeFollowerStrategy
+- [ ] 3407_Currency_Strength — CurrencyStrengthStrategy
+- [ ] 3408_Abe_Be_Stoch — AbeBeStochStrategy
+- [ ] 3409_Potential_Entries — PotentialEntriesStrategy
+- [ ] 3410_Five_Minute_Rsi_Cci — FiveMinuteRsiCciStrategy
+- [ ] 3411_NNFXAutoTrade — NNFXAutoTradeStrategy
+- [ ] 3412_Range_Breakout_Weekly — RangeBreakoutWeeklyStrategy
+- [ ] 3413_5Mins_Envelopes — FiveMinsEnvelopesStrategy
+- [ ] 3414_ABE_BE_CCI — AbeBeCciStrategy
+- [ ] 3415_WatchListLinkerLite — WatchListLinkerLiteStrategy
+- [ ] 3416_VR_Watch_List_Linker_Lite — VrWatchListLinkerLiteStrategy
+- [ ] 3417_Engulfing_MFI_Confirmation — EngulfingMfiConfirmationStrategy
+- [ ] 3418_Galender — GalenderStrategy
+- [ ] 3419_Abe_Be_Rsi — AbeBeRsiStrategy
+- [ ] 3421_Peter_Panel — PeterPanelStrategy
+- [ ] 3422_Bullish_Bearish_Harami_Stochastic — BullishBearishHaramiStochasticStrategy
+- [ ] 3423_Harami_CCI_Confirmation — HaramiCciConfirmationStrategy
+- [ ] 3424_RangeBreakout2 — RangeBreakout2Strategy
+- [ ] 3425_ABHBHMFI — AbhBhMfiStrategy
+- [ ] 3426_MarketMaster — MarketMasterStrategy
+- [ ] 3427_TemplateEAbyMarket — TemplateEAbyMarketStrategy
+- [ ] 3428_Hammer_Hanging_Stochastic — HammerHangingStochasticStrategy
+- [ ] 3429_Template_M5_Envelopes — TemplateM5EnvelopesStrategy
+- [ ] 3430_Hammer_Hanging_Man_CCI — HammerHangingManCciStrategy
+- [ ] 3432_DreamBot — DreamBotStrategy
+- [ ] 3433_AH_HM_MFI — AhHmMfiStrategy
+- [ ] 3434_AH_HM_RSI — AhHmRsiStrategy
+- [ ] 3435_MeetingLinesStochastic — MeetingLinesStochasticStrategy
+- [ ] 3436_Master_Exit_Plan — MasterExitPlanStrategy
+- [ ] 3437_Alerting_System — AlertingSystemStrategy
+- [ ] 3438_Alerting_System_Threshold — AlertingSystemThresholdStrategy
+- [ ] 3439_Mission_Impossible_Power_Two_Open — MissionImpossiblePowerTwoOpenStrategy
+- [ ] 3440_AML_CCI_Meeting_Lines — AmlCciMeetingLinesStrategy
+- [ ] 3442_Specific_Day_Time — SpecificDayTimeStrategy
+- [ ] 3443_Expert_AML_MFI — ExpertAmlMfiStrategy
+- [ ] 3444_AML_RSI_Meeting_Lines — AmlRsiMeetingLinesStrategy
+- [ ] 3445_Universal_Signal_Demo — UniversalSignalDemoStrategy
+- [ ] 3446_Morning_Evening_Star_CCI — MorningEveningStarCciStrategy
+- [ ] 3447_Simple_Martingale_Template — SimpleMartingaleTemplateStrategy
+- [ ] 3448_Morning_Evening_MFI — MorningEveningMfiStrategy
+- [ ] 3449_AMSESRSI — AmsEsRsiStrategy
+- [ ] 3450_Simplest_DeMarker — SimplestDeMarkerStrategy
+- [ ] 3451_Basic_Martingale_EA_3 — BasicMartingaleEa3Strategy
+- [ ] 3453_Fibonacci_Potential_Entries — FibonacciPotentialEntriesStrategy
+- [ ] 3454_Fibonacci_Potential_Entries_Retracement — FibonacciPotentialEntriesRetracementStrategy
+- [ ] 3455_Bollinger_RSI_MA — BollingerRsiMaStrategy
+- [ ] 3456_Candlestick_Stochastic — CandlestickStochasticStrategy
+- [ ] 3457_IFS_Fractals — IfsFractalsStrategy
+- [ ] 3458_Smart_Forex_System — SmartForexSystemStrategy
+- [ ] 3459_Candle_Patterns_Test — CandlePatternsTestStrategy
+- [ ] 3460_Spread_Informer — SpreadInformerStrategy
+- [ ] 3461_Ichimoku_Price_Action — IchimokuPriceActionStrategy
+- [ ] 3462_Spread_Data_Collector — SpreadDataCollectorStrategy
+- [ ] 3463_TugbaGold — TugbaGoldStrategy
+- [ ] 3466_Ronz_Auto_SLTP — RonzAutoSltpStrategy
+- [ ] 3467_The_Enchantress — TheEnchantressStrategy
+- [ ] 3468_Trading_Panel — TradingPanelStrategy
+- [ ] 3469_TradingPanel_Batch — TradingPanelBatchStrategy
+- [ ] 3470_MACross — MacrossStrategy
+- [ ] 3471_AddOn_TrailingStop — AddOnTrailingStopStrategy
+- [ ] 3472_Close_Orders_Risk_Control — CloseOrdersRiskControlStrategy
+- [ ] 3473_AutoTrading_Scheduler — AutoTradingSchedulerStrategy
+- [ ] 3474_Daily_Target — DailyTargetStrategy
+- [ ] 3475_Day_Opening_MACD_Histogram — DayOpeningMacdHistogramStrategy
+- [ ] 3476_Averaging_By_Signal — AveragingBySignalStrategy
+- [ ] 3477_Scalping_Assistant — ScalpingAssistantStrategy
+- [ ] 3478_Dual_Stoploss — DualStoplossStrategy
+- [ ] 3479_One_Price_SL_TP — OnePriceSlTpStrategy
+- [ ] 3480_Trading_Panel_Control — TradingPanelControlStrategy
+- [ ] 3481_Tipu_MACD_EA — TipuMacdEaStrategy
+- [ ] 3482_SpaceX_Delete_StopLoss_TakeProfit_button — SpaceXDeleteStopLossTakeProfitButtonStrategy
+- [ ] 3483_Volume_Calculator — VolumeCalculatorStrategy
+- [ ] 3484_IsConnected — IsConnectedStrategy
+- [ ] 3485_ValidateMe — ValidateMeStrategy
+- [ ] 3486_AverageCandleCross — AverageCandleCrossStrategy
+- [ ] 3487_Macd_Diver_And_Rsi — MacdDiverAndRsiStrategy
+- [ ] 3488_MACD_Divergence_RSI — MacdDivergenceRsiStrategy
+- [ ] 3489_Buy_Sell_On_Your_Price — BuySellOnYourPriceStrategy
+- [ ] 3490_Commission_Calculator — CommissionCalculatorStrategy
+- [ ] 3491_Time_Bomb — TimeBombStrategy
+- [ ] 3492_Simple_Engulfing — SimpleEngulfingStrategy
+- [ ] 3493_MA_Break — MaBreakStrategy
+- [ ] 3494_MA_Break_Impulse_Buy — MABreakImpulseBuyStrategy
+- [ ] 3495_Williams_Percent_Directional_Index — WilliamsPercentDirectionalIndexStrategy
+- [ ] 3496_StochasticAccelerator — StochasticAcceleratorStrategy
+- [ ] 3497_More_Orders_After_BreakEven — MoreOrdersAfterBreakEvenStrategy
+- [ ] 3498_Heiken_Ashi_Engulf — HeikenAshiEngulfStrategy
+- [ ] 3499_Alligator_Candle_Cross — AlligatorCandleCrossStrategy
+- [ ] 3500_Zone_Recovery_Hedge — ZoneRecoveryHedgeStrategy
+- [ ] 3501_EA_Objprop_Chart_Id — EaObjpropChartIdStrategy
+- [ ] 3502_Tops_Bottoms_Trend_RSI — TopsBottomsTrendRsiStrategy
+- [ ] 3503_Manual_Position_Tracking_Panel — ManualPositionTrackingPanelStrategy
+- [ ] 3504_Sample_Trailing_Stop — SampleTrailingStopStrategy
+- [ ] 3505_Sample_Trailingstop_MT5 — SampleTrailingstopMt5Strategy
+- [ ] 3506_Sample_Check_Pending_Order — SampleCheckPendingOrderStrategy
+- [ ] 3507_Sample_Detect_Economic_Calendar — SampleDetectEconomicCalendarStrategy
+- [ ] 3508_Close_Profit_End_Of_Week — CloseProfitEndOfWeekStrategy
+- [ ] 3509_OpenPendingorderAfterPositionGetStopLoss — OpenPendingorderAfterPositionGetStopLossStrategy
+- [ ] 3513_HPCS_Fifth_MT4_EA_V01_WE — HpcsFifthMt4EaV01WeStrategy
+- [ ] 3514_Hpcs_Inter6_Rsi — HpcsInter6RsiStrategy
+- [ ] 3516_HPCS_Inter5 — HpcsInter5Strategy
+- [ ] 3517_HPCS_Inter7 — HpcsInter7Strategy
+- [ ] 3518_HPCS_Inter4 — HpcsInter4Strategy
+- [ ] 3519_PosNegDiCrossover — PosNegDiCrossoverStrategy
+- [ ] 3520_Fast_Slow_RVI_Crossover — FastSlowRviCrossoverStrategy
+- [ ] 3521_Fast_Slow_MA_Crossover — FastSlowMaCrossoverStrategy
+- [ ] 3522_iCHO_Trend_CCIDualOnMA_Filter — iCHO_Trend_CCIDualOnMA_FilterStrategy
+- [ ] 3523_Trailing_Only_Close_All_Button — TrailingOnlyCloseAllButtonStrategy
+- [ ] 3524_TrailingStar — TrailingStarPointStrategy
+- [ ] 3524_TrailingStar — TrailingStarPriceStrategy
+- [ ] 3525_Close_All_Control — CloseAllControlStrategy
+- [ ] 3526_Close_All_MT5 — CloseAllMt5Strategy
+- [ ] 3527_TurnGrid — TurnGridStrategy
+- [ ] 3528_MA_Grid — MaGridStrategy
+- [ ] 3529_Bull_Row_Breakout — BullRowBreakoutStrategy
+- [ ] 3530_RsiMaOnRsiFillingStep — RsiMaOnRsiFillingStepStrategy
+- [ ] 3531_RsiMaOnRsiDual — RsiMaOnRsiDualStrategy
+- [ ] 3532_Two_MA_Other_TimeFrame_Correct_Intersection — TwoMAOtherTimeFrameCorrectIntersectionStrategy
+- [ ] 3533_CHO_Smoothed_EA — ChoSmoothedEaStrategy
+- [ ] 3534_PriceChannel_Signal_v2 — PriceChannelSignalV2Strategy
+- [ ] 3535_DeMarker_Gaining_Position_Volume — DeMarkerGainingPositionVolumeStrategy
+- [ ] 3536_NewBar — NewBarStrategy
+- [ ] 3537_New_Bar_Event — NewBarEventStrategy
+- [ ] 3538_MA_on_Momentum_Min_Profit — MaOnMomentumMinProfitStrategy
+- [ ] 3539_MACD_Four_Colors_2_Martingale — MacdFourColors2MartingaleStrategy
+- [ ] 3540_Simple_Profit_By_Periods_Panel_2_Extended — SimpleProfitByPeriodsPanel2ExtendedStrategy
+- [ ] 3541_Trailing_Activate — TrailingActivateStrategy
+- [ ] 3542_Trailing_Activate_Close_All — TrailingActivateCloseAllStrategy
+- [ ] 3543_DeMarker_Gaining_Position_Volume_2 — DeMarkerGainingPositionVolume2Strategy
+- [ ] 3545_AdaptiveGridMT4 — AdaptiveGridMt4Strategy
+- [ ] 3546_DeMarker_Pending_2 — DeMarkerPending2Strategy
+- [ ] 3547_AutoRisk — AutoRiskStrategy
+- [ ] 3548_Rsi_Dual_Cloud — RsiDualCloudStrategy
+- [ ] 3550_AMA_Trader_2 — AmaTrader2Strategy
+- [ ] 3551_DeMarker_Pending — DeMarkerPendingStrategy
+- [ ] 3552_VIDYA_N_Bars_Borders_Martingale — VidyaNBarsBordersMartingaleStrategy
+- [ ] 3553_OsMA_Four_Colors_Arrow — OsMaFourColorsArrowStrategy
+- [ ] 3554_iVIDyA_Simple — IvidyaSimpleStrategy
+- [ ] 3555_WPR_Custom_Cloud_Simple — WprCustomCloudSimpleStrategy
+- [ ] 3556_Trickerless_RHMP — TrickerlessRhmpStrategy
+- [ ] 3557_At_Random — AtRandomStrategy
+- [ ] 3558_At_Random_Full — AtRandomFullStrategy
+- [ ] 3559_Two_Pending_Orders_2 — TwoPendingOrders2Strategy
+- [ ] 3560_SR_Breakout — SrBreakoutStrategy
+- [ ] 3561_MACD_Fixed_PSAR — MacdFixedPsarStrategy
+- [ ] 3562_Ten_Kijun_Cross — TenKijunCrossStrategy
+- [ ] 3563_Simple_Order_Panel — SimpleOrderPanelStrategy
+- [ ] 3564_Turbo_Scaler_Grid — TurboScalerGridStrategy
+- [ ] 3565_News_Template_Universal — NewsTemplateUniversalStrategy
+- [ ] 3568_Mean_Reversion_Momentum — MeanReversionMomentumStrategy
+- [ ] 3571_Nova_Barra — NovaBarraStrategy
+- [ ] 3572_Conditional_Position_Opener — ConditionalPositionOpenerStrategy
+- [ ] 3573_Positive_Swap_Informer — PositiveSwapInformerStrategy
+- [ ] 3574_LazyBot_V1 — LazyBotV1Strategy
+- [ ] 3575_RSI_Alert — RsiAlertStrategy
+- [ ] 3577_XP_Trade_Manager_Grid — XpTradeManagerGridStrategy
+- [ ] 3578_XP_Trade_Manager — XpTradeManagerStrategy
+- [ ] 3580_XP_Trade_Manager — XPTradeManagerStrategy
+- [ ] 3582_Count_Orders — CountOrdersStrategy
+- [ ] 3583_CCI_MACD_Scalper — CciMacdScalperStrategy
+- [ ] 3584_Multi_Currency_Template_MT5 — MultiCurrencyTemplateMt5Strategy
+- [ ] 3585_GridTradingVolatileMarket — GridTradingAtVolatileMarketStrategy
+- [ ] 3588_Pause_Trading_On_Consecutive_Loss — PauseTradingOnConsecutiveLossStrategy
+- [ ] 3589_Divergence_Macd_Stochastic — DivergenceMacdStochasticStrategy
+- [ ] 3590_Divergence_Ema_Rsi_Close_Buy_Only — DivergenceEmaRsiCloseBuyOnlyStrategy
+- [ ] 3591_Painel — PainelStrategy
+- [ ] 3592_Reverse — ReverseStrategy
+- [ ] 3593_Aussie_Surfer_Ltd — AussieSurferLtdStrategy
+- [ ] 3594_Cryptos — CryptosStrategy
+- [ ] 3595_EAFrameworkLayout — EAFrameworkLayoutStrategy
+- [ ] 3596_Fractal_Identifier_2_0 — FractalIdentifier20Strategy
+- [ ] 3597_Risk_Manager_Layered — LayeredRiskProtectorStrategy
+- [ ] 3599_Move_Stop_Loss — MoveStopLossStrategy
+- [ ] 3601_SwingTrader — SwingTraderStrategy
+- [ ] 3603_Money_Manager — MoneyManagerStrategy
+- [ ] 3604_Change_Tpsl_By_Percentage — ChangeTpslByPercentageStrategy
+- [ ] 3607_Risk_Profit_Closer — RiskProfitCloserStrategy
+- [ ] 3608_Multi_Orders — MultiOrdersStrategy
+- [ ] 3609_Risk_Based_Trailing_Manager — RiskBasedTrailingManagerStrategy
+- [ ] 3610_MAPriceCross — MaPriceCrossStrategy
+- [ ] 3611_MartingaleEA_5_Levels — MartingaleEa5LevelsStrategy
+- [ ] 3613_Fine_Clock — FineClockStrategy
+- [ ] 3614_AK_47_Scalper — Ak47ScalperStrategy
+- [ ] 3615_Check_Open_Orders — CheckOpenOrdersStrategy
+- [ ] 3616_Exp_TEMA — ExpTemaStrategy
+- [ ] 3617_Resonance_Hunter — ResonanceHunterStrategy
+- [ ] 3618_KA_Gold_Bot — KaGoldBotStrategy
+- [ ] 3619_Trailing_Take_Profit_Mq5 — TrailingTakeProfitMq5Strategy
+- [ ] 3623_Matrix_Machine_Learning — MatrixMachineLearningStrategy
+- [ ] 3625_BandOsMa — BandOsMaStrategy
+- [ ] 3626_Band_OsMA_Custom — BandOsMaCustomStrategy
+- [ ] 3627_RectangleTest — RectangleTestStrategy
+- [ ] 3628_RangeEA_Weekly_Grid — RangeWeeklyGridStrategy
+- [ ] 3629_Random_Trader_Bias — RandomBiasTraderStrategy
+- [ ] 3630_Maybeawo222 — Maybeawo222Strategy
+- [ ] 3631_RSI_Martingale — RSIMartingaleStrategy
+- [ ] 3632_Moving_Average_Crossover_Spread — MovingAverageCrossoverSpreadStrategy
+- [ ] 3633_ScalperEMA_Simple — ScalperEmaSimpleStrategy
+- [ ] 3635_Martingale_Breakout — MartingaleBreakoutStrategy
+- [ ] 3636_MartinGale_Breakout — MartinGaleBreakoutStrategy
+- [ ] 3637_BBStrategy — BBStrategy
+- [ ] 3638_Donchian_Scalper — DonchianScalperStrategy
+- [ ] 3640_Mnist_Pattern_Classifier — MnistPatternClassifierStrategy
+- [ ] 3641_Martingale_Trade_Simulator — MartingaleTradeSimulatorStrategy
+- [ ] 3643_Connect_Disconnect_Sound_Alert — ConnectDisconnectSoundAlertStrategy
+- [ ] 3644_Symbol_Sync — SymbolSyncStrategy
+- [ ] 3645_Bounce_Number — BounceNumberStrategy
+- [ ] 3646_Neural_Network_Template — NeuralNetworkTemplateStrategy
+- [ ] 3647_Indices_Tester — IndicesTesterStrategy
+- [ ] 3648_Balance_Drawdown_In_MT4 — BalanceDrawdownInMt4Strategy
+- [ ] 3649_KA_Gold_Bot — KAGoldBotStrategy
+- [ ] 3651_Trail_SL_Manager — TrailSlManagerStrategy
+- [ ] 3652_Close_on_Profit_or_Loss_in_Account_Currency — CloseOnProfitOrLossInAccountCurrencyStrategy
+- [ ] 3654_Trailing_Stop_When_SL_Used — TrailingStopWhenSlUsedStrategy
+- [ ] 3655_Trailing_StopLoss_All_Orders — TrailingStopLossAllOrdersStrategy
+- [ ] 3656_Close_Basket_Pairs — CloseBasketPairsStrategy
+- [ ] 3657_Virtual_SL_TP_V1 — VirtualSlTpV1Strategy
+- [ ] 3659_Count_And_Wait — CountAndWaitStrategy
+- [ ] 3660_Breakout — BreakoutStrategy
+- [ ] 3661_ClassicVirtualTrailing — ClassicVirtualTrailingStrategy
+- [ ] 3662_QuickTradeKeys — QuickTradeKeysStrategy
+- [ ] 3663_Trailing_Close_Manager — TrailingCloseManagerStrategy
+- [ ] 3666_Get_Last_Nth_Open_Trade — GetLastNthOpenTradeStrategy
+- [ ] 3667_Get_Last_Nth_Close_Trade — GetLastNthCloseTradeStrategy
+- [ ] 3668_Get_Last_Nth_Open_Trade — Get_Last_Nth_Open_TradeStrategy
+- [ ] 3669_Get_Last_Nth_Closed_Trade — GetLastNthClosedTradeStrategy
+- [ ] 3670_Prop_Firm_Helper — PropFirmHelperStrategy
+- [ ] 3671_Grid_EA_Pro — GridEaProStrategy
+- [ ] 3672_Moving_Average_Price_Cross — MovingAverageMartingaleStrategy
+- [ ] 3672_Moving_Average_Price_Cross — MovingAveragePriceCrossStrategy
+- [ ] 3674_Raymond_Cloudy_Day — RaymondCloudyDayStrategy
+- [ ] 3675_First_Friday_Alert — FirstFridayStrategy
+- [ ] 3676_Arbitrage — ArbitrageStrategy
+- [ ] 3677_Maximum_Trade_Volume — MaximumTradeVolumeStrategy
+- [ ] 3678_Two_Pair_Correlation — TwoPairCorrelationStrategy
+- [ ] 3679_Revised_Self_Adaptive_EA — RevisedSelfAdaptiveEaStrategy
+- [ ] 3680_Neural_Network_ATR — NeuralNetworkAtrStrategy
+- [ ] 3681_AdaptiveTraderPro — AdaptiveTraderProStrategy
+- [ ] 3683_Doji_Pattern_Alert — DojiPatternAlertStrategy
+- [ ] 3684_Informative_Dashboard — InformativeDashboardStrategy
+- [ ] 3685_EuroSurge_Simplified — EuroSurgeSimplifiedStrategy
+- [ ] 3686_Backtesting_Trade_Assistant_Panel — BacktestingTradeAssistantPanelStrategy
+- [ ] 3687_Smart_Trend_Follower — SmartTrendFollowerStrategy
+- [ ] 3689_SUPERMACBOT_BY_THE_GUARDIAN_FOREX_TV — SupermacbotByTheGuardianForexTvStrategy
+- [ ] 3690_Close_Agent — CloseAgentStrategy
+- [ ] 3691_MarketPredictor — MarketPredictorStrategy
+- [ ] 3692_Profit_Labels — ProfitLabelsStrategy
+- [ ] 3693_Surfing_3_0 — Surfing30Strategy
+- [ ] 3694_Trailing_Stop_Manager_Trigger — TrailingStopTriggerManagerStrategy
+- [ ] 3696_Bollinger_Bands_Session_Reversal — BollingerBandsSessionReversalStrategy
+- [ ] 3697_Symbol_Swap — SymbolSwapStrategy
+- [ ] 3698_Symbol_Swap_Panel — SymbolSwapPanelStrategy
+- [ ] 3700_FetchNews — FetchNewsStrategy
+- [ ] 3702_Risk_Manager_Info_Panel — RiskManagerInfoPanelStrategy
+- [ ] 3704_PullAllTicks — PullAllTicksStrategy
+- [ ] 3705_Magic_Number_Wise_EA_Profit_Loss_Dashboard — MagicNumberWiseEaProfitLossDashboardStrategy
+- [ ] 3706_BreakRevertPro — BreakRevertProStrategy
+- [ ] 3707_Mean_Reverse — MeanReverseStrategy
+- [ ] 3708_RRS_Non_Directional — RrsNonDirectionalStrategy
+- [ ] 3709_ATR_Step_Trader — AtrStepTraderStrategy
+- [ ] 3710_RRSRandomness — RrsRandomnessStrategy
+- [ ] 3711_RRSChaotic — RrsChaoticStrategy
+- [ ] 3712_Triangular_Arbitrage — TriangularArbitrageStrategy
+- [ ] 3713_RRS_Tangled_EA — RrsTangledEaStrategy
+- [ ] 3716_MP_Candlestick — MpCandlestickStrategy
+- [ ] 3717_Average_Pip_Movement_Tick_Seconds — AveragePipMovementTickSecondsStrategy
+- [ ] 3719_MeanReversion_Donchian — MeanReversionDonchianStrategy
+- [ ] 3720_Adjustable_Moving_Average — AdjustableMovingAverageStrategy
+- [ ] 3721_Bands — BandsStrategy
+- [ ] 3722_StellarLite_ICT_EA — StellarLiteIctEaStrategy
+- [ ] 3723_RRS_Impulse — RrsImpulseStrategy
+- [ ] 3724_RM_Stochastic_Band — RmStochasticBandStrategy
+- [ ] 3725_RiskManagementATR — RiskManagementAtrStrategy
+- [ ] 3726_Auto_Close_On_Profit_Loss — AutoCloseOnProfitLossStrategy
+- [ ] 3727_Butterfly_Pattern — ButterflyPatternStrategy
+- [ ] 3730_Sniper_Jaw — SniperJawStrategy
+- [ ] 3731_Pending_tread — PendingTreadStrategy
+- [ ] 3732_Tuyul_Gap_End_Of_Week — TuyulGapEndOfWeekStrategy
+- [ ] 3733_Extreme_Strength_Reversal — ExtremeStrengthReversalStrategy
+- [ ] 3734_MarsiEa — MarsiEaStrategy
+- [ ] 3735_Auto_Tp — AutoTpStrategy
+- [ ] 3736_Tuyul_Uncensored — TuyulUncensoredStrategy
+- [ ] 3737_Cs2011 — Cs2011Strategy
+- [ ] 3738_Auto_TP_Manager — AutoTpManagerStrategy
+- [ ] 3740_Multi_EA — MultiEaV12Strategy
+- [ ] 3742_TradingLab_Best_MACD — TradingLabBestMacdStrategy
+- [ ] 3743_Build_Your_Grid — BuildYourGridStrategy
+- [ ] 3745_TradePad_Sample — TradePadSampleStrategy
+- [ ] 3746_Exp_TrendMagic — ExpTrendMagicStrategy
+- [ ] 3747_TrendMeLeaveMe_Channel — TrendMeLeaveMeChannelStrategy
+- [ ] 3750_Frank_Ud_Minimal — FrankUdMinimalStrategy
+- [ ] 3751_Swaper — SwaperStrategy
+- [ ] 3752_Dealers_Trade_v7_51_RIVOT — DealersTradeV751RivotStrategy
+- [ ] 3753_Dealers_Trade_MACD_MQL4 — DealersTradeMacdMql4Strategy
+- [ ] 3754_OSF_Countertrend — OsfCountertrendStrategy
+- [ ] 3755_MACD_Sample_Classic — MacdSampleClassicStrategy
+- [ ] 3756_ProtoType_IX — PrototypeIxStrategy
+- [ ] 3757_Cloudzs_Trade_2 — CloudzsTrade2Strategy
+- [ ] 3758_MACD_Signal_Crossover — MacdSignalCrossoverStrategy
+- [ ] 3759_DAlembert_Exposure_Balancer — DAlembertExposureBalancerStrategy
+- [ ] 3760_e_TurboFx — ETurboFxClassicStrategy
+- [ ] 3761_e_TurboFx_Momentum — ETurboFxMomentumStrategy
+- [ ] 3762_Mc_Valute_Cloud — McValuteCloudStrategy
+- [ ] 3763_Stochastic_Martingale_Grid — StochasticMartingaleGridStrategy
+- [ ] 3764_Cronex_DeMarker_Crossover — CronexDeMarkerCrossoverStrategy
+- [ ] 3765_Lucky_Code — LuckyCodeStrategy
+- [ ] 3766_Lucky_Shift_Limit — LuckyShiftLimitStrategy
+- [ ] 3767_Zs1_Forex_Instruments — Zs1ForexInstrumentsStrategy
+- [ ] 3768_Wss_Trader — WssTraderStrategy
+- [ ] 3769_Volume_Trader_V2 — VolumeTraderV2Strategy
+- [ ] 3770_Vlado_Williams_Percent_Range — VladoWilliamsPercentRangeStrategy
+- [ ] 3771_VarMovAvg — VarMovAvgStrategy
+- [ ] 3772_Universal_MA_Cross_V4 — UniversalMaCrossV4Strategy
+- [ ] 3773_Tunnel_Method_EMA — TunnelMethodEmaStrategy
+- [ ] 3774_Time_Based_Range_Breakout — TimeBasedRangeBreakoutStrategy
+- [ ] 3775_Terminator — TerminatorStrategy
+- [ ] 3776_Sweet_Spot_Extreme — SweetSpotExtremeStrategy
+- [ ] 3777_SurefireThing — SurefireThingStrategy
+- [ ] 3778_Suffic369 — Suffic369Strategy
+- [ ] 3779_MACD_Stochastic_Filter — MacdStochasticFilterStrategy
+- [ ] 3780_Starter_V6Mod_E — StarterV6ModEStrategy
+- [ ] 3781_Smc_Trader_Camel_Cci_Macd1 — SmcTraderCamelCciMacd1Strategy
+- [ ] 3782_Smc_Hilo_MaxMin — SmcHiloMaxMinStrategy
+- [ ] 3783_Simple_Pivot_Flip — SimplePivotFlipStrategy
+- [ ] 3784_Simple_MACD_EA — SimpleMacdEaStrategy
+- [ ] 3785_Session_Breakout — SessionBreakoutStrategy
+- [ ] 3786_Martingail_Expert_Sequence — MartingailExpertSequenceStrategy
+- [ ] 3787_Semilong_Www_Forex_Instruments_Info — SemilongWwwForexInstrumentsInfoStrategy
+- [ ] 3788_Russian20_TimeFilter_Momentum — Russian20TimeFilterMomentumStrategy
+- [ ] 3789_RSI_Trader_Aligned_Averages — RsiTraderAlignedAveragesStrategy
+- [ ] 3790_RPM5_Bulls_Bears_Eyes — Rpm5BullsBearsEyesStrategy
+- [ ] 3791_Plan_X_Breakout — PlanXBreakoutStrategy
+- [ ] 3792_PivotEMA3RLHv4 — PivotEma3Rlhv4Strategy
+- [ ] 3793_Pedro_Mod — PedroModStrategy
+- [ ] 3794_OverHedge_V2_Grid — OverHedgeV2GridStrategy
+- [ ] 3795_NRTR_Reversal — NrtrReversalStrategy
+- [ ] 3796_Noah10Pips2006 — Noah10Pips2006Strategy
+- [ ] 3797_NinaEA — NinaEaStrategy
+- [ ] 3798_Myfriend_Forex_Instruments — MyfriendForexInstrumentsStrategy
+- [ ] 3799_MultiBreakout_v001k — MultiBreakoutV001kStrategy
+- [ ] 3800_ExpICustomV1 — ExpICustomV1Strategy
+- [ ] 3801_OrderStabilization — OrderStabilizationStrategy
+- [ ] 3802_BollTrade_Bollinger_Reversion — BollTradeBollingerReversionStrategy
+- [ ] 3803_Macd_Stochastic_Trailing — MacdStochasticTrailingStrategy
+- [ ] 3804_3MA_Bunny_Cross — ThreeMaBunnyCrossStrategy
+- [ ] 3805_Triple_SMA_Crossover — TripleSmaCrossoverStrategy
+- [ ] 3806_5min_RSI_Qualified — FiveMinRsiQualifiedStrategy
+- [ ] 3807_L3H3Pivot — L3H3PivotStrategy
+- [ ] 3808_Anubis_Cci_Macd — AnubisCciMacdStrategy
+- [ ] 3809_Above_Below_MA_Rejoin — AboveBelowMaRejoinStrategy
+- [ ] 3810_Alexav_D1_Profit_GBPUSD_Breakout — AlexavD1ProfitGbpUsdBreakoutStrategy
+- [ ] 3811_Alexav_SpeedUp_M1_Body — AlexavSpeedUpM1BodyBreakStrategy
+- [ ] 3812_Aocci_Pivot — AocciPivotFilterStrategy
+- [ ] 3813_Artificial_Intelligence_Right — ArtificialIntelligenceRightStrategy
+- [ ] 3814_Avalanche — AvalancheStrategy
+- [ ] 3815_Simple_FX_Crossover — SimpleFxCrossoverStrategy
+- [ ] 3816_Arttrader — ArttraderStrategy
+- [ ] 3817_ASCV — AscvStrategy
+- [ ] 3818_Bago_EA — BagoEaClassicStrategy
+- [ ] 3819_Bollinger_Band_Pending_Stops — BollingerBandPendingStopsStrategy
+- [ ] 3820_Binario_3 — Binario3Strategy
+- [ ] 3821_Blockbuster_Bollinger_Breakout — BlockbusterBollingerStrategy
+- [ ] 3822_BreakOut15 — BreakOut15Strategy
+- [ ] 3823_Bruno_Trend_Filter — BrunoTrendStrategy
+- [ ] 3824_Channels — ChannelsStrategy
+- [ ] 3825_Contrarian_trade_MA_Weekly — ContrarianTradeMaWeeklyStrategy
+- [ ] 3826_Daydream — DaydreamStrategy
+- [ ] 3827_DojiArrows_Breakout — DojiArrowsBreakoutStrategy
+- [ ] 3828_Doji_Trader_Breakout — DojiTraderBreakoutStrategy
+- [ ] 3829_Donchain_Counter_Channel_System — DonchainCounterChannelSystemStrategy
+- [ ] 3830_DoubleMA_Breakout — DoubleMaBreakoutStrategy
+- [ ] 3831_DT_RSI_EXP1 — DtRsiExp1Strategy
+- [ ] 3832_Envelope_Limit_Ladder — EnvelopeLimitLadderStrategy
+- [ ] 3833_ENewsLuckyw — ENewsLuckywStrategy
+- [ ] 3834_Elderv30aug05v — Elderv30aug05vStrategy
+- [ ] 3835_EMA_Pullback — EmaPullbackStrategy
+- [ ] 3836_Karakatica — KarakaticaStrategy
+- [ ] 3837_Farhad_Hill_Version_2 — FarhadHillVersion2Strategy
+- [ ] 3838_FitFul_13_Time_Gated — FitFul13TimeGatedStrategy
+- [ ] 3839_Flat_Trend — FlatTrendStrategy
+- [ ] 3840_Franks_4Hour_Limit_Orders — Franks4HourLimitOrdersStrategy
+- [ ] 3841_FrBestExp02_Maloma_Mod — FrBestExp02MalomaModStrategy
+- [ ] 3843_GBP9AM — Gbp9AmStrategy
+- [ ] 3844_Get_Rich_Gbp_Session_Reversal — GetRichGbpSessionReversalStrategy
+- [ ] 3845_Glam_Trader — GlamTraderSimpleStrategy
+- [ ] 3846_Graal_Fractal_Channel — GraalFractalChannelStrategy
+- [ ] 3847_Gselector_Pattern_Probability — GselectorPatternProbabilityStrategy
+- [ ] 3848_Gold_Warrior02b_Impulse — GoldWarrior02bImpulseStrategy
+- [ ] 3849_Gaps_Reversion — GapReversionStrategy
+- [ ] 3850_Fractured_Fractals_MQL4 — FracturedFractalsMql4Strategy
+- [ ] 3851_Firebird_MA_Envelope_Exhaustion — FirebirdMaEnvelopeExhaustionStrategy
+- [ ] 3852_Farhad_Crab — FarhadCrabStrategy
+- [ ] 3853_Ema_Cross_Contest_Hedged_Ladder — EmaCrossContestHedgedLadderStrategy
+- [ ] 3854_Ema_6_12 — Ema612Strategy
+- [ ] 3855_E_Friday_Session — EFridaySessionStrategy
+- [ ] 3856_Disaster — DisasterStrategy
+- [ ] 3857_Dlmv1Grid — Dlmv1GridStrategy
+- [ ] 3858_Trend_Scalper — TrendScalperStrategy
+- [ ] 3859_Bronze_Pan — BronzePanStrategy
+- [ ] 3860_Breadandbutter2 — Breadandbutter2Strategy
+- [ ] 3861_BadOrders — BadOrdersStrategy
+- [ ] 3862_5_8_MA_Cross_Protect — FiveEightMaCrossProtectStrategy
+- [ ] 3863_MultiTimeframeEmaAlignment — MultiTimeframeEmaAlignmentStrategy
+- [ ] 3864_Two_PerBar_Ron — TwoPerBarRonStrategy
+- [ ] 3865_AK47_A1 — AK47A1Strategy
+- [ ] 3866_AG_MACD_Dual — AgMacdDualStrategy
+- [ ] 3867_Equal_Volume_Range_Bars — EqualVolumeRangeBarsStrategy
+- [ ] 3868_CrossMA — CrossMaAtrNotificationStrategy
+- [ ] 3870_MA2CCI_Adaptive_Volume — Ma2CciAdaptiveVolumeStrategy
+- [ ] 3871_MA2CCI_Classic — Ma2CciClassicStrategy
+- [ ] 3873_Trade_Channel_Breakout — TradeChannelBreakoutStrategy
+- [ ] 3874_Trendcapture — TrendcaptureStrategy
+- [ ] 3876_Omzdwwi_Pending_Manager — OmzdwwiPendingManagerStrategy
+- [ ] 3877_LoongClock — LoongClockStrategy
+- [ ] 3878_True_Scalper_Profit_Lock_BreakEven — TrueScalperProfitLockBreakEvenStrategy
+- [ ] 3879_MoStAsHaR15_Pivot_Line — MoStAsHaR15PivotLineStrategy
+- [ ] 3880_Lbs_V12 — LbsV12Strategy
+- [ ] 3881_Synchronized_Hour_Breakout — SynchronizedHourBreakoutStrategy
+- [ ] 3883_Graal_Ema_Momentum — GraalEmaMomentumStrategy
+- [ ] 3884_Otkat_Sys — OtkatSysStrategy
+- [ ] 3885_Weekly_Rebound_Corridor — WeeklyReboundCorridorStrategy
+- [ ] 3886_Morning_Pullback_Corridor — MorningPullbackCorridorStrategy
+- [ ] 3887_Double_Up — DoubleUpStrategy
+- [ ] 3888_Nextbar — NextbarStrategy
+- [ ] 3889_Eugene — EugeneStrategy
+- [ ] 3890_ASCPlusPlus — AscPlusPlusStrategy
+- [ ] 3891_SilverTrendV3_JTPO — SilverTrendV3JtpoStrategy
+- [ ] 3892_UsdChf_New — UsdChfNewStrategy
+- [ ] 3893_DoubleUp2 — DoubleUp2MartingaleStrategy
+- [ ] 3894_KSRobot15 — KsRobotV15Strategy
+- [ ] 3895_Ichimoku_2005 — Ichimoku2005Strategy
+- [ ] 3896_20_200_Time_Breakout — Twenty200TimeBreakoutStrategy
+- [ ] 3897_Lot_Size_Scaling — LotSizeScalingStrategy
+- [ ] 3898_T3MA_MTC9 — T3MaMtc9Strategy
+- [ ] 3899_Up3x1_Premium_2vM — Up3x1Premium2VmStrategy
+- [ ] 3900_Combo_Right_Perceptron — ComboRightPerceptronStrategy
+- [ ] 3901_Moving_Average_Shift — MovingAverageShiftStrategy
+- [ ] 3902_Auto_KDJ — AutoKdjStrategy
+- [ ] 3903_Trade_Channel_ATR — TradeChannelAtrStrategy
+- [ ] 3904_OzFx_Simple — OzFxSimpleStrategy
+- [ ] 3905_Fibo_Pivot_MultiVal — FiboPivotMultiValStrategy
+- [ ] 3906_Universum_3_0 — Universum30OriginalStrategy
+- [ ] 3907_Money_Rain_Recovery — MoneyRainRecoveryStrategy
+- [ ] 3908_Five_MA_Multi_Timeframe — FiveMaMultiTimeframeStrategy
+- [ ] 3909_VLT_Trader_Straddle — VltTraderStraddleStrategy
+- [ ] 3910_Elite_eFibo_Trader_v2_1 — EliteEfiboTraderV21Strategy
+- [ ] 3911_Get_trend_Stochastic — GetTrendStochasticStrategy
+- [ ] 3912_4_SMA — FourSmaStrategy
+- [ ] 3913_FX_CHAOS_Scalp_MT4 — FxChaosScalpMt4Strategy
+- [ ] 3914_Fx_Chaos_Pyramid — FxChaosPyramidStrategy
+- [ ] 3915_TRAYLERv — TraylerStrategy
+- [ ] 3916_TCPivotStop_Floor_Breakout — TcpFloorPivotBreakoutStrategy
+- [ ] 3917_TCP_Pivot_Limit_Reversal — TcpPivotReversalLimitStrategy
+- [ ] 3918_Fortrader_10_Pips — Fortrader10PipsStrategy
+- [ ] 3919_et4_MTC_v1 — Et4MtcV1Strategy
+- [ ] 3920_Universal_Investor — UniversalInvestor3920Strategy
+- [ ] 3921_GTerminal — GTerminalStrategy
+- [ ] 3922_ADX_MA — AdxMaStrategy
+- [ ] 3923_Alert_MACD_Slow — AlertMacdSlowStrategy
+- [ ] 3924_Up3x1ShiftedSMA — Up3x1ShiftedSmaStrategy
+- [ ] 3925_Up3x1_Krohabor_Shift — Up3x1KrohaborShiftStrategy
+- [ ] 3927_Hercules — HerculesStrategy
+- [ ] 3928_MA_S_R_Trading — MaSrTradingStrategy
+- [ ] 3929_Forex_Profit_System — ForexProfitSystemStrategy
+- [ ] 3930_One_Two_Three_Pattern — OneTwoThreePatternStrategy
+- [ ] 3931_HBS_System — HbsSystemStrategy
+- [ ] 3932_TrendCapture_Legacy — TrendCaptureLegacyStrategy
+- [ ] 3933_Pending_Limit_Grid — PendingLimitGridStrategy
+- [ ] 3934_Up3x1_Investor_Range_Filter — Up3x1InvestorRangeFilterStrategy
+- [ ] 3935_HarVesteR_Macd_Trend — HarVesteRMacdTrendStrategy
+- [ ] 3936_Manual_EA — ManualEaStrategy
+- [ ] 3937_VQ_EA — VqEaStrategy
+- [ ] 3938_GPF_TCPivotLimit — GpfTcpPivotLimitStrategy
+- [ ] 3939_TCPivotStop_Session — TcpPivotSessionStopStrategy
+- [ ] 3940_Pipsover — Pipsover8167Strategy
+- [ ] 3942_FullDamp — FullDampStrategy
+- [ ] 3943_AMATraderV21 — AmaTraderV21Strategy
+- [ ] 3944_RndTrade_RandomHold — RndTradeRandomHoldStrategy
+- [ ] 3945_Kloss — KlossMql8186Strategy
+- [ ] 3946_Monday_Typical_Breakout — MondayTypicalBreakoutStrategy
+- [ ] 3947_Macd_Pattern_Trader_v01 — MacdPatternTraderV01Strategy
+- [ ] 3948_Kloss_Simple — KlossSimpleStrategy
+- [ ] 3949_Macd_Pattern_Trader_V02 — MacdPatternTraderV02Strategy
+- [ ] 3951_TheMasterMind_Reversal — TheMasterMindReversalStrategy
+- [ ] 3952_Waddah_Attar_Win — WaddahAttarWinGridStrategy
+- [ ] 3953_ZigAndZag_Trader — ZigAndZagTraderStrategy
+- [ ] 3954_Macd_Pattern_Trader_v03 — MacdPatternTraderV03Strategy
+- [ ] 3955_SHE_Kanskigor — SheKanskigorDailyStrategy
+- [ ] 3956_Polish_Layer_Expert_Advisor_System_Efficient — PolishLayerExpertAdvisorSystemEfficientStrategy
+- [ ] 3957_MasterMind2 — MasterMind2Strategy
+- [ ] 3958_ThePuncher — ThePuncherStrategy
+- [ ] 3959_Multi_Indicator_Optimizer — MultiIndicatorOptimizerStrategy
+- [ ] 3960_Pendulum_Swing — PendulumSwingStrategy
+- [ ] 3961_MacdPatternTrader_DoubleTop — MacdPatternTraderDoubleTopStrategy
+- [ ] 3962_Momo_Trades_V3 — MomoTradesV3Strategy
+- [ ] 3963_CashMachine_5min — CashMachine5minLegacyStrategy
+- [ ] 3964_Gazonkos_Expert — GazonkosExpertStrategy
+- [ ] 3965_MacdPatternTrader_Trigger — MacdPatternTraderTriggerStrategy
+- [ ] 3966_Three_MA_Cross_Channel — ThreeMaCrossChannelStrategy
+- [ ] 3967_Fuzzy_Logic — FuzzyLogicLegacyStrategy
+- [ ] 3970_Trend_Follower_Rainbow — TrendFollowerRainbowStrategy
+- [ ] 3972_Macd_Pattern_Trader_All_v001 — MacdPatternTraderAllV001Strategy
+- [ ] 3973_DeMark_Lines — DeMarkLinesStrategy
+- [ ] 3974_NatusekoProtrader4H — NatusekoProtrader4HStrategy
+- [ ] 3975_ZigAndZag_Scalpel — ZigAndZagScalpelStrategy
+- [ ] 3976_Vector_Basket_Trend — VectorBasketTrendStrategy
+- [ ] 3977_Altarius_RSI_Stochastic_Dual — AltariusRsiStochasticDualStrategy
+- [ ] 3978_Moving_Average_Position_System — MovingAveragePositionSystemStrategy
+- [ ] 3980_EES_Hedger — EesHedgerAdvancedStrategy
+- [ ] 3981_Trend_RDS_Reversal — TrendRdsReversalStrategy
+- [ ] 3982_RAVIiAO — RaviIaoStrategy
+- [ ] 3983_Sidus_v1 — SidusV1Strategy
+- [ ] 3984_20_Pips_Price_Channel — TwentyPipsPriceChannelStrategy
+- [ ] 3985_MAMACD_NoVlt — MamacdNovltStrategy
+- [ ] 3986_Straddle_Trail_V240 — StraddleTrailV240Strategy
+- [ ] 3987_Divergence_Trader — DivergenceTraderClassicStrategy
+- [ ] 3988_EMA_Cross_2 — EmaCross2Strategy
+- [ ] 3989_Cyberia_Trader — CyberiaTraderAdaptiveStrategy
+- [ ] 3990_Risk_Monitor — RiskMonitorStrategy
+- [ ] 3991_MartingailExpertV10Stochastic — MartingailExpertV10StochasticStrategy
+- [ ] 3992_ERegression_Channel — ERegressionChannelStrategy
+- [ ] 3993_CCI_MA_v1_5 — CciMaV15Strategy
+- [ ] 3994_RPoint_250 — RPoint250Strategy
+- [ ] 3995_ZigZag_EvgeTrofi_1 — ZigZagEvgeTrofi1Strategy
+- [ ] 3996_Open_Close — OpenCloseStrategy
+- [ ] 3997_MACD_Zero_Filtered_Cross — MacdZeroFilteredCrossStrategy
+- [ ] 3998_Support_Resistance_Breakout — SupportResistanceBreakoutStrategy
+- [ ] 3999_Open_Close2Ampn_Stochastic — OpenClose2AmpnStochasticStrategy
+- [ ] 4000_Master_Mind_Triple_Wpr — MasterMindTripleWprStrategy
+- [ ] 4001_Laptrend_1 — Laptrend1Strategy
+- [ ] 4002_SimpleTrade_Flip — SimpleTradeFlipStrategy
+- [ ] 4003_MA_Cross_Method_PriceMode — MaCrossMethodPriceModeStrategy
+- [ ] 4004_FT_BillWillams_Trader — FTBillWillamsTraderStrategy
+- [ ] 4005_FT_Bill_Williams_AO — FtBillWilliamsAoStrategy
+- [ ] 4006_TenPips_Opposite_Last_N_Hour_Trend — TenPipsOppositeLastNHourTrendStrategy
+- [ ] 4007_Swetten — SwettenStrategy
+- [ ] 4008_CashMachine — CashMachineStrategy
+- [ ] 4009_BullVsMedved_Window — BullVsMedvedWindowStrategy
+- [ ] 4011_Ilan1_4_Grid — Ilan14GridStrategy
+- [ ] 4013_FT_TrendFollower — FtTrendFollowerStrategy
+- [ ] 4014_Brandy_v1_2 — BrandyV12Strategy
+- [ ] 4015_CorrectedAverageChannel — CorrectedAverageChannelStrategy
+- [ ] 4016_Rsi_Test — RsiTestStrategy
+- [ ] 4017_Starter — Starter2005Strategy
+- [ ] 4018_20_Pips_Once_A_Day_Opposite_Trend — TwentyPipsOnceADayStrategy
+- [ ] 4019_HTH — HthStrategy
+- [ ] 4021_RabbitM2_Regime_Swing — RabbitM2RegimeSwingStrategy
+- [ ] 4022_Awesome_Fx_Trader — AwesomeFxTraderStrategy
+- [ ] 4023_Rabbit_M3 — RabbitM3Strategy
+- [ ] 4024_AppPrice_Level_Cross — AppPriceLevelCrossStrategy
+- [ ] 4025_DayTrading_Impulse — DayTradingImpulseStrategy
+- [ ] 4026_Pivots — PivotsStrategy
+- [ ] 4027_CyberiaTraderAI — CyberiaTraderAiStrategy
+- [ ] 4028_Expert_Master_EURUSD — ExpertMasterEurusdStrategy
+- [ ] 4029_ExpertClor2MaStopAtr — ExpertClor2MaStopAtrStrategy
+- [ ] 4030_Regularities_of_Exchange_Rates — RegularitiesOfExchangeRatesStrategy
+- [ ] 4031_OpenTiks — OpenTiksStrategy
+- [ ] 4032_Divergence_Trader_Basket — DivergenceTraderBasketStrategy
+- [ ] 4033_LotFractionAdjuster — LotFractionAdjusterStrategy
+- [ ] 4034_Var_Risk_Volume — VarRiskVolumeStrategy
+- [ ] 4035_Chart_Parameters_Diagnostics — ChartParametersDiagnosticsStrategy
+- [ ] 4036_ACB2 — Acb2Strategy
+- [ ] 4037_ACB1 — Acb1Strategy
+- [ ] 4038_MA_Reverse — MaReverseStrategy
+- [ ] 4040_A_System_Championship — ASystemChampionshipStrategy
+- [ ] 4041_PROphet — ProphetStrategy
+- [ ] 4042_Jims_Close_Orders — JimsCloseOrdersStrategy
+- [ ] 4043_Center_Of_Gravity_Mean_Reversion — CenterOfGravityMeanReversionStrategy
+- [ ] 4044_EMA_Cross_Trailing — EmaCrossTrailingStrategy
+- [ ] 4045_Backbone_Basket — BackboneBasketStrategy
+- [ ] 4046_ACB7 — Acb7Strategy
+- [ ] 4047_21hour — TwentyOneHourStrategy
+- [ ] 4048_Burg_Extrapolator_Forecast — BurgExtrapolatorForecastStrategy
+- [ ] 4049_Hans123Trader_RangeBreakout — Hans123TraderRangeBreakoutStrategy
+- [ ] 4050_Smoothed_MA_Directional — SmoothedMaDirectionalStrategy
+- [ ] 4051_Profit_Hunter_HSI_with_Fibonacci — ProfitHunterHsiWithFibonacciStrategy
+- [ ] 4052_MTrendLine — MTrendLineStrategy
+- [ ] 4053_Alligator_Volatility — AlligatorVolatilityStrategy
+- [ ] 4054_N7SAO772012 — N7SAo772012Strategy
+- [ ] 4055_Stat_Euclidean_Metric — StatEuclideanMetricStrategy
+- [ ] 4056_Billy_Expert_Reversal — BillyExpertReversalStrategy
+- [ ] 4057_Future_Pattern_Memory — FuturePatternMemoryStrategy
+- [ ] 4060_Multi_Time_Frame_Regression — MultiTimeFrameRegressionStrategy
+- [ ] 4061_Parabolic_SAR_Fibo_Limits — ParabolicSarFiboLimitsStrategy
+- [ ] 4062_ESmartTralling — ESmartTrallingStrategy
+- [ ] 4063_Locker_Hedging_Grid — LockerHedgingGridStrategy
+- [ ] 4064_Spazm_Volatility_Breakout — SpazmVolatilityBreakoutStrategy
+- [ ] 4065_Pipso_Night_Breakout — PipsoNightBreakoutStrategy
+- [ ] 4066_CustomChartMonitor — CustomChartMonitorStrategy
+- [ ] 4067_AIS1_Trading_Robot — Ais1TradingRobotStrategy
+- [ ] 4068_TrailingProfit_Guardian — TrailingProfitGuardianStrategy
+- [ ] 4069_NTK07Grid — Ntk07Strategy
+- [ ] 4070_Very_Blondie_System — VeryBlondieSystemStrategy
+- [ ] 4071_SVOS_EURJPY_D1 — SvosEurJpyD1Strategy
+- [ ] 4072_Sidus_EMA_RSI — SidusEmaRsiStrategy
+- [ ] 4073_TrueSort_1001 — TrueSort1001Strategy
+- [ ] 4074_Wave_Power_EA — WavePowerEAStrategy
+- [ ] 4075_Stairs — StairsStrategy
+- [ ] 4077_Glfx — GlfxStrategy
+- [ ] 4078_Alliheik_Trader — AlliheikTraderStrategy
+- [ ] 4079_AIS2_Trading_Robot — Ais2TradingRobot20005Strategy
+- [ ] 4080_Gandalf_PRO_Projection — GandalfProProjectionStrategy
+- [ ] 4081_Two_MA_Four_Level_Bands — TwoMaFourLevelBandsStrategy
+- [ ] 4082_AIS3_Trading_Robot_Template — Ais3TradingRobotTemplateStrategy
+- [ ] 4083_AIS_Trade_Machine — AisTradeMachineStrategy
+- [ ] 4084_ADXSystem_DiCross — AdxSystemDiCrossStrategy
+- [ ] 4086_Parabolic_SAR_Limit — ParabolicSarLimitStrategy
+- [ ] 4087_Open_Time_Daily_Window — OpenTimeDailyWindowStrategy
+- [ ] 4088_Multi_Hedg_1 — MultiHedg1Strategy
+- [ ] 4089_TSTPullbackReversal — TstStrategy
+- [ ] 4090_Multi_Stoch — YtgMultiStochStrategy
+- [ ] 4091_TrainYourself — TrainYourselfStrategy
+- [ ] 4092_Elli — ElliStrategy
+- [ ] 4093_NeuroNirvaman — NeuroNirvamanMq4Strategy
+- [ ] 4094_Fractal_ZigZag — FractalZigZagStrategy
+- [ ] 4095_Nirvaman_Imax — NirvamanImaxStrategy
+- [ ] 4096_STO_M5xM15xM30 — StoM5xM15xM30Strategy
+- [ ] 4097_Simple — SimpleStrategy
+- [ ] 4098_Exp_Amstell — ExpAmstellStrategy
+- [ ] 4099_Ard_Order_Management_Stochastic — ArdOrderManagementStochasticStrategy
+- [ ] 4100_JMaster_RSX — JMasterRsxStrategy
+- [ ] 4101_Amstell_SL — AmstellSlStrategy
+- [ ] 4102_Wajdyss_MA_Expert — WajdyssMaExpertStrategy
+- [ ] 4103_SuperForexV2 — SuperForexV2Strategy
+- [ ] 4104_Pinball_Machine_Random_Draw — PinballMachineRandomDrawStrategy
+- [ ] 4105_Symbol_Synthesizer — SymbolSynthesizerStrategy
+- [ ] 4106_Elite_eFibo_Trader — EliteEfiboTraderStrategy
+- [ ] 4107_NtoQf — NtoQfStrategy
+- [ ] 4108_Rubberbands_Safety_Net — RubberbandsSafetyNetStrategy
+- [ ] 4109_Auto_RXD_V1_67 — AutoRXDV167Strategy
+- [ ] 4110_Rubber_Bands_Grid — RubberBandsGridStrategy
+- [ ] 4111_EmaRsiVa_Crossover — EmaRsiVaCrossStrategy
+- [ ] 4112_Moving_Average_With_Frames — MovingAverageWithFramesStrategy
+- [ ] 4113_Forex_Sky — ForexSkyStrategy
+- [ ] 4114_IndicatorParametersDemo — IndicatorParametersDemoStrategy
+- [ ] 4115_History_Downloader — HistoryDownloaderStrategy
+- [ ] 4116_Rubberbands_3 — Rubberbands3Strategy
+- [ ] 4117_HistTraining — HistTrainingStrategy
+- [ ] 4118_Training — TrainingStrategy
+- [ ] 4119_Champion — ChampionStrategy
+- [ ] 4120_History_Training_Bridge — HistoryTrainingBridgeStrategy
+- [ ] 4121_ComFracti_Fractal_Rsi — ComFractiFractalRsiStrategy
+- [ ] 4122_Order_Guardian — OrderGuardianStrategy
+- [ ] 4124_Training_Simulator — TrainingSimulatorStrategy
+- [ ] 4125_ComFracti — ComFractiStrategy
+- [ ] 4126_Chart_Plus_Chart — ChartPlusChartStrategy
+- [ ] 4127_Trade_Protector — TradeProtectorStrategy
+- [ ] 4129_FT_Time_Bigdog — FtTimeBigdogStrategy
+- [ ] 4130_ADX_Simple — AdxSimpleStrategy
+- [ ] 4131_Exp_Fibo_Zz — ExpFiboZzStrategy
+- [ ] 4132_IndicateOrders — IndicateOrdersStrategy
+- [ ] 4134_CurrencyStopLossTakeProfit — CurrencyStopLossTakeProfitStrategy
+- [ ] 4135_Scalpel — ScalpelStrategy
+- [ ] 4136_For_Max_V2 — ForMaxV2Strategy
+- [ ] 4137_AIS5_Trade_Machine — Ais5TradeMachineStrategy
+- [ ] 4138_Expert610_Breakout — Expert610BreakoutStrategy
+- [ ] 4139_Lcs_Macd_Trader — LcsMacdTraderStrategy
+- [ ] 4140_FiftyFiveMedianSlope — FiftyFiveMedianSlopeStrategy
+- [ ] 4141_Multi_Lot_Scalper — MultiLotScalperStrategy
+- [ ] 4142_CCFp_Advisor — CcfpAdvisorStrategy
+- [ ] 4143_MACD_Sample_1010 — MacdSample1010Strategy
+- [ ] 4144_SendCloseOrder — SendCloseOrderStrategy
+- [ ] 4145_RobotPowerM5_Meta4V12 — RobotPowerM5Meta4V12Strategy
+- [ ] 4146_Trade_Arbitrage — TradeArbitrageStrategy
+- [ ] 4147_Ema_Wma_Crossover_Risk — EmaWmaRiskStrategy
+- [ ] 4148_Renko_Live_Chart_Generator — RenkoLiveChartGeneratorStrategy
+- [ ] 4149_Escape_MeanReversion — EscapeMeanReversionStrategy
+- [ ] 4151_Nevalyashka_Direction — NevalyashkaDirectionStrategy
+- [ ] 4152_Vortex_Indicator_Breakout — VortexIndicatorBreakoutStrategy
+- [ ] 4153_Vortex_Oscillator_System_Momentum — VortexOscillatorSystemMomentumStrategy
+- [ ] 4154_MACD_Alert — MacdAlertStrategy
+- [ ] 4155_PsarBug — PsarBugStrategy
+- [ ] 4156_Parabolic_SAR_Crossover_Alert — ParabolicSarCrossoverAlertStrategy
+- [ ] 4157_Combo_Ea4FsfrUpdated5 — ComboEa4FsfrUpdated5Strategy
+- [ ] 4158_Casino111 — Casino111Strategy
+- [ ] 4159_Lilith_Goes_To_Hollywood — LilithGoesToHollywoodStrategy
+- [ ] 4160_NewFSCEA — NewFsceaStrategy
+- [ ] 4161_Multi_Combo — MultiComboStrategy
+- [ ] 4162_Grail_Expert_MA — GrailExpertMaStrategy
+- [ ] 4163_Parabolic_Sar_Bug2 — ParabolicSarBug2Strategy
+- [ ] 4164_Parabolic_Sar_Flip_Alert — ParabolicSarFlipAlertStrategy
+- [ ] 4165_Peak_Volume_Counter — PeakVolumeCounterStrategy
+- [ ] 4167_Six_Indicators_Momentum — SixIndicatorsMomentumStrategy
+- [ ] 4169_TrailingStopFrCn — TrailingStopFrCnStrategy
+- [ ] 4170_TDSGlobal_4 — TdsGlobal4Strategy
+- [ ] 4171_Envelope_MA_Short — EnvelopeMaShortStrategy
+- [ ] 4172_News_Trader — NewsTraderStrategy
+- [ ] 4173_BeeLine_Pairs — BeeLinePairsStrategy
+- [ ] 4174_Stoch_Levels — StochLevelsStrategy
+- [ ] 4175_My_System — MySystemStrategy
+- [ ] 4176_Mo_Bidir — MoBidirStrategy
+- [ ] 4177_Ema_Wma_Rsi — EmaWmaRsiStrategy
+- [ ] 4178_MARE5_1_Shift — Mare51ShiftCrossoverStrategy
+- [ ] 4179_Moving_Average_Money — MovingAverageMoneyStrategy
+- [ ] 4180_EA_E_mail — EaEmailStrategy
+- [ ] 4181_Nevalyashka_BreakdownLevel — NevalyashkaBreakdownLevelStrategy
+- [ ] 4182_MACD_Signal_Atr — MacdSignalAtrStrategy
+- [ ] 4183_Heiken_Ashi_Smoothed_MTF — HeikenAshiSmoothedMtfStrategy
+- [ ] 4184_JK_BullP_AutoTrader — JkBullPAutoTraderStrategy
+- [ ] 4185_10point3_Macd_Grid — TenPointThreeMacdGridStrategy
+- [ ] 4186_TenPoints3 — TenPoints3Strategy
+- [ ] 4187_10_Points_3_V005 — TenPoints3V005Strategy
+- [ ] 4188_Early_Bird_Range_Breakout — EarlyBirdRangeBreakoutStrategy
+- [ ] 4189_Early_Bird_RangeBreak — EarlyBirdRangeBreakStrategy
+- [ ] 4190_Colibri_Grid_Manager — ColibriGridManagerStrategy
+- [ ] 4191_Ard_Order_Management_Command — ArdOrderManagementCommandStrategy
+- [ ] 4192_Udy_Ivan_Madumere — UdyIvanMadumereStrategy
+- [ ] 4193_EA_MA_Email — EaMaEmailStrategy
+- [ ] 4194_Speed_MA — SpeedMAStrategy
+- [ ] 4195_Parabolic_SAR_Bug_3 — ParabolicSarBug3Strategy
+- [ ] 4196_TrailingStopFrCnSar — TrailingStopFrCnSarStrategy
+- [ ] 4197_OsMaMaster — OsMaMasterStrategy
+- [ ] 4198_AutoMagiCal — AutoMagiCalStrategy
+- [ ] 4199_Easiest_Ever_Daytrade — EasiestEverDaytradeStrategy
+- [ ] 4200_SecondEasiest — SecondEasiestStrategy
+- [ ] 4201_Hard_Profit — HardProfitStrategy
+- [ ] 4202_RobotADX2MA — RobotAdxTwoMaStrategy
+- [ ] 4203_Early_Open_Trend — EarlyOpenTrendStrategy
+- [ ] 4204_Easiest_RSI — EasiestRsiStrategy
+- [ ] 4205_RandomT — RandomTStrategy
+- [ ] 4206_MACDNotSoSample — MacdNotSoSampleStrategy
+- [ ] 4207_Rich_Kohonen_Map — RichKohonenMapStrategy
+- [ ] 4208_Take_Profit_Breakout — TakeProfitBreakoutStrategy
+- [ ] 4209_Slope_Rsi_Mtf — SlopeRsiMtfStrategy
+- [ ] 4210_Huge_Income — HugeIncomeStrategy
+- [ ] 4211_Cyclops_CycleIdentifier — CyclopsCycleIdentifierStrategy
+- [ ] 4212_Early_Top_Prorate_V1 — EarlyTopProrateV1Strategy
+- [ ] 4213_VmMatrixDoubleZero — VmMatrixDoubleZeroStrategy
+- [ ] 4214_Stop_Hunter — StopHunterStrategy
+- [ ] 4215_Flat_001a — Flat001aStrategy
+- [ ] 4216_PSAR_Multi_Timeframe — PsarMultiTimeframeStrategy
+- [ ] 4217_CCIT3_Zero_Cross — Ccit3ZeroCrossStrategy
+- [ ] 4218_Rsi_Ma — RsiMaStrategy
+- [ ] 4219_ErrorEA — ErrorEaStrategy
+- [ ] 4220_MAMirror — MaMirrorStrategy
+- [ ] 4221_DVD_100_50_Cent — Dvd10050CentStrategy
+- [ ] 4222_Parabolic_SAR_First_Dot — ParabolicSarFirstDotStrategy
+- [ ] 4223_XBug — XBugStrategy
+- [ ] 4224_Daily_Trend_Reversal — DailyTrendReversalStrategy
+- [ ] 4226_VivaLasVegas — VivaLasVegasStrategy
+- [ ] 4227_Daily_STP_Entry_Frame — DailyStpEntryFrameStrategy

@@ -104,12 +104,12 @@ public class EscapeStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 4)
 			.SetDisplay("Fast SMA Length", "Length of fast SMA", "Parameters")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_slowLength = Param(nameof(SlowLength), 5)
 			.SetDisplay("Slow SMA Length", "Length of slow SMA", "Parameters")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitLong = Param(nameof(TakeProfitLong), 25m)
 			.SetDisplay("Take Profit Long", "Take profit for long trades", "Trading")
@@ -151,12 +151,12 @@ public class EscapeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastMa = new SimpleMovingAverage { Length = FastLength };
-		_slowMa = new SimpleMovingAverage { Length = SlowLength };
+		_fastMa = new SMA { Length = FastLength };
+		_slowMa = new SMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -170,7 +170,7 @@ public class EscapeStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -178,8 +178,8 @@ public class EscapeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fast = _fastMa!.Process(candle.OpenPrice, candle.OpenTime, true).ToDecimal();
-		var slow = _slowMa!.Process(candle.OpenPrice, candle.OpenTime, true).ToDecimal();
+		var fast = _fastMa!.Process(new DecimalIndicatorValue(_fastMa, candle.OpenPrice, candle.OpenTime)).ToDecimal();
+		var slow = _slowMa!.Process(new DecimalIndicatorValue(_slowMa, candle.OpenPrice, candle.OpenTime)).ToDecimal();
 
 		if (!_initialized)
 		{

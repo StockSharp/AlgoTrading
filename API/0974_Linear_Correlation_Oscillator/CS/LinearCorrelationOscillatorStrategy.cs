@@ -50,23 +50,23 @@ public class LinearCorrelationOscillatorStrategy : Strategy
 
 	public LinearCorrelationOscillatorStrategy()
 	{
-		_length = Param(nameof(Length), 14).SetDisplay("Length").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle type");
+		_length = Param(nameof(Length), 14).SetDisplay("Length", "Length", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle type", "Candle type", "General");
 
 		_prices = new decimal[Length];
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

@@ -134,34 +134,34 @@ public class CryptoScalperStrategy : Strategy
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 8)
 			.SetDisplay("Fast LWMA", "Length of the primary linear weighted moving average", "Trend")
-			.SetCanOptimize(true);
+			;
 
 		_higherFastPeriod = Param(nameof(HigherFastPeriod), 6)
 			.SetDisplay("Higher Fast MA", "Fast moving average length on the higher timeframe", "Trend")
-			.SetCanOptimize(true);
+			;
 
 		_higherSlowPeriod = Param(nameof(HigherSlowPeriod), 85)
 			.SetDisplay("Higher Slow MA", "Slow moving average length on the higher timeframe", "Trend")
-			.SetCanOptimize(true);
+			;
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetDisplay("Momentum Period", "Momentum length applied on the higher timeframe", "Momentum")
-			.SetCanOptimize(true);
+			;
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 			.SetDisplay("Momentum Threshold", "Minimum deviation from the reference momentum", "Momentum")
-			.SetCanOptimize(true);
+			;
 
 		_momentumReference = Param(nameof(MomentumReference), 100m)
 			.SetDisplay("Momentum Reference", "Baseline momentum value used as 100 level in MetaTrader", "Momentum");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetDisplay("Take Profit (pips)", "Protective take profit distance expressed in pips", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
 			.SetDisplay("Volume", "Order volume in lots", "Trading")
@@ -197,12 +197,12 @@ public class CryptoScalperStrategy : Strategy
 		_positionDirection = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
-		StartProtection();
+		StartProtection(null, null);
 
 		_pipSize = GetPipSize();
 
@@ -217,8 +217,8 @@ public class CryptoScalperStrategy : Strategy
 		var higherMomentum = new Momentum { Length = MomentumPeriod };
 		var higherMacd = new Macd
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
+			ShortMa = { Length = MacdFastPeriod },
+			LongMa = { Length = MacdSlowPeriod },
 			SignalPeriod = MacdSignalPeriod
 		};
 

@@ -120,12 +120,12 @@ public class MacdAggressiveScalpSimpleStrategy : Strategy
 
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			ShortPeriod = FastLength,
-			LongPeriod = SlowLength,
+			ShortMa = { Length = FastLength },
+			LongMa = { Length = SlowLength },
 			SignalPeriod = SignalLength
 		};
 
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new EMA { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -111,32 +111,32 @@ public class AggressiveHighIvStrategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Period for fast EMA", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length", "Period for slow EMA", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation period", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_atrMeanLength = Param(nameof(AtrMeanLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Mean Length", "Period for ATR mean", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_atrStdLength = Param(nameof(AtrStdLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Std Length", "Period for ATR standard deviation", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_riskFactor = Param(nameof(RiskFactor), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Factor", "Fraction of equity risked per trade", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -162,14 +162,14 @@ public class AggressiveHighIvStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		_fastEma = new EMA { Length = FastEmaLength };
+		_slowEma = new EMA { Length = SlowEmaLength };
 		_atr = new AverageTrueRange { Length = AtrLength };
-		_atrMean = new SimpleMovingAverage { Length = AtrMeanLength };
+		_atrMean = new SMA { Length = AtrMeanLength };
 		_atrStd = new StandardDeviation { Length = AtrStdLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -192,8 +192,8 @@ public class AggressiveHighIvStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var atrMeanValue = _atrMean.Process(atrValue, candle.ServerTime, true).ToDecimal();
-		var atrStdValue = _atrStd.Process(atrValue, candle.ServerTime, true).ToDecimal();
+		var atrMeanValue = _atrMean.Process(new DecimalIndicatorValue(_atrMean, atrValue, candle.ServerTime)).ToDecimal();
+		var atrStdValue = _atrStd.Process(new DecimalIndicatorValue(_atrStd, atrValue, candle.ServerTime)).ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading() || !_atrMean.IsFormed || !_atrStd.IsFormed)
 		{

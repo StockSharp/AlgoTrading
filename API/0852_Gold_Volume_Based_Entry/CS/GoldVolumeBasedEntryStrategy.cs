@@ -64,13 +64,13 @@ public class GoldVolumeBasedEntryStrategy : Strategy
 		_volumeMaPeriod = Param(nameof(VolumeMaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume MA Period", "Period for volume moving average", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 50, 5);
 
 		_targetMove = Param(nameof(TargetMove), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Target Move", "Profit target in asset currency", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 20m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -95,11 +95,11 @@ public class GoldVolumeBasedEntryStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var volumeSma = new SMA { Length = VolumeMaPeriod };
 

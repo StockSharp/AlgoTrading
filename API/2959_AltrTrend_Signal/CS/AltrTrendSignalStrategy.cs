@@ -211,9 +211,9 @@ public class AltrTrendSignalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		var subscription = SubscribeCandles(CandleType);
@@ -287,14 +287,14 @@ public class AltrTrendSignalStrategy : Strategy
 		for (var i = startIndex; i < available; i++)
 		{
 			var candle = _candles[i];
-			var candleRange = Math.Abs(candle.High - candle.Low);
+			var candleRange = Math.Abs(candle.HighPrice - candle.LowPrice);
 			rangeSum += candleRange;
 
-			if (candle.High > ssMax)
-				ssMax = candle.High;
+			if (candle.HighPrice > ssMax)
+				ssMax = candle.HighPrice;
 
-			if (candle.Low < ssMin)
-				ssMin = candle.Low;
+			if (candle.LowPrice < ssMin)
+				ssMin = candle.LowPrice;
 		}
 
 		if (ssMax == decimal.MinValue || ssMin == decimal.MaxValue)

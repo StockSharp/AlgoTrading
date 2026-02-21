@@ -42,24 +42,24 @@ public class RPoint250Strategy : Strategy
 	{
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetDisplay("Order Volume", "Base volume for market entries.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 15m)
 			.SetDisplay("Take Profit Points", "Take profit distance expressed in price points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 999m)
 			.SetDisplay("Stop Loss Points", "Stop loss distance expressed in price points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
 			.SetDisplay("Trailing Stop Points", "Optional trailing distance in price points.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_reversePoint = Param(nameof(ReversePoint), 250)
 			.SetDisplay("Reverse Point Length", "Number of candles scanned for the latest reversal levels.", "Signals")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle aggregation used for calculations.", "General");
@@ -144,9 +144,9 @@ public class RPoint250Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = Math.Max(1, ReversePoint) };
 		_lowest = new Lowest { Length = Math.Max(1, ReversePoint) };

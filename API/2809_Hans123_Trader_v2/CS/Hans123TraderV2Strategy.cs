@@ -188,9 +188,9 @@ public class Hans123TraderV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (StartHour < 0 || StartHour > 23)
 			throw new InvalidOperationException("Start hour must be between 0 and 23.");
@@ -209,8 +209,8 @@ public class Hans123TraderV2Strategy : Strategy
 		// Keep cached risk distances aligned with the latest parameter values.
 		UpdateDistanceCache();
 
-		_highest = new Highest { Length = BreakoutPeriod, CandlePrice = CandlePrice.High };
-		_lowest = new Lowest { Length = BreakoutPeriod, CandlePrice = CandlePrice.Low };
+		_highest = new Highest { Length = BreakoutPeriod };
+		_lowest = new Lowest { Length = BreakoutPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_highest, _lowest, ProcessCandle).Start();

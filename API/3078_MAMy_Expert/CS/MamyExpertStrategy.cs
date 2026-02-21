@@ -23,9 +23,9 @@ public class MamyExpertStrategy : Strategy
 	private readonly StrategyParam<MaCalculationTypes> _maType;
 	private readonly StrategyParam<decimal> _tradeVolume;
 
-	private LengthIndicator<decimal> _closeMa;
-	private LengthIndicator<decimal> _openMa;
-	private LengthIndicator<decimal> _weightedPriceMa;
+	private DecimalLengthIndicator _closeMa;
+	private DecimalLengthIndicator _openMa;
+	private DecimalLengthIndicator _weightedPriceMa;
 
 	private decimal? _previousCloseMa;
 	private decimal? _previousOpenMa;
@@ -93,12 +93,12 @@ public class MamyExpertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
-		StartProtection();
+		StartProtection(null, null);
 
 		_closeMa = CreateMovingAverage(MaType, MaPeriod);
 		_openMa = CreateMovingAverage(MaType, MaPeriod);
@@ -128,10 +128,10 @@ public class MamyExpertStrategy : Strategy
 		if (_closeMa == null || _openMa == null || _weightedPriceMa == null)
 			return;
 
-		var closeMaValue = _closeMa.Process(candle.ClosePrice, candle.OpenTime, true).ToDecimal();
-		var openMaValue = _openMa.Process(candle.OpenPrice, candle.OpenTime, true).ToDecimal();
+		var closeMaValue = _closeMa.Process(new DecimalIndicatorValue(_closeMa, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var openMaValue = _openMa.Process(new DecimalIndicatorValue(_openMa, candle.OpenPrice, candle.OpenTime)).ToDecimal();
 		var weightedPrice = CalculateWeightedPrice(candle);
-		var weightedMaValue = _weightedPriceMa.Process(weightedPrice, candle.OpenTime, true).ToDecimal();
+		var weightedMaValue = _weightedPriceMa.Process(new DecimalIndicatorValue(_weightedPriceMa, weightedPrice, candle.OpenTime)).ToDecimal();
 
 		var previousCloseMa = _previousCloseMa;
 		var previousOpenMa = _previousOpenMa;
@@ -226,12 +226,12 @@ public class MamyExpertStrategy : Strategy
 		return (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaCalculationTypes type, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(MaCalculationTypes type, int length)
 	{
 		return type switch
 		{
-			MaCalculationTypes.Simple => new SimpleMovingAverage { Length = length },
-			MaCalculationTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MaCalculationTypes.Simple => new SMA { Length = length },
+			MaCalculationTypes.Exponential => new EMA { Length = length },
 			MaCalculationTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			_ => new WeightedMovingAverage { Length = length },
 		};

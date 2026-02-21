@@ -118,31 +118,31 @@ public class EthSignal15mStrategy : Strategy
 	    _atrPeriod = Param(nameof(AtrPeriod), 12)
 	        .SetGreaterThanZero()
 	        .SetDisplay("ATR Length", "ATR period for Supertrend and exits", "Indicators")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(7, 21, 1);
 
 	    _factor = Param(nameof(Factor), 2.76m)
 	        .SetGreaterThanZero()
 	        .SetDisplay("Factor", "ATR multiplier for Supertrend", "Indicators")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(1m, 5m, 0.1m);
 
 	    _rsiLength = Param(nameof(RsiLength), 12)
 	        .SetGreaterThanZero()
 	        .SetDisplay("RSI Length", "RSI calculation length", "Indicators")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(7, 21, 1);
 
 	    _rsiOverbought = Param(nameof(RsiOverbought), 70m)
 	        .SetRange(0m, 100m)
 	        .SetDisplay("RSI Overbought", "Overbought level", "Indicators")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(60m, 80m, 5m);
 
 	    _rsiOversold = Param(nameof(RsiOversold), 30m)
 	        .SetRange(0m, 100m)
 	        .SetDisplay("RSI Oversold", "Oversold level", "Indicators")
-	        .SetCanOptimize(true)
+	        
 	        .SetOptimize(20m, 40m, 5m);
 
 	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -175,9 +175,9 @@ public class EthSignal15mStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 
 	    _atr = new AverageTrueRange { Length = AtrPeriod };
 	    _rsi = new RelativeStrengthIndex { Length = RsiLength };

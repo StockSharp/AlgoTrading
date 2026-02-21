@@ -82,7 +82,7 @@ public class OneHBollingerBandsStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Base Timeframe", "Primary timeframe for signal evaluation", "General");
 
-		_higherTimeFrame = Param(nameof(HigherTimeFrame), TimeSpan.FromDays(1).TimeFrame())
+		_higherTimeFrame = Param(nameof(HigherTimeFrame), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Higher Timeframe", "Higher timeframe used for Bollinger Bands and momentum", "Trend");
 
 		_macdTimeFrame = Param(nameof(MacdTimeFrame), TimeSpan.FromDays(30).TimeFrame())
@@ -91,67 +91,67 @@ public class OneHBollingerBandsStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast LWMA", "Length of the fast LWMA", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(4, 12, 2);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow LWMA", "Length of the slow LWMA", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(50, 120, 5);
 
 		_trendFastPeriod = Param(nameof(TrendFastPeriod), 250)
 		.SetGreaterThanZero()
 		.SetDisplay("Trend Fast LWMA", "Fast trend filter period", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(150, 300, 25);
 
 		_trendSlowPeriod = Param(nameof(TrendSlowPeriod), 500)
 		.SetGreaterThanZero()
 		.SetDisplay("Trend Slow LWMA", "Slow trend filter period", "Trend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(300, 600, 25);
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Length", "Period for momentum deviation", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 20, 2);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Threshold", "Minimum deviation from 100 required", "Momentum")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.2m, 0.8m, 0.1m);
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Period", "Length of the Bollinger Bands", "Volatility")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 30, 2);
 
 		_bollingerWidth = Param(nameof(BollingerWidth), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Width", "Standard deviation multiplier", "Volatility")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.5m, 3m, 0.25m);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trade Volume", "Default trade volume per entry", "Trading")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 2m, 0.1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 5m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit (pips)", "Target profit distance in pips", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30m, 80m, 5m);
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
@@ -160,7 +160,7 @@ public class OneHBollingerBandsStrategy : Strategy
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Stop (pips)", "Distance of the trailing stop", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 60m, 5m);
 
 		_enableBreakEven = Param(nameof(EnableBreakEven), true)
@@ -169,13 +169,13 @@ public class OneHBollingerBandsStrategy : Strategy
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30m)
 		.SetGreaterThanZero()
 		.SetDisplay("Break-Even Trigger", "Profit in pips required to arm break-even", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20m, 50m, 5m);
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 30m)
 		.SetGreaterThanZero()
 		.SetDisplay("Break-Even Offset", "Offset applied when moving to break-even", "Risk")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 40m, 5m);
 	}
 
@@ -373,9 +373,9 @@ public class OneHBollingerBandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
 		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
@@ -425,10 +425,10 @@ public class OneHBollingerBandsStrategy : Strategy
 		var typical = GetTypicalPrice(candle);
 
 		// Update base timeframe indicators and wait for closed candles.
-		_fastMaValue = _fastMa.Process(typical, candle.OpenTime, isFinal).ToDecimal();
-		_slowMaValue = _slowMa.Process(typical, candle.OpenTime, isFinal).ToDecimal();
-		_trendFastValue = _trendFastMa.Process(typical, candle.OpenTime, isFinal).ToDecimal();
-		_trendSlowValue = _trendSlowMa.Process(typical, candle.OpenTime, isFinal).ToDecimal();
+		_fastMaValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, typical, candle.OpenTime)).ToDecimal();
+		_slowMaValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, typical, candle.OpenTime)).ToDecimal();
+		_trendFastValue = _trendFastMa.Process(new DecimalIndicatorValue(_trendFastMa, typical, candle.OpenTime)).ToDecimal();
+		_trendSlowValue = _trendSlowMa.Process(new DecimalIndicatorValue(_trendSlowMa, typical, candle.OpenTime)).ToDecimal();
 
 		if (!isFinal)
 		return;

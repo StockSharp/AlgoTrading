@@ -143,19 +143,19 @@ public class AussieSurferLtdStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Base trade size in lots or contracts", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.10m, 0.60m, 0.10m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 46)
 			.SetGreaterOrEqualThanZero()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0)
 			.SetGreaterOrEqualThanZero()
 			.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0, 120, 20);
 
 		_enableTrailingStop = Param(nameof(EnableTrailingStop), true)
@@ -164,19 +164,19 @@ public class AussieSurferLtdStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Length of the Bollinger Bands window", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 20, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for the bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.5m, 3.5m, 0.5m);
 
 		_teethPeriod = Param(nameof(TeethPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Teeth Period", "Length of the Alligator teeth smoothed moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(13, 34, 3);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -213,9 +213,9 @@ public class AussieSurferLtdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (EnableTrailingStop && StopLossPips <= 0)
 			throw new InvalidOperationException("Trailing stop requires a positive stop-loss distance.");
@@ -253,7 +253,7 @@ public class AussieSurferLtdStrategy : Strategy
 			return;
 
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
-		var teethValue = _teeth.Process(medianPrice, candle.OpenTime, true);
+		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, medianPrice, candle.OpenTime));
 
 		if (!teethValue.IsFinal)
 		{

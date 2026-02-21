@@ -174,7 +174,7 @@ public class SourceStrategy : Strategy
 		_slPercent = Param(nameof(SlPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("SL %", "Stop loss percent", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
 		_useTakeProfit = Param(nameof(UseTakeProfit), true)
@@ -183,7 +183,7 @@ public class SourceStrategy : Strategy
 		_tpPercent = Param(nameof(TpPercent), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("TP %", "Take profit percent", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 10m, 1m);
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), false)
@@ -217,9 +217,9 @@ public class SourceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

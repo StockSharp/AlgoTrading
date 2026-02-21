@@ -61,7 +61,7 @@ public class PotentialEntriesStrategy : Strategy
 	{
 		_patternMode = Param(nameof(PatternSide), PatternModes.Bullish)
 		.SetDisplay("Pattern Side", "Candlestick direction to scan", "General")
-		.SetCanOptimize(true);
+		;
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 		.SetGreaterThanZero()
@@ -88,9 +88,9 @@ public class PotentialEntriesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 

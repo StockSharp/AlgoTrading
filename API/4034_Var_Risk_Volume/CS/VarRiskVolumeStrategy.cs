@@ -139,13 +139,13 @@ public class VarRiskVolumeStrategy : Strategy
 		_varLimit = Param(nameof(VarLimit), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("VaR Limit", "Maximum permitted loss expressed in account currency.", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(50m, 1000m, 50m);
 
 		_varPoints = Param(nameof(VarPoints), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("VaR Points", "Price distance measured in points for the risk scenario.", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 300, 10);
 
 		_logDetails = Param(nameof(LogDetails), true)
@@ -176,13 +176,13 @@ public class VarRiskVolumeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		RecalculateOperationVolume();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void RecalculateOperationVolume()

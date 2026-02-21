@@ -179,18 +179,18 @@ public class SmartTrendFollowerStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA", "Fast moving average period", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_slowPeriod = Param(nameof(SlowPeriod), 28)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA", "Slow moving average period", "Indicators")
-		.SetCanOptimize(true);
+		;
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %K", "%K lookback length", "Indicators");
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %D", "%D smoothing length", "Indicators");
 
@@ -233,15 +233,14 @@ public class SmartTrendFollowerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastSma = new SMA { Length = Math.Max(1, FastPeriod) };
 		_slowSma = new SMA { Length = Math.Max(1, SlowPeriod) };
 		_stochastic = new StochasticOscillator
-		{
-			Length = Math.Max(1, StochasticKPeriod),
+		{ K = { Length = Math }.Max(1, StochasticKPeriod),
 			K = { Length = Math.Max(1, StochasticSlowing) },
 			D = { Length = Math.Max(1, StochasticDPeriod) }
 		};
@@ -263,7 +262,7 @@ public class SmartTrendFollowerStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	/// <inheritdoc />

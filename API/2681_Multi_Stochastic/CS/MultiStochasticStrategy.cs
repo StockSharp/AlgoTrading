@@ -230,7 +230,7 @@ public class MultiStochasticStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("%K Period", "Smoothing period for %K", "Indicators");
 
-		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
+		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("%D Period", "Smoothing period for %D", "Indicators");
 
@@ -245,13 +245,13 @@ public class MultiStochasticStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 200m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 100m, 5m);
 
 		_useSymbol1 = Param(nameof(UseSymbol1), true)
@@ -321,9 +321,9 @@ public class MultiStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_resolvedSymbol1 = UseSymbol1 ? Symbol1 ?? Security : null;
 		_resolvedSymbol2 = UseSymbol2 ? Symbol2 : null;
@@ -356,8 +356,7 @@ public class MultiStochasticStrategy : Strategy
 	private StochasticOscillator CreateStochastic()
 	{
 		return new StochasticOscillator
-		{
-			Length = StochasticLength,
+		{ K = { Length = StochasticLength },
 			K = { Length = StochasticKPeriod },
 			D = { Length = StochasticDPeriod }
 		};

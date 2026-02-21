@@ -77,9 +77,9 @@ public class SupertrendFixedTpUnifiedWithTimeFilterMskStrategy : Strategy
 		_tpLevel = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var supertrend = new SuperTrend
 		{

@@ -85,13 +85,13 @@ public class HeikenAshiWavesStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast SMA", "Period of the fast moving average", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 10, 1);
 
 		_slowLength = Param(nameof(SlowLength), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow SMA", "Period of the slow moving average", "Parameters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(20, 60, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -99,7 +99,7 @@ public class HeikenAshiWavesStrategy : Strategy
 
 		_stopLoss = Param(nameof(StopLoss), new Unit(20, UnitTypes.Point))
 		.SetDisplay("Stop Loss", "Trailing stop distance in points", "Risk Management")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10m, 50m, 10m);
 
 		_useTrailing = Param(nameof(UseTrailing), true)
@@ -122,9 +122,9 @@ public class HeikenAshiWavesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(
 			takeProfit: null,

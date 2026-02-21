@@ -215,9 +215,9 @@ public class EmaRsiVaCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Build both EMA_RSI_VA indicators.
 		_slowIndicator = new EmaRsiVolatilityAdaptiveIndicator
@@ -251,7 +251,7 @@ public class EmaRsiVaCrossStrategy : Strategy
 		}
 		else
 		{
-			StartProtection();
+			StartProtection(null, null);
 		}
 
 		subscription
@@ -388,7 +388,7 @@ public class EmaRsiVaCrossStrategy : Strategy
 /// <summary>
 /// Volatility adaptive EMA implementation driven by RSI displacement.
 /// </summary>
-public class EmaRsiVolatilityAdaptiveIndicator : BaseIndicator<decimal>
+public class EmaRsiVolatilityAdaptiveIndicator : BaseIndicator
 {
 	private readonly RelativeStrengthIndex _rsi = new();
 	private decimal? _previousValue;

@@ -209,9 +209,9 @@ public class NCandlesV5Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (UseTradingHours && StartHour >= EndHour)
 		throw new InvalidOperationException("Start hour must be less than end hour when trading hours filter is enabled.");

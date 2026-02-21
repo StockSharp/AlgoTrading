@@ -56,66 +56,66 @@ public class RabbitM2Strategy : Strategy
 	{
 		_cciSellLevel = Param(nameof(CciSellLevel), 101)
 			.SetDisplay("CCI Sell Level", "CCI threshold confirming short signals", "CCI")
-			.SetCanOptimize(true);
+			;
 
 		_cciBuyLevel = Param(nameof(CciBuyLevel), 99)
 			.SetDisplay("CCI Buy Level", "CCI threshold confirming long signals", "CCI")
-			.SetCanOptimize(true);
+			;
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Lookback for the Commodity Channel Index", "CCI")
-			.SetCanOptimize(true);
+			;
 
 		_donchianPeriod = Param(nameof(DonchianPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Donchian Period", "Lookback used for breakout exits", "Donchian")
-			.SetCanOptimize(true);
+			;
 
 		_maxOpenPositions = Param(nameof(MaxOpenPositions), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Open Positions", "Maximum net exposure in base volume multiples", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_bigWinTarget = Param(nameof(BigWinTarget), 1.50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Big Win Target", "Profit needed before increasing position size", "Money Management")
-			.SetCanOptimize(true);
+			;
 
 		_volumeStep = Param(nameof(VolumeStep), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Step", "Increment applied to the base volume after a big win", "Money Management")
-			.SetCanOptimize(true);
+			;
 
 		_wprPeriod = Param(nameof(WprPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Length of the Williams %R oscillator", "Momentum")
-			.SetCanOptimize(true);
+			;
 
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Period", "Fast EMA period on the hourly trend feed", "Trend Filter")
-			.SetCanOptimize(true);
+			;
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 80)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Period", "Slow EMA period on the hourly trend feed", "Trend Filter")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Distance from entry to take profit", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Distance from entry to stop loss", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_initialVolume = Param(nameof(InitialVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Starting base order size", "Money Management")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Primary Candle Type", "Timeframe for CCI, Williams %R and Donchian", "General");
@@ -274,9 +274,9 @@ public class RabbitM2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tradeVolume = InitialVolume;
 		_bigWinThreshold = BigWinTarget;
@@ -293,8 +293,8 @@ public class RabbitM2Strategy : Strategy
 		var donchian = new DonchianChannels { Length = DonchianPeriod };
 
 		// Initialize hourly EMA indicators for trend gating.
-		var emaFast = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var emaSlow = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var emaFast = new EMA { Length = FastEmaPeriod };
+		var emaSlow = new EMA { Length = SlowEmaPeriod };
 
 		var trendSubscription = SubscribeCandles(TimeSpan.FromHours(1).TimeFrame());
 		trendSubscription

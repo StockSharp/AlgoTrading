@@ -104,9 +104,9 @@ public class BollingerBandsModifiedStrategy : Strategy
 		_isShortEntry = default;
 	}
 	
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var bb = new BollingerBands
 		{
@@ -114,7 +114,7 @@ public class BollingerBandsModifiedStrategy : Strategy
 			Width = BollingerDeviation
 		};
 		
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new EMA { Length = EmaLength };
 		var highest = new Highest { Length = HighestLength };
 		var lowest = new Lowest { Length = LowestLength };
 		

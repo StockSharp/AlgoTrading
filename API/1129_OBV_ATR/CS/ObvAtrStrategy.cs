@@ -56,7 +56,7 @@ public class ObvAtrStrategy : Strategy
 		_lookbackLength = Param(nameof(LookbackLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("OBV Lookback", "Lookback length for OBV highs and lows", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 100, 10);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -82,9 +82,9 @@ public class ObvAtrStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var obv = new OnBalanceVolume();
 		var highest = new Highest { Length = LookbackLength };

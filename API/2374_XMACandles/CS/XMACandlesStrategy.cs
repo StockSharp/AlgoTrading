@@ -137,12 +137,12 @@ public class XMACandlesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_openMa = new ExponentialMovingAverage { Length = Length };
-		_closeMa = new ExponentialMovingAverage { Length = Length };
+		_openMa = new EMA { Length = Length };
+		_closeMa = new EMA { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

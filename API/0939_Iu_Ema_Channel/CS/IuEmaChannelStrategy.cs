@@ -36,12 +36,12 @@ public class IuEmaChannelStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 100)
 			.SetDisplay("EMA Length", "EMA period", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_riskToReward = Param(nameof(RiskToReward), 2m)
 			.SetDisplay("Risk To Reward", "Reward to risk ratio", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
@@ -73,22 +73,20 @@ public class IuEmaChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
-		var highEma = new ExponentialMovingAverage
+		var highEma = new EMA
 		{
-			Length = EmaLength,
-			CandlePrice = CandlePrice.High
+			Length = EmaLength
 		};
 
-		var lowEma = new ExponentialMovingAverage
+		var lowEma = new EMA
 		{
-			Length = EmaLength,
-			CandlePrice = CandlePrice.Low
+			Length = EmaLength
 		};
 
 		var subscription = SubscribeCandles(CandleType);

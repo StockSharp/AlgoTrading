@@ -92,35 +92,35 @@ public class EthUsdtEmaCrossoverStrategy : Strategy
 							.SetGreaterThanZero()
 							.SetDisplay("EMA200 Length",
 										"Period of the 200 EMA", "Indicators")
-							.SetCanOptimize(true)
+							
 							.SetOptimize(100, 400, 50);
 
 		_ema20Length = Param(nameof(Ema20Length), 20)
 						   .SetGreaterThanZero()
 						   .SetDisplay("EMA20 Length", "Period of the 20 EMA",
 									   "Indicators")
-						   .SetCanOptimize(true)
+						   
 						   .SetOptimize(5, 40, 5);
 
 		_ema50Length = Param(nameof(Ema50Length), 50)
 						   .SetGreaterThanZero()
 						   .SetDisplay("EMA50 Length", "Period of the 50 EMA",
 									   "Indicators")
-						   .SetCanOptimize(true)
+						   
 						   .SetOptimize(20, 100, 10);
 
 		_rsiLength =
 			Param(nameof(RsiLength), 14)
 				.SetGreaterThanZero()
 				.SetDisplay("RSI Length", "Period of the RSI", "Indicators")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(7, 28, 7);
 
 		_atrLength =
 			Param(nameof(AtrLength), 14)
 				.SetGreaterThanZero()
 				.SetDisplay("ATR Length", "Period of the ATR", "Indicators")
-				.SetCanOptimize(true)
+				
 				.SetOptimize(7, 28, 7);
 
 		_candleType =
@@ -146,17 +146,17 @@ public class EthUsdtEmaCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var ema200 = new ExponentialMovingAverage { Length = Ema200Length };
-		var ema20 = new ExponentialMovingAverage { Length = Ema20Length };
-		var ema50 = new ExponentialMovingAverage { Length = Ema50Length };
+		var ema200 = new EMA { Length = Ema200Length };
+		var ema20 = new EMA { Length = Ema20Length };
+		var ema50 = new EMA { Length = Ema50Length };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
-		var atrSma = new SimpleMovingAverage { Length = 10 };
-		var volumeSma = new SimpleMovingAverage { Length = 20 };
+		var atrSma = new SMA { Length = 10 };
+		var volumeSma = new SMA { Length = 20 };
 
 		var subscription = SubscribeCandles(CandleType);
 

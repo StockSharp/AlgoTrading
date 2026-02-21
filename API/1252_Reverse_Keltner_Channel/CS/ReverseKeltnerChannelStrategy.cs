@@ -93,7 +93,7 @@ public class ReverseKeltnerChannelStrategy : Strategy
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetDisplay("EMA Period", "EMA length for Keltner Channel", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
@@ -101,12 +101,12 @@ public class ReverseKeltnerChannelStrategy : Strategy
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for channel width", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_stopLossFactor = Param(nameof(StopLossFactor), 0.5m)
 			.SetDisplay("Stop Loss Factor", "Fraction of channel width for stop loss", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_adxLength = Param(nameof(AdxLength), 14)
@@ -114,7 +114,7 @@ public class ReverseKeltnerChannelStrategy : Strategy
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
 			.SetDisplay("ADX Threshold", "Value separating weak and strong trends", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 40m, 5m);
 
 		_useAdxFilter = Param(nameof(UseAdxFilter), true)
@@ -144,9 +144,9 @@ public class ReverseKeltnerChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_keltner = new KeltnerChannels
 		{

@@ -60,19 +60,19 @@ public class StopreversalTmStrategy : Strategy
 	{
 		_allowBuyEntry = Param(nameof(AllowBuyEntry), true)
 			.SetDisplay("Allow Buy Entries", "Enable opening long positions on bullish signals", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_allowSellEntry = Param(nameof(AllowSellEntry), true)
 			.SetDisplay("Allow Sell Entries", "Enable opening short positions on bearish signals", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_allowBuyExit = Param(nameof(AllowBuyExit), true)
 			.SetDisplay("Allow Long Exits", "Close existing long positions when a sell signal arrives", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_allowSellExit = Param(nameof(AllowSellExit), true)
 			.SetDisplay("Allow Short Exits", "Close existing short positions when a buy signal arrives", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), true)
 			.SetDisplay("Use Time Filter", "Restrict trading to the configured session", "Session");
@@ -80,39 +80,39 @@ public class StopreversalTmStrategy : Strategy
 		_startHour = Param(nameof(StartHour), 0)
 			.SetRange(0, 23)
 			.SetDisplay("Start Hour", "Session start hour (0-23)", "Session")
-			.SetCanOptimize(true);
+			;
 
 		_startMinute = Param(nameof(StartMinute), 0)
 			.SetRange(0, 59)
 			.SetDisplay("Start Minute", "Session start minute (0-59)", "Session")
-			.SetCanOptimize(true);
+			;
 
 		_endHour = Param(nameof(EndHour), 23)
 			.SetRange(0, 23)
 			.SetDisplay("End Hour", "Session end hour (0-23)", "Session")
-			.SetCanOptimize(true);
+			;
 
 		_endMinute = Param(nameof(EndMinute), 59)
 			.SetRange(0, 59)
 			.SetDisplay("End Minute", "Session end minute (0-59)", "Session")
-			.SetCanOptimize(true);
+			;
 
 		_nPips = Param(nameof(Npips), 0.004m)
 			.SetGreaterThanZero()
 			.SetDisplay("Sensitivity", "Relative offset used to build the trailing stop", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetNotNegative()
 			.SetDisplay("Signal Bar Delay", "Number of completed bars to wait before acting", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 
 		_appliedPrice = Param(nameof(AppliedPrice), StopreversalAppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for the trailing stop", "Indicator")
-			.SetCanOptimize(true);
+			;
 	}
 
 	public bool AllowBuyEntry { get => _allowBuyEntry.Value; set => _allowBuyEntry.Value = value; }
@@ -136,9 +136,9 @@ public class StopreversalTmStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_previousAppliedPrice = null;
 		_previousStopLevel = null;
@@ -147,7 +147,7 @@ public class StopreversalTmStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

@@ -111,17 +111,17 @@ public class CandleTrendStrategy : Strategy
 	    _trendCandles = Param(nameof(TrendCandles), 3)
 	        .SetGreaterThanZero()
 	        .SetDisplay("Trend Candles", "Number of candles in one direction", "General")
-	        .SetCanOptimize(true);
+	        ;
 
 	    _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 	        .SetDisplay("Candle Type", "Type of candles for analysis", "General");
 
 	    _takeProfitPercent = Param(nameof(TakeProfitPercent), 0m)
 	        .SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-	        .SetCanOptimize(true);
+	        ;
 	    _stopLossPercent = Param(nameof(StopLossPercent), 0m)
 	        .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-	        .SetCanOptimize(true);
+	        ;
 
 	    _enableLongEntry = Param(nameof(EnableLongEntry), true)
 	        .SetDisplay("Enable Long Entry", "Permission to enter long", "General");
@@ -151,9 +151,9 @@ public class CandleTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 
 	    var tp = TakeProfitPercent > 0 ? new Unit(TakeProfitPercent, UnitTypes.Percent) : null;
 	    var sl = StopLossPercent > 0 ? new Unit(StopLossPercent, UnitTypes.Percent) : null;

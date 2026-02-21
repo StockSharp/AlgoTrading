@@ -82,9 +82,9 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ma = new SMA { Length = MaPeriod };
 		var supertrend = new SuperTrend { Length = StAtrPeriod, Multiplier = StMultiplier };

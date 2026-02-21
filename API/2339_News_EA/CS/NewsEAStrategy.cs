@@ -100,13 +100,13 @@ public class NewsEAStrategy : Strategy
 		_beforeNewsMinutes = Param(nameof(BeforeNewsMinutes), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Minutes Before", "Stop trading minutes before news", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 30, 1);
 
 		_afterNewsMinutes = Param(nameof(AfterNewsMinutes), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Minutes After", "Stop trading minutes after news", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1, 30, 1);
 
 		_includeLow = Param(nameof(IncludeLow), false)
@@ -139,9 +139,9 @@ public class NewsEAStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Subscribe to news for the selected security.
 		Connector.SubscribeMarketData(Security, MarketDataTypes.News);

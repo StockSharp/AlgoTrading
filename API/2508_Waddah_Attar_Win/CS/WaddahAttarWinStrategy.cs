@@ -76,7 +76,7 @@ public class WaddahAttarWinStrategy : Strategy
 		_stepPoints = Param(nameof(StepPoints), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Step (Points)", "Distance from market price to pending orders in points", "General")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 100, 5);
 
 		_firstVolume = Param(nameof(FirstVolume), 0.1m)
@@ -107,9 +107,9 @@ public class WaddahAttarWinStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_referenceBalance = Portfolio?.CurrentValue ?? 0m;
 

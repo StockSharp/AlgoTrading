@@ -83,9 +83,9 @@ public class HorizontalLineLevelsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TimerPeriodMinutes <= 0)
 			throw new InvalidOperationException("Timer period must be positive.");

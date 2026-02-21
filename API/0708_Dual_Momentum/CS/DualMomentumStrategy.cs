@@ -104,12 +104,12 @@ public class DualMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
 		if (RiskyAsset == null || SafeAsset == null)
 			throw new InvalidOperationException("Assets must be specified.");
 
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rocRisky = new RateOfChange { Length = Period };
 		_rocSafe = new RateOfChange { Length = Period };

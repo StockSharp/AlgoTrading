@@ -71,82 +71,82 @@ public class StochasticAcceleratorStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Market volume used for every entry.", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPips = Param(nameof(StopLossPips), 40m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in MetaTrader pips.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 70m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance expressed in MetaTrader pips.", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_signalKPeriod = Param(nameof(SignalKPeriod), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal %K", "Base period of the confirmation stochastic.", "Stochastic #1")
-			.SetCanOptimize(true);
+			;
 
-		_signalDPeriod = Param(nameof(SignalDPeriod), 10)
+		_signalD = { Length = Param }(nameof(SignalDPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal %D", "Signal smoothing period for the confirmation stochastic.", "Stochastic #1")
-			.SetCanOptimize(true);
+			;
 
 		_signalSlowing = Param(nameof(SignalSlowing), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Slowing", "Additional smoothing applied to the confirmation stochastic.", "Stochastic #1")
-			.SetCanOptimize(true);
+			;
 
 		_entryKPeriod = Param(nameof(EntryKPeriod), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry %K", "Base period for the overbought / oversold filter.", "Stochastic #2")
-			.SetCanOptimize(true);
+			;
 
-		_entryDPeriod = Param(nameof(EntryDPeriod), 10)
+		_entryD = { Length = Param }(nameof(EntryDPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry %D", "Signal smoothing for the overbought / oversold filter.", "Stochastic #2")
-			.SetCanOptimize(true);
+			;
 
 		_entrySlowing = Param(nameof(EntrySlowing), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Slowing", "Additional smoothing for the overbought / oversold filter.", "Stochastic #2")
-			.SetCanOptimize(true);
+			;
 
 		_entryLevel = Param(nameof(EntryLevel), 20m)
 			.SetNotNegative()
 			.SetDisplay("Entry Level", "Lower threshold confirming bullish momentum; the bearish threshold uses 100 - level.", "Stochastic #2")
-			.SetCanOptimize(true);
+			;
 
 		_filterKPeriod = Param(nameof(FilterKPeriod), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Filter %K", "Base period for the upper stochastic band filter.", "Stochastic #3")
-			.SetCanOptimize(true);
+			;
 
-		_filterDPeriod = Param(nameof(FilterDPeriod), 10)
+		_filterD = { Length = Param }(nameof(FilterDPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Filter %D", "Signal smoothing for the upper stochastic band filter.", "Stochastic #3")
-			.SetCanOptimize(true);
+			;
 
 		_filterSlowing = Param(nameof(FilterSlowing), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Filter Slowing", "Additional smoothing for the upper stochastic band filter.", "Stochastic #3")
-			.SetCanOptimize(true);
+			;
 
 		_filterLevel = Param(nameof(FilterLevel), 75m)
 			.SetNotNegative()
 			.SetDisplay("Filter Level", "Upper threshold limiting bullish setups; the bearish threshold uses 100 - level.", "Stochastic #3")
-			.SetCanOptimize(true);
+			;
 
 		_acceleratorLevel = Param(nameof(AcceleratorLevel), 0.0002m)
 			.SetNotNegative()
 			.SetDisplay("Accelerator Level", "Minimum Accelerator Oscillator amplitude required for entries.", "Momentum")
-			.SetCanOptimize(true);
+			;
 
 		_awesomeLevel = Param(nameof(AwesomeLevel), 0.0013m)
 			.SetNotNegative()
 			.SetDisplay("Awesome Level", "Threshold used to close positions when the Awesome Oscillator reverts.", "Momentum")
-			.SetCanOptimize(true);
+			;
 
 		_pipSize = 0m;
 		_previousAccelerator = null;
@@ -332,9 +332,9 @@ public class StochasticAcceleratorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume; // Align helper order methods with the configured trade volume.
 
@@ -347,22 +347,19 @@ public class StochasticAcceleratorStrategy : Strategy
 			StartProtection(takeProfit: takeProfit, stopLoss: stopLoss);
 
 		_signalStochastic = new StochasticOscillator
-		{
-			Length = SignalKPeriod,
+		{ K = { Length = SignalKPeriod },
 			K = { Length = SignalSlowing },
 			D = { Length = SignalDPeriod },
 		};
 
 		_entryStochastic = new StochasticOscillator
-		{
-			Length = EntryKPeriod,
+		{ K = { Length = EntryKPeriod },
 			K = { Length = EntrySlowing },
 			D = { Length = EntryDPeriod },
 		};
 
 		_filterStochastic = new StochasticOscillator
-		{
-			Length = FilterKPeriod,
+		{ K = { Length = FilterKPeriod },
 			K = { Length = FilterSlowing },
 			D = { Length = FilterDPeriod },
 		};

@@ -58,7 +58,7 @@ public class NonRepaintingRenkoEmulationStrategy : Strategy
 		_brickSize = Param(nameof(BrickSize), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Brick Size", "Renko brick size", "General")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
@@ -80,14 +80,14 @@ public class NonRepaintingRenkoEmulationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

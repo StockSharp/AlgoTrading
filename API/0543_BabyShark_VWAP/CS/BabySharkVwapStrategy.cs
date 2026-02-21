@@ -108,13 +108,13 @@ public class BabySharkVwapStrategy : Strategy
 		_length = Param(nameof(Length), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("VWAP Length", "Period for VWAP and deviation", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 100, 5);
 
 		_rsiLength = Param(nameof(RsiLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Period for RSI of OBV", "Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 15, 1);
 
 		_higherLevel = Param(nameof(HigherLevel), 70m)
@@ -150,9 +150,9 @@ public class BabySharkVwapStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_vwap = new VolumeWeightedMovingAverage { Length = Length };
 		_std = new StandardDeviation { Length = Length };
@@ -179,10 +179,11 @@ public class BabySharkVwapStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var time = candle.ServerTime;
 		var obv = obvValue.ToDecimal();
-		var rsi = _rsi.Process(obv).ToDecimal();
-		var vwap = _vwap.Process(candle).ToDecimal();
-		var dev = _std.Process(candle.ClosePrice).ToDecimal();
+		var rsi = _rsi.Process(new DecimalIndicatorValue(_rsi, obv, time)).ToDecimal();
+		var vwap = _vwap.Process(new CandleIndicatorValue(candle, candle.ClosePrice)).ToDecimal();
+		var dev = _std.Process(new DecimalIndicatorValue(_std, candle.ClosePrice, time)).ToDecimal();
 
 		ProcessCandle(candle, vwap, dev, rsi);
 	}

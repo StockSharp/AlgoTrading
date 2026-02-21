@@ -363,9 +363,9 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_longOpenSmoother = CreateSmoother(LongMethod, LongLength, LongPhase);
 		_longCloseSmoother = CreateSmoother(LongMethod, LongLength, LongPhase);
@@ -408,8 +408,8 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 
 		var time = candle.CloseTime;
 
-		var openValue = _longOpenSmoother.Process(candle.OpenPrice, time, true);
-		var closeValue = _longCloseSmoother.Process(candle.ClosePrice, time, true);
+		var openValue = _longOpenSmoother.Process(new DecimalIndicatorValue(_longOpenSmoother, candle.OpenPrice, time));
+		var closeValue = _longCloseSmoother.Process(new DecimalIndicatorValue(_longCloseSmoother, candle.ClosePrice, time));
 
 		if (!openValue.IsFinal || !closeValue.IsFinal)
 		return;
@@ -453,8 +453,8 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 
 		var time = candle.CloseTime;
 
-		var openValue = _shortOpenSmoother.Process(candle.OpenPrice, time, true);
-		var closeValue = _shortCloseSmoother.Process(candle.ClosePrice, time, true);
+		var openValue = _shortOpenSmoother.Process(new DecimalIndicatorValue(_shortOpenSmoother, candle.OpenPrice, time));
+		var closeValue = _shortCloseSmoother.Process(new DecimalIndicatorValue(_shortCloseSmoother, candle.ClosePrice, time));
 
 		if (!openValue.IsFinal || !closeValue.IsFinal)
 		return;
@@ -611,17 +611,17 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 
 		return method switch
 		{
-			SmoothingMethods.Sma => new SimpleMovingAverage { Length = normalizedLength },
-			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Sma => new SMA { Length = normalizedLength },
+			SmoothingMethods.Ema => new EMA { Length = normalizedLength },
 			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = normalizedLength },
 			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = normalizedLength },
 			SmoothingMethods.Jjma => CreateJurik(normalizedLength, phase),
 			SmoothingMethods.Jurx => new ZeroLagExponentialMovingAverage { Length = normalizedLength },
 			SmoothingMethods.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = offset, Sigma = 6m },
 			SmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
-			SmoothingMethods.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Vidya => new EMA { Length = normalizedLength },
 			SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
-			_ => new SimpleMovingAverage { Length = normalizedLength },
+			_ => new SMA { Length = normalizedLength },
 		};
 	}
 

@@ -97,47 +97,47 @@ public class IchimokuRsiMacdStrategy : Strategy
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 		.SetRange(5, 30)
 		.SetDisplay("Tenkan Period", "Tenkan-sen period", "Ichimoku")
-		.SetCanOptimize(true);
+		;
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 		.SetRange(10, 50)
 		.SetDisplay("Kijun Period", "Kijun-sen period", "Ichimoku")
-		.SetCanOptimize(true);
+		;
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 		.SetRange(30, 70)
 		.SetDisplay("Senkou Span B Period", "Senkou Span B period", "Ichimoku")
-		.SetCanOptimize(true);
+		;
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 		.SetRange(5, 30)
 		.SetDisplay("RSI Length", "RSI period", "RSI")
-		.SetCanOptimize(true);
+		;
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
 		.SetRange(60, 80)
 		.SetDisplay("RSI Overbought", "RSI overbought level", "RSI")
-		.SetCanOptimize(true);
+		;
 
 		_rsiOversold = Param(nameof(RsiOversold), 30)
 		.SetRange(20, 40)
 		.SetDisplay("RSI Oversold", "RSI oversold level", "RSI")
-		.SetCanOptimize(true);
+		;
 
 		_macdFast = Param(nameof(MacdFast), 12)
 		.SetRange(5, 20)
 		.SetDisplay("MACD Fast", "MACD fast period", "MACD")
-		.SetCanOptimize(true);
+		;
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 		.SetRange(20, 40)
 		.SetDisplay("MACD Slow", "MACD slow period", "MACD")
-		.SetCanOptimize(true);
+		;
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 		.SetRange(5, 15)
 		.SetDisplay("MACD Signal", "MACD signal period", "MACD")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <inheritdoc />
@@ -156,9 +156,9 @@ public class IchimokuRsiMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ichimoku = new Ichimoku
 		{

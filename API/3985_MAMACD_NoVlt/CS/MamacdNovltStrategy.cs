@@ -189,20 +189,17 @@ public class MamacdNovltStrategy : Strategy
 
 	_firstLowWma = new WeightedMovingAverage
 	{
-	Length = FirstLowWmaPeriod,
-	CandlePrice = CandlePrice.Low
+	Length = FirstLowWmaPeriod
 	};
 
 	_secondLowWma = new WeightedMovingAverage
 	{
-	Length = SecondLowWmaPeriod,
-	CandlePrice = CandlePrice.Low
+	Length = SecondLowWmaPeriod
 	};
 
-	_fastCloseEma = new ExponentialMovingAverage
+	_fastCloseEma = new EMA
 	{
-	Length = FastEmaPeriod,
-	CandlePrice = CandlePrice.Close
+	Length = FastEmaPeriod
 	};
 
 	_macd = new MovingAverageConvergenceDivergence

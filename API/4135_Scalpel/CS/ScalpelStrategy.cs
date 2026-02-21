@@ -79,89 +79,89 @@ public class ScalpelStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Base Timeframe", "Primary timeframe used for trade execution", "General")
-			.SetCanOptimize(true);
+			;
 
 		_hour1CandleType = Param(nameof(Hour1CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("H1 Timeframe", "One hour candles for higher time-frame confirmation", "General")
-			.SetCanOptimize(true);
+			;
 
 		_hour4CandleType = Param(nameof(Hour4CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("H4 Timeframe", "Four hour candles for the dominant trend", "General")
-			.SetCanOptimize(true);
+			;
 
 		_minute30CandleType = Param(nameof(Minute30CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("M30 Timeframe", "Thirty minute candles for medium-term confirmation", "General")
-			.SetCanOptimize(true);
+			;
 
 		_volatilityCandleType = Param(nameof(VolatilityCandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Volatility Timeframe", "Short timeframe used to measure directional volume", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_tradeVolume = Param(nameof(TradeVolume), -5m)
 			.SetDisplay("Trade Volume", "Positive value = lots, negative value = percent of capital", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 40m)
 			.SetDisplay("Take Profit (points)", "Distance to the profit target expressed in price steps", "Risk")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 340m)
 			.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price steps", "Risk")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 25m)
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance expressed in price steps", "Risk")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetDisplay("CCI Period", "Commodity Channel Index lookback for signal generation", "Signals")
 			.SetGreaterOrEqualTo(1)
-			.SetCanOptimize(true);
+			;
 
 		_cciLimit = Param(nameof(CciLimit), 75m)
 			.SetDisplay("CCI Limit", "Upper bound for long entries and mirrored negative bound for shorts", "Signals")
-			.SetCanOptimize(true);
+			;
 
 		_maxDirectionalPositions = Param(nameof(MaxDirectionalPositions), 1)
 			.SetDisplay("Max Net Positions", "Maximum number of position units allowed in one direction", "Trading")
 			.SetGreaterOrEqualTo(1)
-			.SetCanOptimize(true);
+			;
 
 		_reentryIntervalMinutes = Param(nameof(ReentryIntervalMinutes), 0)
 			.SetDisplay("Reentry Interval (min)", "Minimum minutes to wait before entering again", "Behavior")
 			.SetGreaterOrEqualTo(0)
-			.SetCanOptimize(true);
+			;
 
 		_takeProfitReduceMinutes = Param(nameof(TakeProfitReduceMinutes), 600)
 			.SetDisplay("TP Reduce Interval (min)", "Minutes before reducing the take profit threshold", "Risk")
 			.SetGreaterOrEqualTo(0)
-			.SetCanOptimize(true);
+			;
 
 		_liveMinutes = Param(nameof(LiveMinutes), 0)
 			.SetDisplay("Max Position Lifetime (min)", "Force close trades after the specified lifetime", "Risk")
 			.SetGreaterOrEqualTo(0)
-			.SetCanOptimize(true);
+			;
 
 		_volatilityWindow = Param(nameof(VolatilityWindow), 100)
 			.SetDisplay("Volatility Window", "Number of 1-minute candles examined for the volume filter", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_volatilityThresholdPoints = Param(nameof(VolatilityThresholdPoints), 1m)
 			.SetDisplay("Volatility Threshold (points)", "Minimum candle body/ range to accumulate directional volume", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_fridayCloseHour = Param(nameof(FridayCloseHour), 22)
 			.SetDisplay("Friday Close Hour", "Hour (0-23) to liquidate positions on Friday", "Behavior")
 			.SetGreaterOrEqualTo(0)
-			.SetCanOptimize(true);
+			;
 
 		_spreadLimitPoints = Param(nameof(SpreadLimitPoints), 5.5m)
 			.SetDisplay("Spread Limit (points)", "Maximum spread allowed when opening new positions", "Risk")
 			.SetNotNegative()
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <summary>
@@ -370,9 +370,9 @@ public class ScalpelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		UpdatePipSize();
 		UpdateThresholds();

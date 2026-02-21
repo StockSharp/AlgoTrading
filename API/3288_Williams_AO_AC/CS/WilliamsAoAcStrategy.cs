@@ -68,45 +68,45 @@ public class WilliamsAoAcStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("BB Period", "Bollinger Bands lookback length", "Bollinger Bands")
-		.SetCanOptimize(true);
+		;
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("BB Deviation", "Standard deviation multiplier for the bands", "Bollinger Bands")
-		.SetCanOptimize(true);
+		;
 
 		_bollingerSpreadLower = Param(nameof(BollingerSpreadLower), 40m)
 		.SetNotNegative()
 		.SetDisplay("BB Spread Min", "Minimum band width in points required to trade", "Bollinger Bands")
-		.SetCanOptimize(true);
+		;
 
 		_bollingerSpreadUpper = Param(nameof(BollingerSpreadUpper), 210m)
 		.SetNotNegative()
 		.SetDisplay("BB Spread Max", "Maximum band width in points allowed to trade", "Bollinger Bands")
-		.SetCanOptimize(true);
+		;
 
 		_aoFastPeriod = Param(nameof(AoFastPeriod), 11)
 		.SetGreaterThanZero()
 		.SetDisplay("AO Fast", "Short moving average period for Awesome Oscillator", "Awesome Oscillator")
-		.SetCanOptimize(true);
+		;
 
 		_aoSlowPeriod = Param(nameof(AoSlowPeriod), 40)
 		.SetGreaterThanZero()
 		.SetDisplay("AO Slow", "Long moving average period for Awesome Oscillator", "Awesome Oscillator")
-		.SetCanOptimize(true);
+		;
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Relative Strength Index period", "RSI")
-		.SetCanOptimize(true);
+		;
 
 		_rsiBuyThreshold = Param(nameof(RsiBuyThreshold), 46m)
 		.SetDisplay("RSI Buy", "Minimum RSI value that confirms bullish momentum", "RSI")
-		.SetCanOptimize(true);
+		;
 
 		_rsiSellThreshold = Param(nameof(RsiSellThreshold), 40m)
 		.SetDisplay("RSI Sell", "Maximum RSI value that confirms bearish momentum", "RSI")
-		.SetCanOptimize(true);
+		;
 
 		_entryHour = Param(nameof(EntryHour), 0)
 		.SetDisplay("Entry Hour", "Hour of day (0-23) when trading window opens", "Session")
@@ -115,27 +115,27 @@ public class WilliamsAoAcStrategy : Strategy
 		_tradingWindowHours = Param(nameof(TradingWindowHours), 20)
 		.SetNotNegative()
 		.SetDisplay("Trading Hours", "Number of consecutive hours allowed for trading", "Session")
-		.SetCanOptimize(true);
+		;
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume", "Lot size used for each new entry", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 60)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Protective stop distance expressed in points", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 90)
 		.SetNotNegative()
 		.SetDisplay("Take Profit", "Profit target distance expressed in points", "Risk")
-		.SetCanOptimize(true);
+		;
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 30)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance in points applied after profits", "Risk")
-		.SetCanOptimize(true);
+		;
 	}
 
 	/// <summary>
@@ -312,9 +312,9 @@ public class WilliamsAoAcStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pipSize = Security?.PriceStep ?? 0m;
 		if (_pipSize <= 0m)
@@ -333,11 +333,11 @@ public class WilliamsAoAcStrategy : Strategy
 
 		_awesome = new AwesomeOscillator
 		{
-			ShortPeriod = AoFastPeriod,
-			LongPeriod = AoSlowPeriod
+			ShortMa = { Length = AoFastPeriod },
+			LongMa = { Length = AoSlowPeriod }
 		};
 
-		_aoAverage = new SimpleMovingAverage
+		_aoAverage = new SMA
 		{
 			Length = AcceleratorSmoothingPeriod
 		};
@@ -357,7 +357,7 @@ public class WilliamsAoAcStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand, decimal rsiValue, decimal aoValue)
@@ -395,7 +395,7 @@ public class WilliamsAoAcStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		var candleTime = candle.OpenTime != default ? candle.OpenTime : candle.Time;
+		var candleTime = candle.OpenTime != default ? candle.OpenTime : candle.ServerTime;
 		if (!IsWithinTradingWindow(candleTime))
 		return;
 

@@ -89,23 +89,23 @@ public class MaSrTradingStrategy : Strategy
 	{
 		_smaPeriod = Param(nameof(SmaPeriod), 5)
 			.SetDisplay("SMA Period", "Period of the moving average used for turning points", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 20, 1);
 
 		_highLookback = Param(nameof(HighLookback), 5)
 			.SetDisplay("High Lookback", "Number of candles to evaluate swing highs", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 30, 1);
 
 		_lowLookback = Param(nameof(LowLookback), 5)
 			.SetDisplay("Low Lookback", "Number of candles to evaluate swing lows", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 30, 1);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetDisplay("Volume", "Trading volume in lots", "Trading")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -137,13 +137,13 @@ public class MaSrTradingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
-		_sma = new SimpleMovingAverage { Length = SmaPeriod };
+		_sma = new SMA { Length = SmaPeriod };
 		_highestHigh = new Highest { Length = HighLookback };
 		_lowestLow = new Lowest { Length = LowLookback };
 

@@ -168,17 +168,17 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		_minPartialVolume = Param(nameof(MinPartialVolume), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Min Partial Volume", "Minimum volume executed during partial exits", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_profitThreshold = Param(nameof(ProfitThreshold), 5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Profit Threshold", "Profit threshold required before partial profit taking", "Money Management")
-		.SetCanOptimize(true);
+		;
 
 		_historyLimit = Param(nameof(HistoryLimit), 1024)
 		.SetGreaterThanZero()
 		.SetDisplay("History Limit", "Maximum number of recent candles stored for pattern analysis", "General")
-		.SetCanOptimize(true);
+		;
 
 		_pattern1Enabled = Param(nameof(Pattern1Enabled), true)
 			.SetDisplay("Pattern 1 Enabled", "Enable MACD pattern 1", "Pattern 1");
@@ -1020,9 +1020,9 @@ public class MacdPatternTraderSessionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = Security?.PriceStep ?? 0.0001m;
 		_pointValue = Security?.PriceStepCost ?? 1m;
@@ -1036,10 +1036,10 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		_macd5 = CreateMacd(Pattern5FastEma, Pattern5SlowEma);
 		_macd6 = CreateMacd(Pattern6FastEma, Pattern6SlowEma);
 
-		_ema1 = new ExponentialMovingAverage { Length = Ema1Period };
-		_ema2 = new ExponentialMovingAverage { Length = Ema2Period };
-		_sma1 = new SimpleMovingAverage { Length = SmaPeriod };
-		_ema3 = new ExponentialMovingAverage { Length = Ema3Period };
+		_ema1 = new EMA { Length = Ema1Period };
+		_ema2 = new EMA { Length = Ema2Period };
+		_sma1 = new SMA { Length = SmaPeriod };
+		_ema3 = new EMA { Length = Ema3Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -1053,10 +1053,10 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		{
 			Macd =
 			{
-				ShortMa = new ExponentialMovingAverage { Length = fast },
-				LongMa = new ExponentialMovingAverage { Length = slow },
+				ShortMa = new EMA { Length = fast },
+				LongMa = new EMA { Length = slow },
 			},
-			SignalMa = new ExponentialMovingAverage { Length = 1 },
+			SignalMa = new EMA { Length = 1 },
 		};
 	}
 

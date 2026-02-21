@@ -94,17 +94,17 @@ public class SlopeDirectionLineStrategy : Strategy
 		_length = Param(nameof(Length), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Regression Length", "Number of bars in regression", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetRange(1m, 5m);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetRange(0.5m, 5m);
 
 		_allowLong = Param(nameof(AllowLong), true)
@@ -130,9 +130,9 @@ public class SlopeDirectionLineStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_reg = new LinearRegression { Length = Length };
 

@@ -77,7 +77,7 @@ public class TakeProfitTimeGuardStrategy : Strategy
 		_takeProfitValue = Param(nameof(TakeProfitValue), 100m)
 			.SetDisplay("Target Value", "Profit target expressed in selected mode", "Risk Management")
 			.SetGreaterThanZero()
-			.SetCanOptimize(true);
+			;
 
 		_useTradingWindow = Param(nameof(UseTradingWindow), true)
 			.SetDisplay("Use Trading Window", "Enable scheduled trading window", "Time Filter");
@@ -102,9 +102,9 @@ public class TakeProfitTimeGuardStrategy : Strategy
 		_initialBalance = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_initialBalance = Portfolio?.CurrentValue;
 

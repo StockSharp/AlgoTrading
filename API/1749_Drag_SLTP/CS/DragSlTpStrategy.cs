@@ -64,25 +64,25 @@ public class DragSlTpStrategy : Strategy
 	{
 		_autoSetSl = Param(nameof(AutoSetSl), true)
 			.SetDisplay("Auto Set SL", "Automatically set stop-loss for new positions", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_slPoints = Param(nameof(SlPoints), 300m)
 			.SetDisplay("SL Points", "Stop-loss distance in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_autoSetTp = Param(nameof(AutoSetTp), false)
 			.SetDisplay("Auto Set TP", "Automatically set take-profit for new positions", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_tpPoints = Param(nameof(TpPoints), 30m)
 			.SetDisplay("TP Points", "Take-profit distance in price steps", "Risk")
-			.SetCanOptimize(true);
+			;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		StartProtection(
 			AutoSetTp ? new Unit(TpPoints, UnitTypes.Step) : default,

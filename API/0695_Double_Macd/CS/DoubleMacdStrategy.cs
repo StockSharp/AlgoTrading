@@ -132,17 +132,17 @@ public class DoubleMacdStrategy : Strategy
 		_fastLength1 = Param(nameof(FastLength1), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast Length 1", "Fast length for first MACD", "MACD 1")
-		.SetCanOptimize(true);
+		;
 		
 		_slowLength1 = Param(nameof(SlowLength1), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow Length 1", "Slow length for first MACD", "MACD 1")
-		.SetCanOptimize(true);
+		;
 		
 		_signalLength1 = Param(nameof(SignalLength1), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Length 1", "Signal length for first MACD", "MACD 1")
-		.SetCanOptimize(true);
+		;
 		
 		_maType1 = Param(nameof(MaType1), MaTypes.Ema)
 		.SetDisplay("MA Type 1", "MA type for first MACD", "MACD 1");
@@ -150,24 +150,24 @@ public class DoubleMacdStrategy : Strategy
 		_fastLength2 = Param(nameof(FastLength2), 24)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast Length 2", "Fast length for second MACD", "MACD 2")
-		.SetCanOptimize(true);
+		;
 		
 		_slowLength2 = Param(nameof(SlowLength2), 52)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow Length 2", "Slow length for second MACD", "MACD 2")
-		.SetCanOptimize(true);
+		;
 		
 		_signalLength2 = Param(nameof(SignalLength2), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Length 2", "Signal length for second MACD", "MACD 2")
-		.SetCanOptimize(true);
+		;
 		
 		_maType2 = Param(nameof(MaType2), MaTypes.Ema)
 		.SetDisplay("MA Type 2", "MA type for second MACD", "MACD 2");
 		
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 		.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-		.SetCanOptimize(true);
+		;
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -186,9 +186,9 @@ public class DoubleMacdStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_macd1 = CreateMacd(FastLength1, SlowLength1, SignalLength1, MaType1);
 		_macd2 = CreateMacd(FastLength2, SlowLength2, SignalLength2, MaType2);
@@ -245,19 +245,10 @@ public class DoubleMacdStrategy : Strategy
 		{
 			Macd =
 			{
-				ShortMa = CreateMa(type, fast),
-				LongMa = CreateMa(type, slow),
+				ShortMa = { Length = fast },
+				LongMa = { Length = slow },
 			},
-			SignalMa = CreateMa(type, signal)
-		};
-	}
-	
-	private static LengthIndicator<decimal> CreateMa(MaTypes type, int length)
-	{
-		return type switch
-		{
-			MaTypes.Sma => new SimpleMovingAverage { Length = length },
-			_ => new ExponentialMovingAverage { Length = length },
+			SignalMa = { Length = signal }
 		};
 	}
 	

@@ -57,7 +57,7 @@ public class ZpfStrategy : Strategy
 		_length = Param(nameof(Length), 12)
 			.SetRange(5, 50)
 			.SetDisplay("Length", "Base moving average length", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -78,9 +78,9 @@ public class ZpfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_fastMa = new() { Length = Length };
 		_slowMa = new() { Length = Length * 2 };
@@ -100,7 +100,7 @@ public class ZpfStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)

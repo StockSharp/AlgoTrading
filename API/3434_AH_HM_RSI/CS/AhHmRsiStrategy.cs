@@ -41,31 +41,31 @@ public class AhHmRsiStrategy : Strategy
 	{
 		_rsiPeriodParam = Param(nameof(RsiPeriod), 33)
 			.SetDisplay("RSI Period", "Length of the RSI confirmation filter", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_maPeriodParam = Param(nameof(MaPeriod), 2)
 			.SetDisplay("MA Period", "Length of the smoothing average used to detect the trend", "Indicators")
-			.SetCanOptimize(true);
+			;
 
 		_hammerRsiThresholdParam = Param(nameof(HammerRsiThreshold), 40m)
 			.SetDisplay("Hammer RSI", "RSI level that enables long trades after a hammer", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_hangingManRsiThresholdParam = Param(nameof(HangingManRsiThreshold), 60m)
 			.SetDisplay("Hanging Man RSI", "RSI level that enables short trades after a hanging man", "Filters")
-			.SetCanOptimize(true);
+			;
 
 		_lowerExitLevelParam = Param(nameof(LowerExitLevel), 30m)
 			.SetDisplay("RSI Lower Exit", "RSI level used for exit cross checks", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_upperExitLevelParam = Param(nameof(UpperExitLevel), 70m)
 			.SetDisplay("RSI Upper Exit", "RSI level used for exit cross checks", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for detecting candle patterns", "Data")
-			.SetCanOptimize(false);
+			;
 	}
 
 	/// <summary>
@@ -132,11 +132,11 @@ public class AhHmRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		_rsi.Length = RsiPeriod;
 		_sma.Length = MaPeriod;

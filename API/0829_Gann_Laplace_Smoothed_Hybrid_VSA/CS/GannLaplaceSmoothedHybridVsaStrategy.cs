@@ -59,12 +59,12 @@ public class GannLaplaceSmoothedHybridVsaStrategy : Strategy
 	{
 		_trendPeriod = Param(nameof(TrendPeriod), 20)
 			.SetDisplay("Trend Period", "Period for trend moving average", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_vsaPeriod = Param(nameof(VsaPeriod), 14)
 			.SetDisplay("VSA Smoothing", "EMA period for volume spread", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -86,13 +86,13 @@ public class GannLaplaceSmoothedHybridVsaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		StartProtection();
+		base.OnStarted2(time);
+		StartProtection(null, null);
 
-		_trendMa = new SimpleMovingAverage { Length = TrendPeriod };
-		_vsaEma = new ExponentialMovingAverage { Length = VsaPeriod };
+		_trendMa = new SMA { Length = TrendPeriod };
+		_vsaEma = new EMA { Length = VsaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -120,7 +120,7 @@ public class GannLaplaceSmoothedHybridVsaStrategy : Strategy
 		var spread = candle.ClosePrice - candle.OpenPrice;
 		var vsa = spread / range * candle.TotalVolume;
 
-		var smoothed = _vsaEma.Process(vsa, candle.OpenTime, true).ToDecimal();
+		var smoothed = _vsaEma.Process(new DecimalIndicatorValue(_vsaEma, vsa, candle.OpenTime)).ToDecimal();
 
 		if (smoothed > 0 && candle.ClosePrice > trendValue && Position <= 0)
 		{

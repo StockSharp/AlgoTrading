@@ -70,17 +70,17 @@ public class AverageHighLowRangeIbsReversalStrategy : Strategy
 		_length = Param(nameof(Length), 20)
 			.SetRange(1, 100)
 			.SetDisplay("Length", "Lookback length for calculations", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_barsBelowThreshold = Param(nameof(BarsBelowThreshold), 2)
 			.SetRange(1, 10)
 			.SetDisplay("Bars Below Threshold", "Number of consecutive bars below buy threshold", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_ibsBuyThreshold = Param(nameof(IbsBuyThreshold), 0.2m)
 			.SetRange(0m, 1m)
 			.SetDisplay("IBS Buy Threshold", "IBS value required for entry", "Parameters")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -110,9 +110,9 @@ public class AverageHighLowRangeIbsReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_hlAverage = new SMA { Length = Length };
 		_highest = new Highest { Length = Length };
@@ -144,9 +144,9 @@ public class AverageHighLowRangeIbsReversalStrategy : Strategy
 
 		var time = candle.OpenTime;
 
-		var hlValue = _hlAverage.Process(candle.HighPrice - candle.LowPrice, time, true);
-		var highValue = _highest.Process(candle.HighPrice, time, true);
-		var lowValue = _lowest.Process(candle.LowPrice, time, true);
+		var hlValue = _hlAverage.Process(new DecimalIndicatorValue(_hlAverage, candle.HighPrice - candle.LowPrice, time));
+		var highValue = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, time));
+		var lowValue = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, time));
 
 		if (!_hlAverage.IsFormed || !_highest.IsFormed || !_lowest.IsFormed)
 		{

@@ -33,8 +33,8 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 	private readonly StrategyParam<bool> _enableLongExits;
 	private readonly StrategyParam<bool> _enableShortExits;
 
-	private LengthIndicator<decimal> _valueSmoother;
-	private LengthIndicator<decimal> _volumeSmoother;
+	private DecimalLengthIndicator _valueSmoother;
+	private DecimalLengthIndicator _volumeSmoother;
 
 	private readonly List<int> _stateBuffer = new();
 	private readonly Queue<decimal> _deMaxQueue = new();
@@ -55,23 +55,23 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("DeMarker Period", "Smoothing period used by the DeMarker calculation", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_highLevel1 = Param(nameof(HighLevel1), 15m)
 			.SetDisplay("High Level 1", "Upper alert level multiplied by smoothed volume", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_highLevel2 = Param(nameof(HighLevel2), 20m)
 			.SetDisplay("High Level 2", "Extreme upper level multiplied by smoothed volume", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_lowLevel1 = Param(nameof(LowLevel1), -15m)
 			.SetDisplay("Low Level 1", "Lower alert level multiplied by smoothed volume", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_lowLevel2 = Param(nameof(LowLevel2), -20m)
 			.SetDisplay("Low Level 2", "Extreme lower level multiplied by smoothed volume", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.Simple)
 			.SetDisplay("Smoothing", "Moving average type applied to the histogram and volume", "Indicator");
@@ -79,12 +79,12 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 		_smoothingLength = Param(nameof(SmoothingLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Length", "Length of the moving averages", "Indicator")
-			.SetCanOptimize(true);
+			;
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Bar", "Number of closed bars used for signal detection", "Trading")
-			.SetCanOptimize(true);
+			;
 
 		_volumeSource = Param(nameof(VolumeType), VolumeSources.Tick)
 			.SetDisplay("Volume Type", "Source of volume data used in weighting", "Indicator");
@@ -195,17 +195,17 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_valueSmoother = CreateMovingAverage(Smoothing, SmoothingLength);
 		_volumeSmoother = CreateMovingAverage(Smoothing, SmoothingLength);
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -358,15 +358,15 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 		return 2;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(SmoothingMethods method, int length)
+	private static DecimalLengthIndicator CreateMovingAverage(SmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SMA { Length = length },
+			SmoothingMethods.Exponential => new EMA { Length = length },
 			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

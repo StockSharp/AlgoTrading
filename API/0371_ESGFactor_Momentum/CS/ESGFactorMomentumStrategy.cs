@@ -1,6 +1,6 @@
 // ESGFactorMomentumStrategy.cs - parameterized timeframe version
 // * Universe: IEnumerable<Security>
-// * CandleType: StrategyParam<DataType> (e.g., TimeSpan.FromDays(1).TimeFrame())
+// * CandleType: StrategyParam<DataType> (e.g., TimeSpan.FromMinutes(5).TimeFrame())
 // Date: 2 August 2025
 
 using System;
@@ -85,7 +85,7 @@ public class ESGFactorMomentumStrategy : Strategy
 		_lookback = Param(nameof(LookbackDays), 252);
 
 		// Candle type parameter
-		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle TF", "Time-frame", "General");
 
 		// Minimum trade amount parameter
@@ -110,9 +110,9 @@ public class ESGFactorMomentumStrategy : Strategy
 		_lastProc = default;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (Universe == null || !Universe.Any())
 			throw new InvalidOperationException("Universe is empty.");

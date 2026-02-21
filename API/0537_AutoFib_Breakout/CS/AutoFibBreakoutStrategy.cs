@@ -88,25 +88,25 @@ public class AutoFibBreakoutStrategy : Strategy
 		_emaLength = Param(nameof(EmaLength), 200)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Length", "Period for EMA trend filter", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(100, 300, 50);
 		
 		_atrLength = Param(nameof(AtrLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Length", "Period for ATR", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(7, 28, 7);
 		
 		_fibLevel = Param(nameof(FibLevel), 1.618m)
 		.SetGreaterThanZero()
 		.SetDisplay("Fib Level", "Fibonacci extension level", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1.2m, 2.0m, 0.1m);
 		
 		_pivotPeriod = Param(nameof(PivotPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Pivot Period", "Period for swing high/low", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 5);
 	}
 	
@@ -128,11 +128,11 @@ public class AutoFibBreakoutStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var ema = new EMA { Length = EmaLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var highest = new Highest { Length = PivotPeriod };
 		var lowest = new Lowest { Length = PivotPeriod };

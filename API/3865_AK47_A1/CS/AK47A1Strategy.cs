@@ -215,91 +215,91 @@ public class AK47A1Strategy : Strategy
 		_jawLength = Param(nameof(JawLength), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("Jaw Length", "Length of the Alligator jaw line", "Alligator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 1);
 
 		_jawShift = Param(nameof(JawShift), 8)
 		.SetNotNegative()
 		.SetDisplay("Jaw Shift", "Shift applied to the Alligator jaw line", "Alligator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 16, 1);
 
 		_teethLength = Param(nameof(TeethLength), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Teeth Length", "Length of the Alligator teeth line", "Alligator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 1);
 
 		_teethShift = Param(nameof(TeethShift), 5)
 		.SetNotNegative()
 		.SetDisplay("Teeth Shift", "Shift applied to the Alligator teeth line", "Alligator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 16, 1);
 
 		_lipsLength = Param(nameof(LipsLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Lips Length", "Length of the Alligator lips line", "Alligator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_lipsShift = Param(nameof(LipsShift), 3)
 		.SetNotNegative()
 		.SetDisplay("Lips Shift", "Shift applied to the Alligator lips line", "Alligator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 10, 1);
 
 		_fractalWindow = Param(nameof(FractalWindow), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Fractal Window", "Number of candles for fractal detection", "Fractals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 9, 2);
 
 		_fractalLookback = Param(nameof(FractalLookback), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Fractal Lookback", "Maximum age of a detected fractal", "Fractals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 6, 1);
 
 		_demarkerThreshold = Param(nameof(DemarkerThreshold), 0.5m)
 		.SetNotNegative()
 		.SetDisplay("DeMarker Threshold", "Minimum value for long setups", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 1m, 0.05m);
 
 		_wprLowerBound = Param(nameof(WprLowerBound), 0.25m)
 		.SetNotNegative()
 		.SetDisplay("WPR Lower", "Lower Williams %R filter bound", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 0.5m, 0.05m);
 
 		_wprUpperBound = Param(nameof(WprUpperBound), 0.75m)
 		.SetNotNegative()
 		.SetDisplay("WPR Upper", "Upper Williams %R filter bound", "Filters")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.5m, 1m, 0.05m);
 
 		_spanGatorPoints = Param(nameof(SpanGatorPoints), 0.5m)
 		.SetNotNegative()
 		.SetDisplay("Alligator Span", "Required gap between Alligator lines", "Alligator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 3m, 0.1m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take-profit distance in points", "Orders")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 200m, 10m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop-loss distance in points", "Orders")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 150m, 10m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 50m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing-stop distance in points", "Orders")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0m, 150m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -336,9 +336,9 @@ public class AK47A1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_jaw = new SmoothedMovingAverage { Length = JawLength };
 		_teeth = new SmoothedMovingAverage { Length = TeethLength };
@@ -359,7 +359,7 @@ public class AK47A1Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

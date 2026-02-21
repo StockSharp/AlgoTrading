@@ -43,7 +43,7 @@ public class ExpHighsLowsSignalStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 		.SetDisplay("Volume", "Base order volume", "Trading")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.01m, 1m, 0.01m);
 
 		_allowLongEntry = Param(nameof(AllowLongEntry), true)
@@ -61,25 +61,25 @@ public class ExpHighsLowsSignalStrategy : Strategy
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
 		.SetDisplay("Stop Loss (ticks)", "Protective stop distance expressed in price steps", "Risk")
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 3000, 250);
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 2000)
 		.SetDisplay("Take Profit (ticks)", "Profit target distance expressed in price steps", "Risk")
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 4000, 250);
 
 		_sequenceLength = Param(nameof(SequenceLength), 3)
 		.SetDisplay("Sequence Length", "Consecutive bars required for a signal", "Indicator")
 		.SetGreaterThanZero()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(1, 6, 1);
 
 		_signalBarDelay = Param(nameof(SignalBarDelay), 1)
 		.SetDisplay("Signal Delay", "Number of completed bars to wait before acting", "Indicator")
 		.SetNotNegative()
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0, 3, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -192,9 +192,9 @@ public class ExpHighsLowsSignalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Synchronize the base strategy volume with the configured parameter.
 		base.Volume = OrderVolume;

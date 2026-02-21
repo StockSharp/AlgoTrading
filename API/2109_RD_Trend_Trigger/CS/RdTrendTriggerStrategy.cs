@@ -103,13 +103,13 @@ public class RdTrendTriggerStrategy : Strategy
 		_regress = Param(nameof(Regress), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Regress", "Length for high/low segments", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 30, 5);
 
 		_t3Length = Param(nameof(T3Length), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("T3 Length", "Tillson T3 smoothing depth", "Indicator")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(3, 10, 1);
 
 		_t3VolumeFactor = Param(nameof(T3VolumeFactor), 0.7m)
@@ -135,16 +135,16 @@ public class RdTrendTriggerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

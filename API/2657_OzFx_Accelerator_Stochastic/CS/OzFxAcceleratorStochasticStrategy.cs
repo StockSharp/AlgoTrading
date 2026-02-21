@@ -231,24 +231,23 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_ao = new AwesomeOscillator
 		{
-			ShortPeriod = 5,
-			LongPeriod = 34,
+			ShortMa = { Length = 5 },
+			LongMa = { Length = 34 },
 		};
 
-		_aoSma = new SimpleMovingAverage
+		_aoSma = new SMA
 		{
 			Length = 5,
 		};
 
 		_stochastic = new StochasticOscillator
-		{
-			Length = KPeriod,
+		{ K = { Length = KPeriod },
 			K = { Length = SmoothingPeriod },
 			D = { Length = DPeriod },
 		};

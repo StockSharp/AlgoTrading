@@ -331,12 +331,12 @@ public class SailSystemEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = OrderVolume;
-		StartProtection();
+		StartProtection(null, null);
 
 		_pipValue = CalculatePipValue();
 		RecalculateOffsets();
@@ -382,7 +382,7 @@ public class SailSystemEaStrategy : Strategy
 
 		RecalculateOffsets();
 
-		var isTradingTime = CheckTradingWindow(message.ServerTime.UtcDateTime.TimeOfDay);
+		var isTradingTime = CheckTradingWindow(message.ServerTime.TimeOfDay);
 		var spread = _bestAsk - _bestBid;
 
 		UpdateSpreadAverage(spread);

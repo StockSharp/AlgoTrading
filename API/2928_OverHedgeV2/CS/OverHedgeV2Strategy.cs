@@ -157,13 +157,13 @@ public class OverHedgeV2Strategy : Strategy
 		_startVolume = Param(nameof(StartVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Start Volume", "Initial order size", "Position Sizing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.01m, 1m, 0.01m);
 
 		_baseMultiplier = Param(nameof(BaseMultiplier), 1.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Multiplier", "Multiplier applied after each fill", "Position Sizing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 2m, 0.1m);
 
 		_shutdownGrid = Param(nameof(ShutdownGrid), false)
@@ -172,37 +172,37 @@ public class OverHedgeV2Strategy : Strategy
 		_tunnelWidthPips = Param(nameof(TunnelWidthPips), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Tunnel Width (pips)", "Extra distance added on top of the current spread", "Grid")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 50m, 5m);
 
 		_profitTargetPips = Param(nameof(ProfitTargetPips), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Target (pips)", "Total basket profit before exit", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5m, 50m, 5m);
 
 		_minProfitTargetPips = Param(nameof(MinProfitTargetPips), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Profit (pips)", "Minimum gain per side before closing", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 20m, 1m);
 
 		_shortEmaPeriod = Param(nameof(ShortEmaPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Short EMA", "Fast EMA length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(4, 20, 1);
 
 		_longEmaPeriod = Param(nameof(LongEmaPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Long EMA", "Slow EMA length", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 60, 2);
 
 		_minDistancePips = Param(nameof(MinDistancePips), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Distance (pips)", "Minimum EMA separation to define trend", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 20m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -244,9 +244,9 @@ public class OverHedgeV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_shortEma = new EMA { Length = ShortEmaPeriod };
 		_longEma = new EMA { Length = LongEmaPeriod };

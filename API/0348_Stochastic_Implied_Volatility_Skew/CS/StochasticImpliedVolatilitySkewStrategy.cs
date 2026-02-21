@@ -91,27 +91,27 @@ public class StochasticImpliedVolatilitySkewStrategy : Strategy
 	{
 		_stochLength = Param(nameof(StochLength), 14)
 		.SetRange(5, 30)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Stoch Length", "Period for Stochastic Oscillator", "Indicators");
 
 		_stochK = Param(nameof(StochK), 3)
 		.SetRange(1, 10)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Stoch %K", "Smoothing for Stochastic %K line", "Indicators");
 
 		_stochD = Param(nameof(StochD), 3)
 		.SetRange(1, 10)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Stoch %D", "Smoothing for Stochastic %D line", "Indicators");
 
 		_ivPeriod = Param(nameof(IvPeriod), 20)
 		.SetRange(10, 50)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("IV Period", "Period for IV Skew averaging", "Options");
 
 		_stopLoss = Param(nameof(StopLoss), 2m)
 		.SetRange(1m, 5m)
-		.SetCanOptimize(true)
+		
 		.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -138,9 +138,9 @@ public class StochasticImpliedVolatilitySkewStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create Stochastic Oscillator
 		_stochastic = new StochasticOscillator
@@ -150,7 +150,7 @@ public class StochasticImpliedVolatilitySkewStrategy : Strategy
 		};
 
 		// Create IV Skew SMA
-		_ivSkewSma = new SimpleMovingAverage
+		_ivSkewSma = new SMA
 		{
 			Length = IvPeriod
 		};
@@ -187,7 +187,7 @@ public class StochasticImpliedVolatilitySkewStrategy : Strategy
 		SimulateIvSkew(candle);
 
 		// Process IV Skew with SMA
-		var ivSkewSmaValue = _ivSkewSma.Process(_currentIvSkew, candle.ServerTime, candle.State == CandleStates.Finished);
+		var ivSkewSmaValue = _ivSkewSma.Process(new DecimalIndicatorValue(_ivSkewSma, _currentIvSkew, candle.ServerTime));
 		_avgIvSkew = ivSkewSmaValue.ToDecimal();
 
 		// Check if strategy is ready to trade

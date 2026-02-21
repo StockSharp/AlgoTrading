@@ -79,17 +79,17 @@ public class SupertrendRsiDivergenceStrategy : Strategy
 	{
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
 		.SetDisplay("Supertrend Period", "Supertrend ATR period", "Supertrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 20, 1);
 
 		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
 		.SetDisplay("Supertrend Multiplier", "Supertrend ATR multiplier", "Supertrend")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2.0m, 5.0m, 0.5m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetDisplay("RSI Period", "RSI period for divergence detection", "RSI")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(8, 20, 2);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -115,9 +115,9 @@ _trendDirection = TrendDirections.None;
 		_supertrendValue = 0;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create indicators
 		_supertrend = new()

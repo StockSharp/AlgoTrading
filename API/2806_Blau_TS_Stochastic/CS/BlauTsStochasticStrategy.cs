@@ -211,37 +211,37 @@ public class BlauTsStochasticStrategy : Strategy
 		_baseLength = Param(nameof(BaseLength), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Range Length", "Number of bars for high/low range", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 20, 1);
 
 		_smoothLength1 = Param(nameof(SmoothLength1), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Smoothing #1", "First smoothing length", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 40, 5);
 
 		_smoothLength2 = Param(nameof(SmoothLength2), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Smoothing #2", "Second smoothing length", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 20, 1);
 
 		_smoothLength3 = Param(nameof(SmoothLength3), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Smoothing #3", "Third smoothing length", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 15, 1);
 
 		_signalLength = Param(nameof(SignalLength), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Length", "Length of the signal line", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(2, 15, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Shift used for signal evaluation", "Signals")
-		.SetCanOptimize(false);
+		;
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 		.SetNotNegative()
@@ -279,9 +279,9 @@ public class BlauTsStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = BaseLength };
 		_lowest = new Lowest { Length = BaseLength };
@@ -512,8 +512,8 @@ public class BlauTsStochasticStrategy : Strategy
 	{
 		return type switch
 		{
-			BlauSmoothingTypes.Simple => new SimpleMovingAverage { Length = length },
-			BlauSmoothingTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			BlauSmoothingTypes.Simple => new SMA { Length = length },
+			BlauSmoothingTypes.Exponential => new EMA { Length = length },
 			BlauSmoothingTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			BlauSmoothingTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type), type, null),

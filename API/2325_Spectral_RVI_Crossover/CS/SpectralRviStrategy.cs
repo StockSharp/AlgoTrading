@@ -76,17 +76,17 @@ public class SpectralRviStrategy : Strategy
 		_rviLength = Param(nameof(RviLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Length", "Length for RVI", "General")
-			.SetCanOptimize(true);
+			;
 
 		_signalLength = Param(nameof(SignalLength), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "Length for signal", "General")
-			.SetCanOptimize(true);
+			;
 
 		_smoothLength = Param(nameof(SmoothLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth Length", "Smoothing length", "General")
-			.SetCanOptimize(true);
+			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -112,19 +112,19 @@ public class SpectralRviStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rvi = new RelativeVigorIndex { Length = RviLength };
-		_signal = new SimpleMovingAverage { Length = SignalLength };
-		_smoothRvi = new SimpleMovingAverage { Length = SmoothLength };
-		_smoothSignal = new SimpleMovingAverage { Length = SmoothLength };
+		_signal = new SMA { Length = SignalLength };
+		_smoothRvi = new SMA { Length = SmoothLength };
+		_smoothSignal = new SMA { Length = SmoothLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

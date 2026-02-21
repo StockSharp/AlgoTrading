@@ -526,11 +526,11 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var priceStep = Security?.PriceStep ?? 0m;
 
@@ -888,7 +888,7 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 						}
 
 						/// <summary>ColorAML indicator clone that outputs colour states.</summary>
-						private sealed class ColorAmlIndicator : BaseIndicator<decimal>
+						private sealed class ColorAmlIndicator : BaseIndicator
 						{
 							private readonly List<decimal> _highs = new();
 							private readonly List<decimal> _lows = new();
@@ -998,7 +998,7 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 						}
 
 						/// <summary>X2MA candle colour indicator with two-stage smoothing.</summary>
-						private sealed class X2MaCandleColorIndicator : LengthIndicator<decimal>
+						private sealed class X2MaCandleColorIndicator : DecimalLengthIndicator
 						{
 							private readonly MovingAveragePipeline _open;
 							private readonly MovingAveragePipeline _high;
@@ -1086,12 +1086,12 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 								{
 									return method switch
 									{
-										X2MaSmoothMethods.Simple => new SimpleMovingAverage { Length = Math.Max(1, length) },
-										X2MaSmoothMethods.Exponential => new ExponentialMovingAverage { Length = Math.Max(1, length) },
+										X2MaSmoothMethods.Simple => new SMA { Length = Math.Max(1, length) },
+										X2MaSmoothMethods.Exponential => new EMA { Length = Math.Max(1, length) },
 										X2MaSmoothMethods.Smoothed => new SmoothedMovingAverage { Length = Math.Max(1, length) },
 										X2MaSmoothMethods.Weighted => new WeightedMovingAverage { Length = Math.Max(1, length) },
 										X2MaSmoothMethods.Jurik => CreateJurik(length, phase),
-										_ => new SimpleMovingAverage { Length = Math.Max(1, length) }
+										_ => new SMA { Length = Math.Max(1, length) }
 									};
 								}
 

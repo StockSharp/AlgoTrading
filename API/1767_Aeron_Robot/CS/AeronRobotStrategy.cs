@@ -87,31 +87,31 @@ public class AeronRobotStrategy : Strategy
 	{
 		_takeProfit = Param(nameof(TakeProfit), 19m)
 			.SetDisplay("Take Profit (points)", "Profit target in points", "General")
-			.SetCanOptimize(true);
+			;
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetDisplay("Stop Loss (points)", "Stop loss in points", "General")
-			.SetCanOptimize(true);
+			;
 
 		_firstLot = Param(nameof(FirstLot), 0.02m)
 			.SetDisplay("First Lot", "Initial order volume", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_lotsFactor = Param(nameof(LotsFactor), 2.667m)
 			.SetDisplay("Lots Factor", "Multiplier for subsequent orders", "Risk")
-			.SetCanOptimize(true);
+			;
 
 		_gap = Param(nameof(Gap), 150m)
 			.SetDisplay("Positions Gap", "Distance between grid levels in points", "Grid")
-			.SetCanOptimize(true);
+			;
 
 		_gapFactor = Param(nameof(GapFactor), 1m)
 			.SetDisplay("Gap Factor", "Multiplier for gap after each trade", "Grid")
-			.SetCanOptimize(true);
+			;
 
 		_maxTrades = Param(nameof(MaxTrades), 3)
 			.SetDisplay("Max Trades", "Maximum number of trades per side", "Grid")
-			.SetCanOptimize(true);
+			;
 
 		_hedging = Param(nameof(Hedging), true)
 			.SetDisplay("Hedging", "Allow simultaneous long and short", "General");
@@ -138,9 +138,9 @@ public class AeronRobotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 

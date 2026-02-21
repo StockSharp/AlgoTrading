@@ -102,37 +102,37 @@ public class BollingerWidthMeanReversionStrategy : Strategy
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Length", "Period for Bollinger Bands calculation", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Deviation multiplier for Bollinger Bands", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_widthLookbackPeriod = Param(nameof(WidthLookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Width Lookback", "Lookback period for width's mean and standard deviation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10, 50, 5);
 
 		_widthDeviationMultiplier = Param(nameof(WidthDeviationMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Width Deviation Multiplier", "Multiplier for width's standard deviation", "Strategy Parameters")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(7, 21, 7);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR to determine stop-loss distance", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -154,9 +154,9 @@ public class BollingerWidthMeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 
 		// Initialize indicators
@@ -166,7 +166,7 @@ public class BollingerWidthMeanReversionStrategy : Strategy
 			Width = BollingerDeviation
 		};
 
-		_widthAvg = new SimpleMovingAverage { Length = WidthLookbackPeriod };
+		_widthAvg = new SMA { Length = WidthLookbackPeriod };
 		_widthStdDev = new StandardDeviation { Length = WidthLookbackPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
@@ -201,8 +201,8 @@ public class BollingerWidthMeanReversionStrategy : Strategy
 		var lastWidth = bollingerTyped.UpBand - bollingerTyped.LowBand;
 
 		// Calculate width's average and standard deviation
-		var widthAvg = _widthAvg.Process(lastWidth, candle.ServerTime, candle.State == CandleStates.Finished);
-		var widthStdDev = _widthStdDev.Process(lastWidth, candle.ServerTime, candle.State == CandleStates.Finished);
+		var widthAvg = _widthAvg.Process(new DecimalIndicatorValue(_widthAvg, lastWidth, candle.ServerTime));
+		var widthStdDev = _widthStdDev.Process(new DecimalIndicatorValue(_widthStdDev, lastWidth, candle.ServerTime));
 
 		if (widthAvg.IsFinal && widthStdDev.IsFinal)
 		{

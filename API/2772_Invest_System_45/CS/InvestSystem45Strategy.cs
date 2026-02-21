@@ -114,19 +114,19 @@ public class InvestSystem45Strategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 240)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(120, 360, 20);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 40)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20, 80, 10);
 
 		_entryWindowMinutes = Param(nameof(EntryWindowMinutes), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Window", "Minutes after 4H open when entries are allowed", "Timing")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(5, 30, 5);
 
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -138,7 +138,7 @@ public class InvestSystem45Strategy : Strategy
 		_baseLot = Param(nameof(BaseLot), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Lot", "Starting lot size before scaling", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.05m, 0.3m, 0.05m);
 	}
 
@@ -162,9 +162,9 @@ public class InvestSystem45Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		ResetState();
 		_pipSize = CalculatePipSize();
@@ -177,10 +177,10 @@ public class InvestSystem45Strategy : Strategy
 			stopLoss: new Unit(StopLossPips * _pipSize, UnitTypes.Absolute));
 
 		var trendSubscription = SubscribeCandles(TrendCandleType);
-		trendSubscription.ForEach(ProcessTrendCandle).Start();
+		trendSubscription.Bind(ProcessTrendCandle).Start();
 
 		var entrySubscription = SubscribeCandles(SignalCandleType);
-		entrySubscription.ForEach(ProcessEntryCandle).Start();
+		entrySubscription.Bind(ProcessEntryCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

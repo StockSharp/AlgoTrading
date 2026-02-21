@@ -84,11 +84,11 @@ public class RaviAoStrategy : Strategy
 		_appliedPrice = Param(nameof(AppliedPrices), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for RAVI", "RAVI");
 
-		_aoShortPeriod = Param(nameof(AoShortPeriod), 5)
+		_aoShortMa = { Length = Param }(nameof(AoShortPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("AO Short Period", "Fast period for Awesome Oscillator", "Awesome Oscillator");
 
-		_aoLongPeriod = Param(nameof(AoLongPeriod), 34)
+		_aoLongMa = { Length = Param }(nameof(AoLongPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("AO Long Period", "Slow period for Awesome Oscillator", "Awesome Oscillator");
 	}
@@ -176,9 +176,9 @@ public class RaviAoStrategy : Strategy
 		ResetState();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 			throw new InvalidOperationException("Trailing step must be greater than zero when trailing stop is enabled.");
@@ -218,8 +218,8 @@ public class RaviAoStrategy : Strategy
 
 		var price = GetPrice(candle, AppliedPrice);
 
-		var fastValue = _fastAverage.Process(price, candle.OpenTime, true);
-		var slowValue = _slowAverage.Process(price, candle.OpenTime, true);
+		var fastValue = _fastAverage.Process(new DecimalIndicatorValue(_fastAverage, price, candle.OpenTime));
+		var slowValue = _slowAverage.Process(new DecimalIndicatorValue(_slowAverage, price, candle.OpenTime));
 		var aoValue = _ao.Process(candle.HighPrice, candle.LowPrice);
 
 		if (!fastValue.IsFinal || !slowValue.IsFinal || !aoValue.IsFinal)
@@ -393,7 +393,7 @@ public class RaviAoStrategy : Strategy
 	{
 		return method switch
 		{
-			SmoothMethods.Simple => new SimpleMovingAverage { Length = length },
+			SmoothMethods.Simple => new SMA { Length = length },
 			SmoothMethods.Exponential => new EMA { Length = length },
 			SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			SmoothMethods.Weighted => new WeightedMovingAverage { Length = length },

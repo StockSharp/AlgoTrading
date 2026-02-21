@@ -32,7 +32,7 @@ public class FarhadCrab1Strategy : Strategy
 
 	private readonly Queue<decimal> _maValues = new();
 
-	private readonly DataType _dailyCandleType = TimeSpan.FromDays(1).TimeFrame();
+	private readonly DataType _dailyCandleType = TimeSpan.FromMinutes(5).TimeFrame();
 
 	private decimal? _stopLossPrice;
 	private decimal? _takeProfitPrice;
@@ -188,22 +188,22 @@ public class FarhadCrab1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Ensure the base strategy volume reflects the configured parameter.
 		base.Volume = OrderVolume;
 
 		// Subscribe to the working timeframe candles with an EMA for entry decisions.
-		var ema = new ExponentialMovingAverage { Length = MaLength };
+		var ema = new EMA { Length = MaLength };
 		var candleSubscription = SubscribeCandles(CandleType);
 		candleSubscription
 			.Bind(ema, ProcessWorkingCandle)
 			.Start();
 
 		// Subscribe to daily candles with another EMA for exit filtering.
-		var dailyEma = new ExponentialMovingAverage { Length = DailyMaLength };
+		var dailyEma = new EMA { Length = DailyMaLength };
 		var dailySubscription = SubscribeCandles(_dailyCandleType);
 		dailySubscription
 			.Bind(dailyEma, ProcessDailyCandle)

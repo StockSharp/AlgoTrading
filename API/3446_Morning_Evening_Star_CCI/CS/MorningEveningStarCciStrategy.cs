@@ -86,25 +86,25 @@ public class MorningEveningStarCciStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 25)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI Period", "Number of bars used in the CCI calculation", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 50, 5);
 
 		_bodyAveragePeriod = Param(nameof(BodyAveragePeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Body Average Period", "Number of candles used to measure average body size", "Indicators")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(3, 10, 1);
 
 		_entryThreshold = Param(nameof(EntryThreshold), 50m)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI Entry Threshold", "Absolute CCI value required for a new trade", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(30m, 80m, 10m);
 
 		_neutralThreshold = Param(nameof(NeutralThreshold), 80m)
 		.SetGreaterThanZero()
 		.SetDisplay("CCI Neutral Threshold", "Absolute CCI level defining overbought/oversold exit zone", "Signals")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(60m, 120m, 10m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -130,9 +130,9 @@ public class MorningEveningStarCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_bodyAverage = new SMA { Length = BodyAveragePeriod };

@@ -61,12 +61,12 @@ public class TrailingStopActivationStrategy : Strategy
 		_trailingStop = Param(nameof(TrailingStop), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(1m, 20m, 1m);
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
 			.SetDisplay("Stop Loss", "Initial stop-loss distance", "Risk Management")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 20m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -90,9 +90,9 @@ public class TrailingStopActivationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

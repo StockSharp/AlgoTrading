@@ -72,11 +72,11 @@ public class TableToFilterTradesPerDayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		var fast = new SimpleMovingAverage { Length = FastLength };
-		var slow = new SimpleMovingAverage { Length = SlowLength };
+		base.OnStarted2(time);
+		var fast = new SMA { Length = FastLength };
+		var slow = new SMA { Length = SlowLength };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(fast, slow, ProcessCandle).Start();
 		var area = CreateChartArea();
@@ -86,7 +86,7 @@ public class TableToFilterTradesPerDayStrategy : Strategy
 			DrawIndicator(area, fast);
 			DrawIndicator(area, slow);
 		}
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)

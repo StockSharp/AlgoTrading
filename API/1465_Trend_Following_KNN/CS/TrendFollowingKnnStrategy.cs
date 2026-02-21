@@ -62,12 +62,12 @@ public class TrendFollowingKnnStrategy : Strategy
 		_windowSize = Param(nameof(WindowSize), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Window Size", "Bars for average change", "General")
-		.SetCanOptimize(true);
+		;
 
 		_maLength = Param(nameof(MaLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Length", "Moving average length", "General")
-		.SetCanOptimize(true);
+		;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -90,12 +90,12 @@ public class TrendFollowingKnnStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaLength };
-		_changeSma = new SimpleMovingAverage { Length = WindowSize };
+		_ma = new SMA { Length = MaLength };
+		_changeSma = new SMA { Length = WindowSize };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_ma, ProcessCandle).Start();

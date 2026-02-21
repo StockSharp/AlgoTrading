@@ -152,19 +152,19 @@ public class ColorSchaffDeMarkerTrendCycleStrategy : Strategy
 		_fastDeMarker = Param(nameof(FastDeMarker), 23)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast DeMarker", "Fast DeMarker period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 50, 5);
 		
 		_slowDeMarker = Param(nameof(SlowDeMarker), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow DeMarker", "Slow DeMarker period", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(10, 100, 10);
 		
 		_cycle = Param(nameof(Cycle), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Cycle", "Cycle length", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(5, 30, 5);
 		
 		_highLevel = Param(nameof(HighLevel), 60m)
@@ -190,7 +190,7 @@ public class ColorSchaffDeMarkerTrendCycleStrategy : Strategy
 
 		_factor = Param(nameof(Factor), 0.5m)
 		.SetDisplay("Factor", "Smoothing factor", "Indicator")
-		.SetCanOptimize(true)
+		
 		.SetOptimize(0.1m, 0.9m, 0.1m);
 	}
 	
@@ -212,9 +212,9 @@ public class ColorSchaffDeMarkerTrendCycleStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		var fast = new DeMarker { Length = FastDeMarker };
 		var slow = new DeMarker { Length = SlowDeMarker };

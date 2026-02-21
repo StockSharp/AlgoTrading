@@ -145,7 +145,7 @@ public class AocciPivotFilterStrategy : Strategy
 		_cciPeriod = Param(nameof(CciPeriod), 55)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Period for the Commodity Channel Index.", "Indicators")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(30, 80, 5);
 
 		_signalCandleOffset = Param(nameof(SignalCandleOffset), 0)
@@ -153,17 +153,17 @@ public class AocciPivotFilterStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 40m)
 			.SetDisplay("Stop Loss (points)", "Stop-loss distance expressed in price steps.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(10m, 100m, 10m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 			.SetDisplay("Take Profit (points)", "Take-profit distance expressed in price steps.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(20m, 150m, 10m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance in price steps.", "Risk")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0m, 100m, 10m);
 
 		_bigJumpPoints = Param(nameof(BigJumpPoints), 1000m)
@@ -175,13 +175,13 @@ public class AocciPivotFilterStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume used when submitting market orders.", "Trading")
-			.SetCanOptimize(true)
+			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Intraday Candle", "Time frame for intraday calculations.", "Data");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Daily Candle", "Time frame used for pivot calculation.", "Data");
 	}
 
@@ -209,9 +209,9 @@ public class AocciPivotFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var awesomeOscillator = new AwesomeOscillator();
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
