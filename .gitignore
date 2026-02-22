@@ -172,3 +172,8 @@ __pycache__/
 MQL/
 TradingView/
 TradingView_indicators/
+
+# Runner and temp files
+Runner*/
+.claude/
+AGENTS.md
