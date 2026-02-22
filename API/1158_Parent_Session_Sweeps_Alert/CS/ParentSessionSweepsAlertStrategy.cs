@@ -66,7 +66,7 @@ public ParentSessionSweepsAlertStrategy()
 {
 _minRiskReward = Param(nameof(MinRiskReward), 1m)
 .SetDisplay("Min RR", "Minimum risk reward ratio", "General")
-.SetGreaterOrEqual(0.1m);
+;
 
 _useCandleFilter = Param(nameof(UseCandleFilter), true)
 .SetDisplay("Use Candle Filter", "Require candle close inside range", "General");

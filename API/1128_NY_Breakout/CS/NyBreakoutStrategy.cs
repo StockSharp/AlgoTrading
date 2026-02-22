@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,10 +11,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// New York session breakout strategy.
-/// Collects the 13:00-13:30 UTC range and trades the breakout on the next bar.
-/// </summary>
 public class NyBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _rewardRisk;
@@ -25,65 +19,32 @@ public class NyBreakoutStrategy : Strategy
 	private decimal? _hi;
 	private decimal? _lo;
 	private bool _wasSession;
-	private decimal _tickSize;
+	private decimal _stopPrice;
+	private decimal _takePrice;
 
-	/// <summary>
-	/// Take profit to stop ratio.
-	/// </summary>
-	public decimal RewardRisk
-	{
-		get => _rewardRisk.Value;
-		set => _rewardRisk.Value = value;
-	}
+	public decimal RewardRisk { get => _rewardRisk.Value; set => _rewardRisk.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="NyBreakoutStrategy"/> class.
-	/// </summary>
 	public NyBreakoutStrategy()
 	{
-		_rewardRisk = Param(nameof(RewardRisk), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Reward/Stop Ratio", "Take profit vs stop ratio", "General")
-			
-			.SetOptimize(1m, 3m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Working candle timeframe", "General");
+		_rewardRisk = Param(nameof(RewardRisk), 2m).SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_hi = null;
-		_lo = null;
-		_wasSession = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_tickSize = Security.PriceStep ?? 1m;
+		_hi = null;
+		_lo = null;
+		_wasSession = false;
+		_stopPrice = 0;
+		_takePrice = 0;
+
+		var sma = new SimpleMovingAverage { Length = 10 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(sma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -93,43 +54,76 @@ public class NyBreakoutStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		var t = candle.OpenTime;
-		var inSession = t.Hour == 13 && t.Minute < 30;
+		// Use first hour of each day as session range
+		var inSession = t.TimeOfDay.TotalHours >= 0 && t.TimeOfDay.TotalHours < 1;
 
 		if (inSession)
 		{
 			_hi = _hi.HasValue ? Math.Max(_hi.Value, candle.HighPrice) : candle.HighPrice;
 			_lo = _lo.HasValue ? Math.Min(_lo.Value, candle.LowPrice) : candle.LowPrice;
 		}
-		else if (_wasSession && _hi is decimal hi && _lo is decimal lo)
+
+		// Manage position
+		if (Position > 0)
 		{
-			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-
-			var volume = Volume + Math.Abs(Position);
-
-			if (candle.ClosePrice > hi && Position <= 0)
+			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
 			{
-				BuyMarket(volume);
-				SellLimit(candle.ClosePrice + (candle.ClosePrice - lo) * RewardRisk, volume);
-				SellStop(lo - _tickSize, volume);
+				SellMarket(Math.Abs(Position));
 			}
-			else if (candle.ClosePrice < lo && Position >= 0)
+		}
+		else if (Position < 0)
+		{
+			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
 			{
-				SellMarket(volume);
-				BuyLimit(candle.ClosePrice - (hi - candle.ClosePrice) * RewardRisk, volume);
-				BuyStop(hi + _tickSize, volume);
+				BuyMarket(Math.Abs(Position));
 			}
+		}
 
-			_hi = null;
-			_lo = null;
+		if (!inSession && _wasSession && _hi.HasValue && _lo.HasValue)
+		{
+			// Range just finished, ready for breakout
+		}
+
+		if (!inSession && _hi.HasValue && _lo.HasValue && Position == 0)
+		{
+			var hi = _hi.Value;
+			var lo = _lo.Value;
+			var range = hi - lo;
+
+			if (range > 0)
+			{
+				if (candle.ClosePrice > hi)
+				{
+					BuyMarket(Volume);
+					_stopPrice = lo;
+					_takePrice = candle.ClosePrice + range * RewardRisk;
+					_hi = null;
+					_lo = null;
+				}
+				else if (candle.ClosePrice < lo)
+				{
+					SellMarket(Volume);
+					_stopPrice = hi;
+					_takePrice = candle.ClosePrice - range * RewardRisk;
+					_hi = null;
+					_lo = null;
+				}
+			}
 		}
 
 		_wasSession = inSession;
+
+		// Reset range for new day
+		if (inSession && !_wasSession)
+		{
+			_hi = candle.HighPrice;
+			_lo = candle.LowPrice;
+		}
 	}
 }

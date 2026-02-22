@@ -1,10 +1,6 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +10,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// EMA cloud crossover strategy that trades long when the short EMA crosses above the long EMA.
+/// EMA cloud crossover strategy that trades long when short EMA crosses above long EMA.
 /// </summary>
 public class LongOnlyMtfEmaCloudStrategy : Strategy
 {
@@ -24,39 +20,13 @@ public class LongOnlyMtfEmaCloudStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _shortEma;
-	private ExponentialMovingAverage _longEma;
+	private EMA _shortEma;
+	private EMA _longEma;
 	private decimal _prevShort;
 	private decimal _prevLong;
 	private decimal _stopPrice;
 	private decimal _takeProfit;
 	private bool _isInitialized;
-
-	public LongOnlyMtfEmaCloudStrategy()
-	{
-		_shortLength = Param(nameof(ShortLength), 21)
-			.SetGreaterThanZero()
-			.SetDisplay("Short EMA Length", "Period of the short EMA", "EMA Cloud Settings")
-			;
-
-		_longLength = Param(nameof(LongLength), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("Long EMA Length", "Period of the long EMA", "EMA Cloud Settings")
-			;
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			;
-
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for EMAs", "General");
-	}
 
 	public int ShortLength { get => _shortLength.Value; set => _shortLength.Value = value; }
 	public int LongLength { get => _longLength.Value; set => _longLength.Value = value; }
@@ -64,22 +34,31 @@ public class LongOnlyMtfEmaCloudStrategy : Strategy
 	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
-
-	protected override void OnReseted()
+	public LongOnlyMtfEmaCloudStrategy()
 	{
-		base.OnReseted();
-		_prevShort = 0m;
-		_prevLong = 0m;
-		_stopPrice = 0m;
-		_takeProfit = 0m;
-		_isInitialized = false;
+		_shortLength = Param(nameof(ShortLength), 21)
+			.SetGreaterThanZero()
+			.SetDisplay("Short EMA", "Short EMA period", "Indicators");
+		_longLength = Param(nameof(LongLength), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Long EMA", "Long EMA period", "Indicators");
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk");
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Take Profit %", "Take profit percent", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candles", "General");
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_prevShort = 0;
+		_prevLong = 0;
+		_isInitialized = false;
 
 		_shortEma = new EMA { Length = ShortLength };
 		_longEma = new EMA { Length = LongLength };
@@ -88,8 +67,6 @@ public class LongOnlyMtfEmaCloudStrategy : Strategy
 		subscription
 			.Bind(_shortEma, _longEma, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -122,21 +99,15 @@ public class LongOnlyMtfEmaCloudStrategy : Strategy
 		if (crossedUp && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
-
 			var entry = candle.ClosePrice;
-			var stopOffset = StopLossPercent / 100m;
-			var takeOffset = TakeProfitPercent / 100m;
-
-			_stopPrice = entry * (1m - stopOffset);
-			_takeProfit = entry * (1m + takeOffset);
+			_stopPrice = entry * (1m - StopLossPercent / 100m);
+			_takeProfit = entry * (1m + TakeProfitPercent / 100m);
 		}
 
 		if (Position > 0)
 		{
-			if (candle.LowPrice <= _stopPrice)
-				SellMarket(Position);
-			else if (candle.HighPrice >= _takeProfit)
-				SellMarket(Position);
+			if (candle.ClosePrice <= _stopPrice || candle.ClosePrice >= _takeProfit)
+				SellMarket(Math.Abs(Position));
 		}
 
 		_prevShort = shortValue;

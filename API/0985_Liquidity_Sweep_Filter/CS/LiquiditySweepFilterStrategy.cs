@@ -1,10 +1,6 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,132 +10,81 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Liquidity Sweep Filter strategy based on Bollinger bands and volume.
+/// Liquidity Sweep Filter strategy based on Bollinger bands.
 /// </summary>
 public class LiquiditySweepFilterStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<decimal> _multiplier;
-	private readonly StrategyParam<decimal> _majorSweepThreshold;
-	private readonly StrategyParam<string> _tradeMode;
 
-	private BollingerBands _bands;
-	private Highest _highestVolume;
-	private Lowest _lowestVolume;
-
+	private SimpleMovingAverage _sma;
+	private StandardDeviation _stdDev;
 	private int _trend;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Calculation length.
-	/// </summary>
 	public int Length
 	{
 		get => _length.Value;
 		set => _length.Value = value;
 	}
 
-	/// <summary>
-	/// Deviation multiplier.
-	/// </summary>
 	public decimal Multiplier
 	{
 		get => _multiplier.Value;
 		set => _multiplier.Value = value;
 	}
 
-	/// <summary>
-	/// Threshold for major sweeps based on normalized volume.
-	/// </summary>
-	public decimal MajorSweepThreshold
-	{
-		get => _majorSweepThreshold.Value;
-		set => _majorSweepThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Trade direction mode.
-	/// </summary>
-	public string TradeMode
-	{
-		get => _tradeMode.Value;
-		set => _tradeMode.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public LiquiditySweepFilterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_length = Param(nameof(Length), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Length", "Base period", "Trend")
-			
-			.SetOptimize(5, 30, 1);
+			.SetDisplay("Length", "Base period", "Trend");
 
 		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Multiplier", "Band width multiplier", "Trend")
-			
-			.SetOptimize(1m, 4m, 0.5m);
-
-		_majorSweepThreshold = Param(nameof(MajorSweepThreshold), 50m)
-			.SetRange(0m, 100m)
-			.SetDisplay("Major Sweep Threshold", "Normalized volume threshold", "Trend")
-			
-			.SetOptimize(25m, 75m, 5m);
-
-		_tradeMode = Param(nameof(TradeMode), "Long Only")
-			.SetDisplay("Trade Mode", "Allowed trade directions", "Trading")
-			.SetOptimizeValues(new[] { "Long & Short", "Long Only", "Short Only" });
+			.SetDisplay("Multiplier", "Band width multiplier", "Trend");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_bands = new BollingerBands { Length = Length, Width = Multiplier };
-		_highestVolume = new Highest { Length = (int)(Length * Multiplier) };
-		_lowestVolume = new Lowest { Length = (int)(Length * Multiplier) };
+		_trend = 0;
+		_sma = new SimpleMovingAverage { Length = Length };
+		_stdDev = new StandardDeviation { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_bands, _highestVolume, _lowestVolume, ProcessCandle)
+			.Bind(_sma, _stdDev, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bands);
+			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal highestVol, decimal lowestVol)
+	private void ProcessCandle(ICandleMessage candle, decimal smaVal, decimal stdVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!_sma.IsFormed || !_stdDev.IsFormed)
+			return;
+
+		var upper = smaVal + Multiplier * stdVal;
+		var lower = smaVal - Multiplier * stdVal;
 
 		var prevTrend = _trend;
 
@@ -148,42 +93,19 @@ public class LiquiditySweepFilterStrategy : Strategy
 		else if (candle.ClosePrice < lower)
 			_trend = -1;
 
-		var volRange = highestVol - lowestVol;
-		var nvol = volRange > 0m ? (candle.TotalVolume - lowestVol) * 100m / volRange : 0m;
-
-		var bullishSweep = _trend > 0 && candle.LowPrice < lower && nvol > MajorSweepThreshold;
-		var bearishSweep = _trend < 0 && candle.HighPrice > upper && nvol > MajorSweepThreshold;
-		// Sweeps can be used for alerts or visualization if needed.
-
 		if (prevTrend <= 0 && _trend > 0)
 		{
-			if (TradeMode == "Long & Short" || TradeMode == "Long Only")
-			{
-				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
-
-				if (Position <= 0)
-					BuyMarket();
-			}
-			else if (TradeMode == "Short Only" && Position < 0)
-			{
+			if (Position < 0)
 				BuyMarket(Math.Abs(Position));
-			}
+			if (Position <= 0)
+				BuyMarket();
 		}
 		else if (prevTrend >= 0 && _trend < 0)
 		{
-			if (TradeMode == "Long & Short" || TradeMode == "Short Only")
-			{
-				if (Position > 0)
-					SellMarket(Position);
-
-				if (Position >= 0)
-					SellMarket();
-			}
-			else if (TradeMode == "Long Only" && Position > 0)
-			{
+			if (Position > 0)
 				SellMarket(Position);
-			}
+			if (Position >= 0)
+				SellMarket();
 		}
 	}
 }

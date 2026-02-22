@@ -1,12 +1,7 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -31,112 +26,39 @@ public class LondonBreakOutClassicStrategy : Strategy
 	private bool _tradeOpened;
 	private decimal _stopPrice;
 	private decimal _takePrice;
-	private bool _isLong;
 
-	/// <summary>
-	/// Risk reward factor.
-	/// </summary>
-	public decimal Crv
-	{
-		get => _crv.Value;
-		set => _crv.Value = value;
-	}
+	public decimal Crv { get => _crv.Value; set => _crv.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public TimeSpan BoxStart { get => _boxStart.Value; set => _boxStart.Value = value; }
+	public TimeSpan BoxEnd { get => _boxEnd.Value; set => _boxEnd.Value = value; }
+	public TimeSpan TradeStart { get => _tradeStart.Value; set => _tradeStart.Value = value; }
+	public TimeSpan TradeEnd { get => _tradeEnd.Value; set => _tradeEnd.Value = value; }
 
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Start time of the Asian session.
-	/// </summary>
-	public TimeSpan BoxStart
-	{
-		get => _boxStart.Value;
-		set => _boxStart.Value = value;
-	}
-
-	/// <summary>
-	/// End time of the Asian session.
-	/// </summary>
-	public TimeSpan BoxEnd
-	{
-		get => _boxEnd.Value;
-		set => _boxEnd.Value = value;
-	}
-
-	/// <summary>
-	/// Start time for breakout trading.
-	/// </summary>
-	public TimeSpan TradeStart
-	{
-		get => _tradeStart.Value;
-		set => _tradeStart.Value = value;
-	}
-
-	/// <summary>
-	/// End time for breakout trading.
-	/// </summary>
-	public TimeSpan TradeEnd
-	{
-		get => _tradeEnd.Value;
-		set => _tradeEnd.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="LondonBreakOutClassicStrategy"/> class.
-	/// </summary>
 	public LondonBreakOutClassicStrategy()
 	{
 		_crv = Param(nameof(Crv), 1m)
 			.SetGreaterThanZero()
-			.SetDisplay("CRV", "Risk reward factor", "General")
-			
-			.SetOptimize(0.5m, 3m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
+			.SetDisplay("CRV", "Risk reward factor", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candles", "General");
 		_boxStart = Param(nameof(BoxStart), TimeSpan.Zero)
-			.SetDisplay("Box Start", "Start time of the Asian session", "Session");
-
-		_boxEnd = Param(nameof(BoxEnd), TimeSpan.FromHours(6) + TimeSpan.FromMinutes(55))
-			.SetDisplay("Box End", "End time of the Asian session", "Session");
-
+			.SetDisplay("Box Start", "Asian session start", "Session");
+		_boxEnd = Param(nameof(BoxEnd), TimeSpan.FromHours(7))
+			.SetDisplay("Box End", "Asian session end", "Session");
 		_tradeStart = Param(nameof(TradeStart), TimeSpan.FromHours(7))
-			.SetDisplay("Trade Start", "Start time for breakout trading", "Session");
-
+			.SetDisplay("Trade Start", "Breakout start", "Session");
 		_tradeEnd = Param(nameof(TradeEnd), TimeSpan.FromHours(16))
-			.SetDisplay("Trade End", "End time for breakout trading", "Session");
+			.SetDisplay("Trade End", "Breakout end", "Session");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_sessionHigh = 0m;
-		_sessionLow = 0m;
-		_currentDay = default;
-		_tradeOpened = false;
-		_stopPrice = 0m;
-		_takePrice = 0m;
-		_isLong = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_sessionHigh = 0m;
+		_sessionLow = decimal.MaxValue;
+		_currentDay = default;
+		_tradeOpened = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(OnProcess).Start();
@@ -154,9 +76,6 @@ public class LondonBreakOutClassicStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var day = candle.OpenTime.Date;
 		if (day != _currentDay)
 		{
@@ -171,53 +90,51 @@ public class LondonBreakOutClassicStrategy : Strategy
 				BuyMarket(Math.Abs(Position));
 		}
 
-		var time = candle.OpenTime.TimeOfDay;
+		var tod = candle.OpenTime.TimeOfDay;
 
-		if (time >= BoxStart && time <= BoxEnd)
+		// Accumulate Asian session range
+		if (tod >= BoxStart && tod < BoxEnd)
 		{
 			_sessionHigh = Math.Max(_sessionHigh, candle.HighPrice);
 			_sessionLow = Math.Min(_sessionLow, candle.LowPrice);
 			return;
 		}
 
-		if (time >= TradeStart && time <= TradeEnd)
+		// Trading window
+		if (tod >= TradeStart && tod < TradeEnd && !_tradeOpened && _sessionHigh > 0 && _sessionLow < decimal.MaxValue)
 		{
-			if (!_tradeOpened)
+			var mid = (_sessionHigh + _sessionLow) / 2m;
+
+			if (candle.ClosePrice > _sessionHigh && Position <= 0)
 			{
-				var mid = (_sessionHigh + _sessionLow) / 2m;
+				_stopPrice = mid;
+				var range = candle.ClosePrice - _stopPrice;
+				_takePrice = candle.ClosePrice + range * Crv;
+				BuyMarket(Volume + Math.Abs(Position));
+				_tradeOpened = true;
+				return;
+			}
 
-				if (candle.HighPrice >= _sessionHigh && Position <= 0)
-				{
-					_stopPrice = mid;
-					var entry = candle.ClosePrice;
-					_takePrice = entry + (entry - _stopPrice) * Crv;
-					BuyMarket(Volume + Math.Abs(Position));
-					_isLong = true;
-					_tradeOpened = true;
-					return;
-				}
-
-				if (candle.LowPrice <= _sessionLow && Position >= 0)
-				{
-					_stopPrice = mid;
-					var entry = candle.ClosePrice;
-					_takePrice = entry - (_stopPrice - entry) * Crv;
-					SellMarket(Volume + Math.Abs(Position));
-					_isLong = false;
-					_tradeOpened = true;
-					return;
-				}
+			if (candle.ClosePrice < _sessionLow && Position >= 0)
+			{
+				_stopPrice = mid;
+				var range = _stopPrice - candle.ClosePrice;
+				_takePrice = candle.ClosePrice - range * Crv;
+				SellMarket(Volume + Math.Abs(Position));
+				_tradeOpened = true;
+				return;
 			}
 		}
 
+		// Exit logic
 		if (Position > 0)
 		{
-			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice || time >= TradeEnd)
+			if (candle.ClosePrice <= _stopPrice || candle.ClosePrice >= _takePrice || tod >= TradeEnd)
 				SellMarket(Math.Abs(Position));
 		}
 		else if (Position < 0)
 		{
-			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice || time >= TradeEnd)
+			if (candle.ClosePrice >= _stopPrice || candle.ClosePrice <= _takePrice || tod >= TradeEnd)
 				BuyMarket(Math.Abs(Position));
 		}
 	}

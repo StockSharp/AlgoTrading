@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,20 +11,10 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Opening range breakout strategy.
-/// Builds the opening range and trades breakouts with risk management.
-/// </summary>
 public class OpeningRangeBreakout2Strategy : Strategy
 {
-	private readonly StrategyParam<TimeSpan> _orStart;
-	private readonly StrategyParam<TimeSpan> _orEnd;
-	private readonly StrategyParam<TimeSpan> _dayEnd;
-	private readonly StrategyParam<decimal> _minRangePercent;
 	private readonly StrategyParam<decimal> _rewardRisk;
 	private readonly StrategyParam<decimal> _retrace;
-	private readonly StrategyParam<bool> _oneTradePerDay;
-	private readonly StrategyParam<bool> _reverse;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _orHigh;
@@ -40,94 +28,20 @@ public class OpeningRangeBreakout2Strategy : Strategy
 	private bool _wasInOr;
 	private DateTime _currentDay;
 
-	/// <summary>
-	/// Opening range start time.
-	/// </summary>
-	public TimeSpan OrStart { get => _orStart.Value; set => _orStart.Value = value; }
-
-	/// <summary>
-	/// Opening range end time.
-	/// </summary>
-	public TimeSpan OrEnd { get => _orEnd.Value; set => _orEnd.Value = value; }
-
-	/// <summary>
-	/// End of regular trading day.
-	/// </summary>
-	public TimeSpan DayEnd { get => _dayEnd.Value; set => _dayEnd.Value = value; }
-
-	/// <summary>
-	/// Minimum range width percent.
-	/// </summary>
-	public decimal MinRangePercent { get => _minRangePercent.Value; set => _minRangePercent.Value = value; }
-
-	/// <summary>
-	/// Reward to risk ratio.
-	/// </summary>
 	public decimal RewardRisk { get => _rewardRisk.Value; set => _rewardRisk.Value = value; }
-
-	/// <summary>
-	/// Retracement percent used for stop loss.
-	/// </summary>
 	public decimal Retrace { get => _retrace.Value; set => _retrace.Value = value; }
-
-	/// <summary>
-	/// Allow only one trade per day.
-	/// </summary>
-	public bool OneTradePerDay { get => _oneTradePerDay.Value; set => _oneTradePerDay.Value = value; }
-
-	/// <summary>
-	/// Reverse position on stop loss.
-	/// </summary>
-	public bool Reverse { get => _reverse.Value; set => _reverse.Value = value; }
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public OpeningRangeBreakout2Strategy()
 	{
-		_orStart = Param(nameof(OrStart), new TimeSpan(9, 30, 0))
-		.SetDisplay("OR Start", "Opening range start", "Sessions");
-
-		_orEnd = Param(nameof(OrEnd), new TimeSpan(10, 15, 0))
-		.SetDisplay("OR End", "Opening range end", "Sessions");
-
-		_dayEnd = Param(nameof(DayEnd), new TimeSpan(15, 45, 0))
-		.SetDisplay("Day End", "Regular trading end", "Sessions");
-
-		_minRangePercent = Param(nameof(MinRangePercent), 0.35m)
-		.SetDisplay("Min Range %", "Minimum opening range width percent", "Filters");
-
-		_rewardRisk = Param(nameof(RewardRisk), 1.1m)
-		.SetDisplay("Reward/Risk", "Reward to risk ratio", "Risk");
-
-		_retrace = Param(nameof(Retrace), 0.5m)
-		.SetDisplay("Retrace %", "Stop as percent of range", "Risk");
-
-		_oneTradePerDay = Param(nameof(OneTradePerDay), false)
-		.SetDisplay("One Trade", "Allow only one initial trade per day", "Settings");
-
-		_reverse = Param(nameof(Reverse), true)
-		.SetDisplay("Reverse", "Reverse on stop loss", "Settings");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe for candles", "General");
+		_rewardRisk = Param(nameof(RewardRisk), 1.1m);
+		_retrace = Param(nameof(Retrace), 0.5m);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	protected override void OnStarted2(DateTime time)
 	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
+		base.OnStarted2(time);
 
 		_orHigh = null;
 		_orLow = null;
@@ -136,30 +50,26 @@ public class OpeningRangeBreakout2Strategy : Strategy
 		_pendingShort = false;
 		_wasInOr = false;
 		_currentDay = default;
-	}
 
-	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
-	{
-		base.OnStarted2(time);
+		var sma = new SimpleMovingAverage { Length = 10 };
 
 		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(sma, ProcessCandle).Start();
 
-		subscription
-		.Bind(ProcessCandle)
-		.Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var day = candle.OpenTime.Date;
-
 		if (_currentDay != day)
 		{
 			_currentDay = day;
@@ -170,9 +80,9 @@ public class OpeningRangeBreakout2Strategy : Strategy
 			_pendingShort = false;
 		}
 
-		var time = candle.OpenTime.TimeOfDay;
-		var inOr = time >= OrStart && time < OrEnd;
-		var inRtd = time >= OrStart && time < DayEnd;
+		var hour = candle.OpenTime.TimeOfDay.TotalHours;
+		var inOr = hour >= 0 && hour < 1; // first hour as opening range
+		var inRtd = hour >= 0 && hour < 20;
 
 		if (inOr)
 		{
@@ -183,8 +93,7 @@ public class OpeningRangeBreakout2Strategy : Strategy
 		if (_wasInOr && !inOr && _orHigh.HasValue && _orLow.HasValue)
 		{
 			var range = _orHigh.Value - _orLow.Value;
-
-			if (range >= candle.ClosePrice * MinRangePercent / 100m && (!OneTradePerDay || !_tradeTaken))
+			if (range > 0 && !_tradeTaken)
 			{
 				_rangeRisk = range * Retrace;
 				_pendingLong = true;
@@ -192,18 +101,33 @@ public class OpeningRangeBreakout2Strategy : Strategy
 			}
 		}
 
-		if (_pendingLong && _orHigh.HasValue && candle.HighPrice >= _orHigh.Value && Position <= 0)
+		// Exit logic
+		if (Position > 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			if (candle.LowPrice <= _stopLoss || candle.HighPrice >= _takeProfit)
+				SellMarket(Math.Abs(Position));
+		}
+		else if (Position < 0)
+		{
+			if (candle.HighPrice >= _stopLoss || candle.LowPrice <= _takeProfit)
+				BuyMarket(Math.Abs(Position));
+		}
+
+		// Entry logic
+		if (_pendingLong && _orHigh.HasValue && candle.HighPrice >= _orHigh.Value && Position <= 0 && _rangeRisk > 0)
+		{
+			if (Position < 0) BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
 			_stopLoss = _orHigh.Value - _rangeRisk;
 			_takeProfit = _orHigh.Value + _rangeRisk * RewardRisk;
 			_pendingLong = false;
 			_pendingShort = false;
 			_tradeTaken = true;
 		}
-		else if (_pendingShort && _orLow.HasValue && candle.LowPrice <= _orLow.Value && Position >= 0)
+		else if (_pendingShort && _orLow.HasValue && candle.LowPrice <= _orLow.Value && Position >= 0 && _rangeRisk > 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			if (Position > 0) SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
 			_stopLoss = _orLow.Value + _rangeRisk;
 			_takeProfit = _orLow.Value - _rangeRisk * RewardRisk;
 			_pendingShort = false;
@@ -211,45 +135,12 @@ public class OpeningRangeBreakout2Strategy : Strategy
 			_tradeTaken = true;
 		}
 
-		if (Position > 0)
-		{
-			if (candle.LowPrice <= _stopLoss)
-			{
-				SellMarket(Position);
-
-				if (Reverse && inRtd)
-				{
-					SellMarket(Volume);
-					_stopLoss = candle.ClosePrice + _rangeRisk;
-					_takeProfit = candle.ClosePrice - _rangeRisk * RewardRisk;
-				}
-			}
-			else if (candle.HighPrice >= _takeProfit)
-			{
-				SellMarket(Position);
-			}
-		}
-		else if (Position < 0)
-		{
-			if (candle.HighPrice >= _stopLoss)
-			{
-				BuyMarket(Math.Abs(Position));
-
-				if (Reverse && inRtd)
-				{
-					BuyMarket(Volume);
-					_stopLoss = candle.ClosePrice - _rangeRisk;
-					_takeProfit = candle.ClosePrice + _rangeRisk * RewardRisk;
-				}
-			}
-			else if (candle.LowPrice <= _takeProfit)
-			{
-				BuyMarket(Math.Abs(Position));
-			}
-		}
-
+		// End of day close
 		if (!inRtd && Position != 0)
-			ClosePosition();
+		{
+			if (Position > 0) SellMarket(Math.Abs(Position));
+			else BuyMarket(Math.Abs(Position));
+		}
 
 		_wasInOr = inOr;
 	}

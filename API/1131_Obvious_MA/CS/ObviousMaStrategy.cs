@@ -3,225 +3,111 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// OBV-based moving average strategy.
-/// </summary>
 public class ObviousMaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _longEntryLength;
-	private readonly StrategyParam<int> _longExitLength;
 	private readonly StrategyParam<int> _shortEntryLength;
-	private readonly StrategyParam<int> _shortExitLength;
-private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private OnBalanceVolume _obv = null!;
-	private SimpleMovingAverage _obvMaLongEntry = null!;
-	private SimpleMovingAverage _obvMaLongExit = null!;
-	private SimpleMovingAverage _obvMaShortEntry = null!;
-	private SimpleMovingAverage _obvMaShortExit = null!;
+	private decimal _prevClose;
+	private decimal _obv;
+	private readonly List<decimal> _obvHistory = new();
 
-	private decimal _prevObv;
-	private decimal _prevLongEntryMa;
-	private decimal _prevLongExitMa;
-	private decimal _prevShortEntryMa;
-	private decimal _prevShortExitMa;
-	private bool _isFirst;
+	public int LongEntryLength { get => _longEntryLength.Value; set => _longEntryLength.Value = value; }
+	public int ShortEntryLength { get => _shortEntryLength.Value; set => _shortEntryLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="ObviousMaStrategy"/>.
-	/// </summary>
 	public ObviousMaStrategy()
 	{
-		_longEntryLength = Param(nameof(LongEntryLength), 190)
-			.SetGreaterThanZero()
-			.SetDisplay("Long Entry MA Length", "OBV MA length for long entries", "Parameters")
-			
-			.SetOptimize(50, 300, 10);
-
-		_longExitLength = Param(nameof(LongExitLength), 202)
-			.SetGreaterThanZero()
-			.SetDisplay("Long Exit MA Length", "OBV MA length for long exits", "Parameters")
-			
-			.SetOptimize(50, 300, 10);
-
-		_shortEntryLength = Param(nameof(ShortEntryLength), 395)
-			.SetGreaterThanZero()
-			.SetDisplay("Short Entry MA Length", "OBV MA length for short entries", "Parameters")
-			
-			.SetOptimize(100, 500, 10);
-
-		_shortExitLength = Param(nameof(ShortExitLength), 300)
-			.SetGreaterThanZero()
-			.SetDisplay("Short Exit MA Length", "OBV MA length for short exits", "Parameters")
-			
-			.SetOptimize(100, 500, 10);
-
-_direction = Param(nameof(Direction), Sides.Buy)
-.SetDisplay("Direction", "Trading direction: Long or Short", "Parameters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Parameters");
+		_longEntryLength = Param(nameof(LongEntryLength), 50).SetGreaterThanZero();
+		_shortEntryLength = Param(nameof(ShortEntryLength), 100).SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <summary>
-	/// OBV MA length for long entries.
-	/// </summary>
-	public int LongEntryLength
-	{
-		get => _longEntryLength.Value;
-		set => _longEntryLength.Value = value;
-	}
-
-	/// <summary>
-	/// OBV MA length for long exits.
-	/// </summary>
-	public int LongExitLength
-	{
-		get => _longExitLength.Value;
-		set => _longExitLength.Value = value;
-	}
-
-	/// <summary>
-	/// OBV MA length for short entries.
-	/// </summary>
-	public int ShortEntryLength
-	{
-		get => _shortEntryLength.Value;
-		set => _shortEntryLength.Value = value;
-	}
-
-	/// <summary>
-	/// OBV MA length for short exits.
-	/// </summary>
-	public int ShortExitLength
-	{
-		get => _shortExitLength.Value;
-		set => _shortExitLength.Value = value;
-	}
-
-	/// <summary>
-	/// Trading direction.
-	/// </summary>
-public Sides? Direction
-{
-get => _direction.Value;
-set => _direction.Value = value;
-}
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevObv = 0m;
-		_prevLongEntryMa = 0m;
-		_prevLongExitMa = 0m;
-		_prevShortEntryMa = 0m;
-		_prevShortExitMa = 0m;
-		_isFirst = true;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_obv = new OnBalanceVolume();
-		_obvMaLongEntry = new SMA { Length = LongEntryLength };
-		_obvMaLongExit = new SMA { Length = LongExitLength };
-		_obvMaShortEntry = new SMA { Length = ShortEntryLength };
-		_obvMaShortExit = new SMA { Length = ShortExitLength };
+		_prevClose = 0;
+		_obv = 0;
+		_obvHistory.Clear();
+
+		var sma = new SimpleMovingAverage { Length = Math.Max(LongEntryLength, ShortEntryLength) };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_obv, ProcessObv)
+			.Bind(sma, ProcessCandle)
 			.Start();
-
-		StartProtection(stopLoss: new Unit(2, UnitTypes.Percent), takeProfit: new Unit(3, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _obv);
-			DrawIndicator(area, _obvMaLongEntry);
-			DrawIndicator(area, _obvMaLongExit);
-			DrawIndicator(area, _obvMaShortEntry);
-			DrawIndicator(area, _obvMaShortExit);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessObv(ICandleMessage candle, IIndicatorValue obvValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var obvVal = obvValue.ToDecimal();
-		var longEntry = _obvMaLongEntry.Process(obvValue).ToDecimal();
-		var longExit = _obvMaLongExit.Process(obvValue).ToDecimal();
-		var shortEntry = _obvMaShortEntry.Process(obvValue).ToDecimal();
-		var shortExit = _obvMaShortExit.Process(obvValue).ToDecimal();
+		// OBV calculation
+		if (_prevClose != 0)
+		{
+			if (candle.ClosePrice > _prevClose)
+				_obv += candle.TotalVolume;
+			else if (candle.ClosePrice < _prevClose)
+				_obv -= candle.TotalVolume;
+		}
+		_prevClose = candle.ClosePrice;
 
-		ProcessCandle(obvVal, longEntry, longExit, shortEntry, shortExit);
-	}
+		_obvHistory.Add(_obv);
 
-	private void ProcessCandle(decimal obvValue, decimal longEntry, decimal longExit, decimal shortEntry, decimal shortExit)
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_obvHistory.Count < ShortEntryLength)
 			return;
 
-var dir = Direction;
+		// Calculate OBV MAs
+		var longMa = _obvHistory.Skip(_obvHistory.Count - LongEntryLength).Take(LongEntryLength).Average();
+		var shortMa = _obvHistory.Skip(_obvHistory.Count - ShortEntryLength).Take(ShortEntryLength).Average();
 
-		if (!_isFirst)
+		var prevObv = _obvHistory.Count >= 2 ? _obvHistory[_obvHistory.Count - 2] : _obv;
+
+		// Long: OBV crosses above long MA
+		if (_obv > longMa && prevObv <= longMa && Position <= 0)
 		{
-var longCond = _prevObv <= _prevLongEntryMa && obvValue > longEntry && dir != Sides.Sell && Position <= 0;
-var longExitCond = _prevObv >= _prevLongExitMa && obvValue < longExit && Position > 0;
-var shortCond = _prevObv >= _prevShortEntryMa && obvValue < shortEntry && dir != Sides.Buy && Position >= 0;
-var shortExitCond = _prevObv <= _prevShortExitMa && obvValue > shortExit && Position < 0;
-
-			if (longCond)
-				BuyMarket(Volume + Math.Abs(Position));
-			if (longExitCond)
-				SellMarket(Position);
-			if (shortCond)
-				SellMarket(Volume + Math.Abs(Position));
-			if (shortExitCond)
+			if (Position < 0)
 				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+		}
+		// Short: OBV crosses below short MA
+		else if (_obv < shortMa && prevObv >= shortMa && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+		}
+		// Exit long when OBV below long MA
+		else if (Position > 0 && _obv < longMa)
+		{
+			SellMarket(Math.Abs(Position));
+		}
+		// Exit short when OBV above short MA
+		else if (Position < 0 && _obv > shortMa)
+		{
+			BuyMarket(Math.Abs(Position));
 		}
 
-		_prevObv = obvValue;
-		_prevLongEntryMa = longEntry;
-		_prevLongExitMa = longExit;
-		_prevShortEntryMa = shortEntry;
-		_prevShortExitMa = shortExit;
-		_isFirst = false;
+		// Keep history manageable
+		if (_obvHistory.Count > ShortEntryLength * 2)
+			_obvHistory.RemoveRange(0, _obvHistory.Count - ShortEntryLength * 2);
 	}
 }

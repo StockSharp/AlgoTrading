@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,10 +11,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Mawreez' RSI Divergence Detector strategy.
-/// Buys when price makes a lower low with RSI making a higher low and sells on opposite signal.
-/// </summary>
 public class MawreezRsiDivergenceDetectorStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
@@ -24,10 +18,9 @@ public class MawreezRsiDivergenceDetectorStrategy : Strategy
 	private readonly StrategyParam<int> _minDivLength;
 	private readonly StrategyParam<int> _maxDivLength;
 
-	private readonly RelativeStrengthIndex _rsi;
-
-	private decimal[] _priceHistory = Array.Empty<decimal>();
-	private decimal[] _rsiHistory = Array.Empty<decimal>();
+	private RelativeStrengthIndex _rsi;
+	private decimal[] _priceHistory;
+	private decimal[] _rsiHistory;
 	private int _index;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -37,35 +30,17 @@ public class MawreezRsiDivergenceDetectorStrategy : Strategy
 
 	public MawreezRsiDivergenceDetectorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_rsiLength = Param(nameof(RsiLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "Period for RSI calculation", "Indicator")
-			
-			.SetOptimize(5, 30, 1);
-
-		_minDivLength = Param(nameof(MinDivLength), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Minimum Divergence Length", "Shortest lookback to check", "Strategy")
-			
-			.SetOptimize(2, 10, 1);
-
-		_maxDivLength = Param(nameof(MaxDivLength), 28)
-			.SetGreaterThanZero()
-			.SetDisplay("Maximum Divergence Length", "Longest lookback to check", "Strategy")
-			
-			.SetOptimize(5, 50, 1);
-
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_rsiLength = Param(nameof(RsiLength), 14);
+		_minDivLength = Param(nameof(MinDivLength), 3);
+		_maxDivLength = Param(nameof(MaxDivLength), 28);
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
+		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_priceHistory = new decimal[MaxDivLength + 1];
 		_rsiHistory = new decimal[MaxDivLength + 1];
 		_index = 0;
@@ -74,19 +49,14 @@ public class MawreezRsiDivergenceDetectorStrategy : Strategy
 		subscription
 			.Bind(_rsi, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-			DrawIndicator(area, _rsi);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsi)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!_rsi.IsFormed)
 			return;
 
 		var price = candle.ClosePrice;
@@ -99,13 +69,12 @@ public class MawreezRsiDivergenceDetectorStrategy : Strategy
 		if (_index <= MaxDivLength)
 			return;
 
-		decimal totalDiv = 0m;
-		int count = 0;
 		int winner = 0;
 
 		for (var l = MinDivLength; l <= MaxDivLength; l++)
 		{
 			var idx = (_index - l - 1) % _priceHistory.Length;
+			if (idx < 0) idx += _priceHistory.Length;
 			var pastPrice = _priceHistory[idx];
 			var pastRsi = _rsiHistory[idx];
 
@@ -115,24 +84,18 @@ public class MawreezRsiDivergenceDetectorStrategy : Strategy
 			if (Math.Sign(dsrc) == Math.Sign(dosc))
 				continue;
 
-			totalDiv += Math.Abs(dsrc) + Math.Abs(dosc);
-			count++;
-
 			if (winner == 0)
 			{
 				if (dsrc < 0 && dosc > 0)
-					winner = 1; // bullish
+					winner = 1;
 				else if (dsrc > 0 && dosc < 0)
-					winner = -1; // bearish
+					winner = -1;
 			}
 		}
 
-		if (count == 0)
-			return;
-
 		if (winner > 0 && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		else if (winner < 0 && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 	}
 }

@@ -3,160 +3,95 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Monte Carlo simulation random walk strategy.
+/// Uses MC simulation to estimate expected price range and trades based on mean forecast.
+/// </summary>
 public class MonteCarloSimulationRandomWalkStrategy : Strategy
 {
-	private readonly StrategyParam<int> _numberOfBarsToPredict;
-	private readonly StrategyParam<int> _numberOfSimulations;
+	private readonly StrategyParam<int> _forecastBars;
+	private readonly StrategyParam<int> _simulations;
 	private readonly StrategyParam<int> _dataLength;
-	private readonly StrategyParam<bool> _keepPastMinMaxLevels;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<decimal> _returns = new();
 	private decimal? _prevClose;
-	private decimal? _maxLevel;
-	private decimal? _minLevel;
-	private readonly Random _random = new();
+	private readonly Random _random = new(42);
 
-	public int NumberOfBarsToPredict
-	{
-		get => _numberOfBarsToPredict.Value;
-		set => _numberOfBarsToPredict.Value = value;
-	}
-
-	public int NumberOfSimulations
-	{
-		get => _numberOfSimulations.Value;
-		set => _numberOfSimulations.Value = value;
-	}
-
-	public int DataLength
-	{
-		get => _dataLength.Value;
-		set => _dataLength.Value = value;
-	}
-
-	public bool KeepPastMinMaxLevels
-	{
-		get => _keepPastMinMaxLevels.Value;
-		set => _keepPastMinMaxLevels.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int ForecastBars { get => _forecastBars.Value; set => _forecastBars.Value = value; }
+	public int Simulations { get => _simulations.Value; set => _simulations.Value = value; }
+	public int DataLength { get => _dataLength.Value; set => _dataLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MonteCarloSimulationRandomWalkStrategy()
 	{
-		_numberOfBarsToPredict = Param(nameof(NumberOfBarsToPredict), 50)
-		.SetGreaterThanZero()
-		.SetDisplay("Bars to Predict", "Prediction horizon", "Simulation")
-		
-		.SetOptimize(10, 100, 10);
-
-		_numberOfSimulations = Param(nameof(NumberOfSimulations), 500)
-		.SetGreaterThanZero()
-		.SetDisplay("Simulations", "Number of random paths", "Simulation")
-		
-		.SetOptimize(100, 1000, 100);
-
-		_dataLength = Param(nameof(DataLength), 2000)
-		.SetGreaterThanZero()
-		.SetDisplay("Data Length", "Number of history bars", "Simulation");
-
-		_keepPastMinMaxLevels = Param(nameof(KeepPastMinMaxLevels), false)
-		.SetDisplay("Keep Past Levels", "Keep previous min-max values", "Simulation");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_forecastBars = Param(nameof(ForecastBars), 10).SetGreaterThanZero();
+		_simulations = Param(nameof(Simulations), 100).SetGreaterThanZero();
+		_dataLength = Param(nameof(DataLength), 100).SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_returns.Clear();
-		_prevClose = null;
-		_maxLevel = null;
-		_minLevel = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_returns.Clear();
+		_prevClose = null;
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(ProcessCandle)
-		.Start();
+		subscription.Bind(ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (_prevClose is decimal prevClose)
+		if (_prevClose is decimal prevClose && prevClose > 0)
 		{
 			var ret = (decimal)Math.Log((double)(candle.ClosePrice / prevClose));
-			_returns.Insert(0, ret);
+			_returns.Add(ret);
 			if (_returns.Count > DataLength)
-			_returns.RemoveAt(_returns.Count - 1);
+				_returns.RemoveAt(0);
 		}
 
 		_prevClose = candle.ClosePrice;
 
-		if (_returns.Count == 0)
-		return;
+		if (_returns.Count < 20)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
 		var avg = _returns.Average();
 		var variance = _returns.Select(r => (r - avg) * (r - avg)).Average();
 		var drift = avg - variance / 2m;
 
-		var maxCls = Enumerable.Repeat(decimal.MinValue, NumberOfBarsToPredict).ToArray();
-		var minCls = Enumerable.Repeat(decimal.MaxValue, NumberOfBarsToPredict).ToArray();
-
-		for (var sim = 0; sim < NumberOfSimulations; sim++)
+		double sum = 0;
+		for (var sim = 0; sim < Simulations; sim++)
 		{
-			var lastClose = candle.ClosePrice;
-
-			for (var step = 0; step < NumberOfBarsToPredict; step++)
+			var price = (double)candle.ClosePrice;
+			for (var step = 0; step < ForecastBars; step++)
 			{
-				var index = _random.Next(_returns.Count);
-				var nextClose = Math.Max(0m, lastClose * (decimal)Math.Exp((double)(_returns[index] + drift)));
-				lastClose = nextClose;
-
-				if (nextClose > maxCls[step])
-				maxCls[step] = nextClose;
-
-				if (nextClose < minCls[step])
-				minCls[step] = nextClose;
+				var idx = _random.Next(_returns.Count);
+				price *= Math.Exp((double)(_returns[idx] + drift));
 			}
+			sum += price;
 		}
 
-		var newMax = maxCls[0];
-		var newMin = minCls[0];
+		var meanForecast = (decimal)(sum / Simulations);
+		var current = candle.ClosePrice;
 
-		_maxLevel = KeepPastMinMaxLevels && _maxLevel != null ? Math.Max(_maxLevel.Value, newMax) : newMax;
-		_minLevel = KeepPastMinMaxLevels && _minLevel != null ? Math.Min(_minLevel.Value, newMin) : newMin;
-
-		LogInfo($"Max level: {_maxLevel:0.####}, Min level: {_minLevel:0.####}");
+		if (meanForecast > current * 1.001m && Position <= 0)
+			BuyMarket();
+		else if (meanForecast < current * 0.999m && Position >= 0)
+			SellMarket();
 	}
 }

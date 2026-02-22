@@ -15,76 +15,46 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Linear Regression (All Data) strategy.
-/// Calculates linear regression using all available bars and draws the regression line.
+/// Calculates linear regression using all available bars and trades based on deviation from regression line.
 /// </summary>
 public class LinearRegressionAllDataStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maxBarsBack;
+	private readonly StrategyParam<decimal> _deviationThreshold;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private long _index;
 	private decimal _sumX;
 	private decimal _sumY;
 	private decimal _sumX2;
-	private decimal _sumY2;
 	private decimal _sumXY;
-	private readonly Queue<DateTimeOffset> _times = new();
 
-	/// <summary>
-	/// Maximum number of bars used for line drawing.
-	/// </summary>
-	public int MaxBarsBack
-	{
-		get => _maxBarsBack.Value;
-		set => _maxBarsBack.Value = value;
-	}
+	public int MaxBarsBack { get => _maxBarsBack.Value; set => _maxBarsBack.Value = value; }
+	public decimal DeviationThreshold { get => _deviationThreshold.Value; set => _deviationThreshold.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="LinearRegressionAllDataStrategy"/>.
-	/// </summary>
 	public LinearRegressionAllDataStrategy()
 	{
 		_maxBarsBack = Param(nameof(MaxBarsBack), 5000)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Bars Back", "Maximum number of bars for drawing", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_deviationThreshold = Param(nameof(DeviationThreshold), 0.002m)
+			.SetDisplay("Deviation Threshold", "Deviation from regression to trigger trade", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	protected override void OnStarted2(DateTime time)
 	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
+		base.OnStarted2(time);
 
 		_index = 0;
 		_sumX = 0m;
 		_sumY = 0m;
 		_sumX2 = 0m;
-		_sumY2 = 0m;
 		_sumXY = 0m;
-		_times.Clear();
-	}
-
-	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
-	{
-		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -93,7 +63,10 @@ public class LinearRegressionAllDataStrategy : Strategy
 
 		var area = CreateChartArea();
 		if (area != null)
+		{
 			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -109,43 +82,32 @@ public class LinearRegressionAllDataStrategy : Strategy
 		_sumX += x;
 		_sumY += y;
 		_sumX2 += x * x;
-		_sumY2 += y * y;
 		_sumXY += x * y;
 
-		_times.Enqueue(candle.OpenTime);
-		if (_times.Count > MaxBarsBack)
-			_times.Dequeue();
-
-		if (_index < 2)
+		if (_index < 20)
 			return;
 
-		var denom = _index * _sumX2 - _sumX * _sumX;
+		var n = (decimal)_index;
+		var denom = n * _sumX2 - _sumX * _sumX;
 		if (denom == 0)
 			return;
 
-		var slope = (_index * _sumXY - _sumX * _sumY) / denom;
-		var intercept = (_sumY - slope * _sumX) / _index;
+		var slope = (n * _sumXY - _sumX * _sumY) / denom;
+		var intercept = (_sumY - slope * _sumX) / n;
 
-		var varY = _index * _sumY2 - _sumY * _sumY;
-		var varX = denom;
+		// Current predicted value from regression
+		var predicted = slope * x + intercept;
 
-		var rNum = (double)(_index * _sumXY - _sumX * _sumY);
-		var rDen = Math.Sqrt((double)(varY * varX));
-		if (rDen == 0)
+		if (predicted == 0)
 			return;
 
-		var r = rNum / rDen;
-		var r2 = r * r;
+		// Deviation from regression line
+		var deviation = (candle.ClosePrice - predicted) / predicted;
 
-		var startIndex = _index > MaxBarsBack ? _index - MaxBarsBack : 0;
-		var startX = (decimal)startIndex;
-		var startY = slope * startX + intercept;
-		var endY = slope * (_index - 1) + intercept;
-		var startTime = _times.Peek();
-
-		DrawLine(startTime, startY, candle.OpenTime, endY);
-
-		LogInfo($"Slope: {slope}, Intercept: {intercept}, r: {r:F3}, r2: {r2:F3}");
+		// Mean reversion: buy when price below regression, sell when above
+		if (deviation < -DeviationThreshold && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (deviation > DeviationThreshold && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }
-

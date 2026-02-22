@@ -1,10 +1,6 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,174 +10,59 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Moving Average strategy with logistic or percent-based exits.
+/// MA crossover strategy with percent-based exits.
 /// </summary>
 public class MaWithLogisticStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<MaTypes> _maType;
-	private readonly StrategyParam<ExitTypes> _exitType;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _logisticSlope;
-	private readonly StrategyParam<decimal> _logisticMidpoint;
-	private readonly StrategyParam<decimal> _takeProfitProbability;
-	private readonly StrategyParam<decimal> _stopLossProbability;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Fast moving average length.
-	/// </summary>
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
+	private EMA _fastMa;
+	private EMA _slowMa;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Slow moving average length.
-	/// </summary>
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Moving average type.
-	/// </summary>
-	public MaTypes MaType
-	{
-		get => _maType.Value;
-		set => _maType.Value = value;
-	}
-
-	/// <summary>
-	/// Exit mode.
-	/// </summary>
-	public ExitTypes ExitType
-	{
-		get => _exitType.Value;
-		set => _exitType.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit percent.
-	/// </summary>
-	public decimal TakeProfitPercent
-	{
-		get => _takeProfitPercent.Value;
-		set => _takeProfitPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percent.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Logistic slope.
-	/// </summary>
-	public decimal LogisticSlope
-	{
-		get => _logisticSlope.Value;
-		set => _logisticSlope.Value = value;
-	}
-
-	/// <summary>
-	/// Logistic midpoint.
-	/// </summary>
-	public decimal LogisticMidpoint
-	{
-		get => _logisticMidpoint.Value;
-		set => _logisticMidpoint.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit probability threshold.
-	/// </summary>
-	public decimal TakeProfitProbability
-	{
-		get => _takeProfitProbability.Value;
-		set => _takeProfitProbability.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss probability threshold.
-	/// </summary>
-	public decimal StopLossProbability
-	{
-		get => _stopLossProbability.Value;
-		set => _stopLossProbability.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="MaWithLogisticStrategy"/>.
-	/// </summary>
 	public MaWithLogisticStrategy()
 	{
-		_fastLength =
-			Param(nameof(FastLength), 9).SetDisplay("Fast MA", "Fast MA period", "Indicators").SetGreaterThanZero();
-		_slowLength =
-			Param(nameof(SlowLength), 21).SetDisplay("Slow MA", "Slow MA period", "Indicators").SetGreaterThanZero();
-		_maType = Param(nameof(MaType), MaTypes.EMA).SetDisplay("MA Type", "Moving average type", "Indicators");
-		_exitType = Param(nameof(ExitType), ExitTypes.Percent).SetDisplay("Exit Type", "Exit method", "General");
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 20m)
-								 .SetDisplay("TP %", "Take profit percent", "Percent")
-								 .SetGreaterThanZero();
-		_stopLossPercent =
-			Param(nameof(StopLossPercent), 5m).SetDisplay("SL %", "Stop loss percent", "Percent").SetGreaterThanZero();
-		_logisticSlope = Param(nameof(LogisticSlope), 10m)
-							 .SetDisplay("Logistic k", "Logistic slope k", "Logistic")
-							 .SetGreaterThanZero();
-		_logisticMidpoint =
-			Param(nameof(LogisticMidpoint), 0m).SetDisplay("Logistic mid", "Logistic mid (profit %)", "Logistic");
-		_takeProfitProbability =
-			Param(nameof(TakeProfitProbability), 0.8m).SetDisplay("TP Prob", "TP probability threshold", "Logistic");
-		_stopLossProbability =
-			Param(nameof(StopLossProbability), 0.2m).SetDisplay("SL Prob", "SL probability threshold", "Logistic");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-						  .SetDisplay("Candle Type", "Type of candles", "General");
+		_fastLength = Param(nameof(FastLength), 9).SetGreaterThanZero()
+			.SetDisplay("Fast MA", "Fast MA period", "Indicators");
+		_slowLength = Param(nameof(SlowLength), 21).SetGreaterThanZero()
+			.SetDisplay("Slow MA", "Slow MA period", "Indicators");
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m).SetGreaterThanZero()
+			.SetDisplay("TP %", "Take profit percent", "Risk");
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m).SetGreaterThanZero()
+			.SetDisplay("SL %", "Stop loss percent", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candles", "General");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_entryPrice = 0;
 
-		var fastMa = CreateMa(MaType, FastLength);
-		var slowMa = CreateMa(MaType, SlowLength);
+		_fastMa = new EMA { Length = FastLength };
+		_slowMa = new EMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(fastMa, slowMa, ProcessCandle).Start();
+		subscription.Bind(_fastMa, _slowMa, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastMa);
-			DrawIndicator(area, slowMa);
+			DrawIndicator(area, _fastMa);
+			DrawIndicator(area, _slowMa);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
@@ -189,7 +70,7 @@ public class MaWithLogisticStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_fastMa.IsFormed || !_slowMa.IsFormed)
 			return;
 
 		var close = candle.ClosePrice;
@@ -197,74 +78,29 @@ public class MaWithLogisticStrategy : Strategy
 		var shortCond = close < fast && fast < slow;
 
 		if (longCond && Position <= 0)
+		{
 			BuyMarket(Volume + Math.Abs(Position));
+			_entryPrice = close;
+		}
 		else if (shortCond && Position >= 0)
+		{
 			SellMarket(Volume + Math.Abs(Position));
-
-		if (Position > 0)
-		{
-			if (ExitType == ExitTypes.Percent)
-			{
-				var tpPrice = PositionPrice * (1m + TakeProfitPercent / 100m);
-				var slPrice = PositionPrice * (1m - StopLossPercent / 100m);
-
-				if (close >= tpPrice || close <= slPrice)
-					SellMarket(Math.Abs(Position));
-			}
-			else if (ExitType == ExitTypes.Logistic)
-			{
-				var profitPct = (close - PositionPrice) / PositionPrice;
-				var prob = 1m / (1m + (decimal)Math.Exp((double)(-LogisticSlope * (profitPct - LogisticMidpoint))));
-				if (prob >= TakeProfitProbability || prob <= StopLossProbability)
-					SellMarket(Math.Abs(Position));
-			}
+			_entryPrice = close;
 		}
-		else if (Position < 0)
+
+		if (Position > 0 && _entryPrice > 0)
 		{
-			if (ExitType == ExitTypes.Percent)
-			{
-				var tpPrice = PositionPrice * (1m - TakeProfitPercent / 100m);
-				var slPrice = PositionPrice * (1m + StopLossPercent / 100m);
-
-				if (close <= tpPrice || close >= slPrice)
-					BuyMarket(Math.Abs(Position));
-			}
-			else if (ExitType == ExitTypes.Logistic)
-			{
-				var profitPct = (PositionPrice - close) / PositionPrice;
-				var prob = 1m / (1m + (decimal)Math.Exp((double)(-LogisticSlope * (profitPct - LogisticMidpoint))));
-				if (prob >= TakeProfitProbability || prob <= StopLossProbability)
-					BuyMarket(Math.Abs(Position));
-			}
+			var tp = _entryPrice * (1m + TakeProfitPercent / 100m);
+			var sl = _entryPrice * (1m - StopLossPercent / 100m);
+			if (close >= tp || close <= sl)
+				SellMarket(Math.Abs(Position));
 		}
-	}
-
-	private DecimalLengthIndicator CreateMa(MaTypes type, int length)
-	{
-		return type switch {
-			MaTypes.EMA => new EMA { Length = length },
-			MaTypes.WMA => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length },
-		};
-	}
-
-	/// <summary>
-	/// Moving average types.
-	/// </summary>
-	public enum MaTypes
-	{
-		EMA,
-		SMA,
-		WMA
-	}
-
-	/// <summary>
-	/// Exit modes.
-	/// </summary>
-	public enum ExitTypes
-	{
-		None,
-		Percent,
-		Logistic
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			var tp = _entryPrice * (1m - TakeProfitPercent / 100m);
+			var sl = _entryPrice * (1m + StopLossPercent / 100m);
+			if (close <= tp || close >= sl)
+				BuyMarket(Math.Abs(Position));
+		}
 	}
 }

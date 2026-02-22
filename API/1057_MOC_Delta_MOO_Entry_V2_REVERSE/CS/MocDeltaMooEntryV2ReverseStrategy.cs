@@ -2,8 +2,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -12,169 +10,110 @@ using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
+/// <summary>
+/// MOC Delta MOO Entry V2 Reverse strategy.
+/// Uses volume delta to detect overbought/oversold conditions and trade the reversal.
+/// </summary>
 public class MocDeltaMooEntryV2ReverseStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _tpTicks;
-	private readonly StrategyParam<int> _slTicks;
-	private readonly StrategyParam<decimal> _deltaThreshold;
+	private readonly StrategyParam<int> _smaLength;
+	private readonly StrategyParam<int> _deltaWindow;
 
-	private SimpleMovingAverage _sma15;
-	private SimpleMovingAverage _sma30;
+	private SMA _smaFast;
+	private SMA _smaSlow;
 
-	private decimal _dailyVolume;
-	private decimal _afternoonBuyVol;
-	private decimal _afternoonSellVol;
-	private bool _afternoonTracking;
-	private decimal? _savedMocDeltaPct;
+	private decimal _sessionBuyVol;
+	private decimal _sessionSellVol;
+	private int _candleCount;
+	private decimal _prevDelta;
+	private bool _hasPrevDelta;
 
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public int TpTicks
-	{
-		get => _tpTicks.Value;
-		set => _tpTicks.Value = value;
-	}
-
-	public int SlTicks
-	{
-		get => _slTicks.Value;
-		set => _slTicks.Value = value;
-	}
-
-	public decimal DeltaThreshold
-	{
-		get => _deltaThreshold.Value;
-		set => _deltaThreshold.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int SmaLength { get => _smaLength.Value; set => _smaLength.Value = value; }
+	public int DeltaWindow { get => _deltaWindow.Value; set => _deltaWindow.Value = value; }
 
 	public MocDeltaMooEntryV2ReverseStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
-
-		_tpTicks = Param(nameof(TpTicks), 20)
-			.SetDisplay("Take Profit Ticks", "Take profit in ticks", "Risk")
-			.SetGreaterThanZero();
-
-		_slTicks = Param(nameof(SlTicks), 10)
-			.SetDisplay("Stop Loss Ticks", "Stop loss in ticks", "Risk")
-			.SetGreaterThanZero();
-
-		_deltaThreshold = Param(nameof(DeltaThreshold), 2m)
-			.SetDisplay("Delta % Threshold", "Delta percent threshold", "General")
-			.SetRange(0.1m, 10m);
-	}
-
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_dailyVolume = 0m;
-		_afternoonBuyVol = 0m;
-		_afternoonSellVol = 0m;
-		_afternoonTracking = false;
-		_savedMocDeltaPct = null;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_smaLength = Param(nameof(SmaLength), 15);
+		_deltaWindow = Param(nameof(DeltaWindow), 12);
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_sma15 = new SMA { Length = 15 };
-		_sma30 = new SMA { Length = 30 };
+		_sessionBuyVol = 0;
+		_sessionSellVol = 0;
+		_candleCount = 0;
+		_prevDelta = 0;
+		_hasPrevDelta = false;
+
+		_smaFast = new SMA { Length = SmaLength };
+		_smaSlow = new SMA { Length = SmaLength * 2 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_smaFast, _smaSlow, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaFast, decimal smaSlow)
 	{
-		var openTime = candle.OpenTime;
-
-		if (openTime.Hour == 8 && openTime.Minute == 30)
-			_dailyVolume = 0m;
-
-		_dailyVolume += candle.Volume;
-
-		var inAfternoon = openTime.Hour == 14 && openTime.Minute >= 50 && openTime.Minute <= 55;
-
-		if (inAfternoon)
-		{
-			_afternoonBuyVol = _afternoonTracking
-				? _afternoonBuyVol + (candle.ClosePrice > candle.OpenPrice ? candle.Volume : 0m)
-				: (candle.ClosePrice > candle.OpenPrice ? candle.Volume : 0m);
-
-			_afternoonSellVol = _afternoonTracking
-				? _afternoonSellVol + (candle.ClosePrice < candle.OpenPrice ? candle.Volume : 0m)
-				: (candle.ClosePrice < candle.OpenPrice ? candle.Volume : 0m);
-
-			_afternoonTracking = true;
-		}
-
-		if (openTime.Hour == 14 && openTime.Minute == 55 && _afternoonTracking)
-		{
-			var mocDelta = _afternoonBuyVol - _afternoonSellVol;
-			_savedMocDeltaPct = _dailyVolume > 0m ? mocDelta / _dailyVolume * 100m : (decimal?)null;
-			_afternoonBuyVol = 0m;
-			_afternoonSellVol = 0m;
-			_afternoonTracking = false;
-		}
-
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var sma15Value = _sma15.Process(new CandleIndicatorValue(candle, candle.OpenPrice));
-		var sma30Value = _sma30.Process(new CandleIndicatorValue(candle, candle.OpenPrice));
-
-		if (!sma15Value.IsFinal || !sma30Value.IsFinal)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var sma15 = sma15Value.GetValue<decimal>();
-		var sma30 = sma30Value.GetValue<decimal>();
+		// Accumulate volume delta
+		if (candle.ClosePrice > candle.OpenPrice)
+			_sessionBuyVol += candle.TotalVolume;
+		else
+			_sessionSellVol += candle.TotalVolume;
 
-		var is830 = openTime.Hour == 8 && openTime.Minute == 30;
-		var bearishMoc = _savedMocDeltaPct is decimal pct1 && pct1 > DeltaThreshold;
-		var bullishMoc = _savedMocDeltaPct is decimal pct2 && pct2 < -DeltaThreshold;
+		_candleCount++;
 
-		var validLong = candle.OpenPrice > sma15 && candle.OpenPrice > sma30 && sma15 > sma30;
-		var validShort = candle.OpenPrice < sma15 && candle.OpenPrice < sma30 && sma15 < sma30;
-
-		var step = Security.MinPriceStep;
-
-		if (is830 && bullishMoc && validLong && Position <= 0)
+		// Every DeltaWindow candles, evaluate and trade
+		if (_candleCount % DeltaWindow == 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			var entry = candle.ClosePrice;
-			BuyMarket(volume);
-			SellLimit(volume, entry + step * TpTicks);
-			SellStop(volume, entry - step * SlTicks);
-		}
-		else if (is830 && bearishMoc && validShort && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			var entry = candle.ClosePrice;
-			SellMarket(volume);
-			BuyLimit(volume, entry - step * TpTicks);
-			BuyStop(volume, entry + step * SlTicks);
+			var totalVol = _sessionBuyVol + _sessionSellVol;
+			var delta = totalVol > 0 ? (_sessionBuyVol - _sessionSellVol) / totalVol * 100m : 0m;
+
+			_sessionBuyVol = 0;
+			_sessionSellVol = 0;
+
+			if (_hasPrevDelta)
+			{
+				// Reverse logic: if previous delta was bullish, sell; if bearish, buy
+				if (_prevDelta > 1m && Position >= 0)
+				{
+					if (Position > 0)
+						SellMarket(Position);
+					SellMarket();
+				}
+				else if (_prevDelta < -1m && Position <= 0)
+				{
+					if (Position < 0)
+						BuyMarket(Math.Abs(Position));
+					BuyMarket();
+				}
+			}
+
+			_prevDelta = delta;
+			_hasPrevDelta = true;
+			return;
 		}
 
-		if (openTime.Hour == 14 && openTime.Minute == 50 && Position != 0)
-			CloseAll();
+		// Exit logic (only on non-entry candles)
+		if (Position > 0 && candle.ClosePrice < smaSlow)
+		{
+			SellMarket();
+		}
+		else if (Position < 0 && candle.ClosePrice > smaSlow)
+		{
+			BuyMarket();
+		}
 	}
 }

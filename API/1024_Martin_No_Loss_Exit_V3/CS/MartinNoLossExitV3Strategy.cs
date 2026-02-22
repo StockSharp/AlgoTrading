@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,17 +11,12 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Martin Strategy - No Loss Exit v3.
-/// Adds to a long position on price drops and exits on profit target.
-/// </summary>
 public class MartinNoLossExitV3Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _initialCash;
-	private readonly StrategyParam<int> _maxOrders;
 	private readonly StrategyParam<decimal> _priceStepPercent;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<decimal> _increaseFactor;
+	private readonly StrategyParam<int> _maxOrders;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
@@ -32,124 +25,35 @@ public class MartinNoLossExitV3Strategy : Strategy
 	private decimal _lastCash;
 	private int _orderCount;
 	private bool _inPosition;
-	private bool _waitingClose;
 
-	/// <summary>
-	/// Initial purchase amount in USD.
-	/// </summary>
-	public decimal InitialCash
-	{
-		get => _initialCash.Value;
-		set => _initialCash.Value = value;
-	}
+	public decimal PriceStepPercent { get => _priceStepPercent.Value; set => _priceStepPercent.Value = value; }
+	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
+	public decimal IncreaseFactor { get => _increaseFactor.Value; set => _increaseFactor.Value = value; }
+	public int MaxOrders { get => _maxOrders.Value; set => _maxOrders.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Maximum number of entries including the first.
-	/// </summary>
-	public int MaxOrders
-	{
-		get => _maxOrders.Value;
-		set => _maxOrders.Value = value;
-	}
-
-	/// <summary>
-	/// Percentage drop for each additional order.
-	/// </summary>
-	public decimal PriceStepPercent
-	{
-		get => _priceStepPercent.Value;
-		set => _priceStepPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit percentage from average price.
-	/// </summary>
-	public decimal TakeProfitPercent
-	{
-		get => _takeProfitPercent.Value;
-		set => _takeProfitPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier for each additional cash amount.
-	/// </summary>
-	public decimal IncreaseFactor
-	{
-		get => _increaseFactor.Value;
-		set => _increaseFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="MartinNoLossExitV3Strategy"/>.
-	/// </summary>
 	public MartinNoLossExitV3Strategy()
 	{
-		_initialCash = Param(nameof(InitialCash), 100m)
-			.SetDisplay("Initial Cash", "Initial purchase amount", "General")
-			;
-
-		_maxOrders = Param(nameof(MaxOrders), 20)
-			.SetDisplay("Max Orders", "Maximum number of entries", "General")
-			;
-
-		_priceStepPercent = Param(nameof(PriceStepPercent), 1.5m)
-			.SetDisplay("Price Step %", "Price drop for next order", "General")
-			;
-
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 1m)
-			.SetDisplay("Take Profit %", "Profit target from average price", "General")
-			;
-
-		_increaseFactor = Param(nameof(IncreaseFactor), 1.05m)
-			.SetDisplay("Increase Factor", "Multiplier for next cash amount", "General")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_priceStepPercent = Param(nameof(PriceStepPercent), 1.5m);
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 1m);
+		_increaseFactor = Param(nameof(IncreaseFactor), 1.05m);
+		_maxOrders = Param(nameof(MaxOrders), 20);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
-
-	/// <inheritdoc />
-	protected override void OnReseted()
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnReseted();
+		base.OnStarted2(time);
+
 		_entryPrice = 0m;
 		_totalCost = 0m;
 		_totalQty = 0m;
 		_lastCash = 0m;
 		_orderCount = 0;
 		_inPosition = false;
-		_waitingClose = false;
-	}
-
-	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
-	{
-		base.OnStarted2(time);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
-
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -157,56 +61,43 @@ public class MartinNoLossExitV3Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var initialCash = 100m;
+
 		if (_inPosition)
 		{
 			var avgPrice = _totalQty > 0m ? _totalCost / _totalQty : 0m;
 			var takeProfitPrice = avgPrice * (1 + TakeProfitPercent / 100m);
 
-			if (candle.HighPrice >= takeProfitPrice)
+			if (candle.HighPrice >= takeProfitPrice && Position > 0)
 			{
-				if (Position > 0)
-					SellMarket(Position);
+				SellMarket();
 				_inPosition = false;
-				_waitingClose = true;
+				_entryPrice = 0m;
+				_totalCost = 0m;
+				_totalQty = 0m;
+				_lastCash = 0m;
+				_orderCount = 0;
 				return;
 			}
 
 			var nextEntryPrice = _entryPrice * (1 - PriceStepPercent / 100m * _orderCount);
-			var canAdd = _orderCount < MaxOrders && candle.ClosePrice <= nextEntryPrice;
-
-			if (canAdd && !_waitingClose)
+			if (_orderCount < MaxOrders && candle.ClosePrice <= nextEntryPrice)
 			{
+				BuyMarket();
 				var newCash = _lastCash * IncreaseFactor;
-				var qty = newCash / candle.ClosePrice;
-
-				BuyMarket(qty);
-
 				_totalCost += newCash;
-				_totalQty += qty;
+				_totalQty += newCash / candle.ClosePrice;
 				_lastCash = newCash;
 				_orderCount++;
 			}
 		}
-
-		if (!_inPosition && _waitingClose)
+		else
 		{
-			_entryPrice = 0m;
-			_totalCost = 0m;
-			_totalQty = 0m;
-			_lastCash = 0m;
-			_orderCount = 0;
-			_waitingClose = false;
-		}
-
-		if (!_inPosition && !_waitingClose)
-		{
-			var qty = InitialCash / candle.ClosePrice;
-			BuyMarket(qty);
-
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
-			_totalCost = InitialCash;
-			_totalQty = qty;
-			_lastCash = InitialCash;
+			_totalCost = initialCash;
+			_totalQty = initialCash / candle.ClosePrice;
+			_lastCash = initialCash;
 			_orderCount = 1;
 			_inPosition = true;
 		}

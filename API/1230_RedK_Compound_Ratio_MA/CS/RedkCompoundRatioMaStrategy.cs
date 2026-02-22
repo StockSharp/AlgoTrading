@@ -54,7 +54,7 @@ public class RedkCompoundRatioMaStrategy : Strategy
 		
 		.SetOptimize(1, 10, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -102,7 +102,7 @@ public class RedkCompoundRatioMaStrategy : Strategy
 
 		const decimal startWt = 0.01m;
 		var endWt = Length;
-		var r = (decimal)Math.Pow((double)(endWt / startWt), 1m / (Length - 1)) - 1m;
+		var r = (decimal)Math.Pow((double)(endWt / startWt), 1.0 / (Length - 1)) - 1m;
 		var baseVal = 1m + r * RatioMultiplier;
 
 		decimal numerator = 0m;
@@ -115,7 +115,8 @@ public class RedkCompoundRatioMaStrategy : Strategy
 		}
 
 		var coraRaw = numerator / denom;
-		var coraValue = _coraWma.Process(coraRaw);
+		var coraInput = new DecimalIndicatorValue(_coraWma, coraRaw, candle.ServerTime);
+		var coraValue = _coraWma.Process(coraInput);
 		if (!coraValue.IsFinal)
 			return;
 

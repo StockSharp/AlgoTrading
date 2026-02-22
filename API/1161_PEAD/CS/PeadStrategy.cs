@@ -31,6 +31,7 @@ public class PeadStrategy : Strategy
 	private decimal _prevRoc;
 	private decimal _stopLevel;
 	private int _barsInTrade;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Gap-up threshold (%).
@@ -187,6 +188,7 @@ public class PeadStrategy : Strategy
 			BuyMarket(Volume);
 			_barsInTrade = 0;
 			_stopLevel = 0;
+			_entryPrice = candle.ClosePrice;
 		}
 
 		if (Position > 0)
@@ -194,15 +196,18 @@ public class PeadStrategy : Strategy
 			_barsInTrade++;
 
 			if (_stopLevel == 0)
-				_stopLevel = PositionPrice * (1m - StopPct / 100m);
+				_stopLevel = _entryPrice * (1m - StopPct / 100m);
 
-			var tradeProfit = candle.ClosePrice - PositionPrice;
-			var riskAmount = PositionPrice * (StopPct / 100m);
-			if (tradeProfit >= 2m * riskAmount && _stopLevel < PositionPrice)
-				_stopLevel = PositionPrice;
+			var tradeProfit = candle.ClosePrice - _entryPrice;
+			var riskAmount = _entryPrice * (StopPct / 100m);
+			if (tradeProfit >= 2m * riskAmount && _stopLevel < _entryPrice)
+				_stopLevel = _entryPrice;
 
-			if (candle.ClosePrice > _stopLevel)
-				SellStop(_stopLevel);
+			if (candle.ClosePrice <= _stopLevel)
+			{
+				SellMarket(Position);
+				return;
+			}
 
 			if (_prevEma > 0 && _prevClose > _prevEma && candle.ClosePrice < emaValue)
 				SellMarket(Position);

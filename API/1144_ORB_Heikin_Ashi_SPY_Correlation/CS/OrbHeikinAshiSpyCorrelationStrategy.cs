@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,168 +11,114 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Opening range breakout strategy using SPY correlation and optional Heikin Ashi.
-/// </summary>
 public class OrbHeikinAshiSpyCorrelationStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rvolPeriod;
-	private readonly StrategyParam<TimeSpan> _orbStart;
-	private readonly StrategyParam<TimeSpan> _orbEnd;
-	private readonly StrategyParam<TimeSpan> _tradeStart;
-	private readonly StrategyParam<TimeSpan> _tradeEnd;
-	private readonly StrategyParam<TimeSpan> _exitStart;
-	private readonly StrategyParam<TimeSpan> _exitEnd;
-	private readonly StrategyParam<bool> _useHeikin;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _volumeSma = null!;
-	private decimal? _orbHigh;
-	private decimal? _orbLow;
-	private bool _inOrbSession;
+	private decimal? _orHigh;
+	private decimal? _orLow;
+	private bool _rangeSet;
+	private decimal _stopPrice;
+	private decimal _takePrice;
+	private DateTime _currentDay;
 	private decimal _prevHaOpen;
 	private decimal _prevHaClose;
 
-	/// <summary>
-	/// Correlation security, e.g., SPY.
-	/// </summary>
-	public Security CorrelationSecurity { get; set; } = null!;
-
-	public int RelativeVolumePeriod { get => _rvolPeriod.Value; set => _rvolPeriod.Value = value; }
-	public TimeSpan OrbSessionStart { get => _orbStart.Value; set => _orbStart.Value = value; }
-	public TimeSpan OrbSessionEnd { get => _orbEnd.Value; set => _orbEnd.Value = value; }
-	public TimeSpan TradingSessionStart { get => _tradeStart.Value; set => _tradeStart.Value = value; }
-	public TimeSpan TradingSessionEnd { get => _tradeEnd.Value; set => _tradeEnd.Value = value; }
-	public TimeSpan ExitSessionStart { get => _exitStart.Value; set => _exitStart.Value = value; }
-	public TimeSpan ExitSessionEnd { get => _exitEnd.Value; set => _exitEnd.Value = value; }
-	public bool UseHeikinAshi { get => _useHeikin.Value; set => _useHeikin.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public OrbHeikinAshiSpyCorrelationStrategy()
 	{
-		_rvolPeriod = Param(nameof(RelativeVolumePeriod), 3);
-		_orbStart = Param(nameof(OrbSessionStart), new TimeSpan(9, 30, 0));
-		_orbEnd = Param(nameof(OrbSessionEnd), new TimeSpan(10, 0, 0));
-		_tradeStart = Param(nameof(TradingSessionStart), new TimeSpan(10, 0, 0));
-		_tradeEnd = Param(nameof(TradingSessionEnd), new TimeSpan(12, 0, 0));
-		_exitStart = Param(nameof(ExitSessionStart), new TimeSpan(15, 50, 0));
-		_exitEnd = Param(nameof(ExitSessionEnd), new TimeSpan(15, 55, 0));
-		_useHeikin = Param(nameof(UseHeikinAshi), false);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, CandleType);
-		if (CorrelationSecurity != null)
-			yield return (CorrelationSecurity, CandleType);
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_orbHigh = null;
-		_orbLow = null;
-		_inOrbSession = false;
-		_prevHaOpen = 0m;
-		_prevHaClose = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_orHigh = null; _orLow = null; _rangeSet = false; _currentDay = default;
+		_prevHaOpen = 0; _prevHaClose = 0;
 
-		if (CorrelationSecurity == null)
-			throw new InvalidOperationException("CorrelationSecurity is not set.");
-
-		_volumeSma = new SMA { Length = RelativeVolumePeriod };
-
-		var mainSub = SubscribeCandles(CandleType);
-		mainSub.Bind(c => c.Volume, _volumeSma, ProcessMainCandle).Start();
-
-		var corrSub = SubscribeCandles(CandleType, security: CorrelationSecurity);
-		corrSub.Bind(ProcessCorrelationCandle).Start();
+		var sma = new SimpleMovingAverage { Length = 20 };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(sma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, mainSub);
+			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCorrelationCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var time = candle.OpenTime.TimeOfDay;
-		var inOrb = time >= OrbSessionStart && time < OrbSessionEnd;
-
-		decimal high;
-		decimal low;
-
-		if (UseHeikinAshi)
+		var day = candle.OpenTime.Date;
+		if (_currentDay != day)
 		{
-			var haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
-			var haOpen = _prevHaOpen == 0m ? (candle.OpenPrice + candle.ClosePrice) / 2m : (_prevHaOpen + _prevHaClose) / 2m;
-			high = Math.Max(Math.Max(haOpen, haClose), candle.HighPrice);
-			low = Math.Min(Math.Min(haOpen, haClose), candle.LowPrice);
-			_prevHaOpen = haOpen;
-			_prevHaClose = haClose;
+			_currentDay = day; _orHigh = null; _orLow = null; _rangeSet = false;
+		}
+
+		// Heikin Ashi
+		decimal haOpen, haClose;
+		if (_prevHaOpen == 0)
+		{
+			haOpen = (candle.OpenPrice + candle.ClosePrice) / 2;
+			haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4;
 		}
 		else
 		{
-			high = candle.HighPrice;
-			low = candle.LowPrice;
+			haOpen = (_prevHaOpen + _prevHaClose) / 2;
+			haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4;
 		}
+		_prevHaOpen = haOpen;
+		_prevHaClose = haClose;
 
-		if (inOrb)
+		var bullishHa = haClose > haOpen;
+		var hour = candle.OpenTime.TimeOfDay.TotalHours;
+
+		if (hour < 1)
 		{
-			_orbHigh = _orbHigh.HasValue ? Math.Max(_orbHigh.Value, high) : high;
-			_orbLow = _orbLow.HasValue ? Math.Min(_orbLow.Value, low) : low;
-		}
-
-		_inOrbSession = inOrb;
-	}
-
-	private void ProcessMainCandle(ICandleMessage candle, decimal avgVolume)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var time = candle.OpenTime.TimeOfDay;
-
-		if (time >= ExitSessionStart && time < ExitSessionEnd)
-		{
-			if (Position != 0)
-				ClosePosition();
+			_orHigh = _orHigh.HasValue ? Math.Max(_orHigh.Value, candle.HighPrice) : candle.HighPrice;
+			_orLow = _orLow.HasValue ? Math.Min(_orLow.Value, candle.LowPrice) : candle.LowPrice;
 			return;
 		}
 
-		var inTrading = time >= TradingSessionStart && time < TradingSessionEnd;
+		if (!_rangeSet && _orHigh.HasValue && _orLow.HasValue)
+			_rangeSet = true;
 
-		if (!inTrading || !_orbHigh.HasValue || !_orbLow.HasValue)
-			return;
+		if (Position > 0 && (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice))
+			SellMarket(Math.Abs(Position));
+		else if (Position < 0 && (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice))
+			BuyMarket(Math.Abs(Position));
 
-		if (!_volumeSma.IsFormed || !IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var relVol = avgVolume == 0m ? 0m : candle.Volume / avgVolume;
-
-		if (relVol <= 1m)
-			return;
-
-		if (candle.ClosePrice > _orbHigh && Position <= 0)
+		if (_rangeSet && Position == 0 && _orHigh.HasValue && _orLow.HasValue)
 		{
-			BuyMarket();
+			var range = _orHigh.Value - _orLow.Value;
+			if (range > 0)
+			{
+				if (candle.ClosePrice > _orHigh.Value && bullishHa)
+				{
+					BuyMarket(Volume);
+					_stopPrice = _orLow.Value;
+					_takePrice = candle.ClosePrice + range * 1.5m;
+					_rangeSet = false;
+				}
+				else if (candle.ClosePrice < _orLow.Value && !bullishHa)
+				{
+					SellMarket(Volume);
+					_stopPrice = _orHigh.Value;
+					_takePrice = candle.ClosePrice - range * 1.5m;
+					_rangeSet = false;
+				}
+			}
 		}
-		else if (candle.ClosePrice < _orbLow && Position >= 0)
+
+		if (hour >= 22 && Position != 0)
 		{
-			SellMarket();
+			if (Position > 0) SellMarket(Math.Abs(Position));
+			else BuyMarket(Math.Abs(Position));
 		}
 	}
 }

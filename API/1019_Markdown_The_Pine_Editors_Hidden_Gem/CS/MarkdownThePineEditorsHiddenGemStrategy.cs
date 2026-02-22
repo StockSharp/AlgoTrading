@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,78 +11,30 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-/// <summary>
-/// Bollinger Bands breakout strategy based on a simple moving average.
-/// Opens long when price closes above the upper band and short when price closes below the lower band.
-/// </summary>
 public class MarkdownThePineEditorsHiddenGemStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
+	private BollingerBands _bollinger;
 
-	/// <summary>
-	/// Band width multiplier.
-	/// </summary>
-	public decimal Multiplier
-	{
-		get => _multiplier.Value;
-		set => _multiplier.Value = value;
-	}
+	public int Length { get => _length.Value; set => _length.Value = value; }
+	public decimal Multiplier { get => _multiplier.Value; set => _multiplier.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public MarkdownThePineEditorsHiddenGemStrategy()
 	{
-		_length = Param(nameof(Length), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Period of the moving average", "Bollinger")
-			
-			.SetOptimize(10, 100, 10);
-
-		_multiplier = Param(nameof(Multiplier), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Multiplier", "Band width multiplier", "Bollinger")
-			
-			.SetOptimize(1m, 5m, 1m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_length = Param(nameof(Length), 50);
+		_multiplier = Param(nameof(Multiplier), 2m);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var bollinger = new BollingerBands
+		_bollinger = new BollingerBands
 		{
 			Length = Length,
 			Width = Multiplier
@@ -90,33 +42,30 @@ public class MarkdownThePineEditorsHiddenGemStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bollinger, ProcessCandle)
+			.BindEx(_bollinger, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, bollinger);
-			DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_bollinger.IsFormed)
+			return;
+
+		var bb = (BollingerBandsValue)bollingerValue;
+
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
 			return;
 
 		if (Position <= 0 && candle.ClosePrice > upper)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		else if (Position >= 0 && candle.ClosePrice < lower)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 	}
 }

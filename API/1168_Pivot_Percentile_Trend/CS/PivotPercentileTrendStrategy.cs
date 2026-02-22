@@ -82,7 +82,7 @@ set => _direction.Value = value;
 	/// </summary>
 	public PivotPercentileTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 	.SetDisplay("Candle Type", "Type of candles to use", "General");
 	
 		_percentileLength = Param(nameof(PercentileLength), 10)

@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,10 +11,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Supertrend strategy with SMA200 filter and risk/reward exits.
-/// Based on TradingView "magic wand stsm".
-/// </summary>
 public class MagicWandStsmStrategy : Strategy
 {
 	private readonly StrategyParam<int> _supertrendPeriod;
@@ -36,112 +30,34 @@ public class MagicWandStsmStrategy : Strategy
 	private decimal _stop;
 	private decimal _take;
 
-	/// <summary>
-	/// Supertrend ATR period.
-	/// </summary>
-	public int SupertrendPeriod
-	{
-		get => _supertrendPeriod.Value;
-		set => _supertrendPeriod.Value = value;
-	}
+	public int SupertrendPeriod { get => _supertrendPeriod.Value; set => _supertrendPeriod.Value = value; }
+	public decimal SupertrendMultiplier { get => _supertrendMultiplier.Value; set => _supertrendMultiplier.Value = value; }
+	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
+	public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Supertrend ATR multiplier.
-	/// </summary>
-	public decimal SupertrendMultiplier
-	{
-		get => _supertrendMultiplier.Value;
-		set => _supertrendMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Length of simple moving average filter.
-	/// </summary>
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	/// <summary>
-	/// Risk/reward ratio for take profit.
-	/// </summary>
-	public decimal RiskReward
-	{
-		get => _riskReward.Value;
-		set => _riskReward.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="MagicWandStsmStrategy"/> class.
-	/// </summary>
 	public MagicWandStsmStrategy()
 	{
-		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
-			.SetDisplay("Supertrend Period", "ATR period for Supertrend", "Indicators")
-			.SetGreaterThanZero()
-			;
-
-		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m)
-			.SetDisplay("Supertrend Multiplier", "ATR multiplier for Supertrend", "Indicators")
-			.SetGreaterThanZero()
-			;
-
-		_maLength = Param(nameof(MaLength), 200)
-			.SetDisplay("MA Length", "Simple moving average length", "Indicators")
-			.SetGreaterThanZero()
-			;
-
-		_riskReward = Param(nameof(RiskReward), 2m)
-			.SetDisplay("Risk Reward", "Take profit multiplier", "Risk")
-			.SetGreaterThanZero();
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10);
+		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m);
+		_maLength = Param(nameof(MaLength), 50);
+		_riskReward = Param(nameof(RiskReward), 2m);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevHighest = _prevLowest = _prevSupertrend = _prevClose = 0m;
-		_stop = _take = 0m;
-		_isFirst = true;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = SupertrendPeriod };
-		_sma = new SMA { Length = MaLength };
+		_sma = new SimpleMovingAverage { Length = MaLength };
+
+		_prevHighest = _prevLowest = _prevSupertrend = _prevClose = 0m;
+		_stop = _take = 0m;
+		_isFirst = true;
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(_atr, _sma, ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, sub);
-			DrawIndicator(area, _sma);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal smaValue)
@@ -149,7 +65,7 @@ public class MagicWandStsmStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_atr.IsFormed || !_sma.IsFormed)
 			return;
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
@@ -179,26 +95,26 @@ public class MagicWandStsmStrategy : Strategy
 		{
 			if (isUpTrend && candle.ClosePrice > smaValue)
 			{
-			BuyMarket();
-			_stop = supertrend;
-			_take = candle.ClosePrice + (candle.ClosePrice - _stop) * RiskReward;
+				BuyMarket();
+				_stop = supertrend;
+				_take = candle.ClosePrice + (candle.ClosePrice - _stop) * RiskReward;
 			}
 			else if (!isUpTrend && candle.ClosePrice < smaValue)
 			{
-			SellMarket();
-			_stop = supertrend;
-			_take = candle.ClosePrice - (_stop - candle.ClosePrice) * RiskReward;
+				SellMarket();
+				_stop = supertrend;
+				_take = candle.ClosePrice - (_stop - candle.ClosePrice) * RiskReward;
 			}
 		}
 		else if (Position > 0)
 		{
 			if (candle.LowPrice <= _stop || candle.ClosePrice >= _take)
-			SellMarket(Position);
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
 			if (candle.HighPrice >= _stop || candle.ClosePrice <= _take)
-			BuyMarket(-Position);
+				BuyMarket();
 		}
 
 		_prevHighest = currentUpper;

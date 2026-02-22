@@ -64,7 +64,7 @@ public class MultiBandComparisonStrategy : Strategy
 	/// </summary>
 	public MultiBandComparisonStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_length = Param(nameof(Length), 20)
@@ -76,9 +76,7 @@ public class MultiBandComparisonStrategy : Strategy
 			.SetGreaterThanZero();
 
 		_upperQuantile = Param(nameof(UpperQuantile), 0.95m)
-			.SetDisplay("Upper Quantile", "Quantile for upper band", "Bands")
-			.SetGreaterOrEquals(0m)
-			.SetLessOrEquals(1m);
+			.SetDisplay("Upper Quantile", "Quantile for upper band", "Bands");
 
 		_entryConfirmBars = Param(nameof(EntryConfirmBars), 1)
 			.SetDisplay("Entry Confirm Bars", "Bars for entry confirmation", "Trading")
@@ -90,8 +88,6 @@ public class MultiBandComparisonStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)

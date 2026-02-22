@@ -77,7 +77,7 @@ public class LinearMeanReversionStrategy : Strategy
 			
 			.SetOptimize(1m, 3m, 1m);
 
-		_entryThreshold = Param(nameof(EntryThreshold), 2m)
+		_entryThreshold = Param(nameof(EntryThreshold), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Threshold", "Z-score entry threshold", "Parameters")
 			
@@ -95,7 +95,7 @@ public class LinearMeanReversionStrategy : Strategy
 			
 			.SetOptimize(20m, 100m, 10m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -151,35 +151,22 @@ public class LinearMeanReversionStrategy : Strategy
 
 		if (Position <= 0 && zscore < -EntryThreshold)
 		{
-			BuyMarket(volume + Math.Max(0m, -Position));
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
-			_isLong = true;
 		}
 		else if (Position >= 0 && zscore > EntryThreshold)
 		{
-			SellMarket(volume + Math.Max(0m, Position));
+			SellMarket();
 			_entryPrice = candle.ClosePrice;
-			_isLong = false;
 		}
 		else if (Position > 0 && zscore > -ExitThreshold)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			_entryPrice = 0;
 		}
 		else if (Position < 0 && zscore < ExitThreshold)
 		{
-			BuyMarket(Math.Abs(Position));
-			_entryPrice = 0;
-		}
-
-		if (Position > 0 && candle.ClosePrice <= _entryPrice - StopLossPoints)
-		{
-			SellMarket(Math.Abs(Position));
-			_entryPrice = 0;
-		}
-		else if (Position < 0 && candle.ClosePrice >= _entryPrice + StopLossPoints)
-		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			_entryPrice = 0;
 		}
 	}

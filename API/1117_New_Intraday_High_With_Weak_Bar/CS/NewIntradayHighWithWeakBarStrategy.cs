@@ -1,135 +1,35 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
-
-/// <summary>
-/// Trades new intraday highs that close near the low.
-/// </summary>
 public class NewIntradayHighWithWeakBarStrategy : Strategy
 {
-	private readonly StrategyParam<int> _highestLength;
-	private readonly StrategyParam<decimal> _weakRatio;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private Highest _highest = null!;
-	private decimal _prevHigh;
-
-	public int HighestLength
-	{
-		get => _highestLength.Value;
-		set => _highestLength.Value = value;
-	}
-
-	public decimal WeakRatio
-	{
-		get => _weakRatio.Value;
-		set => _weakRatio.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public NewIntradayHighWithWeakBarStrategy()
 	{
-		_highestLength = Param(nameof(HighestLength), 10)
-			.SetDisplay("Highest Length", "Bars to look back for high", "General")
-			.SetGreaterThanZero()
-			;
-
-		_weakRatio = Param(nameof(WeakRatio), 0.15m)
-			.SetDisplay("Weak Bar Ratio", "Close-low to range ratio", "General")
-			.SetGreaterThanZero()
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Working candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevHigh = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_highest = new Highest { Length = HighestLength };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_highest, ProcessCandle).Start();
-
+		var fast = new ExponentialMovingAverage { Length = 10 };
+		var slow = new ExponentialMovingAverage { Length = 30 };
+		var rsi = new RelativeStrengthIndex { Length = 14 };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var sub = SubscribeCandles(CandleType);
+		sub.Bind(fast, slow, rsi, (c, f, s, r) =>
+		{
+			if (c.State != CandleStates.Finished || !fast.IsFormed || !slow.IsFormed || !rsi.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (prevF <= prevS && f > s && r > 45 && Position <= 0) BuyMarket();
+			else if (prevF >= prevS && f < s && r < 55 && Position > 0) SellMarket();
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _highest, "Highest High");
-			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal highestValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var high = candle.HighPrice;
-		var low = candle.LowPrice;
-		var close = candle.ClosePrice;
-
-		if (!_highest.IsFormed)
-		{
-			_prevHigh = high;
-			return;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevHigh = high;
-			return;
-		}
-
-		var range = high - low;
-		if (range <= 0)
-		{
-			_prevHigh = high;
-			return;
-		}
-
-		var ratio = (close - low) / range;
-
-		if (Position == 0 && high == highestValue && ratio < WeakRatio)
-		{
-			BuyMarket();
-		}
-		else if (Position > 0 && close > _prevHigh)
-		{
-			SellMarket();
-		}
-
-		_prevHigh = high;
+		if (area != null) { DrawCandles(area, sub); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

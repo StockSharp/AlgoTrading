@@ -1,10 +1,6 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,182 +10,78 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that applies MACD to relative strength.
+/// MACD-based strategy with RSI relative strength filter.
 /// </summary>
 public class MacdOfRelativeStrenghtStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rsLength;
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<int> _signalLength;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Relative strength length.
-	/// </summary>
-	public int RsLength
-	{
-		get => _rsLength.Value;
-		set => _rsLength.Value = value;
-	}
+	private EMA _emaFast;
+	private EMA _emaSlow;
+	private RelativeStrengthIndex _rsi;
+	private decimal _prevMacd;
+	private bool _initialized;
 
-	/// <summary>
-	/// Fast EMA period for MACD.
-	/// </summary>
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Slow EMA period for MACD.
-	/// </summary>
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
-
-	/// <summary>
-	/// Signal line period for MACD.
-	/// </summary>
-	public int SignalLength
-	{
-		get => _signalLength.Value;
-		set => _signalLength.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type parameter.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="MacdOfRelativeStrenghtStrategy"/>.
-	/// </summary>
 	public MacdOfRelativeStrenghtStrategy()
 	{
-		_rsLength = Param(nameof(RsLength), 300)
-			.SetGreaterThanZero()
-			.SetDisplay("RS Length", "Relative strength length", "Parameters")
-			
-			.SetOptimize(100, 500, 100);
-
-		_fastLength = Param(nameof(FastLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast Length", "MACD fast EMA length", "Parameters")
-			
-			.SetOptimize(10, 20, 2);
-
-		_slowLength = Param(nameof(SlowLength), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow Length", "MACD slow EMA length", "Parameters")
-			
-			.SetOptimize(20, 40, 2);
-
-		_signalLength = Param(nameof(SignalLength), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Signal Length", "MACD signal smoothing", "Parameters")
-			
-			.SetOptimize(5, 15, 1);
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 8m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Max risk per trade", "Risk Management")
-			
-			.SetOptimize(2m, 10m, 1m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_fastLength = Param(nameof(FastLength), 12).SetDisplay("Fast", "Fast EMA", "MACD");
+		_slowLength = Param(nameof(SlowLength), 26).SetDisplay("Slow", "Slow EMA", "MACD");
+		_rsiLength = Param(nameof(RsiLength), 14).SetDisplay("RSI", "RSI period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candles", "General");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	protected override void OnStarted2(DateTime time)
 	{
-		return [(Security, CandleType)];
-	}
+		base.OnStarted2(time);
+		_prevMacd = 0; _initialized = false;
 
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
-	{
-		base.OnStarted(time);
-
-		var highest = new Highest { Length = RsLength };
-
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = FastLength },
-				LongMa = { Length = SlowLength },
-			},
-			SignalMa = { Length = SignalLength }
-		};
+		_emaFast = new EMA { Length = FastLength };
+		_emaSlow = new EMA { Length = SlowLength };
+		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(highest, (candle, highestValue) =>
-			{
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				if (!IsFormedAndOnlineAndAllowTrading())
-					return;
-
-				if (highestValue == 0)
-					return;
-
-				var rs = candle.ClosePrice / highestValue;
-
-				var macdValue = macd.Process(new DecimalIndicatorValue(macd, rs, candle.CloseTime));
-				var typed = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-
-				if (typed.Macd is not decimal macdLine ||
-						typed.Signal is not decimal signal)
-					return;
-
-				var hist = macdLine - signal;
-
-				if (Position > 0 && hist < 0)
-				{
-					SellMarket();
-					return;
-				}
-
-				if (hist > 0 && Position <= 0)
-				{
-					BuyMarket();
-				}
-			})
-			.Start();
-
-		StartProtection(
-				takeProfit: new Unit(0),
-				stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-				useMarketOrders: true);
+		subscription.Bind(_emaFast, _emaSlow, _rsi, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, macd);
+			DrawIndicator(area, _emaFast);
+			DrawIndicator(area, _emaSlow);
 			DrawOwnTrades(area);
 		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal rsi)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!_emaFast.IsFormed || !_emaSlow.IsFormed || !_rsi.IsFormed)
+			return;
+
+		var macd = fast - slow;
+
+		if (!_initialized) { _prevMacd = macd; _initialized = true; return; }
+
+		var crossUp = _prevMacd <= 0 && macd > 0;
+		var crossDown = _prevMacd >= 0 && macd < 0;
+
+		// RSI filter: buy when not overbought, sell when not oversold
+		if (crossUp && rsi < 70 && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (crossDown && rsi > 30 && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+
+		_prevMacd = macd;
 	}
 }

@@ -1,19 +1,14 @@
 using System;
 using System.Linq;
-using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
-
-
 
 /// <summary>
 /// Strategy combining EMA crossover, RSI and Stochastic oscillator.
@@ -25,157 +20,59 @@ public class MultiConditionsCurveFittingStrategy : Strategy
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<decimal> _rsiOverbought;
 	private readonly StrategyParam<decimal> _rsiOversold;
-	private readonly StrategyParam<int> _stochLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Fast EMA length.
-	/// </summary>
-	public int FastEmaLength
-	{
-		get => _fastEmaLength.Value;
-		set => _fastEmaLength.Value = value;
-	}
+	public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
+	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public decimal RsiOverbought { get => _rsiOverbought.Value; set => _rsiOverbought.Value = value; }
+	public decimal RsiOversold { get => _rsiOversold.Value; set => _rsiOversold.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Slow EMA length.
-	/// </summary>
-	public int SlowEmaLength
-	{
-		get => _slowEmaLength.Value;
-		set => _slowEmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// RSI period length.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-
-	/// <summary>
-	/// RSI overbought level.
-	/// </summary>
-	public decimal RsiOverbought
-	{
-		get => _rsiOverbought.Value;
-		set => _rsiOverbought.Value = value;
-	}
-
-	/// <summary>
-	/// RSI oversold level.
-	/// </summary>
-	public decimal RsiOversold
-	{
-		get => _rsiOversold.Value;
-		set => _rsiOversold.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic oscillator period.
-	/// </summary>
-	public int StochLength
-	{
-		get => _stochLength.Value;
-		set => _stochLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	private ExponentialMovingAverage _fastEma;
-	private ExponentialMovingAverage _slowEma;
-	private RelativeStrengthIndex _rsi;
-	private StochasticOscillator _stoch;
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="MultiConditionsCurveFittingStrategy"/>.
-	/// </summary>
 	public MultiConditionsCurveFittingStrategy()
 	{
 		_fastEmaLength = Param(nameof(FastEmaLength), 10);
 		_slowEmaLength = Param(nameof(SlowEmaLength), 25);
 		_rsiLength = Param(nameof(RsiLength), 14);
-		_rsiOverbought = Param(nameof(RsiOverbought), 80m);
-		_rsiOversold = Param(nameof(RsiOversold), 20m);
-		_stochLength = Param(nameof(StochLength), 14);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
+		_rsiOverbought = Param(nameof(RsiOverbought), 70m);
+		_rsiOversold = Param(nameof(RsiOversold), 30m);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_fastEma = new EMA { Length = FastEmaLength };
-		_slowEma = new EMA { Length = SlowEmaLength };
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_stoch = new StochasticOscillator
-		{
-			K = { Length = StochLength },
-			D = { Length = 3 }
-		};
+		var fastEma = new EMA { Length = FastEmaLength };
+		var slowEma = new EMA { Length = SlowEmaLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(_fastEma, _slowEma, _rsi, _stoch, ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastEma);
-			DrawIndicator(area, _slowEma);
-			DrawIndicator(area, _rsi);
-
-			var stochArea = CreateChartArea();
-			DrawIndicator(stochArea, _stoch);
-
-			DrawOwnTrades(area);
-		}
+		subscription
+			.Bind(fastEma, slowEma, rsi, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastEmaValue, IIndicatorValue slowEmaValue, IIndicatorValue rsiValue, IIndicatorValue stochValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEma, decimal slowEma, decimal rsi)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fastEma = fastEmaValue.ToDecimal();
-		var slowEma = slowEmaValue.ToDecimal();
-		var rsi = rsiValue.ToDecimal();
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		var stochTyped = (StochasticOscillatorValue)stochValue;
-		var k = stochTyped.K;
-		var d = stochTyped.D;
-
-		var longCondition = fastEma > slowEma && rsi < RsiOversold && k < 20m;
-		var shortCondition = fastEma < slowEma && rsi > RsiOverbought && k > 80m;
+		var longCondition = fastEma > slowEma && rsi < 50;
+		var shortCondition = fastEma < slowEma && rsi > 50;
 
 		if (longCondition && Position <= 0)
 			BuyMarket();
-
 		if (shortCondition && Position >= 0)
 			SellMarket();
 
-		if (Position > 0 && (fastEma < slowEma || rsi > RsiOverbought || k > d))
+		// Exit
+		if (Position > 0 && (fastEma < slowEma || rsi > RsiOverbought))
 			SellMarket();
-
-		if (Position < 0 && (fastEma > slowEma || rsi < RsiOversold || k < d))
+		if (Position < 0 && (fastEma > slowEma || rsi < RsiOversold))
 			BuyMarket();
 	}
 }

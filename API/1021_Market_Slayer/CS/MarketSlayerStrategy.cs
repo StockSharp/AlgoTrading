@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,246 +11,83 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Weighted moving average crossover strategy with SSL trend confirmation.
-/// </summary>
 public class MarketSlayerStrategy : Strategy
 {
 	private readonly StrategyParam<int> _shortLength;
 	private readonly StrategyParam<int> _longLength;
 	private readonly StrategyParam<int> _confirmationTrendValue;
-	private readonly StrategyParam<bool> _takeProfitEnabled;
-	private readonly StrategyParam<decimal> _takeProfitValue;
-	private readonly StrategyParam<bool> _stopLossEnabled;
-	private readonly StrategyParam<decimal> _stopLossValue;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<DataType> _trendCandleType;
 
-	private decimal? _prevShort;
-	private decimal? _prevLong;
-	private readonly WeightedMovingAverage _trendWmaHigh = new();
-	private readonly WeightedMovingAverage _trendWmaLow = new();
+	private WeightedMovingAverage _trendWmaHigh;
+	private WeightedMovingAverage _trendWmaLow;
+	private WeightedMovingAverage _shortWma;
+	private WeightedMovingAverage _longWma;
 	private int _trendHlv;
 	private bool _isTrendBullish;
+	private decimal? _prevShort;
+	private decimal? _prevLong;
 
-	/// <summary>
-	/// Length for short WMA.
-	/// </summary>
-	public int ShortLength
-	{
-		get => _shortLength.Value;
-		set => _shortLength.Value = value;
-	}
+	public int ShortLength { get => _shortLength.Value; set => _shortLength.Value = value; }
+	public int LongLength { get => _longLength.Value; set => _longLength.Value = value; }
+	public int ConfirmationTrendValue { get => _confirmationTrendValue.Value; set => _confirmationTrendValue.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Length for long WMA.
-	/// </summary>
-	public int LongLength
-	{
-		get => _longLength.Value;
-		set => _longLength.Value = value;
-	}
-
-	/// <summary>
-	/// Period for trend confirmation WMA.
-	/// </summary>
-	public int ConfirmationTrendValue
-	{
-		get => _confirmationTrendValue.Value;
-		set => _confirmationTrendValue.Value = value;
-	}
-
-	/// <summary>
-	/// Enable take profit.
-	/// </summary>
-	public bool TakeProfitEnabled
-	{
-		get => _takeProfitEnabled.Value;
-		set => _takeProfitEnabled.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit value in points.
-	/// </summary>
-	public decimal TakeProfitValue
-	{
-		get => _takeProfitValue.Value;
-		set => _takeProfitValue.Value = value;
-	}
-
-	/// <summary>
-	/// Enable stop loss.
-	/// </summary>
-	public bool StopLossEnabled
-	{
-		get => _stopLossEnabled.Value;
-		set => _stopLossEnabled.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss value in points.
-	/// </summary>
-	public decimal StopLossValue
-	{
-		get => _stopLossValue.Value;
-		set => _stopLossValue.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for main timeframe.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for trend timeframe.
-	/// </summary>
-	public DataType TrendCandleType
-	{
-		get => _trendCandleType.Value;
-		set => _trendCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="MarketSlayerStrategy"/>
-	/// class.
-	/// </summary>
 	public MarketSlayerStrategy()
 	{
-		_shortLength = Param(nameof(ShortLength), 10)
-						   .SetGreaterThanZero()
-						   .SetDisplay("Short WMA Length", "Short WMA Length", "General")
-						   ;
-
-		_longLength = Param(nameof(LongLength), 20)
-						  .SetGreaterThanZero()
-						  .SetDisplay("Long WMA Length", "Long WMA Length", "General")
-						  ;
-
-		_confirmationTrendValue = Param(nameof(ConfirmationTrendValue), 2)
-									  .SetGreaterThanZero()
-									  .SetDisplay("Trend WMA Length", "Trend WMA Length", "General")
-									  ;
-
-		_takeProfitEnabled = Param(nameof(TakeProfitEnabled), false)
-								 .SetDisplay("Enable Take Profit", "Enable Take Profit", "General");
-
-		_takeProfitValue = Param(nameof(TakeProfitValue), 20m)
-							   .SetNotNegative()
-							   .SetDisplay("Take Profit", "Take Profit", "General")
-							   ;
-
-		_stopLossEnabled = Param(nameof(StopLossEnabled), false)
-							   .SetDisplay("Enable Stop Loss", "Enable Stop Loss", "General");
-
-		_stopLossValue = Param(nameof(StopLossValue), 50m)
-							 .SetNotNegative()
-							 .SetDisplay("Stop Loss", "Stop Loss", "General")
-							 ;
-
-		_candleType = Param(nameof(CandleType),
-							TimeSpan.FromMinutes(5).TimeFrame())
-						  .SetDisplay("Candle Type", "Candle Type", "General");
-
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(240).TimeFrame())
-							   .SetDisplay("Trend Candle Type", "Trend Candle Type", "General");
+		_shortLength = Param(nameof(ShortLength), 10);
+		_longLength = Param(nameof(LongLength), 20);
+		_confirmationTrendValue = Param(nameof(ConfirmationTrendValue), 2);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)>
-	GetWorkingSecurities()
-	{
-		return [(Security, CandleType), (Security, TrendCandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_prevShort = _prevLong = null;
-		_trendHlv = 0;
-		_isTrendBullish = false;
-		_trendWmaHigh.Length = ConfirmationTrendValue;
-		_trendWmaLow.Length = ConfirmationTrendValue;
-		_trendWmaHigh.Reset();
-		_trendWmaLow.Reset();
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var shortWma = new WeightedMovingAverage { Length = ShortLength };
-		var longWma = new WeightedMovingAverage { Length = LongLength };
+		_shortWma = new WeightedMovingAverage { Length = ShortLength };
+		_longWma = new WeightedMovingAverage { Length = LongLength };
+		_trendWmaHigh = new WeightedMovingAverage { Length = ConfirmationTrendValue };
+		_trendWmaLow = new WeightedMovingAverage { Length = ConfirmationTrendValue };
 
-		_trendWmaHigh.Length = ConfirmationTrendValue;
-		_trendWmaLow.Length = ConfirmationTrendValue;
+		_prevShort = _prevLong = null;
+		_trendHlv = 0;
+		_isTrendBullish = false;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(shortWma, longWma, ProcessCandle).Start();
-
-		var trendSubscription = SubscribeCandles(TrendCandleType);
-		trendSubscription.Bind(ProcessTrend).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, shortWma);
-			DrawIndicator(area, longWma);
-			DrawOwnTrades(area);
-		}
-
-		if (TakeProfitEnabled || StopLossEnabled)
-		{
-			StartProtection(takeProfit: TakeProfitEnabled
-								? new Unit(TakeProfitValue, UnitTypes.Absolute)
-								: null,
-							stopLoss: StopLossEnabled
-								? new Unit(StopLossValue, UnitTypes.Absolute)
-								: null);
-		}
+		subscription.Bind(_shortWma, _longWma, ProcessCandle).Start();
 	}
 
-	private void ProcessTrend(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal shortWma, decimal longWma)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var highVal = _trendWmaHigh.Process(new DecimalIndicatorValue(
-			_trendWmaHigh, candle.HighPrice, candle.OpenTime));
-		var lowVal = _trendWmaLow.Process(new DecimalIndicatorValue(
-			_trendWmaLow, candle.LowPrice, candle.OpenTime));
+		// Update trend using candle high/low
+		var t = candle.ServerTime;
+		var highVal = _trendWmaHigh.Process(new DecimalIndicatorValue(_trendWmaHigh, candle.HighPrice, t));
+		var lowVal = _trendWmaLow.Process(new DecimalIndicatorValue(_trendWmaLow, candle.LowPrice, t));
 
-		if (!highVal.IsFinal || !lowVal.IsFinal)
+		if (_trendWmaHigh.IsFormed && _trendWmaLow.IsFormed)
+		{
+			var high = highVal.ToDecimal();
+			var low = lowVal.ToDecimal();
+
+			if (candle.ClosePrice > high)
+				_trendHlv = 1;
+			else if (candle.ClosePrice < low)
+				_trendHlv = -1;
+
+			var sslDown = _trendHlv < 0 ? high : low;
+			var sslUp = _trendHlv < 0 ? low : high;
+			_isTrendBullish = sslUp > sslDown;
+		}
+
+		if (!_shortWma.IsFormed || !_longWma.IsFormed)
+		{
+			_prevShort = shortWma;
+			_prevLong = longWma;
 			return;
-
-		var high = highVal.GetValue<decimal>();
-		var low = lowVal.GetValue<decimal>();
-
-		if (candle.ClosePrice > high)
-			_trendHlv = 1;
-		else if (candle.ClosePrice < low)
-			_trendHlv = -1;
-
-		var sslDown = _trendHlv < 0 ? high : low;
-		var sslUp = _trendHlv < 0 ? low : high;
-		_isTrendBullish = sslUp > sslDown;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal shortWma,
-							   decimal longWma)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		}
 
 		if (_prevShort.HasValue && _prevLong.HasValue)
 		{
@@ -266,10 +101,10 @@ public class MarketSlayerStrategy : Strategy
 				SellMarket();
 
 			if (Position > 0 && !_isTrendBullish)
-				ClosePosition();
+				SellMarket();
 
 			if (Position < 0 && _isTrendBullish)
-				ClosePosition();
+				BuyMarket();
 		}
 
 		_prevShort = shortWma;

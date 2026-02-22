@@ -1,12 +1,8 @@
 using System;
 using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -18,76 +14,21 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MondayOpenStrategy : Strategy
 {
-	private readonly StrategyParam<int> _startYear;
-	private readonly StrategyParam<int> _endYear;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private bool _tradeOpened;
 
-	/// <summary>
-	/// First year to trade.
-	/// </summary>
-	public int StartYear
-	{
-		get => _startYear.Value;
-		set => _startYear.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Last year to trade.
-	/// </summary>
-	public int EndYear
-	{
-		get => _endYear.Value;
-		set => _endYear.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for strategy calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="MondayOpenStrategy"/> class.
-	/// </summary>
 	public MondayOpenStrategy()
 	{
-		_startYear = Param(nameof(StartYear), 2023)
-			.SetDisplay("Start Year", "First year to trade", "General")
-			
-			.SetRange(1900, 2100);
-
-		_endYear = Param(nameof(EndYear), 2025)
-			.SetDisplay("End Year", "Last year to trade", "General")
-			
-			.SetRange(1900, 2100);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_tradeOpened = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
+		_tradeOpened = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -103,20 +44,20 @@ public class MondayOpenStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var year = candle.OpenTime.Year;
-		if (year < StartYear || year > EndYear)
-			return;
-
 		var day = candle.OpenTime.DayOfWeek;
 
-		if (day == DayOfWeek.Monday && !_tradeOpened)
+		if (day == DayOfWeek.Monday && !_tradeOpened && Position <= 0)
 		{
 			BuyMarket();
 			_tradeOpened = true;
 		}
 		else if (day == DayOfWeek.Tuesday && _tradeOpened && Position > 0)
 		{
-			ClosePosition();
+			SellMarket();
+			_tradeOpened = false;
+		}
+		else if (day != DayOfWeek.Monday && day != DayOfWeek.Tuesday)
+		{
 			_tradeOpened = false;
 		}
 	}

@@ -128,7 +128,7 @@ _direction = Param(nameof(Direction), (Sides?)null)
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fake = new CandleMessage
+		var fake = new TimeFrameCandleMessage
 		{
 			SecurityId = candle.SecurityId,
 			OpenTime = candle.OpenTime,

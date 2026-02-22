@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,199 +11,131 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Octopus Nest strategy based on squeeze breakout and PSAR.
-/// </summary>
 public class OctopusNestStrategy : Strategy
 {
-private readonly StrategyParam<int> _emaLength;
-private readonly StrategyParam<int> _bbLength;
-private readonly StrategyParam<decimal> _bbMultiplier;
-private readonly StrategyParam<int> _kcLength;
-private readonly StrategyParam<decimal> _kcMultiplier;
-private readonly StrategyParam<decimal> _stopMultiplier;
-private readonly StrategyParam<int> _lookback;
-private readonly StrategyParam<decimal> _rrRatio;
-private readonly StrategyParam<decimal> _psarStep;
-private readonly StrategyParam<decimal> _psarMax;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _bbLength;
+	private readonly StrategyParam<decimal> _rrRatio;
+	private readonly StrategyParam<DataType> _candleType;
 
-private EMA _ema;
-private BollingerBands _bollinger;
-private KeltnerChannels _keltner;
-private ParabolicSar _psar;
-private Highest _highest;
-private Lowest _lowest;
+	private decimal _longStop;
+	private decimal _longTake;
+	private decimal _shortStop;
+	private decimal _shortTake;
 
-private decimal _longStop;
-private decimal _longTake;
-private decimal _shortStop;
-private decimal _shortTake;
+	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
+	public int BbLength { get => _bbLength.Value; set => _bbLength.Value = value; }
+	public decimal RrRatio { get => _rrRatio.Value; set => _rrRatio.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// EMA length.
-/// </summary>
-public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
+	public OctopusNestStrategy()
+	{
+		_emaLength = Param(nameof(EmaLength), 100).SetGreaterThanZero();
+		_bbLength = Param(nameof(BbLength), 20).SetGreaterThanZero();
+		_rrRatio = Param(nameof(RrRatio), 1.125m).SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+	}
 
-/// <summary>
-/// Bollinger Bands length.
-/// </summary>
-public int BbLength { get => _bbLength.Value; set => _bbLength.Value = value; }
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-/// <summary>
-/// Bollinger Bands multiplier.
-/// </summary>
-public decimal BbMultiplier { get => _bbMultiplier.Value; set => _bbMultiplier.Value = value; }
+		_longStop = _longTake = _shortStop = _shortTake = 0m;
 
-/// <summary>
-/// Keltner Channels length.
-/// </summary>
-public int KcLength { get => _kcLength.Value; set => _kcLength.Value = value; }
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var bb = new BollingerBands { Length = BbLength, Width = 2m };
+		var psar = new ParabolicSar();
+		var highest = new Highest { Length = 20 };
+		var lowest = new Lowest { Length = 20 };
 
-/// <summary>
-/// Keltner Channels multiplier.
-/// </summary>
-public decimal KcMultiplier { get => _kcMultiplier.Value; set => _kcMultiplier.Value = value; }
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.BindEx(ema, bb, psar, highest, lowest, ProcessCandle)
+			.Start();
 
-/// <summary>
-/// Stop multiplier relative to extreme.
-/// </summary>
-public decimal StopMultiplier { get => _stopMultiplier.Value; set => _stopMultiplier.Value = value; }
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawIndicator(area, bb);
+			DrawOwnTrades(area);
+		}
+	}
 
-/// <summary>
-/// Lookback period for extremes.
-/// </summary>
-public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue bbValue, IIndicatorValue psarValue, IIndicatorValue highValue, IIndicatorValue lowValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-/// <summary>
-/// Risk reward ratio.
-/// </summary>
-public decimal RrRatio { get => _rrRatio.Value; set => _rrRatio.Value = value; }
+		if (!emaValue.IsFinal || !emaValue.IsFormed || !bbValue.IsFormed || !psarValue.IsFormed || !highValue.IsFormed || !lowValue.IsFormed)
+			return;
 
-/// <summary>
-/// Parabolic SAR step.
-/// </summary>
-public decimal PsarStep { get => _psarStep.Value; set => _psarStep.Value = value; }
+		var emaVal = emaValue.ToDecimal();
+		var psar = psarValue.ToDecimal();
+		var highest = highValue.ToDecimal();
+		var lowest = lowValue.ToDecimal();
 
-/// <summary>
-/// Parabolic SAR max step.
-/// </summary>
-public decimal PsarMax { get => _psarMax.Value; set => _psarMax.Value = value; }
+		// Get BB upper/lower from complex value
+		decimal bbUpper, bbLower;
+		var complexBb = bbValue as IComplexIndicatorValue;
+		if (complexBb != null)
+		{
+			var vals = complexBb.InnerValues.Select(v => v.Value.ToDecimal()).ToArray();
+			if (vals.Length >= 3)
+			{
+				bbUpper = vals[0]; // upper
+				bbLower = vals[2]; // lower
+			}
+			else
+				return;
+		}
+		else
+			return;
 
-/// <summary>
-/// Candle type.
-/// </summary>
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+		// Simplified squeeze: BB width < some threshold relative to price
+		var bbWidth = bbUpper - bbLower;
+		var squeeze = bbWidth < candle.ClosePrice * 0.01m;
 
-public OctopusNestStrategy()
-{
-_emaLength = Param(nameof(EmaLength), 100).SetGreaterThanZero();
-_bbLength = Param(nameof(BbLength), 20).SetGreaterThanZero();
-_bbMultiplier = Param(nameof(BbMultiplier), 2m).SetGreaterThanZero();
-_kcLength = Param(nameof(KcLength), 20).SetGreaterThanZero();
-_kcMultiplier = Param(nameof(KcMultiplier), 1.5m).SetGreaterThanZero();
-_stopMultiplier = Param(nameof(StopMultiplier), 0.98m).SetGreaterThanZero();
-_lookback = Param(nameof(Lookback), 20).SetGreaterThanZero();
-_rrRatio = Param(nameof(RrRatio), 1.125m).SetGreaterThanZero();
-_psarStep = Param(nameof(PsarStep), 0.02m).SetGreaterThanZero();
-_psarMax = Param(nameof(PsarMax), 0.2m).SetGreaterThanZero();
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
-}
+		var longCond = !squeeze && candle.ClosePrice > emaVal && candle.ClosePrice > psar;
+		var shortCond = !squeeze && candle.ClosePrice < emaVal && candle.ClosePrice < psar;
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+		// Exit management
+		if (Position > 0)
+		{
+			if (_longStop > 0 && (candle.LowPrice <= _longStop || candle.HighPrice >= _longTake))
+			{
+				SellMarket(Math.Abs(Position));
+				_longStop = 0;
+				return;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (_shortStop > 0 && (candle.HighPrice >= _shortStop || candle.LowPrice <= _shortTake))
+			{
+				BuyMarket(Math.Abs(Position));
+				_shortStop = 0;
+				return;
+			}
+		}
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_longStop = _longTake = _shortStop = _shortTake = 0m;
-}
-
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
-
-_ema = new EMA { Length = EmaLength };
-_bollinger = new BollingerBands { Length = BbLength, Width = BbMultiplier };
-_keltner = new KeltnerChannels { Length = KcLength, Multiplier = KcMultiplier };
-_psar = new ParabolicSar { AccelerationStep = PsarStep, AccelerationMax = PsarMax };
-_highest = new Highest { Length = Lookback };
-_lowest = new Lowest { Length = Lookback };
-
-var subscription = SubscribeCandles(CandleType);
-subscription
-.BindEx(_ema, _bollinger, _keltner, _psar, _highest, _lowest, ProcessCandle)
-.Start();
-
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, _ema);
-DrawIndicator(area, _bollinger);
-DrawIndicator(area, _keltner);
-DrawIndicator(area, _psar);
-DrawOwnTrades(area);
-}
-}
-
-private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue bbValue, IIndicatorValue kcValue, IIndicatorValue psarValue, IIndicatorValue highValue, IIndicatorValue lowValue)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-if (!_ema.IsFormed || !_bollinger.IsFormed || !_keltner.IsFormed || !_psar.IsFormed || !_highest.IsFormed || !_lowest.IsFormed)
-return;
-
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
-
-var ema = emaValue.ToDecimal();
-
-var bb = (BollingerBandsValue)bbValue;
-if (bb.UpBand is not decimal bbUpper || bb.LowBand is not decimal bbLower)
-return;
-
-var kc = (KeltnerChannelsValue)kcValue;
-if (kc.Upper is not decimal kcUpper || kc.Lower is not decimal kcLower)
-return;
-
-var psar = psarValue.ToDecimal();
-var highest = highValue.ToDecimal();
-var lowest = lowValue.ToDecimal();
-
-var squeeze = bbUpper < kcUpper && bbLower > kcLower;
-
-var longCond = !squeeze && candle.ClosePrice > ema && candle.ClosePrice > psar;
-var shortCond = !squeeze && candle.ClosePrice < ema && candle.ClosePrice < psar;
-
-if (longCond && Position <= 0)
-{
-BuyMarket(Volume + Math.Abs(Position));
-_longStop = lowest * StopMultiplier;
-_longTake = candle.ClosePrice + (candle.ClosePrice - _longStop) * RrRatio;
-}
-else if (shortCond && Position >= 0)
-{
-SellMarket(Volume + Math.Abs(Position));
-_shortStop = highest * (2m - StopMultiplier);
-_shortTake = candle.ClosePrice - (_shortStop - candle.ClosePrice) * RrRatio;
-}
-
-if (Position > 0)
-{
-if (candle.LowPrice <= _longStop || candle.HighPrice >= _longTake)
-SellMarket(Math.Abs(Position));
-}
-else if (Position < 0)
-{
-if (candle.HighPrice >= _shortStop || candle.LowPrice <= _shortTake)
-BuyMarket(Math.Abs(Position));
-}
-}
+		// Entry
+		if (longCond && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_longStop = lowest * 0.98m;
+			_longTake = candle.ClosePrice + (candle.ClosePrice - _longStop) * RrRatio;
+		}
+		else if (shortCond && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+			_shortStop = highest * 1.02m;
+			_shortTake = candle.ClosePrice - (_shortStop - candle.ClosePrice) * RrRatio;
+		}
+	}
 }

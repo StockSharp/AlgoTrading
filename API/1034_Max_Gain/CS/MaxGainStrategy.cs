@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,77 +11,34 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy that compares potential gain and adjusted loss over a lookback period.
-/// Goes long when potential gain exceeds adjusted loss, otherwise goes short.
-/// </summary>
 public class MaxGainStrategy : Strategy
 {
 	private readonly StrategyParam<int> _periodLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Lookback period length.
-	/// </summary>
-	public int PeriodLength
-	{
-		get => _periodLength.Value;
-		set => _periodLength.Value = value;
-	}
+	private Highest _highest;
+	private Lowest _lowest;
 
-	/// <summary>
-	/// The type of candles used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int PeriodLength { get => _periodLength.Value; set => _periodLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="MaxGainStrategy"/>.
-	/// </summary>
 	public MaxGainStrategy()
 	{
-		_periodLength = Param(nameof(PeriodLength), 30)
-			.SetGreaterThanZero()
-			.SetDisplay("Period Length", "Number of candles for high/low calculation", "General")
-			
-			.SetOptimize(10, 60, 5);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_periodLength = Param(nameof(PeriodLength), 30);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		var highest = new Highest { Length = PeriodLength };
-		var lowest = new Lowest { Length = PeriodLength };
+		_highest = new Highest { Length = PeriodLength };
+		_lowest = new Lowest { Length = PeriodLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(highest, lowest, ProcessCandle)
+			.Bind(_highest, _lowest, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, highest);
-			DrawIndicator(area, lowest);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maxHigh, decimal minLow)
@@ -91,21 +46,27 @@ public class MaxGainStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_highest.IsFormed || !_lowest.IsFormed)
+			return;
+
+		if (minLow == 0 || maxHigh == 0)
 			return;
 
 		var maxGain = (candle.HighPrice - minLow) / minLow * 100m;
 		var maxLoss = (candle.LowPrice - maxHigh) / maxHigh * -100m;
+
+		if (maxLoss >= 100m) return;
+
 		var adjustedMaxLoss = maxLoss / (100m - maxLoss) * 100m;
 
 		if (maxGain > adjustedMaxLoss)
 		{
 			if (Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 		}
 		else if (Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 	}
 }

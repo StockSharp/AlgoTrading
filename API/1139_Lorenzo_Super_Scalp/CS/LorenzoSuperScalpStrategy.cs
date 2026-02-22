@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,243 +11,89 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// RSI, Bollinger Bands and MACD based scalping strategy.
-/// </summary>
 public class LorenzoSuperScalpStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _bollingerLength;
-	private readonly StrategyParam<decimal> _bollingerMultiplier;
-	private readonly StrategyParam<int> _macdFastLength;
-	private readonly StrategyParam<int> _macdSlowLength;
-	private readonly StrategyParam<int> _macdSignalLength;
-	private readonly StrategyParam<int> _minBarsBetweenTrades;
+	private readonly StrategyParam<int> _bbLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi;
-	private BollingerBands _bollinger;
-	private MovingAverageConvergenceDivergence _macd;
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public int BbLength { get => _bbLength.Value; set => _bbLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private bool? _lastSignalBuy;
-	private int _lastTradeBar;
-	private int _barIndex;
-	private decimal _prevMacd;
-	private decimal _prevSignal;
-
-	/// <summary>
-	/// RSI period length.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands period length.
-	/// </summary>
-	public int BollingerLength
-	{
-		get => _bollingerLength.Value;
-		set => _bollingerLength.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands width multiplier.
-	/// </summary>
-	public decimal BollingerMultiplier
-	{
-		get => _bollingerMultiplier.Value;
-		set => _bollingerMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// MACD fast length.
-	/// </summary>
-	public int MacdFastLength
-	{
-		get => _macdFastLength.Value;
-		set => _macdFastLength.Value = value;
-	}
-
-	/// <summary>
-	/// MACD slow length.
-	/// </summary>
-	public int MacdSlowLength
-	{
-		get => _macdSlowLength.Value;
-		set => _macdSlowLength.Value = value;
-	}
-
-	/// <summary>
-	/// MACD signal length.
-	/// </summary>
-	public int MacdSignalLength
-	{
-		get => _macdSignalLength.Value;
-		set => _macdSignalLength.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum bars between trades.
-	/// </summary>
-	public int MinBarsBetweenTrades
-	{
-		get => _minBarsBetweenTrades.Value;
-		set => _minBarsBetweenTrades.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public LorenzoSuperScalpStrategy()
 	{
-		_rsiLength = Param(nameof(RsiLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI calculation period", "Indicators")
-			
-			.SetOptimize(5, 30, 1);
-
-		_bollingerLength = Param(nameof(BollingerLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("BB Length", "Bollinger Bands period", "Indicators")
-			
-			.SetOptimize(10, 40, 1);
-
-		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("BB Multiplier", "Bollinger Bands width", "Indicators")
-			
-			.SetOptimize(1m, 3m, 0.5m);
-
-		_macdFastLength = Param(nameof(MacdFastLength), 12)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Fast", "MACD fast length", "Indicators")
-			
-			.SetOptimize(5, 20, 1);
-
-		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Slow", "MACD slow length", "Indicators")
-			
-			.SetOptimize(20, 40, 1);
-
-		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Signal", "MACD signal length", "Indicators")
-			
-			.SetOptimize(5, 15, 1);
-
-		_minBarsBetweenTrades = Param(nameof(MinBarsBetweenTrades), 15)
-			.SetGreaterThanZero()
-			.SetDisplay("Min Bars", "Minimum bars between trades", "General")
-			
-			.SetOptimize(5, 30, 1);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_lastTradeBar = -1;
+		_rsiLength = Param(nameof(RsiLength), 14).SetGreaterThanZero();
+		_bbLength = Param(nameof(BbLength), 20).SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	protected override void OnStarted2(DateTime time)
 	{
-		return [(Security, CandleType)];
-	}
+		base.OnStarted2(time);
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_lastSignalBuy = null;
-		_lastTradeBar = -1;
-		_barIndex = 0;
-		_prevMacd = 0m;
-		_prevSignal = 0m;
-	}
-
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
-	{
-		base.OnStarted(time);
-
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_bollinger = new BollingerBands { Length = BollingerLength, Width = BollingerMultiplier };
-		_macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = MacdFastLength },
-			LongMa = { Length = MacdSlowLength },
-			SignalPeriod = MacdSignalLength
-		};
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var bb = new BollingerBands { Length = BbLength, Width = 2m };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsi, _bollinger, _macd, ProcessCandle)
+			.BindEx(rsi, bb, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bollinger);
+			DrawIndicator(area, bb);
 			DrawOwnTrades(area);
-
-			var rsiArea = CreateChartArea();
-			DrawIndicator(rsiArea, _rsi);
-
-			var macdArea = CreateChartArea();
-			DrawIndicator(macdArea, _macd);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal _, decimal upperBand, decimal lowerBand, decimal macdValue, decimal signalValue, decimal _2)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiVal, IIndicatorValue bbVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_rsi.IsFormed || !_bollinger.IsFormed || !_macd.IsFormed)
+		if (!rsiVal.IsFinal || !rsiVal.IsFormed || !bbVal.IsFormed)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var rsi = rsiVal.ToDecimal();
 
-		_barIndex++;
-
-		var macdCrossUp = _prevMacd <= _prevSignal && macdValue > signalValue;
-		var macdCrossDown = _prevMacd >= _prevSignal && macdValue < signalValue;
-
-		var buySignal = rsiValue < 45m && candle.ClosePrice < lowerBand * 1.02m && macdCrossUp;
-		var sellSignal = rsiValue > 55m && candle.ClosePrice > upperBand * 0.98m && macdCrossDown;
-
-		var timeElapsed = _lastTradeBar == -1 || (_barIndex - _lastTradeBar) >= MinBarsBetweenTrades;
-		var canBuy = buySignal && (!_lastSignalBuy.HasValue || !_lastSignalBuy.Value) && timeElapsed;
-		var canSell = sellSignal && _lastSignalBuy.HasValue && _lastSignalBuy.Value && timeElapsed;
-
-		if (canBuy && Position <= 0)
+		// Get BB bands
+		decimal upperBand = candle.ClosePrice * 1.01m;
+		decimal lowerBand = candle.ClosePrice * 0.99m;
+		var complexBb = bbVal as IComplexIndicatorValue;
+		if (complexBb != null)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_lastSignalBuy = true;
-			_lastTradeBar = _barIndex;
-		}
-		else if (canSell && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_lastSignalBuy = false;
-			_lastTradeBar = _barIndex;
+			var vals = complexBb.InnerValues.Select(v => v.Value.ToDecimal()).ToArray();
+			if (vals.Length >= 3)
+			{
+				upperBand = vals[0];
+				lowerBand = vals[2];
+			}
 		}
 
-		_prevMacd = macdValue;
-		_prevSignal = signalValue;
+		// Buy when RSI oversold and price near lower BB
+		if (rsi < 35m && candle.ClosePrice <= lowerBand && Position <= 0)
+		{
+			if (Position < 0) BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+		}
+		// Sell when RSI overbought and price near upper BB
+		else if (rsi > 65m && candle.ClosePrice >= upperBand && Position >= 0)
+		{
+			if (Position > 0) SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
+		}
+		// Exit long when RSI > 60
+		else if (Position > 0 && rsi > 60m)
+		{
+			SellMarket(Math.Abs(Position));
+		}
+		// Exit short when RSI < 40
+		else if (Position < 0 && rsi < 40m)
+		{
+			BuyMarket(Math.Abs(Position));
+		}
 	}
 }

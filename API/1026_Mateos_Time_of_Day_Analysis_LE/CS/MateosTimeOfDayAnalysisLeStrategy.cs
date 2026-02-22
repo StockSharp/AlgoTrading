@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,85 +11,31 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-/// <summary>
-/// Mateo's Time of Day Analysis LE strategy.
-/// Enters long during a specified intraday window and closes positions later.
-/// </summary>
 public class MateosTimeOfDayAnalysisLeStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TimeSpan> _startTime;
-	private readonly StrategyParam<TimeSpan> _endTime;
-	private readonly StrategyParam<DateTimeOffset> _from;
-	private readonly StrategyParam<DateTimeOffset> _thru;
+	private readonly StrategyParam<int> _startHour;
+	private readonly StrategyParam<int> _endHour;
+
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int StartHour { get => _startHour.Value; set => _startHour.Value = value; }
+	public int EndHour { get => _endHour.Value; set => _endHour.Value = value; }
 
 	public MateosTimeOfDayAnalysisLeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_startTime = Param(nameof(StartTime), new TimeSpan(9, 30, 0))
-			.SetDisplay("Start Time", "Entry window start", "Time");
-
-		_endTime = Param(nameof(EndTime), new TimeSpan(16, 0, 0))
-			.SetDisplay("End Time", "Entry window end", "Time");
-
-		_from = Param(nameof(From), new DateTimeOffset(2017, 4, 21, 0, 0, 0, TimeSpan.Zero))
-			.SetDisplay("From", "Start date for signals", "Time");
-
-		_thru = Param(nameof(Thru), new DateTimeOffset(2099, 12, 1, 0, 0, 0, TimeSpan.Zero))
-			.SetDisplay("Thru", "End date for signals", "Time");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_startHour = Param(nameof(StartHour), 9);
+		_endHour = Param(nameof(EndHour), 16);
 	}
 
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
-	/// <summary>
-	/// Entry window start.
-	/// </summary>
-	public TimeSpan StartTime { get => _startTime.Value; set => _startTime.Value = value; }
-
-	/// <summary>
-	/// Entry window end.
-	/// </summary>
-	public TimeSpan EndTime { get => _endTime.Value; set => _endTime.Value = value; }
-
-	/// <summary>
-	/// Start date for signals.
-	/// </summary>
-	public DateTimeOffset From { get => _from.Value; set => _from.Value = value; }
-
-	/// <summary>
-	/// End date for signals.
-	/// </summary>
-	public DateTimeOffset Thru { get => _thru.Value; set => _thru.Value = value; }
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -97,25 +43,17 @@ public class MateosTimeOfDayAnalysisLeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var hour = candle.ServerTime.Hour;
 
-		var time = candle.OpenTime;
-
-		if (time < From || time > Thru)
-			return;
-
-		var tod = time.TimeOfDay;
-
-		if (tod >= StartTime && tod < EndTime)
+		if (hour >= StartHour && hour < EndHour)
 		{
 			if (Position <= 0)
 				BuyMarket();
 		}
-		else if (tod >= EndTime && tod < new TimeSpan(20, 0, 0))
+		else if (hour >= EndHour)
 		{
-			if (Position != 0)
-				CloseAll();
+			if (Position > 0)
+				SellMarket();
 		}
 	}
 }

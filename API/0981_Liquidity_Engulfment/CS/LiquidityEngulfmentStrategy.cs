@@ -18,12 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class LiquidityEngulfmentStrategy : Strategy
 {
-	public enum TradeModes
-	{
-		Both,
-		BullishOnly,
-		BearishOnly
-	}
+	public enum TradeModes { Both, BullishOnly, BearishOnly }
 
 	private readonly StrategyParam<TradeModes> _mode;
 	private readonly StrategyParam<int> _upperLookback;
@@ -31,24 +26,22 @@ public class LiquidityEngulfmentStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<bool> _enableTakeProfit;
-	private readonly StrategyParam<DateTimeOffset> _startDate;
-	private readonly StrategyParam<DateTimeOffset> _endDate;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Highest _highest;
-	private readonly Lowest _lowest;
+	private Highest _highest;
+	private Lowest _lowest;
 
 	private ICandleMessage _prev;
 	private decimal? _lastBullOpen;
 	private decimal? _lastBearOpen;
 	private int _lastBullIndex;
 	private int _lastBearIndex;
-	private string _lastSignal = string.Empty;
+	private string _lastSignal;
 	private bool _touchedLower;
 	private bool _touchedUpper;
 	private bool _lockedBull;
 	private bool _lockedBear;
-	private int _sinceTouch = -1;
+	private int _sinceTouch;
 	private decimal _entryPrice;
 	private DateTimeOffset _entryTime;
 	private int _index;
@@ -59,34 +52,25 @@ public class LiquidityEngulfmentStrategy : Strategy
 	public int StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
 	public int TakeProfitPips { get => _takeProfitPips.Value; set => _takeProfitPips.Value = value; }
 	public bool EnableTakeProfit { get => _enableTakeProfit.Value; set => _enableTakeProfit.Value = value; }
-	public DateTimeOffset StartDate { get => _startDate.Value; set => _startDate.Value = value; }
-	public DateTimeOffset EndDate { get => _endDate.Value; set => _endDate.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public LiquidityEngulfmentStrategy()
 	{
 		_mode = Param(nameof(Mode), TradeModes.Both).SetDisplay("Mode", "Trading mode", "General");
-		_upperLookback = Param(nameof(UpperLookback), 10).SetGreaterThanZero().SetDisplay("Upper Lookback", "Upper liquidity", "Indicators").SetOptimize(5, 20, 1);
-		_lowerLookback = Param(nameof(LowerLookback), 10).SetGreaterThanZero().SetDisplay("Lower Lookback", "Lower liquidity", "Indicators").SetOptimize(5, 20, 1);
+		_upperLookback = Param(nameof(UpperLookback), 10).SetGreaterThanZero().SetDisplay("Upper Lookback", "Upper liquidity", "Indicators");
+		_lowerLookback = Param(nameof(LowerLookback), 10).SetGreaterThanZero().SetDisplay("Lower Lookback", "Lower liquidity", "Indicators");
 		_stopLossPips = Param(nameof(StopLossPips), 10).SetGreaterThanZero().SetDisplay("Stop Loss", "Stop in pips", "Risk");
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20).SetGreaterThanZero().SetDisplay("Take Profit", "Target in pips", "Risk");
 		_enableTakeProfit = Param(nameof(EnableTakeProfit), true).SetDisplay("Enable TP", "Use take profit", "Risk");
-		_startDate = Param(nameof(StartDate), new DateTimeOffset(2024,1,1,0,0,0,TimeSpan.Zero)).SetDisplay("Start Date", "Backtest start", "General");
-		_endDate = Param(nameof(EndDate), new DateTimeOffset(2024,12,31,23,59,0,TimeSpan.Zero)).SetDisplay("End Date", "Backtest end", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+	}
+
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		_highest = new Highest { Length = UpperLookback };
 		_lowest = new Lowest { Length = LowerLookback };
-	}
-
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	protected override void OnReseted()
-	{
-		base.OnReseted();
 		_prev = null;
 		_lastBullOpen = null;
 		_lastBearOpen = null;
@@ -101,14 +85,6 @@ public class LiquidityEngulfmentStrategy : Strategy
 		_entryPrice = 0m;
 		_entryTime = DateTimeOffset.MinValue;
 		_index = 0;
-	}
-
-	protected override void OnStarted2(DateTime time)
-	{
-		base.OnStarted2(time);
-
-		_highest.Length = UpperLookback;
-		_lowest.Length = LowerLookback;
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(Process).Start();
@@ -126,11 +102,18 @@ public class LiquidityEngulfmentStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var highVal = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.ServerTime) { IsFinal = true });
+		var lowVal = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.ServerTime) { IsFinal = true });
 
-		var highest = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime)).ToDecimal();
-		var lowest = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime)).ToDecimal();
+		if (!_highest.IsFormed || !_lowest.IsFormed)
+		{
+			_prev = candle;
+			_index++;
+			return;
+		}
+
+		var highest = highVal.ToDecimal();
+		var lowest = lowVal.ToDecimal();
 
 		if (candle.LowPrice <= lowest)
 			_touchedLower = true;
@@ -157,10 +140,8 @@ public class LiquidityEngulfmentStrategy : Strategy
 		var bullSignal = bullEngulf && _lastSignal != "bullish" && _touchedLower && !_lockedBull;
 		var bearSignal = bearEngulf && _lastSignal != "bearish" && _touchedUpper && !_lockedBear;
 
-		if (bullEngulf)
-			_lastSignal = "bullish";
-		if (bearEngulf)
-			_lastSignal = "bearish";
+		if (bullEngulf) _lastSignal = "bullish";
+		if (bearEngulf) _lastSignal = "bearish";
 
 		if (bullSignal)
 		{
@@ -175,39 +156,35 @@ public class LiquidityEngulfmentStrategy : Strategy
 			_sinceTouch = 0;
 		}
 
-		if (_sinceTouch >= 0)
-			_sinceTouch++;
+		if (_sinceTouch >= 0) _sinceTouch++;
 		if (_sinceTouch >= 3)
 		{
 			_lockedBull = false;
 			_lockedBear = false;
 		}
-		if (_touchedLower)
-			_lockedBull = false;
-		if (_touchedUpper)
-			_lockedBear = false;
+		if (_touchedLower) _lockedBull = false;
+		if (_touchedUpper) _lockedBear = false;
 
-		var inRange = candle.OpenTime >= StartDate && candle.OpenTime <= EndDate;
 		var step = Security.PriceStep ?? 1m;
 		var canLong = Mode != TradeModes.BearishOnly;
 		var canShort = Mode != TradeModes.BullishOnly;
 
-		if (inRange && canShort && bearSignal && Position >= 0)
+		if (canShort && bearSignal && Position >= 0)
 		{
 			SellMarket(Volume + Position);
 			_entryPrice = candle.ClosePrice;
 			_entryTime = candle.OpenTime;
 		}
-		else if (inRange && canLong && bullSignal && Position <= 0)
+		else if (canLong && bullSignal && Position <= 0)
 		{
-			BuyMarket(Volume - Position);
+			BuyMarket(Volume + Math.Abs(Position));
 			_entryPrice = candle.ClosePrice;
 			_entryTime = candle.OpenTime;
 		}
 		else
 		{
 			if (Position < 0 && bullSignal && candle.OpenTime > _entryTime)
-				BuyMarket(-Position);
+				BuyMarket(Math.Abs(Position));
 			else if (Position > 0 && bearSignal && candle.OpenTime > _entryTime)
 				SellMarket(Position);
 		}
@@ -224,7 +201,7 @@ public class LiquidityEngulfmentStrategy : Strategy
 			var stop = _entryPrice + StopLossPips * step;
 			var tp = _entryPrice - TakeProfitPips * step;
 			if (candle.ClosePrice >= stop || (EnableTakeProfit && candle.ClosePrice <= tp))
-				BuyMarket(-Position);
+				BuyMarket(Math.Abs(Position));
 		}
 
 		_prev = candle;

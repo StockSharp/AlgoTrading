@@ -3,214 +3,98 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using System.Drawing;
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// OBV Traffic Lights strategy.
-/// Uses Heikin Ashi based OBV with three EMA "traffic lights".
-/// Long when OBV and fast EMA are above slow EMA.
-/// Short when OBV and fast EMA are below slow EMA.
-/// </summary>
 public class ObvTrafficLightsStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
-	private readonly StrategyParam<int> _mediumLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<int> _donchianLength;
-	private readonly StrategyParam<int> _smoothing;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _fastEma;
-	private ExponentialMovingAverage _mediumEma;
-	private ExponentialMovingAverage _slowEma;
-	private Highest _highest;
-	private Lowest _lowest;
-	private ExponentialMovingAverage _haOpenEma;
-	private ExponentialMovingAverage _haCloseEma;
-
-	private decimal _prevHaOpen;
-	private decimal _prevHaClose;
+	private decimal _prevClose;
 	private decimal _obv;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private int _count;
 
-	/// <summary>
-	/// Fast EMA period.
-	/// </summary>
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Medium EMA period.
-	/// </summary>
-	public int MediumLength
-	{
-		get => _mediumLength.Value;
-		set => _mediumLength.Value = value;
-	}
-
-	/// <summary>
-	/// Slow EMA period.
-	/// </summary>
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
-
-	/// <summary>
-	/// Donchian baseline period.
-	/// </summary>
-	public int DonchianLength
-	{
-		get => _donchianLength.Value;
-		set => _donchianLength.Value = value;
-	}
-
-	/// <summary>
-	/// EMA smoothing for Heikin Ashi values.
-	/// </summary>
-	public int Smoothing
-	{
-		get => _smoothing.Value;
-		set => _smoothing.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="ObvTrafficLightsStrategy"/>.
-	/// </summary>
 	public ObvTrafficLightsStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA length", "Indicators");
-
-		_mediumLength = Param(nameof(MediumLength), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("Medium EMA", "Medium EMA length", "Indicators");
-
-		_slowLength = Param(nameof(SlowLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA length", "Indicators");
-
-		_donchianLength = Param(nameof(DonchianLength), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("Donchian Length", "Donchian baseline period", "Indicators");
-
-		_smoothing = Param(nameof(Smoothing), 1)
-			.SetGreaterThanZero()
-			.SetDisplay("Smoothing", "EMA smoothing for Heikin Ashi", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for calculation", "General");
+		_fastLength = Param(nameof(FastLength), 5).SetGreaterThanZero();
+		_slowLength = Param(nameof(SlowLength), 14).SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevHaOpen = default;
-		_prevHaClose = default;
-		_obv = default;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_fastEma = new EMA { Length = FastLength };
-		_mediumEma = new EMA { Length = MediumLength };
-		_slowEma = new EMA { Length = SlowLength };
-		_highest = new Highest { Length = DonchianLength };
-		_lowest = new Lowest { Length = DonchianLength };
-		_haOpenEma = new EMA { Length = Smoothing };
-		_haCloseEma = new EMA { Length = Smoothing };
+		_prevClose = 0;
+		_obv = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_count = 0;
+
+		// Use a dummy indicator to ensure IsFormed checks work through Bind
+		var sma = new SimpleMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastEma, Color.Green);
-			DrawIndicator(area, _mediumEma, Color.Yellow);
-			DrawIndicator(area, _slowEma, Color.Red);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Calculate Heikin Ashi values
-		decimal haOpenRaw;
-		decimal haCloseRaw;
+		_count++;
 
-		if (_prevHaOpen == 0m)
+		// OBV calculation
+		if (_prevClose != 0)
 		{
-			haOpenRaw = (candle.OpenPrice + candle.ClosePrice) / 2m;
-			haCloseRaw = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
+			if (candle.ClosePrice > _prevClose)
+				_obv += candle.TotalVolume;
+			else if (candle.ClosePrice < _prevClose)
+				_obv -= candle.TotalVolume;
 		}
-		else
+		_prevClose = candle.ClosePrice;
+
+		// EMA of OBV
+		var fastMult = 2.0m / (FastLength + 1);
+		var slowMult = 2.0m / (SlowLength + 1);
+
+		if (_count <= 2)
 		{
-			haOpenRaw = (_prevHaOpen + _prevHaClose) / 2m;
-			haCloseRaw = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
-		}
-
-		_prevHaOpen = haOpenRaw;
-		_prevHaClose = haCloseRaw;
-
-		var haOpen = _haOpenEma.Process(haOpenRaw).ToDecimal();
-		var haClose = _haCloseEma.Process(haCloseRaw).ToDecimal();
-
-		// OBV calculation based on Heikin Ashi close vs open
-		var vol = haClose > haOpen ? candle.TotalVolume : haClose < haOpen ? -candle.TotalVolume : 0m;
-		_obv += vol;
-
-		var fastValue = _fastEma.Process(_obv).ToDecimal();
-		var mediumValue = _mediumEma.Process(_obv).ToDecimal();
-		var slowValue = _slowEma.Process(_obv).ToDecimal();
-		var highestValue = _highest.Process(_obv).ToDecimal();
-		var lowestValue = _lowest.Process(_obv).ToDecimal();
-		var baseline = (highestValue + lowestValue) / 2m;
-
-		LogInfo($"OBV: {_obv}, Fast: {fastValue}, Medium: {mediumValue}, Slow: {slowValue}, Baseline: {baseline}");
-
-		if (!_fastEma.IsFormed || !_slowEma.IsFormed)
+			_prevFast = _obv;
+			_prevSlow = _obv;
 			return;
+		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var fastValue = _obv * fastMult + _prevFast * (1 - fastMult);
+		var slowValue = _obv * slowMult + _prevSlow * (1 - slowMult);
+
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
+
+		if (_count < SlowLength + 5)
 			return;
 
 		var goLong = _obv > slowValue && fastValue > slowValue;
@@ -218,26 +102,22 @@ public class ObvTrafficLightsStrategy : Strategy
 
 		if (goLong && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo("Enter long");
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
 		}
 		else if (goShort && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo("Enter short");
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(Volume);
 		}
 		else if (!goLong && !goShort)
 		{
 			if (Position > 0)
-			{
-				SellMarket(Position);
-				LogInfo("Exit long");
-			}
+				SellMarket(Math.Abs(Position));
 			else if (Position < 0)
-			{
-				BuyMarket(-Position);
-				LogInfo("Exit short");
-			}
+				BuyMarket(Math.Abs(Position));
 		}
 	}
 }

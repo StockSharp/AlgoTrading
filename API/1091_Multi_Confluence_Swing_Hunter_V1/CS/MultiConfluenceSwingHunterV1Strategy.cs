@@ -18,157 +18,101 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MultiConfluenceSwingHunterV1Strategy : Strategy
 {
-	private readonly StrategyParam<int> _macdFast;
-	private readonly StrategyParam<int> _macdSlow;
-	private readonly StrategyParam<int> _macdSignal;
 	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _smaLength;
 	private readonly StrategyParam<int> _minEntryScore;
 	private readonly StrategyParam<int> _minExitScore;
-	private readonly StrategyParam<decimal> _minLowerWickPercent;
 	private readonly StrategyParam<decimal> _rsiOversold;
-	private readonly StrategyParam<decimal> _rsiExtremeOversold;
 	private readonly StrategyParam<decimal> _rsiOverbought;
-	private readonly StrategyParam<decimal> _rsiExtremeOverbought;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _isFirst = true;
-	private decimal _prevRsi;
-	private decimal _prevMacd;
-	private decimal _prevHist;
-
-	public int MacdFast { get => _macdFast.Value; set => _macdFast.Value = value; }
-	public int MacdSlow { get => _macdSlow.Value; set => _macdSlow.Value = value; }
-	public int MacdSignal { get => _macdSignal.Value; set => _macdSignal.Value = value; }
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public int SmaLength { get => _smaLength.Value; set => _smaLength.Value = value; }
 	public int MinEntryScore { get => _minEntryScore.Value; set => _minEntryScore.Value = value; }
 	public int MinExitScore { get => _minExitScore.Value; set => _minExitScore.Value = value; }
-	public decimal MinLowerWickPercent { get => _minLowerWickPercent.Value; set => _minLowerWickPercent.Value = value; }
 	public decimal RsiOversold { get => _rsiOversold.Value; set => _rsiOversold.Value = value; }
-	public decimal RsiExtremeOversold { get => _rsiExtremeOversold.Value; set => _rsiExtremeOversold.Value = value; }
 	public decimal RsiOverbought { get => _rsiOverbought.Value; set => _rsiOverbought.Value = value; }
-	public decimal RsiExtremeOverbought { get => _rsiExtremeOverbought.Value; set => _rsiExtremeOverbought.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MultiConfluenceSwingHunterV1Strategy()
 	{
-		_macdFast = Param(nameof(MacdFast), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Fast", "MACD fast length", "Indicators");
-		_macdSlow = Param(nameof(MacdSlow), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Slow", "MACD slow length", "Indicators");
-		_macdSignal = Param(nameof(MacdSignal), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Signal", "MACD signal length", "Indicators");
-		_rsiLength = Param(nameof(RsiLength), 21)
+		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation length", "Indicators");
-		_minEntryScore = Param(nameof(MinEntryScore), 13)
+		_smaLength = Param(nameof(SmaLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("SMA Length", "SMA period", "Indicators");
+		_minEntryScore = Param(nameof(MinEntryScore), 2)
 			.SetDisplay("Min Entry Score", "Minimum entry score", "Entry");
-		_minExitScore = Param(nameof(MinExitScore), 13)
+		_minExitScore = Param(nameof(MinExitScore), 2)
 			.SetDisplay("Min Exit Score", "Minimum exit score", "Exit");
-		_minLowerWickPercent = Param(nameof(MinLowerWickPercent), 50m)
-			.SetDisplay("Min Lower Wick %", "Minimum lower wick percent", "Price Action");
-		_rsiOversold = Param(nameof(RsiOversold), 30m)
+		_rsiOversold = Param(nameof(RsiOversold), 40m)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "RSI");
-		_rsiExtremeOversold = Param(nameof(RsiExtremeOversold), 25m)
-			.SetDisplay("RSI Extreme Oversold", "RSI extreme oversold level", "RSI");
-		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
+		_rsiOverbought = Param(nameof(RsiOverbought), 60m)
 			.SetDisplay("RSI Overbought", "RSI overbought level", "RSI");
-		_rsiExtremeOverbought = Param(nameof(RsiExtremeOverbought), 75m)
-			.SetDisplay("RSI Extreme Overbought", "RSI extreme overbought level", "RSI");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	protected override void OnStarted2(DateTime time)
 	{
-		return [(Security, CandleType)];
-	}
+		base.OnStarted2(time);
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_isFirst = true;
-		_prevRsi = 0m;
-		_prevMacd = 0m;
-		_prevHist = 0m;
-	}
-
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
-	{
-		base.OnStarted(time);
-
-		var macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = MacdFast },
-			LongMa = { Length = MacdSlow },
-			SignalPeriod = MacdSignal
-		};
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var sma = new SMA { Length = SmaLength };
 
-		SubscribeCandles(CandleType)
-			.Bind(macd, rsi, ProcessCandle)
+		var prevRsi = 0m;
+		var prevClose = 0m;
+		var isInitialized = false;
+
+		var subscription = SubscribeCandles(CandleType);
+
+		subscription
+			.Bind(rsi, sma, (candle, rsiVal, smaVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (!isInitialized)
+				{
+					prevRsi = rsiVal;
+					prevClose = candle.ClosePrice;
+					isInitialized = true;
+					return;
+				}
+
+				var entryScore = 0;
+				if (rsiVal < RsiOversold) entryScore += 2;
+				if (rsiVal > prevRsi) entryScore += 1;
+				if (candle.ClosePrice > smaVal) entryScore += 1;
+				if (candle.ClosePrice > candle.OpenPrice) entryScore += 1;
+
+				var exitScore = 0;
+				if (rsiVal > RsiOverbought) exitScore += 2;
+				if (rsiVal < prevRsi) exitScore += 1;
+				if (candle.ClosePrice < smaVal) exitScore += 1;
+				if (candle.ClosePrice < candle.OpenPrice) exitScore += 1;
+
+				if (entryScore >= MinEntryScore && Position <= 0)
+					BuyMarket();
+				else if (exitScore >= MinExitScore && Position > 0)
+					SellMarket();
+
+				prevRsi = rsiVal;
+				prevClose = candle.ClosePrice;
+			})
 			.Start();
-	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macd, decimal signal, decimal hist, decimal rsi)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_isFirst)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			_prevRsi = rsi;
-			_prevMacd = macd;
-			_prevHist = hist;
-			_isFirst = false;
-			return;
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
 		}
-
-		var bodySize = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var lowerWick = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice;
-		var upperWick = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
-		var totalRange = candle.HighPrice - candle.LowPrice;
-		var lowerWickPercent = totalRange > 0 ? (lowerWick / totalRange) * 100m : 0m;
-		var upperWickPercent = totalRange > 0 ? (upperWick / totalRange) * 100m : 0m;
-		var bodyPercent = totalRange > 0 ? (bodySize / totalRange) * 100m : 0m;
-
-		var entryScore = 0;
-		if (rsi < RsiOversold) entryScore += 2;
-		if (rsi < RsiExtremeOversold) entryScore += 2;
-		if (rsi > _prevRsi) entryScore += 1;
-		if (macd < 0) entryScore += 1;
-		if (macd > _prevMacd) entryScore += 2;
-		if (hist > _prevHist) entryScore += 2;
-		if (lowerWickPercent > MinLowerWickPercent) entryScore += 2;
-		if (bodyPercent < 30m) entryScore += 1;
-		if (candle.ClosePrice > candle.OpenPrice) entryScore += 1;
-
-		var exitScore = 0;
-		if (rsi > RsiOverbought) exitScore += 2;
-		if (rsi > RsiExtremeOverbought) exitScore += 2;
-		if (rsi < _prevRsi) exitScore += 1;
-		if (macd > 0) exitScore += 1;
-		if (macd < _prevMacd) exitScore += 2;
-		if (hist < _prevHist) exitScore += 2;
-		if (upperWickPercent > MinLowerWickPercent) exitScore += 2;
-		if (candle.ClosePrice < candle.OpenPrice) exitScore += 1;
-
-		if (entryScore >= MinEntryScore && Position <= 0)
-			BuyMarket();
-		else if (exitScore >= MinExitScore && Position > 0)
-			SellMarket();
-
-		_prevRsi = rsi;
-		_prevMacd = macd;
-		_prevHist = hist;
 	}
 }

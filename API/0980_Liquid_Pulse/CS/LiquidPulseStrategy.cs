@@ -22,75 +22,68 @@ public class LiquidPulseStrategy : Strategy
 {
 	public enum VolumeSensitivityLevels { Low, Medium, High }
 	public enum MacdSpeedOptions { Fast, Medium, Slow }
-	
+
 	private readonly StrategyParam<VolumeSensitivityLevels> _volumeSensitivity;
 	private readonly StrategyParam<MacdSpeedOptions> _macdSpeed;
 	private readonly StrategyParam<int> _dailyTradeLimit;
 	private readonly StrategyParam<int> _adxTrendThreshold;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
+
 	private MovingAverageConvergenceDivergenceSignal _macd;
 	private AverageDirectionalIndex _adx;
 	private AverageTrueRange _atr;
 	private SimpleMovingAverage _volSma;
-	
+
 	private decimal _prevMacd, _prevSignal, _entryPrice, _stop, _tp;
 	private DateTime _day;
-	private int _trades;
-	
+	private int _dailyTrades;
+	private int _volLookback;
+	private decimal _volThreshold;
+
 	public VolumeSensitivityLevels VolumeSensitivity { get => _volumeSensitivity.Value; set => _volumeSensitivity.Value = value; }
 	public MacdSpeedOptions MacdSpeed { get => _macdSpeed.Value; set => _macdSpeed.Value = value; }
 	public int DailyTradeLimit { get => _dailyTradeLimit.Value; set => _dailyTradeLimit.Value = value; }
 	public int AdxTrendThreshold { get => _adxTrendThreshold.Value; set => _adxTrendThreshold.Value = value; }
 	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	
+
 	public LiquidPulseStrategy()
 	{
 		_volumeSensitivity = Param(nameof(VolumeSensitivity), VolumeSensitivityLevels.Medium)
-		.SetDisplay("Volume Sensitivity", "Volume sensitivity", "General");
+			.SetDisplay("Volume Sensitivity", "Volume sensitivity", "General");
 		_macdSpeed = Param(nameof(MacdSpeed), MacdSpeedOptions.Medium)
-		.SetDisplay("MACD Speed", "MACD speed", "General");
+			.SetDisplay("MACD Speed", "MACD speed", "General");
 		_dailyTradeLimit = Param(nameof(DailyTradeLimit), 20)
-		.SetDisplay("Daily Trade Limit", "Max trades per day", "Risk");
-		_adxTrendThreshold = Param(nameof(AdxTrendThreshold), 41)
-		.SetDisplay("ADX Trend Threshold", "Trend threshold", "Indicators");
+			.SetDisplay("Daily Trade Limit", "Max trades per day", "Risk");
+		_adxTrendThreshold = Param(nameof(AdxTrendThreshold), 20)
+			.SetDisplay("ADX Trend Threshold", "Trend threshold", "Indicators");
 		_atrPeriod = Param(nameof(AtrPeriod), 9)
-		.SetDisplay("ATR Period", "ATR period", "Indicators");
+			.SetDisplay("ATR Period", "ATR period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe", "General");
+			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
-	
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-	
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevMacd = _prevSignal = 0m;
-		_entryPrice = _stop = _tp = 0m;
-		_day = default;
-		_trades = 0;
-	}
-	
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		var (lookback, threshold) = VolumeSensitivity switch
+
+		_prevMacd = _prevSignal = 0m;
+		_entryPrice = _stop = _tp = 0m;
+		_day = default;
+		_dailyTrades = 0;
+
+		(_volLookback, _volThreshold) = VolumeSensitivity switch
 		{
 			VolumeSensitivityLevels.Low => (30, 1.5m),
-			VolumeSensitivityLevels.Medium => (20, 1.8m),
-			_ => (11, 2m)
+			VolumeSensitivityLevels.Medium => (20, 1.2m),
+			_ => (11, 1.0m)
 		};
-		_volSma = new SMA { Length = lookback };
-		
+		_volSma = new SMA { Length = _volLookback };
+
 		var (fast, slow, signal) = MacdSpeed switch
 		{
-			MacdSpeedOptions.ShortMa => (2, 7, 5),
+			MacdSpeedOptions.Fast => (2, 7, 5),
 			MacdSpeedOptions.Medium => (5, 13, 9),
 			_ => (12, 26, 9)
 		};
@@ -101,14 +94,10 @@ public class LiquidPulseStrategy : Strategy
 		};
 		_adx = new() { Length = 14 };
 		_atr = new() { Length = AtrPeriod };
-		
+
 		var sub = SubscribeCandles(CandleType);
 		sub.BindEx(_macd, _adx, _atr, ProcessCandle).Start();
-		
-		StartProtection(null, null);
-		
-		_volParams = () => (lookback, threshold);
-		
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -116,49 +105,57 @@ public class LiquidPulseStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 	}
-	
-	private Func<(int, decimal)> _volParams;
-	
+
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdVal, IIndicatorValue adxVal, IIndicatorValue atrVal)
 	{
 		if (candle.State != CandleStates.Finished || !macdVal.IsFinal || !adxVal.IsFinal || !atrVal.IsFinal)
-		return;
-		
+			return;
+
 		var day = candle.OpenTime.Date;
 		if (day != _day)
 		{
 			_day = day;
-			_trades = 0;
+			_dailyTrades = 0;
 		}
-		
-		var (lookback, threshold) = _volParams();
-		_volSma.Length = lookback;
-		var avgVol = _volSma.Process(candle.TotalVolume).ToDecimal();
-		var highVol = avgVol != 0m && candle.TotalVolume >= threshold * avgVol;
-		
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdVal;
+
+		// Volume spike detection
+		var volInput = new DecimalIndicatorValue(_volSma, candle.TotalVolume, candle.ServerTime) { IsFinal = true };
+		var avgVolResult = _volSma.Process(volInput);
+		var avgVol = avgVolResult.IsEmpty ? 0m : avgVolResult.ToDecimal();
+		var highVol = avgVol > 0m && candle.TotalVolume >= _volThreshold * avgVol;
+
+		if (macdVal is not IMovingAverageConvergenceDivergenceSignalValue macdTyped)
+			return;
 		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
-		return;
-		
-		var adxTyped = (AverageDirectionalIndexValue)adxVal;
-		if (adxTyped.MovingAverage is not decimal adx ||
-		adxTyped.Dx.Plus is not decimal plusDi ||
-		adxTyped.Dx.Minus is not decimal minusDi)
-		return;
-		
-		var atr = atrVal.ToDecimal();
-		
+			return;
+
+		if (adxVal is not IAverageDirectionalIndexValue adxTyped)
+			return;
+		if (adxTyped.MovingAverage is not decimal adx)
+			return;
+		if (adxTyped.Dx is not IDirectionalIndexValue dxVal)
+			return;
+		if (dxVal.Plus is not decimal plusDi || dxVal.Minus is not decimal minusDi)
+			return;
+
+		var atr = atrVal.IsEmpty ? 0m : atrVal.ToDecimal();
+
 		var bull = _prevMacd <= _prevSignal && macd > signal && plusDi > minusDi && adx >= AdxTrendThreshold;
 		var bear = _prevMacd >= _prevSignal && macd < signal && minusDi > plusDi && adx >= AdxTrendThreshold;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
+
+		// Check stops/TP for existing position
+		if (Position > 0 && _stop > 0 && (candle.LowPrice <= _stop || candle.HighPrice >= _tp))
 		{
-			_prevMacd = macd;
-			_prevSignal = signal;
-			return;
+			SellMarket(Math.Abs(Position));
+			_entryPrice = _stop = _tp = 0m;
 		}
-		
-		if (highVol && _trades < DailyTradeLimit)
+		else if (Position < 0 && _stop > 0 && (candle.HighPrice >= _stop || candle.LowPrice <= _tp))
+		{
+			BuyMarket(Math.Abs(Position));
+			_entryPrice = _stop = _tp = 0m;
+		}
+
+		if (highVol && _dailyTrades < DailyTradeLimit && atr > 0)
 		{
 			if (bull && Position <= 0)
 			{
@@ -166,7 +163,7 @@ public class LiquidPulseStrategy : Strategy
 				_entryPrice = candle.ClosePrice;
 				_stop = _entryPrice - atr * 1.5m;
 				_tp = _entryPrice + atr * 2m;
-				_trades++;
+				_dailyTrades++;
 			}
 			else if (bear && Position >= 0)
 			{
@@ -174,21 +171,10 @@ public class LiquidPulseStrategy : Strategy
 				_entryPrice = candle.ClosePrice;
 				_stop = _entryPrice + atr * 1.5m;
 				_tp = _entryPrice - atr * 2m;
-				_trades++;
+				_dailyTrades++;
 			}
 		}
-		
-		if (Position > 0 && (candle.LowPrice <= _stop || candle.HighPrice >= _tp))
-		{
-			SellMarket(Math.Abs(Position));
-			_entryPrice = _stop = _tp = 0m;
-		}
-		else if (Position < 0 && (candle.HighPrice >= _stop || candle.LowPrice <= _tp))
-		{
-			BuyMarket(Math.Abs(Position));
-			_entryPrice = _stop = _tp = 0m;
-		}
-		
+
 		_prevMacd = macd;
 		_prevSignal = signal;
 	}

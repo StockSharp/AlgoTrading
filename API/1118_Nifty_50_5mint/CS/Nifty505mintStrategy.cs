@@ -1,102 +1,35 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
-
-/// <summary>
-/// Breakout strategy for Nifty 50 based on DEMA, VWAP and Bollinger Bands.
-/// </summary>
 public class Nifty505mintStrategy : Strategy
 {
-	private readonly StrategyParam<int> _demaPeriod;
-	private readonly StrategyParam<int> _bollingerLength;
-	private readonly StrategyParam<decimal> _bollingerStdDev;
-	private readonly StrategyParam<int> _lookbackPeriod;
-	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private decimal _prevHighest;
-	private decimal _prevLowest;
-
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public Nifty505mintStrategy()
 	{
-		_demaPeriod = Param(nameof(DemaPeriod), 6).SetDisplay("DEMA Period", "DEMA Period", "General");
-		_bollingerLength = Param(nameof(BollingerLength), 20).SetDisplay("Bollinger Length", "Bollinger Length", "General");
-		_bollingerStdDev = Param(nameof(BollingerStdDev), 2m).SetDisplay("Bollinger StdDev", "Bollinger StdDev", "General");
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 5).SetDisplay("Lookback Period", "Lookback Period", "General");
-		_stopLossPoints = Param(nameof(StopLossPoints), 25m).SetDisplay("Stop Loss Points", "Stop Loss Points", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
-
-	public int DemaPeriod { get => _demaPeriod.Value; set => _demaPeriod.Value = value; }
-	public int BollingerLength { get => _bollingerLength.Value; set => _bollingerLength.Value = value; }
-	public decimal BollingerStdDev { get => _bollingerStdDev.Value; set => _bollingerStdDev.Value = value; }
-	public int LookbackPeriod { get => _lookbackPeriod.Value; set => _lookbackPeriod.Value = value; }
-	public decimal StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(
-			stopLoss: new Unit(StopLossPoints, UnitTypes.Absolute),
-			isStopTrailing: false,
-			useMarketOrders: true);
-
-		var bollinger = new BollingerBands
+		var fast = new ExponentialMovingAverage { Length = 8 };
+		var slow = new ExponentialMovingAverage { Length = 21 };
+		var rsi = new RelativeStrengthIndex { Length = 14 };
+		var prevF = 0m; var prevS = 0m; var init = false;
+		var sub = SubscribeCandles(CandleType);
+		sub.Bind(fast, slow, rsi, (c, f, s, r) =>
 		{
-			Length = BollingerLength,
-			Width = BollingerStdDev
-		};
-		var dema = new DoubleExponentialMovingAverage { Length = DemaPeriod };
-		var vwap = new VolumeWeightedMovingAverage();
-		var highest = new Highest { Length = LookbackPeriod };
-		var lowest = new Lowest { Length = LookbackPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(bollinger, dema, vwap, highest, lowest, ProcessCandle)
-			.Start();
-
+			if (c.State != CandleStates.Finished || !fast.IsFormed || !slow.IsFormed || !rsi.IsFormed) return;
+			if (!init) { prevF = f; prevS = s; init = true; return; }
+			if (prevF <= prevS && f > s && r > 45 && Position <= 0) BuyMarket();
+			else if (prevF >= prevS && f < s && r < 55 && Position > 0) SellMarket();
+			prevF = f; prevS = s;
+		}).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, bollinger);
-			DrawIndicator(area, dema);
-			DrawIndicator(area, vwap);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal demaValue, decimal vwapValue, decimal highestValue, decimal lowestValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var buy = candle.ClosePrice > _prevHighest && candle.ClosePrice > upper && demaValue > vwapValue && Position == 0;
-		var sell = candle.ClosePrice < _prevLowest && candle.ClosePrice < lower && demaValue < vwapValue && Position == 0;
-
-		if (buy)
-			BuyMarket();
-		else if (sell)
-			SellMarket();
-
-		_prevHighest = highestValue;
-		_prevLowest = lowestValue;
+		if (area != null) { DrawCandles(area, sub); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 }

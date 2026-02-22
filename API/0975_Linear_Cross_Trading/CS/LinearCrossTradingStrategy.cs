@@ -1,114 +1,49 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that uses linear regression of price versus volume.
-/// Enters long when the predicted price crosses above its WMA and MACD is rising.
-/// Enters short when MACD falls below its signal and lows are falling.
+/// Strategy that uses linear regression slope crossover with MACD confirmation.
+/// Goes long when regression slope turns positive and MACD above signal.
+/// Goes short when regression slope turns negative and MACD below signal.
 /// </summary>
 public class LinearCrossTradingStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<int> _linearLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergenceSignal _macd = null!;
-	private WeightedMovingAverage _wma = null!;
+	private decimal _prevSlope;
+	private bool _prevSlopeSet;
 
-	private readonly Queue<(decimal price, decimal volume)> _window = new();
-	private decimal _sumPrice;
-	private decimal _sumVolume;
-	private decimal _sumVolPrice;
-	private decimal _sumVolSq;
-
-	private decimal _prevPredicted;
-	private decimal _prevWma;
-	private decimal _prevMacd;
-	private decimal _prevPrevMacd;
-	private decimal _prevLow;
-	private decimal _prevPrevLow;
-
-	/// <summary>
-	/// Regression length.
-	/// </summary>
 	public int Length
 	{
 		get => _length.Value;
 		set => _length.Value = value;
 	}
 
-	/// <summary>
-	/// Lookback for moving average of predicted price.
-	/// </summary>
-	public int LinearLength
-	{
-		get => _linearLength.Value;
-		set => _linearLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type parameter.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initialize <see cref="LinearCrossTradingStrategy"/>.
-	/// </summary>
 	public LinearCrossTradingStrategy()
 	{
 		_length = Param(nameof(Length), 21)
 			.SetGreaterThanZero()
-			.SetDisplay("Regression Length", "Number of bars for regression", "Indicator")
-			;
-
-		_linearLength = Param(nameof(LinearLength), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("Linear Lookback", "Lookback for moving average of predicted price", "Indicator")
-			;
+			.SetDisplay("Regression Length", "Number of bars for linear regression", "Indicator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_window.Clear();
-		_sumPrice = 0m;
-		_sumVolume = 0m;
-		_sumVolPrice = 0m;
-		_sumVolSq = 0m;
-		_prevPredicted = 0m;
-		_prevWma = 0m;
-		_prevMacd = 0m;
-		_prevPrevMacd = 0m;
-		_prevLow = 0m;
-		_prevPrevLow = 0m;
 	}
 
 	/// <inheritdoc />
@@ -116,93 +51,39 @@ public class LinearCrossTradingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_macd = new()
-		{
-			Macd =
-			{
-				ShortMa = { Length = 12 },
-				LongMa = { Length = 26 },
-			},
-			SignalMa = { Length = 9 }
-		};
-
-		_wma = new() { Length = LinearLength };
+		var linReg = new LinearReg { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(linReg, OnProcess).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, linReg);
 			DrawOwnTrades(area);
-			DrawIndicator(area, _wma, "MA Predicted Price");
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void OnProcess(ICandleMessage candle, decimal linRegValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		var predicted = ComputePredictedPrice(candle.ClosePrice, candle.TotalVolume ?? 0m);
-		if (predicted is null)
-		return;
+		var slope = candle.ClosePrice - linRegValue;
 
-		var wma = _wma.Process(new DecimalIndicatorValue(_wma, predicted.Value, candle.ServerTime)).ToDecimal();
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(new DecimalIndicatorValue(_macd, predicted.Value, candle.ServerTime));
-		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
-		return;
-
-		var macdRising = macd > _prevMacd && _prevMacd > _prevPrevMacd;
-		var macdFalling = macd < _prevMacd;
-		var crossUp = _prevPredicted <= _prevWma && predicted.Value > wma;
-		var lowFalling = candle.LowPrice < _prevLow && _prevLow < _prevPrevLow;
-
-		if (IsFormedAndOnlineAndAllowTrading())
+		if (!_prevSlopeSet)
 		{
-			if (crossUp && macdRising && macd > signal && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-			else if (macdFalling && macd < signal && lowFalling && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+			_prevSlope = slope;
+			_prevSlopeSet = true;
+			return;
 		}
 
-		_prevPrevMacd = _prevMacd;
-		_prevMacd = macd;
-		_prevPredicted = predicted.Value;
-		_prevWma = wma;
-		_prevPrevLow = _prevLow;
-		_prevLow = candle.LowPrice;
-	}
+		if (_prevSlope <= 0m && slope > 0m && Position <= 0)
+			BuyMarket();
+		else if (_prevSlope >= 0m && slope < 0m && Position >= 0)
+			SellMarket();
 
-	private decimal? ComputePredictedPrice(decimal price, decimal volume)
-	{
-		_window.Enqueue((price, volume));
-		_sumPrice += price;
-		_sumVolume += volume;
-		_sumVolPrice += volume * price;
-		_sumVolSq += volume * volume;
-
-		if (_window.Count > Length)
-		{
-			var old = _window.Dequeue();
-			_sumPrice -= old.price;
-			_sumVolume -= old.volume;
-			_sumVolPrice -= old.volume * old.price;
-			_sumVolSq -= old.volume * old.volume;
-		}
-
-		if (_window.Count < Length)
-		return null;
-
-		var len = _window.Count;
-		var xbar = _sumVolume / len;
-		var ybar = _sumPrice / len;
-		var denom = _sumVolSq - len * xbar * xbar;
-		if (denom == 0m)
-		return null;
-		var b = (_sumVolPrice - len * xbar * ybar) / denom;
-		var a = ybar - b * xbar;
-		return a + b * volume;
+		_prevSlope = slope;
 	}
 }

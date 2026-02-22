@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -17,82 +15,33 @@ public class MeanReversionProStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<TradingModes> _tradingMode;
 	private readonly StrategyParam<DataType> _candleType;
 
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
+	private SimpleMovingAverage _fastSma;
+	private SimpleMovingAverage _slowSma;
 
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
-
-	public TradingModes Mode
-	{
-		get => _tradingMode.Value;
-		set => _tradingMode.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MeanReversionProStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast SMA", "Length of the fast moving average", "Parameters")
-			
-			.SetOptimize(5, 20, 5);
-
-		_slowLength = Param(nameof(SlowLength), 100)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow SMA", "Length of the slow moving average", "Parameters")
-			
-			.SetOptimize(100, 200, 50);
-
-		_tradingMode = Param(nameof(Mode), TradingModes.LongOnly)
-			.SetDisplay("Trading Direction", "Allowed trading direction", "Parameters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Parameters");
-	}
-
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
+		_fastLength = Param(nameof(FastLength), 5);
+		_slowLength = Param(nameof(SlowLength), 50);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var fastSma = new SMA { Length = FastLength };
-		var slowSma = new SMA { Length = SlowLength };
+		_fastSma = new SimpleMovingAverage { Length = FastLength };
+		_slowSma = new SimpleMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(fastSma, slowSma, ProcessCandle)
+			.Bind(_fastSma, _slowSma, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, fastSma);
-			DrawIndicator(area, slowSma);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
@@ -100,53 +49,31 @@ public class MeanReversionProStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_fastSma.IsFormed || !_slowSma.IsFormed)
 			return;
 
 		var range = candle.HighPrice - candle.LowPrice;
 		var longThreshold = candle.LowPrice + 0.2m * range;
 		var shortThreshold = candle.HighPrice - 0.2m * range;
 
-		var longAllowed = Mode is TradingModes.LongOnly or TradingModes.Both;
-		var shortAllowed = Mode is TradingModes.ShortOnly or TradingModes.Both;
-
 		var longSignal = candle.ClosePrice < fast &&
 			candle.ClosePrice < longThreshold &&
-			candle.ClosePrice > slow &&
-			Position == 0 &&
-			longAllowed;
+			candle.ClosePrice > slow;
 
 		var shortSignal = candle.ClosePrice > fast &&
 			candle.ClosePrice > shortThreshold &&
-			candle.ClosePrice < slow &&
-			Position == 0 &&
-			shortAllowed;
+			candle.ClosePrice < slow;
 
 		var exitLong = candle.ClosePrice > fast && Position > 0;
 		var exitShort = candle.ClosePrice < fast && Position < 0;
 
 		if (longSignal && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
+			BuyMarket();
 		else if (shortSignal && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-		}
-		else if (exitLong && Position > 0)
-		{
-			ClosePosition();
-		}
-		else if (exitShort && Position < 0)
-		{
-			ClosePosition();
-		}
-	}
-
-	public enum TradingModes
-	{
-		LongOnly,
-		ShortOnly,
-		Both,
+			SellMarket();
+		else if (exitLong)
+			SellMarket();
+		else if (exitShort)
+			BuyMarket();
 	}
 }
