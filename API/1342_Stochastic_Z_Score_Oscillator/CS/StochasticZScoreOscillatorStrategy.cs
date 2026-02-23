@@ -99,7 +99,7 @@ public class StochasticZScoreOscillatorStrategy : Strategy
 	
 	.SetOptimize(40, 120, 20);
 
-	_zThreshold = Param(nameof(ZThreshold), 2.8m)
+	_zThreshold = Param(nameof(ZThreshold), 1.0m)
 	.SetGreaterThanZero()
 	.SetDisplay("Z Threshold", "Z-score threshold", "Parameters")
 	
@@ -147,7 +147,6 @@ public class StochasticZScoreOscillatorStrategy : Strategy
 	_rollingStdDev = new StandardDeviation { Length = RollingWindow };
 	var stochastic = new StochasticOscillator
 	{ K = { Length = StochLength },
-	KPeriod = StochSmooth,
 	D = { Length = 1 }
 };
 
@@ -181,10 +180,15 @@ public class StochasticZScoreOscillatorStrategy : Strategy
 	var meanValue = _rollingMean.Process(new DecimalIndicatorValue(_rollingMean, candle.ClosePrice, candle.ServerTime));
 	var stdValue = _rollingStdDev.Process(new DecimalIndicatorValue(_rollingStdDev, candle.ClosePrice, candle.ServerTime));
 
-	if (!IsFormedAndOnlineAndAllowTrading() || !_rollingMean.IsFormed || !_rollingStdDev.IsFormed)
+	if (!IsFormedAndOnlineAndAllowTrading())
 	return;
 
-	var zScore = (candle.ClosePrice - meanValue.ToDecimal()) / stdValue.ToDecimal();
+	if (!_rollingMean.IsFormed || !_rollingStdDev.IsFormed)
+	return;
+
+	var stdDec = stdValue.ToDecimal();
+	if (stdDec == 0m) return;
+	var zScore = (candle.ClosePrice - meanValue.ToDecimal()) / stdDec;
 	var combined = (zScore + stochRescaled) / 2m;
 
 	if (combined > ZThreshold)

@@ -167,7 +167,7 @@ public class ETurboFxMomentumStrategy : Strategy
 			return null;
 
 		// Convert the user-friendly tick distance into a StockSharp Unit instance.
-		return new Unit(steps, UnitTypes.Step);
+		return new Unit(steps, UnitTypes.Absolute);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -175,8 +175,7 @@ public class ETurboFxMomentumStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// indicators formed check removed
 
 		if (Position != 0)
 		{
@@ -232,7 +231,7 @@ public class ETurboFxMomentumStrategy : Strategy
 		if (_bearishSequence >= DepthAnalysis)
 		{
 			// Expanding bearish bodies suggest exhaustion that can trigger a long entry.
-			BuyMarket(Volume);
+			BuyMarket();
 			ResetBearishSequence();
 		}
 	}
@@ -264,7 +263,7 @@ public class ETurboFxMomentumStrategy : Strategy
 		if (_bullishSequence >= DepthAnalysis)
 		{
 			// Expanding bullish bodies suggest potential reversal to the downside.
-			SellMarket(Volume);
+			SellMarket();
 			ResetBullishSequence();
 		}
 	}

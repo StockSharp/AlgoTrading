@@ -51,6 +51,7 @@ public class GoldDustStrategy : Strategy
 	private decimal _shortStop;
 	private bool _hasLongStop;
 	private bool _hasShortStop;
+	private decimal _positionPrice;
 
 	/// <summary>
 	/// Volume used when opening a fresh position.
@@ -209,23 +210,23 @@ public class GoldDustStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Weighted moving average length", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
 
 		_passMode = Param(nameof(PassMode), 1)
 			.SetRange(1, 3)
 			.SetDisplay("Pass Mode", "1=Perceptron 1, 2=Perceptron 2, 3=Consensus", "Logic");
 
-		_x11 = Param(nameof(X11), 100)
+		_x11 = Param(nameof(X11), 120)
 			.SetDisplay("X11", "Weight 1 for perceptron #1", "Perceptron #1");
 
-		_x21 = Param(nameof(X21), 100)
+		_x21 = Param(nameof(X21), 80)
 			.SetDisplay("X21", "Weight 2 for perceptron #1", "Perceptron #1");
 
-		_x31 = Param(nameof(X31), 100)
+		_x31 = Param(nameof(X31), 110)
 			.SetDisplay("X31", "Weight 3 for perceptron #1", "Perceptron #1");
 
-		_x41 = Param(nameof(X41), 100)
+		_x41 = Param(nameof(X41), 90)
 			.SetDisplay("X41", "Weight 4 for perceptron #1", "Perceptron #1");
 
 		_x12 = Param(nameof(X12), 100)
@@ -305,9 +306,6 @@ public class GoldDustStrategy : Strategy
 		if (CheckStopLoss(candle))
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!ma.IsFormed)
 			return;
 
@@ -316,10 +314,12 @@ public class GoldDustStrategy : Strategy
 		if (signal < 0)
 		{
 			EnterLong();
+			if (Position > 0) _positionPrice = candle.ClosePrice;
 		}
 		else if (signal > 0)
 		{
 			EnterShort();
+			if (Position < 0) _positionPrice = candle.ClosePrice;
 		}
 		else
 		{
@@ -359,7 +359,7 @@ public class GoldDustStrategy : Strategy
 			if (_lastPosition <= 0m)
 			{
 				_hasShortStop = false;
-				_longStop = PositionPrice - _stopLossOffset;
+				_longStop = _positionPrice - _stopLossOffset;
 				_hasLongStop = _stopLossOffset > 0m;
 			}
 		}
@@ -368,7 +368,7 @@ public class GoldDustStrategy : Strategy
 			if (_lastPosition >= 0m)
 			{
 				_hasLongStop = false;
-				_shortStop = PositionPrice + _stopLossOffset;
+				_shortStop = _positionPrice + _stopLossOffset;
 				_hasShortStop = _stopLossOffset > 0m;
 			}
 		}
@@ -388,7 +388,7 @@ public class GoldDustStrategy : Strategy
 
 		if (Position > 0m)
 		{
-			var profit = candle.ClosePrice - PositionPrice;
+			var profit = candle.ClosePrice - _positionPrice;
 			if (profit > _trailingStopOffset + _trailingStepOffset)
 			{
 				var candidate = candle.ClosePrice - _trailingStopOffset;
@@ -401,7 +401,7 @@ public class GoldDustStrategy : Strategy
 		}
 		else if (Position < 0m)
 		{
-			var profit = PositionPrice - candle.ClosePrice;
+			var profit = _positionPrice - candle.ClosePrice;
 			if (profit > _trailingStopOffset + _trailingStepOffset)
 			{
 				var candidate = candle.ClosePrice + _trailingStopOffset;
@@ -467,7 +467,7 @@ public class GoldDustStrategy : Strategy
 		if (Position == 0m)
 			return;
 
-		var openProfit = Position * (candle.ClosePrice - PositionPrice);
+		var openProfit = Position * (candle.ClosePrice - _positionPrice);
 		if (openProfit <= 0m)
 			return;
 

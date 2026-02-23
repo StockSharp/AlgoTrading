@@ -108,7 +108,7 @@ public class VwapProV21Strategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("SL ATR Multiplier", "ATR multiplier for stop loss", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

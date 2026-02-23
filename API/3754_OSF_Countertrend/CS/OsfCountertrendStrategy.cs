@@ -151,15 +151,14 @@ public class OsfCountertrendStrategy : Strategy
 		if (!_rsi.IsFormed)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// indicators already checked above
 
 		// Track active positions for manual take-profit handling.
 		if (Position > 0 && _longTarget > 0m && TakeProfitPoints > 0m)
 		{
 			if (candle.LowPrice <= _longTarget)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_longTarget = 0m;
 			}
 		}
@@ -167,7 +166,7 @@ public class OsfCountertrendStrategy : Strategy
 		{
 			if (candle.HighPrice >= _shortTarget)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_shortTarget = 0m;
 			}
 		}
@@ -196,7 +195,7 @@ public class OsfCountertrendStrategy : Strategy
 			if (volumeToSell <= 0m)
 			return;
 
-			SellMarket(volumeToSell);
+			SellMarket();
 
 			_shortTarget = TakeProfitPoints > 0m
 			? candle.ClosePrice - step * TakeProfitPoints
@@ -211,7 +210,7 @@ public class OsfCountertrendStrategy : Strategy
 			if (volumeToBuy <= 0m)
 			return;
 
-			BuyMarket(volumeToBuy);
+			BuyMarket();
 
 			_longTarget = TakeProfitPoints > 0m
 			? candle.ClosePrice + step * TakeProfitPoints

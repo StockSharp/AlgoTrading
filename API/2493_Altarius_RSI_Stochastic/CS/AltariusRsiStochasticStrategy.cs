@@ -248,7 +248,7 @@ public class AltariusRsiStochasticStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Primary %K Smoothing", "Smoothing for primary %K", "Primary Stochastic");
 
-		_primaryStochasticD = { Length = Param }(nameof(PrimaryStochasticDPeriod), 8)
+		_primaryStochasticDPeriod = Param(nameof(PrimaryStochasticDPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Primary %D Period", "Signal period for primary Stochastic", "Primary Stochastic");
 
@@ -260,7 +260,7 @@ public class AltariusRsiStochasticStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Secondary %K Smoothing", "Smoothing for secondary %K", "Secondary Stochastic");
 
-		_secondaryStochasticD = { Length = Param }(nameof(SecondaryStochasticDPeriod), 3)
+		_secondaryStochasticDPeriod = Param(nameof(SecondaryStochasticDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Secondary %D Period", "Signal period for secondary Stochastic", "Secondary Stochastic");
 
@@ -313,17 +313,15 @@ public class AltariusRsiStochasticStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var primaryStochastic = new Stochastic
+		var primaryStochastic = new StochasticOscillator
 		{
-			Length = PrimaryStochasticLength,
-			KPeriod = PrimaryStochasticKPeriod,
+			K = { Length = PrimaryStochasticLength },
 			D = { Length = PrimaryStochasticDPeriod },
 		};
 
-		var secondaryStochastic = new Stochastic
+		var secondaryStochastic = new StochasticOscillator
 		{
-			Length = SecondaryStochasticLength,
-			KPeriod = SecondaryStochasticKPeriod,
+			K = { Length = SecondaryStochasticLength },
 			D = { Length = SecondaryStochasticDPeriod },
 		};
 
@@ -337,7 +335,7 @@ public class AltariusRsiStochasticStrategy : Strategy
 			.BindEx(primaryStochastic, secondaryStochastic, rsi, ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
+		// No protection (TP/SL handled internally).
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue primaryValue, IIndicatorValue secondaryValue, IIndicatorValue rsiValue)
@@ -349,8 +347,8 @@ public class AltariusRsiStochasticStrategy : Strategy
 		if (!primaryValue.IsFinal || !secondaryValue.IsFinal || !rsiValue.IsFinal)
 			return;
 
-		var primary = (StochasticValue)primaryValue;
-		var secondary = (StochasticValue)secondaryValue;
+		var primary = (IStochasticOscillatorValue)primaryValue;
+		var secondary = (IStochasticOscillatorValue)secondaryValue;
 
 		if (primary.K is not decimal primaryMain || primary.D is not decimal primarySignal)
 			return;

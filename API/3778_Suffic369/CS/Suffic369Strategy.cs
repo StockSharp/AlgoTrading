@@ -259,9 +259,9 @@ public class Suffic369Strategy : Strategy
 		if (_priceStep <= 0m)
 			_priceStep = 1m;
 
-		_fastCloseSma = new SMA { Length = FastMaLength };
-		_highPriceSma = new SMA { Length = HighMaLength };
-		_lowPriceSma = new SMA { Length = LowMaLength };
+		_fastCloseSma = new SimpleMovingAverage { Length = FastMaLength };
+		_highPriceSma = new SimpleMovingAverage { Length = HighMaLength };
+		_lowPriceSma = new SimpleMovingAverage { Length = LowMaLength };
 		_bollinger = new BollingerBands
 		{
 			Length = BollingerLength,
@@ -329,7 +329,7 @@ public class Suffic369Strategy : Strategy
 		{
 			if (shortSignal)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 				exitTriggered = true;
 			}
@@ -342,7 +342,7 @@ public class Suffic369Strategy : Strategy
 		{
 			if (longSignal)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortState();
 				exitTriggered = true;
 			}
@@ -362,7 +362,7 @@ public class Suffic369Strategy : Strategy
 		{
 			if (longSignal)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				_longEntryPrice = candle.ClosePrice;
 				_longTrailingStop = null;
 				_shortEntryPrice = null;
@@ -370,7 +370,7 @@ public class Suffic369Strategy : Strategy
 			}
 			else if (shortSignal)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				_shortEntryPrice = candle.ClosePrice;
 				_shortTrailingStop = null;
 				_longEntryPrice = null;
@@ -402,7 +402,7 @@ public class Suffic369Strategy : Strategy
 			var stopPrice = entryPrice - StopLossPoints * step;
 			if (candle.LowPrice <= stopPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 				return true;
 			}
@@ -413,7 +413,7 @@ public class Suffic369Strategy : Strategy
 			var targetPrice = entryPrice + TakeProfitPoints * step;
 			if (candle.HighPrice >= targetPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 				return true;
 			}
@@ -431,7 +431,7 @@ public class Suffic369Strategy : Strategy
 
 			if (_longTrailingStop.HasValue && candle.LowPrice <= _longTrailingStop.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 				return true;
 			}
@@ -453,7 +453,7 @@ public class Suffic369Strategy : Strategy
 			var stopPrice = entryPrice + StopLossPoints * step;
 			if (candle.HighPrice >= stopPrice)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortState();
 				return true;
 			}
@@ -464,7 +464,7 @@ public class Suffic369Strategy : Strategy
 			var targetPrice = entryPrice - TakeProfitPoints * step;
 			if (candle.LowPrice <= targetPrice)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortState();
 				return true;
 			}
@@ -482,7 +482,7 @@ public class Suffic369Strategy : Strategy
 
 			if (_shortTrailingStop.HasValue && candle.HighPrice >= _shortTrailingStop.Value)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortState();
 				return true;
 			}

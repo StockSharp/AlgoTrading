@@ -80,7 +80,7 @@ public class ImaIsarEaStrategy : Strategy
 		.SetDisplay("Trailing Step (pips)", "Minimum move before trailing update", "Risk")
 		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle series", "General");
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
@@ -363,7 +363,7 @@ public class ImaIsarEaStrategy : Strategy
 
 		ManageActivePosition(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_fastMa.IsFormed || !_normalMa.IsFormed || !_slowMa.IsFormed)
 		return;
 
 		var close = candle.ClosePrice;
@@ -638,7 +638,7 @@ public class ImaIsarEaStrategy : Strategy
 		if (shift is null)
 		return value;
 
-		var shifted = shift.Process(new DecimalIndicatorValue(shift, value, candle.OpenTime));
+		var shifted = shift.Process(new DecimalIndicatorValue(shift, value, candle.OpenTime) { IsFinal = true });
 		return shift.IsFormed ? shifted.ToDecimal() : null;
 	}
 

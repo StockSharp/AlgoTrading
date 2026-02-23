@@ -84,7 +84,7 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 	/// </summary>
 	public CorrectedAverageBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator calculations", "General");
 
 		_length = Param(nameof(Length), 12)
@@ -135,9 +135,10 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_level = LevelPoints * Security.PriceStep;
-		_stopLoss = StopLossPoints * Security.PriceStep;
-		_takeProfit = TakeProfitPoints * Security.PriceStep;
+		var step = Security.PriceStep ?? 1m;
+		_level = LevelPoints * step;
+		_stopLoss = StopLossPoints * step;
+		_takeProfit = TakeProfitPoints * step;
 
 		var ma = CreateMa(MaTypeOption, Length);
 		var std = new StandardDeviation { Length = Length };
@@ -179,14 +180,14 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 		if (buySignal && EnableLong && Position <= 0)
 		{
 			if (Position < 0)
-				ClosePosition();
+				BuyMarket(Math.Abs(Position));
 
 			BuyMarket();
 		}
 		else if (sellSignal && EnableShort && Position >= 0)
 		{
 			if (Position > 0)
-				ClosePosition();
+				SellMarket(Position);
 
 			SellMarket();
 		}

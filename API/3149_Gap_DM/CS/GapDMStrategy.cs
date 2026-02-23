@@ -122,7 +122,7 @@ public class GapDMStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum number of lots allowed in one direction.", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for gap detection.", "General");
 	}
 
@@ -204,7 +204,7 @@ public class GapDMStrategy : Strategy
 			ResetProtection();
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_hasPreviousClose)
 		{
 			UpdatePreviousClose(candle);
 			return;
@@ -246,7 +246,6 @@ public class GapDMStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		CancelActiveOrders();
 		BuyMarket(volume);
 
 		_entryPrice = entryPrice;
@@ -270,7 +269,6 @@ public class GapDMStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		CancelActiveOrders();
 		SellMarket(volume);
 
 		_entryPrice = entryPrice;

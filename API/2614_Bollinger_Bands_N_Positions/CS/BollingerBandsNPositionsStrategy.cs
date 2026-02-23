@@ -153,7 +153,7 @@ public class BollingerBandsNPositionsStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Volume Tolerance", "Minimum net position magnitude treated as flat", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Source candles", "General");
 	}
 
@@ -187,13 +187,17 @@ public class BollingerBandsNPositionsStrategy : Strategy
 		};
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(bollinger, ProcessCandle).Start();
+		subscription.BindEx(bollinger, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
+
+		var bb = bbValue as IBollingerBandsValue;
+		var upper = bb?.UpBand ?? 0m;
+		var lower = bb?.LowBand ?? 0m;
 
 		if (HandleActivePosition(candle))
 		return;

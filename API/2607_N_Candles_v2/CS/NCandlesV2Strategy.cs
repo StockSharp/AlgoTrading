@@ -102,7 +102,7 @@ public class NCandlesV2Strategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional move required to tighten trailing stop", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for analysis", "General");
 	}
 

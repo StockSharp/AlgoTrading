@@ -266,8 +266,8 @@ public class SweetSpotExtremeStrategy : Strategy
 		if (_priceStep <= 0m)
 		_priceStep = 1m;
 
-		_trendMa = new EMA { Length = MaPeriod };
-		_closeMa = new EMA { Length = CloseMaPeriod };
+		_trendMa = new ExponentialMovingAverage { Length = MaPeriod };
+		_closeMa = new ExponentialMovingAverage { Length = CloseMaPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 
 		SubscribeCandles(TrendCandleType)
@@ -284,8 +284,7 @@ public class SweetSpotExtremeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		
 
 		if (_trendMa is null || _closeMa is null)
 		return;
@@ -391,7 +390,7 @@ public class SweetSpotExtremeStrategy : Strategy
 		&& candle.ClosePrice - _lastEntryPrice.Value >= targetDistance;
 
 		if (slopeReversal || reachedTarget)
-		SellMarket(Position);
+		SellMarket();
 		}
 		else if (Position < 0m)
 		{
@@ -400,7 +399,7 @@ public class SweetSpotExtremeStrategy : Strategy
 		&& _lastEntryPrice.Value - candle.ClosePrice >= targetDistance;
 
 		if (slopeReversal || reachedTarget)
-		BuyMarket(-Position);
+		BuyMarket();
 		}
 	}
 

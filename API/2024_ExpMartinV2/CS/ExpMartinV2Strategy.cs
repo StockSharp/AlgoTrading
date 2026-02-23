@@ -96,7 +96,7 @@ public class ExpMartinV2Strategy : Strategy
 		_startType = Param(nameof(StartType), 0)
 			.SetDisplay("Start Type", "0-Buy, 1-Sell", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

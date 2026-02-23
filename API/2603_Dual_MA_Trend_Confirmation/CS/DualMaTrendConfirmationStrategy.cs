@@ -107,7 +107,7 @@ public class DualMaTrendConfirmationStrategy : Strategy
 			.SetRange(10m, 500m)
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for moving average calculations", "General");
 	}
 
@@ -136,7 +136,7 @@ public class DualMaTrendConfirmationStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var slowEma = new EMA
+		var slowEma = new ExponentialMovingAverage
 		{
 			Length = SlowMaLength
 		};

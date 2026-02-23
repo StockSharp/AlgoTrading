@@ -36,7 +36,7 @@ public class CheduecoglioniAlternatingStrategy : Strategy
 	/// </summary>
 	public CheduecoglioniAlternatingStrategy()
 	{
-		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
+		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetDisplay("Trade Volume", "Volume per trade", "General")
 			.SetGreaterThanZero();
 
@@ -48,7 +48,7 @@ public class CheduecoglioniAlternatingStrategy : Strategy
 			.SetDisplay("Stop Loss (pips)", "Distance to stop loss", "Risk")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles for timing", "General");
 	}
 
@@ -152,8 +152,8 @@ public class CheduecoglioniAlternatingStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (Position != 0 || _waitingForEntry)
-			return; // Skip if a position exists or a market order is still pending.
+		if (Position != 0)
+			return; // Skip if a position exists.
 
 		var volume = TradeVolume;
 		if (volume <= 0m)
@@ -201,15 +201,4 @@ public class CheduecoglioniAlternatingStrategy : Strategy
 		_entryOrder = null;
 	}
 
-	/// <inheritdoc />
-	protected override void OnOrderFailed(Order order)
-	{
-		base.OnOrderFailed(order);
-
-		if (order != _entryOrder)
-			return;
-
-		_waitingForEntry = false; // Allow the next candle to retry when the broker rejected the order.
-		_entryOrder = null;
-	}
 }

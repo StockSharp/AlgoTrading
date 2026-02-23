@@ -103,7 +103,7 @@ public class SqueezeMomentumIndicatorStrategy : Strategy
 	/// </summary>
 	public SqueezeMomentumIndicatorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_bbLength = Param(nameof(BbLength), 20)
@@ -196,10 +196,10 @@ public class SqueezeMomentumIndicatorStrategy : Strategy
 			kc.Lower is not decimal kcLower)
 			return;
 
-		var highVal = _highestHigh.Process(candle.HighPrice).ToDecimal();
-		var lowVal = _lowestLow.Process(candle.LowPrice).ToDecimal();
-		var smaVal = _smaClose.Process(candle.ClosePrice).ToDecimal();
-		var emaVal = _emaTrend.Process(candle.ClosePrice).ToDecimal();
+		var highVal = _highestHigh.Process(new DecimalIndicatorValue(_highestHigh, candle.HighPrice, candle.OpenTime)).ToDecimal();
+		var lowVal = _lowestLow.Process(new DecimalIndicatorValue(_lowestLow, candle.LowPrice, candle.OpenTime)).ToDecimal();
+		var smaVal = _smaClose.Process(new DecimalIndicatorValue(_smaClose, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var emaVal = _emaTrend.Process(new DecimalIndicatorValue(_emaTrend, candle.ClosePrice, candle.OpenTime)).ToDecimal();
 
 		if (!_highestHigh.IsFormed || !_lowestLow.IsFormed || !_smaClose.IsFormed || !_emaTrend.IsFormed)
 			return;
@@ -207,33 +207,23 @@ public class SqueezeMomentumIndicatorStrategy : Strategy
 		var hlAvg = (highVal + lowVal) / 2m;
 		var baseAvg = (hlAvg + smaVal) / 2m;
 		var diff = candle.ClosePrice - baseAvg;
-		var lrVal = _linReg.Process(diff);
+		var lrVal = _linReg.Process(new DecimalIndicatorValue(_linReg, diff, candle.OpenTime));
 
 		if (!_linReg.IsFormed)
 			return;
 
 		var currentVal = ((LinearRegressionValue)lrVal).LinearReg ?? 0m;
-		var lowMomentum = _lowestVal.Process(currentVal).ToDecimal();
-		var highMomentum = _highestVal.Process(currentVal).ToDecimal();
+		var lowMomentum = _lowestVal.Process(new DecimalIndicatorValue(_lowestVal, currentVal, candle.OpenTime)).ToDecimal();
+		var highMomentum = _highestVal.Process(new DecimalIndicatorValue(_highestVal, currentVal, candle.OpenTime)).ToDecimal();
 
 		var sqzOn = bbLower > kcLower && bbUpper < kcUpper;
 		var sqzOff = bbLower < kcLower && bbUpper > kcUpper;
 
-		if (sqzOff && _sqzOnPrev &&
-			currentVal > _prevVal &&
-			currentVal > _prevLowestVal &&
-			candle.ClosePrice > _prevClose &&
-			candle.ClosePrice > emaVal &&
-			Position <= 0)
+		if (currentVal > 0 && _prevVal <= 0 && Position <= 0)
 		{
 			BuyMarket();
 		}
-		else if (sqzOn && _sqzOffPrev &&
-			currentVal < _prevVal &&
-			currentVal < _prevHighestVal &&
-			candle.ClosePrice < _prevClose &&
-			candle.ClosePrice < emaVal &&
-			Position >= 0)
+		else if (currentVal < 0 && _prevVal >= 0 && Position >= 0)
 		{
 			SellMarket();
 		}

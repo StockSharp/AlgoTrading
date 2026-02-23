@@ -168,7 +168,7 @@ public class VladoWilliamsPercentRangeStrategy : Strategy
 		if (_sellSignal && _lastSignal != -1)
 		{
 			// Enter short once Williams %R falls below the chosen level.
-			SellMarket(volume);
+			SellMarket();
 			_lastSignal = -1;
 			return;
 		}
@@ -176,7 +176,7 @@ public class VladoWilliamsPercentRangeStrategy : Strategy
 		if (_buySignal && _lastSignal != 1)
 		{
 			// Enter long once Williams %R rises above the chosen level.
-			BuyMarket(volume);
+			BuyMarket();
 			_lastSignal = 1;
 		}
 	}

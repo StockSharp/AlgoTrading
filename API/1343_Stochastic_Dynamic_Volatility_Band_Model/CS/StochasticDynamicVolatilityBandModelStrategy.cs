@@ -146,8 +146,6 @@ public class StochasticDynamicVolatilityBandModelStrategy : Strategy
 		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
 		{
 			_prevClose = candle.ClosePrice;
-			_prevUpper = upper;
-			_prevLower = lower;
 			_barIndex++;
 			return;
 		}

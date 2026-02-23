@@ -28,7 +28,7 @@ public class SmartScaleEnvelopeDcaStrategy : Strategy
 	private readonly StrategyParam<int> _maxBuys;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private IIndicator _ma = default!;
+	private SMA _ma = default!;
 	private decimal? _avgEntryPrice;
 	private decimal? _lastBuyPrice;
 	private int _buyCount;
@@ -148,7 +148,7 @@ public class SmartScaleEnvelopeDcaStrategy : Strategy
 			
 			.SetDisplay("Max Buys", "Maximum buy-ins", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "Parameters");
 	}
 
@@ -176,12 +176,11 @@ public class SmartScaleEnvelopeDcaStrategy : Strategy
 
 		_startDate = CurrentTime - TimeSpan.FromDays(365);
 
-		_ma = UseEma ? new EMA { Length = EnvelopeLength } : new SMA { Length = EnvelopeLength };
+		_ma = new SMA { Length = EnvelopeLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(_ma, ProcessCandle)
-			.Chart(_ma)
 			.Start();
 	}
 

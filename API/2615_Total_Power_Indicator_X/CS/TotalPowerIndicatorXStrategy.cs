@@ -172,7 +172,7 @@ public class TotalPowerIndicatorXStrategy : Strategy
 	/// </summary>
 	public TotalPowerIndicatorXStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_powerPeriod = Param(nameof(PowerPeriod), 10)
@@ -180,7 +180,7 @@ public class TotalPowerIndicatorXStrategy : Strategy
 		.SetDisplay("Power Period", "EMA length used by Total Power", "Indicator")
 		;
 
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 45)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Lookback", "Samples counted for bull/bear strength", "Indicator")
 		;
@@ -440,7 +440,7 @@ public class TotalPowerIndicatorXStrategy : Strategy
 	{
 		private readonly Queue<int> _bullHistory = new();
 		private readonly Queue<int> _bearHistory = new();
-		private readonly EMA _ema = new();
+		private readonly ExponentialMovingAverage _ema = new();
 		private int _bullCount;
 		private int _bearCount;
 		private int _powerPeriod = 10;
@@ -467,7 +467,7 @@ public class TotalPowerIndicatorXStrategy : Strategy
 			var candle = input.GetValue<ICandleMessage>();
 			var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle.ClosePrice, input.Time));
 
-			if (!emaValue.IsFinal)
+			if (!_ema.IsFormed)
 			{
 				IsFormed = false;
 				return new TotalPowerIndicatorValue(this, input, 0m, 0m, 0m);
@@ -520,17 +520,20 @@ public class TotalPowerIndicatorXStrategy : Strategy
 		}
 	}
 
-	private sealed class TotalPowerIndicatorValue : ComplexIndicatorValue
+	private sealed class TotalPowerIndicatorValue : DecimalIndicatorValue
 	{
 		public TotalPowerIndicatorValue(IIndicator indicator, IIndicatorValue input, decimal bulls, decimal bears, decimal power)
-		: base(indicator, input, (nameof(Bulls), bulls), (nameof(Bears), bears), (nameof(Power), power))
+		: base(indicator, bulls - bears, input.Time)
 		{
+			Bulls = bulls;
+			Bears = bears;
+			Power = power;
 		}
 
-		public decimal Bulls => (decimal)GetValue(nameof(Bulls));
+		public decimal Bulls { get; }
 
-		public decimal Bears => (decimal)GetValue(nameof(Bears));
+		public decimal Bears { get; }
 
-		public decimal Power => (decimal)GetValue(nameof(Power));
+		public decimal Power { get; }
 	}
 }

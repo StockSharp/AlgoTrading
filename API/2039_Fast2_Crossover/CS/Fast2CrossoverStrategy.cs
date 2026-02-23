@@ -60,9 +60,15 @@ public class Fast2CrossoverStrategy : Strategy
 	/// </summary>
 	public Fast2CrossoverStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 		_fastLength = Param(nameof(FastLength), 3).SetDisplay("Fast length", "Fast length", "General");
 		_slowLength = Param(nameof(SlowLength), 9).SetDisplay("Slow length", "Slow length", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -101,10 +107,10 @@ public class Fast2CrossoverStrategy : Strategy
 		if (_hasPrevDiff2)
 			hist += _prevDiff2 / (decimal)Math.Sqrt(3);
 
-		var fastValue = _fast.Process(hist);
-		var slowValue = _slow.Process(hist);
+		var fastValue = _fast.Process(hist, candle.OpenTime, true);
+		var slowValue = _slow.Process(hist, candle.OpenTime, true);
 
-		if (!fastValue.IsFinal || !slowValue.IsFinal)
+		if (fastValue.IsEmpty || slowValue.IsEmpty || !_fast.IsFormed || !_slow.IsFormed)
 		{
 			_prevDiff2 = _prevDiff1;
 			_prevDiff1 = diff;
@@ -113,8 +119,8 @@ public class Fast2CrossoverStrategy : Strategy
 			return;
 		}
 
-		var fast = fastValue.GetValue<decimal>();
-		var slow = slowValue.GetValue<decimal>();
+		var fast = fastValue.ToDecimal();
+		var slow = slowValue.ToDecimal();
 
 		if (_hasPrevAverage)
 		{

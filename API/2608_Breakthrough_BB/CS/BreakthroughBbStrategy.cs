@@ -94,7 +94,7 @@ public class BreakthroughBbStrategy : Strategy
 			;
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series processed by the strategy", "General");
 	}
 
@@ -128,7 +128,7 @@ public class BreakthroughBbStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = MaPeriod };
+		_sma = new SimpleMovingAverage { Length = MaPeriod };
 		_bollingerBands = new BollingerBands
 		{
 			Length = BandsPeriod,
@@ -138,14 +138,20 @@ public class BreakthroughBbStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(_sma, _bollingerBands, ProcessCandle)
+			.BindEx(_sma, _bollingerBands, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal middleBand, decimal upperBand, decimal lowerBand)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaIndValue, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var smaValue = smaIndValue.IsFormed ? smaIndValue.ToDecimal() : 0m;
+		var bb = bbValue as IBollingerBandsValue;
+		var middleBand = bb?.MovingAverage ?? 0m;
+		var upperBand = bb?.UpBand ?? 0m;
+		var lowerBand = bb?.LowBand ?? 0m;
 
 		var close = candle.ClosePrice;
 		var maPrev4 = _maLag2;

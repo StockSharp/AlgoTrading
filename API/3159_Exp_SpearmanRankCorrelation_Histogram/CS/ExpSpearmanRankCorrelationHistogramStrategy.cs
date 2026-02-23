@@ -46,7 +46,7 @@ public class ExpSpearmanRankCorrelationHistogramStrategy : Strategy
 	{
 		Volume = 1m;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for the indicator and trading", "General");
 
 		_rangeLength = Param(nameof(RangeLength), 14)
@@ -294,7 +294,7 @@ public class ExpSpearmanRankCorrelationHistogramStrategy : Strategy
 		if (_colorHistory.Count < required)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_spearman.IsFormed)
 		return;
 
 		var recentColor = _colorHistory[signalBar];
@@ -408,7 +408,7 @@ public class ExpSpearmanRankCorrelationHistogramStrategy : Strategy
 		if (!hasSignal)
 		return;
 
-		CancelActiveOrders();
+		//CancelActiveOrders();
 
 		if (closeBuy && Position > 0m)
 		{

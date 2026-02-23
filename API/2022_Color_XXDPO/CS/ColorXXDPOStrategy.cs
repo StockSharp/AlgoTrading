@@ -37,7 +37,7 @@ public class ColorXXDPOStrategy : Strategy
 		_secondLength = Param(nameof(SecondLength), 5)
 			.SetDisplay("Second MA Length", "Length for the second smoothing stage.", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy calculation.", "General");
 	}
 
@@ -101,9 +101,13 @@ public class ColorXXDPOStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var ma1 = _ma1.Process(candle.ClosePrice).ToDecimal();
+		var ma1Result = _ma1.Process(candle.ClosePrice, candle.OpenTime, true);
+		if (!_ma1.IsFormed || ma1Result.IsEmpty) return;
+		var ma1 = ma1Result.ToDecimal();
 		var dpo = candle.ClosePrice - ma1;
-		var xxdpo = _ma2.Process(dpo).ToDecimal();
+		var xxdpoResult = _ma2.Process(dpo, candle.OpenTime, true);
+		if (!_ma2.IsFormed || xxdpoResult.IsEmpty) return;
+		var xxdpo = xxdpoResult.ToDecimal();
 
 		if (!_isInitialized)
 		{
@@ -117,15 +121,15 @@ public class ColorXXDPOStrategy : Strategy
 		var slopeDown = _prev1 > _prev2;
 
 		if (slopeUp && Position < 0)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 
 		if (slopeDown && Position > 0)
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 
 		if (slopeUp && xxdpo > _prev1 && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		else if (slopeDown && xxdpo < _prev1 && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 
 		_prev2 = _prev1;
 		_prev1 = xxdpo;

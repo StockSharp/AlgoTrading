@@ -151,7 +151,7 @@ public class VolumeTraderV2Strategy : Strategy
 		var shouldGoLong = hourValid && volume1 < volume2;
 		var shouldGoShort = hourValid && volume1 > volume2;
 
-		Comment = !hourValid
+		var comment = !hourValid
 			? "Trading paused"
 			: shouldGoLong
 			? "Up trend"
@@ -168,19 +168,19 @@ public class VolumeTraderV2Strategy : Strategy
 		{
 			// Flatten any short position before opening a new long trade.
 			if (Position < 0)
-			BuyMarket(-Position);
+			BuyMarket();
 
 			if (Position <= 0)
-			BuyMarket(TradeVolume);
+			BuyMarket();
 		}
 		else if (shouldGoShort)
 		{
 			// Flatten any long position before opening a new short trade.
 			if (Position > 0)
-			SellMarket(Position);
+			SellMarket();
 
 			if (Position >= 0)
-			SellMarket(TradeVolume);
+			SellMarket();
 		}
 
 		// Shift the cached volumes to emulate Volume[1] and Volume[2] from MetaTrader.
@@ -193,11 +193,11 @@ public class VolumeTraderV2Strategy : Strategy
 		// Mirror the EA behavior by leaving the market whenever the signal is neutral.
 		if (Position > 0)
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
 		else if (Position < 0)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 		}
 	}
 }

@@ -85,6 +85,14 @@ public class ColorSchaffMomentumTrendCycleStrategy : Strategy
 		set => _sellPosClose.Value = value;
 	}
 
+	private StrategyParam<DataType> _candleType;
+
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
 	public ColorSchaffMomentumTrendCycleStrategy()
 	{
 		_fastMomentumLength = Param(nameof(FastMomentum), 23).SetDisplay("Fast Momentum", "Fast momentum length", "Indicator");
@@ -96,7 +104,11 @@ public class ColorSchaffMomentumTrendCycleStrategy : Strategy
 		_sellPosOpen = Param(nameof(SellPosOpen), true).SetDisplay("Enable Short", "Allow short entries", "Trading");
 		_buyPosClose = Param(nameof(BuyPosClose), true).SetDisplay("Close Long", "Allow closing long positions", "Trading");
 		_sellPosClose = Param(nameof(SellPosClose), true).SetDisplay("Close Short", "Allow closing short positions", "Trading");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candles timeframe", "General");
 	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
@@ -129,8 +141,12 @@ public class ColorSchaffMomentumTrendCycleStrategy : Strategy
 			return;
 
 		var price = candle.ClosePrice;
-		var fast = _fastMomentum.Process(new DecimalIndicatorValue(_fastMomentum, price, candle.OpenTime)).ToDecimal();
-		var slow = _slowMomentum.Process(new DecimalIndicatorValue(_slowMomentum, price, candle.OpenTime)).ToDecimal();
+		var fastVal = _fastMomentum.Process(price, candle.OpenTime, true);
+		var slowVal = _slowMomentum.Process(price, candle.OpenTime, true);
+		if (!fastVal.IsFinal || !slowVal.IsFinal)
+			return;
+		var fast = fastVal.IsEmpty ? 0m : fastVal.ToDecimal();
+		var slow = slowVal.IsEmpty ? 0m : slowVal.ToDecimal();
 		var macd = fast - slow;
 
 		// store MACD and keep limited history
@@ -196,7 +212,7 @@ public class ColorSchaffMomentumTrendCycleStrategy : Strategy
 			if (prev > 5)
 			{
 				if (SellPosClose && Position < 0)
-					ClosePosition();
+					{ if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket(); }
 
 				if (BuyPosOpen && color < 6 && Position <= 0)
 					BuyMarket();
@@ -204,7 +220,7 @@ public class ColorSchaffMomentumTrendCycleStrategy : Strategy
 			else if (prev < 2)
 			{
 				if (BuyPosClose && Position > 0)
-					ClosePosition();
+					{ if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket(); }
 
 				if (SellPosOpen && color > 1 && Position >= 0)
 					SellMarket();

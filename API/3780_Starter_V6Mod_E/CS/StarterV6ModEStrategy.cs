@@ -347,9 +347,9 @@ public class StarterV6ModEStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_slowEma = new EMA { Length = SlowEmaPeriod };
-		_fastEma = new EMA { Length = FastEmaPeriod };
-		_angleEma = new EMA { Length = AngleEmaPeriod };
+		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		_angleEma = new ExponentialMovingAverage { Length = AngleEmaPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 
 		_pipSize = Security?.PriceStep ?? 0.0001m;
@@ -410,8 +410,7 @@ public class StarterV6ModEStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		
 
 		var time = candle.CloseTime;
 		var isFriday = time.DayOfWeek == DayOfWeek.Friday;
@@ -447,11 +446,11 @@ public class StarterV6ModEStrategy : Strategy
 
 		if (allowLong && laguerreOkLong && emaMomentumLong && cciSupportsLong)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 		}
 		else if (allowShort && laguerreOkShort && emaMomentumShort && cciSupportsShort)
 		{
-			SellMarket(Volume);
+			SellMarket();
 		}
 	}
 
@@ -474,14 +473,14 @@ public class StarterV6ModEStrategy : Strategy
 			var stopPrice = entryPrice - pipDistance * StopLossPips;
 			if (StopLossPips > 0 && candle.LowPrice <= stopPrice && volume > 0m)
 			{
-				SellMarket(volume);
+				SellMarket();
 				return;
 			}
 
 			var targetPrice = entryPrice + pipDistance * TakeProfitPips;
 			if (TakeProfitPips > 0 && candle.HighPrice >= targetPrice && volume > 0m)
 			{
-				SellMarket(volume);
+				SellMarket();
 				return;
 			}
 
@@ -490,7 +489,7 @@ public class StarterV6ModEStrategy : Strategy
 				var trailPrice = _highestPrice.Value - pipDistance * TrailingStopPips;
 				if (candle.LowPrice <= trailPrice && volume > 0m)
 				{
-					SellMarket(volume);
+					SellMarket();
 				}
 			}
 		}
@@ -501,14 +500,14 @@ public class StarterV6ModEStrategy : Strategy
 			var stopPrice = entryPrice + pipDistance * StopLossPips;
 			if (StopLossPips > 0 && candle.HighPrice >= stopPrice && volume > 0m)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				return;
 			}
 
 			var targetPrice = entryPrice - pipDistance * TakeProfitPips;
 			if (TakeProfitPips > 0 && candle.LowPrice <= targetPrice && volume > 0m)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				return;
 			}
 
@@ -517,7 +516,7 @@ public class StarterV6ModEStrategy : Strategy
 				var trailPrice = _lowestPrice.Value + pipDistance * TrailingStopPips;
 				if (candle.HighPrice >= trailPrice && volume > 0m)
 				{
-					BuyMarket(volume);
+					BuyMarket();
 				}
 			}
 		}
@@ -530,9 +529,9 @@ public class StarterV6ModEStrategy : Strategy
 			return;
 
 		if (Position > 0m)
-			SellMarket(volume);
+			SellMarket();
 		else if (Position < 0m)
-			BuyMarket(volume);
+			BuyMarket();
 	}
 
 	private decimal CalculateLaguerre(decimal price)

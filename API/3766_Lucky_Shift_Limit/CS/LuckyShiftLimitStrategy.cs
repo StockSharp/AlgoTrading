@@ -164,29 +164,27 @@ public class LuckyShiftLimitStrategy : Strategy
 
 	private void TryOpenLong(decimal price, string reason)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// indicators formed check removed
 
 		var volume = CalculateOrderVolume();
 
 		if (volume <= 0m)
 			return;
 
-		BuyMarket(volume);
+		BuyMarket();
 		LogInfo($"{reason}. Price={price:0.#####}, Volume={volume:0.###}");
 	}
 
 	private void TryOpenShort(decimal price, string reason)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// indicators formed check removed
 
 		var volume = CalculateOrderVolume();
 
 		if (volume <= 0m)
 			return;
 
-		SellMarket(volume);
+		SellMarket();
 		LogInfo($"{reason}. Price={price:0.#####}, Volume={volume:0.###}");
 	}
 
@@ -219,14 +217,14 @@ public class LuckyShiftLimitStrategy : Strategy
 		{
 			if (_currentBid is decimal bid && bid > avgPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				LogInfo($"Closed long in profit. Bid={bid:0.#####}");
 				return;
 			}
 
 			if (_limitOffset > 0m && _currentAsk is decimal ask && avgPrice - ask >= _limitOffset)
 			{
-				SellMarket(Position);
+				SellMarket();
 				LogInfo($"Closed long on loss cap. Ask={ask:0.#####}");
 			}
 		}
@@ -236,14 +234,14 @@ public class LuckyShiftLimitStrategy : Strategy
 
 			if (_currentAsk is decimal ask && ask < avgPrice)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				LogInfo($"Closed short in profit. Ask={ask:0.#####}");
 				return;
 			}
 
 			if (_limitOffset > 0m && _currentBid is decimal bid && bid - avgPrice >= _limitOffset)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				LogInfo($"Closed short on loss cap. Bid={bid:0.#####}");
 			}
 		}

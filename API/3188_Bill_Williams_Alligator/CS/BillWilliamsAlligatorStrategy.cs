@@ -52,6 +52,7 @@ public class BillWilliamsAlligatorStrategy : Strategy
 	private int _lipsCount;
 
 	private decimal _pipSize;
+	private decimal _positionPrice;
 
 	private decimal? _longStopPrice;
 	private decimal? _longTakePrice;
@@ -110,7 +111,7 @@ public class BillWilliamsAlligatorStrategy : Strategy
 		.SetDisplay("Lips Shift", "Forward shift (in bars) applied to the lips.", "Alligator");
 
 		_fractalsLookback = Param(nameof(FractalsLookback), 100)
-		.SetGreaterOrEqual(5)
+		.SetGreaterThanZero()
 		.SetDisplay("Fractal Lookback", "Number of finished candles scanned for confirmed fractals.", "Fractals");
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
@@ -119,7 +120,7 @@ public class BillWilliamsAlligatorStrategy : Strategy
 		_closeOpposite = Param(nameof(CloseOppositePositions), false)
 		.SetDisplay("Close Opposite", "Close opposite exposure before opening a new trade.", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle series used for signals.", "Data");
 	}
 
@@ -328,20 +329,9 @@ public class BillWilliamsAlligatorStrategy : Strategy
 		}
 	}
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	private void SetupStopTake(decimal entryPrice, bool isLong)
 	{
-		base.OnPositionReceived(position);
-
-		if (Position == 0m)
-		{
-			ResetPositionState();
-			return;
-		}
-
-		var entryPrice = PositionPrice;
-
-		if (Position > 0m && delta > 0m)
+		if (isLong)
 		{
 			_longStopPrice = StopLossPips > 0 ? entryPrice - StopLossPips * _pipSize : (decimal?)null;
 			_longTakePrice = TakeProfitPips > 0 ? entryPrice + TakeProfitPips * _pipSize : (decimal?)null;
@@ -351,7 +341,7 @@ public class BillWilliamsAlligatorStrategy : Strategy
 			_shortTakePrice = null;
 			_shortExitRequested = false;
 		}
-		else if (Position < 0m && delta < 0m)
+		else
 		{
 			_shortStopPrice = StopLossPips > 0 ? entryPrice + StopLossPips * _pipSize : (decimal?)null;
 			_shortTakePrice = TakeProfitPips > 0 ? entryPrice - TakeProfitPips * _pipSize : (decimal?)null;
@@ -381,9 +371,9 @@ public class BillWilliamsAlligatorStrategy : Strategy
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.OpenTime));
-		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.OpenTime));
-		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.OpenTime));
+		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.OpenTime) { IsFinal = true });
+		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.OpenTime) { IsFinal = true });
+		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.OpenTime) { IsFinal = true });
 
 		if (!jawValue.IsFinal || !teethValue.IsFinal || !lipsValue.IsFinal)
 		return;
@@ -392,7 +382,7 @@ public class BillWilliamsAlligatorStrategy : Strategy
 		ShiftIndicatorHistory(_teethHistory, ref _teethCount, teethValue.ToDecimal());
 		ShiftIndicatorHistory(_lipsHistory, ref _lipsCount, lipsValue.ToDecimal());
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_jaw.IsFormed || !_teeth.IsFormed || !_lips.IsFormed)
 		return;
 
 		if (!TryFindFractals(out var upperFractal, out var upperIndex, out var lowerFractal, out var lowerIndex))
@@ -435,7 +425,9 @@ public class BillWilliamsAlligatorStrategy : Strategy
 
 			if (Position == 0m)
 			{
+				_positionPrice = candle.ClosePrice;
 				BuyMarket(volume: OrderVolume);
+				SetupStopTake(candle.ClosePrice, true);
 			}
 		}
 
@@ -454,7 +446,9 @@ public class BillWilliamsAlligatorStrategy : Strategy
 
 			if (Position == 0m)
 			{
+				_positionPrice = candle.ClosePrice;
 				SellMarket(volume: OrderVolume);
+				SetupStopTake(candle.ClosePrice, false);
 			}
 		}
 	}
@@ -500,7 +494,7 @@ public class BillWilliamsAlligatorStrategy : Strategy
 		var stepDistance = TrailingStepPips > 0 ? TrailingStepPips * _pipSize : 0m;
 		var referencePrice = Math.Max(candle.HighPrice, candle.ClosePrice);
 
-		if (referencePrice - PositionPrice <= trailingDistance + stepDistance)
+		if (referencePrice - _positionPrice <= trailingDistance + stepDistance)
 		return;
 
 		var desiredStop = referencePrice - trailingDistance;
@@ -521,7 +515,7 @@ public class BillWilliamsAlligatorStrategy : Strategy
 		var stepDistance = TrailingStepPips > 0 ? TrailingStepPips * _pipSize : 0m;
 		var referencePrice = Math.Min(candle.LowPrice, candle.ClosePrice);
 
-		if (PositionPrice - referencePrice <= trailingDistance + stepDistance)
+		if (_positionPrice - referencePrice <= trailingDistance + stepDistance)
 		return;
 
 		var desiredStop = referencePrice + trailingDistance;

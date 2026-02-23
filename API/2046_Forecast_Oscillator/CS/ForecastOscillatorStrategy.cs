@@ -99,7 +99,7 @@ public class ForecastOscillatorStrategy : Strategy
 		_length = Param(nameof(Length), 15).SetGreaterThanZero().SetDisplay("Length", "Regression length", "Indicators");
 		_t3 = Param(nameof(T3), 3).SetGreaterThanZero().SetDisplay("T3 Period", "T3 smoothing period", "Indicators");
 		_b = Param(nameof(B), 0.7m).SetDisplay("T3 Factor", "T3 smoothing factor", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(12).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
 		_buyOpen = Param(nameof(BuyOpen), true).SetDisplay("Buy Open", "Allow opening long positions", "Trading");
 		_sellOpen = Param(nameof(SellOpen), true).SetDisplay("Sell Open", "Allow opening short positions", "Trading");
 		_buyClose = Param(nameof(BuyClose), true).SetDisplay("Buy Close", "Allow closing short positions", "Trading");

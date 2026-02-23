@@ -30,6 +30,7 @@ public class LuckyCodeStrategy : Strategy
 
 	private decimal _shiftThreshold;
 	private decimal _limitThreshold;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Minimum bid/ask movement in points required before opening a new trade.
@@ -99,7 +100,7 @@ public class LuckyCodeStrategy : Strategy
 		if (points <= 0)
 			return 0m;
 
-		var step = Security?.PriceStep ?? Security?.Step ?? 0m;
+		var step = Security?.PriceStep ?? 0m;
 
 		if (step <= 0m)
 			return 0m;
@@ -142,29 +143,29 @@ public class LuckyCodeStrategy : Strategy
 
 	private void OpenLong(decimal price, string reason)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// indicators formed check removed
 
 		var volume = CalculateOrderVolume(price);
 
 		if (volume <= 0m)
 			return;
 
-		BuyMarket(volume);
+		BuyMarket();
+		_entryPrice = price;
 		LogInfo($"{reason}. Price={price:0.#####}, Volume={volume:0.###}");
 	}
 
 	private void OpenShort(decimal price, string reason)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// indicators formed check removed
 
 		var volume = CalculateOrderVolume(price);
 
 		if (volume <= 0m)
 			return;
 
-		SellMarket(volume);
+		SellMarket();
+		_entryPrice = price;
 		LogInfo($"{reason}. Price={price:0.#####}, Volume={volume:0.###}");
 	}
 
@@ -188,7 +189,7 @@ public class LuckyCodeStrategy : Strategy
 		if (Position == 0)
 			return;
 
-		var avgPrice = Position.AveragePrice;
+		var avgPrice = _entryPrice;
 
 		if (avgPrice <= 0m)
 			return;
@@ -198,12 +199,12 @@ public class LuckyCodeStrategy : Strategy
 			// Manage long exposure: grab profits quickly or cap the drawdown.
 			if (_currentBid is decimal bid && bid > avgPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				LogInfo($"Closed long on profit. Price={bid:0.#####}");
 			}
 			else if (_limitThreshold > 0m && _currentAsk is decimal ask && avgPrice - ask >= _limitThreshold)
 			{
-				SellMarket(Position);
+				SellMarket();
 				LogInfo($"Closed long on drawdown limit. Price={ask:0.#####}");
 			}
 		}
@@ -212,12 +213,12 @@ public class LuckyCodeStrategy : Strategy
 			// Manage short exposure with symmetric exit conditions.
 			if (_currentAsk is decimal ask && ask < avgPrice)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				LogInfo($"Closed short on profit. Price={ask:0.#####}");
 			}
 			else if (_limitThreshold > 0m && _currentBid is decimal bid && bid - avgPrice >= _limitThreshold)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				LogInfo($"Closed short on drawdown limit. Price={bid:0.#####}");
 			}
 		}

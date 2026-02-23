@@ -46,7 +46,7 @@ public class HoopMasterStrategy : Strategy
 	/// </summary>
 	public HoopMasterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)

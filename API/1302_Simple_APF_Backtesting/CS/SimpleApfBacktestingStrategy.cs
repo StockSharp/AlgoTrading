@@ -209,7 +209,7 @@ public class SimpleApfBacktestingStrategy : Strategy
 
 		var numerator = correlationLength * sumXY - sumX * sumY;
 		var denom = Math.Sqrt((double)(correlationLength * sumX2 - sumX * sumX) * (double)(correlationLength * sumY2 - sumY * sumY));
-		return denom <= 0 ? 0 : (decimal)(numerator / denom);
+		return denom <= 0 ? 0 : (decimal)((double)numerator / denom);
 	}
 
 

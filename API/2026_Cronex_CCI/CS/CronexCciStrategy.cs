@@ -122,7 +122,7 @@ public class CronexCciStrategy : Strategy
 			.SetDisplay("Slow Period", "Slow smoothing period", "Indicators")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)
@@ -197,29 +197,19 @@ public class CronexCciStrategy : Strategy
 		{
 			if (prevFast > prevSlow)
 			{
-				if (EnableLongEntry && fastValue <= slowValue && Position <= 0)
-				{
-					var volume = Volume + Math.Abs(Position);
-					BuyMarket(volume);
-				}
-
 				if (EnableShortExit && Position < 0)
-				{
-					BuyMarket(Math.Abs(Position));
-				}
+					BuyMarket();
+
+				if (EnableLongEntry && fastValue <= slowValue && Position <= 0)
+					BuyMarket();
 			}
 			else if (prevFast < prevSlow)
 			{
-				if (EnableShortEntry && fastValue >= slowValue && Position >= 0)
-				{
-					var volume = Volume + Math.Abs(Position);
-					SellMarket(volume);
-				}
-
 				if (EnableLongExit && Position > 0)
-				{
-					SellMarket(Math.Abs(Position));
-				}
+					SellMarket();
+
+				if (EnableShortEntry && fastValue >= slowValue && Position >= 0)
+					SellMarket();
 			}
 		}
 

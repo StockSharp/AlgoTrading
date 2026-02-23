@@ -99,7 +99,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 			.SetNotNegative()
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series processed by the strategy.", "General");
 
 		_emaLength = Param(nameof(EmaLength), 50.01m)
@@ -226,10 +226,10 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		base.OnStarted2(time);
 
 		var length = Math.Max(1, (int)Math.Round(EmaLength));
-		_emaStages = new EMA[8];
+		_emaStages = new ExponentialMovingAverage[8];
 		for (var i = 0; i < _emaStages.Length; i++)
 		{
-			_emaStages[i] = new EMA
+			_emaStages[i] = new ExponentialMovingAverage
 			{
 				Length = length
 			};
@@ -293,7 +293,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		for (var i = 0; i < _emaStages.Length; i++)
 		{
 			var ema = _emaStages[i];
-			var value = ema.Process(new DecimalIndicatorValue(ema, stageInput, candle.CloseTime));
+			var value = ema.Process(new DecimalIndicatorValue(ema, stageInput, candle.CloseTime) { IsFinal = true });
 			if (!ema.IsFormed)
 				return;
 
@@ -381,7 +381,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 
 	private void ExecuteRiskManagement(ICandleMessage candle)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_pemaValues.Count < 2)
 			return;
 
 		var now = candle.CloseTime;
@@ -544,11 +544,8 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		if (security == null)
 			return 0.0001m;
 
-		if (security.PriceStep > 0m)
-			return security.PriceStep;
-
-		if (security.MinStep > 0m)
-			return security.MinStep;
+		if (security.PriceStep is decimal ps && ps > 0m)
+			return ps;
 
 		return 0.0001m;
 	}
@@ -576,17 +573,17 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (Position > 0m && trade.OrderDirection == Sides.Buy)
+		if (Position > 0m && trade.Order.Side == Sides.Buy)
 		{
-			_longEntryTime = trade.ServerTime;
-			_longEntryPrice = trade.Price;
+			_longEntryTime = trade.Trade.ServerTime;
+			_longEntryPrice = trade.Trade.Price;
 			_longStopPrice = CalculateStopPrice(true, _longEntryPrice);
 			_longTakePrice = CalculateTakePrice(true, _longEntryPrice);
 		}
-		else if (Position < 0m && trade.OrderDirection == Sides.Sell)
+		else if (Position < 0m && trade.Order.Side == Sides.Sell)
 		{
-			_shortEntryTime = trade.ServerTime;
-			_shortEntryPrice = trade.Price;
+			_shortEntryTime = trade.Trade.ServerTime;
+			_shortEntryPrice = trade.Trade.Price;
 			_shortStopPrice = CalculateStopPrice(false, _shortEntryPrice);
 			_shortTakePrice = CalculateTakePrice(false, _shortEntryPrice);
 		}

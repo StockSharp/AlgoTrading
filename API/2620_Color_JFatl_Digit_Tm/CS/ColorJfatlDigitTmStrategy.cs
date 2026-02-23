@@ -300,7 +300,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 		_sellClose = Param(nameof(SellCloseEnabled), true)
 			.SetDisplay("Enable Sell Close", "Allow closing short positions", "Signals");
 
-		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(4).TimeFrame())
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Signal Candle Type", "Timeframe used for indicator", "Indicator");
 
 		_jmaLength = Param(nameof(JmaLength), 5)
@@ -393,7 +393,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 		}
 
 		var jmaValue = _jma.Process(new DecimalIndicatorValue(_jma, fatl, candle.OpenTime));
-		if (!jmaValue.IsFinal || !_jma.IsFormed)
+		if (!_jma.IsFormed)
 			return;
 
 		var roundedLine = RoundToStep(jmaValue.ToDecimal(), GetRoundingStep());

@@ -155,7 +155,7 @@ public class SteppedTrailingExampleStrategy : Strategy
 		_activateTrailingOnThirdStep = Param(nameof(ActivateTrailingOnThirdStep), false)
 			.SetDisplay("Activate Trailing", "Enable trailing on third step", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

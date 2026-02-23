@@ -11,8 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -55,10 +53,10 @@ public class KolierSuperTrendX2Strategy : Strategy
 	public KolierSuperTrendX2Strategy()
 	{
 
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(6).TimeFrame())
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Trend Timeframe", "Timeframe for trend SuperTrend", "Data");
 
-		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Entry Timeframe", "Timeframe for entry SuperTrend", "Data");
 
 		_trendAtrPeriod = Param(nameof(TrendAtrPeriod), 10)
@@ -348,7 +346,6 @@ public class KolierSuperTrendX2Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessTrendCandle(ICandleMessage candle, IIndicatorValue value)
@@ -356,13 +353,13 @@ public class KolierSuperTrendX2Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!value.IsFinal || value is not SuperTrendIndicatorValue trendValue)
+		if (!value.IsFormed || value is not SuperTrendIndicatorValue trendValue)
 			return;
 
 		if (!_trendSuperTrend.IsFormed)
 			return;
 
-		var direction = trendValue.IsUpTrend ? 1 : trendValue.IsDownTrend ? -1 : 0;
+		var direction = trendValue.IsUpTrend ? 1 : -1;
 		if (direction == 0)
 			return;
 
@@ -393,13 +390,13 @@ public class KolierSuperTrendX2Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!value.IsFinal || value is not SuperTrendIndicatorValue entryValue)
+		if (!value.IsFormed || value is not SuperTrendIndicatorValue entryValue)
 			return;
 
 		if (!_entrySuperTrend.IsFormed)
 			return;
 
-		var direction = entryValue.IsUpTrend ? 1 : entryValue.IsDownTrend ? -1 : 0;
+		var direction = entryValue.IsUpTrend ? 1 : -1;
 		if (direction == 0)
 			return;
 

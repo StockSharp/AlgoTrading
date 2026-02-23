@@ -138,7 +138,7 @@ public class ColorTrendCfStrategy : Strategy {
 				"Permissions");
 
 	_candleType =
-		Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for indicator",
 				"General");
 	}

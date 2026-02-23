@@ -310,8 +310,8 @@ public class CloudzsTrade2Strategy : Strategy
 		base.OnStarted2(time);
 
 		_stochastic = new StochasticOscillator
-		{ K = { Length = KPeriod },
-			K = { Length = SlowingPeriod },
+		{
+			K = { Length = KPeriod },
 			D = { Length = DPeriod }
 		};
 
@@ -364,12 +364,12 @@ public class CloudzsTrade2Strategy : Strategy
 
 		if (combinedSignal == 1)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 			InitializeTargets(candle.ClosePrice, true);
 		}
 		else if (combinedSignal == 2)
 		{
-			SellMarket(volume);
+			SellMarket();
 			InitializeTargets(candle.ClosePrice, false);
 		}
 	}
@@ -505,14 +505,14 @@ public class CloudzsTrade2Strategy : Strategy
 
 		if (_stopPrice is decimal stop && candle.LowPrice <= stop)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			FinalizeExit(candle);
 			return;
 		}
 
 		if (_takeProfitPrice is decimal take && candle.HighPrice >= take)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			FinalizeExit(candle);
 			return;
 		}
@@ -524,14 +524,14 @@ public class CloudzsTrade2Strategy : Strategy
 
 		if (ProfitPointsOffset > 0m && _maxFavorableMove >= ProfitPointsOffset && currentGain <= MinProfitOffset)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			FinalizeExit(candle);
 			return;
 		}
 
 		if (CloseOnOpposite && combinedSignal == 2)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			FinalizeExit(candle);
 		}
 	}
@@ -542,14 +542,14 @@ public class CloudzsTrade2Strategy : Strategy
 
 		if (_stopPrice is decimal stop && candle.HighPrice >= stop)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			FinalizeExit(candle);
 			return;
 		}
 
 		if (_takeProfitPrice is decimal take && candle.LowPrice <= take)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			FinalizeExit(candle);
 			return;
 		}
@@ -561,14 +561,14 @@ public class CloudzsTrade2Strategy : Strategy
 
 		if (ProfitPointsOffset > 0m && _maxFavorableMove >= ProfitPointsOffset && currentGain <= MinProfitOffset)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			FinalizeExit(candle);
 			return;
 		}
 
 		if (CloseOnOpposite && combinedSignal == 1)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			FinalizeExit(candle);
 		}
 	}

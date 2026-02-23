@@ -69,7 +69,7 @@ public class HedgerDrawdownStrategy : Strategy
 		_enableVerboseLogging = Param(nameof(EnableVerboseLogging), false)
 			.SetDisplay("Verbose Logging", "Log every hedging action", "Diagnostics");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to monitor drawdown", "Data");
 	}
 
@@ -163,7 +163,7 @@ public class HedgerDrawdownStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_pipSize <= 0m)
 			return;
 
 		var price = candle.ClosePrice;

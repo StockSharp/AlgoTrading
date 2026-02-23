@@ -88,7 +88,7 @@ public class ColorSchaffRsiTrendCycleStrategy : Strategy
 	/// </summary>
 	public ColorSchaffRsiTrendCycleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 
 		_fastRsi = Param(nameof(FastRsi), 23)
@@ -191,11 +191,14 @@ public class ColorSchaffRsiTrendCycleStrategy : Strategy
 		{
 			var price = input.GetValue<decimal>();
 
-			var fastVal = _fast.Process(new DecimalIndicatorValue(_fast, price, input.Time)).GetValue<decimal>();
-			var slowVal = _slow.Process(new DecimalIndicatorValue(_slow, price, input.Time)).GetValue<decimal>();
+			var fastResult = _fast.Process(new DecimalIndicatorValue(_fast, price, input.Time));
+			var slowResult = _slow.Process(new DecimalIndicatorValue(_slow, price, input.Time));
 
-			if (!_fast.IsFormed || !_slow.IsFormed)
+			if (!_fast.IsFormed || !_slow.IsFormed || fastResult.IsEmpty || slowResult.IsEmpty)
 				return new DecimalIndicatorValue(this, default, input.Time);
+
+			var fastVal = fastResult.GetValue<decimal>();
+			var slowVal = slowResult.GetValue<decimal>();
 
 			var macd = fastVal - slowVal;
 			_macd.Enqueue(macd);
@@ -251,6 +254,8 @@ public class ColorSchaffRsiTrendCycleStrategy : Strategy
 					clr = diff < 0 ? 2m : 3m;
 			}
 
+			if (input.IsFinal)
+				IsFormed = true;
 			return new DecimalIndicatorValue(this, clr, input.Time);
 		}
 

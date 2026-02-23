@@ -231,8 +231,8 @@ public class StochasticMartingaleGridStrategy : Strategy
 		_pipSize = CalculatePipSize();
 
 		_stochastic = new StochasticOscillator
-		{ K = { Length = KPeriod },
-			K = { Length = Slowing },
+		{
+			K = { Length = KPeriod },
 			D = { Length = DPeriod }
 		};
 
@@ -332,7 +332,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 		{
 		// Double the volume and add a new averaging order below the latest long entry.
 		var executionPrice = Math.Min(triggerPrice, candle.LowPrice);
-		BuyMarket(nextVolume);
+		BuyMarket();
 
 		var entry = new Entry
 		{
@@ -358,7 +358,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 		if (candle.HighPrice >= target)
 		{
 		// Exit the current leg once its individual take profit level is reached.
-		SellMarket(entry.Volume);
+		SellMarket();
 		entry.Volume = 0m;
 		entry.TrailingPrice = null;
 		continue;
@@ -380,7 +380,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 		if (entry.TrailingPrice is decimal trailing && candle.LowPrice <= trailing)
 		{
 		// Price retraced back to the trailing stop level: exit the leg to secure profits.
-		SellMarket(entry.Volume);
+		SellMarket();
 		entry.Volume = 0m;
 		entry.TrailingPrice = null;
 		}
@@ -418,7 +418,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 		{
 		// Double the volume and add a new averaging order above the latest short entry.
 		var executionPrice = Math.Max(triggerPrice, candle.HighPrice);
-		SellMarket(nextVolume);
+		SellMarket();
 
 		var entry = new Entry
 		{
@@ -444,7 +444,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 		if (candle.LowPrice <= target)
 		{
 		// Exit the current leg once its individual take profit level is reached.
-		BuyMarket(entry.Volume);
+		BuyMarket();
 		entry.Volume = 0m;
 		entry.TrailingPrice = null;
 		continue;
@@ -466,7 +466,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 		if (entry.TrailingPrice is decimal trailing && candle.HighPrice >= trailing)
 		{
 		// Price retraced back to the trailing stop level: exit the leg to secure profits.
-		BuyMarket(entry.Volume);
+		BuyMarket();
 		entry.Volume = 0m;
 		entry.TrailingPrice = null;
 		}
@@ -487,7 +487,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		BuyMarket(volume);
+		BuyMarket();
 
 		_entries.Clear();
 		_entries.Add(new Entry
@@ -507,7 +507,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		SellMarket(volume);
+		SellMarket();
 
 		_entries.Clear();
 		_entries.Add(new Entry
@@ -569,11 +569,11 @@ public class StochasticMartingaleGridStrategy : Strategy
 		if (step > 0m)
 		volume = step * Math.Round(volume / step, MidpointRounding.AwayFromZero);
 
-		var min = security.VolumeMin ?? 0m;
+		var min = security.MinVolume ?? 0m;
 		if (min > 0m && volume < min)
 		return 0m;
 
-		var max = security.VolumeMax ?? decimal.MaxValue;
+		var max = security.MaxVolume ?? decimal.MaxValue;
 		if (volume > max)
 		volume = max;
 
@@ -583,7 +583,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 	private decimal GetMaxVolumeLimit()
 	{
 		var security = Security;
-		if (security?.VolumeMax is decimal max && max > 0m)
+		if (security?.MaxVolume is decimal max && max > 0m)
 		return max;
 
 		return decimal.MaxValue;

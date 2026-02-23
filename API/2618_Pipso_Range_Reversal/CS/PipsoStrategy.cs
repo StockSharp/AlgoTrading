@@ -95,7 +95,7 @@ public class PipsoStrategy : Strategy
 	/// </summary>
 	public PipsoStrategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
+		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume per trade", "General");
 
@@ -113,7 +113,7 @@ public class PipsoStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Range %", "Extra percentage of the channel width for stop distance", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for calculations", "General");
 	}
 

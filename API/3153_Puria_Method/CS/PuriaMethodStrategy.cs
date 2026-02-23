@@ -98,6 +98,7 @@ public class PuriaMethodStrategy : Strategy
 
 	private decimal _pipSize;
 	private decimal _pointSize;
+	private decimal _positionPrice;
 
 	private decimal? _longStopPrice;
 	private decimal? _shortStopPrice;
@@ -135,7 +136,7 @@ public class PuriaMethodStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Partial Exit Ratio", "Fraction of position to reduce on profit", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "Data");
 
 		_epsilon = Param(nameof(Epsilon), 0.0000001m)
@@ -483,7 +484,7 @@ public class PuriaMethodStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection();
+		// StartProtection requires explicit params, skipping
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -536,7 +537,7 @@ public class PuriaMethodStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_macd.IsFormed)
 		{
 			StorePreviousValues(ma0, ma1, ma2, previousMacd);
 			return;
@@ -580,7 +581,10 @@ public class PuriaMethodStrategy : Strategy
 				volume += Math.Abs(Position);
 
 			if (volume > 0m)
+			{
 				BuyMarket(volume);
+				_positionPrice = candle.ClosePrice;
+			}
 		}
 		else if (sellSignal && Position >= 0m)
 		{
@@ -589,7 +593,10 @@ public class PuriaMethodStrategy : Strategy
 				volume += Position;
 
 			if (volume > 0m)
+			{
 				SellMarket(volume);
+				_positionPrice = candle.ClosePrice;
+			}
 		}
 
 		// Persist indicator values for the next candle.
@@ -601,7 +608,7 @@ public class PuriaMethodStrategy : Strategy
 		if (Position == 0m)
 			return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _positionPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -752,8 +759,9 @@ public class PuriaMethodStrategy : Strategy
 
 	private decimal? ProcessMovingAverage(DecimalLengthIndicator indicator, Shift shift, ICandleMessage candle)
 	{
-		var value = indicator.Process(new DecimalIndicatorValue(indicator, candle);
-		if (!value.IsFinal)
+		var price = GetAppliedPrice(candle, CandlePrices.Close);
+		var value = indicator.Process(new DecimalIndicatorValue(indicator, price, candle.OpenTime) { IsFinal = true });
+		if (value.IsEmpty)
 			return null;
 
 		var result = value.ToDecimal();
@@ -761,8 +769,8 @@ public class PuriaMethodStrategy : Strategy
 		if (shift == null)
 			return result;
 
-		var shifted = shift.Process(value, candle.OpenTime));
-		if (!shift.IsFormed || !shifted.IsFinal)
+		var shifted = shift.Process(new DecimalIndicatorValue(shift, result, candle.OpenTime) { IsFinal = true });
+		if (!shift.IsFormed || shifted.IsEmpty)
 			return null;
 
 		return shifted.ToDecimal();
@@ -826,7 +834,7 @@ public class PuriaMethodStrategy : Strategy
 			return Math.Max(0m, volume);
 
 		var step = Security.VolumeStep ?? 0m;
-		var min = Security.VolumeMin ?? step;
+		var min = Security.MinVolume ?? step;
 		var max = Security.VolumeMax;
 
 		var adjusted = step > 0m ? Math.Floor(volume / step) * step : volume;

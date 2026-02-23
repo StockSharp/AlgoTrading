@@ -113,7 +113,7 @@ public class SmartMoneyPivotStrategy : Strategy
 	.SetDisplay("Length", "Pivot length", "Smart Money Pivot")
 	.SetGreaterThanZero();
 	
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 	.SetDisplay("Candle Type", "Type of candles", "General");
 	
 	Volume = 1;
@@ -148,7 +148,12 @@ public class SmartMoneyPivotStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 	base.OnStarted2(time);
-	
+
+	var len = Period * 2 + 1;
+	_highs = new decimal[len];
+	_lows = new decimal[len];
+	_bufferCount = 0;
+
 	StartProtection(null, null);
 	
 	var subscription = SubscribeCandles(CandleType);

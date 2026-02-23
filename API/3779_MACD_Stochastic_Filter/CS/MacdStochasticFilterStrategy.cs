@@ -256,9 +256,9 @@ public class MacdStochasticFilterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -278,7 +278,7 @@ public class MacdStochasticFilterStrategy : Strategy
 			D = { Length = StochasticDPeriod }
 		};
 
-		_ema = new EMA { Length = EmaPeriod };
+		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
 		_tickSize = Security?.PriceStep ?? 0m;
 		if (_tickSize == 0m)
@@ -346,13 +346,7 @@ public class MacdStochasticFilterStrategy : Strategy
 
 		ManageActivePosition(candle, macd, signal, kValue, dValue, prevMacd, prevSignal);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevMacd = macd;
-			_prevSignal = signal;
-			_prevEma = emaCurrent;
-			return;
-		}
+		
 
 		if (Position == 0 && TradeVolume > 0m && prevMacd is decimal prevMacdValue && prevSignal is decimal prevSignalValue && prevEma is decimal prevEmaValue)
 		{
@@ -377,21 +371,21 @@ public class MacdStochasticFilterStrategy : Strategy
 		{
 			if (ShouldExitLong(macd, signal, prevMacd, prevSignal, kValue, dValue))
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetPositionState();
 				return;
 			}
 
 			if (_stopPrice > 0m && candle.LowPrice <= _stopPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetPositionState();
 				return;
 			}
 
 			if (_takePrice > 0m && candle.HighPrice >= _takePrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetPositionState();
 				return;
 			}
@@ -402,21 +396,21 @@ public class MacdStochasticFilterStrategy : Strategy
 		{
 			if (ShouldExitShort(macd, signal, prevMacd, prevSignal, kValue, dValue))
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetPositionState();
 				return;
 			}
 
 			if (_stopPrice > 0m && candle.HighPrice >= _stopPrice)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetPositionState();
 				return;
 			}
 
 			if (_takePrice > 0m && candle.LowPrice <= _takePrice)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetPositionState();
 				return;
 			}

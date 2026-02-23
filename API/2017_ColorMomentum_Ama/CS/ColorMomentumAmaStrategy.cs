@@ -117,7 +117,7 @@ public class ColorMomentumAmaStrategy : Strategy
 		.SetDisplay("Signal bar", "Bar index used for signals", "Strategy")
 		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle type", "Type of candles", "General");
 	}
 
@@ -147,6 +147,7 @@ public class ColorMomentumAmaStrategy : Strategy
 			FastSCPeriod = FastPeriod,
 			SlowSCPeriod = SlowPeriod
 		};
+		_buffer = new decimal?[SignalBar + 3];
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -169,9 +170,10 @@ public class ColorMomentumAmaStrategy : Strategy
 		return;
 
 		// Update AMA with the momentum value
-		var amaValue = _ama.Process(new DecimalIndicatorValue(_ama, momentumValue, candle.OpenTime)).ToDecimal();
-		if (!_ama.IsFormed)
+		var amaResult = _ama.Process(momentumValue, candle.OpenTime, true);
+		if (!_ama.IsFormed || amaResult.IsEmpty)
 		return;
+		var amaValue = amaResult.ToDecimal();
 
 		// Maintain circular buffer of last values for signal evaluation
 		for (var i = _buffer.Length - 1; i > 0; i--) _buffer[i] = _buffer[i - 1];
@@ -191,21 +193,21 @@ public class ColorMomentumAmaStrategy : Strategy
 		{
 			// Close short positions on upward momentum
 			if (Position < 0)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 
 			// Open long position if momentum continues rising
 			if (v0 > v1 && Position == 0)
-			BuyMarket(Volume);
+			BuyMarket();
 		}
 		else if (falling)
 		{
 			// Close long positions on downward momentum
 			if (Position > 0)
-			SellMarket(Position);
+			SellMarket();
 
 			// Open short position if momentum continues falling
 			if (v0 < v1 && Position == 0)
-			SellMarket(Volume);
+			SellMarket();
 		}
 	}
 }

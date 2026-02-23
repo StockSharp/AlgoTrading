@@ -166,7 +166,7 @@ public class ETurboFxClassicStrategy : Strategy
 		if (steps <= 0)
 			return null;
 
-		return new Unit(steps, UnitTypes.Step);
+		return new Unit(steps, UnitTypes.Absolute);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -174,8 +174,7 @@ public class ETurboFxClassicStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// no indicators to check
 
 		if (Position != 0)
 		{
@@ -227,7 +226,7 @@ public class ETurboFxClassicStrategy : Strategy
 		if (_bearishSequence >= SequenceLength)
 		{
 			// A string of expanding bearish candles hints a bullish reversal.
-			BuyMarket(Volume);
+			BuyMarket();
 			ResetBearishSequence();
 		}
 	}
@@ -258,7 +257,7 @@ public class ETurboFxClassicStrategy : Strategy
 		if (_bullishSequence >= SequenceLength)
 		{
 			// A string of expanding bullish candles hints a bearish reversal.
-			SellMarket(Volume);
+			SellMarket();
 			ResetBullishSequence();
 		}
 	}

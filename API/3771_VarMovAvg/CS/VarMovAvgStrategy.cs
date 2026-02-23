@@ -312,12 +312,12 @@ public class VarMovAvgStrategy : Strategy
 		{
 			if (Volume > 0 && _longSignal.TryEnter(candle, entryBand))
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				AfterEntry();
 			}
 			else if (Volume > 0 && _shortSignal.TryEnter(candle, entryBand))
 			{
-				SellMarket(Volume);
+				SellMarket();
 				AfterEntry();
 			}
 			return;
@@ -337,7 +337,7 @@ public class VarMovAvgStrategy : Strategy
 			var stopPrice = lowMa - stopOffset;
 			if (stopPrice > 0m && candle.LowPrice <= stopPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				AfterExit();
 			}
 		}
@@ -355,7 +355,7 @@ public class VarMovAvgStrategy : Strategy
 			var stopPrice = highMa + stopOffset;
 			if (stopPrice > 0m && candle.HighPrice >= stopPrice)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				AfterExit();
 			}
 		}
@@ -403,10 +403,10 @@ public class VarMovAvgStrategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SMA { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new EMA { Length = length }
+			_ => new ExponentialMovingAverage { Length = length }
 		};
 	}
 

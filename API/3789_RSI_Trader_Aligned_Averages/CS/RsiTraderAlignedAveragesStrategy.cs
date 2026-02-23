@@ -145,9 +145,9 @@ public RsiTraderAlignedAveragesStrategy()
 
 		// Initialize indicators for price and RSI smoothing.
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_shortRsiMa = new SMA { Length = ShortRsiMaPeriod };
-		_longRsiMa = new SMA { Length = LongRsiMaPeriod };
-		_shortPriceMa = new SMA { Length = ShortPriceMaPeriod };
+		_shortRsiMa = new SimpleMovingAverage { Length = ShortRsiMaPeriod };
+		_longRsiMa = new SimpleMovingAverage { Length = LongRsiMaPeriod };
+		_shortPriceMa = new SimpleMovingAverage { Length = ShortPriceMaPeriod };
 		_longPriceMa = new WeightedMovingAverage { Length = LongPriceMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -179,8 +179,7 @@ public RsiTraderAlignedAveragesStrategy()
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		
 
 		if (!rsiValue.IsFinal)
 			return;
@@ -202,33 +201,33 @@ public RsiTraderAlignedAveragesStrategy()
 		{
 			if (Position < 0)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				return;
 			}
 
 			if (Position == 0)
-				BuyMarket(Volume);
+				BuyMarket();
 		}
 		else if (isShort)
 		{
 			if (Position > 0)
 			{
-				SellMarket(Position);
+				SellMarket();
 				return;
 			}
 
 			if (Position == 0)
-				SellMarket(Volume);
+				SellMarket();
 		}
 		else if (isSideways && Position != 0)
 		{
 			if (Position > 0)
 			{
-				SellMarket(Position);
+				SellMarket();
 			}
 			else
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			}
 		}
 	}

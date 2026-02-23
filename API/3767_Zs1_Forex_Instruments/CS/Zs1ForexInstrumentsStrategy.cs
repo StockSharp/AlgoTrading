@@ -393,13 +393,13 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		var volume = InitialVolume;
 		ValidateVolume(volume);
 
-		var buyOrder = BuyMarket(volume);
+		var buyOrder = BuyMarket();
 		if (buyOrder != null)
 		{
 			_orderIntents[buyOrder] = OrderIntents.OpenLong;
 		}
 
-		var sellOrder = SellMarket(volume);
+		var sellOrder = SellMarket();
 		if (sellOrder != null)
 		{
 			_orderIntents[sellOrder] = OrderIntents.OpenShort;
@@ -442,7 +442,7 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 
 		ValidateVolume(volume);
 
-		var order = BuyMarket(volume);
+		var order = BuyMarket();
 		if (order != null)
 		{
 			_orderIntents[order] = OrderIntents.OpenLong;
@@ -457,7 +457,7 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 
 		ValidateVolume(volume);
 
-		var order = SellMarket(volume);
+		var order = SellMarket();
 		if (order != null)
 		{
 			_orderIntents[order] = OrderIntents.OpenShort;
@@ -516,13 +516,13 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 
 		if (side == Sides.Buy)
 		{
-			order = SellMarket(totalVolume);
+			order = SellMarket();
 			if (order != null)
 				_orderIntents[order] = OrderIntents.CloseLong;
 		}
 		else
 		{
-			order = BuyMarket(totalVolume);
+			order = BuyMarket();
 			if (order != null)
 				_orderIntents[order] = OrderIntents.CloseShort;
 		}
@@ -537,13 +537,13 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 
 		if (side == Sides.Buy)
 		{
-			order = SellMarket(volume);
+			order = SellMarket();
 			if (order != null)
 				_orderIntents[order] = OrderIntents.CloseLong;
 		}
 		else
 		{
-			order = BuyMarket(volume);
+			order = BuyMarket();
 			if (order != null)
 				_orderIntents[order] = OrderIntents.CloseShort;
 		}

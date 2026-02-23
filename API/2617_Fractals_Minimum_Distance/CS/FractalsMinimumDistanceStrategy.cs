@@ -59,7 +59,7 @@ public class FractalsMinimumDistanceStrategy : Strategy
 			.SetDisplay("Signal bar offset", "How many closed bars ago the fractal must appear", "General")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Primary candle series used for signals", "Data")
 			;
 	}

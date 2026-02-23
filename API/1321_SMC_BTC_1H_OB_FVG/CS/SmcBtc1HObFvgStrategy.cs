@@ -43,6 +43,8 @@ public class SmcBtc1HObFvgStrategy : Strategy
 	
 	private ICandleMessage _prevCandle1;
 	private ICandleMessage _prevCandle2;
+	private decimal _stopLossPrice;
+	private decimal _takeProfitPrice;
 	
 	/// <summary>
 	/// Use order block entries.
@@ -103,7 +105,7 @@ public class SmcBtc1HObFvgStrategy : Strategy
 		
 		.SetOptimize(5, 20, 5);
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candle time frame", "General");
 	}
 	
@@ -134,7 +136,7 @@ public class SmcBtc1HObFvgStrategy : Strategy
 		base.OnStarted2(time);
 		StartProtection(null, null);
 		
-		var atr = new ATR { Length = 14 };
+		var atr = new AverageTrueRange { Length = 14 };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(atr, ProcessCandle).Start();
@@ -201,16 +203,22 @@ public class SmcBtc1HObFvgStrategy : Strategy
 		var inFvg = fvgActive && _fvgLow.HasValue && _fvgHigh.HasValue &&
 		candle.ClosePrice <= _fvgLow.Value && candle.ClosePrice >= _fvgHigh.Value;
 		
+		if (Position > 0)
+		{
+			if (candle.ClosePrice <= _stopLossPrice || candle.ClosePrice >= _takeProfitPrice)
+			{
+				SellMarket();
+			}
+		}
+
 		if (Position == 0 && ((_useOrderBlock.Value && inOb) || (_useFvg.Value && inFvg)) && _obLow.HasValue)
 		{
-			var entryPrice = _obLow.Value;
-			var stopLoss = entryPrice - atrValue * _atrFactor.Value;
-			var takeProfit = entryPrice + (entryPrice - stopLoss) * _riskReward.Value;
-			
+			var entryPrice = candle.ClosePrice;
+			_stopLossPrice = entryPrice - atrValue * _atrFactor.Value;
+			_takeProfitPrice = entryPrice + (entryPrice - _stopLossPrice) * _riskReward.Value;
+
 			BuyMarket();
-			SellStop(stopLoss);
-			SellLimit(takeProfit);
-			
+
 			_obTimer = 0;
 			_fvgTimer = 0;
 		}

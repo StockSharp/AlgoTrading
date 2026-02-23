@@ -60,7 +60,7 @@ public class SmbMagicStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Length of EMA", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -143,8 +143,8 @@ public class SmbMagicStrategy : Strategy
 		var positiveCandle = candle.ClosePrice > candle.OpenPrice && candleMovement > movementInTicks;
 		var negativeCandle = candle.ClosePrice < candle.OpenPrice && candleMovement > movementInTicks;
 
-		var breakoutUp = _prevClose < _prevHigh && candle.ClosePrice >= _prevHigh && candle.TotalVolume > VolumeMultiplier * _prevVolume;
-		var breakoutDown = _prevClose > _prevLow && candle.ClosePrice <= _prevLow && candle.TotalVolume > VolumeMultiplier * _prevVolume;
+		var breakoutUp = _prevClose < _prevHigh && candle.ClosePrice >= _prevHigh;
+		var breakoutDown = _prevClose > _prevLow && candle.ClosePrice <= _prevLow;
 
 		var buySignal = breakoutUp && positiveCandle && candle.ClosePrice > emaValue;
 		var sellSignal = breakoutDown && negativeCandle && candle.ClosePrice < emaValue;

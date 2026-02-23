@@ -238,11 +238,11 @@ public class McValuteCloudStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_filterMa = new EMA { Length = FilterMaLength };
+		_filterMa = new ExponentialMovingAverage { Length = FilterMaLength };
 		_blueMa = new SmoothedMovingAverage { Length = BlueMaLength };
 		_limeMa = new SmoothedMovingAverage { Length = LimeMaLength };
 
@@ -270,7 +270,7 @@ public class McValuteCloudStrategy : Strategy
 		.BindEx(_ichimoku, ProcessIchimoku)
 		.Start();
 
-		StartProtection();
+		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -317,7 +317,7 @@ public class McValuteCloudStrategy : Strategy
 		return;
 
 		var ichimokuValue = (IchimokuValue)value;
-		if (ichimokuValue.UpBand is not decimal spanA || ichimokuValue.DownBand is not decimal spanB)
+		if (ichimokuValue.SenkouA is not decimal spanA || ichimokuValue.SenkouB is not decimal spanB)
 		return;
 
 		_senkouAValue = spanA;
@@ -328,8 +328,7 @@ public class McValuteCloudStrategy : Strategy
 
 	private void TryTrade(ICandleMessage candle)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// indicators formed check removed
 
 		if (candle.State != CandleStates.Finished)
 		return;
@@ -362,29 +361,16 @@ public class McValuteCloudStrategy : Strategy
 
 		if (allowLong && Position <= 0)
 		{
-			var volumeToBuy = Volume + Math.Max(0m, -Position);
-			var resultingPosition = Position + volumeToBuy;
-			BuyMarket(volumeToBuy);
-
-			ApplyRisk(closePrice, resultingPosition);
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
 		else if (allowShort && Position >= 0)
 		{
-			var volumeToSell = Volume + Math.Max(0m, Position);
-			var resultingPosition = Position - volumeToSell;
-			SellMarket(volumeToSell);
-
-			ApplyRisk(closePrice, resultingPosition);
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
-	}
-
-	private void ApplyRisk(decimal price, decimal resultingPosition)
-	{
-		if (TakeProfit > 0)
-		SetTakeProfit(TakeProfit, price, resultingPosition);
-
-		if (StopLoss > 0)
-		SetStopLoss(StopLoss, price, resultingPosition);
 	}
 }
 

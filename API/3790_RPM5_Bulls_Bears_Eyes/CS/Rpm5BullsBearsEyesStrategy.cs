@@ -237,8 +237,7 @@ public class Rpm5BullsBearsEyesStrategy : Strategy
 		// Manage existing positions before looking for fresh entries.
 		ManageOpenPosition(candle, atrValue);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		
 
 		var ratio = CalculateRatio(bullsValue, bearsValue);
 		if (ratio is not decimal current)
@@ -254,12 +253,12 @@ public class Rpm5BullsBearsEyesStrategy : Strategy
 		if (current > Threshold)
 		{
 			// Bulls dominate, open a long position if flat.
-			BuyMarket(volume);
+			BuyMarket();
 		}
 		else if (current < Threshold)
 		{
 			// Bears dominate, open a short position if flat.
-			SellMarket(volume);
+			SellMarket();
 		}
 	}
 
@@ -290,7 +289,7 @@ public class Rpm5BullsBearsEyesStrategy : Strategy
 			if (_longStop is decimal longStop && candle.LowPrice <= longStop)
 			{
 				// Long stop loss reached on the latest candle.
-				SellMarket(Position);
+				SellMarket();
 				ClearLongTargets();
 				return;
 			}
@@ -298,7 +297,7 @@ public class Rpm5BullsBearsEyesStrategy : Strategy
 			if (_longTake is decimal longTake && candle.HighPrice >= longTake)
 			{
 				// Long take profit touched.
-				SellMarket(Position);
+				SellMarket();
 				ClearLongTargets();
 				return;
 			}
@@ -310,7 +309,7 @@ public class Rpm5BullsBearsEyesStrategy : Strategy
 			if (_shortStop is decimal shortStop && candle.HighPrice >= shortStop)
 			{
 				// Short stop loss reached on the latest candle.
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ClearShortTargets();
 				return;
 			}
@@ -318,7 +317,7 @@ public class Rpm5BullsBearsEyesStrategy : Strategy
 			if (_shortTake is decimal shortTake && candle.LowPrice <= shortTake)
 			{
 				// Short take profit touched.
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ClearShortTargets();
 				return;
 			}

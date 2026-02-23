@@ -103,14 +103,16 @@ public class MavaXonaxStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var openValue = _emaOpen!.Process(candle.OpenPrice);
-		var highValue = _emaHigh!.Process(candle.HighPrice);
-		var lowValue = _emaLow!.Process(candle.LowPrice);
+		var openValue = _emaOpen!.Process(candle.OpenPrice, candle.ServerTime, true);
+		var highValue = _emaHigh!.Process(candle.HighPrice, candle.ServerTime, true);
+		var lowValue = _emaLow!.Process(candle.LowPrice, candle.ServerTime, true);
 
-		if (!openValue.IsFinal || !openValue.TryGetValue(out var openEma) ||
-			!highValue.IsFinal || !highValue.TryGetValue(out var highEma) ||
-			!lowValue.IsFinal || !lowValue.TryGetValue(out var lowEma))
+		if (!openValue.IsFinal || !highValue.IsFinal || !lowValue.IsFinal)
 			return;
+
+		var openEma = openValue.ToDecimal();
+		var highEma = highValue.ToDecimal();
+		var lowEma = lowValue.ToDecimal();
 
 		// Check for stop loss or take profit hits.
 		if (Position > 0)

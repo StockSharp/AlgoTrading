@@ -170,7 +170,7 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 	/// </summary>
 	public StochasticChaikinsVolatilityStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for indicator calculations", "General");
 		
 		_primaryMethod = Param(nameof(PrimaryMethod), SmoothMethods.Sma)
@@ -261,8 +261,8 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 		return;
 		
 		var diff = candle.HighPrice - candle.LowPrice;
-		var smoothedValue = _primarySmoother.Process(diff);
-		if (!smoothedValue.IsFinal)
+		var smoothedValue = _primarySmoother.Process(diff, candle.OpenTime, true);
+		if (!smoothedValue.IsFormed)
 		return;
 		
 		var smoothedDiff = smoothedValue.ToDecimal();
@@ -294,8 +294,8 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 		normalized = 1m;
 		
 		var scaled = normalized * 100m;
-		var stochasticValue = _secondarySmoother.Process(scaled);
-		if (!stochasticValue.IsFinal)
+		var stochasticValue = _secondarySmoother.Process(scaled, candle.OpenTime, true);
+		if (!stochasticValue.IsFormed)
 		return;
 		
 		var main = stochasticValue.ToDecimal();
@@ -315,8 +315,7 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 		var buyOpen = AllowLongEntry && value1 > value2 && value0 <= value1;
 		var sellOpen = AllowShortEntry && value1 < value2 && value0 >= value1;
 		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// proceed with trading logic
 		
 		if (Position > 0m && buyClose)
 		{
@@ -329,14 +328,14 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 		
 		if (buyOpen && Position <= 0m)
 		{
-			CancelActiveOrders();
+
 			var volume = Volume + (Position < 0m ? Math.Abs(Position) : 0m);
 			if (volume > 0m)
 			BuyMarket(volume);
 		}
 		else if (sellOpen && Position >= 0m)
 		{
-			CancelActiveOrders();
+
 			var volume = Volume + (Position > 0m ? Math.Abs(Position) : 0m);
 			if (volume > 0m)
 			SellMarket(volume);
@@ -362,8 +361,8 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 	{
 		return method switch
 		{
-			SmoothMethods.Sma => new SMA { Length = length },
-			SmoothMethods.Ema => new EMA { Length = length },
+			SmoothMethods.Sma => new SimpleMovingAverage { Length = length },
+			SmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
 			SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
 			SmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
 			SmoothMethods.Jurik => new JurikMovingAverage { Length = length },

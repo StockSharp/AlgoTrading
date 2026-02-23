@@ -306,42 +306,37 @@ public class DealersTradeMacdMql4Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_macd = new MovingAverageConvergenceDivergence
-		{
-			Fast = MacdFast,
-			Slow = MacdSlow,
-			Signal = MacdSignal
-		};
+		_macd = new MovingAverageConvergenceDivergence(
+			new ExponentialMovingAverage { Length = MacdSlow },
+			new ExponentialMovingAverage { Length = MacdFast }
+		);
 
 		_pipSize = GetPriceStep();
-		_stepValue = Security?.StepPrice ?? 0m;
+		_stepValue = Security?.PriceStep ?? 0m;
 		if (_stepValue <= 0m)
 			_stepValue = 1m;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_macd, ProcessCandle)
+			.BindEx(_macd, ProcessCandle)
 			.Start();
-
-		StartProtection();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdValue, decimal _, decimal __)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdResult)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		UpdateTrailingAndStops(candle);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousMacd = macdValue;
+		if (!macdResult.IsFinal || !_macd.IsFormed)
 			return;
-		}
+
+		var macdValue = macdResult.GetValue<decimal>();
+
+		UpdateTrailingAndStops(candle);
 
 		var openTrades = _positions.Count;
 		var allowNewTrade = openTrades < MaxTrades;
@@ -411,9 +406,9 @@ public class DealersTradeMacdMql4Strategy : Strategy
 		var takeDistance = TakeProfitPips * _pipSize;
 
 		if (side == Sides.Buy)
-			BuyMarket(volume);
+			BuyMarket();
 		else
-			SellMarket(volume);
+			SellMarket();
 
 		var state = new PositionState
 		{
@@ -441,14 +436,14 @@ public class DealersTradeMacdMql4Strategy : Strategy
 			{
 				if (state.TakeProfitPrice is decimal tp && candle.HighPrice >= tp)
 				{
-					SellMarket(state.Volume);
+					SellMarket();
 					_positions.RemoveAt(i);
 					continue;
 				}
 
 				if (state.StopPrice is decimal sl && candle.LowPrice <= sl)
 				{
-					SellMarket(state.Volume);
+					SellMarket();
 					_positions.RemoveAt(i);
 					continue;
 				}
@@ -464,14 +459,14 @@ public class DealersTradeMacdMql4Strategy : Strategy
 			{
 				if (state.TakeProfitPrice is decimal tp && candle.LowPrice <= tp)
 				{
-					BuyMarket(state.Volume);
+					BuyMarket();
 					_positions.RemoveAt(i);
 					continue;
 				}
 
 				if (state.StopPrice is decimal sl && candle.HighPrice >= sl)
 				{
-					BuyMarket(state.Volume);
+					BuyMarket();
 					_positions.RemoveAt(i);
 					continue;
 				}
@@ -495,7 +490,7 @@ public class DealersTradeMacdMql4Strategy : Strategy
 			if (Portfolio is null)
 				return 0m;
 
-			var balance = Portfolio.CurrentValue;
+			var balance = Portfolio.CurrentValue ?? 0m;
 			if (balance <= 0m)
 				return 0m;
 
@@ -539,9 +534,9 @@ public class DealersTradeMacdMql4Strategy : Strategy
 		var state = _positions[index];
 
 		if (state.Side == Sides.Buy)
-			SellMarket(state.Volume);
+			SellMarket();
 		else
-			BuyMarket(state.Volume);
+			BuyMarket();
 
 		_positions.RemoveAt(index);
 

@@ -201,9 +201,9 @@ public class MacdSampleClassicStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = Security?.PriceStep ?? 1m;
 
@@ -218,7 +218,7 @@ public class MacdSampleClassicStrategy : Strategy
 			SignalMa = { Length = SignalPeriod }
 		};
 
-		var trendMa = new EMA { Length = TrendMaPeriod };
+		var trendMa = new ExponentialMovingAverage { Length = TrendMaPeriod };
 
 		// Subscribe to candles and bind indicators for automatic updates.
 		var subscription = SubscribeCandles(CandleType);
@@ -270,8 +270,7 @@ public class MacdSampleClassicStrategy : Strategy
 			_finishedCandles++;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// indicators checked below
 
 		if (_finishedCandles < MinimumHistoryCandles)
 		return;
@@ -326,25 +325,25 @@ public class MacdSampleClassicStrategy : Strategy
 		if (buySignal && Position == 0m)
 		{
 			// MACD crossed up in negative territory and EMA confirms uptrend.
-			BuyMarket(Volume);
+			BuyMarket();
 			LogInfo($"Open long: MACD {macdCurrent:F5} above signal {signalCurrent:F5}.");
 		}
 		else if (sellSignal && Position == 0m)
 		{
 			// MACD crossed down in positive territory and EMA confirms downtrend.
-			SellMarket(Volume);
+			SellMarket();
 			LogInfo($"Open short: MACD {macdCurrent:F5} below signal {signalCurrent:F5}.");
 		}
 		else if (exitLongSignal && Position > 0m)
 		{
 			// MACD crossed back below the signal line in positive zone - close long.
-			SellMarket(Position);
+			SellMarket();
 			LogInfo($"Close long: MACD {macdCurrent:F5} dropped under signal {signalCurrent:F5}.");
 		}
 		else if (exitShortSignal && Position < 0m)
 		{
 			// MACD crossed back above the signal line in negative zone - close short.
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			LogInfo($"Close short: MACD {macdCurrent:F5} rose above signal {signalCurrent:F5}.");
 		}
 

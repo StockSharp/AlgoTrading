@@ -39,7 +39,7 @@ public class XFatlXSatlCloudStrategy : Strategy
 
 	public XFatlXSatlCloudStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for indicator calculations", "General");
 
 		_fastMethod = Param(nameof(FastMethod), SmoothMethods.Jurik)
@@ -200,11 +200,11 @@ public class XFatlXSatlCloudStrategy : Strategy
 		var step = Security?.PriceStep ?? 1m;
 		Unit takeProfit = null;
 		if (TakeProfitTicks > 0)
-			takeProfit = new Unit(TakeProfitTicks * step, UnitTypes.Point);
+			takeProfit = new Unit(TakeProfitTicks * step, UnitTypes.Absolute);
 
 		Unit stopLoss = null;
 		if (StopLossTicks > 0)
-			stopLoss = new Unit(StopLossTicks * step, UnitTypes.Point);
+			stopLoss = new Unit(StopLossTicks * step, UnitTypes.Absolute);
 
 		if (takeProfit != null || stopLoss != null)
 			StartProtection(takeProfit: takeProfit, stopLoss: stopLoss);
@@ -295,8 +295,8 @@ public class XFatlXSatlCloudStrategy : Strategy
 	{
 		return method switch
 		{
-			SmoothMethods.Sma => new SMA { Length = length },
-			SmoothMethods.Ema => new EMA { Length = length },
+			SmoothMethods.Sma => new SimpleMovingAverage { Length = length },
+			SmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
 			SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
 			SmoothMethods.Wma => new WeightedMovingAverage { Length = length },
 			_ => CreateJurikIndicator(length, phase),

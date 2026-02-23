@@ -119,7 +119,7 @@ public class SimplePullBackTjlv26Strategy : Strategy
 		_endDate = Param(nameof(EndDate), new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero))
 		.SetDisplay("End Date", "End trading date", "Date Range");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

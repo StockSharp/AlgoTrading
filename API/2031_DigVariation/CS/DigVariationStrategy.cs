@@ -43,6 +43,7 @@ public class DigVariationStrategy : Strategy
 		_sellClose = this.Param("SellClose", true).SetDisplay("Close Short", "Close Short", "General");
 		_stopLoss = this.Param("StopLoss", 1000m).SetDisplay("Stop Loss", "Stop Loss", "General");
 		_takeProfit = this.Param("TakeProfit", 2000m).SetDisplay("Take Profit", "Take Profit", "General");
+		_candleType2 = this.Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle", "General");
 	}
 
 	/// <summary>
@@ -108,12 +109,18 @@ public class DigVariationStrategy : Strategy
 		set => _takeProfit.Value = value;
 	}
 
+	private readonly StrategyParam<DataType> _candleType2;
+	public DataType CandleType { get => _candleType2.Value; set => _candleType2.Value = value; }
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(StopLoss, TakeProfit);
+		StartProtection(new Unit(StopLoss, UnitTypes.Absolute), new Unit(TakeProfit, UnitTypes.Absolute));
 
 		var sma = new SMA { Length = Period };
 		var subscription = SubscribeCandles(CandleType);

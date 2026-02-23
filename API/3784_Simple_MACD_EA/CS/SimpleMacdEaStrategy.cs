@@ -136,17 +136,17 @@ public class SimpleMacdEaStrategy : Strategy
 
 		base.Volume = Volume;
 
-		var emaFast = new EMA
+		var emaFast = new ExponentialMovingAverage
 		{
 			Length = 100
 		};
 
-		var emaSlow = new EMA
+		var emaSlow = new ExponentialMovingAverage
 		{
 			Length = MacdLevel
 		};
 
-		var emaSlowPlus = new EMA
+		var emaSlowPlus = new ExponentialMovingAverage
 		{
 			Length = MacdLevel + 1
 		};
@@ -189,12 +189,7 @@ public class SimpleMacdEaStrategy : Strategy
 
 		ResetPositionState();
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousDirectionSignal = directionSignal;
-			_previousBestSignal = bestSignal;
-			return;
-		}
+		
 
 		if (currentTrend > 0 && previousTrend < 0 && Position <= 0m)
 		{
@@ -344,7 +339,7 @@ public class SimpleMacdEaStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		BuyMarket(volume);
+		BuyMarket();
 		_findHighest = true;
 		_findLowest = false;
 		_pendingTime = 0;
@@ -360,7 +355,7 @@ public class SimpleMacdEaStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		SellMarket(volume);
+		SellMarket();
 		_findHighest = false;
 		_findLowest = true;
 		_pendingTime = 0;

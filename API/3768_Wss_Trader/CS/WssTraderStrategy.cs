@@ -257,13 +257,6 @@ public class WssTraderStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousClose = candle.ClosePrice;
-			_hasPreviousClose = true;
-			return;
-		}
-
 		if (!_hasPreviousClose)
 		{
 			_previousClose = candle.ClosePrice;
@@ -282,7 +275,7 @@ public class WssTraderStrategy : Strategy
 
 		if (volume > 0m && _previousClose < _longEntryLevel && close >= _longEntryLevel)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 			_canTrade = false;
 			_longEntryPrice = close;
 			_longStop = RoundPrice(_longStopLevel);
@@ -293,7 +286,7 @@ public class WssTraderStrategy : Strategy
 
 		if (volume > 0m && _previousClose > _shortEntryLevel && close <= _shortEntryLevel)
 		{
-			SellMarket(volume);
+			SellMarket();
 			_canTrade = false;
 			_shortEntryPrice = close;
 			_shortStop = RoundPrice(_shortStopLevel);
@@ -328,14 +321,14 @@ public class WssTraderStrategy : Strategy
 
 		if (stop > 0m && candle.LowPrice <= stop)
 		{
-			SellMarket(volume);
+			SellMarket();
 			ResetLongState();
 			return;
 		}
 
 		if (target > 0m && candle.HighPrice >= target)
 		{
-			SellMarket(volume);
+			SellMarket();
 			ResetLongState();
 			return;
 		}
@@ -353,7 +346,7 @@ public class WssTraderStrategy : Strategy
 
 				if (candle.LowPrice <= _longStop)
 				{
-					SellMarket(volume);
+					SellMarket();
 					ResetLongState();
 				}
 			}
@@ -371,14 +364,14 @@ public class WssTraderStrategy : Strategy
 
 		if (stop > 0m && candle.HighPrice >= stop)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 			ResetShortState();
 			return;
 		}
 
 		if (target > 0m && candle.LowPrice <= target)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 			ResetShortState();
 			return;
 		}
@@ -396,7 +389,7 @@ public class WssTraderStrategy : Strategy
 
 				if (candle.HighPrice >= _shortStop)
 				{
-					BuyMarket(volume);
+					BuyMarket();
 					ResetShortState();
 				}
 			}

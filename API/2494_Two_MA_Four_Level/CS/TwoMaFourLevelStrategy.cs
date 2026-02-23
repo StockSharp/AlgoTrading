@@ -45,43 +45,41 @@ public class TwoMaFourLevelStrategy : Strategy
 
 	public TwoMaFourLevelStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 50)
+		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Period of the fast smoothed MA", "Moving Averages")
-			
 			.SetOptimize(20, 150, 5);
 
-		_slowPeriod = Param(nameof(SlowPeriod), 130)
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Period of the slow smoothed MA", "Moving Averages")
-			
 			.SetOptimize(60, 300, 5);
 
-		_mostTopLevel = Param(nameof(MostTopLevel), 500)
+		_mostTopLevel = Param(nameof(MostTopLevel), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Extreme Upper Level", "Highest positive offset in points", "Levels");
 
-		_topLevel = Param(nameof(TopLevel), 250)
+		_topLevel = Param(nameof(TopLevel), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Upper Level", "Second positive offset in points", "Levels");
 
-		_lowerLevel = Param(nameof(LowerLevel), 250)
+		_lowerLevel = Param(nameof(LowerLevel), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Lower Level", "Second negative offset in points", "Levels");
 
-		_lowermostLevel = Param(nameof(LowermostLevel), 500)
+		_lowermostLevel = Param(nameof(LowermostLevel), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Extreme Lower Level", "Largest negative offset in points", "Levels");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 55)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 500)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Distance to take profit", "Risk");
 
-		_stopLossPips = Param(nameof(StopLossPips), 260)
+		_stopLossPips = Param(nameof(StopLossPips), 1000)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Distance to stop loss", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for analysis", "General");
 	}
 
@@ -152,9 +150,6 @@ public class TwoMaFourLevelStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 
 		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, median, candle.OpenTime));
@@ -173,21 +168,22 @@ public class TwoMaFourLevelStrategy : Strategy
 			return;
 		}
 
-		var pip = Security?.PriceStep ?? 1m;
+		var pip = Security?.PriceStep ?? 0.05m;
 		var signal = GetSignal(fast, slow, _prevFast.Value, _prevSlow.Value, pip);
 
-		if (Position == 0)
+		if (signal > 0)
 		{
-			if (signal > 0)
-			{
-				// Enter long position after bullish crossover confirmation.
+			if (Position < 0)
 				BuyMarket();
-			}
-			else if (signal < 0)
-			{
-				// Enter short position after bearish crossover confirmation.
+			if (Position <= 0)
+				BuyMarket();
+		}
+		else if (signal < 0)
+		{
+			if (Position > 0)
 				SellMarket();
-			}
+			if (Position >= 0)
+				SellMarket();
 		}
 
 		_prevFast = fast;

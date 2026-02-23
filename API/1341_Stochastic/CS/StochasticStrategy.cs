@@ -137,8 +137,8 @@ public class StochasticStrategy : Strategy
 		base.OnStarted2(time);
 
 		var stochastic = new StochasticOscillator
-		{ K = { Length = Length },
-			K = { Length = SmoothK },
+		{
+			K = { Length = Length },
 			D = { Length = SmoothD },
 		};
 
@@ -170,7 +170,7 @@ public class StochasticStrategy : Strategy
 			return;
 
 		var stoch = (StochasticOscillatorValue)stochValue;
-		var k = stoch.K;
+		if (stoch.K is not decimal k) return;
 
 		if (_prevK <= Oversold && k > Oversold && Position <= 0)
 		{

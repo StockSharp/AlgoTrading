@@ -85,7 +85,7 @@ public class CoppockHistogramStrategy : Strategy
 			;
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
 
@@ -124,8 +124,8 @@ public class CoppockHistogramStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var smoothValue = _sma.Process(roc1Value + roc2Value);
-		if (!smoothValue.IsFinal)
+		var smoothValue = _sma.Process(roc1Value + roc2Value, candle.OpenTime, true);
+		if (!smoothValue.IsFinal || smoothValue.IsEmpty || !_sma.IsFormed)
 			return;
 
 		var coppock = smoothValue.ToDecimal();
@@ -135,18 +135,18 @@ public class CoppockHistogramStrategy : Strategy
 			if (prev < prev2)
 			{
 				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 
 				if (coppock > prev && Position <= 0)
-					BuyMarket(Volume);
+					BuyMarket();
 			}
 			else if (prev > prev2)
 			{
 				if (Position > 0)
-					SellMarket(Position);
+					SellMarket();
 
 				if (coppock < prev && Position >= 0)
-					SellMarket(Volume);
+					SellMarket();
 			}
 		}
 

@@ -148,18 +148,18 @@ public class SmcTraderCamelCciMacd1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_timeFrame = CandleType.Arg as TimeSpan?;
 
-		_camelHighEma = new EMA
+		_camelHighEma = new ExponentialMovingAverage
 		{
 			Length = CamelLength
 		};
 
-		_camelLowEma = new EMA
+		_camelLowEma = new ExponentialMovingAverage
 		{
 			Length = CamelLength
 		};
@@ -216,13 +216,13 @@ public class SmcTraderCamelCciMacd1Strategy : Strategy
 		{
 			if (Position > 0m && (prevMain < prevSignal || prevCci < CciThreshold))
 			{
-				SellMarket(Position);
+				SellMarket();
 				_lastExitTime = candle.CloseTime;
 				exitExecuted = true;
 			}
 			else if (Position < 0m && prevMain > prevSignal)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_lastExitTime = candle.CloseTime;
 				exitExecuted = true;
 			}

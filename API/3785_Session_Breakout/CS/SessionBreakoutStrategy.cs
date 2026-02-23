@@ -218,8 +218,7 @@ public class SessionBreakoutStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		
 
 		var candleDate = candle.CloseTime.Date;
 
@@ -330,7 +329,7 @@ public class SessionBreakoutStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		BuyMarket(volume);
+		BuyMarket();
 		_longExecuted = true;
 
 		var resultingPosition = Position + volume;
@@ -349,7 +348,7 @@ public class SessionBreakoutStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		SellMarket(volume);
+		SellMarket();
 		_shortExecuted = true;
 
 		var resultingPosition = Position - volume;

@@ -99,7 +99,7 @@ public class MaSarAdxBindStrategy : Strategy
 		;
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to request", "General");
 	}
 
@@ -115,7 +115,7 @@ public class MaSarAdxBindStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Instantiate indicators used in the original MetaTrader script.
-		var movingAverage = new SMA
+		var movingAverage = new SimpleMovingAverage
 		{
 			Length = MaPeriod
 		};

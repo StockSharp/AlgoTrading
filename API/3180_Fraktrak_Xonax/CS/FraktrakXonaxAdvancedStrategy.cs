@@ -48,6 +48,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 	private decimal _tickSize;
 	private decimal _pipSize;
 	private decimal _volumeStep;
+	private decimal _positionPrice;
 
 	/// <summary>
 	/// Stop loss distance in pips. Zero disables the stop loss.
@@ -177,7 +178,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 		_moneyManagementValue = Param(nameof(ManagementValue), 3m)
 		.SetDisplay("Management Value", "Risk percent or fixed lot size", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Source candles for the strategy", "General");
 	}
 
@@ -248,7 +249,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 
 		DetectFractals();
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_h1 == 0m)
 			return;
 
 		EvaluateEntries(candle);
@@ -306,7 +307,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 			return;
 		}
 
-		var entryPrice = Security?.BestAsk ?? candle.ClosePrice;
+		var entryPrice = candle.ClosePrice;
 		var stopPrice = StopLossPips > 0 ? entryPrice - StopLossPips * _pipSize : (decimal?)null;
 		var volume = CalculateOrderVolume(entryPrice, stopPrice);
 		volume = RoundVolume(volume);
@@ -318,6 +319,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 
 		_lastProcessedUpper = breakoutLevel;
 		_longEntry = entryPrice;
+		_positionPrice = entryPrice;
 		SetupInitialLongLevels(entryPrice);
 	}
 
@@ -340,7 +342,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 			return;
 		}
 
-		var entryPrice = Security?.BestBid ?? candle.ClosePrice;
+		var entryPrice = candle.ClosePrice;
 		var stopPrice = StopLossPips > 0 ? entryPrice + StopLossPips * _pipSize : (decimal?)null;
 		var volume = CalculateOrderVolume(entryPrice, stopPrice);
 		volume = RoundVolume(volume);
@@ -352,6 +354,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 
 		_lastProcessedLower = breakoutLevel;
 		_shortEntry = entryPrice;
+		_positionPrice = entryPrice;
 		SetupInitialShortLevels(entryPrice);
 	}
 
@@ -359,7 +362,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 	{
 		if (Position > 0m)
 		{
-			_longEntry ??= PositionPrice;
+			_longEntry ??= _positionPrice;
 
 			if (_longEntry is decimal entry)
 			{
@@ -388,7 +391,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 		}
 		else if (Position < 0m)
 		{
-			_shortEntry ??= PositionPrice;
+			_shortEntry ??= _positionPrice;
 
 			if (_shortEntry is decimal entry)
 			{
@@ -476,7 +479,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 		if (riskAmount <= 0m)
 			return ManagementValue;
 
-		var stepCost = Security?.PriceStepCost ?? 0m;
+		var stepCost = Security?.PriceStep ?? 0m;
 		var step = Security?.PriceStep ?? 0m;
 
 		if (step > 0m && stepCost > 0m)
@@ -537,15 +540,15 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 
 		if (Position > 0m)
 		{
-			_longEntry = PositionPrice;
+			_longEntry = _positionPrice;
 			_shortEntry = null;
-			SetupInitialLongLevels(PositionPrice);
+			SetupInitialLongLevels(_positionPrice);
 		}
 		else if (Position < 0m)
 		{
-			_shortEntry = PositionPrice;
+			_shortEntry = _positionPrice;
 			_longEntry = null;
-			SetupInitialShortLevels(PositionPrice);
+			SetupInitialShortLevels(_positionPrice);
 		}
 		else
 		{

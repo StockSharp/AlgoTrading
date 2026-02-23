@@ -95,12 +95,12 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 	/// </summary>
 	public StatisticsRepeatingBehaviorStrategy()
 	{
-		_historyDays = Param(nameof(HistoryDays), 10)
+		_historyDays = Param(nameof(HistoryDays), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("History Days", "Number of days to collect statistics", "Parameters")
 			;
 
-		_minimumBodyPoints = Param(nameof(MinimumBodyPoints), 10)
+		_minimumBodyPoints = Param(nameof(MinimumBodyPoints), 0)
 			.SetDisplay("Minimum Body (points)", "Ignore candles with smaller body", "Parameters")
 			;
 
@@ -109,7 +109,7 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
 			;
 
-		_initialVolume = Param(nameof(InitialVolume), 0.1m)
+		_initialVolume = Param(nameof(InitialVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Starting order size", "Trading")
 			;
@@ -119,7 +119,7 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 			.SetDisplay("Martingale Factor", "Multiplier after losing trade", "Trading")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for analysis", "General");
 	}
 
@@ -148,7 +148,7 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_priceStep = Security.MinPriceStep ?? Security.PriceStep ?? 1m;
+		_priceStep = Security.PriceStep ?? 1m;
 
 		_timeFrame = CandleType.Arg is TimeSpan span ? span : TimeSpan.Zero;
 		if (_timeFrame <= TimeSpan.Zero)
@@ -200,8 +200,10 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 				}
 			}
 
-			if (Position != 0)
-				ClosePosition();
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			else if (Position < 0)
+				BuyMarket(Math.Abs(Position));
 
 			UpdateVolumeAfterTrade(exitPrice, stopHit);
 		}
@@ -302,22 +304,7 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 
 	private decimal AdjustVolume(decimal volume)
 	{
-		var step = Security.VolumeStep ?? 1m;
-
-		if (volume <= 0m)
-			return 0m;
-
-		volume = Math.Floor(volume / step) * step;
-
-		var minVolume = Security.MinVolume ?? step;
-		if (volume < minVolume)
-			return 0m;
-
-		var maxVolume = Security.MaxVolume;
-		if (maxVolume != null && volume > maxVolume.Value)
-			volume = maxVolume.Value;
-
-		return volume;
+		return volume <= 0m ? 1m : volume;
 	}
 
 	private static int GetMinuteKey(DateTimeOffset time)

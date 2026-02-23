@@ -67,7 +67,7 @@ public class BreakdownCatcherStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Allowed Spread (points)", "Maximum bid-ask spread measured in points", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used to detect breakouts", "General");
 	}
 
@@ -180,8 +180,12 @@ public class BreakdownCatcherStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		if (_previousHigh is null)
+			{
+				_previousHigh = candle.HighPrice;
+				_previousLow = candle.LowPrice;
+				return;
+			}
 
 		UpdateTrailingStops(candle);
 
@@ -343,9 +347,9 @@ public class BreakdownCatcherStrategy : Strategy
 				}
 			}
 		}
-		else if (Position < 0 && _shortEntryPrice is decimal entry)
+		else if (Position < 0 && _shortEntryPrice is decimal shortEntry)
 		{
-			var move = entry - candle.ClosePrice;
+			var move = shortEntry - candle.ClosePrice;
 			if (move > trailingDistance + trailingStep)
 			{
 				var required = candle.ClosePrice + trailingDistance + trailingStep;
@@ -364,8 +368,8 @@ public class BreakdownCatcherStrategy : Strategy
 		if (_pointSize <= 0m || AllowedSpreadPoints <= 0)
 			return true;
 
-		var bestBid = Security?.BestBid?.Price ?? 0m;
-		var bestAsk = Security?.BestAsk?.Price ?? 0m;
+		var bestBid = 0m;
+		var bestAsk = 0m;
 		if (bestBid <= 0m || bestAsk <= 0m)
 			return true;
 

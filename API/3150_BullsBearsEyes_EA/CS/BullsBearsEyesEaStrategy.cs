@@ -46,6 +46,7 @@ public class BullsBearsEyesEaStrategy : Strategy
 	private decimal? _shortStop;
 	private decimal? _shortTake;
 	private decimal _pipSize;
+	private decimal _positionPrice;
 
 	/// <summary>
 	/// Averaging period for Bulls Power and Bears Power.
@@ -172,7 +173,7 @@ public class BullsBearsEyesEaStrategy : Strategy
 			.SetDisplay("Trailing Step (pips)", "Minimal advance before trailing", "Risk")
 			;
 
-		_useTimeControl = Param(nameof(UseTimeControl), true)
+		_useTimeControl = Param(nameof(UseTimeControl), false)
 			.SetDisplay("Use Time Control", "Enable trading hours filter", "Session");
 
 		_startHour = Param(nameof(StartHour), 10)
@@ -183,7 +184,7 @@ public class BullsBearsEyesEaStrategy : Strategy
 			.SetRange(0, 23)
 			.SetDisplay("End Hour", "Trading session end hour (exclusive)", "Session");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -249,16 +250,22 @@ public class BullsBearsEyesEaStrategy : Strategy
 
 		var (shouldBuy, shouldSell) = CalculateSignals(bullsValue, bearsValue);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_bulls.IsFormed || !_bears.IsFormed)
 			return;
 
 		if (!IsTradingTime(candle.OpenTime))
 			return;
 
 		if (shouldBuy)
+		{
 			EnterLong();
+			if (Position > 0) _positionPrice = candle.ClosePrice;
+		}
 		else if (shouldSell)
+		{
 			EnterShort();
+			if (Position < 0) _positionPrice = candle.ClosePrice;
+		}
 	}
 
 	/// <inheritdoc />
@@ -268,17 +275,13 @@ public class BullsBearsEyesEaStrategy : Strategy
 
 		if (Position > 0)
 		{
-			if (delta > 0)
-				SetupLongRisk();
-
+			SetupLongRisk();
 			_shortStop = null;
 			_shortTake = null;
 		}
 		else if (Position < 0)
 		{
-			if (delta < 0)
-				SetupShortRisk();
-
+			SetupShortRisk();
 			_longStop = null;
 			_longTake = null;
 		}
@@ -439,7 +442,7 @@ public class BullsBearsEyesEaStrategy : Strategy
 
 		var trailingDistance = TrailingStopPips * pip;
 		var trailingStep = TrailingStepPips * pip;
-		var entry = PositionPrice;
+		var entry = _positionPrice;
 
 		if (entry <= 0m)
 			return;
@@ -464,7 +467,7 @@ public class BullsBearsEyesEaStrategy : Strategy
 
 		var trailingDistance = TrailingStopPips * pip;
 		var trailingStep = TrailingStepPips * pip;
-		var entry = PositionPrice;
+		var entry = _positionPrice;
 
 		if (entry <= 0m)
 			return;
@@ -487,7 +490,7 @@ public class BullsBearsEyesEaStrategy : Strategy
 			return;
 		}
 
-		var entry = PositionPrice;
+		var entry = _positionPrice;
 		if (entry <= 0m)
 		{
 			_longStop = _longTake = null;
@@ -507,7 +510,7 @@ public class BullsBearsEyesEaStrategy : Strategy
 			return;
 		}
 
-		var entry = PositionPrice;
+		var entry = _positionPrice;
 		if (entry <= 0m)
 		{
 			_shortStop = _shortTake = null;
@@ -540,7 +543,7 @@ public class BullsBearsEyesEaStrategy : Strategy
 
 	private decimal GetPipSize()
 	{
-		var step = Security?.Step ?? 0m;
+		var step = Security?.PriceStep ?? 0m;
 		if (step <= 0m)
 			return 1m;
 

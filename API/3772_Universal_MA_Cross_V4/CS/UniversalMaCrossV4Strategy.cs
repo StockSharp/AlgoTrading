@@ -409,8 +409,7 @@ public class UniversalMaCrossV4Strategy : Strategy
 		_fastPrev = fastValue;
 		_slowPrev = slowValue;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		
 
 		var minDistance = GetPriceOffset(MinCrossDistancePoints);
 
@@ -586,11 +585,11 @@ public class UniversalMaCrossV4Strategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SMA { Length = period },
-			MovingAverageMethods.Exponential => new EMA { Length = period },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = period },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = period },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
-			_ => new SMA { Length = period }
+			_ => new SimpleMovingAverage { Length = period }
 		};
 	}
 

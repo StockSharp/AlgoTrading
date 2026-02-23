@@ -159,7 +159,7 @@ public class MovingUpStrategy : Strategy
 		
 		.SetOptimize(50m, 500m, 50m);
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle", "Candle type", "General");
 	}
 	
@@ -200,7 +200,7 @@ public class MovingUpStrategy : Strategy
 			if (candle.State != CandleStates.Finished)
 			return;
 			
-			if (!IsFormedAndOnlineAndAllowTrading())
+			if (!fastMa.IsFormed || !slowMa.IsFormed)
 			return;
 			
 			if (!isInitialized && fastMa.IsFormed && slowMa.IsFormed)

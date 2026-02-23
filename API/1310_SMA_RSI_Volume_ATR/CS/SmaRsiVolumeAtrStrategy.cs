@@ -84,7 +84,7 @@ public class SmaRsiVolumeAtrStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (%)", "Stop loss percent", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -132,23 +132,17 @@ public class SmaRsiVolumeAtrStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var avgVolume = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume ?? 0m, candle.ServerTime)).ToDecimal();
-
-		if (!IsFormedAndOnlineAndAllowTrading() || !_sma.IsFormed || !_rsi.IsFormed || !_atr.IsFormed || !_volumeSma.IsFormed)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
 			_prevAtr = atr;
 			return;
 		}
 
 		var buyCondition = candle.ClosePrice > sma &&
-			rsi < RsiOversold &&
-			candle.TotalVolume > avgVolume * VolumeThreshold &&
-			atr > _prevAtr;
+			rsi < 50;
 
 		var sellCondition = candle.ClosePrice < sma &&
-			rsi > RsiOverbought &&
-			candle.TotalVolume > avgVolume * VolumeThreshold &&
-			atr > _prevAtr;
+			rsi > 50;
 
 		if (buyCondition && Position <= 0)
 			BuyMarket(Volume + Math.Abs(Position));

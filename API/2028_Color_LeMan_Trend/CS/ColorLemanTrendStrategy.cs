@@ -53,7 +53,7 @@ public class ColorLemanTrendStrategy : Strategy
 	/// </summary>
 	public ColorLemanTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
 
 		_minPeriod = Param(nameof(Min), 13)
@@ -98,6 +98,9 @@ public class ColorLemanTrendStrategy : Strategy
 
 	}
 
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
@@ -141,10 +144,12 @@ public class ColorLemanTrendStrategy : Strategy
 		var hh = 3m * candle.HighPrice - (highestMin + highestMid + highestMax);
 		var ll = (lowestMin + lowestMid + lowestMax) - 3m * candle.LowPrice;
 
-		var bullsValue = _bullsEma.Process(hh);
-		var bearsValue = _bearsEma.Process(ll);
+		var bullsValue = _bullsEma.Process(hh, candle.OpenTime, true);
+		var bearsValue = _bearsEma.Process(ll, candle.OpenTime, true);
 
-		if (!bullsValue.IsFinal || !bearsValue.IsFinal)
+		if (!bullsValue.IsFinal || !bearsValue.IsFinal || bullsValue.IsEmpty || bearsValue.IsEmpty)
+			return;
+		if (!_bullsEma.IsFormed || !_bearsEma.IsFormed)
 			return;
 
 		var bulls = bullsValue.ToDecimal();

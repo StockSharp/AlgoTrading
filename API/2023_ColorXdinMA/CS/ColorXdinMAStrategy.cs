@@ -74,7 +74,7 @@ public class ColorXdinMAStrategy : Strategy
 			
 			.SetOptimize(10, 40, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -129,13 +129,13 @@ public class ColorXdinMAStrategy : Strategy
 
 		if (_prev < _prevPrev && xdin > _prev)
 		{
-			if (Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+			if (Position < 0) BuyMarket();
+			if (Position <= 0) BuyMarket();
 		}
 		else if (_prev > _prevPrev && xdin < _prev)
 		{
-			if (Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+			if (Position > 0) SellMarket();
+			if (Position >= 0) SellMarket();
 		}
 
 		_prevPrev = _prev;

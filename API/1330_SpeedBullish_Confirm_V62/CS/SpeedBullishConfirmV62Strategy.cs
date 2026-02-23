@@ -271,10 +271,10 @@ public class SpeedBullishConfirmV62Strategy : Strategy
 		return;
 
 		var hlcc4 = (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m;
-		var ema10Val = _ema10.Process(hlcc4);
-		var ema15Val = _ema15.Process(hlcc4);
-		var volumeVal = _volumeSma.Process(candle.Volume);
-		var atrSmaVal = _atrSma.Process((decimal)atrValue);
+		var ema10Val = _ema10.Process(new DecimalIndicatorValue(_ema10, hlcc4, candle.OpenTime));
+		var ema15Val = _ema15.Process(new DecimalIndicatorValue(_ema15, hlcc4, candle.OpenTime));
+		var volumeVal = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.OpenTime));
+		var atrSmaVal = _atrSma.Process(new DecimalIndicatorValue(_atrSma, atrValue.ToDecimal(), candle.OpenTime));
 
 		if (!ema10Val.IsFinal || !ema15Val.IsFinal || !macdValue.IsFinal || !rsiValue.IsFinal)
 		return;
@@ -282,9 +282,9 @@ public class SpeedBullishConfirmV62Strategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		var ema10 = (decimal)ema10Val;
-		var ema15 = (decimal)ema15Val;
-		var rsi = (decimal)rsiValue;
+		var ema10 = ema10Val.ToDecimal();
+		var ema15 = ema15Val.ToDecimal();
+		var rsi = rsiValue.ToDecimal();
 
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
@@ -307,8 +307,8 @@ public class SpeedBullishConfirmV62Strategy : Strategy
 		{
 		if (!atrValue.IsFinal || !atrSmaVal.IsFinal)
 		return;
-		var atr = (decimal)atrValue;
-		var atrAvg = (decimal)atrSmaVal;
+		var atr = atrValue.ToDecimal();
+		var atrAvg = atrSmaVal.ToDecimal();
 		var highVolatility = atr > AtrMultiplier * atrAvg;
 		buyCondition &= highVolatility;
 		sellCondition &= highVolatility;
@@ -318,8 +318,8 @@ public class SpeedBullishConfirmV62Strategy : Strategy
 		{
 		if (!volumeVal.IsFinal)
 		return;
-		var avgVolume = (decimal)volumeVal;
-		var highVolume = candle.Volume > avgVolume * VolumeThresholdMultiplier;
+		var avgVolume = volumeVal.ToDecimal();
+		var highVolume = candle.TotalVolume > avgVolume * VolumeThresholdMultiplier;
 		buyCondition &= highVolume;
 		sellCondition &= highVolume;
 		}

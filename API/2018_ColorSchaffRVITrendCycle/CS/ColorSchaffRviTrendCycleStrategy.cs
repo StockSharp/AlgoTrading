@@ -120,7 +120,7 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 			.SetDisplay("Low Level", "Lower threshold", "General")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -182,11 +182,13 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 		var fastValue = _fastRvi.Process(candle);
 		var slowValue = _slowRvi.Process(candle);
 
-		if (!fastValue.IsFinal || !slowValue.IsFinal)
+		if (!fastValue.IsFinal || !slowValue.IsFinal || fastValue.IsEmpty || slowValue.IsEmpty)
+			return;
+		if (!_fastRvi.IsFormed || !_slowRvi.IsFormed)
 			return;
 
-		var fast = fastValue.GetValue<decimal>();
-		var slow = slowValue.GetValue<decimal>();
+		var fast = fastValue.ToDecimal();
+		var slow = slowValue.ToDecimal();
 		var macd = fast - slow;
 
 		_macd[_index] = macd;
@@ -236,22 +238,19 @@ public class ColorSchaffRviTrendCycleStrategy : Strategy
 		if (_filled < _macd.Length)
 			_filled++;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var prevIndex = (_index - 1 + _stc.Length) % _stc.Length;
 		var prevStcValue = _stc[prevIndex];
 		var delta = stc - prevStcValue;
 
 		if (stc > HighLevel && delta >= 0 && Position <= 0)
 		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			BuyMarket(volume);
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
 		else if (stc < LowLevel && delta <= 0 && Position >= 0)
 		{
-			var volume = Volume + (Position > 0 ? Position : 0m);
-			SellMarket(volume);
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 	}
 }

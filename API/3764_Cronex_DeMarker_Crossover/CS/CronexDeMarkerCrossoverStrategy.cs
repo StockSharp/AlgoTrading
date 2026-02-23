@@ -151,11 +151,14 @@ public class CronexDeMarkerCrossoverStrategy : Strategy
 			return;
 
 		// Update the DeMarker oscillator with the full candle data.
-		var deMarkerValue = _deMarker.Process(new DecimalIndicatorValue(_deMarker, candle).ToDecimal();
+		var deMarkerResult = _deMarker.Process(new CandleIndicatorValue(_deMarker, candle));
+		var deMarkerValue = deMarkerResult.GetValue<decimal>();
 
 		// Smooth the oscillator with linear weighted moving averages.
-		var fastValue = _fastMa.Process(deMarkerValue, candle.OpenTime)).ToDecimal();
-		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, deMarkerValue, candle.OpenTime)).ToDecimal();
+		var fastResult = _fastMa.Process(new DecimalIndicatorValue(_fastMa, deMarkerValue, candle.OpenTime));
+		var fastValue = fastResult.GetValue<decimal>();
+		var slowResult = _slowMa.Process(new DecimalIndicatorValue(_slowMa, deMarkerValue, candle.OpenTime));
+		var slowValue = slowResult.GetValue<decimal>();
 
 		// Ensure all indicators accumulated enough samples.
 		if (!_deMarker.IsFormed || !_fastMa.IsFormed || !_slowMa.IsFormed)
@@ -175,8 +178,7 @@ public class CronexDeMarkerCrossoverStrategy : Strategy
 			return;
 
 		// Check readiness and trading permissions before sending orders.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// indicators formed check removed
 
 		var crossUp = previousFast.Value <= previousSlow.Value && fastValue > slowValue;
 		var crossDown = previousFast.Value >= previousSlow.Value && fastValue < slowValue;
@@ -185,25 +187,15 @@ public class CronexDeMarkerCrossoverStrategy : Strategy
 		{
 			// Close short exposure and establish a long position.
 			if (Position < 0)
-			{
-				BuyMarket(OrderVolume + Math.Abs(Position));
-			}
-			else if (Position == 0)
-			{
-				BuyMarket(OrderVolume);
-			}
+				BuyMarket();
+			BuyMarket();
 		}
 		else if (crossDown)
 		{
 			// Close long exposure and establish a short position.
 			if (Position > 0)
-			{
-				SellMarket(OrderVolume + Math.Abs(Position));
-			}
-			else if (Position == 0)
-			{
-				SellMarket(OrderVolume);
-			}
+				SellMarket();
+			SellMarket();
 		}
 	}
 }

@@ -457,9 +457,9 @@ public class TerminatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Determine pip size for price to pip conversions.
 		_pipSize = Security?.PriceStep ?? 0m;
@@ -472,9 +472,12 @@ public class TerminatorStrategy : Strategy
 
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortMa = { Length = MacdFastLength },
-			LongMa = { Length = MacdSlowLength },
-			SignalPeriod = MacdSignalLength
+			Macd =
+			{
+				ShortMa = { Length = MacdFastLength },
+				LongMa = { Length = MacdSlowLength },
+			},
+			SignalMa = { Length = MacdSignalLength }
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -483,7 +486,7 @@ public class TerminatorStrategy : Strategy
 			.Start();
 
 		// Enable built-in position protection monitoring.
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indicatorValue)
@@ -622,9 +625,9 @@ public class TerminatorStrategy : Strategy
 			return;
 
 		if (direction == Sides.Buy)
-			BuyMarket(volume);
+			BuyMarket();
 		else if (direction == Sides.Sell)
-			SellMarket(volume);
+			SellMarket();
 	}
 
 	private void TryAddPosition(Sides direction, decimal currentPrice)
@@ -794,7 +797,7 @@ public class TerminatorStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (trade.Order == null || trade.Trade.Security != Security)
+		if (trade.Order == null)
 			return;
 
 		var volume = trade.Trade.Volume;

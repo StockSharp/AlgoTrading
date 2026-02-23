@@ -51,7 +51,7 @@ public class ThreeTypicalCandlesStrategy : Strategy
 	public ThreeTypicalCandlesStrategy()
 	{
 
-		_useTimeControl = Param(nameof(UseTimeControl), true)
+		_useTimeControl = Param(nameof(UseTimeControl), false)
 				.SetDisplay("Use Time Control", "Enable trading hour filter", "Schedule");
 
 		_startHour = Param(nameof(StartHour), 11)
@@ -62,7 +62,7 @@ public class ThreeTypicalCandlesStrategy : Strategy
 				.SetDisplay("End Hour", "Trading window end hour (0-23)", "Schedule")
 				.SetRange(0, 23);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Candle type used for analysis", "General");
 	}
 

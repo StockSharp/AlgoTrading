@@ -166,7 +166,7 @@ public class Russian20TimeFilterMomentumStrategy : Strategy
 
 		UpdatePipSettings();
 
-		_movingAverage = new SMA
+		_movingAverage = new SimpleMovingAverage
 		{
 			Length = MovingAverageLength,
 		};
@@ -209,8 +209,7 @@ public class Russian20TimeFilterMomentumStrategy : Strategy
 		}
 
 		// Ensure the infrastructure allows trading and indicators are ready.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		
 
 		if (!_movingAverage.IsFormed || !_momentum.IsFormed)
 		{

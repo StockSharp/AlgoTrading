@@ -140,7 +140,7 @@ public class SimpleFibonacciRetracementStrategy : Strategy
 		.SetDisplay("Stop Loss (pips)", "Stop loss in pips", "Risk")
 		;
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 	
@@ -227,7 +227,7 @@ public class SimpleFibonacciRetracementStrategy : Strategy
 		
 		_prevClose = candle.ClosePrice;
 		
-		var pipValue = Security.Step * 10m;
+		var pipValue = (Security.PriceStep ?? 0.01m) * 10m;
 		var tpOffset = TakeProfitPips * pipValue;
 		var slOffset = StopLossPips * pipValue;
 		

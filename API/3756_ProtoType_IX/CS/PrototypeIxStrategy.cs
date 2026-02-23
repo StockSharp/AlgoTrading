@@ -255,25 +255,34 @@ public class PrototypeIxStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// indicators checked via Bind
+
+		UpdateSwingPoints(candle, wprValue);
+
+		if (atrValue <= 0m)
 			return;
 
-		if (!UpdateSwingPoints(candle, wprValue))
-			return;
-
-		var atrIsValid = atrValue > 0m;
-
-		if (!atrIsValid)
-			return;
-
-		var swingTrend = DetermineSwingTrend(atrValue);
+		var upperThreshold = -CriteriaWpr;
+		var lowerThreshold = CriteriaWpr - 100m;
 
 		if (Position == 0)
-			{
+		{
 			_barsSinceEntry = 0;
 
-			if (Math.Abs(swingTrend) == 1 && swingTrend == _wprTrend)
-				TryOpenPosition(candle, swingTrend, atrValue);
+			if (wprValue >= upperThreshold)
+			{
+				BuyMarket();
+				_isLongPosition = true;
+				_entryPrice = candle.ClosePrice;
+				_initialStopPrice = candle.ClosePrice - 2m * atrValue;
+			}
+			else if (wprValue <= lowerThreshold)
+			{
+				SellMarket();
+				_isLongPosition = false;
+				_entryPrice = candle.ClosePrice;
+				_initialStopPrice = candle.ClosePrice + 2m * atrValue;
+			}
 		}
 		else
 		{
@@ -362,7 +371,7 @@ public class PrototypeIxStrategy : Strategy
 		if (priceStep <= 0m)
 			return;
 
-		var spreadValue = (Security?.StepPrice ?? priceStep) * MinTargetInSpread;
+		var spreadValue = (Security?.PriceStep ?? priceStep) * MinTargetInSpread;
 
 		if (direction > 0)
 			{
@@ -384,8 +393,8 @@ public class PrototypeIxStrategy : Strategy
 				return;
 
 			var resultingPosition = Position + volume;
-			BuyMarket(volume);
-			ApplyInitialProtection(entryPrice, support, target, resultingPosition);
+			BuyMarket();
+			_entryPrice = entryPrice;
 
 			_isLongPosition = true;
 			_entryPrice = entryPrice;
@@ -412,8 +421,8 @@ public class PrototypeIxStrategy : Strategy
 				return;
 
 			var resultingPosition = Position - volume;
-			SellMarket(volume);
-			ApplyInitialProtection(entryPrice, resistance, target, resultingPosition);
+			SellMarket();
+			_entryPrice = entryPrice;
 
 			_isLongPosition = false;
 			_entryPrice = entryPrice;
@@ -424,71 +433,43 @@ public class PrototypeIxStrategy : Strategy
 		_barsSinceEntry = 0;
 	}
 
-	private void ApplyInitialProtection(decimal entryPrice, decimal stopPrice, decimal targetPrice, decimal resultingPosition)
-	{
-		var priceStep = Security?.PriceStep ?? 0m;
-		if (priceStep <= 0m)
-			return;
-
-		if (stopPrice > 0m)
-			{
-			var stopDistanceSteps = Math.Abs(entryPrice - stopPrice) / priceStep;
-			if (stopDistanceSteps > 0m)
-				SetStopLoss(stopDistanceSteps, entryPrice, resultingPosition);
-		}
-
-		if (targetPrice > 0m)
-			{
-			var takeDistanceSteps = Math.Abs(targetPrice - entryPrice) / priceStep;
-			if (takeDistanceSteps > 0m)
-				SetTakeProfit(takeDistanceSteps, entryPrice, resultingPosition);
-		}
-	}
-
 	private void UpdateTrailingProtection(ICandleMessage candle, decimal atrValue)
 	{
 		if (Position == 0)
 			return;
 
-		var priceStep = Security?.PriceStep ?? 0m;
-		if (priceStep <= 0m)
-			return;
-
-		if (_barsSinceEntry < ZeroBarDelay)
-			return;
-
 		var referencePrice = candle.ClosePrice;
 
-		if (_isLongPosition)
+		if (_isLongPosition && Position > 0)
+		{
+			// Stop loss check
+			if (referencePrice <= _initialStopPrice)
 			{
-			var atrStop = referencePrice - (2m * atrValue);
-			var newStop = Math.Max(_initialStopPrice, atrStop);
-
-			if (newStop > 0m && newStop > _initialStopPrice && newStop < referencePrice)
-				{
-				var distanceSteps = (referencePrice - newStop) / priceStep;
-				if (distanceSteps > 0m)
-					{
-					SetStopLoss(distanceSteps, referencePrice, Position);
-					_initialStopPrice = newStop;
-					LogInfo($"Trail long stop to {newStop}");
-				}
+				SellMarket();
+				return;
+			}
+			// Update trailing stop after delay
+			if (_barsSinceEntry >= ZeroBarDelay)
+			{
+				var atrStop = referencePrice - (2m * atrValue);
+				if (atrStop > _initialStopPrice)
+					_initialStopPrice = atrStop;
 			}
 		}
-		else
+		else if (!_isLongPosition && Position < 0)
 		{
-			var atrStop = referencePrice + (2m * atrValue);
-			var newStop = Math.Min(_initialStopPrice, atrStop);
-
-			if (newStop > 0m && newStop < _initialStopPrice && newStop > referencePrice)
-				{
-				var distanceSteps = (newStop - referencePrice) / priceStep;
-				if (distanceSteps > 0m)
-					{
-					SetStopLoss(distanceSteps, referencePrice, Position);
-					_initialStopPrice = newStop;
-					LogInfo($"Trail short stop to {newStop}");
-				}
+			// Stop loss check
+			if (referencePrice >= _initialStopPrice)
+			{
+				BuyMarket();
+				return;
+			}
+			// Update trailing stop after delay
+			if (_barsSinceEntry >= ZeroBarDelay)
+			{
+				var atrStop = referencePrice + (2m * atrValue);
+				if (atrStop < _initialStopPrice)
+					_initialStopPrice = atrStop;
 			}
 		}
 	}
@@ -499,7 +480,7 @@ public class PrototypeIxStrategy : Strategy
 			return 0m;
 
 		var priceStep = Security?.PriceStep ?? 0m;
-		var stepValue = Security?.StepPrice ?? 0m;
+		var stepValue = Security?.PriceStep ?? 0m;
 		var minVolume = Security?.MinVolume ?? 0m;
 		var volumeStep = Security?.VolumeStep ?? 0m;
 

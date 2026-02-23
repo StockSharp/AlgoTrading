@@ -213,8 +213,7 @@ public class MartingailExpertSequenceStrategy : Strategy
 		if (!stochValue.IsFinal)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		
 
 		if (stochValue is not StochasticOscillatorValue stoch)
 			return;
@@ -250,7 +249,7 @@ public class MartingailExpertSequenceStrategy : Strategy
 				if (volume > 0m)
 				{
 					// Enter new long sequence when %K crosses above %D above the buy level.
-					BuyMarket(volume);
+					BuyMarket();
 				}
 			}
 			else if (sellSignal)
@@ -259,7 +258,7 @@ public class MartingailExpertSequenceStrategy : Strategy
 				if (volume > 0m)
 				{
 					// Enter new short sequence when %K crosses below %D below the sell level.
-					SellMarket(volume);
+					SellMarket();
 				}
 			}
 		}
@@ -313,7 +312,7 @@ public class MartingailExpertSequenceStrategy : Strategy
 				if (volume > 0m)
 				{
 					// Add base volume when price advances by the target distance.
-					BuyMarket(volume);
+					BuyMarket();
 				}
 				return;
 			}
@@ -329,7 +328,7 @@ public class MartingailExpertSequenceStrategy : Strategy
 				if (volume > 0m)
 				{
 					// Increase exposure after an adverse move by the configured step size.
-					BuyMarket(volume);
+					BuyMarket();
 				}
 			}
 		}
@@ -347,7 +346,7 @@ public class MartingailExpertSequenceStrategy : Strategy
 				if (volume > 0m)
 				{
 					// Add base volume when price declines by the target distance.
-					SellMarket(volume);
+					SellMarket();
 				}
 				return;
 			}
@@ -363,7 +362,7 @@ public class MartingailExpertSequenceStrategy : Strategy
 				if (volume > 0m)
 				{
 					// Increase exposure after an adverse move by the configured step size.
-					SellMarket(volume);
+					SellMarket();
 				}
 			}
 		}

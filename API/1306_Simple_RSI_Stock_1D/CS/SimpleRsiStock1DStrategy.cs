@@ -234,7 +234,8 @@ public class SimpleRsiStock1DStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi, sma);
+			DrawIndicator(area, rsi);
+			DrawIndicator(area, sma);
 			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}

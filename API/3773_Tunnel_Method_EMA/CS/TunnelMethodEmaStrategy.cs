@@ -198,9 +198,9 @@ public class TunnelMethodEmaStrategy : Strategy
 		_trailingStopDistance = TrailingStopPoints * _pointValue;
 		_trailingTriggerDistance = TrailingTriggerPoints * _pointValue;
 
-		var slowEma = new EMA { Length = SlowLength };
-		var mediumEma = new EMA { Length = MediumLength };
-		var fastEma = new EMA { Length = FastLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		var mediumEma = new ExponentialMovingAverage { Length = MediumLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastLength };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -259,7 +259,7 @@ public class TunnelMethodEmaStrategy : Strategy
 					_highestSinceEntry = candle.HighPrice;
 					_longTrailingStop = null;
 					// Enter long with current volume when the fast EMA crosses above the slow EMA.
-					BuyMarket(volume);
+					BuyMarket();
 				}
 			}
 			else if (shouldOpenShort && Position >= 0)
@@ -271,7 +271,7 @@ public class TunnelMethodEmaStrategy : Strategy
 					_lowestSinceEntry = candle.LowPrice;
 					_shortTrailingStop = null;
 					// Enter short with current volume when the fast EMA crosses below the medium EMA.
-					SellMarket(volume);
+					SellMarket();
 				}
 			}
 		}
@@ -291,14 +291,14 @@ public class TunnelMethodEmaStrategy : Strategy
 
 		if (_takeProfitDistance > 0m && candle.HighPrice >= _entryPrice.Value + _takeProfitDistance)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetPositionState();
 			return;
 		}
 
 		if (_stopLossDistance > 0m && candle.LowPrice <= _entryPrice.Value - _stopLossDistance)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetPositionState();
 			return;
 		}
@@ -319,7 +319,7 @@ public class TunnelMethodEmaStrategy : Strategy
 		if (_longTrailingStop.HasValue && candle.LowPrice <= _longTrailingStop.Value)
 			// Close the long position once price falls to the trailing stop.
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetPositionState();
 		}
 	}
@@ -334,14 +334,14 @@ public class TunnelMethodEmaStrategy : Strategy
 
 		if (_takeProfitDistance > 0m && candle.LowPrice <= _entryPrice.Value - _takeProfitDistance)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetPositionState();
 			return;
 		}
 
 		if (_stopLossDistance > 0m && candle.HighPrice >= _entryPrice.Value + _stopLossDistance)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetPositionState();
 			return;
 		}
@@ -362,7 +362,7 @@ public class TunnelMethodEmaStrategy : Strategy
 		if (_shortTrailingStop.HasValue && candle.HighPrice >= _shortTrailingStop.Value)
 			// Close the short position once price rises to the trailing stop.
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetPositionState();
 		}
 	}

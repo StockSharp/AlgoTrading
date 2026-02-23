@@ -255,8 +255,7 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 
 		ManageOpenPosition(candle.ClosePrice, spreadPoints);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		
 
 		if (Position != 0m)
 			return;
@@ -285,14 +284,14 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 
 		if (buySignal)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 			_positionDirection = 1;
 			_entryPrice = askPrice;
 			_bestPrice = askPrice;
 		}
 		else if (sellSignal)
 		{
-			SellMarket(volume);
+			SellMarket();
 			_positionDirection = -1;
 			_entryPrice = bidPrice;
 			_bestPrice = bidPrice;
@@ -374,9 +373,9 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		}
 
 		if (Position > 0m)
-			SellMarket(volume);
+			SellMarket();
 		else
-			BuyMarket(volume);
+			BuyMarket();
 
 		if (_positionDirection != 0 && _entryPrice > 0m)
 		{

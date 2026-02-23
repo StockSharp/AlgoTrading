@@ -47,6 +47,7 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 	private decimal? _currentCheckClose;
 	private int _tradesOpenedToday;
 	private bool _levelsReady;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Hour of the day when the reference range is calculated.
@@ -167,7 +168,7 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 
 		_checkMode = Param(nameof(CheckMode), 1)
 		.SetDisplay("Check Mode", "1 - use daily range, 2 - use absolute close difference", "Averaging")
-		.SetValues(1, 2);
+		.SetRange(1, 2);
 
 		_profitFactor = Param(nameof(ProfitFactor), 2m)
 		.SetGreaterThanZero()
@@ -189,7 +190,7 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 
 		_closeMode = Param(nameof(CloseMode), 1)
 		.SetDisplay("Close Mode", "1 - keep positions overnight, 2 - close on new day", "Risk")
-		.SetValues(1, 2);
+		.SetRange(1, 2);
 
 		_tradesPerDay = Param(nameof(TradesPerDay), 1)
 		.SetGreaterThanZero()
@@ -259,8 +260,7 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 		UpdateDailyState(candle);
 		TryCalculateLevels(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		
 
 		ManageOpenPosition(candle);
 		TryEnterPosition(candle);
@@ -351,7 +351,8 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 		if (Position == 0m)
 		return;
 
-		if (PositionPrice is not decimal entryPrice)
+		var entryPrice = _entryPrice;
+		if (entryPrice == 0m)
 		return;
 
 		if (Position > 0m)
@@ -360,7 +361,7 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 			var reachedLoss = _lossDistance > 0m && entryPrice - candle.ClosePrice >= _lossDistance;
 
 			if (reachedProfit || reachedLoss)
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		}
 		else if (Position < 0m)
 		{
@@ -368,7 +369,7 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 			var reachedLoss = _lossDistance > 0m && candle.ClosePrice - entryPrice >= _lossDistance;
 
 			if (reachedProfit || reachedLoss)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 	}
 
@@ -391,12 +392,14 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 
 		if (candle.ClosePrice >= _buyBreakout)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
 			_tradesOpenedToday++;
 		}
 		else if (candle.ClosePrice <= _sellBreakout)
 		{
-			SellMarket(Volume);
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
 			_tradesOpenedToday++;
 		}
 	}
@@ -434,11 +437,11 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 	{
 		if (Position > 0m)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		}
 		else if (Position < 0m)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 	}
 }

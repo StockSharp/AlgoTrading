@@ -14,7 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on the Color Schaff MFI Trend Cycle indicator.
+/// Strategy based on the Color Schaff MoneyFlowIndex Trend Cycle indicator.
 /// </summary>
 public class ColorSchaffMfiTrendCycleStrategy : Strategy
 {
@@ -25,8 +25,8 @@ public class ColorSchaffMfiTrendCycleStrategy : Strategy
 	private readonly StrategyParam<int> _lowLevel;
 	private readonly StrategyParam<DataType> _candleType;
 	
-	private MFI _fastMfi;
-	private MFI _slowMfi;
+	private MoneyFlowIndex _fastMfi;
+	private MoneyFlowIndex _slowMfi;
 	private decimal[] _macd;
 	private decimal[] _st;
 	private int _index;
@@ -46,10 +46,10 @@ public class ColorSchaffMfiTrendCycleStrategy : Strategy
 	public ColorSchaffMfiTrendCycleStrategy()
 	{
 		_fastMfiPeriod = Param(nameof(FastMfiPeriod), 23)
-		.SetDisplay("Fast MFI", "Fast MFI period", "Indicator");
+		.SetDisplay("Fast MoneyFlowIndex", "Fast MoneyFlowIndex period", "Indicator");
 		
 		_slowMfiPeriod = Param(nameof(SlowMfiPeriod), 50)
-		.SetDisplay("Slow MFI", "Slow MFI period", "Indicator");
+		.SetDisplay("Slow MoneyFlowIndex", "Slow MoneyFlowIndex period", "Indicator");
 		
 		_cycleLength = Param(nameof(CycleLength), 10)
 		.SetDisplay("Cycle Length", "Cycle length for STC", "Indicator");
@@ -73,8 +73,8 @@ public class ColorSchaffMfiTrendCycleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 		
-		_fastMfi = new MFI { Length = FastMfiPeriod };
-		_slowMfi = new MFI { Length = SlowMfiPeriod };
+		_fastMfi = new MoneyFlowIndex { Length = FastMfiPeriod };
+		_slowMfi = new MoneyFlowIndex { Length = SlowMfiPeriod };
 		_macd = new decimal[CycleLength];
 		_st = new decimal[CycleLength];
 		

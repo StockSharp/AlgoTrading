@@ -158,16 +158,7 @@ public class SmartMoneyConceptUncleSamStrategy : Strategy
 		_pivotHigh = null;
 		_pivotLow = null;
 
-		_ma = new MovingAverage { Length = MaLength, Type = MaType switch
-		{
-			MovingAverageTypes.SMA => MovingAverageTypes.Simple,
-			MovingAverageTypes.EMA => MovingAverageTypes.Exponential,
-			MovingAverageTypes.DEMA => MovingAverageTypes.DoubleExponential,
-			MovingAverageTypes.TEMA => MovingAverageTypes.TripleExponential,
-			MovingAverageTypes.WMA => MovingAverageTypes.Weighted,
-			MovingAverageTypes.VWMA => MovingAverageTypes.VolumeWeighted,
-			_ => MovingAverageTypes.Simple
-		}};
+		_ma = new SMA { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -251,13 +242,13 @@ public class SmartMoneyConceptUncleSamStrategy : Strategy
 
 		if (longCond && Position <= 0)
 		{
-			CancelActiveOrders();
+
 			BuyMarket(Volume + Math.Abs(Position));
 			_pivotHigh = null;
 		}
 		else if (shortCond && Position >= 0)
 		{
-			CancelActiveOrders();
+
 			SellMarket(Volume + Math.Abs(Position));
 			_pivotLow = null;
 		}

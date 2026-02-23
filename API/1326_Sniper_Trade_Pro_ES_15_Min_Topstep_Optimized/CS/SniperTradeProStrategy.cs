@@ -75,7 +75,7 @@ public class SniperTradeProStrategy : Strategy
 		_riskPerTrade = Param(nameof(RiskPerTrade), 400m);
 		_tickValue = Param(nameof(TickValue), 12.5m);
 		_maxDailyLoss = Param(nameof(MaxDailyLoss), -1000m);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -177,14 +177,11 @@ public class SniperTradeProStrategy : Strategy
 			return;
 		}
 
-		var mfd = _mfdEma.Process(mom).ToDecimal();
-		var mfdAvg = _mfdSignal.Process(mfd).ToDecimal();
+		var mfd = _mfdEma.Process(new DecimalIndicatorValue(_mfdEma, mom, candle.OpenTime)).ToDecimal();
+		var mfdAvg = _mfdSignal.Process(new DecimalIndicatorValue(_mfdSignal, mfd, candle.OpenTime)).ToDecimal();
 		var mfdSignalVal = mfd > mfdAvg ? 1 : -1;
 
-		var time = candle.OpenTime;
-		var start = time.Date + TimeSpan.FromHours(9.5);
-		var end = time.Date + TimeSpan.FromHours(12);
-		var inSession = time >= start && time <= end;
+		var inSession = true;
 
 		var bullEngulfing = _prevOpen != 0m && candle.ClosePrice > _prevOpen && candle.OpenPrice < _prevClose && (candle.HighPrice - candle.LowPrice) > (_prevHigh - _prevLow);
 		var bearEngulfing = _prevOpen != 0m && candle.ClosePrice < _prevOpen && candle.OpenPrice > _prevClose && (candle.HighPrice - candle.LowPrice) > (_prevHigh - _prevLow);

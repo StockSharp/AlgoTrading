@@ -166,7 +166,7 @@ public class IcciIrsiStrategy : Strategy
 	/// </summary>
 	public IcciIrsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles used for the indicators", "General");
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
@@ -211,25 +211,25 @@ public class IcciIrsiStrategy : Strategy
 		.SetOptimize(0.1m, 1m, 0.1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
-		.SetNonNegative()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Protective stop-loss distance in pips", "Risk")
 		
 		.SetOptimize(0m, 200m, 20m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 140m)
-		.SetNonNegative()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Profit target distance in pips", "Risk")
 		
 		.SetOptimize(40m, 300m, 20m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-		.SetNonNegative()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
 		
 		.SetOptimize(0m, 50m, 5m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-		.SetNonNegative()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Minimum progress before updating the trailing stop", "Risk")
 		
 		.SetOptimize(0m, 20m, 2m);
@@ -271,11 +271,11 @@ public class IcciIrsiStrategy : Strategy
 			DrawOwnTrades(priceArea);
 		}
 
-		var cciArea = CreateChartArea("CCI");
+		var cciArea = CreateChartArea();
 		if (cciArea != null)
 		DrawIndicator(cciArea, _cci);
 
-		var rsiArea = CreateChartArea("RSI");
+		var rsiArea = CreateChartArea();
 		if (rsiArea != null)
 		DrawIndicator(rsiArea, _rsi);
 	}
@@ -288,7 +288,7 @@ public class IcciIrsiStrategy : Strategy
 		ManageActivePosition(candle);
 
 		// Evaluate new signals only after managing the existing position.
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_cci.IsFormed || !_rsi.IsFormed)
 		return;
 
 		if (!_cci.IsFormed || !_rsi.IsFormed)

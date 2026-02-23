@@ -86,7 +86,7 @@ public class EmaLwmaRsiStrategy : Strategy
 		_rsiAppliedPrice = Param(nameof(RsiAppliedPrice), AppliedPriceTypes.Weighted)
 			.SetDisplay("RSI applied price", "Price source used by the RSI.", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Type of candles analyzed by the strategy.", "General");
 	}
 
@@ -180,8 +180,8 @@ public class EmaLwmaRsiStrategy : Strategy
 
 		_pipSize = CalculatePipSize();
 
-		var stopLossUnit = StopLossPips > 0 ? new Unit(StopLossPips * _pipSize, UnitTypes.Point) : null;
-		var takeProfitUnit = TakeProfitPips > 0 ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Point) : null;
+		var stopLossUnit = StopLossPips > 0 ? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute) : null;
+		var takeProfitUnit = TakeProfitPips > 0 ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute) : null;
 
 		StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit);
 
@@ -238,25 +238,34 @@ public class EmaLwmaRsiStrategy : Strategy
 		var rsiPrice = GetAppliedPrice(candle, RsiAppliedPrice);
 		var time = candle.OpenTime;
 
-		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, maPrice, time)).ToDecimal();
-		var lwmaValue = _lwma.Process(new DecimalIndicatorValue(_lwma, maPrice, time)).ToDecimal();
-		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiPrice, time)).ToDecimal();
+		var emaResult = _ema.Process(new DecimalIndicatorValue(_ema, maPrice, time) { IsFinal = true });
+		var lwmaResult = _lwma.Process(new DecimalIndicatorValue(_lwma, maPrice, time) { IsFinal = true });
+		var rsiResult = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiPrice, time) { IsFinal = true });
+
+		if (emaResult.IsEmpty || lwmaResult.IsEmpty || rsiResult.IsEmpty)
+			return;
+
+		var emaValue = emaResult.ToDecimal();
+		var lwmaValue = lwmaResult.ToDecimal();
+		var rsiValue = rsiResult.ToDecimal();
 
 		if (!_ema.IsFormed || !_lwma.IsFormed || !_rsi.IsFormed)
 			return;
 
 		if (_emaShiftIndicator != null)
 		{
-			emaValue = _emaShiftIndicator.Process(new DecimalIndicatorValue(_emaShiftIndicator, emaValue, time)).ToDecimal();
-			if (!_emaShiftIndicator.IsFormed)
+			var shiftResult = _emaShiftIndicator.Process(new DecimalIndicatorValue(_emaShiftIndicator, emaValue, time) { IsFinal = true });
+			if (shiftResult.IsEmpty || !_emaShiftIndicator.IsFormed)
 				return;
+			emaValue = shiftResult.ToDecimal();
 		}
 
 		if (_lwmaShiftIndicator != null)
 		{
-			lwmaValue = _lwmaShiftIndicator.Process(new DecimalIndicatorValue(_lwmaShiftIndicator, lwmaValue, time)).ToDecimal();
-			if (!_lwmaShiftIndicator.IsFormed)
+			var shiftResult = _lwmaShiftIndicator.Process(new DecimalIndicatorValue(_lwmaShiftIndicator, lwmaValue, time) { IsFinal = true });
+			if (shiftResult.IsEmpty || !_lwmaShiftIndicator.IsFormed)
 				return;
+			lwmaValue = shiftResult.ToDecimal();
 		}
 
 		var buySignal = false;
@@ -274,7 +283,7 @@ public class EmaLwmaRsiStrategy : Strategy
 		_previousEma = emaValue;
 		_previousLwma = lwmaValue;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_ema.IsFormed || !_lwma.IsFormed || !_rsi.IsFormed)
 			return;
 
 		if (buySignal)

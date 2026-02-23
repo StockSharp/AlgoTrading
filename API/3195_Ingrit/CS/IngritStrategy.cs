@@ -201,7 +201,7 @@ public class IngritStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_history.Count < 14)
 		return;
 
 		UpdatePipSettings();

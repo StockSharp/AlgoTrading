@@ -86,7 +86,7 @@ _signalLength = Param(nameof(SignalLength), 9)
 .SetGreaterThanZero()
 ;
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles for processing", "General");
 }
 
@@ -105,15 +105,14 @@ _isInitialized = false;
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-base.OnStarted(time);
+base.OnStarted2(time);
 
 var macd = new MovingAverageConvergenceDivergence
 {
 ShortMa = { Length = FastLength },
 LongMa = { Length = SlowLength },
-SignalPeriod = SignalLength
 };
 
 var subscription = SubscribeCandles(CandleType);

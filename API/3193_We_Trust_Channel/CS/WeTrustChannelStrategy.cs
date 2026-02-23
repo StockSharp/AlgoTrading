@@ -133,7 +133,7 @@ public class WeTrustChannelStrategy : Strategy
 		_appliedPrice = Param(nameof(AppliedPrice), CandlePrices.Weighted)
 			.SetDisplay("Applied price", "Price source fed into the indicators.", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Primary timeframe used for signals.", "General");
 	}
 
@@ -318,10 +318,9 @@ public class WeTrustChannelStrategy : Strategy
 		}
 
 		StartProtection(
-			takeProfit: TakeProfitPips > 0m ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute) : null,
-			stopLoss: StopLossPips > 0m ? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute) : null,
-			trailingStop: TrailingStopPips > 0m ? new Unit(TrailingStopPips * _pipSize, UnitTypes.Absolute) : null,
-			trailingStep: TrailingStopPips > 0m && TrailingStepPips > 0m ? new Unit(TrailingStepPips * _pipSize, UnitTypes.Absolute) : null,
+			takeProfit: TakeProfitPips > 0m ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute) : new Unit(),
+			stopLoss: StopLossPips > 0m ? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute) : new Unit(),
+			isStopTrailing: TrailingStopPips > 0m,
 			useMarketOrders: true);
 	}
 
@@ -370,7 +369,7 @@ public class WeTrustChannelStrategy : Strategy
 			(wantBuy, wantSell) = (wantSell, wantBuy);
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_movingAverage.IsFormed || !_standardDeviation.IsFormed)
 			return;
 
 		if (wantBuy)
@@ -399,7 +398,7 @@ public class WeTrustChannelStrategy : Strategy
 
 	private decimal CalculatePipSize()
 	{
-		var step = Security?.PriceStep ?? Security?.Step ?? 0m;
+		var step = Security?.PriceStep ?? 0m;
 		if (step <= 0m)
 			step = 1m;
 

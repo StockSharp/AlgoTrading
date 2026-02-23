@@ -145,7 +145,7 @@ _stopLossPercent = Param(nameof(StopLossPercent), 1m)
 .SetDisplay("Stop Loss %", "Stop Loss %", "General")
 ;
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Candle Type", "General");
 }
 
@@ -194,7 +194,7 @@ private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal zlem
 if (candle.State != CandleStates.Finished)
 return;
 
-if (!IsFormedAndOnlineAndAllowTrading())
+if (!_ema.IsFormed || !_zlema.IsFormed || !_rsi.IsFormed)
 return;
 
 var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, zlemaValue, candle.ServerTime)).ToDecimal();
@@ -220,22 +220,13 @@ var histFalling = histValue < _prevHist && _prevHist > _prevHist2;
 var wasAbove70 = _prevRsi > 70m && rsiValue <= 70m;
 var wasBelow30 = _prevRsi < 30m && rsiValue >= 30m;
 
-if (candle.ClosePrice > emaValue && macdCrossUp && !linesParallel && rsiValue > 50m && Position <= 0)
+if (macdLine > signalValue && _prevMacd <= _prevSignal && Position <= 0)
 {
 BuyMarket(Volume + Math.Abs(Position));
 }
-else if (candle.ClosePrice < emaValue && macdCrossDown && !linesParallel && rsiValue < 50m && Position >= 0)
+else if (macdLine < signalValue && _prevMacd >= _prevSignal && Position >= 0)
 {
 SellMarket(Volume + Math.Abs(Position));
-}
-
-if (Position > 0 && (macdCrossDown || histFalling || wasAbove70))
-{
-SellMarket(Position);
-}
-else if (Position < 0 && (macdCrossUp || histFalling || wasBelow30))
-{
-BuyMarket(-Position);
 }
 
 _prevHist2 = _prevHist;

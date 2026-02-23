@@ -145,7 +145,7 @@ public class PercentageCrossoverStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Bar", "Closed bars to look back for the signal", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for signal candles", "Data");
 	}
 

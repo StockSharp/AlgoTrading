@@ -71,7 +71,7 @@ public class PreviousHighLowBreakoutStrategy : Strategy
 			
 			.SetOptimize(100m, 2000m, 100m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 
@@ -110,10 +110,6 @@ public class PreviousHighLowBreakoutStrategy : Strategy
 	{
 		// Work only with finished candles.
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Ensure strategy is ready for trading.
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		// Store the first candle values and wait for the next one.

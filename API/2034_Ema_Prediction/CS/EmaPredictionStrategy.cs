@@ -120,7 +120,7 @@ public class EmaPredictionStrategy : Strategy
 	/// </summary>
 	public EmaPredictionStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 1)
@@ -173,8 +173,8 @@ public class EmaPredictionStrategy : Strategy
 
 		var step = Security.PriceStep ?? 1m;
 		StartProtection(
-			takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Point),
-			stopLoss: new Unit(StopLossTicks * step, UnitTypes.Point));
+			takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLossTicks * step, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)

@@ -92,7 +92,7 @@ public class ForceDiverSignStrategy : Strategy
 		.SetDisplay("Fast MA Type", "Moving average type for fast Force", "Indicators");
 		_maType2 = Param(nameof(MaType2), MovingAverageTypes.Exponential)
 		.SetDisplay("Slow MA Type", "Moving average type for slow Force", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 	/// <inheritdoc />
@@ -144,8 +144,17 @@ public class ForceDiverSignStrategy : Strategy
 		}
 		var force = (candle.ClosePrice - _prevClose) * candle.TotalVolume;
 		_prevClose = candle.ClosePrice;
-		var f1 = _ma1.Process(force).ToDecimal();
-		var f2 = _ma2.Process(force).ToDecimal();
+		var f1v = _ma1.Process(force, candle.OpenTime, true);
+		var f2v = _ma2.Process(force, candle.OpenTime, true);
+		if (f1v.IsEmpty || f2v.IsEmpty)
+		{
+			Shift(_opens, candle.OpenPrice);
+			Shift(_closes, candle.ClosePrice);
+			_count++;
+			return;
+		}
+		var f1 = f1v.ToDecimal();
+		var f2 = f2v.ToDecimal();
 		Shift(_opens, candle.OpenPrice);
 		Shift(_closes, candle.ClosePrice);
 		Shift(_f1, f1);
@@ -155,8 +164,6 @@ public class ForceDiverSignStrategy : Strategy
 			_count++;
 			return;
 		}
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
 		var sellSignal = _opens[3] < _closes[3] && _opens[2] > _closes[2] && _opens[1] < _closes[1]
 		&& _f1[4] < _f1[3] && _f1[3] > _f1[2] && _f1[2] < _f1[1]
 		&& _f2[4] < _f2[3] && _f2[3] > _f2[2] && _f2[2] < _f2[1]

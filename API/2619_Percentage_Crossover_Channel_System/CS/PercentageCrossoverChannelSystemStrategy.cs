@@ -129,7 +129,7 @@ public class PercentageCrossoverChannelSystemStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 2000)
 			.SetDisplay("Take Profit (steps)", "Target profit distance in price steps", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for analysis", "General");
 	}
 

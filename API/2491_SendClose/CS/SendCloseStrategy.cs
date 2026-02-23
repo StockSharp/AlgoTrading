@@ -209,7 +209,7 @@ public class SendCloseStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Offset Steps", "Offset in price steps for close levels", "Execution");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 	}
 
@@ -282,7 +282,7 @@ public class SendCloseStrategy : Strategy
 		// Close any open position if price reached one of the close lines.
 		if (shouldClose && Position != 0m)
 		{
-			ClosePosition();
+			if (Position > 0) SellMarket(); else BuyMarket();
 			return;
 		}
 
@@ -295,7 +295,7 @@ public class SendCloseStrategy : Strategy
 				if (Position > 0m)
 				{
 					// Flatten long positions before attempting to go short.
-					ClosePosition();
+					SellMarket();
 				}
 				else if (CanIncreaseShort())
 				{
@@ -313,7 +313,7 @@ public class SendCloseStrategy : Strategy
 				if (Position < 0m)
 				{
 					// Flatten short positions before attempting to go long.
-					ClosePosition();
+					BuyMarket();
 				}
 				else if (CanIncreaseLong())
 				{

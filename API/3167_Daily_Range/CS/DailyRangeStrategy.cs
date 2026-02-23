@@ -147,7 +147,7 @@ public class DailyRangeStrategy : Strategy
 		_startTime = Param(nameof(StartTime), new TimeSpan(10, 5, 0))
 			.SetDisplay("Start Time", "Time of day when a new range is computed", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles used for range calculation and trading", "General");
 	}
 
@@ -205,7 +205,7 @@ public class DailyRangeStrategy : Strategy
 			}
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_rangeCalculatedForDay)
 			return;
 
 		if (_dailyRange is not decimal currentRange || _upperBoundary is not decimal upper || _lowerBoundary is not decimal lower)
@@ -289,7 +289,7 @@ public class DailyRangeStrategy : Strategy
 		if (positionVolume == 0m)
 			return false;
 
-		var averagePrice = Position.AveragePrice ?? candle.ClosePrice;
+		var averagePrice = candle.ClosePrice;
 
 		var stopDistance = StopLossCoefficient > 0m ? currentRange * StopLossCoefficient : 0m;
 		var takeDistance = TakeProfitCoefficient > 0m ? currentRange * TakeProfitCoefficient : 0m;
