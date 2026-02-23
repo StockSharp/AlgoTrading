@@ -100,7 +100,7 @@ public class MasterMind3Strategy : Strategy
 			
 			.SetOptimize(10, 50, 5);
 
-		_candleType = Param(nameof(CandleType), System.TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for the strategy", "General");
 	}
 
@@ -111,9 +111,9 @@ public class MasterMind3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(System.DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var wpr1 = new WilliamsR { Length = WprPeriod1 };
 		var wpr2 = new WilliamsR { Length = WprPeriod2 };
@@ -145,16 +145,16 @@ public class MasterMind3Strategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var isBuySignal = wpr1 <= -99.99m && wpr2 <= -99.99m && wpr3 <= -99.99m && wpr4 <= -99.99m;
-		var isSellSignal = wpr1 >= -0.01m && wpr2 >= -0.01m && wpr3 >= -0.01m && wpr4 >= -0.01m;
+		var isBuySignal = wpr1 <= -80m && wpr2 <= -80m && wpr3 <= -80m && wpr4 <= -80m;
+		var isSellSignal = wpr1 >= -20m && wpr2 >= -20m && wpr3 >= -20m && wpr4 >= -20m;
 
 		if (isBuySignal && Position <= 0)
 		{
-			BuyMarket(Volume + System.Math.Abs(Position));
+			BuyMarket(Volume + Math.Abs(Position));
 		}
 		else if (isSellSignal && Position >= 0)
 		{
-			SellMarket(Volume + System.Math.Abs(Position));
+			SellMarket(Volume + Math.Abs(Position));
 		}
 	}
 }

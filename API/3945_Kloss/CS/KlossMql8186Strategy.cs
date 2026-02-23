@@ -63,10 +63,10 @@ public class KlossMql8186Strategy : Strategy
                         
                         .SetOptimize(3, 15, 1);
 
-                _stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
+                _stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
                         .SetGreaterThanZero()
                         .SetDisplay("Stochastic %D", "SMA length of the %D line", "Indicators")
-                        
+
                         .SetOptimize(1, 10, 1);
 
                 _stochasticSmooth = Param(nameof(StochasticSmooth), 3)
@@ -200,10 +200,9 @@ public class KlossMql8186Strategy : Strategy
                 // Instantiate indicators that mirror the MQL implementation.
                 _cci = new CommodityChannelIndex { Length = CciPeriod };
                 _stochastic = new StochasticOscillator
-                { K = { Length = StochasticKPeriod },
+                {
                         K = { Length = StochasticKPeriod },
                         D = { Length = StochasticDPeriod },
-                        Smooth = StochasticSmooth,
                 };
 
                 var subscription = SubscribeCandles(CandleType);

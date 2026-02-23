@@ -151,7 +151,7 @@ public class ThePredatorStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance in pips", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
 	}
 
@@ -373,12 +373,11 @@ public class ThePredatorStrategy : Strategy
 		_directionalIndex = new DirectionalIndex { Length = DmiPeriod };
 		_adx = new AverageDirectionalIndex { Length = AdxSmoothing };
 		_momentum = new Momentum { Length = MomentumPeriod };
-		_macd = new MovingAverageConvergenceDivergence();
+		_macd = new MovingAverageConvergenceDivergenceSignal();
 		_tightBands = new BollingerBands { Length = BollingerPeriod, Width = TightBandWidth };
 		_wideBands = new BollingerBands { Length = BollingerPeriod, Width = WideBandWidth };
 		_stochastic = new StochasticOscillator
-		{ K = { Length = StochasticLength },
-			Smooth = StochasticSmooth,
+		{
 			K = { Length = StochasticLength },
 			D = { Length = StochasticSmooth }
 		};
