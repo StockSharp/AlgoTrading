@@ -545,7 +545,7 @@ public class TrendCatcherBreakoutStrategy : Strategy
 		if (volume <= 0)
 			return;
 
-		BuyMarket(volume);
+		BuyMarket();
 		_entryPrice = candle.ClosePrice;
 		_stopLossPrice = stopPrice;
 		_takeProfitPrice = takePrice;
@@ -561,7 +561,7 @@ public class TrendCatcherBreakoutStrategy : Strategy
 		if (volume <= 0)
 			return;
 
-		SellMarket(volume);
+		SellMarket();
 		_entryPrice = candle.ClosePrice;
 		_stopLossPrice = stopPrice;
 		_takeProfitPrice = takePrice;
@@ -574,7 +574,7 @@ public class TrendCatcherBreakoutStrategy : Strategy
 		if (volume <= 0)
 			return;
 
-		SellMarket(volume);
+		SellMarket();
 		FinalizeTrade(exitPrice, candle.OpenTime, false);
 	}
 
@@ -585,7 +585,7 @@ public class TrendCatcherBreakoutStrategy : Strategy
 		if (volume <= 0)
 			return;
 
-		BuyMarket(volume);
+		BuyMarket();
 		FinalizeTrade(exitPrice, candle.OpenTime, true);
 	}
 

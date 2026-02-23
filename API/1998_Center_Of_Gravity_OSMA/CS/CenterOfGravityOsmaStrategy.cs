@@ -132,7 +132,7 @@ public class CenterOfGravityOsmaStrategy : Strategy
 		_sellClose = Param(nameof(SellPosClose), true)
 		.SetDisplay("Sell Close", "Allow closing shorts on buy signal", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
@@ -241,29 +241,30 @@ public class CenterOfGravityOsmaStrategy : Strategy
 		public int SmoothPeriod1 { get; set; }
 		public int SmoothPeriod2 { get; set; }
 
-		private readonly SMA _sma = new();
+		private readonly SimpleMovingAverage _sma = new();
 		private readonly WeightedMovingAverage _lwma = new();
-		private readonly SMA _smooth1 = new();
-		private readonly SMA _smooth2 = new();
+		private readonly SimpleMovingAverage _smooth1 = new();
+		private readonly SimpleMovingAverage _smooth2 = new();
 
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
 			var smaValue = _sma.Process(input);
 			var lwmaValue = _lwma.Process(input);
 
-			if (!smaValue.IsFinal || !lwmaValue.IsFinal)
-			return new DecimalIndicatorValue(this, default, input.Time);
+			if (!_sma.IsFormed || !_lwma.IsFormed)
+				return new DecimalIndicatorValue(this, input.Time);
 
 			var res1 = smaValue.GetValue<decimal>() * lwmaValue.GetValue<decimal>();
-			var smooth1Value = _smooth1.Process(new DecimalIndicatorValue(this, res1, input.Time));
-			if (!smooth1Value.IsFinal)
-			return new DecimalIndicatorValue(this, default, input.Time);
+			var smooth1Value = _smooth1.Process(new DecimalIndicatorValue(this, res1, input.Time) { IsFinal = input.IsFinal });
+			if (!_smooth1.IsFormed)
+				return new DecimalIndicatorValue(this, input.Time);
 
 			var res3 = res1 - smooth1Value.GetValue<decimal>();
-			var smooth2Value = _smooth2.Process(new DecimalIndicatorValue(this, res3, input.Time));
-			if (!smooth2Value.IsFinal)
-			return new DecimalIndicatorValue(this, default, input.Time);
+			var smooth2Value = _smooth2.Process(new DecimalIndicatorValue(this, res3, input.Time) { IsFinal = input.IsFinal });
+			if (!_smooth2.IsFormed)
+				return new DecimalIndicatorValue(this, input.Time);
 
+			IsFormed = true;
 			var final = smooth2Value.GetValue<decimal>();
 			return new DecimalIndicatorValue(this, final, input.Time);
 		}

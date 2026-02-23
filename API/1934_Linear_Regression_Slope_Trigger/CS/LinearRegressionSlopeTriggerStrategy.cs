@@ -131,7 +131,7 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 		
 		.SetOptimize(1m, 5m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 	/// <inheritdoc />
@@ -178,8 +178,9 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var typed = (LinearRegressionValue)_slopeIndicator.Process(new DecimalIndicatorValue(_slopeIndicator, candle.ClosePrice, candle.ServerTime));
-		if (!typed.IsFinal || typed.LinearReg is not decimal slope)
+		var input = new DecimalIndicatorValue(_slopeIndicator, candle.ClosePrice, candle.ServerTime) { IsFinal = true };
+		var typed = (LinearRegressionValue)_slopeIndicator.Process(input);
+		if (typed.LinearReg is not decimal slope)
 			return;
 
 		// Store slope history for trigger calculation
@@ -197,14 +198,6 @@ public class LinearRegressionSlopeTriggerStrategy : Strategy
 
 		if (_slopeHistory.Count > TriggerShift + 1)
 			_slopeHistory.RemoveAt(0);
-
-		// Ensure strategy can trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousSlope = slope;
-			_previousTrigger = trigger;
-			return;
-		}
 
 		var buySignal = _previousTrigger <= _previousSlope && trigger > slope;
 		var sellSignal = _previousTrigger >= _previousSlope && trigger < slope;

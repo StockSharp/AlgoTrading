@@ -116,7 +116,7 @@ public class ColorZerolagRsiOsmaStrategy : Strategy
 		_sellClose = Param(nameof(SellClose), true)
 			.SetDisplay("Close Short", "Close shorts on upward signal", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -128,8 +128,6 @@ public class ColorZerolagRsiOsmaStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
-
 		_smoothConst1 = (Smoothing1 - 1m) / Smoothing1;
 		_smoothConst2 = (Smoothing2 - 1m) / Smoothing2;
 

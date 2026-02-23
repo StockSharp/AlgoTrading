@@ -330,9 +330,6 @@ public class TwoPerBarStrategy : Strategy
 		if (security?.PriceStep is decimal step && step > 0m)
 		return step;
 
-		if (security?.MinPriceStep is decimal minStep && minStep > 0m)
-		return minStep;
-
 		return 0m;
 	}
 }

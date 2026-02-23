@@ -230,7 +230,7 @@ public class XoSignalReopenStrategy : Strategy
 		_enableSellExits = Param(nameof(EnableSellExits), true)
 			.SetDisplay("Close Short", "Close short on long signal", "Permissions");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe", "General");
 
 		_range = Param(nameof(Range), 10)
@@ -367,13 +367,13 @@ public class XoSignalReopenStrategy : Strategy
 
 		if (signal.BuyExit && EnableBuyExits && Position > 0)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetLongState();
 		}
 
 		if (signal.SellExit && EnableSellExits && Position < 0)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 			ResetShortState();
 		}
 
@@ -383,13 +383,13 @@ public class XoSignalReopenStrategy : Strategy
 			{
 				if (Position < 0)
 				{
-					BuyMarket(-Position);
+					BuyMarket();
 					ResetShortState();
 				}
 
 				if (Position <= 0)
 				{
-					BuyMarket(Volume);
+					BuyMarket();
 					_lastExecutedBuySignalTime = signal.BuySignalTime;
 					_longOrderCount = 1;
 					_shortOrderCount = 0;
@@ -405,13 +405,13 @@ public class XoSignalReopenStrategy : Strategy
 			{
 				if (Position > 0)
 				{
-					SellMarket(Position);
+					SellMarket();
 					ResetLongState();
 				}
 
 				if (Position >= 0)
 				{
-					SellMarket(Volume);
+					SellMarket();
 					_lastExecutedSellSignalTime = signal.SellSignalTime;
 					_shortOrderCount = 1;
 					_longOrderCount = 0;
@@ -428,12 +428,12 @@ public class XoSignalReopenStrategy : Strategy
 		{
 			if (_longStopPrice.HasValue && candle.LowPrice <= _longStopPrice.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 			}
 			else if (_longTakePrice.HasValue && candle.HighPrice >= _longTakePrice.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 			}
 		}
@@ -447,12 +447,12 @@ public class XoSignalReopenStrategy : Strategy
 		{
 			if (_shortStopPrice.HasValue && candle.HighPrice >= _shortStopPrice.Value)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetShortState();
 			}
 			else if (_shortTakePrice.HasValue && candle.LowPrice <= _shortTakePrice.Value)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetShortState();
 			}
 		}
@@ -475,7 +475,7 @@ public class XoSignalReopenStrategy : Strategy
 		{
 			if (candle.ClosePrice >= _lastLongEntryPrice + distance)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				_longOrderCount++;
 				_lastLongEntryPrice = candle.ClosePrice;
 				UpdateLongRiskLevels(candle.ClosePrice);
@@ -486,7 +486,7 @@ public class XoSignalReopenStrategy : Strategy
 		{
 			if (candle.ClosePrice <= _lastShortEntryPrice - distance)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				_shortOrderCount++;
 				_lastShortEntryPrice = candle.ClosePrice;
 				UpdateShortRiskLevels(candle.ClosePrice);

@@ -257,7 +257,7 @@ public class ProperBotStrategy : Strategy
 			.SetDisplay("Finish Minute", "Trading session end minute", "Session")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -364,24 +364,11 @@ public class ProperBotStrategy : Strategy
 
 		var volumeIsOk = CheckVolume(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			UpdatePreviousCandle(candle);
-			return;
-		}
-
-		if (!volumeIsOk)
-		{
-			UpdatePreviousCandle(candle);
-			return;
-		}
 
 		var signal = CalculateSignal(fastValue, midValue, slowValue);
 
 		ApplyBoundaryFilters(ref signal, candle.ClosePrice);
 
-		if (!IsWithinTradingHours(candle.CloseTime))
-			signal = 0;
 
 		if (!HasActiveCycle() && signal != 0)
 			StartNewCycle(signal);
@@ -491,11 +478,11 @@ public class ProperBotStrategy : Strategy
 
 		if (signal > 0)
 		{
-			BuyMarket(FirstVolume);
+			BuyMarket();
 		}
 		else if (signal < 0)
 		{
-			SellMarket(FirstVolume);
+			SellMarket();
 		}
 	}
 
@@ -516,13 +503,13 @@ public class ProperBotStrategy : Strategy
 		{
 			if (TakeProfitPoints > 0 && high - averagePrice >= takeProfitDistance)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				return true;
 			}
 
 			if (StopLossPoints > 0 && averagePrice - low >= stopLossDistance)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				return true;
 			}
 		}
@@ -530,13 +517,13 @@ public class ProperBotStrategy : Strategy
 		{
 			if (TakeProfitPoints > 0 && averagePrice - low >= takeProfitDistance)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				return true;
 			}
 
 			if (StopLossPoints > 0 && high - averagePrice >= stopLossDistance)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				return true;
 			}
 		}
@@ -554,7 +541,7 @@ public class ProperBotStrategy : Strategy
 				}
 				else if (_maxTrailingPoints - points >= TrailStepPoints)
 				{
-					ClosePosition();
+					if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 					return true;
 				}
 			}
@@ -580,7 +567,7 @@ public class ProperBotStrategy : Strategy
 			if (_lastEntryPrice - candle.LowPrice >= distance)
 			{
 				if (level.Volume > 0m)
-					BuyMarket(level.Volume);
+					BuyMarket();
 			}
 		}
 		else
@@ -588,7 +575,7 @@ public class ProperBotStrategy : Strategy
 			if (candle.HighPrice - _lastEntryPrice >= distance)
 			{
 				if (level.Volume > 0m)
-					SellMarket(level.Volume);
+					SellMarket();
 			}
 		}
 	}

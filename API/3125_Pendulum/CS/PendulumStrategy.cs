@@ -48,13 +48,13 @@ public class PendulumStrategy : Strategy
 
 		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetDisplay("Multiplier", "Scaling applied to volume and extended targets", "Strategy")
-			.SetGreaterThan(1m)
+			.SetGreaterThanZero()
 			
 			.SetOptimize(1.2m, 3m, 0.1m);
 
 		_maxLayers = Param(nameof(MaxLayers), 3)
 			.SetDisplay("Max Layers", "Maximum number of martingale layers", "Risk")
-			.SetGreaterThan(1)
+			.SetGreaterThanZero()
 			
 			.SetOptimize(2, 5, 1);
 

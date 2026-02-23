@@ -333,9 +333,9 @@ public class RsiEaV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	protected override void OnPositionReceived(Position positionObj)
 	{
-		base.OnPositionReceived(position);
+		base.OnPositionReceived(positionObj);
 
 		var position = Position;
 
@@ -565,7 +565,7 @@ public class RsiEaV2Strategy : Strategy
 
 	private void InitializeLongState()
 	{
-		var entryPrice = PositionPrice ?? (_lastClosePrice > 0m ? _lastClosePrice : (decimal?)null);
+		var entryPrice = _lastClosePrice > 0m ? _lastClosePrice : (decimal?)null;
 		if (entryPrice == null)
 			return;
 
@@ -577,7 +577,7 @@ public class RsiEaV2Strategy : Strategy
 
 	private void InitializeShortState()
 	{
-		var entryPrice = PositionPrice ?? (_lastClosePrice > 0m ? _lastClosePrice : (decimal?)null);
+		var entryPrice = _lastClosePrice > 0m ? _lastClosePrice : (decimal?)null;
 		if (entryPrice == null)
 			return;
 
@@ -589,14 +589,14 @@ public class RsiEaV2Strategy : Strategy
 
 	private void UpdateLongState()
 	{
-		if (PositionPrice is decimal avgPrice)
-			_longEntryPrice = avgPrice;
+		if (_lastClosePrice > 0m)
+			_longEntryPrice = _lastClosePrice;
 	}
 
 	private void UpdateShortState()
 	{
-		if (PositionPrice is decimal avgPrice)
-			_shortEntryPrice = avgPrice;
+		if (_lastClosePrice > 0m)
+			_shortEntryPrice = _lastClosePrice;
 	}
 
 	private void ResetLongState()

@@ -109,8 +109,7 @@ public class BollingerBandsTrailingStopStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ma = CreateMa(MaType, BbLength);
-		var bb = new BollingerBands { Length = BbLength, Width = BbDeviation, MovingAverage = ma };
+		var bb = new BollingerBands { Length = BbLength, Width = BbDeviation };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

@@ -89,13 +89,19 @@ public class ColorZeroLagMaStrategy : Strategy
 	public ColorZeroLagMaStrategy()
 	{
 		_length = Param(nameof(Length), 12).SetDisplay("Length", "Zero lag length", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 		_buyOpen = Param(nameof(BuyOpen), true).SetDisplay("Open Buy", "Allow opening long", "Trading");
 		_sellOpen = Param(nameof(SellOpen), true).SetDisplay("Open Sell", "Allow opening short", "Trading");
 		_buyClose = Param(nameof(BuyClose), true).SetDisplay("Close Buy", "Close long on reverse", "Trading");
 		_sellClose = Param(nameof(SellClose), true).SetDisplay("Close Sell", "Close short on reverse", "Trading");
 	}
 	
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{

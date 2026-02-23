@@ -148,9 +148,10 @@ public class ReflexOscillatorStrategy : Strategy
 
 		StartProtection(null, null);
 
+		var ema = new ExponentialMovingAverage { Length = 2 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(ema, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -160,7 +161,7 @@ public class ReflexOscillatorStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;

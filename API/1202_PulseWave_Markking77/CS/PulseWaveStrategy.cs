@@ -117,9 +117,9 @@ public class PulseWaveStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -159,8 +159,8 @@ public class PulseWaveStrategy : Strategy
 			return;
 
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macd = macdTyped.Macd;
-		var signal = macdTyped.Signal;
+		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			return;
 		var rsi = rsiValue.ToDecimal();
 		var vwap = vwapValue.ToDecimal();
 		var price = candle.ClosePrice;

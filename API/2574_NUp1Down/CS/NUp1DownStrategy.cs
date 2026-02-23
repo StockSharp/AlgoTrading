@@ -141,7 +141,7 @@ public class NUp1DownStrategy : Strategy
 			
 			.SetOptimize(1m, 10m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candle analysis", "General");
 	}
 
@@ -194,9 +194,6 @@ public class NUp1DownStrategy : Strategy
 		if (_recentCandles.Count < BarsCount + 1)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var candles = _recentCandles.ToArray();
 		var last = candles[^1];
 
@@ -210,7 +207,7 @@ public class NUp1DownStrategy : Strategy
 			var index = candles.Length - 1 - i;
 			var bar = candles[index];
 
-			if (bar.ClosePrice <= bar.OpenPrice)
+			if (bar.Close <= bar.Open)
 			{
 				isPattern = false;
 				break;
@@ -219,7 +216,7 @@ public class NUp1DownStrategy : Strategy
 			if (i < BarsCount)
 			{
 				var prev = candles[index - 1];
-				if (bar.ClosePrice <= prev.Close)
+				if (bar.Close <= prev.Close)
 				{
 					isPattern = false;
 					break;
@@ -233,21 +230,13 @@ public class NUp1DownStrategy : Strategy
 		if (Position < 0)
 			return;
 
-		var tradeVolume = CalculateOrderVolume();
-		if (tradeVolume <= 0m)
-			return;
-
-		var totalVolume = tradeVolume + Math.Max(Position, 0m);
-		if (totalVolume <= 0m)
-			return;
-
-		SellMarket(totalVolume);
+		SellMarket();
 
 		_entryPrice = candle.ClosePrice;
 		_activeStopPrice = _entryPrice + StopLossPips * _pipSize;
 		_activeTakePrice = _entryPrice - TakeProfitPips * _pipSize;
 
-		LogInfo($"Short entry after {BarsCount} bullish bars at {_entryPrice:0.#####}");
+		this.LogInfo($"Short entry after {BarsCount} bullish bars at {_entryPrice:0.#####}");
 	}
 
 	private void UpdateTrailingAndExits(ICandleMessage candle)
@@ -260,16 +249,16 @@ public class NUp1DownStrategy : Strategy
 
 			if (_activeStopPrice is decimal stop && candle.HighPrice >= stop)
 			{
-				BuyMarket(volumeToClose);
-				LogInfo($"Short exit by stop-loss at {stop:0.#####}");
+				BuyMarket();
+				this.LogInfo($"Short exit by stop-loss at {stop:0.#####}");
 				ResetPositionState();
 				return;
 			}
 
 			if (_activeTakePrice is decimal take && candle.LowPrice <= take)
 			{
-				BuyMarket(volumeToClose);
-				LogInfo($"Short exit by take-profit at {take:0.#####}");
+				BuyMarket();
+				this.LogInfo($"Short exit by take-profit at {take:0.#####}");
 				ResetPositionState();
 				return;
 			}
@@ -288,7 +277,7 @@ public class NUp1DownStrategy : Strategy
 				if (newStopCandidate + trailingStep < trailingStop)
 				{
 					_activeStopPrice = newStopCandidate;
-					LogInfo($"Short trailing stop moved to {_activeStopPrice:0.#####}");
+					this.LogInfo($"Short trailing stop moved to {_activeStopPrice:0.#####}");
 				}
 			}
 		}
@@ -325,12 +314,11 @@ public class NUp1DownStrategy : Strategy
 			return baseVolume;
 
 		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = Security?.StepPrice ?? 0m;
 
-		if (priceStep <= 0m || stepPrice <= 0m)
+		if (priceStep <= 0m)
 			return baseVolume;
 
-		var capital = Portfolio.CurrentValue ?? 0m;
+		var capital = Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? 0m;
 		if (capital <= 0m)
 			return baseVolume;
 
@@ -338,11 +326,7 @@ public class NUp1DownStrategy : Strategy
 		if (riskAmount <= 0m)
 			return baseVolume;
 
-		var steps = stopDistance / priceStep;
-		if (steps <= 0m)
-			return baseVolume;
-
-		var riskPerUnit = steps * stepPrice;
+		var riskPerUnit = stopDistance;
 		if (riskPerUnit <= 0m)
 			return baseVolume;
 

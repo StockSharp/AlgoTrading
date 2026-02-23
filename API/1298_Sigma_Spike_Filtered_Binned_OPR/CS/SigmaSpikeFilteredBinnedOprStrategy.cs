@@ -81,7 +81,13 @@ public class SigmaSpikeFilteredBinnedOprStrategy : Strategy
 		_filterBySigmaSpike = Param(nameof(FilterBySigmaSpike), true).SetDisplay("Filter by sigma spike threshold?", "Filter by sigma spike threshold?", "General");
 		_sigmaSpikeThreshold = Param(nameof(SigmaSpikeThreshold), 2m).SetDisplay("Sigma spike threshold", "Sigma spike threshold", "General");
 		_oprThreshold = Param(nameof(OprThreshold), 10).SetDisplay("Upper/lower OPR threshold", "Upper/lower OPR threshold", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle type", "Candle type", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle type", "Candle type", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -89,17 +95,18 @@ public class SigmaSpikeFilteredBinnedOprStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		// no separate protection
 
 		_returnsStdDev = new StandardDeviation { Length = SigmaSpikeLength };
 
+		var dummyEma = new ExponentialMovingAverage { Length = 5 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(dummyEma, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _dummyEma)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -111,30 +118,37 @@ public class SigmaSpikeFilteredBinnedOprStrategy : Strategy
 		}
 
 		var ret = candle.ClosePrice / _prevClose.Value - 1m;
-		var stdValue = _returnsStdDev.Process(ret);
+		var stdValue = _returnsStdDev.Process(new DecimalIndicatorValue(_returnsStdDev, ret, candle.OpenTime));
 
 		if (_prevStd is not null && _prevStd != 0m)
 		{
 			var ss = ret / _prevStd.Value;
 
-			var opr = (candle.OpenPrice - candle.LowPrice) / (candle.HighPrice - candle.LowPrice) * 100m;
-			var bin = (int)Math.Round(opr, MidpointRounding.AwayFromZero);
-			bin = Math.Max(0, Math.Min(100, bin));
-
-			if (!FilterBySigmaSpike || Math.Abs(ss) >= SigmaSpikeThreshold)
+			var range = candle.HighPrice - candle.LowPrice;
+			if (range > 0)
 			{
-				_oprBins[bin]++;
+				var opr = (candle.OpenPrice - candle.LowPrice) / range * 100m;
+				var bin = (int)Math.Round(opr, MidpointRounding.AwayFromZero);
+				bin = Math.Max(0, Math.Min(100, bin));
 
-				var upper = 100 - OprThreshold;
+				if (!FilterBySigmaSpike || Math.Abs(ss) >= SigmaSpikeThreshold)
+				{
+					_oprBins[bin]++;
 
-				if (opr <= OprThreshold && Position <= 0)
-					BuyMarket();
-				else if (opr >= upper && Position >= 0)
-					SellMarket();
+					var upper = 100 - OprThreshold;
+
+					if (IsFormedAndOnlineAndAllowTrading())
+					{
+						if (opr <= OprThreshold && Position <= 0)
+							BuyMarket();
+						else if (opr >= upper && Position >= 0)
+							SellMarket();
+					}
+				}
 			}
 		}
 
-		if (stdValue.IsFinal)
+		if (_returnsStdDev.IsFormed)
 			_prevStd = stdValue.GetValue<decimal>();
 
 		_prevClose = candle.ClosePrice;

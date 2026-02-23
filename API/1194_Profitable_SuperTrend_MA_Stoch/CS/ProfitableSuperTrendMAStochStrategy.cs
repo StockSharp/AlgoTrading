@@ -144,7 +144,7 @@ public class ProfitableSuperTrendMAStochStrategy : Strategy
 			.SetDisplay("Stoch %K", "%K period", "Indicators")
 			;
 
-		_stochD = { Length = Param }(nameof(StochDPeriod), 3)
+		_stochDPeriod = Param(nameof(StochDPeriod), 3)
 			.SetDisplay("Stoch %D", "%D smoothing", "Indicators")
 			;
 
@@ -190,8 +190,8 @@ public class ProfitableSuperTrendMAStochStrategy : Strategy
 		var emaFast = new EMA { Length = MaFastPeriod };
 		var emaSlow = new EMA { Length = MaSlowPeriod };
 		var stochastic = new StochasticOscillator
-		{ K = { Length = StochKPeriod },
-			K = { Length = 1 },
+		{
+			K = { Length = StochKPeriod },
 			D = { Length = StochDPeriod }
 		};
 

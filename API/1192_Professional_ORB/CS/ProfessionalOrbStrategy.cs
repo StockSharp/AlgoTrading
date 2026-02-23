@@ -87,7 +87,7 @@ public class ProfessionalOrbStrategy : Strategy
 			
 			.SetOptimize(5, 60, 5);
 
-		_minOrbRange = Param(nameof(MinOrbRange), 40m)
+		_minOrbRange = Param(nameof(MinOrbRange), 1m)
 			.SetDisplay("Min ORB Range", "Minimum opening range in points", "ORB")
 			.SetGreaterThanZero()
 			
@@ -99,7 +99,7 @@ public class ProfessionalOrbStrategy : Strategy
 			
 			.SetOptimize(0.5m, 3m, 0.5m);
 
-		_profitTargetPoints = Param(nameof(ProfitTargetPoints), 50m)
+		_profitTargetPoints = Param(nameof(ProfitTargetPoints), 5000m)
 			.SetDisplay("Profit Target", "Profit target in points", "Risk")
 			.SetGreaterThanZero()
 			
@@ -159,7 +159,7 @@ public class ProfessionalOrbStrategy : Strategy
 		var time = candle.OpenTime;
 		var date = time.Date;
 		var currentMinutes = time.Hour * 60 + time.Minute;
-		var orbStart = 9 * 60 + 15;
+		var orbStart = 0 * 60 + 0;
 		var orbEnd = orbStart + OrbMinutes;
 
 		if (date != _currentDate)

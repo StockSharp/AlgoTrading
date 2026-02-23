@@ -98,7 +98,7 @@ public class ExpExtremumStrategy : Strategy
 		.SetDisplay("Period", "Indicator period", "General")
 		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame of the Extremum indicator", "General");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
@@ -143,10 +143,10 @@ public class ExpExtremumStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var minHighVal = _minHigh.Process(new DecimalIndicatorValue(_minHigh, candle.HighPrice, candle.OpenTime));
-		var maxLowVal = _maxLow.Process(new DecimalIndicatorValue(_maxLow, candle.LowPrice, candle.OpenTime));
+		var minHighVal = _minHigh.Process(new DecimalIndicatorValue(_minHigh, candle.HighPrice, candle.OpenTime) { IsFinal = true });
+		var maxLowVal = _maxLow.Process(new DecimalIndicatorValue(_maxLow, candle.LowPrice, candle.OpenTime) { IsFinal = true });
 
-		if (!minHighVal.IsFinal || !maxLowVal.IsFinal)
+		if (!_minHigh.IsFormed || !_maxLow.IsFormed)
 		return;
 
 		var minHigh = ((DecimalIndicatorValue)minHighVal).Value;
@@ -160,10 +160,10 @@ public class ExpExtremumStrategy : Strategy
 		var dn = sum < 0m;
 
 		if (BuyPosClose && _dnPrev2 && Position > 0)
-		ClosePosition();
+		SellMarket(Position);
 
 		if (SellPosClose && _upPrev2 && Position < 0)
-		ClosePosition();
+		BuyMarket(-Position);
 
 		if (BuyPosOpen && _upPrev2 && _dnPrev1 && Position <= 0)
 		BuyMarket();

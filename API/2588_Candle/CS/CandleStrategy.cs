@@ -11,8 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -35,7 +33,7 @@ public class CandleStrategy : Strategy
 	/// </summary>
 	public CandleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for candle evaluation", "General");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
@@ -125,11 +123,8 @@ public class CandleStrategy : Strategy
 			: null;
 
 		// Enable automatic protective orders and trailing stop handling.
-		StartProtection(
-			takeProfit: takeProfit,
-			stopLoss: trailingStop,
-			isStopTrailing: trailingStop != null,
-			useMarketOrders: true);
+		if (trailingStop != null || takeProfit != null)
+			StartProtection(trailingStop, takeProfit);
 
 		// Subscribe to candle data for the configured timeframe.
 		var subscription = SubscribeCandles(CandleType);
@@ -154,10 +149,6 @@ public class CandleStrategy : Strategy
 
 		_finishedCandles++;
 
-		// Ensure the environment and indicators are ready for trading.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		// Wait until the chart has enough historical data.
 		if (_finishedCandles < MinBars * 2)
 			return;
@@ -179,7 +170,7 @@ public class CandleStrategy : Strategy
 			var volume = Math.Abs(Position) + Volume;
 			if (volume > 0m)
 			{
-				SellMarket(volume);
+				SellMarket();
 				tradeExecuted = true;
 			}
 		}
@@ -189,7 +180,7 @@ public class CandleStrategy : Strategy
 			var volume = Math.Abs(Position) + Volume;
 			if (volume > 0m)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				tradeExecuted = true;
 			}
 		}
@@ -200,7 +191,7 @@ public class CandleStrategy : Strategy
 				// Enter long on bullish close.
 				if (Volume > 0m)
 				{
-					BuyMarket(Volume);
+					BuyMarket();
 					tradeExecuted = true;
 				}
 			}
@@ -209,7 +200,7 @@ public class CandleStrategy : Strategy
 				// Enter short on bearish close.
 				if (Volume > 0m)
 				{
-					SellMarket(Volume);
+					SellMarket();
 					tradeExecuted = true;
 				}
 			}

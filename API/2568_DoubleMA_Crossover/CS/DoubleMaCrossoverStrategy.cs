@@ -222,7 +222,7 @@ public class DoubleMaCrossoverStrategy : Strategy
 		.SetDisplay("Level 3 Offset", "Offset in price steps applied after the third trigger.", "Risk")
 		;
 
-		_useTimeLimit = Param(nameof(UseTimeLimit), true)
+		_useTimeLimit = Param(nameof(UseTimeLimit), false)
 		.SetDisplay("Use Time Limit", "Restrict the creation of new orders to a trading window.", "Schedule");
 
 		_startHour = Param(nameof(StartHour), 11)
@@ -255,8 +255,6 @@ public class DoubleMaCrossoverStrategy : Strategy
 		// Reset internal buffers before processing market data.
 		ResetState();
 		Volume = TradeVolume;
-		StartProtection(null, null);
-
 		var fastMa = new SMA { Length = FastMaPeriod };
 		var slowMa = new SMA { Length = SlowMaPeriod };
 
@@ -376,8 +374,8 @@ public class DoubleMaCrossoverStrategy : Strategy
 
 	private void UpdateExtremes(ICandleMessage candle)
 	{
-		var high = candle.HighPrice ?? candle.ClosePrice;
-		var low = candle.LowPrice ?? candle.ClosePrice;
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
 		_maxPriceSinceEntry = Math.Max(_maxPriceSinceEntry, high);
 		_minPriceSinceEntry = Math.Min(_minPriceSinceEntry, low);
 	}

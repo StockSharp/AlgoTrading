@@ -115,7 +115,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 0.14m)
 			.SetDisplay("Risk Fraction", "Fraction of portfolio capital risked per trade", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for calculations", "General");
 
 		_priceSource = Param(nameof(PriceSource), CandlePrices.Close)
@@ -155,8 +155,8 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 
 		var fastMa = CreateMovingAverage(FastMaType, FastLength, PriceSource);
 		var slowMa = CreateMovingAverage(SlowMaType, SlowLength, PriceSource);
-		var highest = new Highest { Length = ChannelLength, CandlePrice = CandlePrices.High };
-		var lowest = new Lowest { Length = ChannelLength, CandlePrice = CandlePrices.Low };
+		var highest = new Highest { Length = ChannelLength };
+		var lowest = new Lowest { Length = ChannelLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -205,7 +205,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 
 			if (exitByChannel || exitByStop)
 			{
-				ClosePosition();
+				SellMarket();
 				ResetTradeState();
 			}
 		}
@@ -217,11 +217,11 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 
 			if (exitByChannel || exitByStop)
 			{
-				ClosePosition();
+				BuyMarket();
 				ResetTradeState();
 			}
 		}
-		else if (IsFormedAndOnlineAndAllowTrading())
+		else
 		{
 			var stopDistance = GetStopDistance();
 
@@ -234,7 +234,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 
 					if (volume > 0m)
 					{
-						BuyMarket(volume);
+						BuyMarket();
 						_entryPrice = candle.ClosePrice;
 						_stopPrice = _entryPrice - stopDistance;
 					}
@@ -246,7 +246,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 
 					if (volume > 0m)
 					{
-						SellMarket(volume);
+						SellMarket();
 						_entryPrice = candle.ClosePrice;
 						_stopPrice = _entryPrice + stopDistance;
 					}
@@ -344,11 +344,11 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SMA { Length = length, CandlePrice = price },
-			MovingAverageTypes.Exponential => new EMA { Length = length, CandlePrice = price },
-			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length, CandlePrice = price },
-			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length, CandlePrice = price },
-			_ => new SMA { Length = length, CandlePrice = price },
+			MovingAverageTypes.Simple => new SMA { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
+			_ => new SMA { Length = length },
 		};
 	}
 

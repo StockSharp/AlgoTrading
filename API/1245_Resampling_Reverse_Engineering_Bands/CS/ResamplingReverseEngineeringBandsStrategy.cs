@@ -133,9 +133,10 @@ public class ResamplingReverseEngineeringBandsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var ema = new ExponentialMovingAverage { Length = 2 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(ema, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -148,7 +149,7 @@ public class ResamplingReverseEngineeringBandsStrategy : Strategy
 		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;

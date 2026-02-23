@@ -109,12 +109,12 @@ public class PolynomialRegressionBandsChannelStrategy : Strategy
 		var upper = mid + stdev * StdDevMultiplier;
 		var lower = mid - stdev * StdDevMultiplier;
 
-		if (_prevMid != null)
-		{
-			DrawLine(_prevTime, _prevMid.Value, candle.OpenTime, mid);
-			DrawLine(_prevTime, _prevUpper!.Value, candle.OpenTime, upper);
-			DrawLine(_prevTime, _prevLower!.Value, candle.OpenTime, lower);
-		}
+		//if (_prevMid != null)
+		//{
+		//	DrawLine(_prevTime, _prevMid.Value, candle.OpenTime, mid);
+		//	DrawLine(_prevTime, _prevUpper!.Value, candle.OpenTime, upper);
+		//	DrawLine(_prevTime, _prevLower!.Value, candle.OpenTime, lower);
+		//}
 
 		_prevMid = mid;
 		_prevUpper = upper;

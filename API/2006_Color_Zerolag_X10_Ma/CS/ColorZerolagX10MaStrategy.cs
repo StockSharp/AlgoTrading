@@ -92,11 +92,17 @@ public class ColorZerolagX10MaStrategy : Strategy
 	public ColorZerolagX10MaStrategy()
 	{
 		_length = Param(nameof(Length), 20).SetDisplay("Length", "MA length", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 		_buyPosOpen = Param(nameof(BuyPosOpen), true).SetDisplay("Buy Open", "Allow long entries", "Trading");
 		_sellPosOpen = Param(nameof(SellPosOpen), true).SetDisplay("Sell Open", "Allow short entries", "Trading");
 		_buyPosClose = Param(nameof(BuyPosClose), true).SetDisplay("Buy Close", "Allow closing longs", "Trading");
 		_sellPosClose = Param(nameof(SellPosClose), true).SetDisplay("Sell Close", "Allow closing shorts", "Trading");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />

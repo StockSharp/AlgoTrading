@@ -286,11 +286,11 @@ public class KijunSenRobotStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _ichimoku);
-			DrawIndicator(area, _lwma, "LWMA");
+			DrawIndicator(area, _lwma);
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(new(), new Unit(0), useMarketOrders: true);
+		// protection handled manually via SL/TP/trailing
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue, IIndicatorValue maValue)
@@ -327,7 +327,7 @@ public class KijunSenRobotStrategy : Strategy
 		}
 
 		var isLong = Position > 0;
-		var actualEntry = PositionPrice;
+		var actualEntry = _entryPrice ?? candle.ClosePrice;
 		if (_isLongPosition is null || _isLongPosition.Value != isLong || _entryPrice is null)
 		{
 			var entry = actualEntry != 0m ? actualEntry : candle.ClosePrice;
@@ -518,7 +518,7 @@ public class KijunSenRobotStrategy : Strategy
 
 		if (_pendingLongLevel.HasValue && maTrendUp && Position <= 0)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 			SetupPositionState(true, candle.ClosePrice);
 			_pendingLongLevel = null;
 			_pendingShortLevel = null;
@@ -527,7 +527,7 @@ public class KijunSenRobotStrategy : Strategy
 
 		if (_pendingShortLevel.HasValue && maTrendDown && Position >= 0)
 		{
-			SellMarket(volume);
+			SellMarket();
 			SetupPositionState(false, candle.ClosePrice);
 			_pendingLongLevel = null;
 			_pendingShortLevel = null;
@@ -570,7 +570,7 @@ public class KijunSenRobotStrategy : Strategy
 	private void ClosePositionAndReset()
 	{
 		if (Position != 0)
-		ClosePosition();
+		if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 
 		ResetPositionState();
 	}
@@ -600,7 +600,7 @@ public class KijunSenRobotStrategy : Strategy
 
 	private decimal GetPipStep()
 	{
-		var priceStep = Security?.PriceStep ?? Security?.MinPriceStep;
+		var priceStep = Security?.PriceStep;
 		if (priceStep is null || priceStep <= 0m)
 		return 1m;
 

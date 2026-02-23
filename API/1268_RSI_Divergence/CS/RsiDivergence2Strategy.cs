@@ -87,7 +87,7 @@ public class RsiDivergence2Strategy : Strategy
 		_shortExitRsi = Param(nameof(ShortExitRsi), 54.1m)
 			.SetDisplay("Short Exit RSI", "RSI level to exit shorts", "Levels");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -120,7 +120,7 @@ public class RsiDivergence2Strategy : Strategy
 			.Bind(rsi, ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
+		// no separate protection
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)

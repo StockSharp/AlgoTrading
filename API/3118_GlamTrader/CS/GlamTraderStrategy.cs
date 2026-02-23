@@ -389,7 +389,7 @@ public class GlamTraderStrategy : Strategy
 	{
 		if (Position > 0m)
 		{
-			var entry = PositionPrice != 0m ? PositionPrice : _longEntry ?? candle.ClosePrice;
+			var entry = (_longEntry ?? _shortEntry ?? 0m) != 0m ? (_longEntry ?? _shortEntry ?? 0m) : _longEntry ?? candle.ClosePrice;
 			_longEntry = entry;
 
 			if (_longStop is null && StopLossBuyPips > 0m)
@@ -422,7 +422,7 @@ public class GlamTraderStrategy : Strategy
 		}
 		else if (Position < 0m)
 		{
-			var entry = PositionPrice != 0m ? PositionPrice : _shortEntry ?? candle.ClosePrice;
+			var entry = (_longEntry ?? _shortEntry ?? 0m) != 0m ? (_longEntry ?? _shortEntry ?? 0m) : _shortEntry ?? candle.ClosePrice;
 			_shortEntry = entry;
 			var volume = Math.Abs(Position);
 

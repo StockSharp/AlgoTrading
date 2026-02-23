@@ -142,7 +142,7 @@ public class NRatioSignStrategy : Strategy
 	/// </summary>
 	public NRatioSignStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for indicator calculation", "General");
 
 		_kf = Param(nameof(Kf), 1m)
@@ -156,17 +156,17 @@ public class NRatioSignStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Fast", "Fast parameter", "Indicator");
 
-		_sharp = Param(nameof(Sharp), 2m)
+		_sharp = Param(nameof(Sharp), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Sharp", "Exponent for oscillator", "Indicator");
 
-		_upLevel = Param(nameof(UpLevel), 80m)
+		_upLevel = Param(nameof(UpLevel), 60m)
 		.SetDisplay("Up Level", "Upper NRatio threshold", "Indicator");
 
-		_downLevel = Param(nameof(DownLevel), 20m)
+		_downLevel = Param(nameof(DownLevel), 40m)
 		.SetDisplay("Down Level", "Lower NRatio threshold", "Indicator");
 
-		_mode = Param(nameof(Mode), StrategyModes.ModeOut)
+		_mode = Param(nameof(Mode), StrategyModes.ModeIn)
 		.SetDisplay("Mode", "Signal generation mode", "Indicator");
 
 		_takeProfit = Param(nameof(TakeProfitPercent), 2m)
@@ -197,7 +197,7 @@ public class NRatioSignStrategy : Strategy
 	_nrtr = 0m;
 	_nratioPrev = 50m;
 	_trend = 1;
-	_ema = new EMA { Length = Length };
+	_ema = new ExponentialMovingAverage { Length = Length };
 	}
 
 	/// <inheritdoc />
@@ -222,8 +222,7 @@ public class NRatioSignStrategy : Strategy
 	if (candle.State != CandleStates.Finished)
 	return;
 
-	// Ensure trading is allowed and connection is established
-	if (!IsFormedAndOnlineAndAllowTrading())
+	if (!IsOnline)
 	return;
 
 	var price = candle.ClosePrice;
@@ -270,7 +269,8 @@ public class NRatioSignStrategy : Strategy
 	}
 
 	var oscil = (100m * Math.Abs(price - nrtr0) / price) / Kf;
-	var xOscil = _ema.Process(oscil);
+	var xOscilValue = _ema.Process(new DecimalIndicatorValue(_ema, oscil, candle.OpenTime) { IsFinal = true });
+	var xOscil = xOscilValue.IsEmpty ? oscil : xOscilValue.ToDecimal();
 
 	if (!_ema.IsFormed)
 	{

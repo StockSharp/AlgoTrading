@@ -67,13 +67,13 @@ public class Surfing30Strategy : Strategy
 			.SetOptimize(10, 150, 10);
 
 		_maPeriod = Param(nameof(MaPeriod), 50)
-			.SetGreaterThan(1)
+			.SetRange(1, 1000)
 			.SetDisplay("EMA Period", "Length of the exponential moving averages calculated over highs and lows.", "Indicators")
 			
 			.SetOptimize(10, 120, 5);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 10)
-			.SetGreaterThan(1)
+			.SetRange(1, 1000)
 			.SetDisplay("RSI Period", "Length of the RSI filter.", "Indicators")
 			
 			.SetOptimize(5, 30, 1);

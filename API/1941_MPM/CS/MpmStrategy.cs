@@ -91,7 +91,7 @@ public class MpmStrategy : Strategy
 			.SetDisplay("Stop Ratio", "Trailing stop ratio", "Risk");
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "Average True Range period", "Indicator");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 		_profitPerLot = Param(nameof(ProfitPerLot), 300m)
 			.SetDisplay("Profit Per Lot", "Profit target per lot", "Risk");
@@ -120,7 +120,6 @@ public class MpmStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
 
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 

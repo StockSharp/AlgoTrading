@@ -177,16 +177,16 @@ public class MacdAoPatternStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal EMA length", "Indicators");
 
-		_bearishExtremeLevel = Param(nameof(BearishExtremeLevel), -0.0015m)
+		_bearishExtremeLevel = Param(nameof(BearishExtremeLevel), -100m)
 			.SetDisplay("Bearish Extreme", "Negative MACD level that arms shorts", "Signals");
 
-		_bearishNeutralLevel = Param(nameof(BearishNeutralLevel), -0.0005m)
+		_bearishNeutralLevel = Param(nameof(BearishNeutralLevel), -30m)
 			.SetDisplay("Bearish Neutral", "Negative MACD level that confirms the hook", "Signals");
 
-		_bullishExtremeLevel = Param(nameof(BullishExtremeLevel), 0.0015m)
+		_bullishExtremeLevel = Param(nameof(BullishExtremeLevel), 100m)
 			.SetDisplay("Bullish Extreme", "Positive MACD level that arms longs", "Signals");
 
-		_bullishNeutralLevel = Param(nameof(BullishNeutralLevel), 0.0005m)
+		_bullishNeutralLevel = Param(nameof(BullishNeutralLevel), 30m)
 			.SetDisplay("Bullish Neutral", "Positive MACD level that confirms the hook", "Signals");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -227,24 +227,18 @@ public class MacdAoPatternStrategy : Strategy
 
 		Volume = OrderVolume;
 
-		_macd = new MACD
-		{
-			ShortMa = { Length = MacdFastPeriod },
-			LongMa = { Length = MacdSlowPeriod },
-			SignalPeriod = MacdSignalPeriod
-		};
+		_macd = new MACD();
+		_macd.ShortMa.Length = MacdFastPeriod;
+		_macd.LongMa.Length = MacdSlowPeriod;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_macd, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal signalLine)
+	private void ProcessCandle(ICandleMessage candle, decimal macdLine)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		// The signal line is not required for this pattern, but binding keeps both buffers available.
-		_ = signalLine;
 
 		// First handle protective exits using the finished candle range.
 		HandlePositionExit(candle);
@@ -302,7 +296,7 @@ public class MacdAoPatternStrategy : Strategy
 		if (_bearishSignalPending && Position <= 0)
 		{
 			// Execute the short entry with predefined stop-loss and take-profit.
-			SellMarket(OrderVolume);
+			SellMarket();
 
 			var pip = GetPipSize();
 			var entryPrice = candle.ClosePrice;
@@ -348,7 +342,7 @@ public class MacdAoPatternStrategy : Strategy
 		if (_bullishSignalPending && Position >= 0)
 		{
 			// Execute the long entry with the configured targets.
-			BuyMarket(OrderVolume);
+			BuyMarket();
 
 			var pip = GetPipSize();
 			var entryPrice = candle.ClosePrice;
@@ -370,7 +364,7 @@ public class MacdAoPatternStrategy : Strategy
 			if (_stopPrice.HasValue && candle.LowPrice <= _stopPrice.Value)
 			{
 				// Long stop-loss hit inside the finished candle range.
-				SellMarket(exitVolume);
+				SellMarket();
 				ResetProtectionLevels();
 				return;
 			}
@@ -378,7 +372,7 @@ public class MacdAoPatternStrategy : Strategy
 			if (_takePrice.HasValue && candle.HighPrice >= _takePrice.Value)
 			{
 				// Long take-profit reached.
-				SellMarket(exitVolume);
+				SellMarket();
 				ResetProtectionLevels();
 			}
 		}
@@ -389,7 +383,7 @@ public class MacdAoPatternStrategy : Strategy
 			if (_stopPrice.HasValue && candle.HighPrice >= _stopPrice.Value)
 			{
 				// Short stop-loss triggered within the candle.
-				BuyMarket(exitVolume);
+				BuyMarket();
 				ResetProtectionLevels();
 				return;
 			}
@@ -397,7 +391,7 @@ public class MacdAoPatternStrategy : Strategy
 			if (_takePrice.HasValue && candle.LowPrice <= _takePrice.Value)
 			{
 				// Short take-profit reached.
-				BuyMarket(exitVolume);
+				BuyMarket();
 				ResetProtectionLevels();
 			}
 		}

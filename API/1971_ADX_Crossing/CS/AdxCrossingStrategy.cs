@@ -114,7 +114,7 @@ public class AdxCrossingStrategy : Strategy
 			
 			.SetOptimize(10, 100, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 
 		_allowBuyOpen = Param(nameof(AllowBuyOpen), true)

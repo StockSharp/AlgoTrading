@@ -191,8 +191,6 @@ public class ExtremeStrengthReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		_bollinger = new BollingerBands
 		{
 			Length = BollingerPeriod,
@@ -206,7 +204,7 @@ public class ExtremeStrengthReversalStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_bollinger, _rsi, ProcessCandle)
+			.BindEx(_bollinger, _rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -219,21 +217,23 @@ public class ExtremeStrengthReversalStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue rsiInd)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_bollinger is null || _rsi is null)
+		if (bbValue is not IBollingerBandsValue bb)
 			return;
 
-		if (!_bollinger.IsFormed || !_rsi.IsFormed)
+		var middleBand = bb.MovingAverage ?? 0m;
+		var upperBand = bb.UpBand ?? 0m;
+		var lowerBand = bb.LowBand ?? 0m;
+		var rsiValue = rsiInd.ToDecimal();
+
+		if (middleBand == 0m)
 			return;
 
 		ManageOpenPosition(candle);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (Position != 0m)
 			return;
@@ -373,8 +373,8 @@ public class ExtremeStrengthReversalStrategy : Strategy
 
 	private decimal NormalizeVolume(decimal volume)
 	{
-		var minVolume = Security?.VolumeMin ?? 0m;
-		var maxVolume = Security?.VolumeMax ?? 0m;
+		var minVolume = Security?.MinVolume ?? 0m;
+		var maxVolume = Security?.MaxVolume ?? 0m;
 		var step = Security?.VolumeStep ?? 0m;
 
 		if (step > 0m && volume > 0m)

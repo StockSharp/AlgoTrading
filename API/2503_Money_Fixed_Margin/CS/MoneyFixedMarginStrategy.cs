@@ -78,11 +78,11 @@ public class MoneyFixedMarginStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Percent", "Percent of equity risked per trade", "Risk");
 
-		_checkInterval = Param(nameof(CheckInterval), 980)
+		_checkInterval = Param(nameof(CheckInterval), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Check Interval", "Completed candles between trades", "Execution");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
@@ -114,8 +114,8 @@ public class MoneyFixedMarginStrategy : Strategy
 
 		// Attach a protective stop using the pip-based distance converted to price units.
 		StartProtection(
-			stopLoss: new Unit(StopLossPips * _pipSize, UnitTypes.Absolute),
-			useMarketOrders: true);
+			new Unit(StopLossPips * _pipSize, UnitTypes.Absolute),
+			new Unit(StopLossPips * _pipSize * 2, UnitTypes.Absolute));
 
 		// Subscribe to the candle stream that emulates the tick counter from the MQL example.
 		var subscription = SubscribeCandles(CandleType);
@@ -161,19 +161,7 @@ public class MoneyFixedMarginStrategy : Strategy
 			volumeWithStop,
 			GetPortfolioValue());
 
-		if (volumeWithStop <= 0m)
-		{
-			// Mimic the MQL behavior where zero size prevents order submission.
-			return;
-		}
-
-		var order = BuyMarket(volumeWithStop);
-
-		if (order is null)
-		{
-			LogWarning("Buy order was not sent by the broker model.");
-			return;
-		}
+		BuyMarket();
 
 		// Reset the counter only after successfully sending an order.
 		_barCount = 0;
@@ -208,7 +196,7 @@ public class MoneyFixedMarginStrategy : Strategy
 		if (priceStep <= 0m)
 			priceStep = 1m;
 
-		var stepPrice = Security?.StepPrice ?? 0m;
+		var stepPrice = 0m;
 		if (stepPrice <= 0m)
 			stepPrice = priceStep;
 

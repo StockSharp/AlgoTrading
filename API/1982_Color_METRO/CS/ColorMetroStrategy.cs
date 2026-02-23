@@ -31,12 +31,13 @@ public class ColorMetroStrategy : Strategy
 	private readonly StrategyParam<bool> _sellCloseAllowed;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private ColorMetroIndicator _indicator;
 	private decimal? _prevMPlus;
 	private decimal? _prevMMinus;
 
 	public ColorMetroStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 7)
@@ -67,90 +68,60 @@ public class ColorMetroStrategy : Strategy
 			.SetDisplay("Close Long", "Permission to close long positions", "Trading");
 	}
 
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// RSI period.
-	/// </summary>
 	public int RsiPeriod
 	{
 		get => _rsiPeriod.Value;
 		set => _rsiPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Fast step size.
-	/// </summary>
 	public int FastStep
 	{
 		get => _fastStep.Value;
 		set => _fastStep.Value = value;
 	}
 
-	/// <summary>
-	/// Slow step size.
-	/// </summary>
 	public int SlowStep
 	{
 		get => _slowStep.Value;
 		set => _slowStep.Value = value;
 	}
 
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
 	public int StopLossPoints
 	{
 		get => _stopLossPoints.Value;
 		set => _stopLossPoints.Value = value;
 	}
 
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
 	public int TakeProfitPoints
 	{
 		get => _takeProfitPoints.Value;
 		set => _takeProfitPoints.Value = value;
 	}
 
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
 	public bool BuyOpenAllowed
 	{
 		get => _buyOpenAllowed.Value;
 		set => _buyOpenAllowed.Value = value;
 	}
 
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
 	public bool SellOpenAllowed
 	{
 		get => _sellOpenAllowed.Value;
 		set => _sellOpenAllowed.Value = value;
 	}
 
-	/// <summary>
-	/// Allow closing long positions.
-	/// </summary>
 	public bool SellCloseAllowed
 	{
 		get => _sellCloseAllowed.Value;
 		set => _sellCloseAllowed.Value = value;
 	}
 
-	/// <summary>
-	/// Allow closing short positions.
-	/// </summary>
 	public bool BuyCloseAllowed
 	{
 		get => _buyCloseAllowed.Value;
@@ -160,92 +131,105 @@ public class ColorMetroStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted2(time);
+		base.OnStarted2(time);
 
-	_prevMPlus = null;
-	_prevMMinus = null;
+		_prevMPlus = null;
+		_prevMMinus = null;
 
-	var indicator = new ColorMetroIndicator
-	{
-	RsiPeriod = RsiPeriod,
-	FastStep = FastStep,
-	SlowStep = SlowStep,
-	};
+		_indicator = new ColorMetroIndicator
+		{
+			RsiPeriod = RsiPeriod,
+			FastStep = FastStep,
+			SlowStep = SlowStep,
+		};
 
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.BindEx(indicator, ProcessCandle)
-	.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(_indicator, ProcessCandle)
+			.Start();
 
-	var area = CreateChartArea();
-	if (area != null)
-	{
-	DrawCandles(area, subscription);
-	DrawIndicator(area, indicator);
-	DrawOwnTrades(area);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _indicator);
+			DrawOwnTrades(area);
+		}
+
+		var step = Security.PriceStep ?? 1m;
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPoints * step, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLossPoints * step, UnitTypes.Absolute));
 	}
 
-	var step = Security.PriceStep ?? 1m;
-	StartProtection(
-	takeProfit: new Unit(TakeProfitPoints * step, UnitTypes.Point),
-	stopLoss: new Unit(StopLossPoints * step, UnitTypes.Point));
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
+	private void ProcessCandle(ICandleMessage candle, decimal indicatorValue)
 	{
-	if (candle.State != CandleStates.Finished || !value.IsFinal)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	var cm = (ColorMetroValue)value;
-	var mPlus = cm.MPlus;
-	var mMinus = cm.MMinus;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-	if (_prevMPlus is null || _prevMMinus is null)
-	{
-	_prevMPlus = mPlus;
-	_prevMMinus = mMinus;
-	return;
-	}
+		var mPlus = _indicator.LastMPlus;
+		var mMinus = _indicator.LastMMinus;
 
-	var crossUp = _prevMPlus <= _prevMMinus && mPlus > mMinus;
-	var crossDown = _prevMPlus >= _prevMMinus && mPlus < mMinus;
+		if (_prevMPlus is null || _prevMMinus is null)
+		{
+			_prevMPlus = mPlus;
+			_prevMMinus = mMinus;
+			return;
+		}
 
-	if (crossUp)
-	{
-	if (SellCloseAllowed && Position < 0)
-	BuyMarket(Math.Abs(Position));
+		var crossUp = _prevMPlus <= _prevMMinus && mPlus > mMinus;
+		var crossDown = _prevMPlus >= _prevMMinus && mPlus < mMinus;
 
-	if (BuyOpenAllowed && Position <= 0)
-	BuyMarket(Volume + Math.Abs(Position));
-	}
-	else if (crossDown)
-	{
-	if (BuyCloseAllowed && Position > 0)
-	SellMarket(Position);
+		if (crossUp)
+		{
+			if (SellCloseAllowed && Position < 0)
+				BuyMarket(Math.Abs(Position));
 
-	if (SellOpenAllowed && Position >= 0)
-	SellMarket(Volume + Math.Abs(Position));
-	}
+			if (BuyOpenAllowed && Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
+		}
+		else if (crossDown)
+		{
+			if (BuyCloseAllowed && Position > 0)
+				SellMarket(Position);
 
-	_prevMPlus = mPlus;
-	_prevMMinus = mMinus;
+			if (SellOpenAllowed && Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
+		}
+
+		_prevMPlus = mPlus;
+		_prevMMinus = mMinus;
 	}
 }
 
 /// <summary>
 /// ColorMETRO indicator producing fast and slow lines based on RSI.
+/// Returns MPlus as the decimal value; MMinus is available via LastMMinus property.
 /// </summary>
 public class ColorMetroIndicator : BaseIndicator
 {
 	public int RsiPeriod { get; set; } = 7;
 	public int FastStep { get; set; } = 5;
 	public int SlowStep { get; set; } = 15;
+
+	/// <summary>
+	/// Last computed MPlus (fast line) value.
+	/// </summary>
+	public decimal LastMPlus { get; private set; }
+
+	/// <summary>
+	/// Last computed MMinus (slow line) value.
+	/// </summary>
+	public decimal LastMMinus { get; private set; }
 
 	private RelativeStrengthIndex _rsi;
 	private bool _initialized;
@@ -259,69 +243,50 @@ public class ColorMetroIndicator : BaseIndicator
 	/// <inheritdoc />
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
 	{
-	_rsi ??= new RelativeStrengthIndex { Length = RsiPeriod };
+		_rsi ??= new RelativeStrengthIndex { Length = RsiPeriod };
 
-	var rsiVal = _rsi.Process(input);
-	if (!_rsi.IsFormed)
-	return new ColorMetroValue(this, input, default, default);
+		var rsiVal = _rsi.Process(input);
+		if (!_rsi.IsFormed)
+			return new DecimalIndicatorValue(this, input.Time);
 
-	var rsi = rsiVal.GetValue<decimal>();
+		IsFormed = true;
 
-	var fmax0 = rsi + 2m * FastStep;
-	var fmin0 = rsi - 2m * FastStep;
-	var smax0 = rsi + 2m * SlowStep;
-	var smin0 = rsi - 2m * SlowStep;
+		var rsi = rsiVal.GetValue<decimal>();
 
-	if (!_initialized)
-	{
-	_fmin1 = fmin0;
-	_fmax1 = fmax0;
-	_smin1 = smin0;
-	_smax1 = smax0;
-	_initialized = true;
+		var fmax0 = rsi + 2m * FastStep;
+		var fmin0 = rsi - 2m * FastStep;
+		var smax0 = rsi + 2m * SlowStep;
+		var smin0 = rsi - 2m * SlowStep;
+
+		if (!_initialized)
+		{
+			_fmin1 = fmin0;
+			_fmax1 = fmax0;
+			_smin1 = smin0;
+			_smax1 = smax0;
+			_initialized = true;
+		}
+
+		if (rsi > _fmax1) _ftrend = +1;
+		if (rsi < _fmin1) _ftrend = -1;
+
+		if (_ftrend > 0 && fmin0 < _fmin1) fmin0 = _fmin1;
+		if (_ftrend < 0 && fmax0 > _fmax1) fmax0 = _fmax1;
+
+		if (rsi > _smax1) _strend = +1;
+		if (rsi < _smin1) _strend = -1;
+
+		if (_strend > 0 && smin0 < _smin1) smin0 = _smin1;
+		if (_strend < 0 && smax0 > _smax1) smax0 = _smax1;
+
+		LastMPlus = _ftrend > 0 ? fmin0 + FastStep : fmax0 - FastStep;
+		LastMMinus = _strend > 0 ? smin0 + SlowStep : smax0 - SlowStep;
+
+		_fmin1 = fmin0;
+		_fmax1 = fmax0;
+		_smin1 = smin0;
+		_smax1 = smax0;
+
+		return new DecimalIndicatorValue(this, LastMPlus, input.Time);
 	}
-
-	if (rsi > _fmax1) _ftrend = +1;
-	if (rsi < _fmin1) _ftrend = -1;
-
-	if (_ftrend > 0 && fmin0 < _fmin1) fmin0 = _fmin1;
-	if (_ftrend < 0 && fmax0 > _fmax1) fmax0 = _fmax1;
-
-	if (rsi > _smax1) _strend = +1;
-	if (rsi < _smin1) _strend = -1;
-
-	if (_strend > 0 && smin0 < _smin1) smin0 = _smin1;
-	if (_strend < 0 && smax0 > _smax1) smax0 = _smax1;
-
-	var mPlus = _ftrend > 0 ? fmin0 + FastStep : fmax0 - FastStep;
-	var mMinus = _strend > 0 ? smin0 + SlowStep : smax0 - SlowStep;
-
-	_fmin1 = fmin0;
-	_fmax1 = fmax0;
-	_smin1 = smin0;
-	_smax1 = smax0;
-
-	return new ColorMetroValue(this, input, mPlus, mMinus);
-	}
-}
-
-/// <summary>
-/// Indicator value for <see cref="ColorMetroIndicator"/>.
-/// </summary>
-public class ColorMetroValue : ComplexIndicatorValue
-{
-	public ColorMetroValue(IIndicator indicator, IIndicatorValue input, decimal mPlus, decimal mMinus)
-	: base(indicator, input, (nameof(MPlus), mPlus), (nameof(MMinus), mMinus))
-	{
-	}
-
-	/// <summary>
-	/// Fast line value.
-	/// </summary>
-	public decimal MPlus => (decimal)GetValue(nameof(MPlus));
-
-	/// <summary>
-	/// Slow line value.
-	/// </summary>
-	public decimal MMinus => (decimal)GetValue(nameof(MMinus));
 }

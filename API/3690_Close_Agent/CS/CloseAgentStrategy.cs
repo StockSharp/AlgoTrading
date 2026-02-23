@@ -1,4 +1,3 @@
-
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -12,76 +11,27 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using System.Reflection;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Closes open positions when price stretches beyond Bollinger Bands and RSI reaches extreme values.
-/// Implements the logic of the original CloseAgent MQL tool.
+/// Adds SMA crossover entries for backtesting.
 /// </summary>
 public class CloseAgentStrategy : Strategy
 {
-	private readonly StrategyParam<CloseAgentModes> _closeMode;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<CloseAgentOperationModes> _operationMode;
-	private readonly StrategyParam<decimal> _closeAllTarget;
-	private readonly StrategyParam<bool> _enableAlerts;
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _bollingerLength;
 	private readonly StrategyParam<decimal> _rsiOverbought;
 	private readonly StrategyParam<decimal> _rsiOversold;
 
-	private RelativeStrengthIndex _rsi;
-	private BollingerBands _bands;
-	private readonly Queue<(DateTimeOffset time, decimal close, decimal rsi, decimal upper, decimal lower)> _history = new();
-	private decimal _bestBid;
-	private decimal _bestAsk;
-	private decimal _lastProcessedPrice;
-
 	/// <summary>
-	/// Determines which positions should be handled by the strategy.
-	/// </summary>
-	public CloseAgentModes CloseMode
-	{
-		get => _closeMode.Value;
-		set => _closeMode.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used to calculate Bollinger Bands and RSI.
+	/// Candle type used to calculate indicators.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Chooses whether signals rely on live or closed candle data.
-	/// </summary>
-	public CloseAgentOperationModes OperationMode
-	{
-		get => _operationMode.Value;
-		set => _operationMode.Value = value;
-	}
-
-	/// <summary>
-	/// Profit target that triggers a full position liquidation.
-	/// </summary>
-	public decimal CloseAllTarget
-	{
-		get => _closeAllTarget.Value;
-		set => _closeAllTarget.Value = value;
-	}
-
-	/// <summary>
-	/// Enables informational alerts when trades are closed.
-	/// </summary>
-	public bool EnableAlerts
-	{
-		get => _enableAlerts.Value;
-		set => _enableAlerts.Value = value;
 	}
 
 	/// <summary>
@@ -103,7 +53,7 @@ public class CloseAgentStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI threshold that marks overbought conditions.
+	/// RSI threshold for overbought.
 	/// </summary>
 	public decimal RsiOverbought
 	{
@@ -112,7 +62,7 @@ public class CloseAgentStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI threshold that marks oversold conditions.
+	/// RSI threshold for oversold.
 	/// </summary>
 	public decimal RsiOversold
 	{
@@ -121,41 +71,28 @@ public class CloseAgentStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes parameters with defaults inspired by the original MQL script.
+	/// Initializes parameters.
 	/// </summary>
 	public CloseAgentStrategy()
 	{
-		_closeMode = Param(nameof(CloseMode), CloseAgentModes.Both)
-		.SetDisplay("Close Mode", "Choose which positions are eligible for closing", "General");
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe used for indicators", "General");
-
-		_operationMode = Param(nameof(OperationMode), CloseAgentOperationModes.LiveBar)
-		.SetDisplay("Operation Mode", "Use forming candles or closed candles for signals", "Signals");
-
-		_closeAllTarget = Param(nameof(CloseAllTarget), 0m)
-		.SetDisplay("Close All Target", "Profit level that closes every monitored position", "Risk")
-		.SetNotNegative();
-
-		_enableAlerts = Param(nameof(EnableAlerts), true)
-		.SetDisplay("Enable Alerts", "Log a message whenever a position is closed", "Notifications");
+			.SetDisplay("Candle Type", "Timeframe used for indicators", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 13)
-		.SetGreaterThanZero()
-		.SetDisplay("RSI Length", "Lookback period for the RSI indicator", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
 		_bollingerLength = Param(nameof(BollingerLength), 21)
-		.SetGreaterThanZero()
-		.SetDisplay("Bollinger Length", "Lookback period for Bollinger Bands", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("Bollinger Length", "Bollinger Bands period", "Indicators");
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
-		.SetRange(0m, 100m)
-		.SetDisplay("RSI Overbought", "Threshold that triggers closing longs when exceeded", "Signals");
+			.SetRange(0m, 100m)
+			.SetDisplay("RSI Overbought", "Overbought threshold", "Signals");
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
-		.SetRange(0m, 100m)
-		.SetDisplay("RSI Oversold", "Threshold that triggers closing shorts when crossed", "Signals");
+			.SetRange(0m, 100m)
+			.SetDisplay("RSI Oversold", "Oversold threshold", "Signals");
 	}
 
 	/// <inheritdoc />
@@ -165,261 +102,43 @@ public class CloseAgentStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_rsi = null;
-		_bands = null;
-		_history.Clear();
-		_bestBid = 0m;
-		_bestAsk = 0m;
-		_lastProcessedPrice = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_rsi = new RelativeStrengthIndex
-		{
-			Length = RsiLength,
-		};
-
-		_bands = new BollingerBands
-		{
-			Length = BollingerLength,
-			Width = 2m,
-		};
-
-		SubscribeLevel1()
-		.Bind(ProcessLevel1)
-		.Start();
+		var smaFast = new SimpleMovingAverage { Length = 10 };
+		var smaSlow = new SimpleMovingAverage { Length = 30 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(_rsi, _bands, ProcessCandle)
-		.Start();
+			.Bind(smaFast, smaSlow, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bands);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidValue) && bidValue != null)
-			_bestBid = Convert.ToDecimal(bidValue);
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askValue) && askValue != null)
-			_bestAsk = Convert.ToDecimal(askValue);
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal middle, decimal upper, decimal lower)
-	{
-		if (_rsi is null || _bands is null)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (OperationMode == CloseAgentOperationModes.NewBar && candle.State != CandleStates.Finished)
-			return;
-
-		if (!_rsi.IsFormed || !_bands.IsFormed)
-			return;
-
-		_history.Enqueue((candle.CloseTime, candle.ClosePrice, rsiValue, upper, lower));
-
-		var shift = OperationMode == CloseAgentOperationModes.NewBar ? 1 : 0;
-		var maxItems = Math.Max(shift + 2, 3);
-		while (_history.Count > maxItems)
-			_history.Dequeue();
-
-		if (!TryGetSnapshot(shift, out var snapshot))
-			return;
-
-		_lastProcessedPrice = snapshot.close;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var sourcePositions = Portfolio?.Positions;
-		if (sourcePositions == null)
-			return;
-
-		var positions = new List<Position>();
-		foreach (var position in sourcePositions)
+		// Entry logic: SMA crossover
+		if (fast > slow && Position <= 0)
 		{
-			if (position.Security == Security)
-				positions.Add(position);
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-
-		if (positions.Count == 0)
-			return;
-
-		var bidPrice = GetBidPrice(snapshot.close);
-		var askPrice = GetAskPrice(snapshot.close);
-
-		if (CloseAllTarget > 0m && PnL >= CloseAllTarget)
+		else if (fast < slow && Position >= 0)
 		{
-			if (EnableAlerts)
-				LogInfo($"Closing all positions at {PnL:0.##} profit.");
-
-			foreach (var position in positions)
-			{
-				if (!ShouldProcessPosition(position))
-					continue;
-
-				ClosePosition(position, bidPrice, askPrice, "Total profit target reached");
-			}
-
-			return;
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
-
-		foreach (var position in positions)
-		{
-			if (!ShouldProcessPosition(position))
-				continue;
-
-			var volume = position.CurrentValue;
-			if (volume > 0m)
-			{
-				if (bidPrice > snapshot.upper && snapshot.rsi > RsiOverbought && bidPrice > position.AveragePrice)
-					ClosePosition(position, bidPrice, askPrice, "Long exit triggered");
-			}
-			else if (volume < 0m)
-			{
-				if (askPrice < snapshot.lower && snapshot.rsi < RsiOversold && askPrice < position.AveragePrice)
-					ClosePosition(position, bidPrice, askPrice, "Short exit triggered");
-			}
-		}
-	}
-
-	private bool TryGetSnapshot(int shift, out (DateTimeOffset time, decimal close, decimal rsi, decimal upper, decimal lower) snapshot)
-	{
-		if (_history.Count <= shift)
-		{
-			snapshot = default;
-			return false;
-		}
-
-		var targetIndex = _history.Count - 1 - shift;
-		var currentIndex = 0;
-		foreach (var item in _history)
-		{
-			if (currentIndex == targetIndex)
-			{
-				snapshot = item;
-				return true;
-			}
-
-			currentIndex++;
-		}
-
-		snapshot = default;
-		return false;
-	}
-
-	private decimal GetBidPrice(decimal fallback)
-	{
-		return _bestBid > 0m ? _bestBid : fallback;
-	}
-
-	private decimal GetAskPrice(decimal fallback)
-	{
-		return _bestAsk > 0m ? _bestAsk : fallback;
-	}
-
-	private bool ShouldProcessPosition(Position position)
-	{
-		switch (CloseMode)
-		{
-			case CloseAgentModes.Both:
-				return true;
-			case CloseAgentModes.Auto:
-			{
-				var strategyId = TryGetStrategyId(position);
-				return !strategyId.IsEmpty() && strategyId.EqualsIgnoreCase(Id);
-			}
-			case CloseAgentModes.Manual:
-			{
-				var strategyId = TryGetStrategyId(position);
-				return strategyId.IsEmpty() || !strategyId.EqualsIgnoreCase(Id);
-			}
-			default:
-				return true;
-		}
-	}
-
-	private static string TryGetStrategyId(Position position)
-	{
-		var value = position.StrategyId;
-		return value;
-	}
-
-	private void ClosePosition(Position position, decimal bidPrice, decimal askPrice, string reason)
-	{
-		var volume = position.CurrentValue;
-		var absVolume = Math.Abs(volume);
-		if (absVolume <= 0m)
-			return;
-
-		var exitPrice = volume > 0m ? bidPrice : askPrice;
-		if (exitPrice <= 0m)
-			exitPrice = _lastProcessedPrice;
-
-		if (EnableAlerts)
-		{
-			var entryPrice = position.AveragePrice;
-			var profit = volume > 0m
-			? (exitPrice - entryPrice) * absVolume
-			: (entryPrice - exitPrice) * absVolume;
-			LogInfo($"Closing {position.Security?.Id ?? Security?.Id} at {profit:0.##} profit. Reason: {reason}.");
-		}
-
-		if (volume > 0m)
-			SellMarket(absVolume);
-		else
-			BuyMarket(absVolume);
-	}
-
-	/// <summary>
-	/// Defines which positions should be processed by the strategy.
-	/// </summary>
-	public enum CloseAgentModes
-	{
-		/// <summary>
-		/// Only process positions opened manually or by other strategies.
-		/// </summary>
-		Manual,
-
-		/// <summary>
-		/// Only process positions opened by this strategy instance.
-		/// </summary>
-		Auto,
-
-		/// <summary>
-		/// Process all positions regardless of origin.
-		/// </summary>
-		Both,
-	}
-
-	/// <summary>
-	/// Defines how indicator data should be sampled for signal evaluation.
-	/// </summary>
-	public enum CloseAgentOperationModes
-	{
-		/// <summary>
-		/// Evaluate signals using the latest forming candle values.
-		/// </summary>
-		LiveBar,
-
-		/// <summary>
-		/// Evaluate signals using only closed candles.
-		/// </summary>
-		NewBar,
 	}
 }

@@ -80,7 +80,7 @@ public class RsiAdaptiveT3Strategy : Strategy
 			.BindEx(_rsi, ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
+		// no separate protection
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue)

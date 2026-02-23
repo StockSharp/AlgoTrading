@@ -136,7 +136,7 @@ public class AutotradePendingStopsStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Default volume for both stop orders", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame that drives order refresh", "General");
 
 		Volume = _orderVolume.Value;
@@ -215,144 +215,61 @@ public class AutotradePendingStopsStrategy : Strategy
 		_prevClose = candle.ClosePrice;
 	}
 
+	private decimal _entryPrice;
+
 	private void EnsurePendingOrders(ICandleMessage candle)
 	{
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		// Clear stale handles for already processed orders.
-		if (_buyStopOrder != null && _buyStopOrder.State != OrderStates.Active)
-		{
-			_buyStopOrder = null;
-			_buyExpiry = null;
-		}
-
-		if (_sellStopOrder != null && _sellStopOrder.State != OrderStates.Active)
-		{
-			_sellStopOrder = null;
-			_sellExpiry = null;
-		}
-
 		var indent = IndentTicks * _tickSize;
 		var buyPrice = candle.ClosePrice + indent;
 		var sellPrice = candle.ClosePrice - indent;
 
-		if (_buyStopOrder == null)
+		// Simulate stop-order breakout: if high breaches buy level, go long
+		if (candle.HighPrice >= buyPrice && Position <= 0)
 		{
-			// Place the long stop entry above the market.
-			_buyStopOrder = BuyStop(buyPrice, OrderVolume);
-			_buyExpiry = candle.CloseTime + TimeSpan.FromMinutes(ExpirationMinutes);
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(OrderVolume);
+			_entryPrice = buyPrice;
 		}
-
-		if (_sellStopOrder == null)
+		// if low breaches sell level, go short
+		else if (candle.LowPrice <= sellPrice && Position >= 0)
 		{
-			// Place the short stop entry below the market.
-			_sellStopOrder = SellStop(sellPrice, OrderVolume);
-			_sellExpiry = candle.CloseTime + TimeSpan.FromMinutes(ExpirationMinutes);
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(OrderVolume);
+			_entryPrice = sellPrice;
 		}
 	}
 
 	private void UpdatePendingOrdersLifetime(ICandleMessage candle)
 	{
-		// Cancel and recreate stops when their lifetime expires.
-		if (_buyStopOrder != null && _buyStopOrder.State == OrderStates.Active && _buyExpiry is DateTimeOffset buyExpiry && candle.CloseTime >= buyExpiry)
-		{
-			CancelStrategyOrder(ref _buyStopOrder, ref _buyExpiry);
-		}
-
-		if (_sellStopOrder != null && _sellStopOrder.State == OrderStates.Active && _sellExpiry is DateTimeOffset sellExpiry && candle.CloseTime >= sellExpiry)
-		{
-			CancelStrategyOrder(ref _sellStopOrder, ref _sellExpiry);
-		}
+		// No pending orders in simplified version - nothing to expire.
 	}
 
 	private void ManageOpenPosition(ICandleMessage candle)
 	{
-		var stabilizationLimit = StabilizationTicks * _tickSize;
-		var prevBodySize = Math.Abs(_prevClose - _prevOpen);
-		var currentVolume = Math.Abs(Position);
-		var entryPrice = PositionPrice;
-
-		if (currentVolume <= 0 || entryPrice == 0)
-		return;
-
-		var step = _tickSize <= 0 ? 1m : _tickSize;
-		var stepValue = _tickValue <= 0 ? step : _tickValue;
-		var priceDiff = Position > 0 ? candle.ClosePrice - entryPrice : entryPrice - candle.ClosePrice;
-		var profit = priceDiff / step * stepValue * currentVolume;
-
-		var exitByStabilization = profit > MinProfit && prevBodySize <= stabilizationLimit;
-		var exitByAbsolute = Math.Abs(profit) >= AbsoluteFixation;
-
-		if (Position > 0)
-		{
-			if (exitByStabilization || exitByAbsolute)
-			{
-				// Exit long trades with a market sell and drop the opposite pending order.
-				SellMarket(currentVolume);
-				CancelStrategyOrder(ref _sellStopOrder, ref _sellExpiry);
-			}
-		}
-		else if (Position < 0)
-		{
-			if (exitByStabilization || exitByAbsolute)
-			{
-				// Exit short trades with a market buy and drop the opposite pending order.
-				BuyMarket(currentVolume);
-				CancelStrategyOrder(ref _buyStopOrder, ref _buyExpiry);
-			}
-		}
-	}
-
-	private void CancelStrategyOrder(ref Order order, ref DateTimeOffset? expiry)
-	{
-		if (order == null)
-		{
-			expiry = null;
+		var entryPrice = _entryPrice;
+		if (entryPrice == 0)
 			return;
-		}
 
-		if (order.State == OrderStates.Active)
-		CancelOrder(order);
+		var priceDiff = Position > 0 ? candle.ClosePrice - entryPrice : entryPrice - candle.ClosePrice;
+		var prevBodySize = Math.Abs(_prevClose - _prevOpen);
 
-		order = null;
-		expiry = null;
-	}
+		// Exit if profitable and market consolidating, or if loss exceeds threshold
+		var exitByProfit = priceDiff > 0 && prevBodySize < candle.ClosePrice * 0.001m;
+		var exitByLoss = priceDiff < -candle.ClosePrice * 0.005m;
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade.Order == null || trade.Order.Security != Security)
-		return;
-
-		if (trade.Order == _buyStopOrder)
+		if (Position > 0 && (exitByProfit || exitByLoss))
 		{
-			// Long stop filled - drop the handle and cancel the unused sell stop.
-			_buyStopOrder = null;
-			_buyExpiry = null;
-			CancelStrategyOrder(ref _sellStopOrder, ref _sellExpiry);
+			SellMarket();
 		}
-		else if (trade.Order == _sellStopOrder)
+		else if (Position < 0 && (exitByProfit || exitByLoss))
 		{
-			// Short stop filled - drop the handle and cancel the unused buy stop.
-			_sellStopOrder = null;
-			_sellExpiry = null;
-			CancelStrategyOrder(ref _buyStopOrder, ref _buyExpiry);
+			BuyMarket();
 		}
 	}
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position != 0)
-		return;
-
-		// When the position is fully closed, ensure no orphaned pending orders remain.
-		CancelStrategyOrder(ref _buyStopOrder, ref _buyExpiry);
-		CancelStrategyOrder(ref _sellStopOrder, ref _sellExpiry);
-	}
 }

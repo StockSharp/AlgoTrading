@@ -105,8 +105,9 @@ public class S4IBSMeanRev3candleExitStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var ema = new ExponentialMovingAverage { Length = 5 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(ema, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -115,15 +116,15 @@ public class S4IBSMeanRev3candleExitStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
+		// no separate protection
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var inRange = candle.OpenTime >= StartTime && candle.OpenTime <= EndTime;
+		var inRange = true;
 
 		decimal? ibs = null;
 		if (_prevHigh is decimal h && _prevLow is decimal l && _prevClose is decimal c && h != l)
@@ -143,7 +144,7 @@ public class S4IBSMeanRev3candleExitStrategy : Strategy
 				_barsSinceEntry++;
 				var profit = candle.ClosePrice > entry;
 				var lossTooLong = _barsSinceEntry >= 3 && candle.ClosePrice < entry;
-				var forceExit = candle.OpenTime > EndTime;
+				var forceExit = false;
 
 				if ((inRange && (profit || lossTooLong)) || forceExit)
 				{

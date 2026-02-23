@@ -77,7 +77,7 @@ public class BackToTheFutureStrategy : Strategy
 	/// </summary>
 	public BackToTheFutureStrategy()
 	{
-		_barSize = Param(nameof(BarSize), 0.25m)
+		_barSize = Param(nameof(BarSize), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Difference", "Threshold to trigger trades", "General")
 			;
@@ -97,7 +97,7 @@ public class BackToTheFutureStrategy : Strategy
 			.SetDisplay("Stop Loss", "Distance from entry", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -159,7 +159,7 @@ public class BackToTheFutureStrategy : Strategy
 			if (candle.ClosePrice <= _entryPrice - TakeProfit || candle.ClosePrice >= _entryPrice + StopLoss)
 				BuyMarket(-Position);
 		}
-		else if (IsFormedAndOnlineAndAllowTrading())
+		else
 		{
 			if (diff > BarSize)
 			{

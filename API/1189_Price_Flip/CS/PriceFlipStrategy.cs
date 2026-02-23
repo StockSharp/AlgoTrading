@@ -113,8 +113,9 @@ public class PriceFlipStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var maxVal = _tickerMax.Process(candle.HighPrice).ToDecimal();
-		var minVal = _tickerMin.Process(candle.LowPrice).ToDecimal();
+		var t = default(DateTime);
+		var maxVal = _tickerMax.Process(new DecimalIndicatorValue(_tickerMax, candle.HighPrice, t)).ToDecimal();
+		var minVal = _tickerMin.Process(new DecimalIndicatorValue(_tickerMin, candle.LowPrice, t)).ToDecimal();
 
 		if (!_tickerMax.IsFormed || !_tickerMin.IsFormed || !_fastMa.IsFormed || !_slowMa.IsFormed)
 		{

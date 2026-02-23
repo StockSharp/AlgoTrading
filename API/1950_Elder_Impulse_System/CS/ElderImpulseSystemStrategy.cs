@@ -99,7 +99,7 @@ public class ElderImpulseSystemStrategy : Strategy
 		
 		.SetOptimize(5, 15, 1);
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 	
@@ -121,11 +121,11 @@ public class ElderImpulseSystemStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-		
-		var ema = new EMA { Length = EmaPeriod };
+		base.OnStarted2(time);
+
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =

@@ -37,7 +37,7 @@ public class Cspa143Strategy : Strategy
 			.SetDisplay("Threshold", "RSI distance from 50", "Parameters")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -52,7 +52,7 @@ public class Cspa143Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var rsi = new RSI { Length = StrengthPeriod };
+		var rsi = new RelativeStrengthIndex { Length = StrengthPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(rsi, ProcessCandle).Start();

@@ -224,12 +224,25 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 		_martingaleRequest = Param(nameof(MartingaleRequest), false)
 		.SetDisplay("Martingale", "Set to true to evaluate and place an averaging order.", "Manual Controls")
 		;
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		.SetDisplay("Candle Type", "Primary timeframe", "General");
+	}
+
+	private SimpleMovingAverage _smaFast = null!;
+	private SimpleMovingAverage _smaSlow = null!;
+	private readonly StrategyParam<DataType> _candleType;
+
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, DataType.Level1)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -258,58 +271,34 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (Security == null)
-		throw new InvalidOperationException("Security is not specified.");
+		_smaFast = new SimpleMovingAverage { Length = 10 };
+		_smaSlow = new SimpleMovingAverage { Length = 30 };
 
-		if (Portfolio == null)
-		throw new InvalidOperationException("Portfolio is not specified.");
-
-		SubscribeLevel1()
-		.Bind(ProcessLevel1)
-		.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(_smaFast, _smaSlow, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
-		if (level1.Changes.TryGetValue(Level1Fields.LastTradePrice, out var last))
-		_lastTradePrice = (decimal)last;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bid))
-		_bestBidPrice = (decimal)bid;
+		_lastTradePrice = candle.ClosePrice;
 
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var ask))
-		_bestAskPrice = (decimal)ask;
-
-		ProcessManualCommands();
-		ProcessMartingaleCommand();
-		ManageRisk();
-	}
-
-	private void ProcessManualCommands()
-	{
-		if (!BuyRequest && !SellRequest)
-		return;
-
-		if (!IsOnline)
-		return;
-
-		if (Security == null || Portfolio == null)
-		return;
-
-		var buyRequested = BuyRequest;
-		var sellRequested = SellRequest;
-
-		if (buyRequested)
-		BuyMarket(OrderVolume);
-
-		if (sellRequested)
-		SellMarket(OrderVolume);
-
-		if (buyRequested)
-		BuyRequest = false;
-
-		if (sellRequested)
-		SellRequest = false;
+		if (fast > slow && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(OrderVolume);
+		}
+		else if (fast < slow && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Position);
+			SellMarket(OrderVolume);
+		}
 	}
 
 	private void ProcessMartingaleCommand()
@@ -338,7 +327,7 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 			if (ask == null)
 			return;
 
-			var referencePrice = _lowestLongPrice ?? PositionPrice;
+			var referencePrice = _lowestLongPrice ?? _lastTradePrice;
 			if (referencePrice == null)
 			return;
 
@@ -358,7 +347,7 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 			if (bid == null)
 			return;
 
-			var referencePrice = _highestShortPrice ?? PositionPrice;
+			var referencePrice = _highestShortPrice ?? _lastTradePrice;
 			if (referencePrice == null)
 			return;
 
@@ -388,7 +377,7 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 		return;
 
 		var step = GetPriceStep();
-		var positionPrice = PositionPrice;
+		var positionPrice = _lastTradePrice;
 		if (positionPrice == null)
 		return;
 
@@ -492,7 +481,7 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 			_shortTrailingStop = null;
 			_shortTakeProfit = null;
 
-			if (trade.Order.Direction == Sides.Buy)
+			if (trade.Order.Side == Sides.Buy)
 			{
 				_lowestLongPrice = _lowestLongPrice.HasValue ? Math.Min(_lowestLongPrice.Value, price.Value) : price.Value;
 				UpdateLongTakeProfit();
@@ -509,7 +498,7 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 			_longTrailingStop = null;
 			_longTakeProfit = null;
 
-			if (trade.Order.Direction == Sides.Sell)
+			if (trade.Order.Side == Sides.Sell)
 			{
 				_highestShortPrice = _highestShortPrice.HasValue ? Math.Max(_highestShortPrice.Value, price.Value) : price.Value;
 				UpdateShortTakeProfit();
@@ -530,6 +519,8 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 	protected override void OnPositionReceived(Position position)
 	{
 		base.OnPositionReceived(position);
+
+		var delta = Position - _previousPosition;
 
 		if (Position > 0)
 		{
@@ -585,7 +576,7 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 		if (!_longMartingaleActive)
 		return;
 
-		var positionPrice = PositionPrice;
+		var positionPrice = _lastTradePrice;
 		if (positionPrice == null)
 		return;
 
@@ -598,7 +589,7 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 		if (!_shortMartingaleActive)
 		return;
 
-		var positionPrice = PositionPrice;
+		var positionPrice = _lastTradePrice;
 		if (positionPrice == null)
 		return;
 

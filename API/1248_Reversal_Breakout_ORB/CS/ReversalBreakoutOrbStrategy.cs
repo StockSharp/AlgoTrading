@@ -58,6 +58,7 @@ public class ReversalBreakoutOrbStrategy : Strategy
 	private decimal? _qty;
 	private bool _tp1Done;
 	private bool _beSet;
+	private decimal _positionPrice;
 
 public int Ema9Length { get => _ema9.Value; set => _ema9.Value = value; }
 public int Ema20Length { get => _ema20.Value; set => _ema20.Value = value; }
@@ -158,11 +159,11 @@ private void Process(ICandleMessage candle, decimal ema9Val, decimal ema20Val, d
 	if (candle.State != CandleStates.Finished)
 	return;
 
-	var lowVal = _stopLow.Process(candle.LowPrice);
-	var highVal = _stopHigh.Process(candle.HighPrice);
-	var orbHigh = _orbHigh.Process(candle.HighPrice);
-	var orbLow = _orbLow.Process(candle.LowPrice);
-	var volVal = _orbVol.Process(candle.TotalVolume);
+	var lowVal = _stopLow.Process(new DecimalIndicatorValue(_stopLow, candle.LowPrice, candle.ServerTime));
+	var highVal = _stopHigh.Process(new DecimalIndicatorValue(_stopHigh, candle.HighPrice, candle.ServerTime));
+	var orbHigh = _orbHigh.Process(new DecimalIndicatorValue(_orbHigh, candle.HighPrice, candle.ServerTime));
+	var orbLow = _orbLow.Process(new DecimalIndicatorValue(_orbLow, candle.LowPrice, candle.ServerTime));
+	var volVal = _orbVol.Process(new DecimalIndicatorValue(_orbVol, candle.TotalVolume, candle.ServerTime));
 
 	if (_orbHighVal == null && _orbHigh.IsFormed)
 	{
@@ -201,6 +202,7 @@ private void Process(ICandleMessage candle, decimal ema9Val, decimal ema20Val, d
 	{
 		var vol = Volume;
 		BuyMarket(vol);
+		_positionPrice = candle.ClosePrice;
 		_qty = vol;
 		_stop = longStop;
 		var dist = candle.ClosePrice - longStop;
@@ -213,6 +215,7 @@ private void Process(ICandleMessage candle, decimal ema9Val, decimal ema20Val, d
 	{
 		var vol = Volume;
 		SellMarket(vol);
+		_positionPrice = candle.ClosePrice;
 		_qty = vol;
 		_stop = shortStop;
 		var dist = shortStop - candle.ClosePrice;
@@ -239,7 +242,7 @@ private void Process(ICandleMessage candle, decimal ema9Val, decimal ema20Val, d
 			}
 			if (_tp1Done && !_beSet)
 			{
-				_stop = PositionPrice;
+				_stop = _positionPrice;
 				_beSet = true;
 			}
 			if (_tp2.HasValue && candle.HighPrice >= _tp2)
@@ -266,7 +269,7 @@ private void Process(ICandleMessage candle, decimal ema9Val, decimal ema20Val, d
 			}
 			if (_tp1Done && !_beSet)
 			{
-				_stop = PositionPrice;
+				_stop = _positionPrice;
 				_beSet = true;
 			}
 			if (_tp2.HasValue && candle.LowPrice <= _tp2)

@@ -29,6 +29,7 @@ public class ColorJMomentumStrategy : Strategy
 	private readonly StrategyParam<bool> _enableLong;
 	private readonly StrategyParam<bool> _enableShort;
 
+	private JurikMovingAverage _jma;
 	private decimal? _prevValue;
 	private decimal? _prevPrevValue;
 
@@ -118,7 +119,7 @@ public class ColorJMomentumStrategy : Strategy
 			
 			.SetOptimize(5, 20, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "Parameters");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
@@ -144,27 +145,39 @@ public class ColorJMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		var momentum = new Momentum { Length = MomentumLength };
-		var jma = new JurikMovingAverage { Length = JmaLength, Input = momentum };
+		_jma = new JurikMovingAverage { Length = JmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(jma, ProcessCandle)
+			.Bind(momentum, ProcessCandle)
 			.Start();
 
 		StartProtection(
-			takeProfit: new Unit(TakeProfitPercent * 100m, UnitTypes.Percent),
-			stopLoss: EnableStopLoss ? new Unit(StopLossPercent * 100m, UnitTypes.Percent) : null);
+			takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
+			stopLoss: EnableStopLoss ? new Unit(StopLossPercent, UnitTypes.Percent) : null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal jMomentum)
+	private void ProcessCandle(ICandleMessage candle, decimal momentumValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var jmaResult = _jma.Process(momentumValue, candle.OpenTime, true);
+		if (!_jma.IsFormed)
+			return;
+
+		var jMomentum = jmaResult.ToDecimal();
 
 		if (_prevValue is decimal prev && _prevPrevValue is decimal prevPrev)
 		{

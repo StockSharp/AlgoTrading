@@ -88,8 +88,14 @@ public class ExpMovingAverageFnStrategy : Strategy
 			
 			.SetOptimize(1000m, 4000m, 500m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for EMA calculation", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -107,7 +113,7 @@ public class ExpMovingAverageFnStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema = new EMA { Length = Length };
+		var ema = new ExponentialMovingAverage { Length = Length };
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription

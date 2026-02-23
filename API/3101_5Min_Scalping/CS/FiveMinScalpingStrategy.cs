@@ -512,11 +512,13 @@ public class FiveMinScalpingStrategy : Strategy
 		_momentumReady = _momentumDeviationHistory.Count >= MomentumHistorySize;
 	}
 
-	private void ProcessMacroMacd(ICandleMessage candle, decimal macd, decimal signal, decimal histogram)
+	private void ProcessMacroMacd(ICandleMessage candle, decimal macdVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var macd = _macroMacdIndicator.Macd.GetCurrentValue();
+		var signal = _macroMacdIndicator.SignalMa.GetCurrentValue();
 		_macroMacdValue = macd;
 		_macroSignalValue = signal;
 		_hasMacroMacd = true;

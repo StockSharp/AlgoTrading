@@ -343,9 +343,9 @@ public class BrunoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = BaseVolume;
 
@@ -358,15 +358,13 @@ public class BrunoStrategy : Strategy
 
 		_fastEma = new EMA { Length = FastEmaPeriod };
 		_slowEma = new EMA { Length = SlowEmaPeriod };
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = MacdFastPeriod },
-				LongMa = { Length = MacdSlowPeriod },
-			},
-			SignalMa = { Length = MacdSignalPeriod },
-		};
+		_macd = new MovingAverageConvergenceDivergenceSignal(
+			new MovingAverageConvergenceDivergence(
+				new ExponentialMovingAverage { Length = MacdSlowPeriod },
+				new ExponentialMovingAverage { Length = MacdFastPeriod }
+			),
+			new ExponentialMovingAverage { Length = MacdSignalPeriod }
+		);
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		_stochastic = new StochasticOscillator
 		{

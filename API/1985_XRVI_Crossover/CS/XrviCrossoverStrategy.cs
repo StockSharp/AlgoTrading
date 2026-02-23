@@ -15,38 +15,15 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// XRVI crossover strategy.
-/// Uses Relative Vigor Index with an additional moving average signal line.
-/// Buys when XRVI crosses above its signal line and sells when XRVI crosses below.
+/// Uses Relative Vigor Index with its built-in signal line.
+/// Buys when RVI Average crosses above Signal and sells when it crosses below.
 /// </summary>
 public class XrviCrossoverStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rviLength;
-	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeVigorIndex _rvi;
-	private SimpleMovingAverage _signal;
-
-	private decimal? _prevRvi;
-	private decimal? _prevSignal;
-
-	/// <summary>
-	/// Length of RVI.
-	/// </summary>
-	public int RviLength
-	{
-		get => _rviLength.Value;
-		set => _rviLength.Value = value;
-	}
-
-	/// <summary>
-	/// Length of signal line.
-	/// </summary>
-	public int SignalLength
-	{
-		get => _signalLength.Value;
-		set => _signalLength.Value = value;
-	}
+	private decimal? _prevAvg;
+	private decimal? _prevSig;
 
 	/// <summary>
 	/// Candle type to process.
@@ -59,17 +36,7 @@ public class XrviCrossoverStrategy : Strategy
 
 	public XrviCrossoverStrategy()
 	{
-		_rviLength = Param(nameof(RviLength), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("RVI Length", "Length for XRVI", "General")
-			;
-
-		_signalLength = Param(nameof(SignalLength), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Signal Length", "Length for signal line", "General")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -83,11 +50,8 @@ public class XrviCrossoverStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_rvi = default;
-		_signal = default;
-		_prevRvi = default;
-		_prevSignal = default;
+		_prevAvg = default;
+		_prevSig = default;
 	}
 
 	/// <inheritdoc />
@@ -95,20 +59,20 @@ public class XrviCrossoverStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_rvi = new RelativeVigorIndex { Length = RviLength };
-		_signal = new SMA { Length = SignalLength };
+		var rvi = new RelativeVigorIndex();
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(_rvi, ProcessCandle).Start();
+		subscription.BindEx(rvi, ProcessCandle).Start();
 
-		StartProtection(null, null);
+		StartProtection(
+			takeProfit: new Unit(2000, UnitTypes.Absolute),
+			stopLoss: new Unit(1000, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _rvi);
-			DrawIndicator(area, _signal);
+			DrawIndicator(area, rvi);
 			DrawOwnTrades(area);
 		}
 	}
@@ -118,32 +82,32 @@ public class XrviCrossoverStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var signalValue = _signal.Process(rviValue);
-
-		if (!rviValue.IsFinal || !signalValue.IsFinal)
-			return;
-
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var rvi = rviValue.GetValue<decimal>();
-		var signal = signalValue.GetValue<decimal>();
+		var value = (RelativeVigorIndexValue)rviValue;
 
-		var longSignal = _prevRvi <= _prevSignal && rvi > signal;
-		var shortSignal = _prevRvi >= _prevSignal && rvi < signal;
+		if (value.Average is not decimal avg || value.Signal is not decimal sig)
+			return;
 
-		if (longSignal && Position <= 0)
+		if (_prevAvg is not null && _prevSig is not null)
 		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			BuyMarket(volume);
-		}
-		else if (shortSignal && Position >= 0)
-		{
-			var volume = Volume + (Position > 0 ? Position : 0m);
-			SellMarket(volume);
+			var longSignal = _prevAvg <= _prevSig && avg > sig;
+			var shortSignal = _prevAvg >= _prevSig && avg < sig;
+
+			if (longSignal && Position <= 0)
+			{
+				var volume = Volume + (Position < 0 ? -Position : 0m);
+				BuyMarket(volume);
+			}
+			else if (shortSignal && Position >= 0)
+			{
+				var volume = Volume + (Position > 0 ? Position : 0m);
+				SellMarket(volume);
+			}
 		}
 
-		_prevRvi = rvi;
-		_prevSignal = signal;
+		_prevAvg = avg;
+		_prevSig = sig;
 	}
 }

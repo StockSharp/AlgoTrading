@@ -71,7 +71,7 @@ public class VortexIndicatorCrossStrategy : Strategy
 			
 			.SetOptimize(7, 28, 7);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for Vortex calculation", "General");
 
 		_stopLoss = Param(nameof(StopLoss), 1000)
@@ -93,8 +93,8 @@ public class VortexIndicatorCrossStrategy : Strategy
 		base.OnStarted2(time);
 
 		StartProtection(
-			stopLoss: new Unit(StopLoss, UnitTypes.Step),
-			takeProfit: new Unit(TakeProfit, UnitTypes.Step));
+			stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
+			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute));
 
 		var vortex = new VortexIndicator { Length = Length };
 
@@ -105,7 +105,7 @@ public class VortexIndicatorCrossStrategy : Strategy
 		var isInitialized = false;
 
 		subscription
-			.Bind(vortex, (candle, viPlus, viMinus) =>
+			.BindEx(vortex, (candle, vortexValue) =>
 			{
 				if (candle.State != CandleStates.Finished)
 					return;
@@ -113,11 +113,12 @@ public class VortexIndicatorCrossStrategy : Strategy
 				if (!IsFormedAndOnlineAndAllowTrading())
 					return;
 
+				var typed = (VortexIndicatorValue)vortexValue;
+				if (typed.PlusVi is not decimal viPlus || typed.MinusVi is not decimal viMinus)
+					return;
+
 				if (!isInitialized)
 				{
-					if (!vortex.IsFormed)
-						return;
-
 					prevPlus = viPlus;
 					prevMinus = viMinus;
 					isInitialized = true;

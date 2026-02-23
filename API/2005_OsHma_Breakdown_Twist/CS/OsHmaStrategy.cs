@@ -107,7 +107,7 @@ public class OsHmaStrategy : Strategy
 		_mode = Param(nameof(Mode), OsHmaModes.Twist)
 		.SetDisplay("Mode", "Breakdown – zero crossing, Twist – direction change", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
@@ -158,8 +158,8 @@ public class OsHmaStrategy : Strategy
 	}
 
 	StartProtection(
-	takeProfit: new Unit(TakeProfit, UnitTypes.Point),
-	stopLoss: new Unit(StopLoss, UnitTypes.Point),
+	takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
+	stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
 	isStopTrailing: false);
 	}
 

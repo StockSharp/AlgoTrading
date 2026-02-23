@@ -89,7 +89,7 @@ public class SyndicateTraderStrategy : Strategy
 		_sessionEndMinute = Param(nameof(SessionEndMinute), 59)
 		.SetDisplay("End Minute", "Session end minute", "Session");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 	
@@ -104,9 +104,9 @@ public class SyndicateTraderStrategy : Strategy
 	{
 		base.OnStarted2(time);
 		
-		_fastEma = new EMA { Length = FastEmaLength };
-		_slowEma = new EMA { Length = SlowEmaLength };
-		_volumeMa = new SMA { Length = VolumeMaLength };
+		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		_slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		_volumeMa = new SimpleMovingAverage { Length = VolumeMaLength };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -140,19 +140,22 @@ public class SyndicateTraderStrategy : Strategy
 			}
 		}
 		
-		var fast = _fastEma.Process(new DecimalIndicatorValue(_fastEma, candle).ToDecimal();
-		var slow = _slowEma.Process(candle).ToDecimal();
-		var volumeAvg = _volumeMa.Process(candle.TotalVolume, candle.OpenTime)).ToDecimal();
-		
+		var fast = _fastEma.Process(new DecimalIndicatorValue(_fastEma, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var slow = _slowEma.Process(new DecimalIndicatorValue(_slowEma, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var volumeAvg = _volumeMa.Process(new DecimalIndicatorValue(_volumeMa, candle.TotalVolume, candle.OpenTime) { IsFinal = true }).ToDecimal();
+
+		if (!_fastEma.IsFormed || !_slowEma.IsFormed)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
+
 		var crossUp = fast > slow && _prevFast <= _prevSlow;
 		var crossDown = fast < slow && _prevFast >= _prevSlow;
-		var volumeSpike = candle.TotalVolume > volumeAvg * VolumeMultiplier;
 		
 		_prevFast = fast;
 		_prevSlow = slow;
-		
-		if (!volumeSpike)
-		return;
 		
 		if (crossUp && Position <= 0)
 		BuyMarket();

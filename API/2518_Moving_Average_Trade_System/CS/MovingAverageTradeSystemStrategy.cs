@@ -152,7 +152,7 @@ public class MovingAverageTradeSystemStrategy : Strategy
 			
 			.SetOptimize(0m, 100m, 5m);
 
-		_slopeThresholdSteps = Param(nameof(SlopeThresholdSteps), 1m)
+		_slopeThresholdSteps = Param(nameof(SlopeThresholdSteps), 0m)
 			.SetNotNegative()
 			.SetDisplay("Slope Threshold", "Minimum SMA40 vs SMA60 distance in steps", "Signals")
 			
@@ -224,10 +224,10 @@ public class MovingAverageTradeSystemStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _smaFast, "SMA Fast");
-			DrawIndicator(area, _smaMedium, "SMA Medium");
-			DrawIndicator(area, _smaSignal, "SMA Signal");
-			DrawIndicator(area, _smaSlow, "SMA Slow");
+			DrawIndicator(area, _smaFast);
+			DrawIndicator(area, _smaMedium);
+			DrawIndicator(area, _smaSignal);
+			DrawIndicator(area, _smaSlow);
 			DrawOwnTrades(area);
 		}
 	}
@@ -262,16 +262,13 @@ public class MovingAverageTradeSystemStrategy : Strategy
 		var buySignal = bullishStructure && bullishSlope && bullishCross;
 		var sellSignal = bearishStructure && bearishSlope && bearishCross;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (buySignal && Position <= 0m)
 		{
 			// Flip the position by buying enough volume to cover shorts and add the desired long exposure.
 			var volume = Volume + (Position < 0m ? Math.Abs(Position) : 0m);
 
 			if (volume > 0m)
-				BuyMarket(volume);
+				BuyMarket();
 		}
 		else if (sellSignal && Position >= 0m)
 		{
@@ -279,7 +276,7 @@ public class MovingAverageTradeSystemStrategy : Strategy
 			var volume = Volume + (Position > 0m ? Position : 0m);
 
 			if (volume > 0m)
-				SellMarket(volume);
+				SellMarket();
 		}
 		else
 		{
@@ -288,7 +285,7 @@ public class MovingAverageTradeSystemStrategy : Strategy
 			{
 				if (smaSignal <= smaSlow)
 				{
-					SellMarket(Position);
+					SellMarket();
 				}
 				else
 				{
@@ -299,7 +296,7 @@ public class MovingAverageTradeSystemStrategy : Strategy
 			{
 				if (smaSignal >= smaSlow)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 				}
 				else
 				{
@@ -318,13 +315,13 @@ public class MovingAverageTradeSystemStrategy : Strategy
 
 		if (_longTakeProfit.HasValue && candle.HighPrice >= _longTakeProfit.Value)
 		{
-			SellMarket(Position);
+			SellMarket();
 			return;
 		}
 
 		if (_longStopLoss.HasValue && candle.LowPrice <= _longStopLoss.Value)
 		{
-			SellMarket(Position);
+			SellMarket();
 			return;
 		}
 
@@ -333,7 +330,7 @@ public class MovingAverageTradeSystemStrategy : Strategy
 
 		var trailingLevel = _longHigh - TrailingStopSteps * priceStep;
 		if (candle.ClosePrice <= trailingLevel)
-			SellMarket(Position);
+			SellMarket();
 	}
 
 	private void ManageShortPosition(ICandleMessage candle, decimal priceStep)
@@ -345,13 +342,13 @@ public class MovingAverageTradeSystemStrategy : Strategy
 
 		if (_shortTakeProfit.HasValue && candle.LowPrice <= _shortTakeProfit.Value)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			return;
 		}
 
 		if (_shortStopLoss.HasValue && candle.HighPrice >= _shortStopLoss.Value)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			return;
 		}
 
@@ -360,7 +357,7 @@ public class MovingAverageTradeSystemStrategy : Strategy
 
 		var trailingLevel = _shortLow + TrailingStopSteps * priceStep;
 		if (candle.ClosePrice >= trailingLevel)
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 	}
 
 	/// <inheritdoc />

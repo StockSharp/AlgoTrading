@@ -214,7 +214,7 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 							 
 							 .SetOptimize(30, 80, 5);
 
-		_trendTimeFrame = Param(nameof(TrendTimeFrame), TimeSpan.FromDays(1))
+		_trendTimeFrame = Param(nameof(TrendTimeFrame), TimeSpan.FromHours(1))
 							  .SetDisplay("Trend Higher Time Frame", "Time frame for trend filter", "Trend Settings");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -244,9 +244,9 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var baseTf = (TimeSpan)CandleType.Arg;
 		var macdSmoothLength = Math.Max(1, (int)(MacdTimeFrame.TotalMinutes / baseTf.TotalMinutes));
@@ -256,36 +256,39 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 		_signalSmooth = new SMA { Length = macdSmoothLength };
 		_trendSmooth = new SMA { Length = trendSmoothLength };
 
-		var macd = new MovingAverageConvergenceDivergence { ShortMa = CreateMa(MacdMaType, FastMaLength),
-															LongMa = CreateMa(MacdMaType, SlowMaLength),
-															SignalMa = CreateMa(MacdMaType, SignalMaLength) };
+		var macd = new MovingAverageConvergenceDivergenceSignal();
+		macd.Macd.ShortMa.Length = FastMaLength;
+		macd.Macd.LongMa.Length = SlowMaLength;
+		macd.SignalMa.Length = SignalMaLength;
 
 		var macdSub = SubscribeCandles(MacdTimeFrame.TimeFrame());
-		macdSub.Bind(macd, OnMacd).Start();
+		macdSub.BindEx(macd, OnMacd).Start();
 
-		var trendMa = CreateMa(TrendMaType, TrendMaLength);
+		var trendMa = new ExponentialMovingAverage { Length = TrendMaLength };
 		var trendSub = SubscribeCandles(TrendTimeFrame.TimeFrame());
 		trendSub.Bind(trendMa, OnTrend).Start();
 
+		var baseEma = new ExponentialMovingAverage { Length = 2 };
 		var baseSub = SubscribeCandles(CandleType);
-		baseSub.Bind(ProcessBase).Start();
+		baseSub.Bind(baseEma, ProcessBase).Start();
 
-		StartProtection();
+		// no separate protection needed, exit logic in ProcessBase
 	}
 
-	private void OnMacd(ICandleMessage candle, decimal macd, decimal signal, decimal hist)
+	private void OnMacd(ICandleMessage candle, IIndicatorValue macdVal)
 	{
 		if (candle.State != CandleStates.Finished || _macdSmooth == null || _signalSmooth == null)
 			return;
 
-		var macdVal = _macdSmooth.Process(macd);
-		var sigVal = _signalSmooth.Process(signal);
-
-		if (!macdVal.IsFinal || !sigVal.IsFinal)
+		var mv = (MovingAverageConvergenceDivergenceSignalValue)macdVal;
+		if (mv.Macd is not decimal macd || mv.Signal is not decimal signal)
 			return;
 
-		_macdValue = macdVal.GetValue<decimal>();
-		_signalValue = sigVal.GetValue<decimal>();
+		var macdSmoothed = _macdSmooth.Process(new DecimalIndicatorValue(_macdSmooth, macd, candle.ServerTime));
+		var sigSmoothed = _signalSmooth.Process(new DecimalIndicatorValue(_signalSmooth, signal, candle.ServerTime));
+
+		_macdValue = macdSmoothed.GetValue<decimal>();
+		_signalValue = sigSmoothed.GetValue<decimal>();
 		_macdReady = true;
 	}
 
@@ -294,16 +297,14 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 		if (candle.State != CandleStates.Finished || _trendSmooth == null)
 			return;
 
-		var val = _trendSmooth.Process(trend);
-		if (!val.IsFinal)
-			return;
+		var val = _trendSmooth.Process(new DecimalIndicatorValue(_trendSmooth, trend, candle.ServerTime));
 
 		_prevTrendValue = _trendValue;
 		_trendValue = val.GetValue<decimal>();
 		_trendReady = true;
 	}
 
-	private void ProcessBase(ICandleMessage candle)
+	private void ProcessBase(ICandleMessage candle, decimal _emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -336,9 +337,13 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 		}
 
 		if (Position > 0 && _macdValue < _signalValue)
-			ClosePosition();
+		{
+			SellMarket(Math.Abs(Position));
+		}
 		else if (Position < 0 && _macdValue > _signalValue)
-			ClosePosition();
+		{
+			BuyMarket(Math.Abs(Position));
+		}
 	}
 
 	private decimal ComputeQty(decimal price)

@@ -157,7 +157,7 @@ public class ReverseKeltnerChannelStrategy : Strategy
 		_adx = new AverageDirectionalIndex { Length = AdxLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_keltner, _adx, ProcessCandle).Start();
+		subscription.BindEx(_keltner, _adx, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -168,9 +168,16 @@ public class ReverseKeltnerChannelStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal adxValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue keltnerVal, IIndicatorValue adxVal)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		var kv = (KeltnerChannelsValue)keltnerVal;
+		if (kv.Middle is not decimal middle || kv.Upper is not decimal upper || kv.Lower is not decimal lower)
+			return;
+		var adxTyped = (AverageDirectionalIndexValue)adxVal;
+		if (adxTyped.MovingAverage is not decimal adxValue)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading() || !_keltner.IsFormed || !_adx.IsFormed)

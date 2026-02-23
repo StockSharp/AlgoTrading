@@ -57,7 +57,7 @@ public class SvmTraderStrategy : Strategy
 	/// </summary>
 	public SvmTraderStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 
@@ -87,20 +87,8 @@ public class SvmTraderStrategy : Strategy
 		_bulls = new BullPower { Length = 13 };
 		_atr = new AverageTrueRange { Length = 13 };
 		_momentum = new Momentum { Length = 13 };
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = 12 },
-				LongMa = { Length = 26 }
-			},
-			SignalMa = { Length = 9 }
-		};
-		_stochastic = new StochasticOscillator
-		{,
-			D = {  K = { Length = 3 } },
-			Smooth = 3
-		};
+		_macd = new MovingAverageConvergenceDivergenceSignal();
+		_stochastic = new StochasticOscillator();
 		_force = new ForceIndex { Length = 13 };
 
 		var subscription = SubscribeCandles(CandleType);

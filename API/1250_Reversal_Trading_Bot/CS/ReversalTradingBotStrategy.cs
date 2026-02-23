@@ -289,10 +289,10 @@ public class ReversalTradingBotStrategy : Strategy
 		var bb = (BollingerBandsValue)bbVal;
 		var volSma = volSmaVal.GetValue<decimal>();
 
-		var priceLow = _priceLowest.Process(candle.LowPrice).ToDecimal();
-		var rsiLow = _rsiLowest.Process(rsi).ToDecimal();
-		var priceHigh = _priceHighest.Process(candle.HighPrice).ToDecimal();
-		var rsiHigh = _rsiHighest.Process(rsi).ToDecimal();
+		var priceLow = _priceLowest.Process(new DecimalIndicatorValue(_priceLowest, candle.LowPrice, candle.ServerTime)).ToDecimal();
+		var rsiLow = _rsiLowest.Process(new DecimalIndicatorValue(_rsiLowest, rsi, candle.ServerTime)).ToDecimal();
+		var priceHigh = _priceHighest.Process(new DecimalIndicatorValue(_priceHighest, candle.HighPrice, candle.ServerTime)).ToDecimal();
+		var rsiHigh = _rsiHighest.Process(new DecimalIndicatorValue(_rsiHighest, rsi, candle.ServerTime)).ToDecimal();
 
 		var bullDiv = false;
 		var bearDiv = false;

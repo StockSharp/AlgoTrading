@@ -112,11 +112,9 @@ public class AflWinnerSignStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var stochastic = new StochasticOscillator
-		{ K = { Length = Period },
-			K = { Length = KPeriod },
-			D = { Length = DPeriod },
-		};
+		var stochastic = new StochasticOscillator();
+		stochastic.K.Length = Period;
+		stochastic.D.Length = DPeriod;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -146,8 +144,8 @@ public class AflWinnerSignStrategy : Strategy
 		return;
 
 		var stoch = (StochasticOscillatorValue)stochValue;
-		var k = stoch.K;
-		var d = stoch.D;
+		if (stoch.K is not decimal k || stoch.D is not decimal d)
+			return;
 
 		if (_prevK <= _prevD && k > d && Position <= 0)
 		{

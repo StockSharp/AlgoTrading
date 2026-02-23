@@ -72,7 +72,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume", "Trading");
 
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(8).TimeFrame())
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Trend TF", "Trend timeframe", "Trend");
 
 		_trendIbsPeriod = Param(nameof(TrendIbsPeriod), 5)
@@ -152,7 +152,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		.SetDisplay("Output Direction", "Directional multiplier for the composite output", "Weights")
 		;
 
-		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(1).TimeFrame())
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Signal TF", "Signal timeframe", "Signal");
 
 		_signalIbsPeriod = Param(nameof(SignalIbsPeriod), 5)
@@ -517,7 +517,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		{
 			var takeProfit = new Unit(TakeProfitPoints * priceStep, UnitTypes.Absolute);
 			var stopLoss = new Unit(StopLossPoints * priceStep, UnitTypes.Absolute);
-			StartProtection(takeProfit: takeProfit, stopLoss: stopLoss);
+			StartProtection(stopLoss, takeProfit);
 		}
 
 		var area = CreateChartArea();
@@ -574,9 +574,6 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		if (_signalValues.Count > maxCount)
 			_signalValues.RemoveAt(0);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (_signalValues.Count <= SignalSignalBar + 1)
 			return;
 
@@ -627,8 +624,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		if (Position <= 0)
 			return;
 
-		CancelActiveOrders();
-		SellMarket(Position);
+		SellMarket();
 	}
 
 	private void CloseShort()
@@ -636,28 +632,17 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		if (Position >= 0)
 			return;
 
-		CancelActiveOrders();
-		BuyMarket(-Position);
+		BuyMarket();
 	}
 
 	private void EnterLong()
 	{
-		var volume = OrderVolume + Math.Abs(Position);
-		if (volume <= 0)
-			return;
-
-		CancelActiveOrders();
-		BuyMarket(volume);
+		BuyMarket();
 	}
 
 	private void EnterShort()
 	{
-		var volume = OrderVolume + Math.Abs(Position);
-		if (volume <= 0)
-			return;
-
-		CancelActiveOrders();
-		SellMarket(volume);
+		SellMarket();
 	}
 
 	private readonly record struct IbsRsiCciValue(decimal Up, decimal Down);
@@ -739,17 +724,17 @@ public class IbsRsiCciV4X2Strategy : Strategy
 				return null;
 
 			var ibsRaw = (candle.ClosePrice - candle.LowPrice) / range;
-			var ibsValue = _ibsMa.Process(new DecimalIndicatorValue(_ibsMa, ibsRaw, candle.OpenTime));
+			var ibsValue = _ibsMa.Process(new DecimalIndicatorValue(_ibsMa, ibsRaw, candle.OpenTime) { IsFinal = true });
 			if (!ibsValue.IsFinal)
 				return null;
 
 			var rsiInput = GetPrice(candle, _rsiPrice);
-			var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiInput, candle.OpenTime));
+			var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiInput, candle.OpenTime) { IsFinal = true });
 			if (!rsiValue.IsFinal)
 				return null;
 
 			var cciInput = GetPrice(candle, _cciPrice);
-			var cciValue = _cci.Process(new DecimalIndicatorValue(_cci, cciInput, candle.OpenTime));
+			var cciValue = _cci.Process(cciInput, candle.OpenTime, true);
 			if (cciValue == null)
 				return null;
 
@@ -781,16 +766,16 @@ public class IbsRsiCciV4X2Strategy : Strategy
 
 			_previousUp = up;
 
-			var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, up, candle.OpenTime));
-			var lowestValue = _lowest.Process(new DecimalIndicatorValue(_lowest, up, candle.OpenTime));
+			var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, up, candle.OpenTime) { IsFinal = true });
+			var lowestValue = _lowest.Process(new DecimalIndicatorValue(_lowest, up, candle.OpenTime) { IsFinal = true });
 			if (!highestValue.IsFinal || !lowestValue.IsFinal)
 				return null;
 
 			var highest = highestValue.GetValue<decimal>();
 			var lowest = lowestValue.GetValue<decimal>();
 
-			var highSmooth = _rangeHighMa.Process(new DecimalIndicatorValue(_rangeHighMa, highest, candle.OpenTime));
-			var lowSmooth = _rangeLowMa.Process(new DecimalIndicatorValue(_rangeLowMa, lowest, candle.OpenTime));
+			var highSmooth = _rangeHighMa.Process(new DecimalIndicatorValue(_rangeHighMa, highest, candle.OpenTime) { IsFinal = true });
+			var lowSmooth = _rangeLowMa.Process(new DecimalIndicatorValue(_rangeLowMa, lowest, candle.OpenTime) { IsFinal = true });
 			if (!highSmooth.IsFinal || !lowSmooth.IsFinal)
 				return null;
 
@@ -874,7 +859,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 
 		public decimal? Process(decimal price, DateTimeOffset time, bool isFinal)
 		{
-			var maValue = _sma.Process(new DecimalIndicatorValue(_sma, price, time.UtcDateTime));
+			var maValue = _sma.Process(new DecimalIndicatorValue(_sma, price, time.UtcDateTime) { IsFinal = true });
 			_buffer.Enqueue(price);
 			if (_buffer.Count > _period)
 				_buffer.Dequeue();

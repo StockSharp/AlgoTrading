@@ -33,9 +33,11 @@ public class RtbMomentumBreakoutStrategy : Strategy
 
 	private Highest _breakoutHigh;
 	private Lowest _breakoutLow;
+	private AverageTrueRange _atr;
 
 	private decimal? _prevResistance;
 	private decimal? _prevSupport;
+	private decimal _entryPrice;
 
 public int MaxLookback { get => _maxLookback.Value; set => _maxLookback.Value = value; }
 public int EmaFastLength { get => _emaFastLen.Value; set => _emaFastLen.Value = value; }
@@ -77,6 +79,7 @@ protected override void OnReseted()
 	base.OnReseted();
 	_prevResistance = null;
 	_prevSupport = null;
+	_entryPrice = 0m;
 }
 
 protected override void OnStarted2(DateTime time)
@@ -86,7 +89,7 @@ protected override void OnStarted2(DateTime time)
 	var emaFast = new EMA { Length = EmaFastLength };
 	var emaSlow = new EMA { Length = EmaSlowLength };
 	var rsi = new RSI { Length = RsiLength };
-	var atr = new ATR { Length = AtrLength };
+	_atr = new ATR { Length = AtrLength };
 	_breakoutHigh = new Highest { Length = BreakoutPeriod };
 	_breakoutLow = new Lowest { Length = BreakoutPeriod };
 	var longHigh = new Highest { Length = MaxLookback };
@@ -94,13 +97,16 @@ protected override void OnStarted2(DateTime time)
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription
-		.Bind(emaFast, emaSlow, rsi, atr, _breakoutHigh, _breakoutLow, longHigh, shortLow, ProcessCandle)
+		.Bind(emaFast, emaSlow, rsi, _breakoutHigh, _breakoutLow, longHigh, shortLow, ProcessCandle)
 		.Start();
 }
-private void ProcessCandle(ICandleMessage candle, decimal emaFastVal, decimal emaSlowVal, decimal rsiVal, decimal atrVal, decimal breakoutHighVal, decimal breakoutLowVal, decimal longHighVal, decimal shortLowVal)
+private void ProcessCandle(ICandleMessage candle, decimal emaFastVal, decimal emaSlowVal, decimal rsiVal, decimal breakoutHighVal, decimal breakoutLowVal, decimal longHighVal, decimal shortLowVal)
 {
 	if (candle.State != CandleStates.Finished)
 		return;
+
+	var atrResult = _atr.Process(candle);
+	var atrVal = atrResult.IsFormed ? atrResult.GetValue<decimal>() : 0m;
 
 	if (!_breakoutHigh.IsFormed || !_breakoutLow.IsFormed)
 	{
@@ -121,13 +127,19 @@ private void ProcessCandle(ICandleMessage candle, decimal emaFastVal, decimal em
 	var shortCond = candle.ClosePrice < support && emaFastVal < emaSlowVal && rsiVal > RsiOversold;
 
 	if (longCond)
+	{
 		BuyMarket();
+		_entryPrice = candle.ClosePrice;
+	}
 	else if (shortCond)
+	{
 		SellMarket();
+		_entryPrice = candle.ClosePrice;
+	}
 
 	if (Position > 0)
 	{
-		var stopLoss = PositionPrice - atrVal * AtrStopMultiplier;
+		var stopLoss = _entryPrice - atrVal * AtrStopMultiplier;
 		var trail = longHighVal - atrVal * AtrTrailMultiplier;
 		var exitPrice = Math.Max(stopLoss, trail);
 
@@ -136,7 +148,7 @@ private void ProcessCandle(ICandleMessage candle, decimal emaFastVal, decimal em
 	}
 	else if (Position < 0)
 	{
-		var stopLoss = PositionPrice + atrVal * AtrStopMultiplier;
+		var stopLoss = _entryPrice + atrVal * AtrStopMultiplier;
 		var trail = shortLowVal + atrVal * AtrTrailMultiplier;
 		var exitPrice = Math.Min(stopLoss, trail);
 

@@ -315,7 +315,7 @@ public class VortexIndicatorDuplexStrategy : Strategy
 
 		base.OnStarted2(time);
 	}
-	private void ProcessLongCandle(ICandleMessage candle, decimal viPlus, decimal viMinus)
+	private void ProcessLongCandle(ICandleMessage candle, decimal viPlusVal)
 	{
 		if (candle.State != CandleStates.Finished)
 		{
@@ -327,6 +327,8 @@ public class VortexIndicatorDuplexStrategy : Strategy
 			return;
 		}
 
+		var viPlus = _longVortex.PlusVi.GetCurrentValue();
+		var viMinus = _longVortex.MinusVi.GetCurrentValue();
 		AppendHistory(_longHistory, (viPlus, viMinus));
 
 		if (!_longVortex.IsFormed)
@@ -358,7 +360,7 @@ public class VortexIndicatorDuplexStrategy : Strategy
 			TryOpenLong(candle.ClosePrice);
 		}
 	}
-	private void ProcessShortCandle(ICandleMessage candle, decimal viPlus, decimal viMinus)
+	private void ProcessShortCandle(ICandleMessage candle, decimal viPlusVal)
 	{
 		if (candle.State != CandleStates.Finished)
 		{
@@ -370,6 +372,8 @@ public class VortexIndicatorDuplexStrategy : Strategy
 			return;
 		}
 
+		var viPlus = _shortVortex.PlusVi.GetCurrentValue();
+		var viMinus = _shortVortex.MinusVi.GetCurrentValue();
 		AppendHistory(_shortHistory, (viPlus, viMinus));
 
 		if (!_shortVortex.IsFormed)

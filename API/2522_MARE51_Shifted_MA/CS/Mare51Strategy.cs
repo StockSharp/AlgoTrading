@@ -107,23 +107,23 @@ public class Mare51Strategy : Strategy
 			.SetDisplay("Fast Period", "Fast SMA period", "Indicators")
 			.SetGreaterThanZero();
 
-		_slowPeriod = Param(nameof(SlowPeriod), 79)
+		_slowPeriod = Param(nameof(SlowPeriod), 20)
 			.SetDisplay("Slow Period", "Slow SMA period", "Indicators")
 			.SetGreaterThanZero();
 
-		_movingAverageShift = Param(nameof(MovingAverageShift), 4)
+		_movingAverageShift = Param(nameof(MovingAverageShift), 1)
 			.SetDisplay("MA Shift", "Forward shift applied to both SMAs", "Indicators")
 			.SetNotNegative();
 
-		_sessionOpenHour = Param(nameof(SessionOpenHour), 2)
+		_sessionOpenHour = Param(nameof(SessionOpenHour), 0)
 			.SetDisplay("Session Open Hour", "Inclusive start hour for trading", "Session")
 			.SetRange(0, 23);
 
-		_sessionCloseHour = Param(nameof(SessionCloseHour), 3)
+		_sessionCloseHour = Param(nameof(SessionCloseHour), 23)
 			.SetDisplay("Session Close Hour", "Inclusive end hour for trading", "Session")
 			.SetRange(0, 23);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle data type", "Data");
 	}
 
@@ -167,7 +167,7 @@ public class Mare51Strategy : Strategy
 			? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute)
 			: new Unit(0m);
 
-		StartProtection(takeProfitUnit, stopLossUnit, useMarketOrders: true);
+		StartProtection(stopLossUnit, takeProfitUnit);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -205,8 +205,8 @@ public class Mare51Strategy : Strategy
 		var previousCandle = _previousCandle;
 		_previousCandle = candle;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		//if (!IsFormedAndOnlineAndAllowTrading())
+		//	return;
 
 		if (previousCandle == null)
 			return;
@@ -249,12 +249,12 @@ public class Mare51Strategy : Strategy
 		if (sellSignal)
 		{
 			// Enter short when slow SMA overtakes the fast SMA and previous bars confirm the reversal.
-			SellMarket(TradeVolume);
+			SellMarket();
 		}
 		else if (buySignal)
 		{
 			// Enter long when fast SMA overtakes the slow SMA and previous bars confirm the reversal.
-			BuyMarket(TradeVolume);
+			BuyMarket();
 		}
 	}
 

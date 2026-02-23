@@ -94,7 +94,7 @@ public class Binario31Strategy : Strategy
 			.SetOptimize(100m, 1000m, 100m);
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -116,8 +116,8 @@ public class Binario31Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_emaHigh = new EMA { Length = EmaLength };
-		_emaLow = new EMA { Length = EmaLength };
+		_emaHigh = new ExponentialMovingAverage { Length = EmaLength };
+		_emaLow = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -137,10 +137,10 @@ public class Binario31Strategy : Strategy
 
 		var step = Security.PriceStep ?? 1m;
 
-		var emaHigh = _emaHigh.Process(new DecimalIndicatorValue(_emaHigh, candle.HighPrice, candle.OpenTime)).ToDecimal();
-		var emaLow = _emaLow.Process(new DecimalIndicatorValue(_emaLow, candle.LowPrice, candle.OpenTime)).ToDecimal();
+		var emaHigh = _emaHigh.Process(new DecimalIndicatorValue(_emaHigh, candle.HighPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var emaLow = _emaLow.Process(new DecimalIndicatorValue(_emaLow, candle.LowPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
-		if (!IsFormedAndOnlineAndAllowTrading() || !_emaHigh.IsFormed || !_emaLow.IsFormed)
+		if (!IsOnline || !_emaHigh.IsFormed || !_emaLow.IsFormed)
 			return;
 
 		var close = candle.ClosePrice;

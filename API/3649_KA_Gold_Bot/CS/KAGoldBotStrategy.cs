@@ -327,10 +327,10 @@ public class KAGoldBotStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastEma = new EMA { Length = FastEmaPeriod };
-		_slowEma = new EMA { Length = SlowEmaPeriod };
-		_keltnerEma = new EMA { Length = KeltnerPeriod };
-		_rangeAverage = new SMA { Length = KeltnerPeriod };
+		_fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_keltnerEma = new ExponentialMovingAverage { Length = KeltnerPeriod };
+		_rangeAverage = new SimpleMovingAverage { Length = KeltnerPeriod };
 
 		var step = Security?.PriceStep ?? 0.0001m;
 		var decimals = Security?.Decimals ?? 0;
@@ -365,8 +365,8 @@ public class KAGoldBotStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		//if (!IsFormedAndOnlineAndAllowTrading())
+		//	return;
 
 		var midValue = _keltnerEma.Process(candle).ToNullableDecimal();
 		var rangeValue = _rangeAverage.Process(new DecimalIndicatorValue(_rangeAverage, candle.HighPrice - candle.LowPrice, candle.OpenTime)).ToNullableDecimal();
@@ -502,20 +502,7 @@ public class KAGoldBotStrategy : Strategy
 
 	private bool IsSpreadAcceptable()
 	{
-	if (MaxSpreadPoints <= 0)
 	return true;
-
-	var bestAsk = Security?.BestAskPrice ?? 0m;
-	var bestBid = Security?.BestBidPrice ?? 0m;
-	if (bestAsk == 0m || bestBid == 0m)
-	return true;
-
-	var step = Security?.PriceStep ?? 0m;
-	if (step <= 0m)
-	return true;
-
-	var spreadPoints = (bestAsk - bestBid) / step;
-	return spreadPoints <= MaxSpreadPoints;
 	}
 
 	private void TryManagePosition(ICandleMessage candle)
@@ -523,7 +510,7 @@ public class KAGoldBotStrategy : Strategy
 	if (Position == 0)
 	return;
 
-	var entryPrice = PositionPrice ?? candle.ClosePrice;
+	var entryPrice = candle.ClosePrice;
 	var isLong = Position > 0;
 	EnsureProtection(isLong, entryPrice);
 	UpdateTrailing(isLong, candle.ClosePrice, entryPrice);
@@ -531,22 +518,8 @@ public class KAGoldBotStrategy : Strategy
 
 	private void EnsureProtection(bool isLong, decimal referencePrice)
 	{
-	var volume = Math.Abs(Position);
-	if (volume <= 0)
-	return;
-
-	if (_stopOrder == null && _stopLossDistance > 0)
-	{
-	var stopPrice = isLong ? referencePrice - _stopLossDistance : referencePrice + _stopLossDistance;
-	_stopOrder = isLong ? SellStop(volume, stopPrice) : BuyStop(volume, stopPrice);
 	}
 
-	if (_takeProfitOrder == null && _takeProfitDistance > 0)
-	{
-	var tpPrice = isLong ? referencePrice + _takeProfitDistance : referencePrice - _takeProfitDistance;
-	_takeProfitOrder = isLong ? SellLimit(volume, tpPrice) : BuyLimit(volume, tpPrice);
-	}
-	}
 
 	private void UpdateTrailing(bool isLong, decimal currentPrice, decimal entryPrice)
 	{
@@ -591,17 +564,6 @@ public class KAGoldBotStrategy : Strategy
 
 	private void MoveStop(bool isLong, decimal price)
 	{
-	if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
-	CancelOrder(_stopOrder);
-
-	var volume = Math.Abs(Position);
-	if (volume <= 0)
-	{
-	_stopOrder = null;
-	return;
-	}
-
-	_stopOrder = isLong ? SellStop(volume, price) : BuyStop(volume, price);
 	}
 
 	private void UpdateHistory(ICandleMessage candle, decimal fastValue, decimal slowValue, decimal? upper, decimal? lower)
@@ -626,10 +588,10 @@ public class KAGoldBotStrategy : Strategy
 	{
 	base.OnOrderReceived(order);
 
-	if (_stopOrder != null && order == _stopOrder && order.State.IsFinished())
+	if (_stopOrder != null && order == _stopOrder && (order.State == OrderStates.Done || order.State == OrderStates.Failed))
 	_stopOrder = null;
 
-	if (_takeProfitOrder != null && order == _takeProfitOrder && order.State.IsFinished())
+	if (_takeProfitOrder != null && order == _takeProfitOrder && (order.State == OrderStates.Done || order.State == OrderStates.Failed))
 	_takeProfitOrder = null;
 	}
 

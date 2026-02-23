@@ -72,12 +72,12 @@ public class BounceNumberStrategy : Strategy
 			.SetDisplay("Max History Candles", "Maximum number of candles inspected inside a single channel cycle", "General")
 			;
 
-		_channelPoints = Param(nameof(ChannelPoints), 300)
+		_channelPoints = Param(nameof(ChannelPoints), 10)
 			.SetRange(10, 5000)
 			.SetDisplay("Channel Half-Width", "Half height of the bounce channel measured in price points", "General")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to perform the bounce analysis", "Data");
 	}
 
@@ -85,11 +85,6 @@ public class BounceNumberStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var priceStep = Security?.PriceStep;
-
-		if (priceStep is null || priceStep.Value <= 0m)
-			throw new InvalidOperationException("Security.PriceStep must be configured to convert point values into price offsets.");
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -141,13 +136,38 @@ public class BounceNumberStrategy : Strategy
 		{
 			_bounceCount++;
 			_lastTouchDirection = -1;
-			LogInfo($"Lower band touch detected. Bounce count increased to {_bounceCount}.");
+
+			if (Position <= 0)
+			{
+				if (Position < 0)
+					BuyMarket();
+				BuyMarket();
+			}
 		}
 		else if (touchedUpper && _lastTouchDirection <= 0)
 		{
 			_bounceCount++;
 			_lastTouchDirection = 1;
-			LogInfo($"Upper band touch detected. Bounce count increased to {_bounceCount}.");
+
+			if (Position >= 0)
+			{
+				if (Position > 0)
+					SellMarket();
+				SellMarket();
+			}
+		}
+
+		if (breakoutUp && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+		}
+		else if (breakoutDown && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 	}
 
@@ -176,7 +196,7 @@ public class BounceNumberStrategy : Strategy
 		var priceStep = Security?.PriceStep;
 
 		if (priceStep is null || priceStep.Value <= 0m)
-			return 0m;
+			return ChannelPoints;
 
 		return ChannelPoints * priceStep.Value;
 	}

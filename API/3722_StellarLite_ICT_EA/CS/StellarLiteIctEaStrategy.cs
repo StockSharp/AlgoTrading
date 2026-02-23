@@ -78,10 +78,10 @@ public class StellarLiteIctEaStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Entry Candle", "Primary timeframe used for entries", "General");
 
-		_higherTimeframeType = Param(nameof(HigherTimeframeType), TimeSpan.FromHours(1).TimeFrame())
+		_higherTimeframeType = Param(nameof(HigherTimeframeType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Higher Timeframe", "Timeframe used for directional bias", "General");
 
-		_higherMaPeriod = Param(nameof(HigherMaPeriod), 200)
+		_higherMaPeriod = Param(nameof(HigherMaPeriod), 20)
 			.SetDisplay("Higher MA Period", "Moving average length for higher timeframe bias", "Bias")
 			;
 
@@ -373,7 +373,7 @@ public class StellarLiteIctEaStrategy : Strategy
 		if (_volumeStep <= 0m)
 			_volumeStep = 1m;
 
-		_higherMa = new SMA
+		_higherMa = new SimpleMovingAverage
 		{
 			Length = HigherMaPeriod
 		};
@@ -451,14 +451,13 @@ public class StellarLiteIctEaStrategy : Strategy
 
 		ManageActivePosition(candle);
 
-		if (!_highest.IsFormed || !_lowest.IsFormed || !atrValue.IsFinal)
-			return;
+		// wait for indicators
 
 		_latestHighest = highestValue.ToDecimal();
 		_latestLowest = lowestValue.ToDecimal();
 		_latestAtr = atrValue.ToDecimal();
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!true)
 			return;
 
 		if (Position != 0)

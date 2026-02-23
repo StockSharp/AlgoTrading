@@ -172,20 +172,20 @@ public class HeikenAshiIdeaStrategy : Strategy
 		_useCloseAll = Param(nameof(UseCloseAllOnNewBar), true)
 				.SetDisplay("Close On Higher Bar", "Flatten positions when a new candle of the close-all timeframe opens.", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Primary Candle Type", "Primary timeframe used for trading signals.", "Data");
 
 		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Higher Candle Type", "Confirmation timeframe used for Heikin Ashi trend filter.", "Data");
 
-		_closeAllCandleType = Param(nameof(CloseAllCandleType), TimeSpan.FromDays(7).TimeFrame())
+		_closeAllCandleType = Param(nameof(CloseAllCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Close-All Candle Type", "Timeframe that triggers a complete exit on a new bar.", "Data");
 
-		_startHour = Param(nameof(StartHour), 9)
+		_startHour = Param(nameof(StartHour), 0)
 				.SetRange(0, 23)
 				.SetDisplay("Start Hour", "First hour of the trading window (inclusive).", "Session");
 
-		_endHour = Param(nameof(EndHour), 19)
+		_endHour = Param(nameof(EndHour), 23)
 				.SetRange(0, 23)
 				.SetDisplay("End Hour", "Last hour of the trading window (inclusive).", "Session");
 
@@ -277,7 +277,7 @@ public class HeikenAshiIdeaStrategy : Strategy
 
 		if (takeProfitUnit != null || stopLossUnit != null)
 		{
-				StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit);
+				StartProtection(stopLossUnit, takeProfitUnit);
 		}
 	}
 
@@ -311,8 +311,10 @@ public class HeikenAshiIdeaStrategy : Strategy
 
 		CancelTrackedOrders();
 
-		if (Position != 0m)
-				ClosePosition();
+		if (Position > 0)
+				SellMarket();
+		else if (Position < 0)
+				BuyMarket();
 	}
 
 	private void UpdateAtrState(decimal atrValue)
@@ -354,9 +356,6 @@ public class HeikenAshiIdeaStrategy : Strategy
 
 	private void TryPlaceOrders(ICandleMessage candle)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-
 		if (DistancePoints <= 0m || StopLossPoints < 0m || TakeProfitPoints < 0m)
 				return;
 
@@ -471,32 +470,32 @@ public class HeikenAshiIdeaStrategy : Strategy
 
 	private static bool IsBullish(HeikinAshiCandle candle)
 	{
-		return candle.ClosePrice > candle.OpenPrice;
+		return candle.Close > candle.Open;
 	}
 
 	private static bool IsBearish(HeikinAshiCandle candle)
 	{
-		return candle.ClosePrice < candle.OpenPrice;
+		return candle.Close < candle.Open;
 	}
 
 	private bool HasNoLowerShadow(HeikinAshiCandle candle)
 	{
-		return Math.Abs(candle.OpenPrice - candle.LowPrice) <= _comparisonTolerance;
+		return Math.Abs(candle.Open - candle.Low) <= _comparisonTolerance;
 	}
 
 	private bool HasLowerShadow(HeikinAshiCandle candle)
 	{
-		return Math.Abs(candle.OpenPrice - candle.LowPrice) > _comparisonTolerance;
+		return Math.Abs(candle.Open - candle.Low) > _comparisonTolerance;
 	}
 
 	private bool HasNoUpperShadow(HeikinAshiCandle candle)
 	{
-		return Math.Abs(candle.OpenPrice - candle.HighPrice) <= _comparisonTolerance;
+		return Math.Abs(candle.Open - candle.High) <= _comparisonTolerance;
 	}
 
 	private bool HasUpperShadow(HeikinAshiCandle candle)
 	{
-		return Math.Abs(candle.OpenPrice - candle.HighPrice) > _comparisonTolerance;
+		return Math.Abs(candle.Open - candle.High) > _comparisonTolerance;
 	}
 
 	private readonly struct HeikinAshiCandle

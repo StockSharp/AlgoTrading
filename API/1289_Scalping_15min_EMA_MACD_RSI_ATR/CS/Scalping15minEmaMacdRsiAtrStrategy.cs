@@ -30,176 +30,60 @@ public class Scalping15minEmaMacdRsiAtrStrategy : Strategy
 	private readonly StrategyParam<decimal> _tpAtrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _ema;
-	private MovingAverageConvergenceDivergence _macd;
-	private RelativeStrengthIndex _rsi;
 	private AverageTrueRange _atr;
 
-	/// <summary>
-	/// EMA calculation period.
-	/// </summary>
-	public int EmaPeriod
-	{
-		get => _emaPeriod.Value;
-		set => _emaPeriod.Value = value;
-	}
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public int MacdFast { get => _macdFast.Value; set => _macdFast.Value = value; }
+	public int MacdSlow { get => _macdSlow.Value; set => _macdSlow.Value = value; }
+	public int MacdSignal { get => _macdSignal.Value; set => _macdSignal.Value = value; }
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public decimal RsiOverbought { get => _rsiOverbought.Value; set => _rsiOverbought.Value = value; }
+	public decimal RsiOversold { get => _rsiOversold.Value; set => _rsiOversold.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal SlAtrMultiplier { get => _slAtrMultiplier.Value; set => _slAtrMultiplier.Value = value; }
+	public decimal TpAtrMultiplier { get => _tpAtrMultiplier.Value; set => _tpAtrMultiplier.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// MACD fast length.
-	/// </summary>
-	public int MacdFast
-	{
-		get => _macdFast.Value;
-		set => _macdFast.Value = value;
-	}
-
-	/// <summary>
-	/// MACD slow length.
-	/// </summary>
-	public int MacdSlow
-	{
-		get => _macdSlow.Value;
-		set => _macdSlow.Value = value;
-	}
-
-	/// <summary>
-	/// MACD signal smoothing length.
-	/// </summary>
-	public int MacdSignal
-	{
-		get => _macdSignal.Value;
-		set => _macdSignal.Value = value;
-	}
-
-	/// <summary>
-	/// RSI calculation period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// RSI overbought level.
-	/// </summary>
-	public decimal RsiOverbought
-	{
-		get => _rsiOverbought.Value;
-		set => _rsiOverbought.Value = value;
-	}
-
-	/// <summary>
-	/// RSI oversold level.
-	/// </summary>
-	public decimal RsiOversold
-	{
-		get => _rsiOversold.Value;
-		set => _rsiOversold.Value = value;
-	}
-
-	/// <summary>
-	/// ATR calculation period.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for stop loss.
-	/// </summary>
-	public decimal SlAtrMultiplier
-	{
-		get => _slAtrMultiplier.Value;
-		set => _slAtrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for take profit.
-	/// </summary>
-	public decimal TpAtrMultiplier
-	{
-		get => _tpAtrMultiplier.Value;
-		set => _tpAtrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public Scalping15minEmaMacdRsiAtrStrategy()
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period for EMA indicator", "Indicators")
-			
 			.SetOptimize(10, 100, 5);
 
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("MACD Fast", "Fast EMA length for MACD", "Indicators")
-			
-			.SetOptimize(6, 18, 2);
+			.SetDisplay("MACD Fast", "Fast EMA length for MACD", "Indicators");
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("MACD Slow", "Slow EMA length for MACD", "Indicators")
-			
-			.SetOptimize(20, 40, 2);
+			.SetDisplay("MACD Slow", "Slow EMA length for MACD", "Indicators");
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("MACD Signal", "Signal smoothing length", "Indicators")
-			
-			.SetOptimize(6, 18, 1);
+			.SetDisplay("MACD Signal", "Signal smoothing length", "Indicators");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Period for RSI indicator", "Indicators")
-			
-			.SetOptimize(7, 21, 1);
+			.SetDisplay("RSI Period", "Period for RSI indicator", "Indicators");
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
-			.SetRange(0m, 100m)
-			.SetDisplay("RSI Overbought", "RSI overbought level", "Indicators")
-			
-			.SetOptimize(60m, 90m, 5m);
+			.SetDisplay("RSI Overbought", "RSI overbought level", "Indicators");
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
-			.SetRange(0m, 100m)
-			.SetDisplay("RSI Oversold", "RSI oversold level", "Indicators")
-			
-			.SetOptimize(10m, 40m, 5m);
+			.SetDisplay("RSI Oversold", "RSI oversold level", "Indicators");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR indicator period", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
+			.SetDisplay("ATR Period", "ATR indicator period", "Indicators");
 
 		_slAtrMultiplier = Param(nameof(SlAtrMultiplier), 1m)
-			.SetRange(0.1m, decimal.MaxValue)
-			.SetDisplay("SL ATR Mult", "ATR multiplier for stop loss", "Risk")
-			
-			.SetOptimize(0.5m, 3m, 0.5m);
+			.SetDisplay("SL ATR Mult", "ATR multiplier for stop loss", "Risk");
 
 		_tpAtrMultiplier = Param(nameof(TpAtrMultiplier), 2m)
-			.SetRange(0.1m, decimal.MaxValue)
-			.SetDisplay("TP ATR Mult", "ATR multiplier for take profit", "Risk")
-			
-			.SetOptimize(1m, 5m, 0.5m);
+			.SetDisplay("TP ATR Mult", "ATR multiplier for take profit", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy", "Common");
 	}
 
@@ -213,51 +97,45 @@ public class Scalping15minEmaMacdRsiAtrStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_ema = null;
-		_macd = null;
-		_rsi = null;
 		_atr = null;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_ema = new EMA { Length = EmaPeriod };
-		_macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = MacdFast },
-			LongMa = { Length = MacdSlow },
-			SignalPeriod = MacdSignal
-		};
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var macd = new MovingAverageConvergenceDivergenceSignal();
+		macd.Macd.ShortMa.Length = MacdFast;
+		macd.Macd.LongMa.Length = MacdSlow;
+		macd.SignalMa.Length = MacdSignal;
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_macd, _ema, _rsi, _atr, ProcessCandle)
+			.BindEx(ema, rsi, macd, ProcessCandle)
 			.Start();
 
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
-			DrawIndicator(area, _macd);
-			DrawIndicator(area, _rsi);
-			DrawIndicator(area, _atr);
-			DrawOwnTrades(area);
-		}
-
-		StartProtection();
+		// no separate protection
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdValue, decimal signalValue, decimal histValue, decimal emaValue, decimal rsiValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaIV, IIndicatorValue rsiIV, IIndicatorValue macdIV)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var emaValue = emaIV.GetValue<decimal>();
+		var rsiValue = rsiIV.GetValue<decimal>();
+
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdIV;
+		var macdLine = macdTyped.Macd ?? 0m;
+		var signalLine = macdTyped.Signal ?? 0m;
+		var histValue = macdLine - signalLine;
+
+		var atrResult = _atr.Process(candle);
+		var atrValue = atrResult.IsFormed ? atrResult.GetValue<decimal>() : 0m;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

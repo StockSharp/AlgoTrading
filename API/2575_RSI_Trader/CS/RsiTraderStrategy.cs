@@ -153,7 +153,7 @@ public class RsiTraderStrategy : Strategy
 		_reverse = Param(nameof(Reverse), false)
 			.SetDisplay("Reverse", "Flip buy/sell signals", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle type", "Data");
 	}
 
@@ -191,7 +191,6 @@ public class RsiTraderStrategy : Strategy
 			.Bind(_priceShortSma, _priceLongWma, ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal priceShort, decimal priceLong)
@@ -214,9 +213,6 @@ public class RsiTraderStrategy : Strategy
 		if (!_priceShortSma.IsFormed || !_priceLongWma.IsFormed)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (rsiShortValue is not DecimalIndicatorValue rsiShortDecimal ||
 			rsiLongValue is not DecimalIndicatorValue rsiLongDecimal)
 			return;
@@ -232,9 +228,9 @@ public class RsiTraderStrategy : Strategy
 		{
 			// Close position when price and RSI trends disagree.
 			if (Position > 0)
-				SellMarket(Position);
+				SellMarket();
 			else
-				BuyMarket(-Position);
+				BuyMarket();
 
 			return;
 		}

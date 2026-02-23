@@ -77,7 +77,7 @@ public class Ma2CciEmaStrategy : Strategy
 	/// </summary>
 	public Ma2CciEmaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
@@ -158,8 +158,7 @@ public class Ma2CciEmaStrategy : Strategy
 		if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_cci.IsFormed || !_atr.IsFormed)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// removed IFOAAT for backtesting
 
 		if (!_hasPreviousValues)
 		{
@@ -186,12 +185,12 @@ public class Ma2CciEmaStrategy : Strategy
 				// Close long positions on stop hit or bearish crossover.
 				if (_stopPrice.HasValue && candle.LowPrice <= _stopPrice.Value)
 				{
-					SellMarket(Position);
+					SellMarket();
 					exitTriggered = true;
 				}
 				else if (fastCrossDown)
 				{
-					SellMarket(Position);
+					SellMarket();
 					exitTriggered = true;
 				}
 			}
@@ -200,12 +199,12 @@ public class Ma2CciEmaStrategy : Strategy
 				// Close short positions on stop hit or bullish crossover.
 				if (_stopPrice.HasValue && candle.HighPrice >= _stopPrice.Value)
 				{
-					BuyMarket(-Position);
+					BuyMarket();
 					exitTriggered = true;
 				}
 				else if (fastCrossUp)
 				{
-					BuyMarket(-Position);
+					BuyMarket();
 					exitTriggered = true;
 				}
 			}
@@ -227,7 +226,7 @@ public class Ma2CciEmaStrategy : Strategy
 				var volume = CalculateVolume(stopDistance);
 				if (volume > 0m)
 				{
-					BuyMarket(volume);
+					BuyMarket();
 					_stopPrice = NormalizePrice(candle.ClosePrice - stopDistance);
 				}
 			}
@@ -237,7 +236,7 @@ public class Ma2CciEmaStrategy : Strategy
 				var volume = CalculateVolume(stopDistance);
 				if (volume > 0m)
 				{
-					SellMarket(volume);
+					SellMarket();
 					_stopPrice = NormalizePrice(candle.ClosePrice + stopDistance);
 				}
 			}

@@ -214,9 +214,9 @@ public class MacdParabolicSarWizardStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Configure MACD indicator replicating the wizard defaults.
 		_macd = new MovingAverageConvergenceDivergenceSignal
@@ -293,26 +293,26 @@ public class MacdParabolicSarWizardStrategy : Strategy
 		// Exit conditions take priority to mirror the wizard behaviour.
 		if (Position > 0 && bearScore >= CloseThreshold)
 		{
-			SellMarket(Position);
+			SellMarket();
 			return;
 		}
 
 		if (Position < 0 && bullScore >= CloseThreshold)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 			return;
 		}
 
 		// Entry rules: open when the weighted score exceeds the open threshold.
 		if (Position <= 0 && bullScore >= OpenThreshold)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			return;
 		}
 
 		if (Position >= 0 && bearScore >= OpenThreshold)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 	}
 }

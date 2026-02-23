@@ -306,7 +306,17 @@ public class RnnProbabilityStrategy : Strategy
 		if (RsiPeriod <= 0)
 			return;
 
-		var price = GetPrice(candle, AppliedPrice);
+		var price = AppliedPrice switch
+		{
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Close => candle.ClosePrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			_ => candle.ClosePrice,
+		};
 		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, price, candle.OpenTime)).ToDecimal();
 
 		if (!_rsi.IsFormed)
@@ -315,7 +325,7 @@ public class RnnProbabilityStrategy : Strategy
 		_rsiHistory.Add(rsiValue);
 		TrimHistory(_rsiHistory, GetHistoryLimit());
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsOnline)
 			return;
 
 		var lastIndex = _rsiHistory.Count - 1;
@@ -387,7 +397,7 @@ public class RnnProbabilityStrategy : Strategy
 		if (Security == null)
 			return 0m;
 
-		var step = Security.PriceStep ?? Security.Step ?? 0m;
+		var step = Security.PriceStep ?? 0m;
 		if (step <= 0m)
 			return 0m;
 

@@ -169,10 +169,9 @@ public class SilverTrendV3Strategy : Strategy
 
 		_fridayCutoffHour = Param(nameof(FridayCutoffHour), 16)
 			.SetDisplay("Friday Cutoff Hour", "Disable new entries after this hour on Friday", "Sessions")
-			.SetNotNegative()
-			.SetLessThan(24);
+			.SetNotNegative();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for signal calculations", "General");
 
 		Volume = 1m;
@@ -221,7 +220,7 @@ public class SilverTrendV3Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
+		// protection handled manually via trailing/TP/SL
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -233,10 +232,7 @@ public class SilverTrendV3Strategy : Strategy
 
 		UpdateHistory(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			return;
-		}
+		// indicators are processed manually
 
 		if (_closeHistory.Count < CountBars + Ssp + 1)
 		{
@@ -295,7 +291,7 @@ public class SilverTrendV3Strategy : Strategy
 				(takeProfit.HasValue && candle.HighPrice >= takeProfit.Value) ||
 				(stop.HasValue && candle.LowPrice <= stop.Value))
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetStops();
 			}
 		}
@@ -312,7 +308,7 @@ public class SilverTrendV3Strategy : Strategy
 				(takeProfit.HasValue && candle.LowPrice <= takeProfit.Value) ||
 				(stop.HasValue && candle.HighPrice >= stop.Value))
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetStops();
 			}
 		}
@@ -330,7 +326,7 @@ public class SilverTrendV3Strategy : Strategy
 			volume += Math.Abs(Position);
 		}
 
-		BuyMarket(volume);
+		BuyMarket();
 
 		_entryPrice = candle.ClosePrice;
 		_longTrailingStop = null;
@@ -345,7 +341,7 @@ public class SilverTrendV3Strategy : Strategy
 			volume += Position;
 		}
 
-		SellMarket(volume);
+		SellMarket();
 
 		_entryPrice = candle.ClosePrice;
 		_longTrailingStop = null;

@@ -125,13 +125,13 @@ public class NewMartinStrategy : Strategy
 		.SetOptimize(0.01m, 1m, 0.01m);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 20)
-		.SetGreaterThan(1)
+		.SetGreaterThanZero()
 		.SetDisplay("Slow MA", "Slow smoothed MA period", "Indicators")
 		
 		.SetOptimize(10, 80, 5);
 
 		_fastPeriod = Param(nameof(FastPeriod), 5)
-		.SetGreaterThan(1)
+		.SetGreaterThanZero()
 		.SetDisplay("Fast MA", "Fast smoothed MA period", "Indicators")
 		
 		.SetOptimize(2, 20, 1);
@@ -143,7 +143,7 @@ public class NewMartinStrategy : Strategy
 		.SetOptimize(5m, 30m, 1m);
 
 		_multiplier = Param(nameof(Multiplier), 1.6m)
-		.SetGreaterThan(1m)
+		.SetGreaterThanZero()
 		.SetDisplay("Multiplier", "Martingale growth factor", "Trading")
 		
 		.SetOptimize(1.1m, 3m, 0.1m);
@@ -392,12 +392,12 @@ public class NewMartinStrategy : Strategy
 		if (side == Sides.Buy)
 		{
 			_longPositions.Add(entry);
-			BuyMarket(volume);
+			BuyMarket();
 		}
 		else
 		{
 			_shortPositions.Add(entry);
-			SellMarket(volume);
+			SellMarket();
 		}
 	}
 
@@ -414,12 +414,12 @@ public class NewMartinStrategy : Strategy
 	{
 		if (entry.Side == Sides.Buy)
 		{
-			SellMarket(entry.Volume);
+			SellMarket();
 			_longPositions.Remove(entry);
 		}
 		else
 		{
-			BuyMarket(entry.Volume);
+			BuyMarket();
 			_shortPositions.Remove(entry);
 		}
 	}
@@ -471,13 +471,6 @@ public class NewMartinStrategy : Strategy
 		var security = Security;
 		if (security is null)
 			return volume;
-
-		var step = security.StepVolume ?? 0m;
-		if (step > 0m)
-		{
-			var steps = decimal.Floor(volume / step);
-			volume = steps * step;
-		}
 
 		var min = security.MinVolume ?? 0m;
 		if (min > 0m && volume < min)

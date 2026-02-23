@@ -130,7 +130,7 @@ public class FiveEightMaCrossStrategy : Strategy
 			
 			.SetOptimize(0m, 100m, 10m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for calculations", "General");
 
 		Volume = 0.1m;
@@ -206,8 +206,8 @@ public class FiveEightMaCrossStrategy : Strategy
 	return;
 
 	// Feed indicators with the corresponding price source.
-	var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, candle.ClosePrice, candle.OpenTime)).ToDecimal();
-	var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, candle.OpenPrice, candle.OpenTime)).ToDecimal();
+	var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+	var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, candle.OpenPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 	if (!_fastMa.IsFormed || !_slowMa.IsFormed)
 	{
@@ -218,12 +218,7 @@ public class FiveEightMaCrossStrategy : Strategy
 
 	HandleRiskManagement(candle);
 
-	if (!IsFormedAndOnlineAndAllowTrading())
-	{
-	_prevFast = fastValue;
-	_prevSlow = slowValue;
-	return;
-	}
+	// indicators are processed manually
 
 	if (!_isInitialized)
 	{
@@ -260,7 +255,7 @@ public class FiveEightMaCrossStrategy : Strategy
 	ResetPositionState();
 
 	// Enter long position with volume including any short covering.
-	BuyMarket(volume);
+	BuyMarket();
 
 	_entryPrice = candle.ClosePrice;
 	_takePrice = TakeProfitPoints > 0m ? _entryPrice + TakeProfitPoints * _pointValue : null;
@@ -288,7 +283,7 @@ public class FiveEightMaCrossStrategy : Strategy
 	ResetPositionState();
 
 	// Enter short position with volume including any long exit.
-	SellMarket(volume);
+	SellMarket();
 
 	_entryPrice = candle.ClosePrice;
 	_takePrice = TakeProfitPoints > 0m ? _entryPrice - TakeProfitPoints * _pointValue : null;
@@ -321,14 +316,14 @@ public class FiveEightMaCrossStrategy : Strategy
 
 	if (_takePrice.HasValue && candle.ClosePrice >= _takePrice.Value)
 	{
-	SellMarket(Position);
+	SellMarket();
 	ResetPositionState();
 	return;
 	}
 
 	if (_stopPrice.HasValue && candle.ClosePrice <= _stopPrice.Value)
 	{
-	SellMarket(Position);
+	SellMarket();
 	ResetPositionState();
 	return;
 	}
@@ -347,14 +342,14 @@ public class FiveEightMaCrossStrategy : Strategy
 
 	if (_takePrice.HasValue && candle.ClosePrice <= _takePrice.Value)
 	{
-	BuyMarket(-Position);
+	BuyMarket();
 	ResetPositionState();
 	return;
 	}
 
 	if (_stopPrice.HasValue && candle.ClosePrice >= _stopPrice.Value)
 	{
-	BuyMarket(-Position);
+	BuyMarket();
 	ResetPositionState();
 	}
 	}

@@ -142,7 +142,7 @@ public class FuzzyLogicStrategy : Strategy
 	/// </summary>
 	public FuzzyLogicStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to analyze", "General");
 
 		_buyThreshold = Param(nameof(BuyThreshold), 0.25m)
@@ -230,11 +230,9 @@ public class FuzzyLogicStrategy : Strategy
 
 		var step = Security?.PriceStep ?? 1m;
 		var stopDistance = TrailingStopPoints > 0m ? TrailingStopPoints : StopLossPoints;
-		StartProtection(
-		takeProfit: TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : null,
-		stopLoss: stopDistance > 0m ? new Unit(stopDistance * step, UnitTypes.Absolute) : null,
-		isStopTrailing: TrailingStopPoints > 0m
-		);
+		var slUnit = stopDistance > 0m ? new Unit(stopDistance * step, UnitTypes.Absolute) : new Unit();
+		var tpUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : new Unit();
+		StartProtection(slUnit, tpUnit);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -254,11 +252,12 @@ public class FuzzyLogicStrategy : Strategy
 
 		var hl2 = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var jawValue = _jaw.Process(hl2);
-		var teethValue = _teeth.Process(hl2);
-		var lipsValue = _lips.Process(hl2);
-		var aoFastValue = _aoFast.Process(hl2);
-		var aoSlowValue = _aoSlow.Process(hl2);
+		var hl2Input = new DecimalIndicatorValue(_jaw, hl2, candle.OpenTime) { IsFinal = true };
+		var jawValue = _jaw.Process(hl2Input);
+		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, hl2, candle.OpenTime) { IsFinal = true });
+		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, hl2, candle.OpenTime) { IsFinal = true });
+		var aoFastValue = _aoFast.Process(new DecimalIndicatorValue(_aoFast, hl2, candle.OpenTime) { IsFinal = true });
+		var aoSlowValue = _aoSlow.Process(new DecimalIndicatorValue(_aoSlow, hl2, candle.OpenTime) { IsFinal = true });
 
 		if (!jawValue.IsFinal || !teethValue.IsFinal || !lipsValue.IsFinal || !aoFastValue.IsFinal || !aoSlowValue.IsFinal)
 		{
@@ -277,7 +276,7 @@ public class FuzzyLogicStrategy : Strategy
 		}
 
 		var ao = aoFastValue.GetValue<decimal>() - aoSlowValue.GetValue<decimal>();
-		var acAverageValue = _acAverage.Process(ao);
+		var acAverageValue = _acAverage.Process(new DecimalIndicatorValue(_acAverage, ao, candle.OpenTime) { IsFinal = true });
 		if (!acAverageValue.IsFinal)
 		{
 			UpdateDeMarker(candle);
@@ -309,18 +308,15 @@ public class FuzzyLogicStrategy : Strategy
 		var rsi = rsiValue.ToDecimal();
 		var decision = CalculateDecision(sumGator, wpr, deMarker.Value, rsi);
 
-		if (IsFormedAndOnlineAndAllowTrading() && Position == 0)
+		if (Position == 0)
 		{
-			var volume = Volume;
 			if (decision > SellThreshold)
 			{
-				SellMarket(volume);
-				LogInfo($"Fuzzy decision {decision:F2} triggered a short entry.");
+				SellMarket();
 			}
 			else if (decision < BuyThreshold)
 			{
-				BuyMarket(volume);
-				LogInfo($"Fuzzy decision {decision:F2} triggered a long entry.");
+				BuyMarket();
 			}
 		}
 

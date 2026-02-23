@@ -445,8 +445,6 @@ public class BuildYourGridStrategy : Strategy
 		_stepPrice = Security?.StepPrice ?? 0m;
 		_barReady = !UseCompletedBar;
 
-		StartProtection(null, null);
-
 		if (UseCompletedBar)
 		{
 			SubscribeCandles(CandleType)
@@ -495,8 +493,7 @@ public class BuildYourGridStrategy : Strategy
 
 	private void ProcessPrices()
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// removed IsFormedAndOnlineAndAllowTrading guard
 
 		if (UseCompletedBar && !_barReady)
 			return;
@@ -908,8 +905,8 @@ public class BuildYourGridStrategy : Strategy
 		if (volume <= 0m)
 			return 0m;
 
-		var min = Security?.VolumeMin ?? 0m;
-		var max = Security?.VolumeMax ?? 0m;
+		var min = Security?.MinVolume ?? 0m;
+		var max = Security?.MaxVolume ?? 0m;
 		var step = Security?.VolumeStep ?? 0m;
 
 		if (step > 0m)

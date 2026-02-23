@@ -173,7 +173,7 @@ public class AdxSmoothedCrossStrategy : Strategy
 		_allowCloseSell = Param(nameof(AllowCloseSell), true)
 			.SetDisplay("Allow Close Short", "Permission to close short positions", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
 	}
 
@@ -201,8 +201,8 @@ public class AdxSmoothedCrossStrategy : Strategy
 
 		// Initialize risk management
 		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Point),
-			stopLoss: new Unit(StopLoss, UnitTypes.Point),
+			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
 			isStopTrailing: false,
 			useMarketOrders: true
 		);

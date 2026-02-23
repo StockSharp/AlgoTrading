@@ -98,7 +98,7 @@ public class ExpTrendMagicStrategy : Strategy
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetDisplay("Signal Bar", "Bar shift used for signals", "Indicator")
-		.SetGreaterOrEqualToZero();
+		.SetNotNegative();
 	}
 
 	/// <summary>
@@ -290,8 +290,7 @@ public class ExpTrendMagicStrategy : Strategy
 		if (cci == null || atr == null)
 			return;
 
-		if (!atrValue.IsFinal)
-			return;
+		// check ATR formed
 
 		var price = GetAppliedPrice(candle, CciPrice);
 		var cciIndicatorValue = cci.Process(new DecimalIndicatorValue(cci, price, candle.OpenTime));
@@ -344,7 +343,7 @@ public class ExpTrendMagicStrategy : Strategy
 
 	private void TryEnterLong(ICandleMessage candle)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!true)
 			return;
 
 		if (_nextLongTradeAllowed.HasValue && candle.OpenTime < _nextLongTradeAllowed.Value)
@@ -369,7 +368,7 @@ public class ExpTrendMagicStrategy : Strategy
 
 	private void TryEnterShort(ICandleMessage candle)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!true)
 			return;
 
 		if (_nextShortTradeAllowed.HasValue && candle.OpenTime < _nextShortTradeAllowed.Value)

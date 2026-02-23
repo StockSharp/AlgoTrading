@@ -48,7 +48,7 @@ public class GgRsiCciStrategy : Strategy
 
 	public GgRsiCciStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for indicator calculation.", "General");
 
 		_length = Param(nameof(Length), 8)
@@ -146,15 +146,13 @@ public class GgRsiCciStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		var rsi = new RelativeStrengthIndex { Length = Length };
 		var cci = new CommodityChannelIndex { Length = Length };
 
-		_rsiFast = new SMA { Length = FastPeriod };
-		_rsiSlow = new SMA { Length = SlowPeriod };
-		_cciFast = new SMA { Length = FastPeriod };
-		_cciSlow = new SMA { Length = SlowPeriod };
+		_rsiFast = new SimpleMovingAverage { Length = FastPeriod };
+		_rsiSlow = new SimpleMovingAverage { Length = SlowPeriod };
+		_cciFast = new SimpleMovingAverage { Length = FastPeriod };
+		_cciSlow = new SimpleMovingAverage { Length = SlowPeriod };
 
 		_prevSignal = -1;
 

@@ -31,6 +31,7 @@ public class BollTradeStrategy : Strategy
 
 	private decimal _lotBaseline;
 	private decimal _pipSize;
+	private BollingerBands _bollinger;
 	private decimal? _longStop;
 	private decimal? _longTarget;
 	private decimal? _shortStop;
@@ -84,6 +85,12 @@ public class BollTradeStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	public decimal MaxVolume
+	{
+		get => _maxVolume.Value;
+		set => _maxVolume.Value = value;
+	}
+
 	public BollTradeStrategy()
 	{
 		_maxVolume = Param(nameof(MaxVolume), 500m)
@@ -93,27 +100,27 @@ public class BollTradeStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 3m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Distance to take profit expressed in pip units.", "Orders")
-		.SetCanOptimize(true, 1m, 20m, 1m);
+		;
 
 		_stopLoss = Param(nameof(StopLoss), 20m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Distance to stop loss expressed in pip units.", "Orders")
-		.SetCanOptimize(true, 5m, 100m, 5m);
+		;
 
-		_bandOffset = Param(nameof(BollingerDistance), 3m)
+		_bandOffset = Param(nameof(BollingerDistance), 0m)
 		.SetNotNegative()
 		.SetDisplay("Band Offset", "Extra pip offset beyond Bollinger Bands.", "Signals")
-		.SetCanOptimize(true, 0m, 10m, 1m);
+		;
 
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 4)
+		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Period", "Length of the Bollinger Bands.", "Signals")
-		.SetCanOptimize(true, 2, 30, 1);
+		;
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bollinger Deviation", "Width multiplier of the Bollinger Bands.", "Signals")
-		.SetCanOptimize(true, 1m, 4m, 0.5m);
+		;
 
 		_lots = Param(nameof(Lots), 1m)
 		.SetGreaterThanZero()
@@ -158,8 +165,10 @@ public class BollTradeStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-		.Bind(bollinger, ProcessCandle)
+		.Bind(ProcessCandleRaw)
 		.Start();
+
+		_bollinger = bollinger;
 	}
 
 	private decimal CalculatePipSize()
@@ -192,7 +201,23 @@ public class BollTradeStrategy : Strategy
 		return Math.Min(scaled, MaxVolume);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand)
+	private void ProcessCandleRaw(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var result = _bollinger.Process(candle);
+		if (!_bollinger.IsFormed)
+			return;
+
+		var middleBand = _bollinger.GetCurrentValue();
+		var upperBand = _bollinger.UpBand.GetCurrentValue();
+		var lowerBand = _bollinger.LowBand.GetCurrentValue();
+
+		ProcessCandleInner(candle, middleBand, upperBand, lowerBand);
+	}
+
+	private void ProcessCandleInner(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -224,7 +249,7 @@ public class BollTradeStrategy : Strategy
 			if ((_longStop.HasValue && candle.LowPrice <= _longStop.Value) ||
 				(_longTarget.HasValue && candle.HighPrice >= _longTarget.Value))
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetStops();
 			}
 		}
@@ -234,7 +259,7 @@ public class BollTradeStrategy : Strategy
 			if ((_shortStop.HasValue && candle.HighPrice >= _shortStop.Value) ||
 				(_shortTarget.HasValue && candle.LowPrice <= _shortTarget.Value))
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetStops();
 			}
 		}
@@ -247,7 +272,7 @@ public class BollTradeStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		BuyMarket(volume);
+		BuyMarket();
 
 		// Store exit targets for the newly opened long trade.
 		_longStop = StopLoss > 0m ? candle.ClosePrice - _pipSize * StopLoss : null;
@@ -263,7 +288,7 @@ public class BollTradeStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		SellMarket(volume);
+		SellMarket();
 
 		// Store exit targets for the newly opened short trade.
 		_shortStop = StopLoss > 0m ? candle.ClosePrice + _pipSize * StopLoss : null;

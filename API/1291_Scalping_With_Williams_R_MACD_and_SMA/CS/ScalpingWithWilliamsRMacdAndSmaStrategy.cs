@@ -162,7 +162,7 @@ public class ScalpingWithWilliamsRMacdAndSmaStrategy : Strategy
 		_sellDeactivation = Param(nameof(SellDeactivation), -60m)
 			.SetDisplay("Sell Deactivation", "Williams %R cross level to deactivate sells", "Williams %R");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 
@@ -184,28 +184,23 @@ public class ScalpingWithWilliamsRMacdAndSmaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var williams = new WilliamsR { Length = WilliamsLength };
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = MacdFast },
-				LongMa = { Length = MacdSlow },
-			},
-			SignalMa = { Length = MacdSignal }
-		};
+		var macd = new MovingAverageConvergenceDivergenceSignal();
+		macd.Macd.ShortMa.Length = MacdFast;
+		macd.Macd.LongMa.Length = MacdSlow;
+		macd.SignalMa.Length = MacdSignal;
 		var sma = new SMA { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(macd, williams, sma, ProcessCandle)
+			.BindEx(macd, williams, sma, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		// no separate protection
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -216,10 +211,17 @@ public class ScalpingWithWilliamsRMacdAndSmaStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macd, decimal signal, decimal hist, decimal williams, decimal sma)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdIV, IIndicatorValue williamsIV, IIndicatorValue smaIV)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdIV;
+		var macdLine = macdTyped.Macd ?? 0m;
+		var signalLine = macdTyped.Signal ?? 0m;
+		var hist = macdLine - signalLine;
+		var williams = williamsIV.GetValue<decimal>();
+		var sma = smaIV.GetValue<decimal>();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

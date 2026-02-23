@@ -154,9 +154,9 @@ public class MacdZeroFilterTakeProfitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = VolumePerTrade;
 
@@ -222,12 +222,12 @@ public class MacdZeroFilterTakeProfitStrategy : Strategy
 		if (Position > 0 && crossedDown)
 		{
 			// Close long position on bearish crossover.
-			SellMarket(Position);
+			SellMarket();
 		}
 		else if (Position < 0 && crossedUp)
 		{
 			// Close short position on bullish crossover.
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 
 		if (Position == 0)
@@ -238,12 +238,12 @@ public class MacdZeroFilterTakeProfitStrategy : Strategy
 				if (crossedUp && macd < 0m && signal < 0m)
 				{
 					// Enter long when MACD crosses above signal under the zero line.
-					BuyMarket(VolumePerTrade);
+					BuyMarket();
 				}
 				else if (crossedDown && macd > 0m && signal > 0m)
 				{
 					// Enter short when MACD crosses below signal above the zero line.
-					SellMarket(VolumePerTrade);
+					SellMarket();
 				}
 			}
 		}

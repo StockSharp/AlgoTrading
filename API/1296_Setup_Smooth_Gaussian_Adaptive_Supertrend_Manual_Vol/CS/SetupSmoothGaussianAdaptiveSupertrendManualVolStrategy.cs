@@ -89,9 +89,10 @@ public class SetupSmoothGaussianAdaptiveSupertrendManualVolStrategy : Strategy
 		_sma1 = new SMA { Length = TrendLength };
 		_sma2 = new SMA { Length = TrendLength };
 
+		var dummyEma = new ExponentialMovingAverage { Length = 5 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(dummyEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -103,14 +104,15 @@ public class SetupSmoothGaussianAdaptiveSupertrendManualVolStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _dummyEma)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var sma1Value = _sma1.Process(candle);
-		var trendValue = _sma2.Process(candle.ServerTime, sma1Value.GetValue<decimal>());
-		if (!trendValue.IsFinal)
+		var sma1Value = _sma1.Process(new DecimalIndicatorValue(_sma1, candle.ClosePrice, candle.OpenTime));
+		var sma1Val = sma1Value.GetValue<decimal>();
+		var trendValue = _sma2.Process(new DecimalIndicatorValue(_sma2, sma1Val, candle.OpenTime));
+		if (!_sma2.IsFormed)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())

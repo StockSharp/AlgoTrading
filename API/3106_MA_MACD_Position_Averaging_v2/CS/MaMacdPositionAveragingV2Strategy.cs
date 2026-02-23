@@ -399,7 +399,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 				DrawIndicator(macdArea, _macd);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue maValue)
@@ -684,21 +684,18 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 			_ => new WeightedMovingAverage { Length = length }
 		};
 
-		indicator.CandlePrice = price;
 		return indicator;
 	}
 
 	private MovingAverageConvergenceDivergenceSignal CreateMacd()
 	{
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = Math.Max(1, MacdFastPeriod), CandlePrice = MacdPrice },
-				LongMa = { Length = Math.Max(1, MacdSlowPeriod), CandlePrice = MacdPrice }
-			},
-			SignalMa = { Length = Math.Max(1, MacdSignalPeriod) }
-		};
+		var macd = new MovingAverageConvergenceDivergenceSignal(
+			new MovingAverageConvergenceDivergence(
+				new ExponentialMovingAverage { Length = Math.Max(1, MacdSlowPeriod) },
+				new ExponentialMovingAverage { Length = Math.Max(1, MacdFastPeriod) }
+			),
+			new ExponentialMovingAverage { Length = Math.Max(1, MacdSignalPeriod) }
+		);
 
 		return macd;
 	}

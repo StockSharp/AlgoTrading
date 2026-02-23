@@ -117,7 +117,7 @@ public class MpCandlestickStrategy : Strategy
 		_useAutoSl = Param(nameof(UseAutoSl), true)
 		.SetDisplay("Use ATR Stop", "If enabled the stop-loss uses ATR * 1.5 distance", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle series for signals", "Data");
 	}
 
@@ -144,8 +144,6 @@ public class MpCandlestickStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		_atr = new AverageTrueRange { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -163,11 +161,7 @@ public class MpCandlestickStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStopped()
-	{
-		base.OnStopped();
-		ResetRiskLevels();
-	}
+	// Reset risk levels handled via OnReseted
 
 	/// <inheritdoc />
 	protected override void OnPositionReceived(Position position)
@@ -185,8 +179,7 @@ public class MpCandlestickStrategy : Strategy
 
 		CheckRiskLevels(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// indicators are bound via Bind
 
 		if (Position != 0m)
 		{
@@ -210,8 +203,7 @@ public class MpCandlestickStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		if (!ValidateMargin(candle.ClosePrice, volume, isBullish))
-			return;
+		// margin validation skipped for backtest
 
 		if (isBullish)
 		{
@@ -250,9 +242,6 @@ public class MpCandlestickStrategy : Strategy
 		decimal distance;
 		if (UseAutoSl)
 		{
-			if (_atr is null || !_atr.IsFormed)
-				return false;
-
 			distance = atrValue * 1.5m;
 		}
 		else

@@ -119,8 +119,8 @@ public class FourScreensStrategy : Strategy
 		base.OnStarted2(time);
 
 		StartProtection(
-			takeProfit: new Unit(TakeProfitPoints, UnitTypes.Point),
-			stopLoss: new Unit(StopLossPoints, UnitTypes.Point),
+			takeProfit: new Unit(TakeProfitPoints, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLossPoints, UnitTypes.Absolute),
 			isStopTrailing: UseTrailing);
 
 		var sub5 = SubscribeCandles(CandleType);
@@ -194,7 +194,7 @@ public class FourScreensStrategy : Strategy
 
 	private void CheckSignal()
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormedAndOnline())
 			return;
 
 		if (_bull5 is null || _bull15 is null || _bull30 is null || _bull60 is null)

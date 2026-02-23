@@ -131,6 +131,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 	private decimal _entryPrice;
 	private decimal? _stopPrice;
 	private decimal? _takePrice;
+	private DateTime _currentTime;
 
 	/// <summary>
 	/// Trading direction mode.
@@ -395,7 +396,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pts)", "Take-profit distance in points", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for processing", "General");
 	}
 
@@ -445,13 +446,13 @@ public class FractalWeightOscillatorStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		_currentTime = candle.OpenTime;
+		// indicators are processed manually below
 
 		var rsiInput = GetPrice(candle, RsiPrice);
-		var rsiValue = _rsi.Process(new CandleIndicatorValue(candle, rsiInput));
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiInput, candle.OpenTime) { IsFinal = true });
 		var mfiInput = GetPrice(candle, MfiPrice);
-		var wprValue = _williams.Process(new CandleIndicatorValue(candle, candle.ClosePrice));
+		var wprValue = _williams.Process(new CandleIndicatorValue(_williams, candle));
 
 		if (!rsiValue.IsFinal || !wprValue.IsFinal)
 			return;
@@ -535,26 +536,26 @@ public class FractalWeightOscillatorStrategy : Strategy
 
 		if (closeBuy && Position > 0)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			ResetRisk();
 		}
 
 		if (closeSell && Position < 0)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetRisk();
 		}
 
 		if (openBuy && Position <= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 			SetRiskLevels(candle, Sides.Buy);
 		}
 		else if (openSell && Position >= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket();
 			SetRiskLevels(candle, Sides.Sell);
 		}
 	}
@@ -564,7 +565,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 		if (_smoother is null)
 			return value;
 
-		var smoothed = _smoother.Process(new DecimalIndicatorValue(_smoother, value));
+		var smoothed = _smoother.Process(new DecimalIndicatorValue(_smoother, value, _currentTime) { IsFinal = true });
 		return smoothed.IsFinal ? smoothed.GetValue<decimal>() : null;
 	}
 
@@ -584,8 +585,8 @@ public class FractalWeightOscillatorStrategy : Strategy
 		_previousHigh = candle.HighPrice;
 		_previousLow = candle.LowPrice;
 
-		var deMaxValue = _deMaxSma.Process(new DecimalIndicatorValue(_deMaxSma, deMax));
-		var deMinValue = _deMinSma.Process(new DecimalIndicatorValue(_deMinSma, deMin));
+		var deMaxValue = _deMaxSma.Process(new DecimalIndicatorValue(_deMaxSma, deMax, _currentTime) { IsFinal = true });
+		var deMinValue = _deMinSma.Process(new DecimalIndicatorValue(_deMinSma, deMin, _currentTime) { IsFinal = true });
 
 		if (!deMaxValue.IsFinal || !deMinValue.IsFinal)
 			return null;
@@ -658,14 +659,14 @@ public class FractalWeightOscillatorStrategy : Strategy
 		{
 			if (_stopPrice is decimal stop && candle.LowPrice <= stop)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetRisk();
 				return;
 			}
 
 			if (_takePrice is decimal take && candle.HighPrice >= take)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetRisk();
 			}
 		}
@@ -673,14 +674,14 @@ public class FractalWeightOscillatorStrategy : Strategy
 		{
 			if (_stopPrice is decimal stop && candle.HighPrice >= stop)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetRisk();
 				return;
 			}
 
 			if (_takePrice is decimal take && candle.LowPrice <= take)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetRisk();
 			}
 		}
@@ -690,7 +691,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 	{
 		_entryPrice = candle.ClosePrice;
 
-		var step = Security?.MinPriceStep ?? 0m;
+		var step = Security?.PriceStep ?? 0m;
 		if (step <= 0m)
 		{
 			_stopPrice = null;

@@ -87,7 +87,7 @@ public class ProjectionStrategy : Strategy
 			
 			.SetOptimize(5, 20, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -115,10 +115,11 @@ public class ProjectionStrategy : Strategy
 		base.OnStarted2(time);
 
 		_changeSma = new SMA { Length = CalculationPeriod };
+		var _dummyEma = new EMA { Length = 2 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_dummyEma, (c, v) => ProcessCandle(c))
 			.Start();
 
 		StartProtection(null, null);
@@ -129,8 +130,8 @@ public class ProjectionStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		//if (!IsFormedAndOnlineAndAllowTrading())
+		//	return;
 
 		var open = candle.OpenPrice;
 
@@ -141,7 +142,7 @@ public class ProjectionStrategy : Strategy
 		}
 
 		var change = Math.Abs((open - _prevOpen) / Math.Abs(_prevOpen) * 100m);
-		var changeValue = _changeSma!.Process(candle.OpenTime, change);
+		var changeValue = _changeSma!.Process(new DecimalIndicatorValue(_changeSma, change, candle.ServerTime));
 
 		if (!changeValue.IsFinal)
 		{

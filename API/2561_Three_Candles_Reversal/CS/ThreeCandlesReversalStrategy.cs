@@ -56,7 +56,7 @@ public class ThreeCandlesReversalStrategy : Strategy
 
 	public ThreeCandlesReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for the candle subscription", "General");
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetRange(0, 20)
@@ -119,9 +119,6 @@ public class ThreeCandlesReversalStrategy : Strategy
 		if (_candles.Count < required)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 		var priceStep = Security?.PriceStep ?? 1m;
 		if (priceStep <= 0m)
 		priceStep = 1m;
@@ -161,7 +158,7 @@ public class ThreeCandlesReversalStrategy : Strategy
 
 		if (stopTriggered || takeTriggered)
 		{
-		SellMarket(Position);
+		SellMarket();
 		ResetTradeState();
 		return true;
 		}
@@ -173,7 +170,7 @@ public class ThreeCandlesReversalStrategy : Strategy
 
 		if (stopTriggered || takeTriggered)
 		{
-		BuyMarket(-Position);
+		BuyMarket();
 		ResetTradeState();
 		return true;
 		}
@@ -190,7 +187,7 @@ public class ThreeCandlesReversalStrategy : Strategy
 
 		if (AllowSellExit && Position < 0m)
 		{
-		BuyMarket(-Position);
+		BuyMarket();
 		ResetTradeState();
 		}
 
@@ -211,7 +208,7 @@ public class ThreeCandlesReversalStrategy : Strategy
 
 		if (AllowBuyExit && Position > 0m)
 		{
-		SellMarket(Position);
+		SellMarket();
 		ResetTradeState();
 		}
 
@@ -298,7 +295,7 @@ public class ThreeCandlesReversalStrategy : Strategy
 	}
 
 	private static decimal GetVolume(ICandleMessage candle)
-	=> candle.TotalVolume ?? 0m;
+	=> candle.TotalVolume;
 
 	private void ResetTradeState()
 	{

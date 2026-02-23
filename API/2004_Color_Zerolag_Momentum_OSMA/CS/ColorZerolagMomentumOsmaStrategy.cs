@@ -74,7 +74,7 @@ public class ColorZerolagMomentumOsmaStrategy : Strategy
 			.SetDisplay("Momentum Period 4", "Momentum Period 4", "General");
 		_period5 = Param(nameof(MomentumPeriod5), 89)
 			.SetDisplay("Momentum Period 5", "Momentum Period 5", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle Type", "General");
 		_buyOpen = Param(nameof(BuyOpen), true)
 			.SetDisplay("Enable Buy Open", "Enable Buy Open", "General");
@@ -105,11 +105,15 @@ public class ColorZerolagMomentumOsmaStrategy : Strategy
 	public bool SellClose { get => _sellClose.Value; set => _sellClose.Value = value; }
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
 
 		_mom1 = new Momentum { Length = MomentumPeriod1 };
 		_mom2 = new Momentum { Length = MomentumPeriod2 };

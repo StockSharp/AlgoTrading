@@ -85,6 +85,7 @@ public class AdxEaStrategy : Strategy
 	private decimal? _volumePrev3;
 
 	private ICandleMessage _lastCandle;
+	private decimal _positionPrice;
 	private ICandleMessage _previousCandle;
 	private ICandleMessage _previousCandle2;
 
@@ -475,12 +476,13 @@ public class AdxEaStrategy : Strategy
 		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		_momentum = new Momentum { Length = MomentumPeriod };
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			ShortMa = { Length = MacdFastPeriod },
-			LongMa = { Length = MacdSlowPeriod },
-			SignalPeriod = MacdSignalPeriod
-		};
+		_macd = new MovingAverageConvergenceDivergenceSignal(
+			new MovingAverageConvergenceDivergence(
+				new ExponentialMovingAverage { Length = MacdSlowPeriod },
+				new ExponentialMovingAverage { Length = MacdFastPeriod }
+			),
+			new ExponentialMovingAverage { Length = MacdSignalPeriod }
+		);
 
 		var mainSubscription = SubscribeCandles(CandleType);
 		mainSubscription
@@ -543,7 +545,7 @@ _currentSlowMa = slowValue;
 _maUpdateTime = candle.CloseTime;
 
 // Update volume history so Volume[1], Volume[2], Volume[3] are always available for the filters.
-UpdateVolumeHistory(candle.TotalVolume ?? 0m);
+UpdateVolumeHistory(candle.TotalVolume);
 
 TryProcessSignal(candle);
 }
@@ -560,7 +562,7 @@ if (!adxValue.IsFinal || adxValue is not AverageDirectionalIndexValue typed)
 return;
 }
 
-if (typed.Adx is not decimal adx || typed.PlusDi is not decimal plusDi || typed.MinusDi is not decimal minusDi)
+if (typed.MovingAverage is not decimal adx || typed.Dx?.Plus is not decimal plusDi || typed.Dx?.Minus is not decimal minusDi)
 {
 return;
 }
@@ -785,6 +787,7 @@ var momBuyDeviation = Math.Abs(100m - _momentumPrev1.Value);
 		}
 
 		BuyMarket(volume);
+		_positionPrice = _lastCandle?.ClosePrice ?? 0m;
 	}
 
 	private void OpenShortPosition()
@@ -806,6 +809,7 @@ var momBuyDeviation = Math.Abs(100m - _momentumPrev1.Value);
 		}
 
 		SellMarket(volume);
+		_positionPrice = _lastCandle?.ClosePrice ?? 0m;
 	}
 
 private bool CanOpenNewTrade()
@@ -863,7 +867,7 @@ var breakEvenOffset = BreakEvenOffset > 0m ? BreakEvenOffset * step : 0m;
 
 if (Position > 0)
 {
-var entry = PositionPrice;
+var entry = _positionPrice;
 
 if (trailingDistance > 0m)
 {
@@ -893,7 +897,7 @@ _longTrailingStop = null;
 }
 else if (Position < 0)
 {
-var entry = PositionPrice;
+var entry = _positionPrice;
 var absPosition = Math.Abs(Position);
 
 if (trailingDistance > 0m)

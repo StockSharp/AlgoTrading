@@ -103,7 +103,7 @@ public class ForexProfitBoostStrategy : Strategy
 			
 			.SetOptimize(1000m, 4000m, 100m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -128,8 +128,8 @@ public class ForexProfitBoostStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new EMA { Length = FastPeriod };
-		var slowSma = new SMA { Length = SlowPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowSma = new SimpleMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 

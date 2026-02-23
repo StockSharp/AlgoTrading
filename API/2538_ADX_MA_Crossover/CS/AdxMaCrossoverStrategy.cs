@@ -141,7 +141,7 @@ public class AdxMaCrossoverStrategy : Strategy
 		_trailingStopSell = Param(nameof(TrailingStopSell), 27m)
 			.SetDisplay("Sell Trailing Stop (pips)", "Trailing stop distance for short trades", "Risk Management")
 			.SetNotNegative();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
 	}
 
@@ -206,42 +206,31 @@ public class AdxMaCrossoverStrategy : Strategy
 			return;
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-		var maValue = _ma.Process(new DecimalIndicatorValue(_ma, median, candle.OpenTime));
+		var maValue = _ma.Process(new DecimalIndicatorValue(_ma, median, candle.OpenTime) { IsFinal = true });
 
 		if (!maValue.IsFinal || !adxValue.IsFinal)
 			return;
 
 		var ma = maValue.GetValue<decimal>();
-		var adx = ((AverageDirectionalIndexValue)adxValue).MovingAverage;
+		var adx = ((AverageDirectionalIndexValue)adxValue).MovingAverage ?? 0m;
 		var close = candle.ClosePrice;
 
 		if (_hasPrev && _hasPrevPrev)
 		{
 			ManageOpenPositions(close);
 
-			if (IsFormedAndOnlineAndAllowTrading())
-			{
-				var longSignal = _prevClose > _prevMa && _prevPrevClose < _prevMa && _prevAdx >= AdxThreshold;
-				var shortSignal = _prevClose < _prevMa && _prevPrevClose > _prevMa && _prevAdx >= AdxThreshold;
+			var longSignal = _prevClose > _prevMa && _prevPrevClose < _prevMa && _prevAdx >= AdxThreshold;
+			var shortSignal = _prevClose < _prevMa && _prevPrevClose > _prevMa && _prevAdx >= AdxThreshold;
 
-				if (longSignal && Position <= 0)
-				{
-					var volume = Volume + Math.Abs(Position);
-					if (volume > 0)
-					{
-						BuyMarket(volume);
-						InitializeLongTargets(_prevClose);
-					}
-				}
-				else if (shortSignal && Position >= 0)
-				{
-					var volume = Volume + Math.Abs(Position);
-					if (volume > 0)
-					{
-						SellMarket(volume);
-						InitializeShortTargets(_prevClose);
-					}
-				}
+			if (longSignal && Position <= 0)
+			{
+				BuyMarket();
+				InitializeLongTargets(_prevClose);
+			}
+			else if (shortSignal && Position >= 0)
+			{
+				SellMarket();
+				InitializeShortTargets(_prevClose);
 			}
 		}
 
@@ -255,7 +244,7 @@ public class AdxMaCrossoverStrategy : Strategy
 		{
 			if (_prevClose < _prevMa)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongTargets();
 				return;
 			}
@@ -264,14 +253,14 @@ public class AdxMaCrossoverStrategy : Strategy
 
 			if (_longTakeProfitPrice > 0m && currentClose >= _longTakeProfitPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongTargets();
 				return;
 			}
 
 			if (_longStopPrice > 0m && currentClose <= _longStopPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongTargets();
 				return;
 			}
@@ -280,7 +269,7 @@ public class AdxMaCrossoverStrategy : Strategy
 		{
 			if (_prevClose > _prevMa)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortTargets();
 				return;
 			}
@@ -289,14 +278,14 @@ public class AdxMaCrossoverStrategy : Strategy
 
 			if (_shortTakeProfitPrice > 0m && currentClose <= _shortTakeProfitPrice)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortTargets();
 				return;
 			}
 
 			if (_shortStopPrice > 0m && currentClose >= _shortStopPrice)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortTargets();
 				return;
 			}

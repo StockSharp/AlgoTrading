@@ -99,7 +99,7 @@ public class SimpleMacdStrategy : Strategy
 			
 			.SetOptimize(0.1m, 1m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for MACD calculations", "General");
 	}
 
@@ -119,16 +119,15 @@ public class SimpleMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Configure MACD indicator to match the source MQL strategy settings.
 		_macd = new MovingAverageConvergenceDivergence
 		{
 			ShortMa = { Length = FastPeriod },
 			LongMa = { Length = SlowPeriod },
-			SignalPeriod = SignalPeriod
 		};
 
 		// Subscribe to candle data and bind the MACD indicator.
@@ -160,8 +159,7 @@ public class SimpleMacdStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var macdData = (MovingAverageConvergenceDivergenceValue)macdValue;
-		var macdLine = macdData.Macd;
+		var macdLine = macdValue.ToDecimal();
 
 		// Accumulate historical MACD values for slope calculations.
 		if (_previousMacdValue is null)
@@ -189,7 +187,7 @@ public class SimpleMacdStrategy : Strategy
 			var volumeToBuy = TradeVolume + Math.Max(0m, -Position);
 			if (volumeToBuy > 0m)
 			{
-				BuyMarket(volumeToBuy);
+				BuyMarket();
 				LogInfo($"Bullish slope detected. MACD(1)={macdPrev:F5}, MACD(2)={macdPrevPrev:F5}. Buying {volumeToBuy}.");
 			}
 		}
@@ -199,7 +197,7 @@ public class SimpleMacdStrategy : Strategy
 			var volumeToSell = TradeVolume + Math.Max(0m, Position);
 			if (volumeToSell > 0m)
 			{
-				SellMarket(volumeToSell);
+				SellMarket();
 				LogInfo($"Bearish slope detected. MACD(1)={macdPrev:F5}, MACD(2)={macdPrevPrev:F5}. Selling {volumeToSell}.");
 			}
 		}

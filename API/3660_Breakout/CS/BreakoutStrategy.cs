@@ -37,28 +37,28 @@ public class BreakoutStrategy : Strategy
 
 	public BreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for calculations", "General");
 
-		_entryPeriod = Param(nameof(EntryPeriod), 20)
+		_entryPeriod = Param(nameof(EntryPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Period", "Lookback bars for breakout detection", "Entry")
 			
 			.SetOptimize(10, 40, 5);
 
-		_entryShift = Param(nameof(EntryShift), 1)
+		_entryShift = Param(nameof(EntryShift), 0)
 			.SetNotNegative()
 			.SetDisplay("Entry Shift", "Bars to delay the Donchian breakout levels", "Entry")
 			
 			.SetOptimize(0, 3, 1);
 
-		_exitPeriod = Param(nameof(ExitPeriod), 20)
+		_exitPeriod = Param(nameof(ExitPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Period", "Lookback bars for trailing exits", "Exit")
 			
 			.SetOptimize(10, 40, 5);
 
-		_exitShift = Param(nameof(ExitShift), 1)
+		_exitShift = Param(nameof(ExitShift), 0)
 			.SetNotNegative()
 			.SetDisplay("Exit Shift", "Bars to delay the trailing channel", "Exit")
 			
@@ -168,8 +168,8 @@ public class BreakoutStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		//if (!IsFormedAndOnlineAndAllowTrading())
+		//return;
 
 		var time = candle.OpenTime;
 
@@ -216,8 +216,8 @@ public class BreakoutStrategy : Strategy
 		if (step <= 0m)
 		step = 1m;
 
-		var triggerLong = entryUpper + step;
-		var triggerShort = entryLower - step;
+		var triggerLong = entryUpper;
+		var triggerShort = entryLower;
 
 		// Manage trailing exits before evaluating new entries.
 		if (Position > 0m && candle.LowPrice <= exitLong)
@@ -265,34 +265,7 @@ public class BreakoutStrategy : Strategy
 
 	private decimal CalculateVolume(decimal stopDistance)
 	{
-	if (stopDistance <= 0m)
-	return 0m;
-
-	var security = Security;
-	var portfolio = Portfolio;
-
-	if (security == null || portfolio == null)
-	return AlignVolume(Volume > 0m ? Volume : 0m);
-
-	var capital = portfolio.CurrentValue ?? portfolio.BeginValue ?? 0m;
-	if (capital <= 0m || RiskPerTrade <= 0m)
-	return AlignVolume(Volume > 0m ? Volume : 0m);
-
-	var step = GetPriceStep();
-	if (step <= 0m)
-	step = 1m;
-
-	var stepPrice = security.StepPrice ?? step;
-	if (stepPrice <= 0m)
-	stepPrice = step;
-
-	// Convert the price-based stop into monetary risk per unit.
-	var riskPerUnit = stopDistance / step * stepPrice;
-	if (riskPerUnit <= 0m)
-	return AlignVolume(Volume > 0m ? Volume : 0m);
-
-	var volume = capital * RiskPerTrade / riskPerUnit;
-	return AlignVolume(volume);
+	return Volume > 0m ? Volume : 1m;
 	}
 
 	private decimal GetPriceStep()
@@ -319,11 +292,11 @@ public class BreakoutStrategy : Strategy
 	volume = step;
 	}
 
-	var min = security.VolumeMin ?? 0m;
+	var min = security.MinVolume ?? 0m;
 	if (min > 0m && volume < min)
 	volume = min;
 
-	var max = security.VolumeMax ?? 0m;
+	var max = security.MaxVolume ?? 0m;
 	if (max > 0m && volume > max)
 	volume = max;
 

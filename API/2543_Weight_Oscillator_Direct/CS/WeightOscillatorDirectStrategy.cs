@@ -109,7 +109,7 @@ public class WeightOscillatorDirectStrategy : Strategy
 	/// </summary>
 	public WeightOscillatorDirectStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for indicator calculations", "General");
 
 		_trendMode = Param(nameof(TrendMode), WeightOscillatorTrendModes.Direct)
@@ -402,7 +402,7 @@ public class WeightOscillatorDirectStrategy : Strategy
 		var takeProfit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null;
 		var stopLoss = StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Point) : null;
 
-		StartProtection(takeProfit, stopLoss);
+		StartProtection(stopLoss, takeProfit);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal mfiValue, decimal wprValue, decimal deMarkerValue)
@@ -413,7 +413,7 @@ public class WeightOscillatorDirectStrategy : Strategy
 		var totalWeight = RsiWeight + MfiWeight + WprWeight + DeMarkerWeight;
 		if (totalWeight <= 0)
 		{
-		LogWarning("Total oscillator weight must be positive to generate signals.");
+		this.LogInfo("Total oscillator weight must be positive to generate signals.");
 		return;
 		}
 
@@ -424,7 +424,7 @@ public class WeightOscillatorDirectStrategy : Strategy
 
 		var blended = (RsiWeight * rsiValue + MfiWeight * mfiValue + WprWeight * normalizedWpr + DeMarkerWeight * normalizedDeMarker) / totalWeight;
 
-		var smoothedValue = _smoothing.Process(new DecimalIndicatorValue(_smoothing, blended, candle.OpenTime));
+		var smoothedValue = _smoothing.Process(new DecimalIndicatorValue(_smoothing, blended, candle.OpenTime) { IsFinal = true });
 		if (!smoothedValue.IsFinal)
 		return;
 
@@ -461,21 +461,16 @@ public class WeightOscillatorDirectStrategy : Strategy
 		shortSignal = rising;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 		if (longSignal)
 		{
 		if (BuyCloseEnabled && Position < 0)
 		{
-		// Close existing short exposure before flipping long.
-		BuyMarket(Math.Abs(Position));
+		BuyMarket();
 		}
 
 		if (BuyOpenEnabled && Position <= 0)
 		{
-		// Use Volume + |Position| to reverse and build the new long position in a single order.
-		BuyMarket(Volume + Math.Abs(Position));
+		BuyMarket();
 		}
 		}
 
@@ -483,14 +478,12 @@ public class WeightOscillatorDirectStrategy : Strategy
 		{
 		if (SellCloseEnabled && Position > 0)
 		{
-		// Close existing long exposure before flipping short.
-		SellMarket(Math.Abs(Position));
+		SellMarket();
 		}
 
 		if (SellOpenEnabled && Position >= 0)
 		{
-		// Use Volume + |Position| to reverse and build the new short position in a single order.
-		SellMarket(Volume + Math.Abs(Position));
+		SellMarket();
 		}
 		}
 	}

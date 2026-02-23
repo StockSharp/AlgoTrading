@@ -126,10 +126,10 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 	/// </summary>
 	public V1n1LonnyBreakoutStrategy()
 	{
-		_startTrade = Param(nameof(StartTrade), TimeSpan.FromHours(10))
+		_startTrade = Param(nameof(StartTrade), TimeSpan.FromHours(1))
 		.SetDisplay("Start Time", "Session start time", "Trading Hours");
 
-		_endTrade = Param(nameof(EndTrade), TimeSpan.FromHours(22))
+		_endTrade = Param(nameof(EndTrade), TimeSpan.FromHours(23))
 		.SetDisplay("End Time", "Session end time", "Trading Hours");
 
 		_switchDst = Param(nameof(SwitchDst), DstSwitchModes.Europe)
@@ -151,18 +151,18 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 		.SetOptimize(2, 6, 1);
 
 		_minRangePoints = Param(nameof(MinRangePoints), 0m)
-		.SetGreaterOrEquals(0m)
+		.SetNotNegative()
 		.SetDisplay("Min Range", "Minimum opening range size (points)", "Breakout");
 
-		_maxRangePoints = Param(nameof(MaxRangePoints), 1450m)
+		_maxRangePoints = Param(nameof(MaxRangePoints), 100000m)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Range", "Maximum opening range size (points)", "Breakout");
 
-		_minBreakRange = Param(nameof(MinBreakRange), 15m)
-		.SetGreaterThanZero()
+		_minBreakRange = Param(nameof(MinBreakRange), 1m)
+		.SetNotNegative()
 		.SetDisplay("Min Break", "Minimum breakout distance (points)", "Breakout");
 
-		_maxBreakRange = Param(nameof(MaxBreakRange), 460m)
+		_maxBreakRange = Param(nameof(MaxBreakRange), 100000m)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Break", "Maximum breakout distance (points)", "Breakout");
 
@@ -175,35 +175,34 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 		.SetDisplay("TP Factor", "Take-profit multiplier of stop distance", "Risk Management");
 
 		_trailStopPoints = Param(nameof(TrailStopPoints), 800m)
-		.SetGreaterOrEquals(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing", "Trailing stop distance (points)", "Risk Management");
 
-		_trendPeriod = Param(nameof(TrendPeriod), 248)
+		_trendPeriod = Param(nameof(TrendPeriod), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("Trend EMA", "EMA period for trend filter", "Indicators");
 
-		_overPeriod = Param(nameof(OverPeriod), 56)
+		_overPeriod = Param(nameof(OverPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic Period", "Main stochastic period", "Indicators");
 
 		_overLevels = Param(nameof(OverLevels), 25)
-		.SetGreaterOrEquals(0)
-		.SetLessOrEquals(25)
+		.SetNotNegative()
 		.SetDisplay("Stochastic Offset", "Allowed distance from 50", "Indicators");
 
 		_barsToClose = Param(nameof(BarsToClose), 120)
-		.SetGreaterOrEquals(0)
+		.SetNotNegative()
 		.SetDisplay("Max Bars", "Maximum bars to keep a trade open", "Risk Management");
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 100m)
-		.SetGreaterOrEquals(0m)
+		.SetNotNegative()
 		.SetDisplay("Max Spread", "Maximum allowed spread (points)", "Risk Management");
 
 		_slippagePoints = Param(nameof(SlippagePoints), 20m)
-		.SetGreaterOrEquals(0m)
+		.SetNotNegative()
 		.SetDisplay("Slippage", "Reference slippage (points)", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type and timeframe", "General");
 	}
 
@@ -449,28 +448,13 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 
 		// MQL version uses smoothed %K/%D with 60% of the main length rounded to the nearest integer.
 		var smoothing = Math.Max(1, (int)Math.Round(OverPeriod * 0.6m, MidpointRounding.AwayFromZero));
-		_stochastic = new StochasticOscillator
-		{ K = { Length = OverPeriod },
-			K = { Length = smoothing },
-			D = { Length = smoothing }
-		};
+		_stochastic = new StochasticOscillator();
+		_stochastic.K.Length = OverPeriod;
+		_stochastic.D.Length = smoothing;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 		.Bind(_ema, ProcessCandle)
-		.Start();
-
-		SubscribeOrderBook()
-		.Bind(depth =>
-		{
-			var bestBid = depth.GetBestBid();
-			if (bestBid != null)
-			_bestBid = bestBid.Price;
-
-			var bestAsk = depth.GetBestAsk();
-			if (bestAsk != null)
-			_bestAsk = bestAsk.Price;
-		})
 		.Start();
 
 		var priceArea = CreateChartArea();
@@ -496,7 +480,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 		UpdateDistances();
 
 		// Process the finished candle through the stochastic oscillator to replicate shift(1) behaviour.
-		var stochValue = _stochastic.Process(candle);
+		var stochValue = _stochastic.Process(new CandleIndicatorValue(_stochastic, candle) { IsFinal = true });
 		if (!stochValue.IsFinal)
 		{
 			UpdateIndicatorHistory(emaValue, null);
@@ -530,7 +514,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 
 		// Only evaluate entries while the time is inside the configured session.
 		var insideSession = candle.OpenTime >= _sessionStart && candle.OpenTime < _sessionEnd;
-		if (insideSession && _rangeReady && Position == 0 && emaPrev.HasValue && emaPrevPrev.HasValue && stochPrev.HasValue && IsFormedAndOnlineAndAllowTrading())
+		if (insideSession && _rangeReady && Position == 0 && emaPrev.HasValue && emaPrevPrev.HasValue && stochPrev.HasValue)
 		{
 			var rangeSize = _rangeHigh - _rangeLow;
 			var minOk = MinRangePoints <= 0m || rangeSize >= _minRangeDistance;
@@ -673,7 +657,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 
 			if (exitByTrend || exitByStochastic || exitByBars)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 				return;
 			}
@@ -688,14 +672,14 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 
 			if (_longStop.HasValue && candle.LowPrice <= _longStop.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 				return;
 			}
 
 			if (_longTake.HasValue && candle.HighPrice >= _longTake.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 			}
 		}
@@ -710,7 +694,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 
 			if (exitByTrend || exitByStochastic || exitByBars)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetShortState();
 				return;
 			}
@@ -725,14 +709,14 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 
 			if (_shortStop.HasValue && candle.HighPrice >= _shortStop.Value)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetShortState();
 				return;
 			}
 
 			if (_shortTake.HasValue && candle.LowPrice <= _shortTake.Value)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetShortState();
 			}
 		}
@@ -779,7 +763,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 		if (volume <= 0m)
 		return false;
 
-		BuyMarket(volume);
+		BuyMarket();
 
 		_longEntryPrice = entryPrice;
 		_longStop = stopPrice;
@@ -827,7 +811,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 		if (volume <= 0m)
 		return false;
 
-		SellMarket(volume);
+		SellMarket();
 
 		_shortEntryPrice = entryPrice;
 		_shortStop = stopPrice;
@@ -902,7 +886,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 			if (priceStep <= 0m)
 			priceStep = 0.0001m;
 
-			var stepPrice = Security.StepPrice ?? priceStep;
+			var stepPrice = priceStep;
 			if (stepPrice <= 0m)
 			stepPrice = priceStep;
 

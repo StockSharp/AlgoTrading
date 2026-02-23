@@ -181,9 +181,9 @@ public class T3MaDirectionChangeStrategy : Strategy
 		}
 
 		// Initialize protective orders based on configured distances.
-		StartProtection(
-			takeProfit: TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Step) : null,
-			stopLoss: StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Step) : null);
+		var slUnit = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Step) : null;
+		var tpUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Step) : null;
+		StartProtection(slUnit, tpUnit);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -195,7 +195,7 @@ public class T3MaDirectionChangeStrategy : Strategy
 			return;
 
 		// Run the two-stage EMA smoothing chain.
-		var emaPriceValue = _emaPrice.Process(candle.ClosePrice);
+		var emaPriceValue = _emaPrice.Process(new DecimalIndicatorValue(_emaPrice, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
 		var emaSmoothValue = _emaSmooth.Process(emaPriceValue);
 
 		var smoothed = emaSmoothValue.ToDecimal();
@@ -215,8 +215,8 @@ public class T3MaDirectionChangeStrategy : Strategy
 		}
 
 		var snapshot = _recentSmoothed.ToArray();
-		var current = snapshot[^1 - shift];
-		var previous = snapshot[^2 - shift];
+		var current = snapshot[snapshot.Length - 1 - shift];
+		var previous = snapshot[snapshot.Length - 2 - shift];
 
 		var direction = _previousDirection;
 		if (current > previous)
@@ -266,39 +266,19 @@ public class T3MaDirectionChangeStrategy : Strategy
 		if (signal.Direction == 0)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var baseVolume = Volume;
-		var reversalVolume = Math.Abs(Position) + baseVolume;
-
 		if (signal.Direction > 0)
 		{
-			// Direction flipped upward: switch to a long position.
 			if (Position < 0)
-			{
-				BuyMarket(reversalVolume);
-				LogInfo($"Reversed short into long after upward slope change at {signal.Time:O}. Reference price: {signal.ReferencePrice}");
-			}
-			else if (Position == 0)
-			{
-				BuyMarket(baseVolume);
-				LogInfo($"Entered long after upward slope change at {signal.Time:O}. Reference price: {signal.ReferencePrice}");
-			}
+				BuyMarket();
+			if (Position <= 0)
+				BuyMarket();
 		}
 		else
 		{
-			// Direction flipped downward: switch to a short position.
 			if (Position > 0)
-			{
-				SellMarket(reversalVolume);
-				LogInfo($"Reversed long into short after downward slope change at {signal.Time:O}. Reference price: {signal.ReferencePrice}");
-			}
-			else if (Position == 0)
-			{
-				SellMarket(baseVolume);
-				LogInfo($"Entered short after downward slope change at {signal.Time:O}. Reference price: {signal.ReferencePrice}");
-			}
+				SellMarket();
+			if (Position >= 0)
+				SellMarket();
 		}
 	}
 

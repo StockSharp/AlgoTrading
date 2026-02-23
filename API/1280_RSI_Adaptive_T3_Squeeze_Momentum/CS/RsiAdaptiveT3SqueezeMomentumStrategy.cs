@@ -193,7 +193,7 @@ public class RsiAdaptiveT3SqueezeMomentumStrategy : Strategy
 		_linReg = new LinearRegression { Length = KeltnerPeriod };
 
 		var bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerMultiplier };
-		var keltner = new KeltnerChannels { Length = KeltnerPeriod, Multiplier = KeltnerMultiplier, UseTrueRange = UseTrueRange };
+		var keltner = new KeltnerChannels { Length = KeltnerPeriod, Multiplier = KeltnerMultiplier };
 		var donchian = new DonchianChannels { Length = KeltnerPeriod };
 		var sma = new SMA { Length = KeltnerPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
@@ -212,7 +212,7 @@ public class RsiAdaptiveT3SqueezeMomentumStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
+		// no separate protection
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue keltnerValue, IIndicatorValue donchianValue, IIndicatorValue smaValue, IIndicatorValue rsiValue)
@@ -221,9 +221,6 @@ public class RsiAdaptiveT3SqueezeMomentumStrategy : Strategy
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (!bollingerValue.IsFinal || !keltnerValue.IsFinal || !donchianValue.IsFinal || !smaValue.IsFinal || !rsiValue.IsFinal)
 			return;
 
 		var bb = (BollingerBandsValue)bollingerValue;

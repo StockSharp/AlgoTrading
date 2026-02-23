@@ -344,9 +344,9 @@ public class Tdi2ReOpenStrategy : Strategy
 
 		if (stopLoss.HasValue || takeProfit.HasValue)
 		{
-			StartProtection(
-			takeProfit: takeProfit.HasValue ? new Unit(takeProfit.Value) : null,
-			stopLoss: stopLoss.HasValue ? new Unit(stopLoss.Value) : null);
+			var slUnit = stopLoss.HasValue ? new Unit(stopLoss.Value) : null;
+			var tpUnit = takeProfit.HasValue ? new Unit(takeProfit.Value) : null;
+			StartProtection(slUnit, tpUnit);
 		}
 	}
 
@@ -402,12 +402,12 @@ public class Tdi2ReOpenStrategy : Strategy
 
 		if (exitLong)
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
 
 		if (exitShort)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 
 		var priceStep = (Security?.PriceStep ?? 1m) * PriceStepPoints;
@@ -435,40 +435,22 @@ public class Tdi2ReOpenStrategy : Strategy
 
 		if (scaleInLong)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 		}
 
 		if (scaleInShort)
 		{
-			SellMarket(Volume);
+			SellMarket();
 		}
 
 		if (openLong)
 		{
-			var volume = Volume;
-			if (Position < 0m)
-			{
-				volume += Math.Abs(Position);
-			}
-
-			if (volume > 0m)
-			{
-				BuyMarket(volume);
-			}
+			BuyMarket();
 		}
 
 		if (openShort)
 		{
-			var volume = Volume;
-			if (Position > 0m)
-			{
-				volume += Position;
-			}
-
-			if (volume > 0m)
-			{
-				SellMarket(volume);
-			}
+			SellMarket();
 		}
 	}
 
@@ -570,7 +552,7 @@ public class Tdi2Indicator : BaseIndicator
 	/// <summary>
 	/// Gets or sets the smoothing method.
 	/// </summary>
-	public SmoothMethod Method { get; set; } = SmoothMethod.Sma;
+	public Tdi2ReOpenStrategy.SmoothMethods Method { get; set; } = Tdi2ReOpenStrategy.SmoothMethods.Sma;
 
 	/// <summary>
 	/// Gets or sets the momentum period.
@@ -585,7 +567,7 @@ public class Tdi2Indicator : BaseIndicator
 	/// <summary>
 	/// Gets or sets the price source used by the indicator.
 	/// </summary>
-	public AppliedPrice AppliedPrice { get; set; } = AppliedPrice.Close;
+	public Tdi2ReOpenStrategy.AppliedPrices AppliedPrice { get; set; } = Tdi2ReOpenStrategy.AppliedPrices.Close;
 
 	/// <inheritdoc />
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
@@ -636,10 +618,10 @@ public class Tdi2Indicator : BaseIndicator
 	{
 		return Method switch
 		{
-			SmoothMethod.Sma => new SMA { Length = length },
-			SmoothMethod.Ema => new EMA { Length = length },
-			SmoothMethod.Smma => new SmoothedMovingAverage { Length = length },
-			SmoothMethod.Lwma => new WeightedMovingAverage { Length = length },
+			Tdi2ReOpenStrategy.SmoothMethods.Sma => new SMA { Length = length },
+			Tdi2ReOpenStrategy.SmoothMethods.Ema => new EMA { Length = length },
+			Tdi2ReOpenStrategy.SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
+			Tdi2ReOpenStrategy.SmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
 			_ => throw new NotSupportedException($"Smoothing method {Method} is not supported."),
 		};
 	}
@@ -668,18 +650,18 @@ public class Tdi2Indicator : BaseIndicator
 	{
 		return AppliedPrice switch
 		{
-			AppliedPrices.Close => candle.ClosePrice,
-			AppliedPrices.Open => candle.OpenPrice,
-			AppliedPrices.High => candle.HighPrice,
-			AppliedPrices.Low => candle.LowPrice,
-			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-			AppliedPrices.Demark => CalculateDemarkPrice(candle),
+			Tdi2ReOpenStrategy.AppliedPrices.Close => candle.ClosePrice,
+			Tdi2ReOpenStrategy.AppliedPrices.Open => candle.OpenPrice,
+			Tdi2ReOpenStrategy.AppliedPrices.High => candle.HighPrice,
+			Tdi2ReOpenStrategy.AppliedPrices.Low => candle.LowPrice,
+			Tdi2ReOpenStrategy.AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			Tdi2ReOpenStrategy.AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			Tdi2ReOpenStrategy.AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			Tdi2ReOpenStrategy.AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			Tdi2ReOpenStrategy.AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			Tdi2ReOpenStrategy.AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+			Tdi2ReOpenStrategy.AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+			Tdi2ReOpenStrategy.AppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}

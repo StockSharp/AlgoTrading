@@ -156,7 +156,7 @@ public class EmaBarabashkakvnEditionStrategy : Strategy
 			
 			.SetOptimize(8, 40, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles", "General");
 	}
 
@@ -188,8 +188,6 @@ public class EmaBarabashkakvnEditionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		_fastEma = new EMA { Length = FastLength };
 		_slowEma = new EMA { Length = SlowLength };
 
@@ -217,8 +215,8 @@ public class EmaBarabashkakvnEditionStrategy : Strategy
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
 
 		// Update EMA values using the median price.
-		var fastValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, medianPrice, candle.OpenTime));
-		var slowValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, medianPrice, candle.OpenTime));
+		var fastValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, medianPrice, candle.OpenTime) { IsFinal = true });
+		var slowValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, medianPrice, candle.OpenTime) { IsFinal = true });
 
 		if (!_fastEma.IsFormed || !_slowEma.IsFormed)
 		{
@@ -252,13 +250,6 @@ public class EmaBarabashkakvnEditionStrategy : Strategy
 		var profitDistance = VirtualProfitPips * pipValue;
 		var stopDistance = StopLossPips * pipValue;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevHigh = candle.HighPrice;
-			_prevLow = candle.LowPrice;
-			return;
-		}
-
 		if (Position == 0 && _hasCrossSignal && _prevHigh is decimal prevHigh && _prevLow is decimal prevLow)
 		{
 			var bearishSpread = slow - fast;
@@ -273,7 +264,7 @@ public class EmaBarabashkakvnEditionStrategy : Strategy
 				_entryPrice = candle.ClosePrice;
 				_virtualTarget = _entryPrice - profitDistance;
 				_virtualStop = _entryPrice + stopDistance;
-				SellMarket(OrderVolume);
+				SellMarket();
 				_hasCrossSignal = false;
 			}
 			else if (bullishReady)
@@ -282,7 +273,7 @@ public class EmaBarabashkakvnEditionStrategy : Strategy
 				_entryPrice = candle.ClosePrice;
 				_virtualTarget = _entryPrice + profitDistance;
 				_virtualStop = _entryPrice - stopDistance;
-				BuyMarket(OrderVolume);
+				BuyMarket();
 				_hasCrossSignal = false;
 			}
 		}
@@ -296,7 +287,7 @@ public class EmaBarabashkakvnEditionStrategy : Strategy
 
 				if (hitTarget || hitStop)
 				{
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 					_hasCrossSignal = false;
 					_entryPrice = null;
 					_virtualTarget = null;
@@ -311,7 +302,7 @@ public class EmaBarabashkakvnEditionStrategy : Strategy
 
 				if (hitTarget || hitStop)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					_hasCrossSignal = false;
 					_entryPrice = null;
 					_virtualTarget = null;

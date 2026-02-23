@@ -381,12 +381,9 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		_indentOffset = IndentPips > 0 ? IndentPips * _pipSize : 0m;
 
 		_ma = CreateMovingAverage(MaMethod, MaPeriod);
-		_macd = new MovingAverageConvergenceDivergence
-		{
-			Fast = MacdFastPeriod,
-			Slow = MacdSlowPeriod,
-			Signal = MacdSignalPeriod,
-		};
+		_macd = new MovingAverageConvergenceDivergence(
+			new ExponentialMovingAverage { Length = MacdSlowPeriod },
+			new ExponentialMovingAverage { Length = MacdFastPeriod });
 
 		_ma.Reset();
 		_macd.Reset();
@@ -408,7 +405,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection();
+		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -432,7 +429,8 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		PushValue(_maValues, maValue);
 
 		var macdInput = GetAppliedPrice(candle, MacdAppliedPrice);
-		var macdValue = (MovingAverageConvergenceDivergenceValue)_macd.Process(new DecimalIndicatorValue(_macd, macdInput, candle.OpenTime));
+		var macdResult = _macd.Process(new DecimalIndicatorValue(_macd, macdInput, candle.OpenTime));
+		var macdValue = macdResult.ToDecimal();
 
 		if (!_macd.IsFormed)
 			return;

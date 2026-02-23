@@ -148,7 +148,7 @@ public class MoneyRainStrategy : Strategy
 		_fastOptimize = Param(nameof(FastOptimize), false)
 		.SetDisplay("Fast Optimisation", "Disable adaptive position sizing during rough optimisation", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candles used for indicator calculations", "Data");
 	}
 
@@ -186,10 +186,6 @@ public class MoneyRainStrategy : Strategy
 		base.OnStarted2(time);
 
 		UpdateOffsets();
-
-		SubscribeLevel1()
-		.Bind(ProcessLevel1)
-		.Start();
 
 		_deMarker = new DeMarker
 		{
@@ -233,9 +229,6 @@ public class MoneyRainStrategy : Strategy
 
 		ManageOpenPosition(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 		if (_deMarker == null || !_deMarker.IsFormed)
 		return;
 
@@ -244,7 +237,7 @@ public class MoneyRainStrategy : Strategy
 
 		if (LossLimit > 0 && _consecutiveLosses >= LossLimit)
 		{
-			LogInfo($"Trading paused after reaching loss limit of {LossLimit} consecutive losses.");
+			this.LogInfo($"Trading paused after reaching loss limit of {LossLimit} consecutive losses.");
 			return;
 		}
 
@@ -294,10 +287,13 @@ public class MoneyRainStrategy : Strategy
 	_exitOrderActive = true;
 	_pendingExitReason = hitStop ? ExitReasons.StopLoss : ExitReasons.TakeProfit;
 
-	ClosePosition();
+	if (Position > 0)
+		SellMarket();
+	else if (Position < 0)
+		BuyMarket();
 
 	var exitPrice = hitStop ? _stopPrice : _takePrice;
-	LogInfo(hitStop
+	this.LogInfo(hitStop
 	? $"Stop-loss triggered near {exitPrice} (range {candle.LowPrice} - {candle.HighPrice})."
 	: $"Take-profit triggered near {exitPrice} (range {candle.LowPrice} - {candle.HighPrice}).");
 }
@@ -316,15 +312,15 @@ private void EnterPosition(Sides side, decimal volume, decimal referencePrice, d
 	{
 		_stopPrice = referencePrice - _stopLossOffset;
 		_takePrice = referencePrice + _takeProfitOffset;
-		BuyMarket(volume);
-		LogInfo($"Entered long at {referencePrice} (DeMarker={deMarkerValue:F4}) with volume {volume}.");
+		BuyMarket();
+		this.LogInfo($"Entered long at {referencePrice} (DeMarker={deMarkerValue:F4}) with volume {volume}.");
 	}
 	else
 	{
 		_stopPrice = referencePrice + _stopLossOffset;
 		_takePrice = referencePrice - _takeProfitOffset;
-		SellMarket(volume);
-		LogInfo($"Entered short at {referencePrice} (DeMarker={deMarkerValue:F4}) with volume {volume}.");
+		SellMarket();
+		this.LogInfo($"Entered short at {referencePrice} (DeMarker={deMarkerValue:F4}) with volume {volume}.");
 	}
 }
 
@@ -363,7 +359,7 @@ private void UpdateTradeStats(bool isProfit)
 
 		_consecutiveProfits++;
 
-		LogInfo($"Take-profit confirmed. Profit streak = {_consecutiveProfits}.");
+		this.LogInfo($"Take-profit confirmed. Profit streak = {_consecutiveProfits}.");
 	}
 	else
 	{
@@ -373,7 +369,7 @@ private void UpdateTradeStats(bool isProfit)
 		if (BaseVolume > 0m)
 		_lossesVolume += _activeVolume / BaseVolume;
 
-		LogInfo($"Stop-loss confirmed. Loss streak = {_consecutiveLosses}, accumulated loss volume = {_lossesVolume:F2}.");
+		this.LogInfo($"Stop-loss confirmed. Loss streak = {_consecutiveLosses}, accumulated loss volume = {_lossesVolume:F2}.");
 	}
 }
 

@@ -106,14 +106,14 @@ public class RangeFilterStrategy : Strategy
 			
 			.SetOptimize(1m, 5m, 0.5m);
 
-		_riskPoints = Param(nameof(RiskPoints), 50m)
+		_riskPoints = Param(nameof(RiskPoints), 2000m)
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			
+
 			.SetOptimize(10m, 100m, 10m);
 
-		_rewardPoints = Param(nameof(RewardPoints), 100m)
+		_rewardPoints = Param(nameof(RewardPoints), 4000m)
 			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			
+
 			.SetOptimize(20m, 200m, 10m);
 
 		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 5)
@@ -139,12 +139,13 @@ public class RangeFilterStrategy : Strategy
 		_avrng = new EMA { Length = SamplingPeriod };
 		_smrngEma = new EMA { Length = SamplingPeriod * 2 - 1 };
 
+		var atr = new AverageTrueRange { Length = 14 };
 		SubscribeCandles(CandleType)
-			.Bind(ProcessCandle)
+			.Bind(atr, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -171,15 +172,11 @@ public class RangeFilterStrategy : Strategy
 		var diff = Math.Abs(src - _prevSrc);
 		_prevSrc = src;
 
-		var avrng = _avrng.Process(diff);
-		if (!avrng.IsFinal)
-			return;
+		var avrng = _avrng.Process(new DecimalIndicatorValue(_avrng, diff, candle.ServerTime));
+		var avrngDec = avrng.ToDecimal();
 
-		var smooth = _smrngEma.Process(avrng.GetValue<decimal>());
-		if (!smooth.IsFinal)
-			return;
-
-		var smrng = smooth.GetValue<decimal>() * RangeMultiplier;
+		var smooth = _smrngEma.Process(new DecimalIndicatorValue(_smrngEma, avrngDec, candle.ServerTime));
+		var smrng = smooth.ToDecimal() * RangeMultiplier;
 
 		var newFilt = src;
 		if (_hasFilt)

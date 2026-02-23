@@ -211,11 +211,11 @@ public class ButterflyPatternStrategy : Strategy
 		.SetDisplay("Candle Type", "Timeframe used for pattern detection", "General");
 
 		_pivotLeft = Param(nameof(PivotLeft), 1)
-		.SetGreaterOrEqual(1)
+		.SetGreaterThanZero()
 		.SetDisplay("Pivot Left", "Bars to the left when validating a pivot", "Pattern");
 
 		_pivotRight = Param(nameof(PivotRight), 1)
-		.SetGreaterOrEqual(1)
+		.SetGreaterThanZero()
 		.SetDisplay("Pivot Right", "Bars to the right when validating a pivot", "Pattern");
 
 		_tolerance = Param(nameof(Tolerance), 0.10m)
@@ -270,7 +270,7 @@ public class ButterflyPatternStrategy : Strategy
 		.SetDisplay("Use Break-Even", "Enable break-even management", "Risk");
 
 		_breakEvenAfterTp = Param(nameof(BreakEvenAfterTp), 1)
-		.SetGreaterOrEqual(1)
+		.SetGreaterThanZero()
 		.SetDisplay("Break-Even After TP", "Activate break-even after the specified take-profit", "Risk");
 
 		_breakEvenTrigger = Param(nameof(BreakEvenTrigger), 30m)
@@ -283,7 +283,7 @@ public class ButterflyPatternStrategy : Strategy
 		.SetDisplay("Use Trailing", "Enable trailing stop management", "Risk");
 
 		_trailAfterTp = Param(nameof(TrailAfterTp), 2)
-		.SetGreaterOrEqual(1)
+		.SetGreaterThanZero()
 		.SetDisplay("Trail After TP", "Activate trailing after the specified take-profit", "Risk");
 
 		_trailStart = Param(nameof(TrailStart), 20m)

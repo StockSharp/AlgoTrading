@@ -274,8 +274,8 @@ public class CandleShadowPercentStrategy : Strategy
 			
 			if (stopHit || takeHit)
 			{
-				SellMarket(Position);
-				LogInfo($"Closing long at {candle.ClosePrice}. Stop hit: {stopHit}, Take hit: {takeHit}");
+				SellMarket();
+				this.LogInfo($"Closing long at {candle.ClosePrice}. Stop hit: {stopHit}, Take hit: {takeHit}");
 				_longStop = null;
 				_longTake = null;
 				_entryPrice = null;
@@ -288,8 +288,8 @@ public class CandleShadowPercentStrategy : Strategy
 			
 			if (stopHit || takeHit)
 			{
-				BuyMarket(-Position);
-				LogInfo($"Closing short at {candle.ClosePrice}. Stop hit: {stopHit}, Take hit: {takeHit}");
+				BuyMarket();
+				this.LogInfo($"Closing short at {candle.ClosePrice}. Stop hit: {stopHit}, Take hit: {takeHit}");
 				_shortStop = null;
 				_shortTake = null;
 				_entryPrice = null;
@@ -299,78 +299,59 @@ public class CandleShadowPercentStrategy : Strategy
 	
 	private void EnterLong(ICandleMessage candle, decimal pipSize)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-		
 		var stopDistance = StopLossPips * pipSize;
 		if (stopDistance <= 0m)
 			return;
-		
+
 		var takeDistance = TakeProfitPips * pipSize;
-		var volume = CalculatePositionSize(stopDistance);
-		if (volume <= 0m)
-			return;
-		
-		var quantity = volume;
-		if (Position < 0)
-			quantity += Math.Abs(Position);
-		
+
 		var entryPrice = candle.ClosePrice;
 		var stopPrice = entryPrice - stopDistance;
 		var takePrice = takeDistance > 0m ? entryPrice + takeDistance : (decimal?)null;
-		
-		BuyMarket(quantity);
-		
+
+		BuyMarket();
+
 		_longStop = stopPrice;
 		_longTake = takePrice;
 		_shortStop = null;
 		_shortTake = null;
 		_entryPrice = entryPrice;
-		
-		LogInfo($"Entered long at {entryPrice} with quantity {quantity}. Stop {stopPrice}, Take {(takePrice.HasValue ? takePrice.Value.ToString() : "n/a")}");
+
+		this.LogInfo($"Entered long at {entryPrice}. Stop {stopPrice}, Take {(takePrice.HasValue ? takePrice.Value.ToString() : "n/a")}");
 	}
 	
 	private void EnterShort(ICandleMessage candle, decimal pipSize)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-		
 		var stopDistance = StopLossPips * pipSize;
 		if (stopDistance <= 0m)
 			return;
-		
+
 		var takeDistance = TakeProfitPips * pipSize;
-		var volume = CalculatePositionSize(stopDistance);
-		if (volume <= 0m)
-			return;
-		
-		var quantity = volume;
-		if (Position > 0)
-			quantity += Math.Abs(Position);
-		
+
 		var entryPrice = candle.ClosePrice;
 		var stopPrice = entryPrice + stopDistance;
 		var takePrice = takeDistance > 0m ? entryPrice - takeDistance : (decimal?)null;
-		
-		SellMarket(quantity);
-		
+
+		SellMarket();
+
 		_shortStop = stopPrice;
 		_shortTake = takePrice;
 		_longStop = null;
 		_longTake = null;
 		_entryPrice = entryPrice;
-		
-		LogInfo($"Entered short at {entryPrice} with quantity {quantity}. Stop {stopPrice}, Take {(takePrice.HasValue ? takePrice.Value.ToString() : "n/a")}");
+
+		this.LogInfo($"Entered short at {entryPrice}. Stop {stopPrice}, Take {(takePrice.HasValue ? takePrice.Value.ToString() : "n/a")}");
 	}
 	
 	private decimal CalculatePositionSize(decimal stopDistance)
 	{
 		var defaultVolume = Volume > 0m ? Volume : 1m;
 		
-		if (Portfolio == null || Portfolio.CurrentValue <= 0m)
+		var portfolioValue = Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? 0m;
+		if (portfolioValue <= 0m)
 			return defaultVolume;
-		
-		var riskAmount = Portfolio.CurrentValue * (RiskPercent / 100m);
+
+		var riskAmount = portfolioValue * (RiskPercent / 100m);
 		if (riskAmount <= 0m || stopDistance <= 0m)
 			return defaultVolume;
 		

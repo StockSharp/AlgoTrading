@@ -96,7 +96,7 @@ public class AngrybirdXScalpingnStrategy : Strategy
 		.SetDisplay("Max Trades", "Maximum number of open trades", "Risk")
 		.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
 
@@ -130,7 +130,7 @@ public class AngrybirdXScalpingnStrategy : Strategy
 		sub.Bind(rsi, cci, ProcessCandle)
 		.Start();
 
-		StartProtection(new Unit(TakeProfit, UnitTypes.Step), new Unit(StopLoss, UnitTypes.Step));
+		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -167,7 +167,7 @@ public class AngrybirdXScalpingnStrategy : Strategy
 				var highest = _highs.Max();
 				var lowest = _lows.Min();
 				var step = (highest - lowest) / Del;
-				var stepSize = Security?.Step ?? 1m;
+				var stepSize = Security?.PriceStep ?? 1m;
 				var minStep = (DefaultPips / (decimal)Del) * stepSize;
 				var maxStep = (DefaultPips * Del) * stepSize;
 				step = Math.Min(Math.Max(step, minStep), maxStep);
@@ -176,7 +176,7 @@ public class AngrybirdXScalpingnStrategy : Strategy
 		}
 		else
 		{
-			_pipStep = DefaultPips * (Security?.Step ?? 1m);
+			_pipStep = DefaultPips * (Security?.PriceStep ?? 1m);
 		}
 
 		if (Position == 0)
@@ -188,13 +188,15 @@ public class AngrybirdXScalpingnStrategy : Strategy
 		// close all on CCI reversal
 		if (Position > 0 && cci < -Drop)
 		{
-			ClosePosition();
+			if (Position > 0) SellMarket(Math.Abs(Position));
+		else if (Position < 0) BuyMarket(Math.Abs(Position));
 			return;
 		}
 
 		if (Position < 0 && cci > Drop)
 		{
-			ClosePosition();
+			if (Position > 0) SellMarket(Math.Abs(Position));
+		else if (Position < 0) BuyMarket(Math.Abs(Position));
 			return;
 		}
 

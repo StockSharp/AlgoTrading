@@ -56,9 +56,9 @@ public class FifteenMinuteScalperStrategy : Strategy
 	private WeightedMovingAverage _fastMa = null!;
 	private WeightedMovingAverage _slowMa = null!;
 	private Momentum _momentumIndicator = null!;
-	private ParabolicStopAndReverse _sar = null!;
+	private ParabolicSar _sar = null!;
 	private StochasticOscillator _stochastic = null!;
-	private MovingAverageConvergenceDivergence _macd = null!;
+	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
 	private decimal? _stochasticPrev1;
 	private decimal? _stochasticPrev2;
@@ -75,6 +75,7 @@ public class FifteenMinuteScalperStrategy : Strategy
 	private decimal _equityPeak;
 	private decimal _maxFloatingProfit;
 	private decimal? _breakevenPrice;
+	private decimal? _cachedEntryPrice;
 	private decimal _highestPrice;
 	private decimal _lowestPrice;
 	private decimal _previousRealizedPnL;
@@ -472,14 +473,15 @@ public class FifteenMinuteScalperStrategy : Strategy
 		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
 		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 		_momentumIndicator = new Momentum { Length = MomentumPeriod };
-		_sar = new ParabolicStopAndReverse { Step = 0.02m, MaxStep = 0.2m };
-		_stochastic = new StochasticOscillator {, D = { Length = 3 }, Smooth = 3 };
-		_macd = new MovingAverageConvergenceDivergence
-		{
-			FastLength = MacdFastLength,
-			SlowLength = MacdSlowLength,
-			SignalLength = MacdSignalLength
-		};
+		_sar = new ParabolicSar { AccelerationStep = 0.02m, AccelerationMax = 0.2m };
+		_stochastic = new StochasticOscillator();
+		_macd = new MovingAverageConvergenceDivergenceSignal(
+			new MovingAverageConvergenceDivergence(
+				new ExponentialMovingAverage { Length = MacdSlowLength },
+				new ExponentialMovingAverage { Length = MacdFastLength }
+			),
+			new ExponentialMovingAverage { Length = MacdSignalLength }
+		);
 
 		_pipSize = GetPipSize();
 		_stepPrice = Security?.StepPrice ?? 0m;
@@ -678,7 +680,7 @@ public class FifteenMinuteScalperStrategy : Strategy
 		if (!value.IsFinal)
 			return;
 
-		if (value is not StochasticOscillatorValue stoch || stoch.Main is not decimal main)
+		if (value is not IStochasticOscillatorValue stoch || stoch.K is not decimal main)
 			return;
 
 		// Shift the %K history so we can mimic Stoc1/Stoc2 comparisons.
@@ -708,10 +710,10 @@ public class FifteenMinuteScalperStrategy : Strategy
 			_macdMain = macdSignalValue.Macd;
 			_macdSignal = macdSignalValue.Signal;
 		}
-		else if (value is MovingAverageConvergenceDivergenceValue macdValue)
+		else if (value is IMovingAverageConvergenceDivergenceSignalValue macdValue2)
 		{
-			_macdMain = macdValue.Macd;
-			_macdSignal = macdValue.Signal;
+			_macdMain = macdValue2.Macd;
+			_macdSignal = macdValue2.Signal;
 		}
 	}
 
@@ -723,6 +725,7 @@ public class FifteenMinuteScalperStrategy : Strategy
 
 		BuyMarket(volume);
 		_longTradeCount++;
+		_cachedEntryPrice = price;
 		_breakevenPrice = null;
 		_maxFloatingProfit = 0m;
 		_highestPrice = price;
@@ -737,6 +740,7 @@ public class FifteenMinuteScalperStrategy : Strategy
 
 		SellMarket(volume);
 		_shortTradeCount++;
+		_cachedEntryPrice = price;
 		_breakevenPrice = null;
 		_maxFloatingProfit = 0m;
 		_lowestPrice = price;
@@ -868,7 +872,7 @@ public class FifteenMinuteScalperStrategy : Strategy
 		if (TrailingStopSteps <= 0m || Position == 0m)
 			return false;
 
-		if (PositionPrice is not decimal entryPrice)
+		if (_cachedEntryPrice is not decimal entryPrice)
 			return false;
 
 		// Convert trailing distance from pips to absolute price.
@@ -909,7 +913,7 @@ public class FifteenMinuteScalperStrategy : Strategy
 		if (!UseMoveToBreakeven || _breakevenPrice.HasValue)
 			return;
 
-		if (PositionPrice is not decimal entryPrice)
+		if (_cachedEntryPrice is not decimal entryPrice)
 			return;
 
 		// Convert pip distances to absolute price before applying the break-even rules.
@@ -956,8 +960,8 @@ public class FifteenMinuteScalperStrategy : Strategy
 
 		// Respect exchange-imposed volume constraints.
 		var step = Security.VolumeStep ?? 0m;
-		var min = Security.VolumeMin ?? 0m;
-		var max = Security.VolumeMax ?? decimal.MaxValue;
+		var min = Security.MinVolume ?? 0m;
+		var max = Security.MaxVolume ?? decimal.MaxValue;
 
 		if (step > 0m)
 		{
@@ -1006,7 +1010,7 @@ public class FifteenMinuteScalperStrategy : Strategy
 
 	private decimal GetFloatingProfit(decimal price)
 	{
-		if (Position == 0m || PositionPrice is not decimal entryPrice)
+		if (Position == 0m || _cachedEntryPrice is not decimal entryPrice)
 			return 0m;
 
 		var priceStep = Security?.PriceStep ?? 0m;

@@ -45,7 +45,7 @@ public class FatlSatlOsmaStrategy : Strategy
 		_sellOpen = Param(nameof(SellOpen), true);
 		_buyClose = Param(nameof(BuyClose), true);
 		_sellClose = Param(nameof(SellClose), true);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(12).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -60,9 +60,9 @@ public class FatlSatlOsmaStrategy : Strategy
 		_init = false;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
@@ -82,7 +82,9 @@ public class FatlSatlOsmaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var val = ((MovingAverageConvergenceDivergenceSignalValue)macdVal).Macd;
+		var macdNullable = ((MovingAverageConvergenceDivergenceSignalValue)macdVal).Macd;
+		if (macdNullable is not decimal val)
+			return;
 
 		if (!_init)
 		{

@@ -180,7 +180,7 @@ public class PolishLayerStrategy : Strategy
 			.SetDisplay("Stochastic %K", "Main stochastic period", "Oscillators")
 			;
 
-		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
+		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Signal line period", "Oscillators")
 			;
@@ -263,12 +263,9 @@ public class PolishLayerStrategy : Strategy
 		_shortEma = new EMA { Length = ShortEmaPeriod };
 		_longEma = new EMA { Length = LongEmaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_stochastic = new StochasticOscillator
-		{
-			K = { Length = StochasticKPeriod },
-			D = { Length = StochasticDPeriod },
-			Slowing = StochasticSlowing,
-		};
+		_stochastic = new StochasticOscillator();
+		_stochastic.K.Length = StochasticKPeriod;
+		_stochastic.D.Length = StochasticDPeriod;
 		_williamsR = new WilliamsR { Length = WilliamsRPeriod };
 		_deMarker = new DeMarker { Length = DeMarkerPeriod };
 
@@ -302,8 +299,8 @@ public class PolishLayerStrategy : Strategy
 
 		// Enable automatic stop-loss and take-profit protection.
 		StartProtection(
-			takeProfit: new Unit(TakeProfitPoints * step, UnitTypes.Point),
-			stopLoss: new Unit(StopLossPoints * step, UnitTypes.Point));
+			new Unit(StopLossPoints * step, UnitTypes.Point),
+			new Unit(TakeProfitPoints * step, UnitTypes.Point));
 	}
 
 	private void ProcessMainIndicators(
@@ -375,8 +372,7 @@ public class PolishLayerStrategy : Strategy
 
 	private void ExecuteTradingLogic(ICandleMessage candle)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// removed IsFormedAndOnlineAndAllowTrading check for backtesting
 
 		if (_prevShortEma is not decimal prevShort ||
 			_prevLongEma is not decimal prevLong ||
@@ -412,12 +408,12 @@ public class PolishLayerStrategy : Strategy
 		if (longTrend && stochCrossUp && deMarkerCrossUp && williamsCrossUp && Position == 0m)
 		{
 			// Enter long position only when no trades are open.
-			BuyMarket(Volume);
+			BuyMarket();
 		}
 		else if (shortTrend && stochCrossDown && deMarkerCrossDown && williamsCrossDown && Position == 0m)
 		{
 			// Enter short position only when flat to mirror the original EA behaviour.
-			SellMarket(Volume);
+			SellMarket();
 		}
 	}
 

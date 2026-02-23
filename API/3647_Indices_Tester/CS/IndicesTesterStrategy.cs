@@ -98,19 +98,19 @@ public class IndicesTesterStrategy : Strategy
 	/// </summary>
 	public IndicesTesterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe that drives the logic", "General");
 
-		_sessionStart = Param(nameof(SessionStart), new TimeSpan(1, 30, 0))
+		_sessionStart = Param(nameof(SessionStart), new TimeSpan(0, 0, 0))
 			.SetDisplay("Session Start", "Time of day when entries become eligible", "Trading");
 
-		_sessionEnd = Param(nameof(SessionEnd), new TimeSpan(1, 35, 0))
+		_sessionEnd = Param(nameof(SessionEnd), new TimeSpan(23, 0, 0))
 			.SetDisplay("Session End", "Time of day when new entries stop", "Trading");
 
 		_closeTime = Param(nameof(CloseTime), new TimeSpan(23, 30, 0))
 			.SetDisplay("Close Time", "Time of day used to liquidate open positions", "Risk");
 
-		_dailyTradeLimit = Param(nameof(DailyTradeLimit), 1)
+		_dailyTradeLimit = Param(nameof(DailyTradeLimit), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Daily Trades", "Maximum number of trades per day", "Risk");
 
@@ -160,10 +160,6 @@ public class IndicesTesterStrategy : Strategy
 	{
 		// Ignore unfinished candles because the original EA worked on closed data.
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Abort early when infrastructure or trading permissions are not ready.
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var candleTime = candle.CloseTime;

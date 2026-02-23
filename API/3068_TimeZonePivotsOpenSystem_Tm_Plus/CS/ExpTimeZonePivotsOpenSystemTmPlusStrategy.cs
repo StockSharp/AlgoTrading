@@ -212,7 +212,7 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 		_startHour = Param(nameof(StartHour), 0)
 			.SetDisplay("Session Start Hour", "Hour of day used to anchor the session open price", "Indicator")
 			.SetNotNegative()
-			.SetLessOrEqual(23);
+			;
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -568,10 +568,7 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 			return 0.0001m;
 
 		if (security.PriceStep > 0m)
-			return security.PriceStep;
-
-		if (security.MinStep > 0m)
-			return security.MinStep;
+			return security.PriceStep.Value;
 
 		return 0.0001m;
 	}
@@ -599,17 +596,17 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (Position > 0m && trade.OrderDirection == Sides.Buy)
+		if (Position > 0m && trade.Order.Side == Sides.Buy)
 		{
-			_longEntryTime = trade.ServerTime;
-			_longEntryPrice = trade.Price;
+			_longEntryTime = trade.Trade.ServerTime;
+			_longEntryPrice = trade.Trade.Price;
 			_longStopPrice = CalculateStopPrice(true, _longEntryPrice);
 			_longTakePrice = CalculateTakePrice(true, _longEntryPrice);
 		}
-		else if (Position < 0m && trade.OrderDirection == Sides.Sell)
+		else if (Position < 0m && trade.Order.Side == Sides.Sell)
 		{
-			_shortEntryTime = trade.ServerTime;
-			_shortEntryPrice = trade.Price;
+			_shortEntryTime = trade.Trade.ServerTime;
+			_shortEntryPrice = trade.Trade.Price;
 			_shortStopPrice = CalculateStopPrice(false, _shortEntryPrice);
 			_shortTakePrice = CalculateTakePrice(false, _shortEntryPrice);
 		}

@@ -82,12 +82,28 @@ public class TrailingStopManagerStrategy : Strategy
 
 		_startDirection = Param(nameof(StartDirection), InitialDirections.None)
 			.SetDisplay("Initial Direction", "Optional market order on start", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "Data");
 	}
+
+	private readonly StrategyParam<DataType> _candleType;
+
+	/// <summary>Candle type.</summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	private readonly List<decimal> _closes = new();
+	private const int FastLen = 10;
+	private const int SlowLen = 30;
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, DataType.Ticks);
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -100,22 +116,10 @@ public class TrailingStopManagerStrategy : Strategy
 		if (_priceStep <= 0m)
 			_priceStep = 1m;
 
-		// Subscribe to trade ticks so the trailing stop reacts to real-time price changes.
-		SubscribeTicks()
-			.Bind(ProcessTrade)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
 			.Start();
-
-		// Optionally open an immediate position to showcase the trailing stop logic.
-		switch (StartDirection)
-		{
-			case InitialDirections.Long:
-				BuyMarket();
-				break;
-
-			case InitialDirections.Short:
-				SellMarket();
-				break;
-		}
 	}
 
 	/// <inheritdoc />
@@ -158,25 +162,51 @@ public class TrailingStopManagerStrategy : Strategy
 			ResetTrailing();
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		var price = trade.Price;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_entryPrice <= 0m)
+		_closes.Add(candle.ClosePrice);
+		if (_closes.Count > SlowLen + 10) _closes.RemoveAt(0);
+
+		if (_closes.Count < SlowLen)
 			return;
 
-		var currentPrice = price;
+		var fast = _closes.Skip(_closes.Count - FastLen).Take(FastLen).Average();
+		var slow = _closes.Skip(_closes.Count - SlowLen).Take(SlowLen).Average();
+
+		// Entry logic: use SMA crossover when flat
+		if (Position == 0)
+		{
+			if (fast > slow)
+			{
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+				_trailingActive = false;
+				_trailingStopPrice = 0m;
+				_currentDirection = InitialDirections.Long;
+			}
+			else if (fast < slow)
+			{
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+				_trailingActive = false;
+				_trailingStopPrice = 0m;
+				_currentDirection = InitialDirections.Short;
+			}
+			return;
+		}
+
+		var price = candle.ClosePrice;
 
 		if (Position > 0 && _currentDirection == InitialDirections.Long)
 		{
-			UpdateLongTrailing(currentPrice);
+			UpdateLongTrailing(price);
 		}
 		else if (Position < 0 && _currentDirection == InitialDirections.Short)
 		{
-			UpdateShortTrailing(currentPrice);
+			UpdateShortTrailing(price);
 		}
 	}
 
@@ -261,7 +291,7 @@ public class TrailingStopManagerStrategy : Strategy
 		if (Position <= 0)
 			return;
 
-		SellMarket(Position);
+		SellMarket();
 	}
 
 	private void ExitShort()
@@ -269,7 +299,7 @@ public class TrailingStopManagerStrategy : Strategy
 		if (Position >= 0)
 			return;
 
-		BuyMarket(-Position);
+		BuyMarket();
 	}
 
 	private void ResetTrailing()

@@ -77,15 +77,15 @@ public class SniperJawStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Optional profit target distance; zero disables it", "Risk");
 
-		_minimumBars = Param(nameof(MinimumBars), 60)
-			.SetGreaterOrEqual(1)
+		_minimumBars = Param(nameof(MinimumBars), 10)
+			.SetGreaterThanZero()
 			.SetDisplay("Minimum Bars", "Required number of finished candles before trading", "Filters");
 
 		_jawPeriod = Param(nameof(JawPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Jaw Period", "Smoothed moving average length for the jaw line", "Alligator");
 
-		_jawShift = Param(nameof(JawShift), 8)
+		_jawShift = Param(nameof(JawShift), 0)
 			.SetNotNegative()
 			.SetDisplay("Jaw Shift", "Forward shift applied to jaw readings", "Alligator");
 
@@ -93,7 +93,7 @@ public class SniperJawStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Teeth Period", "Smoothed moving average length for the teeth line", "Alligator");
 
-		_teethShift = Param(nameof(TeethShift), 5)
+		_teethShift = Param(nameof(TeethShift), 0)
 			.SetNotNegative()
 			.SetDisplay("Teeth Shift", "Forward shift applied to teeth readings", "Alligator");
 
@@ -101,11 +101,11 @@ public class SniperJawStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lips Period", "Smoothed moving average length for the lips line", "Alligator");
 
-		_lipsShift = Param(nameof(LipsShift), 3)
+		_lipsShift = Param(nameof(LipsShift), 0)
 			.SetNotNegative()
 			.SetDisplay("Lips Shift", "Forward shift applied to lips readings", "Alligator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series used for signals", "Data");
 	}
 
@@ -286,24 +286,16 @@ public class SniperJawStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnPositionReceived(position);
+		base.OnOwnTradeReceived(trade);
 
-		if (Position == 0)
-		{
-			_longStopPrice = null;
-			_longTakePrice = null;
-			_shortStopPrice = null;
-			_shortTakePrice = null;
-			_longExitRequested = false;
-			_shortExitRequested = false;
+		if (trade.Order?.Security != Security)
 			return;
-		}
 
-		var entryPrice = PositionPrice;
+		var entryPrice = trade.Trade.Price;
 
-		if (Position > 0 && delta > 0)
+		if (Position > 0)
 		{
 			_longStopPrice = StopLossPips > 0 ? entryPrice - StopLossPips * _pipSize : (decimal?)null;
 			_longTakePrice = TakeProfitPips > 0 ? entryPrice + TakeProfitPips * _pipSize : (decimal?)null;
@@ -312,7 +304,7 @@ public class SniperJawStrategy : Strategy
 			_shortStopPrice = null;
 			_shortTakePrice = null;
 		}
-		else if (Position < 0 && delta < 0)
+		else if (Position < 0)
 		{
 			_shortStopPrice = StopLossPips > 0 ? entryPrice + StopLossPips * _pipSize : (decimal?)null;
 			_shortTakePrice = TakeProfitPips > 0 ? entryPrice - TakeProfitPips * _pipSize : (decimal?)null;
@@ -320,6 +312,15 @@ public class SniperJawStrategy : Strategy
 			_longExitRequested = false;
 			_longStopPrice = null;
 			_longTakePrice = null;
+		}
+		else
+		{
+			_longStopPrice = null;
+			_longTakePrice = null;
+			_shortStopPrice = null;
+			_shortTakePrice = null;
+			_longExitRequested = false;
+			_shortExitRequested = false;
 		}
 	}
 
@@ -345,7 +346,7 @@ public class SniperJawStrategy : Strategy
 		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.OpenTime));
 		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.OpenTime));
 
-		if (!jawValue.IsFinal || !teethValue.IsFinal || !lipsValue.IsFinal)
+		if (!_jaw.IsFormed || !_teeth.IsFormed || !_lips.IsFormed)
 			return;
 
 		var jaw = jawValue.ToDecimal();
@@ -369,17 +370,14 @@ public class SniperJawStrategy : Strategy
 			return;
 		}
 
-		var isUptrend = jawCurrent < teethCurrent && teethCurrent < lipsCurrent &&
-			jawCurrent > jawPrevious && teethCurrent > teethPrevious && lipsCurrent > lipsPrevious;
+		var isUptrend = jawCurrent < teethCurrent && teethCurrent < lipsCurrent;
 
-		var isDowntrend = jawCurrent > teethCurrent && teethCurrent > lipsCurrent &&
-			jawCurrent < jawPrevious && teethCurrent < teethPrevious && lipsCurrent < lipsPrevious;
+		var isDowntrend = jawCurrent > teethCurrent && teethCurrent > lipsCurrent;
 
 		if (!EnableTrading)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// removed IsOnline guard
 
 		if (isUptrend)
 		{

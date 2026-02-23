@@ -125,7 +125,7 @@ public class NeuralNetworkTemplateStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max TP", "Maximum take-profit in points", "Risk");
 
-		_minTargetPoints = Param(nameof(MinTargetPoints), 100)
+		_minTargetPoints = Param(nameof(MinTargetPoints), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Target", "Minimum projected move in points", "Model");
 
@@ -137,8 +137,8 @@ public class NeuralNetworkTemplateStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Profit Mult", "Take-profit multiplier", "Model");
 
-		_tradeLevel = Param(nameof(TradeLevel), 0.9m)
-			.SetBetween(0m, 1m)
+		_tradeLevel = Param(nameof(TradeLevel), 0.1m)
+			.SetRange(0m, 1m)
 			.SetDisplay("Trade Level", "Required confidence", "Model");
 
 		_volume = Param(nameof(TradeVolume), 0.1m)
@@ -222,9 +222,6 @@ public class NeuralNetworkTemplateStrategy : Strategy
 			return;
 
 		UpdateHistory(rsiDecimal, macdLine - signalLine);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (Position != 0)
 			return;

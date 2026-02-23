@@ -133,8 +133,9 @@ _rangeSma = new SMA { Length = SmaLength };
 _highest = new Highest { Length = Lookback };
 _lowest = new Lowest { Length = Lookback };
 
+var ema = new ExponentialMovingAverage { Length = 2 };
 var subscription = SubscribeCandles(CandleType);
-subscription.Bind(ProcessCandle).Start();
+subscription.Bind(ema, ProcessCandle).Start();
 
 var area = CreateChartArea();
 if (area != null)
@@ -147,21 +148,21 @@ DrawOwnTrades(area);
 }
 }
 
-private void ProcessCandle(ICandleMessage candle)
+private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 {
 if (candle.State != CandleStates.Finished)
 return;
 
 var range = candle.HighPrice - candle.LowPrice;
-var avgRangeValue = _rangeSma.Process(range);
+var avgRangeValue = _rangeSma.Process(new DecimalIndicatorValue(_rangeSma, range, candle.ServerTime));
 
 IIndicatorValue highestValue = default;
 IIndicatorValue lowestValue = default;
 
 if (_prevHigh != null && _prevLow != null)
 {
-highestValue = _highest.Process(_prevHigh.Value);
-lowestValue = _lowest.Process(_prevLow.Value);
+highestValue = _highest.Process(new DecimalIndicatorValue(_highest, _prevHigh.Value, candle.ServerTime));
+lowestValue = _lowest.Process(new DecimalIndicatorValue(_lowest, _prevLow.Value, candle.ServerTime));
 }
 
 _prevHigh = candle.HighPrice;

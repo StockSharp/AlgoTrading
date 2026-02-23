@@ -141,7 +141,7 @@ public class ExpHlrSignStrategy : Strategy
 			.SetOptimize(10m, 40m, 5m)
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 
 		_buyOpen = Param(nameof(BuyOpen), true)

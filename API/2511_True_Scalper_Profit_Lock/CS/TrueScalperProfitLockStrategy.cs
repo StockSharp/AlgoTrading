@@ -324,7 +324,7 @@ public class TrueScalperProfitLockStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Max Positions", "Maximum simultaneous trades", "Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type for processing", "General");
 	}
 
@@ -421,14 +421,14 @@ public class TrueScalperProfitLockStrategy : Strategy
 		{
 			if (_isLongPosition && Position > 0)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				ResetTradeState();
 				_pendingReverseToSell = true;
 				_pendingReverseToBuy = false;
 			}
 			else if (!_isLongPosition && Position < 0)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				ResetTradeState();
 				_pendingReverseToBuy = true;
 				_pendingReverseToSell = false;
@@ -436,7 +436,7 @@ public class TrueScalperProfitLockStrategy : Strategy
 		}
 		else if (UseAbandonMethodB)
 		{
-			ClosePosition();
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 			ResetTradeState();
 			_pendingReverseToBuy = false;
 			_pendingReverseToSell = false;
@@ -475,14 +475,14 @@ public class TrueScalperProfitLockStrategy : Strategy
 		{
 			if (candle.HighPrice >= _takeProfitPrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				ResetTradeState();
 				return true;
 			}
 
 			if (candle.LowPrice <= _stopLossPrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				ResetTradeState();
 				return true;
 			}
@@ -491,14 +491,14 @@ public class TrueScalperProfitLockStrategy : Strategy
 		{
 			if (candle.LowPrice <= _takeProfitPrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				ResetTradeState();
 				return true;
 			}
 
 			if (candle.HighPrice >= _stopLossPrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				ResetTradeState();
 				return true;
 			}
@@ -560,7 +560,7 @@ public class TrueScalperProfitLockStrategy : Strategy
 			if (totalVolume <= 0)
 			return;
 
-			BuyMarket(totalVolume);
+			BuyMarket();
 			InitializeTradeState(candle, step, volume, true);
 			_pendingReverseToBuy = false;
 			_pendingReverseToSell = false;
@@ -572,7 +572,7 @@ public class TrueScalperProfitLockStrategy : Strategy
 			if (totalVolume <= 0)
 			return;
 
-			SellMarket(totalVolume);
+			SellMarket();
 			InitializeTradeState(candle, step, volume, false);
 			_pendingReverseToBuy = false;
 			_pendingReverseToSell = false;

@@ -107,7 +107,7 @@ public class BlauTviStrategy : Strategy
 		
 		.SetOptimize(2, 20, 1);
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 		
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
@@ -168,11 +168,11 @@ public class BlauTviStrategy : Strategy
 	{
 		base.OnStarted2(time);
 		
-		_emaUp1 = new EMA { Length = Length1 };
-		_emaDown1 = new EMA { Length = Length1 };
-		_emaUp2 = new EMA { Length = Length2 };
-		_emaDown2 = new EMA { Length = Length2 };
-		_emaTvi = new EMA { Length = Length3 };
+		_emaUp1 = new ExponentialMovingAverage { Length = Length1 };
+		_emaDown1 = new ExponentialMovingAverage { Length = Length1 };
+		_emaUp2 = new ExponentialMovingAverage { Length = Length2 };
+		_emaDown2 = new ExponentialMovingAverage { Length = Length2 };
+		_emaTvi = new ExponentialMovingAverage { Length = Length3 };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -180,8 +180,8 @@ public class BlauTviStrategy : Strategy
 		.Start();
 		
 		StartProtection(
-		EnableTakeProfit ? new Unit(TakeProfit, UnitTypes.Point) : new Unit(),
-		EnableStopLoss ? new Unit(StopLoss, UnitTypes.Point) : new Unit());
+		EnableTakeProfit ? new Unit(TakeProfit, UnitTypes.Absolute) : new Unit(),
+		EnableStopLoss ? new Unit(StopLoss, UnitTypes.Absolute) : new Unit());
 		
 		var area = CreateChartArea();
 		if (area != null)
@@ -195,33 +195,34 @@ public class BlauTviStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
+			return;
+
 		var volume = candle.TotalVolume;
 		var priceStep = Security?.PriceStep ?? 1m;
 		var upTicks = (volume + (candle.ClosePrice - candle.OpenPrice) / priceStep) / 2m;
 		var dnTicks = volume - upTicks;
-		
-		var up1 = _emaUp1.Process(upTicks);
-		var dn1 = _emaDown1.Process(dnTicks);
-		if (!up1.IsFinal || !dn1.IsFinal)
-		return;
-		
-		var up2 = _emaUp2.Process(up1.GetValue<decimal>());
-		var dn2 = _emaDown2.Process(dn1.GetValue<decimal>());
-		if (!up2.IsFinal || !dn2.IsFinal)
-		return;
-		
+
+		var t = candle.CloseTime;
+		var up1 = _emaUp1.Process(upTicks, t, true);
+		var dn1 = _emaDown1.Process(dnTicks, t, true);
+		if (!_emaUp1.IsFormed || !_emaDown1.IsFormed)
+			return;
+
+		var up2 = _emaUp2.Process(up1.GetValue<decimal>(), t, true);
+		var dn2 = _emaDown2.Process(dn1.GetValue<decimal>(), t, true);
+		if (!_emaUp2.IsFormed || !_emaDown2.IsFormed)
+			return;
+
 		var xxUp = up2.GetValue<decimal>();
 		var xxDn = dn2.GetValue<decimal>();
 		if (xxUp + xxDn == 0)
-		return;
-		
+			return;
+
 		var raw = 100m * (xxUp - xxDn) / (xxUp + xxDn);
-		var tviVal = _emaTvi.Process(raw);
-		if (!tviVal.IsFinal)
-		return;
-		
+		var tviVal = _emaTvi.Process(raw, t, true);
+		if (!_emaTvi.IsFormed)
+			return;
+
 		var current = tviVal.GetValue<decimal>();
 		
 		if (_isFirst)

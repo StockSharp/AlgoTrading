@@ -92,10 +92,10 @@ public class TrendlineAlertStrategy : Strategy
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 5)
 			.SetDisplay("Trailing Stop Points", "Trailing stop distance", "Protection");
 
-		_upperLine = Param(nameof(UpperLine), 0m)
+		_upperLine = Param(nameof(UpperLine), 68000m)
 			.SetDisplay("Upper Line", "Upper trendline level", "Levels");
 
-		_lowerLine = Param(nameof(LowerLine), 0m)
+		_lowerLine = Param(nameof(LowerLine), 62000m)
 			.SetDisplay("Lower Line", "Lower trendline level", "Levels");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -128,7 +128,9 @@ public class TrendlineAlertStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
+		StartProtection(
+			new Unit(2, UnitTypes.Percent),
+			new Unit(2, UnitTypes.Percent));
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

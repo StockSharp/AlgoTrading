@@ -107,7 +107,7 @@ public class SupermacbotByTheGuardianForexTvStrategy : Strategy
 	/// </summary>
 	public SupermacbotByTheGuardianForexTvStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 12)
@@ -166,24 +166,21 @@ public class SupermacbotByTheGuardianForexTvStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = MacdFastPeriod },
-			LongMa = { Length = MacdSlowPeriod },
-			SignalPeriod = MacdSignalPeriod
-		};
+		var macd = new MovingAverageConvergenceDivergence();
+		macd.ShortMa.Length = MacdFastPeriod;
+		macd.LongMa.Length = MacdSlowPeriod;
 
-		var fastMa = new SMA { Length = FastMaPeriod };
-		var slowMa = new SMA { Length = SlowMaPeriod };
-		var trailingMa = new SMA { Length = TrailingPeriod };
+		var fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
+		var slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
+		var trailingMa = new SimpleMovingAverage { Length = TrailingPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(macd, fastMa, slowMa, trailingMa, ProcessCandle)
+			.BindEx(macd, fastMa, slowMa, trailingMa, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -200,13 +197,18 @@ public class SupermacbotByTheGuardianForexTvStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal signalLine, decimal histogram, decimal fastMa, decimal slowMa, decimal trailingMa)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue fastMaValue, IIndicatorValue slowMaValue, IIndicatorValue trailingMaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var macdLine = macdValue.ToDecimal();
+		var fastMa = fastMaValue.ToDecimal();
+		var slowMa = slowMaValue.ToDecimal();
+		var trailingMa = trailingMaValue.ToDecimal();
+
+		// Use MACD line as a proxy for histogram (MACD line itself)
+		var histogram = macdLine;
 
 		if (!_isHistogramInitialized)
 		{

@@ -339,7 +339,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_priceStep = Security?.Step ?? 0m;
+		_priceStep = Security?.PriceStep ?? 0m;
 		Volume = Math.Max(LongVolume, ShortVolume);
 
 		_longContext = new UltraFatlContext(this, true, LongCandleType, LongAppliedPrice, LongTrendMethod,
@@ -361,9 +361,9 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		var price = trade.Trade?.Price ?? trade.Order.Price ?? 0m;
+		var price = trade.Trade?.Price ?? 0m;
 
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 			if (Position > 0m)
 				_longEntryPrice = price;
@@ -371,7 +371,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 			if (Position >= 0m)
 				_shortEntryPrice = Position == 0m ? null : _shortEntryPrice;
 		}
-		else if (trade.Order.Direction == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		{
 			if (Position < 0m)
 				_shortEntryPrice = price;
@@ -669,7 +669,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 
 			for (var i = 0; i < _ladder.Count; i++)
 			{
-				var indicatorValue = _ladder[i].Process(fatlValue.Value);
+				var indicatorValue = _ladder[i].Process(fatlValue.Value, candle.OpenTime);
 				if (!indicatorValue.IsFinal)
 					return;
 

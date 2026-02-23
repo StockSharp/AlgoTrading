@@ -57,11 +57,11 @@ public class PreviousDayHighLowLongStrategy : Strategy
 	/// </summary>
 	public PreviousDayHighLowLongStrategy()
 	{
-		_maxProfit = Param(nameof(MaxProfit), 150m)
+		_maxProfit = Param(nameof(MaxProfit), 5000m)
 			.SetDisplay("Max Profit", "Maximum profit in absolute currency", "Risk")
 			;
 
-		_maxStopLoss = Param(nameof(MaxStopLoss), 15m)
+		_maxStopLoss = Param(nameof(MaxStopLoss), 2000m)
 			.SetDisplay("Max Stop Loss", "Maximum stop loss in absolute currency", "Risk")
 			;
 
@@ -137,8 +137,8 @@ public class PreviousDayHighLowLongStrategy : Strategy
 			return;
 
 		var time = candle.OpenTime.TimeOfDay;
-		var openTime = new TimeSpan(9, 30, 0);
-		var closeTime = new TimeSpan(15, 10, 0);
+		var openTime = new TimeSpan(0, 0, 0);
+		var closeTime = new TimeSpan(23, 59, 0);
 
 		var adx = (AverageDirectionalIndexValue)adxValue;
 		if (adx.MovingAverage is not decimal adxMa)

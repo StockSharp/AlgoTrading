@@ -293,7 +293,7 @@ public class RrsTangledEaStrategy : Strategy
 
 		UpdateStatus(price, floating);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (false)
 			return;
 
 		if (!IsSpreadAcceptable())

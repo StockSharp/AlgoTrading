@@ -72,7 +72,7 @@ public class MaRsiWizardStrategy : Strategy
 	/// </summary>
 	public MaRsiWizardStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for incoming candles", "General");
 
 		_thresholdOpen = Param(nameof(ThresholdOpen), 55)
@@ -316,10 +316,8 @@ public class MaRsiWizardStrategy : Strategy
 			? new Unit(StopLevelPoints * step, UnitTypes.Point)
 			: null;
 
-		StartProtection(
-			takeProfit: takeProfit,
-			stopLoss: stopLoss,
-			useMarketOrders: true);
+		if (stopLoss != null || takeProfit != null)
+			StartProtection(stopLoss ?? new Unit(), takeProfit ?? new Unit());
 
 		var priceArea = CreateChartArea();
 		if (priceArea != null)
@@ -342,18 +340,17 @@ public class MaRsiWizardStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// removed IsFormedAndOnlineAndAllowTrading for backtesting
 
 		_barIndex++;
 
 		var maInput = SelectAppliedPrice(candle, MaAppliedPrice);
-		var maValue = _ma.Process(new DecimalIndicatorValue(_ma, maInput, candle.OpenTime));
+		var maValue = _ma.Process(new DecimalIndicatorValue(_ma, maInput, candle.OpenTime) { IsFinal = true });
 		if (!maValue.IsFinal || maValue is not DecimalIndicatorValue maResult)
 			return;
 
 		var rsiInput = SelectAppliedPrice(candle, RsiAppliedPrice);
-		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiInput, candle.OpenTime));
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiInput, candle.OpenTime) { IsFinal = true });
 		if (!rsiValue.IsFinal || rsiValue is not DecimalIndicatorValue rsiResult)
 			return;
 
@@ -384,11 +381,11 @@ public class MaRsiWizardStrategy : Strategy
 
 		if (Position > 0 && shortScore >= ThresholdClose)
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
 		else if (Position < 0 && longScore >= ThresholdClose)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 		}
 
 		var allowLong = ExpirationBars <= 0 || _lastLongEntryBar == null || _barIndex - _lastLongEntryBar >= ExpirationBars;
@@ -399,7 +396,7 @@ public class MaRsiWizardStrategy : Strategy
 			var volume = Volume + Math.Abs(Position);
 			if (volume > 0)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				_lastLongEntryBar = _barIndex;
 			}
 			return;
@@ -410,7 +407,7 @@ public class MaRsiWizardStrategy : Strategy
 			var volume = Volume + Math.Abs(Position);
 			if (volume > 0)
 			{
-				SellMarket(volume);
+				SellMarket();
 				_lastShortEntryBar = _barIndex;
 			}
 		}

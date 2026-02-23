@@ -148,7 +148,7 @@ public class MeanReverseStrategy : Strategy
 			.SetDisplay("Trade Volume", "Volume opened with a new signal", "Execution")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of market data processed by the strategy", "General");
 	}
 
@@ -174,10 +174,8 @@ public class MeanReverseStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_fastMa = new SMA { Length = FastMaPeriod };
-		_slowMa = new SMA { Length = SlowMaPeriod };
+		_fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
+		_slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -200,13 +198,12 @@ public class MeanReverseStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_atr.IsFormed)
+		// indicators checked via Bind
+
+		if (false)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		var step = Security?.Step ?? 1m;
+		var step = Security?.PriceStep ?? 1m;
 
 		if (_prevFastMa is null || _prevSlowMa is null)
 		{

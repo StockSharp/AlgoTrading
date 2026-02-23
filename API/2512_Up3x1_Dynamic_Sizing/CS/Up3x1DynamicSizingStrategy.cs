@@ -288,7 +288,7 @@ public class Up3x1DynamicSizingStrategy : Strategy
 			return;
 		}
 
-		BuyMarket(volume);
+		BuyMarket();
 
 		_entryPrice = candle.ClosePrice;
 		_highestPrice = candle.HighPrice;
@@ -307,7 +307,7 @@ public class Up3x1DynamicSizingStrategy : Strategy
 			return;
 		}
 
-		SellMarket(volume);
+		SellMarket();
 
 		_entryPrice = candle.ClosePrice;
 		_highestPrice = candle.HighPrice;
@@ -444,11 +444,11 @@ public class Up3x1DynamicSizingStrategy : Strategy
 
 		if (isLong)
 		{
-			SellMarket(volume);
+			SellMarket();
 		}
 		else
 		{
-			BuyMarket(volume);
+			BuyMarket();
 		}
 
 		LogInfo($"Exit {(isLong ? "long" : "short")} at {exitPrice} because {reason}. Approx PnL: {pnl}.");

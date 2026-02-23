@@ -328,18 +328,15 @@ public class FineTuningMaCandleDuplexStrategy : Strategy
 
 		_longShift1 = Param(nameof(LongShift1), 1m)
 		.SetNotNegative()
-		.SetLessOrEquals(1m)
-		.SetDisplay("Long Shift1", "First shift coefficient for long weights", "Long stream");
+				.SetDisplay("Long Shift1", "First shift coefficient for long weights", "Long stream");
 
 		_longShift2 = Param(nameof(LongShift2), 1m)
 		.SetNotNegative()
-		.SetLessOrEquals(1m)
-		.SetDisplay("Long Shift2", "Second shift coefficient for long weights", "Long stream");
+				.SetDisplay("Long Shift2", "Second shift coefficient for long weights", "Long stream");
 
 		_longShift3 = Param(nameof(LongShift3), 1m)
 		.SetNotNegative()
-		.SetLessOrEquals(1m)
-		.SetDisplay("Long Shift3", "Third shift coefficient for long weights", "Long stream");
+				.SetDisplay("Long Shift3", "Third shift coefficient for long weights", "Long stream");
 
 		_longGap = Param(nameof(LongGap), 10m)
 		.SetNotNegative()
@@ -378,18 +375,15 @@ public class FineTuningMaCandleDuplexStrategy : Strategy
 
 		_shortShift1 = Param(nameof(ShortShift1), 1m)
 		.SetNotNegative()
-		.SetLessOrEquals(1m)
-		.SetDisplay("Short Shift1", "First shift coefficient for short weights", "Short stream");
+				.SetDisplay("Short Shift1", "First shift coefficient for short weights", "Short stream");
 
 		_shortShift2 = Param(nameof(ShortShift2), 1m)
 		.SetNotNegative()
-		.SetLessOrEquals(1m)
-		.SetDisplay("Short Shift2", "Second shift coefficient for short weights", "Short stream");
+				.SetDisplay("Short Shift2", "Second shift coefficient for short weights", "Short stream");
 
 		_shortShift3 = Param(nameof(ShortShift3), 1m)
 		.SetNotNegative()
-		.SetLessOrEquals(1m)
-		.SetDisplay("Short Shift3", "Third shift coefficient for short weights", "Short stream");
+				.SetDisplay("Short Shift3", "Third shift coefficient for short weights", "Short stream");
 
 		_shortGap = Param(nameof(ShortGap), 10m)
 		.SetNotNegative()
@@ -476,23 +470,23 @@ public class FineTuningMaCandleDuplexStrategy : Strategy
 		.Bind(_shortIndicator, ProcessShortCandle)
 		.Start();
 
-		var step = Security?.Step ?? 0m;
+		var step = Security?.PriceStep ?? 0m;
 		Unit takeProfit = null;
 		Unit stopLoss = null;
 
 		if (step > 0m)
 		{
 			if (TakeProfitPoints > 0m)
-			takeProfit = new Unit(TakeProfitPoints * step, UnitTypes.Point);
+			takeProfit = new Unit(TakeProfitPoints * step, UnitTypes.Absolute);
 
 			if (StopLossPoints > 0m)
-			stopLoss = new Unit(StopLossPoints * step, UnitTypes.Point);
+			stopLoss = new Unit(StopLossPoints * step, UnitTypes.Absolute);
 		}
 
 		if (takeProfit != null || stopLoss != null)
 		StartProtection(takeProfit: takeProfit, stopLoss: stopLoss);
 
-		var longArea = CreateChartArea("FineTuningMA Long");
+		var longArea = CreateChartArea();
 		if (longArea != null)
 		{
 			DrawCandles(longArea, longSubscription);
@@ -502,7 +496,7 @@ public class FineTuningMaCandleDuplexStrategy : Strategy
 
 		if (!Equals(LongCandleType, ShortCandleType))
 		{
-			var shortArea = CreateChartArea("FineTuningMA Short");
+			var shortArea = CreateChartArea();
 			if (shortArea != null)
 			{
 				DrawCandles(shortArea, shortSubscription);

@@ -281,14 +281,14 @@ public class NevalyashkaMartingaleStrategy : Strategy
 
 		if (candle.LowPrice <= _stopPrice)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			ResetProtection();
 			return;
 		}
 
 		if (candle.HighPrice >= currentTake)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			ResetProtection();
 		}
 	}
@@ -317,14 +317,14 @@ public class NevalyashkaMartingaleStrategy : Strategy
 
 		if (candle.HighPrice >= _stopPrice)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetProtection();
 			return;
 		}
 
 		if (candle.LowPrice <= currentTake)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetProtection();
 		}
 	}
@@ -345,13 +345,13 @@ public class NevalyashkaMartingaleStrategy : Strategy
 
 		if (isSell)
 		{
-			SellMarket(_plannedVolume);
+			SellMarket();
 			_stopPrice = price + stopOffset;
 			_takePrice = price - takeOffset;
 		}
 		else
 		{
-			BuyMarket(_plannedVolume);
+			BuyMarket();
 			_stopPrice = price - stopOffset;
 			_takePrice = price + takeOffset;
 		}
@@ -404,7 +404,7 @@ public class NevalyashkaMartingaleStrategy : Strategy
 
 		var max = Security.MaxVolume ?? 0m;
 		if (max > 0m && volume > max)
-			volume = max.Value;
+			volume = max;
 
 		return volume;
 	}
@@ -414,7 +414,7 @@ public class NevalyashkaMartingaleStrategy : Strategy
 		var step = Security?.PriceStep ?? 0m;
 
 		if (step <= 0m)
-			step = Security?.Step ?? 0m;
+			step = 1m;
 
 		if (step <= 0m)
 			return 1m;

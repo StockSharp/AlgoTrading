@@ -62,7 +62,7 @@ public class BreakRevertProStrategy : Strategy
 	{
 		_riskPerTrade = Param(nameof(RiskPerTrade), 1m)
 		.SetDisplay("Risk %", "Risk per trade as percentage of portfolio value", "Risk")
-		.SetCanOptimize(true, 0.5m, 5m, 0.5m);
+		.SetOptimize(0.5m, 5m, 0.5m);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetRange(10, 60)
@@ -71,11 +71,11 @@ public class BreakRevertProStrategy : Strategy
 
 		_breakoutThreshold = Param(nameof(BreakoutThreshold), 0.4m)
 		.SetDisplay("Breakout Threshold", "Minimum composite probability required for breakout entries", "Signals")
-		.SetCanOptimize(true, 0.2m, 0.8m, 0.05m);
+		.SetOptimize(0.2m, 0.8m, 0.05m);
 
 		_meanReversionThreshold = Param(nameof(MeanReversionThreshold), 0.4m)
 		.SetDisplay("Reversion Threshold", "Maximum probability that still allows mean-reversion trades", "Signals")
-		.SetCanOptimize(true, 0.2m, 0.8m, 0.05m);
+		.SetOptimize(0.2m, 0.8m, 0.05m);
 
 		_tradeDelaySeconds = Param(nameof(TradeDelaySeconds), 600)
 		.SetDisplay("Trade Delay", "Minimum delay between consecutive entries (seconds)", "Risk");
@@ -258,7 +258,7 @@ public class BreakRevertProStrategy : Strategy
 
 		if (_m1TrendAverage is not null)
 		{
-			var trendValue = _m1TrendAverage.Process(new DecimalIndicatorValue(_m1TrendAverage, close, time.UtcDateTime)).ToDecimal();
+			var trendValue = _m1TrendAverage.Process(new DecimalIndicatorValue(_m1TrendAverage, close, time)).ToDecimal();
 			if (_m1TrendAverage.IsFormed)
 			_m1Trend = close - trendValue;
 		}
@@ -269,14 +269,14 @@ public class BreakRevertProStrategy : Strategy
 			var eventValue = move >= pip * 5m ? 1m : 0m;
 			if (_eventFrequency is not null)
 			{
-				var avg = _eventFrequency.Process(new DecimalIndicatorValue(_eventFrequency, eventValue, time.UtcDateTime)).ToDecimal();
+				var avg = _eventFrequency.Process(new DecimalIndicatorValue(_eventFrequency, eventValue, time)).ToDecimal();
 				if (_eventFrequency.IsFormed)
 				_poissonProbability = Clamp(avg, 0m, 1m);
 			}
 
 			if (_volatilityEma is not null)
 			{
-				var ema = _volatilityEma.Process(new DecimalIndicatorValue(_volatilityEma, move, time.UtcDateTime)).ToDecimal();
+				var ema = _volatilityEma.Process(new DecimalIndicatorValue(_volatilityEma, move, time)).ToDecimal();
 				if (_volatilityEma.IsFormed)
 				{
 					var normalized = pip > 0m ? ema / (pip * 10m) : 0m;
@@ -445,7 +445,7 @@ public class BreakRevertProStrategy : Strategy
 		if (Volume > 0m)
 		return Volume;
 
-		var stepVolume = Security?.StepVolume ?? 1m;
+		var stepVolume = Security?.VolumeStep ?? 1m;
 		var lotStep = Security?.VolumeStep ?? stepVolume;
 		var minVolume = Security?.MinVolume ?? stepVolume;
 		var maxVolume = Security?.MaxVolume ?? decimal.MaxValue;

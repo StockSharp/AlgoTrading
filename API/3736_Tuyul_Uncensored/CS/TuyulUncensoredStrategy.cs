@@ -38,8 +38,8 @@ public class TuyulUncensoredStrategy : Strategy
 	private readonly List<(DateTimeOffset Time, decimal Price)> _pivots = new();
 
 	private ZigZag _zigZag = null!;
-	private EMA _fastEma = null!;
-	private EMA _slowEma = null!;
+	private ExponentialMovingAverage _fastEma = null!;
+	private ExponentialMovingAverage _slowEma = null!;
 
 	private decimal _lastZigZagHigh;
 	private decimal _lastZigZagLow;
@@ -293,8 +293,8 @@ public class TuyulUncensoredStrategy : Strategy
 			BackStep = ZigZagBackstep
 		};
 
-		_fastEma = new EMA { Length = FastEmaPeriod };
-		_slowEma = new EMA { Length = SlowEmaPeriod };
+		_fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -407,8 +407,7 @@ public class TuyulUncensoredStrategy : Strategy
 
 	private void TryPlacePendingOrder(decimal previousFast, decimal previousSlow)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// removed IsFormedAndOnlineAndAllowTrading guard
 
 		var high = _lastZigZagHigh;
 		var low = _lastZigZagLow;

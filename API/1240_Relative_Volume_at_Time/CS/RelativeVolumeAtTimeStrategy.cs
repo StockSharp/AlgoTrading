@@ -111,35 +111,35 @@ public class RelativeVolumeAtTimeStrategy : Strategy
 
 		_volumeSma = new SMA { Length = Period };
 
+		var ema = new ExponentialMovingAverage { Length = 2 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(c => c.Volume, _volumeSma, ProcessCandle)
+			.Bind(ema, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _volumeSma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal avgVolume)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (candle.OpenTime.Hour != TargetHour || candle.OpenTime.Minute != TargetMinute)
-			return;
-
-		if (!_volumeSma.IsFormed)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var relVol = avgVolume == 0m ? 0m : candle.Volume / avgVolume;
+		var volInput = new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.ServerTime);
+		var avgResult = _volumeSma.Process(volInput);
+		if (!_volumeSma.IsFormed)
+			return;
+
+		var avgVolume = avgResult.ToDecimal();
+		var relVol = avgVolume == 0m ? 0m : candle.TotalVolume / avgVolume;
 
 		if (relVol > Threshold && Position <= 0)
 		{

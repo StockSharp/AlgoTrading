@@ -147,19 +147,16 @@ public class FmOneScalpingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	// Initialize indicators with current parameters.
-	_fastMa = new EMA { Length = FastMaPeriod };
-	_slowMa = new EMA { Length = SlowMaPeriod };
-	_macd = new MovingAverageConvergenceDivergence
-	{
-	ShortMa = { Length = FastMaPeriod },
-	LongMa = { Length = SlowMaPeriod },
-	SignalPeriod = MacdSignalPeriod
-	};
+	_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
+	_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
+	_macd = new MovingAverageConvergenceDivergence(
+		new ExponentialMovingAverage { Length = SlowMaPeriod },
+		new ExponentialMovingAverage { Length = FastMaPeriod });
 
 	// Subscribe to candles and bind indicators.
 	var subscription = SubscribeCandles(CandleType);
@@ -189,17 +186,14 @@ public class FmOneScalpingStrategy : Strategy
 	DrawIndicator(macdArea, _macd);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastMa, decimal slowMa, decimal macdValue, decimal macdSignal, decimal macdHistogram)
+	private void ProcessCandle(ICandleMessage candle, decimal fastMa, decimal slowMa, decimal macdValue)
 	{
 	if (candle.State != CandleStates.Finished)
 	return;
 
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
-
-	// Determine trend direction using EMA crossover and MACD histogram.
-	var isLongSignal = fastMa > slowMa && macdHistogram > 0;
-	var isShortSignal = fastMa < slowMa && macdHistogram < 0;
+	// Determine trend direction using EMA crossover and MACD value.
+	var isLongSignal = fastMa > slowMa && macdValue > 0;
+	var isShortSignal = fastMa < slowMa && macdValue < 0;
 
 	// Open or reverse positions based on signal.
 	if (isLongSignal && Position <= 0)

@@ -85,7 +85,7 @@ public class PinballMachineStrategy : Strategy
 			.SetGreaterThanZero()
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe that triggers the lottery", "Data");
 	}
 
@@ -153,14 +153,14 @@ public class PinballMachineStrategy : Strategy
 		{
 			if (_stopLossPrice > 0m && candle.LowPrice <= _stopLossPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetTargets();
 				return;
 			}
 
 			if (_takeProfitPrice > 0m && candle.HighPrice >= _takeProfitPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetTargets();
 			}
 		}
@@ -168,14 +168,14 @@ public class PinballMachineStrategy : Strategy
 		{
 			if (_stopLossPrice > 0m && candle.HighPrice >= _stopLossPrice)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetTargets();
 				return;
 			}
 
 			if (_takeProfitPrice > 0m && candle.LowPrice <= _takeProfitPrice)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetTargets();
 			}
 		}
@@ -200,10 +200,10 @@ public class PinballMachineStrategy : Strategy
 		if (volume <= 0m)
 			volume = DefaultVolume();
 
-		if (volume <= 0m || !IsFormedAndOnlineAndAllowTrading())
+		if (volume <= 0m)
 			return false;
 
-		BuyMarket(volume);
+		BuyMarket();
 
 		_entryPrice = entryPrice;
 		_stopLossPrice = stopPrice;
@@ -231,10 +231,10 @@ public class PinballMachineStrategy : Strategy
 		if (volume <= 0m)
 			volume = DefaultVolume();
 
-		if (volume <= 0m || !IsFormedAndOnlineAndAllowTrading())
+		if (volume <= 0m)
 			return false;
 
-		SellMarket(volume);
+		SellMarket();
 
 		_entryPrice = entryPrice;
 		_stopLossPrice = stopPrice;
@@ -266,7 +266,7 @@ public class PinballMachineStrategy : Strategy
 		if (riskPerUnit <= 0m)
 			return 0m;
 
-		var portfolioValue = Portfolio?.CurrentValue ?? Portfolio?.CurrentBalance ?? Portfolio?.BeginValue ?? 0m;
+		var portfolioValue = Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? 0m;
 		if (portfolioValue <= 0m)
 			return 0m;
 

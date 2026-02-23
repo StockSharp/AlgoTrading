@@ -111,10 +111,10 @@ public class ProbabilityOfAtrIndexStrategy : Strategy
 
 		var atrValue = _atr!.Process(candle).GetValue<decimal>();
 
-		var highMean = _smaHigh!.Process(new DecimalIndicatorValue(_smaHigh, candle.HighPrice)).GetValue<decimal>();
-		var lowMean = _smaLow!.Process(new DecimalIndicatorValue(_smaLow, candle.LowPrice)).GetValue<decimal>();
-		var highStd = _sdHigh!.Process(new DecimalIndicatorValue(_sdHigh, candle.HighPrice)).GetValue<decimal>();
-		var lowStd = _sdLow!.Process(new DecimalIndicatorValue(_sdLow, candle.LowPrice)).GetValue<decimal>();
+		var highMean = _smaHigh!.Process(new DecimalIndicatorValue(_smaHigh, candle.HighPrice, candle.ServerTime)).GetValue<decimal>();
+		var lowMean = _smaLow!.Process(new DecimalIndicatorValue(_smaLow, candle.LowPrice, candle.ServerTime)).GetValue<decimal>();
+		var highStd = _sdHigh!.Process(new DecimalIndicatorValue(_sdHigh, candle.HighPrice, candle.ServerTime)).GetValue<decimal>();
+		var lowStd = _sdLow!.Process(new DecimalIndicatorValue(_sdLow, candle.LowPrice, candle.ServerTime)).GetValue<decimal>();
 
 		var meanDiff = highMean - lowMean;
 		var variance = (highStd * highStd + lowStd * lowStd) / 2m + (meanDiff * meanDiff) / 4m;

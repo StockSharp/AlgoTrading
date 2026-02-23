@@ -108,18 +108,14 @@ public class AutoKdStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var stochastic = new StochasticOscillator
-		{ K = { Length = KdPeriod },
-		K = { Length = KPeriod },
-		D = { Length = DPeriod },
-		};
+		var stochastic = new StochasticOscillator();
+		stochastic.K.Length = KdPeriod;
+		stochastic.D.Length = DPeriod;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 		.BindEx(stochastic, ProcessCandle)
 		.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -139,15 +135,15 @@ public class AutoKdStrategy : Strategy
 		return;
 
 		var stoch = (StochasticOscillatorValue)stochValue;
-		var k = stoch.K;
-		var d = stoch.D;
+		if (stoch.K is not decimal k || stoch.D is not decimal d)
+			return;
 
 		if (_prevK is decimal prevK && _prevD is decimal prevD)
 		{
-		if (prevK < prevD && k > d && Position <= 0)
-		BuyMarket();
-		else if (prevK > prevD && k < d && Position >= 0)
-		SellMarket();
+			if (prevK < prevD && k > d && Position <= 0)
+				BuyMarket();
+			else if (prevK > prevD && k < d && Position >= 0)
+				SellMarket();
 		}
 
 		_prevK = k;

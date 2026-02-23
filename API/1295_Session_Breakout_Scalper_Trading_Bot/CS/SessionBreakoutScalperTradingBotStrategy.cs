@@ -86,29 +86,35 @@ public class SessionBreakoutScalperTradingBotStrategy : Strategy
 		_useAtrStop = Param(nameof(UseAtrStop), true).SetDisplay("Use ATR Stop", "Use ATR Stop", "General");
 		_atrLength = Param(nameof(AtrLength), 14).SetDisplay("ATR Length", "ATR Length", "General");
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m).SetDisplay("ATR Multiplier", "ATR Multiplier", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
 	
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 		
-		StartProtection(null, null);
-		
+		// no separate protection
+
 		var atr = new AverageTrueRange { Length = AtrLength };
-		
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(atr, ProcessCandle)
+		.BindEx(atr, ProcessCandle)
 		.Start();
 	}
 	
-	private void ProcessCandle(ICandleMessage candle, decimal atr)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrIV)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
-		
+
+		var atr = atrIV.GetValue<decimal>();
+
 		var day = candle.OpenTime.Date;
 		var time = candle.OpenTime.TimeOfDay;
 		

@@ -130,13 +130,14 @@ public class RandomEntryAndExitStrategy : Strategy
 		_entryRandom = new Random(RandomSeed);
 		_exitRandom = new Random(RandomSeed + 1);
 
+		var ema = new ExponentialMovingAverage { Length = 2 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(ema, ProcessCandle).Start();
 
 		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;

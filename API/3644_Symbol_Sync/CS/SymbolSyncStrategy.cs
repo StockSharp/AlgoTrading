@@ -55,6 +55,15 @@ public class SymbolSyncStrategy : Strategy
 		set => _syncSecurityId.Value = value ?? string.Empty;
 	}
 
+	private SimpleMovingAverage _smaFast;
+	private SimpleMovingAverage _smaSlow;
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
@@ -65,7 +74,32 @@ public class SymbolSyncStrategy : Strategy
 		if (SyncSecurityId.IsEmpty() && Security != null)
 			SyncSecurityId = Security.Id;
 
-		SyncSymbols();
+		_smaFast = new SimpleMovingAverage { Length = 10 };
+		_smaSlow = new SimpleMovingAverage { Length = 30 };
+
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription
+			.Bind(_smaFast, _smaSlow, ProcessCandle)
+			.Start();
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (fast > slow && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+		}
+		else if (fast < slow && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+		}
 	}
 
 	/// <inheritdoc />
@@ -150,7 +184,7 @@ public class SymbolSyncStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Changes the synchronization security by resolving the identifier through <see cref="Strategy.SecurityProvider"/>.
+	/// Changes the synchronization security by resolving the identifier through <see cref="Strategy.Connector"/>.
 	/// </summary>
 	/// <param name="securityId">Identifier of the security to use for synchronization.</param>
 	/// <returns><c>true</c> when the identifier resolved to a new security.</returns>
@@ -159,9 +193,9 @@ public class SymbolSyncStrategy : Strategy
 		if (securityId.IsEmpty())
 			throw new ArgumentNullException(nameof(securityId));
 
-		if (SecurityProvider != null)
+		if (Connector != null)
 		{
-			var resolved = SecurityProvider.LookupById(securityId);
+			var resolved = Connector.LookupById(securityId);
 			if (resolved != null)
 				return ChangeSyncSecurity(resolved);
 
@@ -215,9 +249,9 @@ public class SymbolSyncStrategy : Strategy
 		if (Security != null && (SyncSecurityId.IsEmpty() || SyncSecurityId.EqualsIgnoreCase(Security.Id)))
 			return Security;
 
-		if (!SyncSecurityId.IsEmpty() && SecurityProvider != null)
+		if (!SyncSecurityId.IsEmpty() && Connector != null)
 		{
-			var resolved = SecurityProvider.LookupById(SyncSecurityId);
+			var resolved = Connector.LookupById(SyncSecurityId);
 			if (resolved != null)
 				return resolved;
 		}

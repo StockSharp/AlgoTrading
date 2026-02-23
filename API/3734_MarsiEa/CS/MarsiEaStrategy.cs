@@ -108,7 +108,7 @@ public class MarsiEaStrategy : Strategy
 	/// </summary>
 	public MarsiEaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Series used for indicator calculations", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 14)
@@ -123,10 +123,10 @@ public class MarsiEaStrategy : Strategy
 			
 			.SetOptimize(5, 50, 1);
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
+		_rsiOverbought = Param(nameof(RsiOverbought), 55m)
 			.SetDisplay("RSI Overbought", "Upper RSI threshold", "Signals");
 
-		_rsiOversold = Param(nameof(RsiOversold), 30m)
+		_rsiOversold = Param(nameof(RsiOversold), 45m)
 			.SetDisplay("RSI Oversold", "Lower RSI threshold", "Signals");
 
 		_riskPercent = Param(nameof(RiskPercent), 10m)
@@ -153,13 +153,11 @@ public class MarsiEaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = MaPeriod };
+		_sma = new SimpleMovingAverage { Length = MaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_sma, _rsi, ProcessCandle).Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -174,9 +172,6 @@ public class MarsiEaStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (!_sma.IsFormed || !_rsi.IsFormed)
@@ -197,25 +192,15 @@ public class MarsiEaStrategy : Strategy
 
 		if (closePrice > maValue && rsiValue < RsiOversold && Position <= 0m)
 		{
-			var resultingPosition = Position + volume;
+			if (Position < 0m)
+				BuyMarket(-Position);
 			BuyMarket(volume);
-
-			if (stopSteps > 0m)
-				SetStopLoss(stopSteps, closePrice, resultingPosition);
-
-			if (takeSteps > 0m)
-				SetTakeProfit(takeSteps, closePrice, resultingPosition);
 		}
 		else if (closePrice < maValue && rsiValue > RsiOverbought && Position >= 0m)
 		{
-			var resultingPosition = Position - volume;
+			if (Position > 0m)
+				SellMarket(Position);
 			SellMarket(volume);
-
-			if (stopSteps > 0m)
-				SetStopLoss(stopSteps, closePrice, resultingPosition);
-
-			if (takeSteps > 0m)
-				SetTakeProfit(takeSteps, closePrice, resultingPosition);
 		}
 	}
 
@@ -251,7 +236,7 @@ public class MarsiEaStrategy : Strategy
 			volume = steps * volumeStep;
 		}
 
-		var minVolume = Security?.VolumeMin ?? 0m;
+		var minVolume = Security?.MinVolume ?? 0m;
 		if (minVolume > 0m && volume < minVolume)
 			volume = minVolume;
 

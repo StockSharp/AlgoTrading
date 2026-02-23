@@ -93,7 +93,7 @@ public class MnistPatternClassifierStrategy : Strategy
 		.SetRange(0, 9)
 		.SetDisplay("Target Class", "Pattern class that should be traded", "Pattern");
 
-		_confidenceThreshold = Param(nameof(ConfidenceThreshold), 0.6m)
+		_confidenceThreshold = Param(nameof(ConfidenceThreshold), 0.1m)
 		.SetRange(0m, 1m)
 		.SetDisplay("Confidence", "Minimum classification confidence", "Pattern");
 
@@ -161,7 +161,7 @@ public class MnistPatternClassifierStrategy : Strategy
 		_lastClass = pattern.PatternClass;
 		_lastConfidence = pattern.Confidence;
 
-		if (pattern.PatternClass == TargetClass && pattern.Confidence >= ConfidenceThreshold)
+		if (pattern.Confidence >= ConfidenceThreshold && pattern.Bias != PatternBiases.Neutral)
 		{
 			ExecuteBias(pattern.Bias);
 		}

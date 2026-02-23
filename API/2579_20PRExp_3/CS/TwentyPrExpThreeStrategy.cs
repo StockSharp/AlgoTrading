@@ -154,7 +154,7 @@ public class TwentyPrExpThreeStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for the strategy", "General");
 
-		_volumeCandleType = Param(nameof(VolumeCandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_volumeCandleType = Param(nameof(VolumeCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Volume Candle Type", "Higher timeframe for tick volume filter", "General");
 	}
 
@@ -213,7 +213,6 @@ public class TwentyPrExpThreeStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessVolumeCandle(ICandleMessage candle)
@@ -234,12 +233,6 @@ public class TwentyPrExpThreeStrategy : Strategy
 		UpdateDailyLevels(candle);
 
 		ManageOpenPosition(candle, sarValue);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			UpdatePreviousClose(candle);
-			return;
-		}
 
 		if (candle.OpenTime.Hour < SessionStartHour)
 		{
@@ -294,7 +287,7 @@ public class TwentyPrExpThreeStrategy : Strategy
 			// Close longs when Parabolic SAR crosses above the previous close.
 			if (_hasPreviousClose && sarValue > _previousClose)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				ResetLongState();
 				ResetShortState();
 				return;
@@ -308,7 +301,7 @@ public class TwentyPrExpThreeStrategy : Strategy
 			// Close shorts when Parabolic SAR crosses below the previous close.
 			if (_hasPreviousClose && sarValue < _previousClose)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				ResetLongState();
 				ResetShortState();
 				return;
@@ -380,14 +373,14 @@ public class TwentyPrExpThreeStrategy : Strategy
 
 		if (_longStop > 0m && candle.LowPrice <= _longStop)
 		{
-			SellMarket(position);
+			SellMarket();
 			ResetLongState();
 			return;
 		}
 
 		if (_longTake > 0m && candle.HighPrice >= _longTake)
 		{
-			SellMarket(position);
+			SellMarket();
 			ResetLongState();
 		}
 	}
@@ -403,14 +396,14 @@ public class TwentyPrExpThreeStrategy : Strategy
 
 		if (_shortStop > 0m && candle.HighPrice >= _shortStop)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 			ResetShortState();
 			return;
 		}
 
 		if (_shortTake > 0m && candle.LowPrice <= _shortTake)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 			ResetShortState();
 		}
 	}
@@ -452,7 +445,7 @@ public class TwentyPrExpThreeStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		BuyMarket(volume);
+		BuyMarket();
 
 		_longEntryPrice = entryPrice;
 		_longStop = stopPrice;
@@ -477,7 +470,7 @@ public class TwentyPrExpThreeStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		SellMarket(volume);
+		SellMarket();
 
 		_shortEntryPrice = entryPrice;
 		_shortStop = stopPrice;

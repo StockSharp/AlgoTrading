@@ -89,7 +89,7 @@ public class RaymondCloudyDayStrategy : Strategy
 			
 			.SetOptimize(50, 1000, 50);
 
-		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(1).TimeFrame())
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Signal Candle Type", "Candle type used for trade signals", "Data");
 
 		_pivotCandleType = Param(nameof(PivotCandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -100,9 +100,6 @@ public class RaymondCloudyDayStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		yield return (Security, SignalCandleType);
-
-		if (!SignalCandleType.Equals(PivotCandleType))
-			yield return (Security, PivotCandleType);
 	}
 
 	/// <inheritdoc />
@@ -130,14 +127,7 @@ public class RaymondCloudyDayStrategy : Strategy
 
 		var signalSubscription = SubscribeCandles(SignalCandleType);
 		signalSubscription
-			// Process only completed signal candles to avoid using partial data.
-			.WhenCandlesFinished(ProcessSignalCandle)
-			.Start();
-
-		var pivotSubscription = SubscribeCandles(PivotCandleType);
-		pivotSubscription
-			// Recalculate Raymond levels as soon as the higher timeframe candle is finished.
-			.WhenCandlesFinished(ProcessPivotCandle)
+			.Bind(ProcessBothCandle)
 			.Start();
 
 		var priceArea = CreateChartArea();
@@ -146,6 +136,14 @@ public class RaymondCloudyDayStrategy : Strategy
 			DrawCandles(priceArea, signalSubscription);
 			DrawOwnTrades(priceArea);
 		}
+	}
+
+	private void ProcessBothCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+		ProcessPivotCandle(candle);
+		ProcessSignalCandle(candle);
 	}
 
 	private void ProcessPivotCandle(ICandleMessage candle)
@@ -181,8 +179,8 @@ public class RaymondCloudyDayStrategy : Strategy
 
 		ManageOpenPosition(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		//if (!IsFormedAndOnlineAndAllowTrading())
+		//	return;
 
 		if (_takeProfitSellLevel is not decimal triggerLevel)
 			return;
@@ -203,19 +201,15 @@ public class RaymondCloudyDayStrategy : Strategy
 
 	private void EnterLong(decimal closePrice)
 	{
-		var priceStep = Security?.PriceStep ?? 0m;
+		var priceStep = Security?.PriceStep ?? 1m;
 		if (priceStep <= 0m)
-		{
-			LogWarning("Cannot place long trade because PriceStep is not defined.");
-			return;
-		}
+			priceStep = 1m;
 
 		CancelActiveOrders();
 
 		var volume = TradeVolume + Math.Max(0m, -Position);
 		BuyMarket(volume);
 
-		// Convert the tick offset into an absolute price distance.
 		var offset = priceStep * ProtectiveOffsetTicks;
 		_entryPrice = closePrice;
 		_takePrice = closePrice + offset;
@@ -226,19 +220,15 @@ public class RaymondCloudyDayStrategy : Strategy
 
 	private void EnterShort(decimal closePrice)
 	{
-		var priceStep = Security?.PriceStep ?? 0m;
+		var priceStep = Security?.PriceStep ?? 1m;
 		if (priceStep <= 0m)
-		{
-			LogWarning("Cannot place short trade because PriceStep is not defined.");
-			return;
-		}
+			priceStep = 1m;
 
 		CancelActiveOrders();
 
 		var volume = TradeVolume + Math.Max(0m, Position);
 		SellMarket(volume);
 
-		// Mirror the original EA risk profile for short trades.
 		var offset = priceStep * ProtectiveOffsetTicks;
 		_entryPrice = closePrice;
 		_takePrice = closePrice - offset;

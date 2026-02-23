@@ -72,10 +72,14 @@ public class SeparatedMovingAverageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
+		// no separate protection
 
 		_maUp = CreateMa();
 		_maDown = CreateMa();
@@ -84,8 +88,9 @@ public class SeparatedMovingAverageStrategy : Strategy
 		_prevHaOpen = 0m;
 		_prevHaClose = 0m;
 
+		var dummyEma = new ExponentialMovingAverage { Length = 5 };
 		SubscribeCandles(CandleType)
-			.Bind(ProcessCandle)
+			.Bind(dummyEma, ProcessCandle)
 			.Start();
 	}
 
@@ -97,7 +102,7 @@ public class SeparatedMovingAverageStrategy : Strategy
 			_ => new SMA { Length = Length },
 		};
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _dummyEma)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;

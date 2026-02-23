@@ -45,7 +45,7 @@ public class RksFrameworkAutoColorGradientStrategy : Strategy
 		.SetDisplay("Length", "Length", "General")
 		;
 
-		_scaleLength = Param(nameof(ScaleLength), 200)
+		_scaleLength = Param(nameof(ScaleLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Scale Length", "Scale Length", "General");
 
@@ -54,6 +54,11 @@ public class RksFrameworkAutoColorGradientStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candle Type", "General");
+	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	protected override void OnReseted()
@@ -70,6 +75,8 @@ public class RksFrameworkAutoColorGradientStrategy : Strategy
 
 	protected override void OnStarted2(DateTime time)
 	{
+		base.OnStarted2(time);
+
 		_bb = new BollingerBands { Length = Length, Width = 2m };
 		_rsi = new RelativeStrengthIndex { Length = Length };
 
@@ -78,27 +85,35 @@ public class RksFrameworkAutoColorGradientStrategy : Strategy
 		_highestRsi = new Highest { Length = ScaleLength };
 		_lowestRsi = new Lowest { Length = ScaleLength };
 
+		var ema = new ExponentialMovingAverage { Length = 2 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(_bb, _rsi, ProcessCandle)
+		.Bind(ema, ProcessCandle)
 		.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 		DrawCandles(area, subscription);
-		DrawIndicator(area, _bb);
 		DrawIndicator(area, _rsi);
 		DrawOwnTrades(area);
 		}
-
-		base.OnStarted2(time);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
+
+		var bbResult = _bb.Process(new DecimalIndicatorValue(_bb, candle.ClosePrice, candle.ServerTime));
+		var rsiResult = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.ServerTime));
+		if (!_bb.IsFormed || !_rsi.IsFormed)
+		return;
+
+		var bbTyped = (BollingerBandsValue)bbResult;
+		if (bbTyped.UpBand is not decimal upper || bbTyped.LowBand is not decimal lower || bbTyped.MovingAverage is not decimal middle)
+		return;
+		var rsi = rsiResult.GetValue<decimal>();
 
 		var deviation = upper - middle;
 		if (deviation == 0)
@@ -106,8 +121,8 @@ public class RksFrameworkAutoColorGradientStrategy : Strategy
 
 		var bbr = (candle.ClosePrice - middle - deviation) / (2m * deviation);
 
-		var stochBbr = GetStoch(_highestBbr, _lowestBbr, bbr);
-		var stochRsi = GetStoch(_highestRsi, _lowestRsi, rsi);
+		var stochBbr = GetStoch(_highestBbr, _lowestBbr, bbr, candle.ServerTime);
+		var stochRsi = GetStoch(_highestRsi, _lowestRsi, rsi, candle.ServerTime);
 		if (stochBbr == null || stochRsi == null)
 		return;
 
@@ -134,13 +149,10 @@ public class RksFrameworkAutoColorGradientStrategy : Strategy
 		// Color variable can be used for custom visualization.
 	}
 
-	private decimal? GetStoch(Highest highest, Lowest lowest, decimal value)
+	private decimal? GetStoch(Highest highest, Lowest lowest, decimal value, DateTime time)
 	{
-		var highValue = highest.Process(value);
-		var lowValue = lowest.Process(value);
-
-		if (!highValue.IsFinal || !lowValue.IsFinal)
-		return null;
+		var highValue = highest.Process(new DecimalIndicatorValue(highest, value, time));
+		var lowValue = lowest.Process(new DecimalIndicatorValue(lowest, value, time));
 
 		var high = highValue.ToDecimal();
 		var low = lowValue.ToDecimal();

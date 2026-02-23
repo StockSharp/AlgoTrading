@@ -67,19 +67,19 @@ public class TrailingStopStrategy : Strategy
 	/// </summary>
 	public TrailingStopStrategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 100m)
+		_takeProfit = Param(nameof(TakeProfit), 2000m)
 		.SetDisplay("Take Profit", "Profit distance in price units", "Risk")
 		;
-		
-		_stopLoss = Param(nameof(StopLoss), 20m)
+
+		_stopLoss = Param(nameof(StopLoss), 500m)
 		.SetDisplay("Stop Loss", "Loss distance in price units", "Risk")
 		;
-		
-		_trailing = Param(nameof(Trailing), 3m)
+
+		_trailing = Param(nameof(Trailing), 300m)
 		.SetDisplay("Trailing", "Trailing stop distance", "Risk")
 		;
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles for price updates", "General");
 	}
 	
@@ -103,11 +103,19 @@ public class TrailingStopStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
 		
 		var price = candle.ClosePrice;
 		
+		// Entry logic when flat
+		if (Position == 0)
+		{
+			if (candle.ClosePrice > candle.OpenPrice)
+				BuyMarket();
+			else if (candle.ClosePrice < candle.OpenPrice)
+				SellMarket();
+			return;
+		}
+
 		if (Position > 0)
 		{
 			if (price - _entryPrice >= TakeProfit || _entryPrice - price > StopLoss)

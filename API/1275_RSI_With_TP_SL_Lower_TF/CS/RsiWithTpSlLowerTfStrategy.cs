@@ -33,7 +33,7 @@ private readonly StrategyParam<Sides?> _direction;
 	/// </summary>
 	public RsiWithTpSlLowerTfStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -131,7 +131,7 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(_rsi, area);
+			DrawIndicator(area, _rsi);
 			DrawOwnTrades(area);
 		}
 	}

@@ -119,15 +119,15 @@ public class MeanReversionDonchianStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// indicators bound via BindEx
 
 		ManageOpenPosition(candle);
 
 		if (Position != 0)
 		return;
 
-		var channel = (DonchianChannelsValue)donchianValue;
+		if (donchianValue is not IDonchianChannelsValue channel)
+			return;
 
 		if (channel.UpperBand is not decimal upperBand || channel.LowerBand is not decimal lowerBand || channel.Middle is not decimal midBand)
 		return;
@@ -239,7 +239,7 @@ public class MeanReversionDonchianStrategy : Strategy
 
 		var normalized = Math.Floor(volume / step) * step;
 
-		var max = Security?.VolumeMax ?? 0m;
+		var max = Security?.MaxVolume ?? 0m;
 		if (max > 0m && normalized > max)
 		normalized = max;
 
@@ -248,7 +248,7 @@ public class MeanReversionDonchianStrategy : Strategy
 
 	private decimal GetMinimalVolume()
 	{
-		var min = Security?.VolumeMin ?? 0m;
+		var min = Security?.MinVolume ?? 0m;
 		if (min > 0m)
 		return min;
 

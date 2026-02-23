@@ -139,7 +139,7 @@ public class RsiStochasticWmaStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 		
-		StartProtection(null, null);
+		// no separate protection needed
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue wmaValue, IIndicatorValue stochValue)
@@ -171,12 +171,12 @@ public class RsiStochasticWmaStrategy : Strategy
 			return;
 		}
 		
-		if (rsi < 30m && stochCrossUp && priceAboveWma && Position <= 0)
+		if (rsi < 50m && stochCrossUp && priceAboveWma && Position <= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
 		}
-		else if (rsi > 70m && stochCrossDown && priceBelowWma && Position >= 0)
+		else if (rsi > 50m && stochCrossDown && priceBelowWma && Position >= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);

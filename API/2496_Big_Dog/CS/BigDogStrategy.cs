@@ -109,15 +109,15 @@ public class BigDogStrategy : Strategy
 	/// </summary>
 	public BigDogStrategy()
 	{
-		_startHour = Param(nameof(StartHour), 14)
+		_startHour = Param(nameof(StartHour), 2)
 			.SetRange(0, 23)
 			.SetDisplay("Start Hour", "Hour to begin measuring the range", "Session");
 
-		_stopHour = Param(nameof(StopHour), 16)
+		_stopHour = Param(nameof(StopHour), 8)
 			.SetRange(0, 23)
 			.SetDisplay("Stop Hour", "Hour to stop measuring the range", "Session");
 
-		_maxRangePoints = Param(nameof(MaxRangePoints), 50m)
+		_maxRangePoints = Param(nameof(MaxRangePoints), 50000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Range", "Maximum allowed height of the consolidation range (points)", "Trading");
 
@@ -125,7 +125,7 @@ public class BigDogStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take-profit distance in adjusted points", "Trading");
 
-		_distancePoints = Param(nameof(DistancePoints), 20m)
+		_distancePoints = Param(nameof(DistancePoints), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Distance", "Minimum distance from current price to breakout level (points)", "Trading");
 
@@ -133,7 +133,7 @@ public class BigDogStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume used for each breakout order", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles timeframe used for range detection", "Data");
 	}
 
@@ -171,15 +171,6 @@ public class BigDogStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		SubscribeOrderBook()
-			.Bind(depth =>
-			{
-				// Store the latest best bid/ask values to approximate current market price.
-				_bestBid = depth.GetBestBid()?.Price ?? _bestBid;
-				_bestAsk = depth.GetBestAsk()?.Price ?? _bestAsk;
-			})
-			.Start();
-
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -213,7 +204,6 @@ public class BigDogStrategy : Strategy
 
 	private void ResetDailyState(DateTime date)
 	{
-		CancelActiveOrders();
 		_rangeDate = date;
 		_rangeHigh = null;
 		_rangeLow = null;
@@ -285,11 +275,7 @@ public class BigDogStrategy : Strategy
 		if (_longReady && candle.HighPrice >= _longEntryPrice && Position <= 0)
 		{
 			// Enter long on breakout of the session high.
-			var qty = volume + Math.Max(0m, -Position);
-			if (qty > 0m)
-			{
-				BuyMarket(qty);
-			}
+			BuyMarket();
 
 			_longReady = false;
 			_shortReady = false;
@@ -298,11 +284,7 @@ public class BigDogStrategy : Strategy
 		if (_shortReady && candle.LowPrice <= _shortEntryPrice && Position >= 0)
 		{
 			// Enter short on breakout of the session low.
-			var qty = volume + Math.Max(0m, Position);
-			if (qty > 0m)
-			{
-				SellMarket(qty);
-			}
+			SellMarket();
 
 			_shortReady = false;
 			_longReady = false;
@@ -316,13 +298,13 @@ public class BigDogStrategy : Strategy
 			// Close the long position if stop-loss or take-profit levels are touched.
 			if (candle.LowPrice <= _longStopPrice.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_longStopPrice = null;
 				_longTakeProfitPrice = null;
 			}
 			else if (candle.HighPrice >= _longTakeProfitPrice.Value)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_longStopPrice = null;
 				_longTakeProfitPrice = null;
 			}
@@ -332,13 +314,13 @@ public class BigDogStrategy : Strategy
 			// Close the short position if stop-loss or take-profit levels are touched.
 			if (candle.HighPrice >= _shortStopPrice.Value)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_shortStopPrice = null;
 				_shortTakeProfitPrice = null;
 			}
 			else if (candle.LowPrice <= _shortTakeProfitPrice.Value)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_shortStopPrice = null;
 				_shortTakeProfitPrice = null;
 			}

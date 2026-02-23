@@ -36,6 +36,7 @@ public class SupportResistTradeStrategy : Strategy
 	private TrendDirections _trend = TrendDirections.None;
 	private decimal _pipSize;
 	private bool _levelsInitialized;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Number of candles used to build swing levels.
@@ -88,7 +89,7 @@ public class SupportResistTradeStrategy : Strategy
 		.SetDisplay("EMA Period", "Length of EMA trend filter", "Indicators")
 		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
@@ -174,13 +175,6 @@ public class SupportResistTradeStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevSupport = support;
-			_prevResistance = resistance;
-			return;
-		}
-
 		// Update trend direction using candle open price against EMA.
 		if (candle.OpenPrice > emaValue)
 		{
@@ -199,6 +193,7 @@ public class SupportResistTradeStrategy : Strategy
 			{
 				// Breakout above resistance in bullish trend opens long position.
 				BuyMarket();
+				_entryPrice = candle.ClosePrice;
 				_longStop = _prevSupport;
 				_shortStop = null;
 			}
@@ -206,6 +201,7 @@ public class SupportResistTradeStrategy : Strategy
 			{
 				// Breakout below support in bearish trend opens short position.
 				SellMarket();
+				_entryPrice = candle.ClosePrice;
 				_shortStop = _prevResistance;
 				_longStop = null;
 			}
@@ -222,18 +218,18 @@ public class SupportResistTradeStrategy : Strategy
 			if (_longStop.HasValue && candle.ClosePrice <= _longStop.Value)
 			{
 				// Close long when trailing stop level is breached.
-				SellMarket(Position);
+				SellMarket();
 				_longStop = null;
 				return true;
 			}
 
-			var entry = PositionPrice;
+			var entry = _entryPrice;
 			var profitPerUnit = candle.ClosePrice - entry;
 
 			if (profitPerUnit > 0m && _prevSupport.HasValue && candle.ClosePrice < _prevSupport.Value)
 			{
 				// Exit profitable long on drop below refreshed support.
-				SellMarket(Position);
+				SellMarket();
 				_longStop = null;
 				return true;
 			}
@@ -245,18 +241,18 @@ public class SupportResistTradeStrategy : Strategy
 			if (_shortStop.HasValue && candle.ClosePrice >= _shortStop.Value)
 			{
 				// Close short when trailing stop level is breached.
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_shortStop = null;
 				return true;
 			}
 
-			var entry = PositionPrice;
+			var entry = _entryPrice;
 			var profitPerUnit = entry - candle.ClosePrice;
 
 			if (profitPerUnit > 0m && _prevResistance.HasValue && candle.ClosePrice > _prevResistance.Value)
 			{
 				// Exit profitable short on rally above refreshed resistance.
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_shortStop = null;
 				return true;
 			}

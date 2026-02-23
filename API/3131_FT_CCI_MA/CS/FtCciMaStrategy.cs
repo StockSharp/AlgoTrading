@@ -277,7 +277,7 @@ public class FtCciMaStrategy : Strategy
 			DrawOwnTrades(priceArea);
 		}
 
-		var cciArea = CreateChartArea("CCI");
+		var cciArea = CreateChartArea();
 		if (cciArea != null)
 		{
 			DrawIndicator(cciArea, _cci);

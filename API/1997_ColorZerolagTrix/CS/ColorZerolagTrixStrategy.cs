@@ -196,7 +196,7 @@ set => _sellPosClose.Value = value;
 /// </summary>
 public ColorZerolagTrixStrategy()
 {
-_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
 
 _smoothing = Param(nameof(Smoothing), 15)
@@ -257,11 +257,15 @@ _sellPosClose = Param(nameof(SellPosClose), true)
 }
 
 /// <inheritdoc />
+public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+{
+return [(Security, CandleType)];
+}
+
+/// <inheritdoc />
 protected override void OnStarted2(DateTime time)
 {
 base.OnStarted2(time);
-
-StartProtection(null, null);
 
 _trix1 = new Trix { Length = TrixPeriod1 };
 _trix2 = new Trix { Length = TrixPeriod2 };

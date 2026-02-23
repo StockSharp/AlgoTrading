@@ -51,7 +51,7 @@ public class CloseByEquityPercentStrategy : Strategy
 			
 			.SetOptimize(1.1m, 2m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for periodic checks", "General");
 	}
 
@@ -77,7 +77,7 @@ public class CloseByEquityPercentStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Do(ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -97,15 +97,23 @@ public class CloseByEquityPercentStrategy : Strategy
 
 		if (equity > _currentBalance * EquityPercentFromBalance)
 		{
-			if (Position != 0)
-				ClosePosition();
+			if (Position > 0)
+				SellMarket(Position);
+			else if (Position < 0)
+				BuyMarket(-Position);
 
-			LogInfo($"Equity {equity:0.##} exceeded balance {_currentBalance:0.##} * {EquityPercentFromBalance:0.##}");
 			_currentBalance = equity;
 			return;
 		}
 
+		// Simple entry when flat
 		if (Position == 0)
+		{
 			_currentBalance = equity;
+			if (candle.ClosePrice > candle.OpenPrice)
+				BuyMarket();
+			else if (candle.ClosePrice < candle.OpenPrice)
+				SellMarket();
+		}
 	}
 }

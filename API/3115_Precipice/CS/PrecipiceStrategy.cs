@@ -21,7 +21,7 @@ public class PrecipiceStrategy : Strategy
 	private readonly StrategyParam<bool> _useSell;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Random _random = new(Environment.TickCount);
+	private readonly Random _random = new(System.Environment.TickCount);
 	private decimal _pipSize;
 	private Order _stopOrder;
 	private Order _takeProfitOrder;
@@ -175,7 +175,7 @@ public class PrecipiceStrategy : Strategy
 		var tpPrice = isBuy ? price + stopDistance : price - stopDistance;
 
 		if (slPrice > 0m)
-			_stopOrder = isBuy ? SellStop(volume, slPrice) : BuyStop(volume, slPrice);
+			_stopOrder = isBuy ? SellLimit(volume, slPrice) : BuyLimit(volume, slPrice);
 
 		if (tpPrice > 0m)
 			_takeProfitOrder = isBuy ? SellLimit(volume, tpPrice) : BuyLimit(volume, tpPrice);

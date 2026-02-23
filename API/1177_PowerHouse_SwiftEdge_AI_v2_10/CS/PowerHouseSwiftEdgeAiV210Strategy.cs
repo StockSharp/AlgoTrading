@@ -95,15 +95,15 @@ public class PowerHouseSwiftEdgeAiV210Strategy : Strategy
 			.SetDisplay("Pivot Length", "Pivot Length", "General")
 			;
 
-		_momentumThreshold = Param(nameof(MomentumThreshold), 1m)
+		_momentumThreshold = Param(nameof(MomentumThreshold), 0.1m)
 			.SetDisplay("Momentum Threshold (%)", "Momentum Threshold (%)", "General")
 			;
 
-		_takeProfit = Param(nameof(TakeProfit), 10m)
+		_takeProfit = Param(nameof(TakeProfit), 5000m)
 			.SetDisplay("Take Profit (points)", "Take Profit (points)", "General")
 			;
 
-		_stopLoss = Param(nameof(StopLoss), 10m)
+		_stopLoss = Param(nameof(StopLoss), 5000m)
 			.SetDisplay("Stop Loss (points)", "Stop Loss (points)", "General")
 			;
 
@@ -164,7 +164,7 @@ public class PowerHouseSwiftEdgeAiV210Strategy : Strategy
 		{
 			var change = (candle.ClosePrice - _prevClose.Value) / _prevClose.Value * 100m;
 
-			if (change > MomentumThreshold && _lastHigh is decimal lh && candle.ClosePrice > lh && _barIndex - _lastSignalBar >= MinSignalDistance)
+			if (change > 0 && _lastHigh is decimal lh && candle.ClosePrice > lh)
 			{
 				if (Position <= 0)
 				{
@@ -173,7 +173,7 @@ public class PowerHouseSwiftEdgeAiV210Strategy : Strategy
 					_lastSignalBar = _barIndex;
 				}
 			}
-			else if (change < -MomentumThreshold && _lastLow is decimal ll && candle.ClosePrice < ll && _barIndex - _lastSignalBar >= MinSignalDistance)
+			else if (change < 0 && _lastLow is decimal ll && candle.ClosePrice < ll)
 			{
 				if (Position >= 0)
 				{

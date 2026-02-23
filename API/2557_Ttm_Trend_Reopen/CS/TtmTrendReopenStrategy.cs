@@ -35,6 +35,7 @@ public class TtmTrendReopenStrategy : Strategy
 	private readonly List<int> _colorHistory = new();
 	private int _longEntries;
 	private int _shortEntries;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Candle type used for calculations.
@@ -140,7 +141,7 @@ public class TtmTrendReopenStrategy : Strategy
 	/// </summary>
 	public TtmTrendReopenStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for the TTM Trend calculation", "General");
 
 		_compBars = Param(nameof(CompBars), 6)
@@ -230,15 +231,12 @@ public class TtmTrendReopenStrategy : Strategy
 		Unit takeProfitUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : null;
 
 		if (stopLossUnit != null || takeProfitUnit != null)
-		StartProtection(stopLoss: stopLossUnit, takeProfit: takeProfitUnit);
+			StartProtection(stopLossUnit, takeProfitUnit);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ttmValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
 		if (!ttmValue.IsFinal)
@@ -265,31 +263,31 @@ public class TtmTrendReopenStrategy : Strategy
 		// Close existing positions before opening new ones.
 		if (EnableLongExits && isBearishColor && Position > 0)
 		{
-			SellMarket(Position);
+			SellMarket();
 			_longEntries = 0;
 		}
 
 		if (EnableShortExits && isBullishColor && Position < 0)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			_shortEntries = 0;
 		}
 
 		// Open a fresh long when the color flips to bullish.
 		if (EnableLongEntries && isBullishColor && previousColor.HasValue && !wasBullish && Position <= 0)
 		{
-			var quantity = Volume + Math.Max(0m, -Position);
-			BuyMarket(quantity);
+			BuyMarket();
 			_longEntries = 1;
 			_shortEntries = 0;
+			_entryPrice = candle.ClosePrice;
 		}
 		// Open a fresh short when the color flips to bearish.
 		else if (EnableShortEntries && isBearishColor && previousColor.HasValue && !wasBearish && Position >= 0)
 		{
-			var quantity = Volume + Math.Max(0m, Position);
-			SellMarket(quantity);
+			SellMarket();
 			_shortEntries = 1;
 			_longEntries = 0;
+			_entryPrice = candle.ClosePrice;
 		}
 
 		var step = Security?.PriceStep ?? 1m;
@@ -298,20 +296,20 @@ public class TtmTrendReopenStrategy : Strategy
 		// Add to an existing long once price moves in favor.
 		if (EnableLongEntries && Position > 0 && reentryStep > 0m && _longEntries > 0 && _longEntries < MaxPositions)
 		{
-			var distance = candle.ClosePrice - PositionPrice;
+			var distance = candle.ClosePrice - _entryPrice;
 			if (distance >= reentryStep)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				_longEntries++;
 			}
 		}
 		// Add to an existing short once price moves in favor.
 		else if (EnableShortEntries && Position < 0 && reentryStep > 0m && _shortEntries > 0 && _shortEntries < MaxPositions)
 		{
-			var distance = PositionPrice - candle.ClosePrice;
+			var distance = _entryPrice - candle.ClosePrice;
 			if (distance >= reentryStep)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				_shortEntries++;
 			}
 		}
@@ -348,8 +346,11 @@ public class TtmTrendReopenStrategy : Strategy
 		/// <inheritdoc />
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
-			if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-			return new DecimalIndicatorValue(this, default, input.Time, isFinal: false);
+			ICandleMessage candle;
+			try { candle = input.GetValue<ICandleMessage>(default); }
+			catch { return new DecimalIndicatorValue(this, default, input.Time); }
+			if (candle == null || candle.State != CandleStates.Finished)
+			return new DecimalIndicatorValue(this, default, input.Time);
 
 			var haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
 			decimal haOpen;
@@ -385,6 +386,7 @@ public class TtmTrendReopenStrategy : Strategy
 			while (_history.Count > Math.Max(1, CompBars))
 			_history.RemoveLast();
 
+			IsFormed = true;
 			return new DecimalIndicatorValue(this, color, input.Time);
 		}
 

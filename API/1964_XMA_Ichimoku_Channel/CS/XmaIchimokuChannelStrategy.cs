@@ -123,7 +123,7 @@ public class XmaIchimokuChannelStrategy : Strategy
 				;
 
 		_candleType =
-			Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -141,7 +141,7 @@ public class XmaIchimokuChannelStrategy : Strategy
 
 		_highest = new Highest { Length = UpPeriod };
 		_lowest = new Lowest { Length = DownPeriod };
-		_sma = new SMA { Length = MaLength };
+		_sma = new SimpleMovingAverage { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_highest, _lowest, ProcessCandle).Start();
@@ -162,8 +162,8 @@ public class XmaIchimokuChannelStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var middle =
-			_sma.Process((highestValue + lowestValue) / 2m).ToDecimal();
+		var midValue = (highestValue + lowestValue) / 2m;
+		var middle = _sma.Process(new DecimalIndicatorValue(_sma, midValue, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (!_sma.IsFormed)
 			return;

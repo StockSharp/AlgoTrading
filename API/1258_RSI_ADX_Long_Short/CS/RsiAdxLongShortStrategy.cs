@@ -101,7 +101,7 @@ public class RsiAdxLongShortStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(rsi, adx, ProcessCandle)
+			.BindEx(rsi, adx, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -114,12 +114,17 @@ public class RsiAdxLongShortStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal adxValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiVal, IIndicatorValue adxVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var rsiValue = rsiVal.GetValue<decimal>();
+		var adxTyped = (AverageDirectionalIndexValue)adxVal;
+		if (adxTyped.MovingAverage is not decimal adxValue)
 			return;
 
 		if (_prevRsi is null)

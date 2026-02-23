@@ -111,7 +111,7 @@ public class SimpleMaAdxEaStrategy : Strategy
 			;
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -126,7 +126,7 @@ public class SimpleMaAdxEaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema = new EMA { Length = MaPeriod };
+		var ema = new ExponentialMovingAverage { Length = MaPeriod };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

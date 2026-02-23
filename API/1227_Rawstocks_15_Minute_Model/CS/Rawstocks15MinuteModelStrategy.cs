@@ -53,27 +53,27 @@ public class Rawstocks15MinuteModelStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_startHour = Param(nameof(StartHour), 9)
+		_startHour = Param(nameof(StartHour), 0)
 			.SetRange(0, 23)
 			.SetDisplay("Start Hour", "Session start hour (ET)", "Time");
 
-		_startMinute = Param(nameof(StartMinute), 30)
+		_startMinute = Param(nameof(StartMinute), 0)
 			.SetRange(0, 59)
 			.SetDisplay("Start Minute", "Session start minute", "Time");
 
-		_entryCutoffHour = Param(nameof(EntryCutoffHour), 16)
+		_entryCutoffHour = Param(nameof(EntryCutoffHour), 23)
 			.SetRange(0, 23)
 			.SetDisplay("Last Entry Hour", "Last entry hour (ET)", "Time");
 
-		_entryCutoffMinute = Param(nameof(EntryCutoffMinute), 0)
+		_entryCutoffMinute = Param(nameof(EntryCutoffMinute), 59)
 			.SetRange(0, 59)
 			.SetDisplay("Last Entry Minute", "Last entry minute", "Time");
 
-		_closeHour = Param(nameof(CloseHour), 16)
+		_closeHour = Param(nameof(CloseHour), 23)
 			.SetRange(0, 23)
 			.SetDisplay("Force Close Hour", "Force close hour (ET)", "Time");
 
-		_closeMinute = Param(nameof(CloseMinute), 30)
+		_closeMinute = Param(nameof(CloseMinute), 59)
 			.SetRange(0, 59)
 			.SetDisplay("Force Close Minute", "Force close minute", "Time");
 
@@ -141,7 +141,7 @@ public class Rawstocks15MinuteModelStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var eastern = candle.OpenTime.ToOffset(TimeSpan.FromHours(-4));
+		var eastern = candle.OpenTime;
 		if (eastern.Date != _lastDate)
 		{
 		_forceClosed = false;
@@ -213,7 +213,10 @@ public class Rawstocks15MinuteModelStrategy : Strategy
 
 		if (!_forceClosed && sessionTime >= close && sessionTime < close.Add(TimeSpan.FromMinutes(1)))
 		{
-		CloseAll();
+		if (Position > 0)
+			SellMarket();
+		else if (Position < 0)
+			BuyMarket();
 		_forceClosed = true;
 		}
 	}

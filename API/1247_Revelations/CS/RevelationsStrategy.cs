@@ -39,6 +39,7 @@ public class RevelationsStrategy : Strategy
 	private Highest _priceHigh;
 	private Sum _regimeSum;
 	private decimal _prevVoSpike;
+	private decimal _entryPrice;
 	
 	/// <summary>
 	/// Fast ATR period.
@@ -247,9 +248,9 @@ public class RevelationsStrategy : Strategy
 		
 		var vovixAvgVal = _vovixAvg.Process(new DecimalIndicatorValue(_vovixAvg, absSpike, candle.ServerTime));
 		var spikeMaxVal = _spikeMax.Process(new DecimalIndicatorValue(_spikeMax, absSpike, candle.ServerTime));
-		var lowVal = _priceLow.Process(new DecimalIndicatorValue(_priceLow, candle.LowPrice);
-		var highVal = _priceHigh.Process(candle.HighPrice);
-		var regimeVal = _regimeSum.Process(Math.Abs(_prevVoSpike) > SpikeThreshold ? 1m : 0m, candle.ServerTime));
+		var lowVal = _priceLow.Process(new DecimalIndicatorValue(_priceLow, candle.LowPrice, candle.ServerTime));
+		var highVal = _priceHigh.Process(new DecimalIndicatorValue(_priceHigh, candle.HighPrice, candle.ServerTime));
+		var regimeVal = _regimeSum.Process(new DecimalIndicatorValue(_regimeSum, Math.Abs(_prevVoSpike) > SpikeThreshold ? 1m : 0m, candle.ServerTime));
 		
 		if (!vovixAvgVal.IsFinal || !spikeMaxVal.IsFinal || !lowVal.IsFinal || !highVal.IsFinal || !regimeVal.IsFinal)
 		{
@@ -284,26 +285,32 @@ public class RevelationsStrategy : Strategy
 		if (Position == 0)
 		{
 			if (canLong)
-			BuyMarket(tradeQty);
-		else if (canShort)
-		SellMarket(tradeQty);
-	}
-else if (Position > 0)
-{
-	var tp = PositionPrice * (1 + TakeProfitPercent / 100m);
-	var sl = PositionPrice * (1 - StopPercent / 100m);
-	
-	if (candle.HighPrice >= tp || candle.LowPrice <= sl)
-	SellMarket(Position);
-}
-else if (Position < 0)
-{
-	var tp = PositionPrice * (1 - TakeProfitPercent / 100m);
-	var sl = PositionPrice * (1 + StopPercent / 100m);
-	
-	if (candle.LowPrice <= tp || candle.HighPrice >= sl)
-	BuyMarket(-Position);
-}
+			{
+				BuyMarket(tradeQty);
+				_entryPrice = candle.ClosePrice;
+			}
+			else if (canShort)
+			{
+				SellMarket(tradeQty);
+				_entryPrice = candle.ClosePrice;
+			}
+		}
+		else if (Position > 0)
+		{
+			var tp = _entryPrice * (1 + TakeProfitPercent / 100m);
+			var sl = _entryPrice * (1 - StopPercent / 100m);
+
+			if (candle.HighPrice >= tp || candle.LowPrice <= sl)
+				SellMarket(Position);
+		}
+		else if (Position < 0)
+		{
+			var tp = _entryPrice * (1 - TakeProfitPercent / 100m);
+			var sl = _entryPrice * (1 + StopPercent / 100m);
+
+			if (candle.LowPrice <= tp || candle.HighPrice >= sl)
+				BuyMarket(-Position);
+		}
 
 _prevVoSpike = voSpike;
 }

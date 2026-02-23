@@ -125,7 +125,7 @@ public class RsiCciFusionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		// no separate protection
 
 		var rsi = new RelativeStrengthIndex { Length = Length };
 		var cci = new CommodityChannelIndex { Length = Length };
@@ -140,16 +140,19 @@ public class RsiCciFusionStrategy : Strategy
 		_rescaledStd = new StandardDeviation { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(rsi, cci, ProcessCandle).Start();
+		subscription.BindEx(rsi, cci, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal cciValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiIV, IIndicatorValue cciIV)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
+
+		var rsiValue = rsiIV.GetValue<decimal>();
+		var cciValue = cciIV.GetValue<decimal>();
 
 		var rsiMean = _rsiSma!.Process(new DecimalIndicatorValue(_rsiSma, rsiValue, candle.OpenTime)).ToDecimal();
 		var rsiStd = _rsiStd!.Process(new DecimalIndicatorValue(_rsiStd, rsiValue, candle.OpenTime)).ToDecimal();

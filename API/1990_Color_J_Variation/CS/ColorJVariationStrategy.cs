@@ -84,7 +84,7 @@ public class ColorJVariationStrategy : Strategy
 		_jmaPhase = Param(nameof(JmaPhase), 100)
 			.SetDisplay("JMA Phase", "Phase for JMA", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "Parameters");
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
@@ -98,6 +98,12 @@ public class ColorJVariationStrategy : Strategy
 			.SetDisplay("Take Profit", "Absolute take profit", "Risk Management")
 			
 			.SetOptimize(200m, 4000m, 100m);
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />

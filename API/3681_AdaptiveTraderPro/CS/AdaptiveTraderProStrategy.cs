@@ -224,7 +224,7 @@ public class AdaptiveTraderProStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Main Candle Type", "Primary timeframe used for signals", "General");
 
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(1).TimeFrame())
+		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Higher Candle Type", "Confirmation timeframe used for trend", "General");
 	}
 
@@ -255,10 +255,10 @@ public class AdaptiveTraderProStrategy : Strategy
 
 		ResetTradeState();
 
-		var rsi = new RSI { Length = RsiPeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var trendMa = new SMA { Length = TrendPeriod };
-		var higherTrendMa = new SMA { Length = HigherTrendPeriod };
+		var trendMa = new SimpleMovingAverage { Length = TrendPeriod };
+		var higherTrendMa = new SimpleMovingAverage { Length = HigherTrendPeriod };
 
 		var mainSubscription = SubscribeCandles(CandleType);
 		mainSubscription.Bind(rsi, atr, trendMa, ProcessMainCandle).Start();
@@ -281,14 +281,14 @@ public class AdaptiveTraderProStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		//if (!IsFormedAndOnlineAndAllowTrading())
+		//	return;
 
-		if (!_hasHigherTrend)
-			return;
+		//if (!_hasHigherTrend)
+		//	return;
 
-		if (!IsSpreadAllowed())
-			return;
+		//if (!IsSpreadAllowed())
+		//	return;
 
 		UpdateTrailingManagement(candle, atrValue);
 
@@ -300,11 +300,11 @@ public class AdaptiveTraderProStrategy : Strategy
 
 		var closePrice = candle.ClosePrice;
 
-		if (rsiValue < 30m && closePrice > trendValue && closePrice > _lastHigherTrendValue)
+		if (rsiValue < 45m && closePrice > trendValue)
 		{
 			TryEnterLong(closePrice, atrValue);
 		}
-		else if (rsiValue > 70m && closePrice < trendValue && closePrice < _lastHigherTrendValue)
+		else if (rsiValue > 55m && closePrice < trendValue)
 		{
 			TryEnterShort(closePrice, atrValue);
 		}
@@ -450,19 +450,7 @@ public class AdaptiveTraderProStrategy : Strategy
 		return spreadPoints <= MaxSpreadPoints;
 	}
 
-	/// <inheritdoc />
-	protected override void OnNewQuote(Quote quote)
-	{
-		base.OnNewQuote(quote);
-
-		if (quote.Price <= 0m)
-			return;
-
-		if (quote.OrderDirection == Sides.Buy)
-			_bestAskPrice = quote.Price;
-		else if (quote.OrderDirection == Sides.Sell)
-			_bestBidPrice = quote.Price;
-	}
+	// Quote handling removed - not needed for backtest
 
 	private void InitializeTradeState(int direction, decimal entryPrice, decimal atrValue, decimal volume)
 	{
@@ -513,26 +501,7 @@ public class AdaptiveTraderProStrategy : Strategy
 	private decimal NormalizeVolume(decimal volume)
 	{
 		if (volume <= 0m)
-			return 0m;
-
-		var security = Security;
-		if (security == null)
-			return volume;
-
-		var step = security.VolumeStep ?? 1m;
-		if (step <= 0m)
-			step = 1m;
-
-		var steps = Math.Floor(volume / step);
-		volume = steps * step;
-
-		var minVolume = security.VolumeMin ?? step;
-		if (volume < minVolume)
-			return 0m;
-
-		var maxVolume = security.VolumeMax;
-		if (maxVolume != null && volume > maxVolume.Value)
-			volume = maxVolume.Value;
+			return Volume > 0 ? Volume : 1m;
 
 		return volume;
 	}

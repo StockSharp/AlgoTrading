@@ -214,7 +214,7 @@ public class SimpleTradingSystemStrategy : Strategy
 		_priceType = Param(nameof(PriceType), PriceTypes.Close)
 			.SetDisplay("Price Type", "Source price for MA", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_buyOpen = Param(nameof(BuyPositionOpen), true)
@@ -286,7 +286,7 @@ public class SimpleTradingSystemStrategy : Strategy
 			return;
 
 		var price = GetPrice(candle);
-		var maValue = _ma!.Process(new DecimalIndicatorValue(_ma, price, candle.OpenTime)).ToDecimal();
+		var maValue = _ma!.Process(new DecimalIndicatorValue(_ma, price, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		Shift(_maBuffer, maValue);
 		Shift(_closeBuffer, candle.ClosePrice);
@@ -294,11 +294,11 @@ public class SimpleTradingSystemStrategy : Strategy
 		if (_closeBuffer[0] == 0m)
 			return; // not enough history yet
 
-		var ma0 = _maBuffer[^1];
-		var ma1 = _maBuffer[^1 - MaShift];
+		var ma0 = _maBuffer[_maBuffer.Length - 1];
+		var ma1 = _maBuffer[_maBuffer.Length - 1 - MaShift];
 
-		var close = _closeBuffer[^1];
-		var closeShift = _closeBuffer[^1 - MaShift];
+		var close = _closeBuffer[_closeBuffer.Length - 1];
+		var closeShift = _closeBuffer[_closeBuffer.Length - 1 - MaShift];
 		var closeSum = _closeBuffer[0];
 		var open = candle.OpenPrice;
 
@@ -327,7 +327,7 @@ public class SimpleTradingSystemStrategy : Strategy
 	{
 		for (var i = 0; i < array.Length - 1; i++)
 			array[i] = array[i + 1];
-		array[^1] = value;
+		array[array.Length - 1] = value;
 	}
 
 	private decimal GetPrice(ICandleMessage candle)
@@ -348,13 +348,13 @@ public class SimpleTradingSystemStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypes.SMA => new SMA { Length = length },
-			MovingAverageTypes.EMA => new EMA { Length = length },
+			MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
 			MovingAverageTypes.DEMA => new DoubleExponentialMovingAverage { Length = length },
 			MovingAverageTypes.TEMA => new TripleExponentialMovingAverage { Length = length },
 			MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
 			MovingAverageTypes.VWMA => new VolumeWeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length }
+			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
 }

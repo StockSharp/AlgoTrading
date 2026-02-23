@@ -32,8 +32,8 @@ public class SmartTrendFollowerStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 
-	private SMA _fastSma;
-	private SMA _slowSma;
+	private SimpleMovingAverage _fastSma;
+	private SimpleMovingAverage _slowSma;
 	private StochasticOscillator _stochastic;
 
 	private readonly List<PositionEntry> _longEntries = new();
@@ -190,7 +190,7 @@ public class SmartTrendFollowerStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %K", "%K lookback length", "Indicators");
 
-		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
+		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %D", "%D smoothing length", "Indicators");
 
@@ -237,13 +237,11 @@ public class SmartTrendFollowerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastSma = new SMA { Length = Math.Max(1, FastPeriod) };
-		_slowSma = new SMA { Length = Math.Max(1, SlowPeriod) };
-		_stochastic = new StochasticOscillator
-		{ K = { Length = Math }.Max(1, StochasticKPeriod),
-			K = { Length = Math.Max(1, StochasticSlowing) },
-			D = { Length = Math.Max(1, StochasticDPeriod) }
-		};
+		_fastSma = new SimpleMovingAverage { Length = Math.Max(1, FastPeriod) };
+		_slowSma = new SimpleMovingAverage { Length = Math.Max(1, SlowPeriod) };
+		_stochastic = new StochasticOscillator();
+		_stochastic.K.Length = Math.Max(1, StochasticKPeriod);
+		_stochastic.D.Length = Math.Max(1, StochasticDPeriod);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -262,7 +260,7 @@ public class SmartTrendFollowerStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
+		// protection managed manually via ManageExits
 	}
 
 	/// <inheritdoc />
@@ -270,11 +268,10 @@ public class SmartTrendFollowerStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		var info = trade.Trade;
-		var price = info.Price;
-		var volume = info.Volume;
+		var price = trade.Trade.Price;
+		var volume = trade.Trade.Volume;
 
-		if (info.Side == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 			ReduceEntries(_shortEntries, ref volume);
 
@@ -283,7 +280,7 @@ public class SmartTrendFollowerStrategy : Strategy
 				_longEntries.Add(new PositionEntry(price, volume));
 			}
 		}
-		else if (info.Side == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		{
 			ReduceEntries(_longEntries, ref volume);
 
@@ -331,8 +328,9 @@ public class SmartTrendFollowerStrategy : Strategy
 					signal = SignalDirections.Sell;
 			}
 		}
-		else if (_stochastic?.IsFormed == true && stochasticValue is StochasticOscillatorValue stoch && stoch.K is decimal kValue)
+		else if (_stochastic?.IsFormed == true)
 		{
+			var kValue = stochasticValue.ToDecimal();
 			var bullish = candle.ClosePrice > candle.OpenPrice;
 			var bearish = candle.ClosePrice < candle.OpenPrice;
 
@@ -342,7 +340,7 @@ public class SmartTrendFollowerStrategy : Strategy
 				signal = SignalDirections.Sell;
 		}
 
-		if (signal != SignalDirections.None && IsFormedAndOnlineAndAllowTrading())
+		if (signal != SignalDirections.None)
 		{
 			ProcessSignal(signal, candle.ClosePrice);
 		}
@@ -504,11 +502,11 @@ public class SmartTrendFollowerStrategy : Strategy
 			requested = step * Math.Round(requested / step, MidpointRounding.AwayFromZero);
 		}
 
-		var min = security.VolumeMin ?? 0m;
+		var min = security.MinVolume ?? 0m;
 		if (min > 0m && requested < min)
 			return 0m;
 
-		var max = security.VolumeMax ?? decimal.MaxValue;
+		var max = security.MaxVolume ?? decimal.MaxValue;
 		if (requested > max)
 		{
 			requested = max;

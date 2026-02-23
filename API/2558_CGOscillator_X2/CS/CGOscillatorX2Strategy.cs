@@ -35,8 +35,9 @@ public class CGOscillatorX2Strategy : Strategy
 	private CenterOfGravityOscillator _signalIndicator;
 
 	private int _trendDirection;
-	private decimal? _signalPrevMain;
-	private decimal? _signalPrevSignal;
+	private decimal? _trendPrevCg;
+	private decimal? _signalPrevCg;
+	private decimal? _signalPrevPrevCg;
 	private decimal? _entryPrice;
 	private decimal? _stopPrice;
 	private decimal? _takePrice;
@@ -56,10 +57,10 @@ public class CGOscillatorX2Strategy : Strategy
 
 	public CGOscillatorX2Strategy()
 	{
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(6).TimeFrame())
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Trend Candle Type", "Higher timeframe for trend detection", "General");
 
-		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Signal Candle Type", "Lower timeframe for trade execution", "General");
 
 		_trendLength = Param(nameof(TrendLength), 10)
@@ -135,8 +136,9 @@ public class CGOscillatorX2Strategy : Strategy
 		base.OnReseted();
 
 		_trendDirection = 0;
-		_signalPrevMain = null;
-		_signalPrevSignal = null;
+		_trendPrevCg = null;
+		_signalPrevCg = null;
+		_signalPrevPrevCg = null;
 		_entryPrice = null;
 		_stopPrice = null;
 		_takePrice = null;
@@ -150,11 +152,13 @@ public class CGOscillatorX2Strategy : Strategy
 		if (!_trendIndicator.IsFormed)
 			return;
 
-		var cg = (CenterOfGravityOscillatorValue)value;
+		var cgValue = value.GetValue<decimal>();
+		var prevCg = _trendPrevCg;
+		_trendPrevCg = cgValue;
 
-		if (cg.Main > cg.Signal)
+		if (cgValue > 0)
 			_trendDirection = 1;
-		else if (cg.Main < cg.Signal)
+		else if (cgValue < 0)
 			_trendDirection = -1;
 		else
 			_trendDirection = 0;
@@ -165,28 +169,25 @@ public class CGOscillatorX2Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!_signalIndicator.IsFormed)
 			return;
 
-		var cg = (CenterOfGravityOscillatorValue)value;
+		var cgValue = value.GetValue<decimal>();
 
-		var prevMain = _signalPrevMain;
-		var prevSignal = _signalPrevSignal;
+		var prevCg = _signalPrevCg;
+		var prevPrevCg = _signalPrevPrevCg;
 
-		_signalPrevMain = cg.Main;
-		_signalPrevSignal = cg.Signal;
+		_signalPrevPrevCg = _signalPrevCg;
+		_signalPrevCg = cgValue;
 
-		if (prevMain is null || prevSignal is null)
+		if (prevCg is null)
 			return;
 
 		if (TryCloseByRisk(candle))
 			return;
 
-		var closeBuy = BuyCloseSignal && prevMain < prevSignal;
-		var closeSell = SellCloseSignal && prevMain > prevSignal;
+		var closeBuy = BuyCloseSignal && prevCg < 0;
+		var closeSell = SellCloseSignal && prevCg > 0;
 		var openBuy = false;
 		var openSell = false;
 
@@ -195,7 +196,7 @@ public class CGOscillatorX2Strategy : Strategy
 			if (BuyClose)
 				closeBuy = true;
 
-			if (SellOpen && cg.Main >= cg.Signal && prevMain < prevSignal)
+			if (SellOpen && cgValue < prevCg)
 				openSell = true;
 		}
 		else if (_trendDirection > 0)
@@ -203,32 +204,32 @@ public class CGOscillatorX2Strategy : Strategy
 			if (SellClose)
 				closeSell = true;
 
-			if (BuyOpen && cg.Main <= cg.Signal && prevMain > prevSignal)
+			if (BuyOpen && cgValue > prevCg)
 				openBuy = true;
 		}
 
 		if (closeBuy && Position > 0)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			ResetRiskTargets();
 		}
 
 		if (closeSell && Position < 0)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetRiskTargets();
 		}
 
 		if (openBuy && Position <= 0)
 		{
 			var volume = Volume + (Position < 0 ? Math.Abs(Position) : 0m);
-			BuyMarket(volume);
+			BuyMarket();
 			SetRiskTargets(candle.ClosePrice, true);
 		}
 		else if (openSell && Position >= 0)
 		{
 			var volume = Volume + (Position > 0 ? Math.Abs(Position) : 0m);
-			SellMarket(volume);
+			SellMarket();
 			SetRiskTargets(candle.ClosePrice, false);
 		}
 	}
@@ -239,14 +240,14 @@ public class CGOscillatorX2Strategy : Strategy
 		{
 			if (_stopPrice is decimal stop && candle.LowPrice <= stop)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetRiskTargets();
 				return true;
 			}
 
 			if (_takePrice is decimal take && candle.HighPrice >= take)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetRiskTargets();
 				return true;
 			}
@@ -255,14 +256,14 @@ public class CGOscillatorX2Strategy : Strategy
 		{
 			if (_stopPrice is decimal stop && candle.HighPrice >= stop)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetRiskTargets();
 				return true;
 			}
 
 			if (_takePrice is decimal take && candle.LowPrice <= take)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetRiskTargets();
 				return true;
 			}

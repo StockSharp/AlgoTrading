@@ -82,7 +82,7 @@ public class RangeExpansionIndexStrategy : Strategy
 			.SetDisplay("Down Level", "Lower threshold", "Parameters")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 

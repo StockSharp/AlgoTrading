@@ -41,7 +41,7 @@ public class HeikenAshiNoWickStrategy : Strategy
 	/// </summary>
 	public HeikenAshiNoWickStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -80,7 +80,7 @@ public class HeikenAshiNoWickStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsOnline)
 			return;
 
 		decimal haOpen;

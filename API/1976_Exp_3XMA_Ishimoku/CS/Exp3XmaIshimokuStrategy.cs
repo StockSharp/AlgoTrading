@@ -9,8 +9,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 
@@ -107,7 +105,7 @@ public class Exp3XmaIshimokuStrategy : Strategy
 		_allowSell = Param(nameof(AllowSell), true)
 			.SetDisplay("Allow Sell", "Enable short trades", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
@@ -122,12 +120,10 @@ public class Exp3XmaIshimokuStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ichimoku = new Ichimoku
-		{
-			Tenkan = { Length = TenkanPeriod },
-			Kijun = { Length = KijunPeriod },
-			SenkouB = { Length = SenkouSpanPeriod }
-		};
+		_ichimoku = new Ichimoku();
+		_ichimoku.Tenkan.Length = TenkanPeriod;
+		_ichimoku.Kijun.Length = KijunPeriod;
+		_ichimoku.SenkouB.Length = SenkouSpanPeriod;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -132,7 +132,7 @@ public class TradeOnQualifiedRSIStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume used for entries.", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Source timeframe for RSI calculation.", "General");
 	}
 
@@ -182,9 +182,6 @@ public class TradeOnQualifiedRSIStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (_rsi == null || !_rsi.IsFormed)
 		{
 			_aboveCounter = 0;
@@ -213,8 +210,8 @@ public class TradeOnQualifiedRSIStrategy : Strategy
 
 			if (shortSignal)
 			{
-				LogInfo($"Open short: RSI={rsiValue:F2}, counter={_aboveCounter}");
-				SellMarket(Volume);
+				this.LogInfo($"Open short: RSI={rsiValue:F2}, counter={_aboveCounter}");
+				SellMarket();
 				_entryPrice = candle.ClosePrice;
 				_stopPrice = candle.ClosePrice + distance;
 				return;
@@ -222,8 +219,8 @@ public class TradeOnQualifiedRSIStrategy : Strategy
 
 			if (longSignal)
 			{
-				LogInfo($"Open long: RSI={rsiValue:F2}, counter={_belowCounter}");
-				BuyMarket(Volume);
+				this.LogInfo($"Open long: RSI={rsiValue:F2}, counter={_belowCounter}");
+				BuyMarket();
 				_entryPrice = candle.ClosePrice;
 				_stopPrice = candle.ClosePrice - distance;
 			}
@@ -242,8 +239,8 @@ public class TradeOnQualifiedRSIStrategy : Strategy
 
 			if (_stopPrice != null && candle.LowPrice <= _stopPrice)
 			{
-				LogInfo($"Exit long via stop at {_stopPrice:F5}");
-				SellMarket(Math.Abs(Position));
+				this.LogInfo($"Exit long via stop at {_stopPrice:F5}");
+				SellMarket();
 				_stopPrice = null;
 				_entryPrice = 0m;
 			}
@@ -262,8 +259,8 @@ public class TradeOnQualifiedRSIStrategy : Strategy
 
 			if (_stopPrice != null && candle.HighPrice >= _stopPrice)
 			{
-				LogInfo($"Exit short via stop at {_stopPrice:F5}");
-				BuyMarket(Math.Abs(Position));
+				this.LogInfo($"Exit short via stop at {_stopPrice:F5}");
+				BuyMarket();
 				_stopPrice = null;
 				_entryPrice = 0m;
 			}

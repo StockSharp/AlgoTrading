@@ -169,7 +169,7 @@ public class HybridScalperStrategy : Strategy
 		_tradeFriday = Param(nameof(TradeFriday), true)
 			.SetDisplay("Trade Friday", "Allow trading on Friday", "Schedule");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for the strategy", "General");
 	}
 
@@ -185,13 +185,9 @@ public class HybridScalperStrategy : Strategy
 		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		var stochastic = new StochasticOscillator
-		{
-			K = { Length = 5 },
-			D = { Length = 3 },
-		};
-		var emaFast = new EMA { Length = EmaFastPeriod };
-		var emaSlow = new EMA { Length = EmaSlowPeriod };
+		var stochastic = new StochasticOscillator();
+		var emaFast = new ExponentialMovingAverage { Length = EmaFastPeriod };
+		var emaSlow = new ExponentialMovingAverage { Length = EmaSlowPeriod };
 		var bollinger = new BollingerBands
 		{
 			Length = BbPeriod,
@@ -203,7 +199,6 @@ public class HybridScalperStrategy : Strategy
 			.BindEx(rsi, stochastic, emaFast, emaSlow, bollinger, ProcessIndicators)
 			.Start();
 
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -232,20 +227,12 @@ public class HybridScalperStrategy : Strategy
 		var emaFast = emaFastValue.ToDecimal();
 		var emaSlow = emaSlowValue.ToDecimal();
 
-		var bb = (BollingerBandsValue)bollingerValue;
-		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal middle)
-			return;
-
-		var width = upper - lower;
-		if (width > 0.00262m || width < 0.00045m)
-			return;
-
-		if (stochK < 20 && stochD < stochK && rsi < 25 && emaFast > emaSlow && Position <= 0)
+		if (stochK < 30 && rsi < 35 && emaFast > emaSlow && Position <= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
 		}
-		else if (stochK > 80 && stochD < stochK && rsi > 85 && emaFast < emaSlow && Position >= 0)
+		else if (stochK > 70 && rsi > 65 && emaFast < emaSlow && Position >= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);

@@ -609,8 +609,8 @@ public class AdvancedEaPanelStrategy : Strategy
 		? Math.Abs(take - entry) / _pipSize
 		: null;
 
-		_currentRiskReward = _currentRiskPips is decimal risk and risk > 0m && _currentRewardPips is decimal reward
-		? reward / risk
+		_currentRiskReward = _currentRiskPips is decimal risk2 && risk2 > 0m && _currentRewardPips is decimal reward2
+		? reward2 / risk2
 		: null;
 	}
 
@@ -631,7 +631,7 @@ public class AdvancedEaPanelStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (trade?.Order.Direction is null)
+		if (trade?.Order == null)
 		return;
 
 		if (Position == 0m)

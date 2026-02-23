@@ -122,7 +122,7 @@ public class Cs2011Strategy : Strategy
 			
 			.SetOptimize(10, 60, 5);
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 500)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 50)
 			.SetDisplay("Slow EMA", "Slow EMA period for MACD", "Indicators")
 			
 			.SetOptimize(200, 700, 20);
@@ -132,7 +132,7 @@ public class Cs2011Strategy : Strategy
 			
 			.SetOptimize(10, 60, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Source timeframe for MACD", "General");
 	}
 
@@ -155,9 +155,9 @@ public class Cs2011Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TargetVolume;
 
@@ -184,19 +184,15 @@ public class Cs2011Strategy : Strategy
 			DrawOwnTrades(chartArea);
 		}
 
-		var step = Security?.PriceStep ?? 1m;
-		Unit takeProfit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null;
-		Unit stopLoss = StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Point) : null;
-
-		StartProtection(takeProfit: takeProfit, stopLoss: stopLoss);
+		// removed StartProtection
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indicatorValue)
 	{
-		if (candle.State != CandleStates.Finished || !indicatorValue.IsFinal)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (indicatorValue is not MovingAverageConvergenceDivergenceSignalValue macdValue)
+		if (indicatorValue is not IMovingAverageConvergenceDivergenceSignalValue macdValue)
 			return;
 
 		if (macdValue.Macd is not decimal macd || macdValue.Signal is not decimal signal)
@@ -241,8 +237,7 @@ public class Cs2011Strategy : Strategy
 
 	private void ExecuteSignals(bool upSignal, bool downSignal)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// removed IsFormedAndOnlineAndAllowTrading guard
 
 		if (upSignal)
 		{

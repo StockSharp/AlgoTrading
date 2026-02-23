@@ -186,7 +186,7 @@ public class ColorZerolagTrixOsmaStrategy : Strategy
 	_period4 = Param(nameof(Period4), 55).SetDisplay("Period4", "TRIX 4 period", "Indicator");
 	_factor5 = Param(nameof(Factor5), 0.43m).SetDisplay("Factor5", "Weight for fifth TRIX", "Indicator");
 	_period5 = Param(nameof(Period5), 89).SetDisplay("Period5", "TRIX 5 period", "Indicator");
-	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
 }
 
 	/// <inheritdoc />
@@ -196,16 +196,6 @@ public class ColorZerolagTrixOsmaStrategy : Strategy
 	protected override void OnReseted()
 	{
 	base.OnReseted();
-	_tema1.Reset();
-	_tema2.Reset();
-	_tema3.Reset();
-	_tema4.Reset();
-	_tema5.Reset();
-	_roc1.Reset();
-	_roc2.Reset();
-	_roc3.Reset();
-	_roc4.Reset();
-	_roc5.Reset();
 	_prevSlow = 0m;
 	_prevOsma = 0m;
 	_prev1 = 0m;
@@ -236,7 +226,6 @@ public class ColorZerolagTrixOsmaStrategy : Strategy
 	var subscription = SubscribeCandles(CandleType);
 	subscription.Bind(ProcessCandle).Start();
 
-	StartProtection(null, null);
 }
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -244,20 +233,30 @@ public class ColorZerolagTrixOsmaStrategy : Strategy
 	if (candle.State != CandleStates.Finished)
 	return;
 
-	var t1 = _roc1.Process(_tema1.Process(candle.ClosePrice).ToDecimal());
-	var t2 = _roc2.Process(_tema2.Process(candle.ClosePrice).ToDecimal());
-	var t3 = _roc3.Process(_tema3.Process(candle.ClosePrice).ToDecimal());
-	var t4 = _roc4.Process(_tema4.Process(candle.ClosePrice).ToDecimal());
-	var t5 = _roc5.Process(_tema5.Process(candle.ClosePrice).ToDecimal());
-
-	if (!t1.IsFinal || !t2.IsFinal || !t3.IsFinal || !t4.IsFinal || !t5.IsFinal)
+	if (!IsOnline)
 	return;
 
-	var osc1 = Factor1 * t1.ToDecimal();
-	var osc2 = Factor2 * t2.ToDecimal();
-	var osc3 = Factor3 * t3.ToDecimal();
-	var osc4 = Factor4 * t4.ToDecimal();
-	var osc5 = Factor5 * t5.ToDecimal();
+	var time = candle.OpenTime;
+	var tema1Val = _tema1.Process(candle.ClosePrice, time, true).ToDecimal();
+	var tema2Val = _tema2.Process(candle.ClosePrice, time, true).ToDecimal();
+	var tema3Val = _tema3.Process(candle.ClosePrice, time, true).ToDecimal();
+	var tema4Val = _tema4.Process(candle.ClosePrice, time, true).ToDecimal();
+	var tema5Val = _tema5.Process(candle.ClosePrice, time, true).ToDecimal();
+
+	var t1Val = _roc1.Process(tema1Val, time, true).ToDecimal();
+	var t2Val = _roc2.Process(tema2Val, time, true).ToDecimal();
+	var t3Val = _roc3.Process(tema3Val, time, true).ToDecimal();
+	var t4Val = _roc4.Process(tema4Val, time, true).ToDecimal();
+	var t5Val = _roc5.Process(tema5Val, time, true).ToDecimal();
+
+	if (!_roc1.IsFormed || !_roc2.IsFormed || !_roc3.IsFormed || !_roc4.IsFormed || !_roc5.IsFormed)
+	return;
+
+	var osc1 = Factor1 * t1Val;
+	var osc2 = Factor2 * t2Val;
+	var osc3 = Factor3 * t3Val;
+	var osc4 = Factor4 * t4Val;
+	var osc5 = Factor5 * t5Val;
 
 	var fast = osc1 + osc2 + osc3 + osc4 + osc5;
 	var slow = fast / Smoothing1 + _prevSlow * _smoothConst1;

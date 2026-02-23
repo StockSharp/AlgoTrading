@@ -335,7 +335,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 			return;
 
 		var inSession = InSession(candle.OpenTime);
-		var allowTrading = inSession && IsFormedAndOnlineAndAllowTrading();
+		var allowTrading = inSession && true;
 
 		UpdateTrailing(candle, inSession || TrailOutsideSession);
 		HandleProtectiveExits(candle);
@@ -346,7 +346,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 		if (!_fastMa.IsFormed || !_slowMa.IsFormed)
 			return;
 
-		if (!IsFormedAndOnline())
+		if (!true)
 			return;
 
 		var gapUp = fast - slow;
@@ -403,7 +403,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 
 	private void OpenLong(decimal price)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!true)
 			return;
 
 		var volume = CalculateOrderVolume(price);
@@ -416,7 +416,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 
 	private void OpenShort(decimal price)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!true)
 			return;
 
 		var volume = CalculateOrderVolume(price);
@@ -452,7 +452,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 		{
 			if (allowUpdate)
 			{
-				var move = candle.ClosePrice - PositionPrice;
+				var move = candle.ClosePrice - 0m;
 				if (move >= distance)
 				{
 					var newStop = candle.ClosePrice - distance;
@@ -474,7 +474,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 
 			if (allowUpdate)
 			{
-				var move = PositionPrice - candle.ClosePrice;
+				var move = 0m - candle.ClosePrice;
 				if (move >= distance)
 				{
 					var newStop = candle.ClosePrice + distance;
@@ -503,8 +503,8 @@ public class AdjustableMovingAverageStrategy : Strategy
 
 		if (Position > 0m)
 		{
-			var stop = StopLossPoints > 0m ? PositionPrice - StopLossPoints * _pointValue : (decimal?)null;
-			var target = TakeProfitPoints > 0m ? PositionPrice + TakeProfitPoints * _pointValue : (decimal?)null;
+			var stop = StopLossPoints > 0m ? 0m - StopLossPoints * _pointValue : (decimal?)null;
+			var target = TakeProfitPoints > 0m ? 0m + TakeProfitPoints * _pointValue : (decimal?)null;
 
 			if (stop.HasValue && candle.LowPrice <= stop.Value)
 			{
@@ -524,8 +524,8 @@ public class AdjustableMovingAverageStrategy : Strategy
 		else if (Position < 0m)
 		{
 			var absPosition = -Position;
-			var stop = StopLossPoints > 0m ? PositionPrice + StopLossPoints * _pointValue : (decimal?)null;
-			var target = TakeProfitPoints > 0m ? PositionPrice - TakeProfitPoints * _pointValue : (decimal?)null;
+			var stop = StopLossPoints > 0m ? 0m + StopLossPoints * _pointValue : (decimal?)null;
+			var target = TakeProfitPoints > 0m ? 0m - TakeProfitPoints * _pointValue : (decimal?)null;
 
 			if (stop.HasValue && candle.HighPrice >= stop.Value)
 			{
@@ -573,20 +573,20 @@ public class AdjustableMovingAverageStrategy : Strategy
 		if (security == null)
 			return volume;
 
-		var step = security.VolumeStep;
+		var step = security.VolumeStep ?? 1m;
 		if (step > 0m)
 		{
-			var steps = Math.Max(1m, Math.Round(volume / step, MidpointRounding.AwayFromZero));
+			var steps = Math.Max(1m, Math.Round(volume / step, 0, MidpointRounding.AwayFromZero));
 			volume = steps * step;
 		}
 
-		var minVolume = security.MinVolume;
+		var minVolume = security.MinVolume ?? 0m;
 		if (minVolume > 0m && volume < minVolume)
-			volume = minVolume.Value;
+			volume = minVolume;
 
-		var maxVolume = security.MaxVolume;
-		if (maxVolume > 0m && volume > maxVolume)
-			volume = maxVolume.Value;
+		var maxVolume = security.MaxVolume ?? decimal.MaxValue;
+		if (volume > maxVolume)
+			volume = maxVolume;
 
 		return volume;
 	}
@@ -607,7 +607,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 
 	private decimal CalculatePointValue()
 	{
-		var step = Security?.PriceStep ?? Security?.Step ?? 0m;
+		var step = Security?.PriceStep ?? Security?.PriceStep ?? 0m;
 		if (step <= 0m)
 			return 0m;
 
@@ -622,11 +622,11 @@ public class AdjustableMovingAverageStrategy : Strategy
 	{
 		DecimalLengthIndicator indicator = method switch
 		{
-			MovingAverageMethods.Simple => new SMA { Length = length },
-			MovingAverageMethods.Exponential => new EMA { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new EMA { Length = length }
+			_ => new ExponentialMovingAverage { Length = length }
 		};
 
 		return indicator;

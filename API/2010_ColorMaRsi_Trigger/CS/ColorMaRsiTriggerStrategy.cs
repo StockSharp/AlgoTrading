@@ -85,7 +85,7 @@ _rsiSlowLength = Param(nameof(RsiSlowLength), 13)
 
 .SetOptimize(5, 40, 1);
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
 }
 
@@ -107,8 +107,8 @@ protected override void OnStarted2(DateTime time)
 {
 base.OnStarted2(time);
 
-_emaFast = new EMA { Length = EmaFastLength };
-_emaSlow = new EMA { Length = EmaSlowLength };
+_emaFast = new ExponentialMovingAverage { Length = EmaFastLength };
+_emaSlow = new ExponentialMovingAverage { Length = EmaSlowLength };
 _rsiFast = new RelativeStrengthIndex { Length = RsiFastLength };
 _rsiSlow = new RelativeStrengthIndex { Length = RsiSlowLength };
 

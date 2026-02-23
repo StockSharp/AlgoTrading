@@ -140,11 +140,7 @@ public class ETurboFxStepsStrategy : Strategy
 		if (takeProfitUnit != null || stopLossUnit != null)
 		{
 			// Configure protective orders once the strategy starts.
-			StartProtection(
-				takeProfit: takeProfitUnit,
-				stopLoss: stopLossUnit,
-				isStopTrailing: false,
-				useMarketOrders: true);
+			StartProtection(stopLossUnit, takeProfitUnit);
 		}
 
 		var subscription = SubscribeCandles(CandleType);
@@ -227,7 +223,7 @@ public class ETurboFxStepsStrategy : Strategy
 		if (_bearishSequence >= DepthAnalysis)
 		{
 			// Expanding bearish bodies suggest exhaustion that can trigger a long entry.
-			BuyMarket(Volume);
+			BuyMarket();
 			ResetBearishSequence();
 		}
 	}
@@ -258,7 +254,7 @@ public class ETurboFxStepsStrategy : Strategy
 		if (_bullishSequence >= DepthAnalysis)
 		{
 			// Expanding bullish bodies suggest potential reversal to the downside.
-			SellMarket(Volume);
+			SellMarket();
 			ResetBullishSequence();
 		}
 	}

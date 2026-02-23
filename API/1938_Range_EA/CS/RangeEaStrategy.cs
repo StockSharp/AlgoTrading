@@ -213,7 +213,7 @@ public class RangeEaStrategy : Strategy
 		_nextStepPrice = default;
 		_turnPrice = default;
 
-		var ma = new SMA
+		var ma = new SimpleMovingAverage
 		{
 			Length = MaLength
 		};
@@ -342,5 +342,13 @@ public class RangeEaStrategy : Strategy
 					_turnPrice = _entryPrice + Turn;
 			}
 		}
+	}
+
+	private void ClosePosition()
+	{
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(-Position);
 	}
 }

@@ -181,8 +181,10 @@ public class RangeFilterAtrLowDrawdownStrategy : Strategy
 
 		var price = candle.ClosePrice;
 
-		var avrng = _avrng.Process(Math.Abs(price - _prevPrice)).ToDecimal();
-		var smooth = _smooth.Process(avrng).ToDecimal();
+		var avrngVal = _avrng.Process(new DecimalIndicatorValue(_avrng, Math.Abs(price - _prevPrice), candle.ServerTime));
+		var avrng = avrngVal.ToDecimal();
+		var smoothVal = _smooth.Process(new DecimalIndicatorValue(_smooth, avrng, candle.ServerTime));
+		var smooth = smoothVal.ToDecimal();
 		var smrng = smooth * Multiplier;
 
 		var prevFilt = _filter;

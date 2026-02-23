@@ -91,7 +91,7 @@ public class SuperTakeStrategy : Strategy
 		
 		.SetOptimize(1m, 3m, 0.2m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to drive the logic", "General");
 	}
 	/// <inheritdoc />
@@ -123,14 +123,14 @@ public class SuperTakeStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(null, null);
+		// Protection handled internally by the strategy
 	}
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsOnline)
 		return;
 
 		if (Position != 0)

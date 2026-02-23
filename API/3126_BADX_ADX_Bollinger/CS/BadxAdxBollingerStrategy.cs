@@ -207,13 +207,12 @@ public class BadxAdxBollingerStrategy : Strategy
 			}
 		}
 
-		if (takeProfitUnit != null || stopLossUnit != null || trailingStopUnit != null)
+		if (takeProfitUnit != null || stopLossUnit != null)
 		{
 			StartProtection(
 				takeProfit: takeProfitUnit,
 				stopLoss: stopLossUnit,
-				trailingStop: trailingStopUnit,
-				trailingStep: trailingStepUnit,
+				isStopTrailing: trailingStopUnit != null,
 				useMarketOrders: true);
 		}
 

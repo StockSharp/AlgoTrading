@@ -308,11 +308,11 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsOnline)
 			return;
 
 		var time = candle.OpenTime;
-		decimal volume = VolumeSource == VolumeSources.Tick ? candle.TotalTicks : candle.TotalVolume;
+		decimal volume = VolumeSource == VolumeSources.Tick ? (decimal)(candle.TotalTicks ?? 0) : candle.TotalVolume;
 		var weightedValue = (williamsValue + 50m) * volume;
 
 		var valueResult = _valueSmoother.Process(new DecimalIndicatorValue(_valueSmoother, weightedValue, time));

@@ -329,7 +329,7 @@ protected override void OnOwnTradeReceived(MyTrade trade)
 	if (order == null)
 	return;
 
-	if (order.Direction == Sides.Buy)
+	if (order.Side == Sides.Buy)
 	{
 		if (Position > 0m)
 		{
@@ -343,7 +343,7 @@ protected override void OnOwnTradeReceived(MyTrade trade)
 		ResetShortRiskLevels();
 	}
 }
-else if (order.Direction == Sides.Sell)
+else if (order.Side == Sides.Sell)
 {
 	if (Position < 0m)
 	{
@@ -429,8 +429,6 @@ _previousCandle = candle;
 
 private void TryOpenLong(decimal price)
 {
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
 
 	if (Position > 0m)
 	return;
@@ -455,9 +453,6 @@ BuyMarket(volume);
 
 private void TryOpenShort(decimal price)
 {
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
-
 	if (Position < 0m)
 	return;
 

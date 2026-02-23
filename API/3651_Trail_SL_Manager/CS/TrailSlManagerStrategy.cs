@@ -36,6 +36,9 @@ public class TrailSlManagerStrategy : Strategy
 	private decimal _shortStop;
 	private bool _longBreakEvenActive;
 	private bool _shortBreakEvenActive;
+	private decimal _lastEntryPrice;
+	private SimpleMovingAverage _smaFast;
+	private SimpleMovingAverage _smaSlow;
 
 	/// <summary>
 	/// Enables automatic break-even adjustment.
@@ -156,7 +159,7 @@ public class TrailSlManagerStrategy : Strategy
 		_initialStopPoints = Param(nameof(InitialStopPoints), 200)
 		.SetDisplay("Initial Stop", "Initial stop distance used before trailing", "Risk")
 		;
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candle subscription for monitoring", "Data");
 	}
 
@@ -172,12 +175,15 @@ public class TrailSlManagerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_priceStep = Security?.PriceStep ?? 0m;
+		_priceStep = Security?.PriceStep ?? 1m;
 		if (_priceStep <= 0m)
-			throw new InvalidOperationException("Security price step must be defined.");
+			_priceStep = 1m;
+
+		_smaFast = new SimpleMovingAverage { Length = 10 };
+		_smaSlow = new SimpleMovingAverage { Length = 30 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(_smaFast, _smaSlow, ProcessCandleWithIndicators).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -198,22 +204,37 @@ public class TrailSlManagerStrategy : Strategy
 			return;
 		}
 
-		if (trade.Order.Direction == Sides.Buy && Position > 0)
+		if (trade.Order.Side == Sides.Buy && Position > 0)
 		{
-			_longStop = InitialStopPoints > 0 ? PositionPrice - InitialStopPoints * _priceStep : 0m;
+			_longStop = InitialStopPoints > 0 ? _lastEntryPrice - InitialStopPoints * _priceStep : 0m;
 			_longBreakEvenActive = false;
 		}
-		else if (trade.Order.Direction == Sides.Sell && Position < 0)
+		else if (trade.Order.Side == Sides.Sell && Position < 0)
 		{
-			_shortStop = InitialStopPoints > 0 ? PositionPrice + InitialStopPoints * _priceStep : 0m;
+			_shortStop = InitialStopPoints > 0 ? _lastEntryPrice + InitialStopPoints * _priceStep : 0m;
 			_shortBreakEvenActive = false;
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandleWithIndicators(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (fast > slow && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+			_lastEntryPrice = candle.ClosePrice;
+		}
+		else if (fast < slow && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+			_lastEntryPrice = candle.ClosePrice;
+		}
 
 		ManageLongPosition(candle);
 		ManageShortPosition(candle);
@@ -228,7 +249,7 @@ public class TrailSlManagerStrategy : Strategy
 			return;
 		}
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _lastEntryPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -313,7 +334,7 @@ public class TrailSlManagerStrategy : Strategy
 			return;
 		}
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _lastEntryPrice;
 		if (entryPrice <= 0m)
 			return;
 

@@ -234,7 +234,7 @@ public class Ais1EurUsdBreakoutStrategy : Strategy
 			// Respect take profit first so gains are locked immediately.
 			if (_longTake > 0m && candle.HighPrice >= _longTake)
 			{
-				SellMarket(exitVolume);
+				SellMarket();
 				ResetAfterExit(candle.CloseTime);
 				return;
 			}
@@ -254,7 +254,7 @@ public class Ais1EurUsdBreakoutStrategy : Strategy
 
 			if (trailingStop > 0m && candle.LowPrice <= trailingStop)
 			{
-				SellMarket(exitVolume);
+				SellMarket();
 				ResetAfterExit(candle.CloseTime);
 			}
 		}
@@ -264,7 +264,7 @@ public class Ais1EurUsdBreakoutStrategy : Strategy
 
 			if (_shortTake > 0m && candle.LowPrice <= _shortTake)
 			{
-				BuyMarket(exitVolume);
+				BuyMarket();
 				ResetAfterExit(candle.CloseTime);
 				return;
 			}
@@ -283,7 +283,7 @@ public class Ais1EurUsdBreakoutStrategy : Strategy
 
 			if (trailingStop > 0m && candle.HighPrice >= trailingStop)
 			{
-				BuyMarket(exitVolume);
+				BuyMarket();
 				ResetAfterExit(candle.CloseTime);
 			}
 		}
@@ -306,7 +306,7 @@ public class Ais1EurUsdBreakoutStrategy : Strategy
 			if (volume <= 0m)
 				return;
 
-			BuyMarket(volume);
+			BuyMarket();
 
 			_entryPrice = entryPrice;
 			_longStop = stopPrice;
@@ -329,7 +329,7 @@ public class Ais1EurUsdBreakoutStrategy : Strategy
 			if (volume <= 0m)
 				return;
 
-			SellMarket(volume);
+			SellMarket();
 
 			_entryPrice = entryPrice;
 			_shortStop = stopPrice;

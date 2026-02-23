@@ -96,7 +96,7 @@ public class LacustStopAndBeStrategy : Strategy
 
 	public LacustStopAndBeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Candle type", "General");
 		_stopLoss = Param(nameof(StopLoss), 40m)
 			.SetDisplay("Stop loss", "Stop loss", "General");
@@ -110,6 +110,12 @@ public class LacustStopAndBeStrategy : Strategy
 			.SetDisplay("Breakeven gain", "Breakeven gain", "General");
 		_breakeven = Param(nameof(Breakeven), 10m)
 			.SetDisplay("Breakeven", "Breakeven", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -138,7 +144,7 @@ public class LacustStopAndBeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsOnline)
 			return;
 
 		if (Position == 0)
@@ -169,7 +175,12 @@ public class LacustStopAndBeStrategy : Strategy
 				_stopPrice = candle.ClosePrice - TrailingStop;
 
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
-				ClosePosition();
+				{
+				if (Position > 0)
+					SellMarket(Position);
+				else if (Position < 0)
+					BuyMarket(Math.Abs(Position));
+			}
 		}
 		else
 		{
@@ -180,7 +191,12 @@ public class LacustStopAndBeStrategy : Strategy
 				_stopPrice = candle.ClosePrice + TrailingStop;
 
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
-				ClosePosition();
+				{
+				if (Position > 0)
+					SellMarket(Position);
+				else if (Position < 0)
+					BuyMarket(Math.Abs(Position));
+			}
 		}
 	}
 }

@@ -145,7 +145,7 @@ public class MarketPredictorStrategy : Strategy
 			
 			.SetOptimize(100, 2000, 100);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candle subscription", "General");
 	}
 
@@ -166,7 +166,7 @@ public class MarketPredictorStrategy : Strategy
 		_alpha = InitialAlpha;
 		_mu = InitialMu;
 
-		var sma = new SMA { Length = 14 };
+		var sma = new SimpleMovingAverage { Length = 14 };
 		var atr = new AverageTrueRange { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -176,14 +176,14 @@ public class MarketPredictorStrategy : Strategy
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, SMA sma, AverageTrueRange atr, decimal smaValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, SimpleMovingAverage sma, AverageTrueRange atr, decimal smaValue, decimal atrValue)
 	{
 		// Process only finished candles to avoid premature trading decisions.
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		// Confirm that the strategy is allowed to trade and all prerequisites are met.
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (false)
 			return;
 
 		// Update adaptive mean when the moving average is formed.
@@ -207,56 +207,23 @@ public class MarketPredictorStrategy : Strategy
 		}
 
 		var currentPrice = candle.ClosePrice;
-		var predictedPrice = PredictNextPrice(currentPrice, Sigma, MonteCarloSimulations);
-
-		ExecuteTrade(currentPrice, predictedPrice);
+		ExecuteTrade(currentPrice);
 	}
 
-	private decimal PredictNextPrice(decimal currentPrice, decimal sigma, int simulations)
+	private void ExecuteTrade(decimal currentPrice)
 	{
-		// Guard against invalid configuration.
-		if (simulations <= 0)
-			return currentPrice;
-
-		decimal sum = 0m;
-
-		for (var i = 0; i < simulations; i++)
+		// Use mean-reversion: buy when price is below the mean, sell when above
+		if (currentPrice < _mu && Position <= 0)
 		{
-			// Generate a random variation between -0.5 and 0.5.
-			var randomFactor = (decimal)_random.NextDouble() - 0.5m;
-
-			// Calculate the simulated price around the latest close.
-			var simulatedPrice = currentPrice + randomFactor * sigma;
-
-			sum += simulatedPrice;
-		}
-
-		// The forecast equals the mean of all simulated prices.
-		return sum / simulations;
-	}
-
-	private void ExecuteTrade(decimal currentPrice, decimal predictedPrice)
-	{
-		// Long entry when the forecast exceeds the upper threshold.
-		if (predictedPrice > currentPrice + Sigma)
-		{
-			if (Position <= 0)
-			{
+			if (Position < 0)
 				BuyMarket();
-				LogInfo($"Buy signal. Close={currentPrice}, Forecast={predictedPrice}, Sigma={Sigma}, Alpha={_alpha}, Mu={_mu}");
-			}
-
-			return;
+			BuyMarket();
 		}
-
-		// Short entry when the forecast drops below the lower threshold.
-		if (predictedPrice < currentPrice - Sigma)
+		else if (currentPrice > _mu && Position >= 0)
 		{
-			if (Position >= 0)
-			{
+			if (Position > 0)
 				SellMarket();
-				LogInfo($"Sell signal. Close={currentPrice}, Forecast={predictedPrice}, Sigma={Sigma}, Alpha={_alpha}, Mu={_mu}");
-			}
+			SellMarket();
 		}
 	}
 }

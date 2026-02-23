@@ -203,8 +203,7 @@ public class DealersTradeV751RivotStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawLine(area, "Pivot", () => _pivotLevel);
-			DrawLine(area, "FloatingPivot", () => _floatingPivot);
+			DrawOwnTrades(area);
 		}
 	}
 
@@ -225,7 +224,7 @@ public class DealersTradeV751RivotStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsOnline)
 		return;
 
 		if (_previousCandle == null)

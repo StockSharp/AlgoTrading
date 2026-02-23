@@ -56,7 +56,7 @@ public class ChandelExitReopenStrategy : Strategy
 	/// </summary>
 	public ChandelExitReopenStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for signals", "General");
 
 		_rangePeriod = Param(nameof(RangePeriod), 15)
@@ -266,8 +266,6 @@ public class ChandelExitReopenStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var subscription = SubscribeCandles(CandleType);
 
@@ -353,17 +351,17 @@ public class ChandelExitReopenStrategy : Strategy
 		{
 			if (_longStopPrice is decimal sl && candle.LowPrice <= sl)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 				longClosed = true;
-				LogInfo($"Long stop triggered at {sl:0.########}");
+				this.LogInfo($"Long stop triggered at {sl:0.########}");
 			}
 			else if (_longTakePrice is decimal tp && candle.HighPrice >= tp)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetLongState();
 				longClosed = true;
-				LogInfo($"Long take profit triggered at {tp:0.########}");
+				this.LogInfo($"Long take profit triggered at {tp:0.########}");
 			}
 		}
 
@@ -371,38 +369,35 @@ public class ChandelExitReopenStrategy : Strategy
 		{
 			if (_shortStopPrice is decimal sl && candle.HighPrice >= sl)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortState();
 				shortClosed = true;
-				LogInfo($"Short stop triggered at {sl:0.########}");
+				this.LogInfo($"Short stop triggered at {sl:0.########}");
 			}
 			else if (_shortTakePrice is decimal tp && candle.LowPrice <= tp)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetShortState();
 				shortClosed = true;
-				LogInfo($"Short take profit triggered at {tp:0.########}");
+				this.LogInfo($"Short take profit triggered at {tp:0.########}");
 			}
 		}
 
 		if (!longClosed && buyClose && Position > 0m)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetLongState();
 			longClosed = true;
-			LogInfo($"Long exit on down signal at {candle.ClosePrice:0.########}");
+			this.LogInfo($"Long exit on down signal at {candle.ClosePrice:0.########}");
 		}
 
 		if (!shortClosed && sellClose && Position < 0m)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			ResetShortState();
 			shortClosed = true;
-			LogInfo($"Short exit on up signal at {candle.ClosePrice:0.########}");
+			this.LogInfo($"Short exit on up signal at {candle.ClosePrice:0.########}");
 		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (!longClosed && Position > 0m && MaxAdditions > 0 && _longEntryPrice is decimal lastLongPrice && priceStep > 0m && _longAdditions < MaxAdditions)
 		{
@@ -410,12 +405,12 @@ public class ChandelExitReopenStrategy : Strategy
 			{
 				if (Volume > 0m)
 				{
-					BuyMarket(Volume);
+					BuyMarket();
 					_longAdditions++;
 					_longEntryPrice = candle.ClosePrice;
 					_lastLongAdditionTime = candle.OpenTime;
 					UpdateLongProtection(candle.ClosePrice, step);
-					LogInfo($"Added to long position at {candle.ClosePrice:0.########} (add #{_longAdditions})");
+					this.LogInfo($"Added to long position at {candle.ClosePrice:0.########} (add #{_longAdditions})");
 				}
 			}
 		}
@@ -426,12 +421,12 @@ public class ChandelExitReopenStrategy : Strategy
 			{
 				if (Volume > 0m)
 				{
-					SellMarket(Volume);
+					SellMarket();
 					_shortAdditions++;
 					_shortEntryPrice = candle.ClosePrice;
 					_lastShortAdditionTime = candle.OpenTime;
 					UpdateShortProtection(candle.ClosePrice, step);
-					LogInfo($"Added to short position at {candle.ClosePrice:0.########} (add #{_shortAdditions})");
+					this.LogInfo($"Added to short position at {candle.ClosePrice:0.########} (add #{_shortAdditions})");
 				}
 			}
 		}
@@ -444,26 +439,24 @@ public class ChandelExitReopenStrategy : Strategy
 
 		if (buyOpen && Volume > 0m)
 		{
-			var volume = Volume + (Position < 0m ? Math.Abs(Position) : 0m);
-			BuyMarket(volume);
+			BuyMarket();
 			ResetShortState();
 			_longAdditions = 0;
 			_longEntryPrice = candle.ClosePrice;
 			_lastLongAdditionTime = candle.OpenTime;
 			UpdateLongProtection(candle.ClosePrice, step);
-			LogInfo($"Opened long position at {candle.ClosePrice:0.########}");
+			this.LogInfo($"Opened long position at {candle.ClosePrice:0.########}");
 		}
 
 		if (sellOpen && Volume > 0m)
 		{
-			var volume = Volume + (Position > 0m ? Position : 0m);
-			SellMarket(volume);
+			SellMarket();
 			ResetLongState();
 			_shortAdditions = 0;
 			_shortEntryPrice = candle.ClosePrice;
 			_lastShortAdditionTime = candle.OpenTime;
 			UpdateShortProtection(candle.ClosePrice, step);
-			LogInfo($"Opened short position at {candle.ClosePrice:0.########}");
+			this.LogInfo($"Opened short position at {candle.ClosePrice:0.########}");
 		}
 	}
 

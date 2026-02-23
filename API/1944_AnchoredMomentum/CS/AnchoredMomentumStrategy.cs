@@ -114,7 +114,7 @@ public class AnchoredMomentumStrategy : Strategy
 		_downLevel = Param(nameof(DownLevel), -0.025m)
 			.SetDisplay("Lower Level", "Lower threshold for momentum", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used by the strategy", "General");
 
 		_buyEnabled = Param(nameof(BuyEnabled), true)
@@ -143,8 +143,8 @@ public class AnchoredMomentumStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SMA { Length = SmaPeriod };
-		var ema = new EMA { Length = EmaPeriod };
+		var sma = new SimpleMovingAverage { Length = SmaPeriod };
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 

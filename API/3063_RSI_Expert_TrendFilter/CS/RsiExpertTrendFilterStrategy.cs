@@ -401,7 +401,7 @@ public RsiExpertTrendFilterStrategy()
 		else if (rsiSignal == -1 && (MaMode == MaTradeModes.Off || maSignal == -1))
 			finalSignal = -1;
 
-		if (finalSignal > 0 && AllowLong())
+		if (finalSignal > 0 && Position <= 0)
 		{
 			var volume = GetOrderVolume();
 			if (volume > 0m)
@@ -411,7 +411,7 @@ public RsiExpertTrendFilterStrategy()
 				_closeByStop = false;
 			}
 		}
-		else if (finalSignal < 0 && AllowShort())
+		else if (finalSignal < 0 && Position >= 0)
 		{
 			var volume = GetOrderVolume();
 			if (volume > 0m)
@@ -529,9 +529,9 @@ public RsiExpertTrendFilterStrategy()
 		}
 		else
 		{
-			_entryPrice ??= PositionPrice;
+			_entryPrice ??= (_entryPrice ?? 0m);
 
-			InitializePositionState(Position > 0m, PositionPrice);
+			InitializePositionState(Position > 0m, (_entryPrice ?? 0m));
 			_closeRequested = false;
 			_closeByStop = false;
 		}
@@ -619,7 +619,7 @@ public RsiExpertTrendFilterStrategy()
 
 	private bool HasActiveOrders()
 	{
-		return Orders.Any(o => o.State.IsActive());
+		return Orders.Any(o => o.State == OrderStates.Active || o.State == OrderStates.Pending);
 	}
 }
 

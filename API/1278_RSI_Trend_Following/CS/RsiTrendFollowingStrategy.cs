@@ -29,6 +29,13 @@ public class RsiTrendFollowingStrategy : Strategy
 	private readonly StrategyParam<int> _macdSignal;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private ExponentialMovingAverage _filterEma;
+	private RelativeStrengthIndex _rsi;
+	private StochasticOscillator _stochastic;
+	private AverageTrueRange _atr;
+	private ExponentialMovingAverage _trailingEma;
+	private MovingAverageConvergenceDivergenceSignal _macd;
+
 	private decimal _entryPrice;
 	private decimal _stopLossLevel;
 	private decimal _trailingActivationLevel;
@@ -114,46 +121,46 @@ public class RsiTrendFollowingStrategy : Strategy
 		_stopLossAtr = Param(nameof(StopLossAtr), 1.75m)
 				.SetGreaterThanZero()
 				.SetDisplay("ATR Stop Loss", "ATR multiplier for stop loss", "Risk")
-				
+
 				.SetOptimize(1m, 3m, 0.25m);
 
 		_trailingActivationAtr = Param(nameof(TrailingActivationAtr), 2.25m)
 				.SetGreaterThanZero()
 				.SetDisplay("ATR Trailing Activation", "ATR multiplier to activate trailing profit", "Risk")
-				
+
 				.SetOptimize(1.5m, 3.5m, 0.25m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 				.SetGreaterThanZero()
 				.SetDisplay("RSI Length", "RSI calculation period", "Indicators")
-				
+
 				.SetOptimize(10, 30, 1);
 
 		_trailingEmaLength = Param(nameof(TrailingEmaLength), 20)
 				.SetGreaterThanZero()
 				.SetDisplay("Trailing EMA Length", "Length of trailing EMA", "Indicators")
-				
+
 				.SetOptimize(10, 50, 5);
 
 		_macdFast = Param(nameof(MacdFastLength), 12)
 				.SetGreaterThanZero()
 				.SetDisplay("MACD Fast", "MACD fast period", "Indicators")
-				
+
 				.SetOptimize(8, 20, 2);
 
 		_macdSlow = Param(nameof(MacdSlowLength), 26)
 				.SetGreaterThanZero()
 				.SetDisplay("MACD Slow", "MACD slow period", "Indicators")
-				
+
 				.SetOptimize(20, 40, 2);
 
 		_macdSignal = Param(nameof(MacdSignalLength), 9)
 				.SetGreaterThanZero()
 				.SetDisplay("MACD Signal", "MACD signal period", "Indicators")
-				
+
 				.SetOptimize(5, 15, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -174,33 +181,53 @@ public class RsiTrendFollowingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var filterEma = new EMA { Length = 200 };
-		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		var stochastic = new StochasticOscillator { K = { Length = 14 }, K = { Length = 1 }, D = { Length = 3 } };
-		var atr = new AverageTrueRange { Length = 14 };
-		var trailingEma = new EMA { Length = TrailingEmaLength };
-		var macd = new MovingAverageConvergenceDivergence
-		{
-				ShortMa = { Length = MacdFastLength },
-				LongMa = { Length = MacdSlowLength },
-				SignalPeriod = MacdSignalLength
-		};
+		_filterEma = new ExponentialMovingAverage { Length = 200 };
+		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		_stochastic = new StochasticOscillator { K = { Length = 14 }, D = { Length = 3 } };
+		_atr = new AverageTrueRange { Length = 14 };
+		_trailingEma = new ExponentialMovingAverage { Length = TrailingEmaLength };
+		_macd = new MovingAverageConvergenceDivergenceSignal();
+		_macd.Macd.ShortMa.Length = MacdFastLength;
+		_macd.Macd.LongMa.Length = MacdSlowLength;
+		_macd.SignalMa.Length = MacdSignalLength;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-				.Bind(filterEma, rsi, stochastic, atr, trailingEma, macd, ProcessCandle)
+				.BindEx(_filterEma, _rsi, _macd, ProcessCandle)
 				.Start();
 
-		StartProtection();
+		// no separate protection
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal filterEma, decimal rsi, decimal k, decimal d, decimal atr, decimal trailingEma, decimal macd, decimal signal, decimal hist)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue filterEmaVal, IIndicatorValue rsiVal, IIndicatorValue macdVal)
 	{
 		if (candle.State != CandleStates.Finished)
+				return;
+
+		var filterEma = filterEmaVal.GetValue<decimal>();
+		var rsi = rsiVal.GetValue<decimal>();
+
+		var mv = (MovingAverageConvergenceDivergenceSignalValue)macdVal;
+		var macdLine = mv.Macd ?? 0m;
+		var signalLine = mv.Signal ?? 0m;
+
+		// manually process stochastic, atr, trailingEma
+		var stochResult = _stochastic.Process(candle);
+		var stochTyped = stochResult as StochasticOscillatorValue;
+		var k = stochTyped?.K ?? 0m;
+		var d = stochTyped?.D ?? 0m;
+
+		var atrResult = _atr.Process(candle);
+		var atr = atrResult.IsFormed ? atrResult.GetValue<decimal>() : 0m;
+
+		var trailingEmaResult = _trailingEma.Process(new DecimalIndicatorValue(_trailingEma, candle.ClosePrice, candle.ServerTime));
+		var trailingEma = trailingEmaResult.GetValue<decimal>();
+
+		if (!_filterEma.IsFormed || !_rsi.IsFormed || !_macd.IsFormed)
 				return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
@@ -208,7 +235,7 @@ public class RsiTrendFollowingStrategy : Strategy
 
 		if (Position == 0)
 		{
-				var longCondition = k < 80m && d < 80m && macd > signal && rsi > 50m && candle.LowPrice > filterEma;
+				var longCondition = k < 80m && d < 80m && macdLine > signalLine && rsi > 50m && candle.LowPrice > filterEma;
 				if (longCondition)
 				{
 					var volume = Volume + Math.Abs(Position);

@@ -44,7 +44,7 @@ public class IchiOscillatorStrategy : Strategy
 	/// </summary>
 	public IchiOscillatorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for Ichimoku calculations", "General");
 
 		_ichimokuBasePeriod = Param(nameof(IchimokuBasePeriod), 22)
@@ -269,16 +269,13 @@ public class IchiOscillatorStrategy : Strategy
 		}
 
 		StartProtection(
-			stopLoss: StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Step) : null,
-			takeProfit: TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Step) : null);
+			StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Step) : null,
+			TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Step) : null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var ichimokuTyped = (IchimokuValue)ichimokuValue;
@@ -290,7 +287,7 @@ public class IchiOscillatorStrategy : Strategy
 			return;
 		}
 
-		var step = Security?.Step ?? 1m;
+		var step = Security?.PriceStep ?? 1m;
 		if (step == 0m)
 			step = 1m;
 
@@ -298,7 +295,7 @@ public class IchiOscillatorStrategy : Strategy
 		var trend = tenkan - kijun;
 		var rawOscillator = (markt - trend) / step;
 
-		var smoothValue = _smoother.Process(new DecimalIndicatorValue(_smoother, rawOscillator, candle.OpenTime));
+		var smoothValue = _smoother.Process(new DecimalIndicatorValue(_smoother, rawOscillator, candle.OpenTime) { IsFinal = true });
 		if (!smoothValue.IsFinal || smoothValue is not DecimalIndicatorValue smoothResult)
 			return;
 
@@ -341,28 +338,28 @@ public class IchiOscillatorStrategy : Strategy
 
 		if (buyClose && Position > 0)
 		{
-			SellMarket(Position);
-			LogInfo($"[{signalTime}] Closing long at {candle.ClosePrice} due to oscillator color change {previousColor}->{currentColor}.");
+			SellMarket();
+			this.LogInfo($"[{signalTime}] Closing long at {candle.ClosePrice} due to oscillator color change {previousColor}->{currentColor}.");
 		}
 
 		if (sellClose && Position < 0)
 		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"[{signalTime}] Closing short at {candle.ClosePrice} due to oscillator color change {previousColor}->{currentColor}.");
+			BuyMarket();
+			this.LogInfo($"[{signalTime}] Closing short at {candle.ClosePrice} due to oscillator color change {previousColor}->{currentColor}.");
 		}
 
 		if (buyOpen && Position <= 0)
 		{
 			var volume = Volume + Math.Max(0m, -Position);
-			BuyMarket(volume);
-			LogInfo($"[{signalTime}] Opening long at {candle.ClosePrice} with oscillator {smoothed:F5}.");
+			BuyMarket();
+			this.LogInfo($"[{signalTime}] Opening long at {candle.ClosePrice} with oscillator {smoothed:F5}.");
 		}
 
 		if (sellOpen && Position >= 0)
 		{
 			var volume = Volume + Math.Max(0m, Position);
-			SellMarket(volume);
-			LogInfo($"[{signalTime}] Opening short at {candle.ClosePrice} with oscillator {smoothed:F5}.");
+			SellMarket();
+			this.LogInfo($"[{signalTime}] Opening short at {candle.ClosePrice} with oscillator {smoothed:F5}.");
 		}
 	}
 

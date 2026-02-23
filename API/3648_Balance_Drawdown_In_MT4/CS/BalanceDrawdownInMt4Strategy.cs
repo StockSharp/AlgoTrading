@@ -87,7 +87,7 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 			.SetDisplay("Take-Profit (points)", "Distance from entry price to the profit target.", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe that drives drawdown monitoring.", "General");
 	}
 
@@ -178,7 +178,7 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 		if (step <= 0m || stepPrice <= 0m)
 			return 0m;
 
-		var priceDiff = price - PositionPrice;
+		var priceDiff = price - _lastPrice;
 		var points = priceDiff / step;
 
 		return points * stepPrice * Position;

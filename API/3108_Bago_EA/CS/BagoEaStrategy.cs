@@ -527,11 +527,11 @@ public class BagoEaStrategy : Strategy
 		var rsiInput = GetAppliedPrice(candle, RsiAppliedPrice);
 		var time = candle.OpenTime;
 
-		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, maInput, time.UtcDateTime)).ToDecimal();
-		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, maInput, time.UtcDateTime)).ToDecimal();
-		var vegasFastValue = _vegasFastMa.Process(new DecimalIndicatorValue(_vegasFastMa, maInput, time.UtcDateTime)).ToDecimal();
-		var vegasSlowValue = _vegasSlowMa.Process(new DecimalIndicatorValue(_vegasSlowMa, maInput, time.UtcDateTime)).ToDecimal();
-		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiInput, time.UtcDateTime)).ToDecimal();
+		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, maInput, time)).ToDecimal();
+		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, maInput, time)).ToDecimal();
+		var vegasFastValue = _vegasFastMa.Process(new DecimalIndicatorValue(_vegasFastMa, maInput, time)).ToDecimal();
+		var vegasSlowValue = _vegasSlowMa.Process(new DecimalIndicatorValue(_vegasSlowMa, maInput, time)).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiInput, time)).ToDecimal();
 
 		AddToHistory(_fastHistory, fastValue);
 		AddToHistory(_slowHistory, slowValue);
@@ -752,7 +752,7 @@ public class BagoEaStrategy : Strategy
 			CancelLongStop();
 		}
 
-		_longStopOrder = SellStop(Math.Abs(Position), newStopPrice);
+		_longStopOrder = SellLimit(Math.Abs(Position), newStopPrice);
 		_longStopPrice = newStopPrice;
 	}
 
@@ -770,7 +770,7 @@ public class BagoEaStrategy : Strategy
 			CancelShortStop();
 		}
 
-		_shortStopOrder = BuyStop(Math.Abs(Position), newStopPrice);
+		_shortStopOrder = BuyLimit(Math.Abs(Position), newStopPrice);
 		_shortStopPrice = newStopPrice;
 	}
 

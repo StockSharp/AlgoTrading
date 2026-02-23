@@ -40,6 +40,7 @@ public class LbsStrategy : Strategy
 	private bool _stopForLong;
 	private decimal? _pendingLongStopPrice;
 	private decimal? _pendingShortStopPrice;
+	private decimal _positionPrice;
 
 	/// <summary>
 	/// Stop-loss distance expressed in pips. A value of zero disables protective stops.
@@ -225,10 +226,10 @@ public class LbsStrategy : Strategy
 
 		decimal? price = null;
 
-		if (Position > 0 && _bestBid is decimal bid)
-			price = bid;
-		else if (Position < 0 && _bestAsk is decimal ask)
-			price = ask;
+		if (Position > 0 && _bestBid is decimal bidPrice)
+			price = bidPrice;
+		else if (Position < 0 && _bestAsk is decimal askPrice)
+			price = askPrice;
 
 		if (price is decimal validPrice && validPrice > 0m)
 			ApplyTrailing(validPrice);
@@ -299,7 +300,7 @@ public class LbsStrategy : Strategy
 			return;
 		}
 
-		_buyStopOrder = BuyStop(volume, price);
+		_buyStopOrder = BuyLimit(volume, price);
 		_pendingLongStopPrice = stopLoss;
 	}
 
@@ -314,7 +315,7 @@ public class LbsStrategy : Strategy
 			return;
 		}
 
-		_sellStopOrder = SellStop(volume, price);
+		_sellStopOrder = SellLimit(volume, price);
 		_pendingShortStopPrice = stopLoss;
 	}
 
@@ -363,7 +364,7 @@ public class LbsStrategy : Strategy
 
 		if (Position > 0)
 		{
-			var profit = marketPrice - PositionPrice;
+			var profit = marketPrice - _positionPrice;
 			if (profit <= trailingStop + trailingStep)
 				return;
 
@@ -376,7 +377,7 @@ public class LbsStrategy : Strategy
 		}
 		else
 		{
-			var profit = PositionPrice - marketPrice;
+			var profit = _positionPrice - marketPrice;
 			if (profit <= trailingStop + trailingStep)
 				return;
 
@@ -397,8 +398,8 @@ public class LbsStrategy : Strategy
 		CancelOrderIfActive(_stopOrder);
 
 		_stopOrder = side == Sides.Sell
-		? SellStop(volume, price)
-		: BuyStop(volume, price);
+		? SellLimit(volume, price)
+		: BuyLimit(volume, price);
 
 		_stopPrice = price;
 		_stopForLong = forLong;
@@ -496,10 +497,10 @@ public class LbsStrategy : Strategy
 			volume = stepsCount * step;
 		}
 
-		if (Security?.VolumeMin is decimal min && min > 0m && volume < min)
+		if (Security?.MinVolume is decimal min && min > 0m && volume < min)
 			volume = min;
 
-		if (Security?.VolumeMax is decimal max && max > 0m && volume > max)
+		if (Security?.MaxVolume is decimal max && max > 0m && volume > max)
 			volume = max;
 
 		return volume;
@@ -575,6 +576,9 @@ public class LbsStrategy : Strategy
 	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
 		base.OnOwnTradeReceived(trade);
+
+		if (trade.Trade.Price > 0m)
+			_positionPrice = trade.Trade.Price;
 
 		var order = trade.Order;
 		if (order is null)

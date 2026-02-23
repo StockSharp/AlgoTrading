@@ -125,6 +125,10 @@ public class ExecuterAcStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
@@ -172,7 +176,7 @@ public class ExecuterAcStrategy : Strategy
 
 		if (Position > 0)
 		{
-			if (PositionPrice is decimal longPrice && (_longEntry is null || longPrice != _longEntry.Value))
+			if (_longEntry is decimal longPrice)
 				UpdateLongReference(longPrice, false);
 
 			if (ShouldCloseLongByAc())
@@ -193,7 +197,7 @@ public class ExecuterAcStrategy : Strategy
 
 		if (Position < 0)
 		{
-			if (PositionPrice is decimal shortPrice && (_shortEntry is null || shortPrice != _shortEntry.Value))
+			if (_shortEntry is decimal shortPrice)
 				UpdateShortReference(shortPrice, false);
 
 			if (ShouldCloseShortByAc())
@@ -285,7 +289,7 @@ public class ExecuterAcStrategy : Strategy
 		if (trailingDistance <= 0m)
 			return false;
 
-		var entryPrice = PositionPrice ?? _longEntry;
+		var entryPrice = _longEntry;
 		if (entryPrice is not decimal entry || entry <= 0m)
 			return false;
 
@@ -320,7 +324,7 @@ public class ExecuterAcStrategy : Strategy
 		if (trailingDistance <= 0m)
 			return false;
 
-		var entryPrice = PositionPrice ?? _shortEntry;
+		var entryPrice = _shortEntry;
 		if (entryPrice is not decimal entry || entry <= 0m)
 			return false;
 

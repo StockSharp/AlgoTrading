@@ -33,7 +33,7 @@ public class JpalonsoModokiStrategy : Strategy
 	/// </summary>
 	public JpalonsoModokiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 		
 		_smaPeriod = Param(nameof(SmaPeriod), 200)
@@ -42,10 +42,10 @@ public class JpalonsoModokiStrategy : Strategy
 		_deviation = Param(nameof(Deviation), 0.35m)
 		.SetDisplay("Deviation %", "Envelope deviation from SMA in percent", "Envelopes");
 		
-		_takeProfit = Param(nameof(TakeProfit), new Unit(127, UnitTypes.Point))
+		_takeProfit = Param(nameof(TakeProfit), new Unit(127, UnitTypes.Absolute))
 		.SetDisplay("Take Profit", "Take profit in points", "Risk Management");
 		
-		_stopLoss = Param(nameof(StopLoss), new Unit(77, UnitTypes.Point))
+		_stopLoss = Param(nameof(StopLoss), new Unit(77, UnitTypes.Absolute))
 		.SetDisplay("Stop Loss", "Stop loss in points", "Risk Management");
 	}
 	
@@ -107,7 +107,7 @@ public class JpalonsoModokiStrategy : Strategy
 		
 		StartProtection(takeProfit: TakeProfit, stopLoss: StopLoss);
 		
-		_sma = new SMA { Length = SmaPeriod };
+		_sma = new SimpleMovingAverage { Length = SmaPeriod };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription

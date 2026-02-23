@@ -121,7 +121,7 @@ public class ExpXmaRangeBandsStrategy : Strategy
 			
 			.SetOptimize(1000m, 4000m, 500m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -148,7 +148,7 @@ public class ExpXmaRangeBandsStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Create indicators
-		var ema = new EMA { Length = MaLength };
+		var ema = new ExponentialMovingAverage { Length = MaLength };
 		var atr = new AverageTrueRange { Length = RangeLength };
 
 		// Subscribe to candles and bind indicators

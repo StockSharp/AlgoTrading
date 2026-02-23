@@ -81,15 +81,20 @@ public class RedkCompoundRatioMaStrategy : Strategy
 		var smoothing = AutoSmoothing ? Math.Max((int)Math.Round(Math.Sqrt(Length)), 1) : ManualSmoothing;
 		_coraWma = new WeightedMovingAverage { Length = smoothing };
 
+		var ema = new ExponentialMovingAverage { Length = 2 };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(ProcessCandle)
+		.Bind(ema, ProcessCandle)
 		.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var price = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
@@ -117,8 +122,6 @@ public class RedkCompoundRatioMaStrategy : Strategy
 		var coraRaw = numerator / denom;
 		var coraInput = new DecimalIndicatorValue(_coraWma, coraRaw, candle.ServerTime);
 		var coraValue = _coraWma.Process(coraInput);
-		if (!coraValue.IsFinal)
-			return;
 
 		var coraWave = coraValue.GetValue<decimal>();
 

@@ -628,7 +628,7 @@ public class MacdNoSampleStrategy : Strategy
 		if (stopDistance <= 0m)
 		return TradeVolume;
 
-		var portfolioValue = Portfolio.CurrentValue;
+		var portfolioValue = Portfolio.CurrentValue ?? 0m;
 		if (portfolioValue <= 0m)
 		return TradeVolume;
 
@@ -638,17 +638,9 @@ public class MacdNoSampleStrategy : Strategy
 
 		var estimatedVolume = riskAmount / stopDistance;
 
-		var volumeStep = Security?.VolumeStep;
-		if (volumeStep is > 0m)
-		estimatedVolume = Math.Floor(estimatedVolume / volumeStep.Value) * volumeStep.Value;
-
-		var minVolume = Security?.MinVolume;
-		if (minVolume is > 0m && estimatedVolume < minVolume.Value)
-		estimatedVolume = minVolume.Value;
-
-		var maxVolume = Security?.MaxVolume;
-		if (maxVolume is > 0m && estimatedVolume > maxVolume.Value)
-		estimatedVolume = maxVolume.Value;
+		var volumeStep = Security?.VolumeStep ?? 1m;
+		if (volumeStep > 0m)
+		estimatedVolume = Math.Floor(estimatedVolume / volumeStep) * volumeStep;
 
 		if (estimatedVolume <= 0m)
 		estimatedVolume = TradeVolume;

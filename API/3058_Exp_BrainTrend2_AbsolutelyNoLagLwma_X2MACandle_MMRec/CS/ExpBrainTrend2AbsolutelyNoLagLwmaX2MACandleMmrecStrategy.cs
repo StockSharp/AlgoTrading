@@ -280,13 +280,13 @@ public class ExpBrainTrend2AbsolutelyNoLagLwmaX2MACandleMmrecStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 			_longEntryPrice = trade.Trade?.Price;
 			if (Position <= 0)
 				_shortEntryPrice = null;
 		}
-		else if (trade.Order.Direction == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		{
 			_shortEntryPrice = trade.Trade?.Price;
 			if (Position >= 0)

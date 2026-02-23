@@ -151,7 +151,7 @@ public class PowertrendVolumeRangeFilterStrategy : Strategy
 			return;
 
 		var close = candle.ClosePrice;
-		var volume = candle.TotalVolume ?? 0m;
+		var volume = candle.TotalVolume;
 
 		var volRng = ComputeVolRng(close, volume, smoothRng);
 
@@ -160,7 +160,7 @@ public class PowertrendVolumeRangeFilterStrategy : Strategy
 
 		var uprng = _prevBase is decimal pb && volRng > pb;
 
-		var adxSmaValue = _adxSma.Process(adxValue).ToNullableDecimal();
+		var adxSmaValue = _adxSma.Process(new DecimalIndicatorValue(adxValue)).ToNullableDecimal();
 		if (UseAdx && adxSmaValue is null)
 		{
 			UpdateState(close, volume, volRng, hband, lowband, null, null);
@@ -168,8 +168,8 @@ public class PowertrendVolumeRangeFilterStrategy : Strategy
 		}
 		var adxFilter = !UseAdx || adxValue > adxSmaValue;
 
-		var highBandTrendFollow = _highBandTrend.Process(hband).ToNullableDecimal();
-		var lowBandTrendFollow = _lowBandTrend.Process(lowband).ToNullableDecimal();
+		var highBandTrendFollow = _highBandTrend.Process(new DecimalIndicatorValue(hband)).ToNullableDecimal();
+		var lowBandTrendFollow = _lowBandTrend.Process(new DecimalIndicatorValue(lowband)).ToNullableDecimal();
 		if (UseHl && (highBandTrendFollow is null || lowBandTrendFollow is null))
 		{
 			UpdateState(close, volume, volRng, hband, lowband, highBandTrendFollow, lowBandTrendFollow);
@@ -201,7 +201,7 @@ public class PowertrendVolumeRangeFilterStrategy : Strategy
 		var iguFilterPositive = !UseHl || inGeneralUptrend;
 		var iguFilterNegative = !UseHl || !inGeneralUptrend;
 
-		var vwmaValue = _vwma.Process(volRng).ToNullableDecimal();
+		var vwmaValue = _vwma.Process(new DecimalIndicatorValue(volRng)).ToNullableDecimal();
 		if (UseVwma && vwmaValue is null)
 		{
 			UpdateState(close, volume, volRng, hband, lowband, highBandTrendFollow, lowBandTrendFollow);

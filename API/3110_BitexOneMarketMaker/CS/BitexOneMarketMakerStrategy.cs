@@ -411,8 +411,8 @@ public class BitexOneMarketMakerStrategy : Strategy
 			return;
 		}
 
-		var currentPrice = order.Price ?? normalizedPrice;
-		var currentVolume = order.Volume ?? normalizedVolume;
+		var currentPrice = order.Price > 0m ? order.Price : normalizedPrice;
+		var currentVolume = order.Volume > 0m ? order.Volume : normalizedVolume;
 
 		var priceDiff = leadPrice > 0m
 		? Math.Abs(currentPrice - normalizedPrice) / leadPrice
@@ -492,7 +492,6 @@ public class BitexOneMarketMakerStrategy : Strategy
 		{
 			case OrderStates.Done:
 			case OrderStates.Failed:
-			case OrderStates.Canceled:
 				order = null;
 				break;
 		}
@@ -500,7 +499,7 @@ public class BitexOneMarketMakerStrategy : Strategy
 
 	private static bool IsOrderActive(Order order)
 	{
-		return order != null && order.State is OrderStates.Active or OrderStates.Pending or OrderStates.Placed or OrderStates.Suspended;
+		return order != null && order.State is OrderStates.Active or OrderStates.Pending;
 	}
 
 	private bool IsStrategyOrder(Order order)

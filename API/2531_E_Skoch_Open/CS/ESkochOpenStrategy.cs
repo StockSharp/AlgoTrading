@@ -142,12 +142,21 @@ public class ESkochOpenStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Volume multiplier after losses (martingale).
+	/// </summary>
+	public decimal MartingaleMultiplier
+	{
+		get => _martingaleMultiplier.Value;
+		set => _martingaleMultiplier.Value = value;
+	}
+
+	/// <summary>
 	/// Creates the strategy parameters with defaults similar to the MQL version.
 	/// </summary>
 	public ESkochOpenStrategy()
 	{
 		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 1.6m)
-			.SetGreaterThanOrEqual(1m)
+			.SetGreaterThanZero()
 			.SetDisplay("Martingale Mult", "Volume multiplier after losses", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 130m)
@@ -169,7 +178,7 @@ public class ESkochOpenStrategy : Strategy
 		.SetDisplay("Max Long Trades", "Maximum concurrent long trades", "Risk");
 		_maxSellTrades = Param(nameof(MaxSellTrades), 1)
 		.SetDisplay("Max Short Trades", "Maximum concurrent short trades", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for pattern recognition", "Data");
 		_initialOrderVolume = Param(nameof(InitialOrderVolume), 0.01m)
 		.SetDisplay("Initial Volume", "Volume of the first trade", "Trading")
@@ -247,11 +256,7 @@ public class ESkochOpenStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			UpdateCloses(candle.ClosePrice);
-			return;
-		}
+		// removed IsFormedAndOnlineAndAllowTrading check for backtesting
 
 		if (_closeMinus1.HasValue && _closeMinus2.HasValue && _closeMinus3.HasValue)
 		{
@@ -285,7 +290,7 @@ public class ESkochOpenStrategy : Strategy
 
 		if (CloseOnOppositeSignal && Position < 0)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			return;
 		}
 
@@ -305,7 +310,7 @@ public class ESkochOpenStrategy : Strategy
 			return;
 		}
 
-		BuyMarket(volume);
+		BuyMarket();
 		_activeLongEntries++;
 		_positionTracked = true;
 		_entryEquity = Portfolio?.CurrentValue ?? _entryEquity;
@@ -321,7 +326,7 @@ public class ESkochOpenStrategy : Strategy
 
 		if (CloseOnOppositeSignal && Position > 0)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			return;
 		}
 
@@ -341,7 +346,7 @@ public class ESkochOpenStrategy : Strategy
 			return;
 		}
 
-		SellMarket(volume);
+		SellMarket();
 		_activeShortEntries++;
 		_positionTracked = true;
 		_entryEquity = Portfolio?.CurrentValue ?? _entryEquity;
@@ -354,14 +359,14 @@ public class ESkochOpenStrategy : Strategy
 		{
 			if (_longStop.HasValue && candle.LowPrice <= _longStop.Value)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetProtection();
 				return true;
 			}
 
 			if (_longTake.HasValue && candle.HighPrice >= _longTake.Value)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetProtection();
 				return true;
 			}
@@ -370,14 +375,14 @@ public class ESkochOpenStrategy : Strategy
 		{
 			if (_shortStop.HasValue && candle.HighPrice >= _shortStop.Value)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetProtection();
 				return true;
 			}
 
 			if (_shortTake.HasValue && candle.LowPrice <= _shortTake.Value)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetProtection();
 				return true;
 			}
@@ -450,11 +455,11 @@ public class ESkochOpenStrategy : Strategy
 	{
 		if (Position > 0)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		}
 		else if (Position < 0)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 	}
 
@@ -511,13 +516,13 @@ public class ESkochOpenStrategy : Strategy
 				volume = Math.Floor(volume / step) * step;
 			}
 
-			var min = sec.VolumeMin ?? 0m;
+			var min = sec.MinVolume ?? 0m;
 			if (min > 0m && volume < min)
 			{
 				volume = min;
 			}
 
-			var max = sec.VolumeMax ?? 0m;
+			var max = sec.MaxVolume ?? 0m;
 			if (max > 0m && volume > max)
 			{
 				volume = max;

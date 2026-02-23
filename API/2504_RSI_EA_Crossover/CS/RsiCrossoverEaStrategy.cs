@@ -161,7 +161,7 @@ public class RsiCrossoverEaStrategy : Strategy
     /// </summary>
     public RsiCrossoverEaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for RSI", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -278,14 +278,14 @@ public class RsiCrossoverEaStrategy : Strategy
 		{
 			if (Position > 0 && crossBelowSell)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetProtection();
 				return; // Close long trades when RSI drops below the sell level.
 			}
 
 			if (Position < 0 && crossAboveBuy)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetProtection();
 				return; // Close short trades when RSI rises above the buy level.
 			}
@@ -298,7 +298,7 @@ public class RsiCrossoverEaStrategy : Strategy
 		{
 			var volume = CalculateVolume();
 			if (volume > 0m)
-				SellMarket(volume);
+				SellMarket();
 			return;
 		}
 
@@ -306,7 +306,7 @@ public class RsiCrossoverEaStrategy : Strategy
 		{
 			var volume = CalculateVolume();
 			if (volume > 0m)
-				BuyMarket(volume);
+				BuyMarket();
 		}
 	}
 
@@ -323,7 +323,7 @@ public class RsiCrossoverEaStrategy : Strategy
 	{
 		if (Position > 0)
 		{
-			var entryPrice = Position.AveragePrice;
+			var entryPrice = candle.ClosePrice;
 
 			if (_longStop is null && StopLoss > 0m)
 				_longStop = entryPrice - StopLoss; // Initial protective stop below entry.
@@ -340,21 +340,21 @@ public class RsiCrossoverEaStrategy : Strategy
 
 			if (_longStop.HasValue && candle.LowPrice <= _longStop.Value)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetProtection();
 				return true;
 			}
 
 			if (_longTakeProfit.HasValue && candle.HighPrice >= _longTakeProfit.Value)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetProtection();
 				return true;
 			}
 		}
 		else if (Position < 0)
 		{
-			var entryPrice = Position.AveragePrice;
+			var entryPrice = candle.ClosePrice;
 
 			if (_shortStop is null && StopLoss > 0m)
 				_shortStop = entryPrice + StopLoss; // Protective stop above entry.
@@ -371,14 +371,14 @@ public class RsiCrossoverEaStrategy : Strategy
 
 			if (_shortStop.HasValue && candle.HighPrice >= _shortStop.Value)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetProtection();
 				return true;
 			}
 
 			if (_shortTakeProfit.HasValue && candle.LowPrice <= _shortTakeProfit.Value)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetProtection();
 				return true;
 			}

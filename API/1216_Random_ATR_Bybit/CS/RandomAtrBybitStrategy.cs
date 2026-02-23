@@ -22,8 +22,10 @@ public class RandomAtrBybitStrategy : Strategy
 
 	private bool _hasPrev;
 	private decimal _prevClose;
-	private Order _stopOrder;
-	private Order _tpOrder;
+	private decimal _entryPrice;
+	private decimal _stopOffset;
+	private decimal _takeOffset;
+	private bool _isLong;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
@@ -32,7 +34,7 @@ public class RandomAtrBybitStrategy : Strategy
 
 	public RandomAtrBybitStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 		_atrLength = Param(nameof(AtrLength), 14);
 		_slAtrRatio = Param(nameof(SlAtrRatio), 3m);
 		_tpSlRatio = Param(nameof(TpSlRatio), 1m);
@@ -54,11 +56,26 @@ public class RandomAtrBybitStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		if (!_hasPrev)
 		{
 			_prevClose = candle.ClosePrice;
 			_hasPrev = true;
 			return;
+		}
+
+		// Check SL/TP for existing position
+		if (Position > 0)
+		{
+			if (candle.LowPrice <= _entryPrice - _stopOffset || candle.HighPrice >= _entryPrice + _takeOffset)
+				SellMarket();
+		}
+		else if (Position < 0)
+		{
+			if (candle.HighPrice >= _entryPrice + _stopOffset || candle.LowPrice <= _entryPrice - _takeOffset)
+				BuyMarket();
 		}
 
 		var highestClose = _prevClose > candle.ClosePrice ? _prevClose : candle.ClosePrice;
@@ -69,56 +86,25 @@ public class RandomAtrBybitStrategy : Strategy
 		var timeSeed = openTime.Year * 10000 + openTime.Month * 100 + openTime.Day;
 		var randomSignal = ((randNumber * timeSeed) % 2m) == 1m;
 
-		var stopOffset = SlAtrRatio * atr;
-		var takeOffset = stopOffset * TpSlRatio;
+		_stopOffset = SlAtrRatio * atr;
+		_takeOffset = _stopOffset * TpSlRatio;
 
 		if (Position == 0)
 		{
 			if (randomSignal)
 			{
-				BuyMarket(Volume);
-				RegisterProtection(true, candle.ClosePrice, stopOffset, takeOffset);
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+				_isLong = true;
 			}
 			else
 			{
-				SellMarket(Volume);
-				RegisterProtection(false, candle.ClosePrice, stopOffset, takeOffset);
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+				_isLong = false;
 			}
 		}
 
 		_prevClose = candle.ClosePrice;
-	}
-
-	private void RegisterProtection(bool isLong, decimal entryPrice, decimal stopOffset, decimal takeOffset)
-	{
-		if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
-			CancelOrder(_stopOrder);
-		if (_tpOrder != null && _tpOrder.State == OrderStates.Active)
-			CancelOrder(_tpOrder);
-
-		_stopOrder = isLong
-			? SellStop(Volume, entryPrice - stopOffset)
-			: BuyStop(Volume, entryPrice + stopOffset);
-
-		_tpOrder = isLong
-			? SellLimit(Volume, entryPrice + takeOffset)
-			: BuyLimit(Volume, entryPrice - takeOffset);
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position != 0)
-			return;
-
-		if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
-			CancelOrder(_stopOrder);
-		if (_tpOrder != null && _tpOrder.State == OrderStates.Active)
-			CancelOrder(_tpOrder);
-
-		_stopOrder = null;
-		_tpOrder = null;
 	}
 }

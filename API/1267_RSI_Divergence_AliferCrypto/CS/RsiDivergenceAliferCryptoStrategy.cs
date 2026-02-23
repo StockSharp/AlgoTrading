@@ -98,6 +98,7 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy
 	private decimal? _entryTp;
 	private decimal? _slPrice;
 	private decimal? _tpPrice;
+	private decimal _entryPrice;
 
 	public int RsiLength
 	{
@@ -313,7 +314,7 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
+		// no separate protection
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsi,
@@ -402,14 +403,16 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy
 
 		if (bullCond && Position <= 0)
 		{
-			BuyMarket();
+			BuyMarket(Volume + Math.Abs(Position));
+			_entryPrice = candle.ClosePrice;
 			_rsiOversoldFlag = false;
 			_entrySl = null;
 			_entryTp = null;
 		}
 		else if (bearCond && Position >= 0)
 		{
-			SellMarket();
+			SellMarket(Volume + Math.Abs(Position));
+			_entryPrice = candle.ClosePrice;
 			_rsiOverboughtFlag = false;
 			_entrySl = null;
 			_entryTp = null;
@@ -417,7 +420,7 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy
 
 		if (Position > 0)
 		{
-			var entryPrice = PositionPrice;
+			var entryPrice = _entryPrice;
 			decimal slCalc;
 			decimal tpCalc;
 			decimal rr;
@@ -460,7 +463,7 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			var entryPrice = PositionPrice;
+			var entryPrice = _entryPrice;
 			decimal slCalc;
 			decimal tpCalc;
 			decimal rr;

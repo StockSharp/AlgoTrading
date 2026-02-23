@@ -104,7 +104,7 @@ public class ColorStochNrStrategy : Strategy
 			
 			.SetOptimize(1m, 5m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -164,9 +164,9 @@ public class ColorStochNrStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var stoch = (StochasticOscillatorValue)stochValue;
-		var k = stoch.K;
-		var d = stoch.D;
+		var stoch = (IStochasticOscillatorValue)stochValue;
+		if (stoch.K is not decimal k || stoch.D is not decimal d)
+			return;
 
 		var deltaK = k - _prevK;
 		var deltaD = d - _prevD;

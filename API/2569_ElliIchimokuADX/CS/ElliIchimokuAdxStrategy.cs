@@ -178,10 +178,10 @@ public class ElliIchimokuAdxStrategy : Strategy
 			.SetDisplay("Baseline Distance", "Minimum Tenkan/Kijun spread in steps", "Ichimoku")
 			.SetNotNegative();
 
-		_ichimokuCandleType = Param(nameof(IchimokuCandleType), TimeSpan.FromHours(1).TimeFrame())
+		_ichimokuCandleType = Param(nameof(IchimokuCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Ichimoku Candle", "Candle series for Ichimoku", "General");
 
-		_adxCandleType = Param(nameof(AdxCandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_adxCandleType = Param(nameof(AdxCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("ADX Candle", "Candle series for ADX", "General");
 	}
 
@@ -240,10 +240,8 @@ public class ElliIchimokuAdxStrategy : Strategy
 		if (TakeProfitPoints > 0m || StopLossPoints > 0m)
 		{
 			StartProtection(
-				takeProfit: TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Step) : null,
-				stopLoss: StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Step) : null,
-				isStopTrailing: false,
-				useMarketOrders: true);
+				StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Step) : null,
+				TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Step) : null);
 		}
 
 		var priceArea = CreateChartArea();
@@ -310,9 +308,6 @@ public class ElliIchimokuAdxStrategy : Strategy
 		if (baselineDistance < BaselineDistanceThreshold)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (Position != 0)
 			return;
 
@@ -321,13 +316,13 @@ public class ElliIchimokuAdxStrategy : Strategy
 
 		if (priceAboveCloud)
 		{
-			LogInfo($"Bullish signal: Tenkan {tenkan:F2} > Kijun {kijun:F2}, cloud rising, +DI from {previousPlus:F2} to {currentPlus:F2}.");
-			BuyMarket(Volume);
+			this.LogInfo($"Bullish signal: Tenkan {tenkan:F2} > Kijun {kijun:F2}, cloud rising, +DI from {previousPlus:F2} to {currentPlus:F2}.");
+			BuyMarket();
 		}
 		else if (priceBelowCloud)
 		{
-			LogInfo($"Bearish signal: Tenkan {tenkan:F2} < Kijun {kijun:F2}, cloud falling, +DI from {previousPlus:F2} to {currentPlus:F2}.");
-			SellMarket(Volume);
+			this.LogInfo($"Bearish signal: Tenkan {tenkan:F2} < Kijun {kijun:F2}, cloud falling, +DI from {previousPlus:F2} to {currentPlus:F2}.");
+			SellMarket();
 		}
 	}
 }

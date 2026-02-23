@@ -183,7 +183,7 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 		_closeDelta = _entryDelta * CloseDeltaCoefficient;
 
 		var movingAverage = CreateMovingAverage(MaType, MaLength);
-		movingAverage.CandlePrice = PriceSource;
+		//movingAverage.CandlePrice = PriceSource;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

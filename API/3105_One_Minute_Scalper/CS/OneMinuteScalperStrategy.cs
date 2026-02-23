@@ -61,7 +61,7 @@ public class OneMinuteScalperStrategy : Strategy
 	private WeightedMovingAverage _fastTrendMa;
 	private WeightedMovingAverage _slowTrendMa;
 	private Momentum _momentumIndicator;
-	private MovingAverageConvergenceDivergence _macdIndicator;
+	private MovingAverageConvergenceDivergence _macdMainIndicator;
 
 	private decimal _tickSize;
 	private decimal? _prevHigh1;
@@ -450,9 +450,9 @@ public class OneMinuteScalperStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_tickSize = Security?.PriceStep ?? 0m;
 
@@ -472,19 +472,17 @@ public class OneMinuteScalperStrategy : Strategy
 		_fastTrendMa = new WeightedMovingAverage { Length = FastMaPeriod };
 		_slowTrendMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 		_momentumIndicator = new Momentum { Length = MomentumPeriod };
-		_macdIndicator = new MovingAverageConvergenceDivergence
-		{
-			FastLength = MacdFastLength,
-			SlowLength = MacdSlowLength,
-			SignalLength = MacdSignalLength
-		};
+		_macdMainIndicator = new MovingAverageConvergenceDivergence(
+			new ExponentialMovingAverage { Length = MacdSlowLength },
+			new ExponentialMovingAverage { Length = MacdFastLength }
+		);
 
 		_initialEquity = GetPortfolioValue();
 		_equityPeak = _initialEquity;
 
 		var mainSubscription = SubscribeCandles(CandleType);
 		mainSubscription
-			.Bind(
+			.Bind(new IIndicator[] {
 				_lwma3,
 				_lwma5,
 				_lwma8,
@@ -499,8 +497,8 @@ public class OneMinuteScalperStrategy : Strategy
 				_lwma55,
 				_lwma200,
 				_fastTrendMa,
-				_slowTrendMa,
-				ProcessMainCandle)
+				_slowTrendMa
+			}, (candle, values) => ProcessMainCandle(candle, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9], values[10], values[11], values[12], values[13], values[14]))
 			.Start();
 
 		var momentumSubscription = SubscribeCandles(MomentumCandleType);
@@ -510,7 +508,7 @@ public class OneMinuteScalperStrategy : Strategy
 
 		var macdSubscription = SubscribeCandles(MacdCandleType);
 		macdSubscription
-			.Bind(_macdIndicator, ProcessMacd)
+			.Bind(_macdMainIndicator, ProcessMacd)
 			.Start();
 
 		var area = CreateChartArea();
@@ -536,14 +534,14 @@ public class OneMinuteScalperStrategy : Strategy
 		_momentumReady = _momentumIndicator.IsFormed;
 	}
 
-	private void ProcessMacd(ICandleMessage candle, decimal macdValue, decimal signalValue)
+	private void ProcessMacd(ICandleMessage candle, decimal macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_macdSignal = _macdMain;
 		_macdMain = macdValue;
-		_macdSignal = signalValue;
-		_macdReady = _macdIndicator.IsFormed;
+		_macdReady = _macdMainIndicator.IsFormed && _macdSignal != null;
 	}
 
 	private void ProcessMainCandle(
@@ -937,7 +935,7 @@ public class OneMinuteScalperStrategy : Strategy
 		if (Position == 0)
 			return 0m;
 
-		var entry = PositionPrice;
+		var entry = _entryPrice ?? 0m;
 		if (entry == 0m)
 			return 0m;
 
@@ -948,11 +946,11 @@ public class OneMinuteScalperStrategy : Strategy
 	private decimal GetPortfolioValue()
 	{
 		var portfolio = Portfolio;
-		if (portfolio?.CurrentValue > 0m)
-			return portfolio.CurrentValue;
+		if ((portfolio?.CurrentValue ?? 0m) > 0m)
+			return portfolio.CurrentValue ?? 0m;
 
-		if (portfolio?.BeginValue > 0m)
-			return portfolio.BeginValue;
+		if ((portfolio?.BeginValue ?? 0m) > 0m)
+			return portfolio.BeginValue ?? 0m;
 
 		return _initialEquity;
 	}

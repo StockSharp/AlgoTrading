@@ -166,15 +166,13 @@ public class PropFirmBusinessSimulatorStrategy : Strategy
 		if (qty <= 0m)
 		return;
 
-		CancelActiveOrders();
-
-		var buyVolume = qty + Math.Max(-Position, 0m);
-		var sellVolume = qty + Math.Max(Position, 0m);
-
-		if (candle.HighPrice <= upper)
-		BuyStop(buyVolume, upper);
-
-		if (candle.LowPrice >= lower)
-		SellStop(sellVolume, lower);
+		if (candle.ClosePrice > upper && Position <= 0)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+		}
+		else if (candle.ClosePrice < lower && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+		}
 	}
 }

@@ -71,21 +71,20 @@ public class PremarketGapMomoTraderStrategy : Strategy
 	/// </summary>
 	public PremarketGapMomoTraderStrategy()
 	{
-		_minGainPct = Param(nameof(MinGainPct), 5m)
+		_minGainPct = Param(nameof(MinGainPct), 0.1m)
 		.SetDisplay("Min % Gain for Entry", "Minimum percent gain from previous close", "General")
-		
+
 		.SetOptimize(1m, 10m, 1m);
 		
-		_minVolume = Param(nameof(MinVolume), 15000)
-		.SetGreaterThanZero()
+		_minVolume = Param(nameof(MinVolume), 0)
 		.SetDisplay("Min Volume for Entry", "Minimum candle volume required", "General")
-		
+
 		.SetOptimize(1000, 50000, 1000);
 		
-		_useSession = Param(nameof(UseSession), true)
+		_useSession = Param(nameof(UseSession), false)
 		.SetDisplay("Restrict to Premarket", "Trade only during premarket 04:00–09:30", "General");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 	
@@ -111,9 +110,10 @@ public class PremarketGapMomoTraderStrategy : Strategy
 	{
 		base.OnStarted2(time);
 		
+		var dummyEma = new EMA { Length = 2 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-		
+		subscription.Bind(dummyEma, (c, v) => ProcessCandle(c)).Start();
+
 		StartProtection(null, null);
 	}
 	
@@ -122,8 +122,8 @@ public class PremarketGapMomoTraderStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		//if (!IsFormedAndOnlineAndAllowTrading())
+		//return;
 		
 		var candleDate = candle.OpenTime.Date;
 		

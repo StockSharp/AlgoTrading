@@ -187,11 +187,11 @@ public class RelativeStrengthStrategy : Strategy
 		var weightedProfit = profitFast * _weightEma + profitSlow * _weightEma + profitSma1 * _weightSma1 + profitSma2 * _weightSma2 + profitSma3 * _weightSma3;
 		var strength = weightedProfit / _totalWeight;
 
-		var bbFastVal = (BollingerBandsValue)_bbFast.Process(new DecimalIndicatorValue(_bbFast, strength));
-		var bbSlowVal = (BollingerBandsValue)_bbSlow.Process(new DecimalIndicatorValue(_bbSlow, strength));
-		var bb1Val = (BollingerBandsValue)_bb1.Process(new DecimalIndicatorValue(_bb1, strength));
-		var bb2Val = (BollingerBandsValue)_bb2.Process(new DecimalIndicatorValue(_bb2, strength));
-		var bb3Val = (BollingerBandsValue)_bb3.Process(new DecimalIndicatorValue(_bb3, strength));
+		var bbFastVal = (BollingerBandsValue)_bbFast.Process(new DecimalIndicatorValue(_bbFast, strength, candle.ServerTime));
+		var bbSlowVal = (BollingerBandsValue)_bbSlow.Process(new DecimalIndicatorValue(_bbSlow, strength, candle.ServerTime));
+		var bb1Val = (BollingerBandsValue)_bb1.Process(new DecimalIndicatorValue(_bb1, strength, candle.ServerTime));
+		var bb2Val = (BollingerBandsValue)_bb2.Process(new DecimalIndicatorValue(_bb2, strength, candle.ServerTime));
+		var bb3Val = (BollingerBandsValue)_bb3.Process(new DecimalIndicatorValue(_bb3, strength, candle.ServerTime));
 
 		if (bbFastVal.UpBand is not decimal upFast || bbFastVal.LowBand is not decimal lowFast ||
 			bbSlowVal.UpBand is not decimal upSlow || bbSlowVal.LowBand is not decimal lowSlow ||

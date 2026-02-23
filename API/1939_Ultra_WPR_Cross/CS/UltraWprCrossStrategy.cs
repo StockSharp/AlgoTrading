@@ -91,7 +91,7 @@ public class UltraWprCrossStrategy : Strategy
 	/// </summary>
 	public UltraWprCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_wprPeriod = Param(nameof(WprPeriod), 13)
@@ -161,14 +161,14 @@ public class UltraWprCrossStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fastValue = _fastMa.Process(wprValue);
-		var slowValue = _slowMa.Process(wprValue);
+		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, wprValue, candle.OpenTime) { IsFinal = true });
+		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, wprValue, candle.OpenTime) { IsFinal = true });
 
-		if (!fastValue.IsFinal || !slowValue.IsFinal)
+		if (!_fastMa.IsFormed || !_slowMa.IsFormed)
 			return;
 
-		var fast = fastValue.GetValue<decimal>();
-		var slow = slowValue.GetValue<decimal>();
+		var fast = fastValue.ToDecimal();
+		var slow = slowValue.ToDecimal();
 
 		if (_isFirst)
 		{

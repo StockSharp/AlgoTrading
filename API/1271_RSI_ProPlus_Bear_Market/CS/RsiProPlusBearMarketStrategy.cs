@@ -87,7 +87,7 @@ public class RsiProPlusBearMarketStrategy : Strategy
 			
 			.SetOptimize(0.01m, 5m, 0.01m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -119,7 +119,7 @@ public class RsiProPlusBearMarketStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_rsi, ProcessCandle).Start();
 
-		StartProtection(null, null);
+		// no separate protection
 
 		var area = CreateChartArea();
 		if (area != null)

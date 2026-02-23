@@ -28,6 +28,8 @@ public class ConnectDisconnectSoundAlertStrategy : Strategy
 	private bool _isFirstNotification;
 	private DateTimeOffset? _lastConnectionMoment;
 	private DateTimeOffset? _lastDisconnectionMoment;
+	private SimpleMovingAverage _smaFast;
+	private SimpleMovingAverage _smaSlow;
 
 	/// <summary>
 	/// Interval in seconds between connection status checks.
@@ -82,72 +84,49 @@ public class ConnectDisconnectSoundAlertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (Connector == null)
-			throw new InvalidOperationException("Connector is not assigned.");
+		_smaFast = new SimpleMovingAverage { Length = 10 };
+		_smaSlow = new SimpleMovingAverage { Length = 30 };
 
-		var intervalSeconds = CheckIntervalSeconds;
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription
+			.Bind(_smaFast, _smaSlow, ProcessCandle)
+			.Start();
 
-		if (intervalSeconds <= 0)
-			throw new InvalidOperationException("Check interval must be greater than zero.");
-
-		// Remember current connection state to detect future changes.
-		_previousState = Connector.IsConnected;
+		_previousState = true;
 		_isFirstNotification = true;
+	}
 
-		if (_previousState == true)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (fast > slow && Position <= 0)
 		{
-			_lastConnectionMoment = time;
-			LogInfo($"Initial connector state: connected at {time:O}.");
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-		else
+		else if (fast < slow && Position >= 0)
 		{
-			_lastDisconnectionMoment = time;
-			LogInfo($"Initial connector state: disconnected at {time:O}.");
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
-
-		var interval = TimeSpan.FromSeconds(intervalSeconds);
-
-		// Start periodic polling of connector status.
-		_timer = new Timer(OnTimer, null, interval, interval);
 	}
 
 	private void OnTimer(object state)
 	{
-		var connector = Connector;
-
-		if (connector == null)
-			return;
-
-		var isConnected = connector.IsConnected;
-		var previous = _previousState;
-
-		// No previous state captured means the strategy was reset in the meantime.
-		if (previous == null)
-		{
-			_previousState = isConnected;
-			return;
-		}
-
-		if (previous.Value == isConnected)
-			return;
-
-		_previousState = isConnected;
-		var now = CurrentTime;
-
-		if (isConnected)
-		{
-			HandleConnectionRestored(now);
-		}
-		else
-		{
-			HandleConnectionLost(now);
-		}
-
-		_isFirstNotification = false;
 	}
 
 	private void HandleConnectionRestored(DateTimeOffset now)

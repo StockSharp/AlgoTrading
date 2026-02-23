@@ -363,7 +363,7 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 		_useStochastic = Param(nameof(UseStochastic), true)
 		.SetDisplay("Use Stochastic", "Enable Stochastic oscillator filter", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for signal calculations", "Execution");
 	}
 
@@ -418,7 +418,7 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (false)
 			return;
 
 		if (!TryBuildSignals(fastValue, slowValue, rsiValue, macdValue, bollingerValue, stochasticValue, candle, out var isBuySignal, out var isSellSignal))

@@ -153,7 +153,7 @@ public class AtrStepTraderStrategy : Strategy
 			
 			.SetOptimize(50, 150, 10);
 
-		_momentumPeriod = Param(nameof(MomentumPeriod), 50)
+		_momentumPeriod = Param(nameof(MomentumPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Bars", "Number of consecutive bars required for trend confirmation", "Trend Filter")
 			
@@ -189,7 +189,7 @@ public class AtrStepTraderStrategy : Strategy
 			
 			.SetOptimize(0.5m, 2m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for processing", "General");
 	}
 
@@ -216,8 +216,8 @@ public class AtrStepTraderStrategy : Strategy
 
 		Volume = TradeVolume;
 
-		var fastMa = new SMA { Length = FastPeriod };
-		var slowMa = new SMA { Length = SlowPeriod };
+		var fastMa = new SimpleMovingAverage { Length = FastPeriod };
+		var slowMa = new SimpleMovingAverage { Length = SlowPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var highest = new Highest { Length = MomentumPeriod };
 		var lowest = new Lowest { Length = MomentumPeriod };
@@ -245,7 +245,7 @@ public class AtrStepTraderStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (false)
 			return;
 
 		if (atrValue <= 0m)
@@ -269,7 +269,7 @@ public class AtrStepTraderStrategy : Strategy
 		{
 			if (previousSlow.HasValue && slowValue > 0m)
 			{
-				var bullishReady = _bullishStreak >= MomentumPeriod && price > previousSlow.Value && price <= highest - StepMultiplier * atrValue;
+				var bullishReady = _bullishStreak >= MomentumPeriod && price > previousSlow.Value;
 				if (bullishReady)
 				{
 					BuyMarket(Volume);
@@ -282,7 +282,7 @@ public class AtrStepTraderStrategy : Strategy
 
 			if (longCount == 0 && previousSlow.HasValue && slowValue > 0m)
 			{
-				var bearishReady = _bearishStreak >= MomentumPeriod && price < previousSlow.Value && price >= lowest + StepMultiplier * atrValue;
+				var bearishReady = _bearishStreak >= MomentumPeriod && price < previousSlow.Value;
 				if (bearishReady)
 				{
 					SellMarket(Volume);

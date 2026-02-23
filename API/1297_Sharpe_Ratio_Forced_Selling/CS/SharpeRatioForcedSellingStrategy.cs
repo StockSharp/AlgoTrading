@@ -138,13 +138,14 @@ public class SharpeRatioForcedSellingStrategy : Strategy
 		
 		_riskFreePerPeriod = (decimal)Math.Pow((double)(1m + RiskFreeRateAnnual), 1d / PeriodsPerYear) - 1m;
 		
+		var dummyEma = new ExponentialMovingAverage { Length = 5 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-		
-		StartProtection(null, null);
+		subscription.Bind(dummyEma, ProcessCandle).Start();
+
+		// no separate protection
 	}
 	
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _dummyEma)
 	{
 		if (candle.State != CandleStates.Finished) return;
 		

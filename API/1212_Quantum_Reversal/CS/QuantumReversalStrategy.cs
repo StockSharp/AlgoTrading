@@ -62,7 +62,7 @@ public class QuantumReversalStrategy : Strategy
 		var bb = new BollingerBands { Length = BollingerLength, Width = BollingerMultiplier };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var sub = SubscribeCandles(CandleType);
-		sub.Bind(bb, rsi, Process).Start();
+		sub.BindEx(bb, rsi, ProcessEx).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -73,10 +73,14 @@ public class QuantumReversalStrategy : Strategy
 		}
 	}
 	
-	private void Process(ICandleMessage candle, decimal basis, decimal upper, decimal lower, decimal rsi)
+	private void ProcessEx(ICandleMessage candle, IIndicatorValue bbVal, IIndicatorValue rsiVal)
 	{
 		if (candle.State != CandleStates.Finished || !IsFormedAndOnlineAndAllowTrading())
 		return;
+		var bbv = (BollingerBandsValue)bbVal;
+		if (bbv.UpBand is not decimal upper || bbv.LowBand is not decimal lower)
+			return;
+		var rsi = rsiVal.ToDecimal();
 		var rsiSmooth = _sma.Process(new DecimalIndicatorValue(_sma, rsi, candle.ServerTime)).ToDecimal();
 		if ((candle.ClosePrice <= lower || rsiSmooth < RsiOversold) && Position <= 0)
 		{

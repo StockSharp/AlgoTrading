@@ -34,7 +34,7 @@ public class AdaptiveMarketLevelStrategy : Strategy
 	
 	public AdaptiveMarketLevelStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 		
 		_fractal = Param(nameof(Fractal), 6)
@@ -155,8 +155,8 @@ public class AdaptiveMarketLevelStrategy : Strategy
 		var step = Security.PriceStep ?? 1m;
 		
 		StartProtection(
-		takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Point),
-		stopLoss: new Unit(StopLossTicks * step, UnitTypes.Point));
+		takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Absolute),
+		stopLoss: new Unit(StopLossTicks * step, UnitTypes.Absolute));
 		
 		var area = CreateChartArea();
 		if (area != null)
@@ -223,13 +223,13 @@ public class AdaptiveMarketLevelStrategy : Strategy
 		{
 			var candle = input.GetValue<ICandleMessage>();
 			if (candle == null)
-			return new DecimalIndicatorValue(this);
-			
+			return new DecimalIndicatorValue(this, input.Time);
+
 			_high.Insert(0, candle.HighPrice);
 			_low.Insert(0, candle.LowPrice);
 			_open.Insert(0, candle.OpenPrice);
 			_close.Insert(0, candle.ClosePrice);
-			
+
 			var maxLength = Math.Max(Lag + 1, Fractal * 2);
 			if (_high.Count > maxLength)
 			{
@@ -238,10 +238,12 @@ public class AdaptiveMarketLevelStrategy : Strategy
 				_open.RemoveAt(_open.Count - 1);
 				_close.RemoveAt(_close.Count - 1);
 			}
-			
+
 			if (_high.Count < maxLength)
-			return new DecimalIndicatorValue(this);
-			
+			return new DecimalIndicatorValue(this, input.Time);
+
+			IsFormed = true;
+
 			var r1 = Range(Fractal, 0) / Fractal;
 			var r2 = Range(Fractal, Fractal) / Fractal;
 			var r3 = Range(Fractal * 2, 0) / (Fractal * 2);
@@ -265,7 +267,7 @@ public class AdaptiveMarketLevelStrategy : Strategy
 			var condition = _smooth.Count > Lag && Math.Abs(newSmooth - _smooth[Lag]) >= Lag * Lag * Step;
 			_aml = condition ? newSmooth : _aml;
 			
-			return new DecimalIndicatorValue(this, _aml);
+			return new DecimalIndicatorValue(this, _aml, input.Time);
 		}
 		
 		private decimal Range(int period, int start)

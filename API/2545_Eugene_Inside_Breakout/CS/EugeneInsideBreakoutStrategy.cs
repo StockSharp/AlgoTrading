@@ -56,7 +56,7 @@ public class EugeneInsideBreakoutStrategy : Strategy
 	/// </summary>
 	public EugeneInsideBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 
 
@@ -86,8 +86,6 @@ public class EugeneInsideBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
@@ -105,12 +103,6 @@ public class EugeneInsideBreakoutStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			UpdateHistory(candle);
-			return;
-		}
 
 		if (!_hasPrev2)
 		{
@@ -152,22 +144,22 @@ public class EugeneInsideBreakoutStrategy : Strategy
 		{
 			if (buySignal && confirmBuy && low0 > low1 && low1 < high2)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 			}
 			else if (sellSignal && confirmSell && high0 < high1)
 			{
-				SellMarket(Volume);
+				SellMarket();
 			}
 		}
 		else if (Position > 0)
 		{
 			if (sellSignal && confirmSell && high0 < high1)
-				SellMarket(Position);
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
 			if (buySignal && confirmBuy && low0 > low1 && low1 < high2)
-				BuyMarket(-Position);
+				BuyMarket();
 		}
 
 		UpdateHistory(candle);

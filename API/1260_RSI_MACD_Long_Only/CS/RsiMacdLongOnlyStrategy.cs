@@ -265,9 +265,9 @@ public class RsiMacdLongOnlyStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
 		_macd = new MovingAverageConvergenceDivergenceSignal { Macd =
@@ -314,7 +314,7 @@ public class RsiMacdLongOnlyStrategy : Strategy
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 		var macd = macdTyped.Macd;
 		var macdSignal = macdTyped.Signal;
-		var macdHist = macdTyped.Histogram;
+		var macdHist = (macd ?? 0m) - (macdSignal ?? 0m);
 		var ema = emaValue.ToDecimal();
 
 		var rsiAboveMid = rsi > RsiMidline;

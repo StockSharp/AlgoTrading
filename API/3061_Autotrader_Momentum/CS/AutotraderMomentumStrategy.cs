@@ -218,12 +218,12 @@ public class AutotraderMomentumStrategy : Strategy
 			return;
 
 		// Enter long when the monitored bar closes above the reference bar.
-		if (currentClose > comparableClose && CanBuy)
+		if (currentClose > comparableClose && Position <= 0)
 		{
 			EnterPosition(true, candle);
 		}
 		// Enter short when the monitored bar closes below the reference bar.
-		else if (currentClose < comparableClose && CanSell)
+		else if (currentClose < comparableClose && Position >= 0)
 		{
 			EnterPosition(false, candle);
 		}

@@ -38,11 +38,11 @@ public class PreviousCandleBreakoutStrategy : Strategy
 
 		_stopLossOffset = Param(nameof(StopLossOffset), 0m)
 			.SetDisplay("Stop Loss", "Price distance for the stop-loss. Set 0 to disable.", "Risk")
-			.SetMinValue(0m);
+			;
 
 		_takeProfitOffset = Param(nameof(TakeProfitOffset), 0m)
 			.SetDisplay("Take Profit", "Price distance for the take-profit. Set 0 to disable.", "Risk")
-			.SetMinValue(0m);
+			;
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -84,12 +84,12 @@ public class PreviousCandleBreakoutStrategy : Strategy
 		{
 			if (StopLossOffset > 0m && close <= _entryPrice - StopLossOffset)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				_entryPrice = 0m;
 			}
 			else if (TakeProfitOffset > 0m && close >= _entryPrice + TakeProfitOffset)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				_entryPrice = 0m;
 			}
 		}
@@ -97,12 +97,12 @@ public class PreviousCandleBreakoutStrategy : Strategy
 		{
 			if (StopLossOffset > 0m && close >= _entryPrice + StopLossOffset)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				_entryPrice = 0m;
 			}
 			else if (TakeProfitOffset > 0m && close <= _entryPrice - TakeProfitOffset)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				_entryPrice = 0m;
 			}
 		}
@@ -112,7 +112,7 @@ public class PreviousCandleBreakoutStrategy : Strategy
 		{
 			if (Position < 0)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				_entryPrice = 0m;
 			}
 
@@ -127,7 +127,7 @@ public class PreviousCandleBreakoutStrategy : Strategy
 			// Breakout below the previous low opens or reverses into a short position.
 			if (Position > 0)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 				_entryPrice = 0m;
 			}
 

@@ -56,7 +56,7 @@ public class RsiBuySellForceStrategy : Strategy
 			
 			.SetOptimize(5, 50, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -85,7 +85,7 @@ public class RsiBuySellForceStrategy : Strategy
 		_ema = new EMA { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(rsi, ProcessCandle).Start();
+		subscription.Bind(rsi, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -97,16 +97,14 @@ public class RsiBuySellForceStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsi)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-
-		var rsi = rsiValue.ToDecimal();
-		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, rsi)).ToDecimal();
+		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, rsi, candle.ServerTime)).ToDecimal();
 
 		var d = (rsi - emaValue) * 5m;
 		var bb = (rsi - d + emaValue) / 2m;

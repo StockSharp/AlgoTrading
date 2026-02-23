@@ -80,7 +80,7 @@ public class TrendlessAgHistStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Profit target in price units", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(12).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 	}
 
@@ -131,13 +131,6 @@ public class TrendlessAgHistStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		if (!_indicator.IsFormed)
-		{
-			_prev2 = _prev1;
-			_prev1 = value;
-			return;
-		}
 
 		if (!_initialized)
 		{
@@ -200,14 +193,13 @@ public class TrendlessAgHistStrategy : Strategy
 			var candle = input.GetValue<ICandleMessage>();
 			var price = candle.ClosePrice;
 
-			_fast.Length = FastLength;
-			_slow.Length = SlowLength;
-
-			var fastVal = _fast.Process(input.Time, price).GetValue<decimal>();
+			var fastResult = _fast.Process(new DecimalIndicatorValue(_fast, price, input.Time) { IsFinal = true });
+			var fastVal = fastResult.IsEmpty ? price : fastResult.ToDecimal();
 			var diff = price - fastVal;
-			var slowVal = _slow.Process(input.Time, diff).GetValue<decimal>();
+			var slowResult = _slow.Process(new DecimalIndicatorValue(_slow, diff, input.Time) { IsFinal = true });
+			var slowVal = slowResult.IsEmpty ? diff : slowResult.ToDecimal();
 
-			IsFormed = _slow.IsFormed;
+			IsFormed = _fast.IsFormed && _slow.IsFormed;
 			return new DecimalIndicatorValue(this, slowVal, input.Time);
 		}
 

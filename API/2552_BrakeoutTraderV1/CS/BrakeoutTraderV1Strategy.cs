@@ -101,7 +101,7 @@ public class BrakeoutTraderV1Strategy : Strategy
 	/// </summary>
 	public BrakeoutTraderV1Strategy()
 	{
-		_breakoutLevel = Param(nameof(BreakoutLevel), 0m)
+		_breakoutLevel = Param(nameof(BreakoutLevel), 65000m)
 			.SetDisplay("Breakout Level", "Static price level monitored for breakouts", "Signal");
 
 		_enableLong = Param(nameof(EnableLong), true)
@@ -122,7 +122,7 @@ public class BrakeoutTraderV1Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Risk %", "Percentage of equity risked per trade", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for breakout detection", "General");
 	}
 
@@ -171,7 +171,7 @@ public class BrakeoutTraderV1Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
+		// removed StartProtection(null, null)
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -180,12 +180,6 @@ public class BrakeoutTraderV1Strategy : Strategy
 			return;
 
 		if (ManageOpenPosition(candle))
-		{
-			UpdatePreviousClose(candle.ClosePrice);
-			return;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 		{
 			UpdatePreviousClose(candle.ClosePrice);
 			return;
@@ -223,7 +217,7 @@ public class BrakeoutTraderV1Strategy : Strategy
 			// Exit long if stop-loss is touched.
 			if (_stopPrice is decimal stop && candle.LowPrice <= stop)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetPositionState();
 				return true;
 			}
@@ -231,7 +225,7 @@ public class BrakeoutTraderV1Strategy : Strategy
 			// Exit long if take-profit is reached.
 			if (_takePrice is decimal take && candle.HighPrice >= take)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetPositionState();
 				return true;
 			}
@@ -241,7 +235,7 @@ public class BrakeoutTraderV1Strategy : Strategy
 			// Exit short if stop-loss is touched.
 			if (_stopPrice is decimal stop && candle.HighPrice >= stop)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetPositionState();
 				return true;
 			}
@@ -249,7 +243,7 @@ public class BrakeoutTraderV1Strategy : Strategy
 			// Exit short if take-profit is reached.
 			if (_takePrice is decimal take && candle.LowPrice <= take)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetPositionState();
 				return true;
 			}
@@ -278,7 +272,7 @@ public class BrakeoutTraderV1Strategy : Strategy
 		if (closingVolume > 0m)
 			ResetPositionState();
 
-		BuyMarket(totalVolume);
+		BuyMarket();
 		SetPositionTargets(price, true, volume > 0m);
 	}
 
@@ -297,7 +291,7 @@ public class BrakeoutTraderV1Strategy : Strategy
 		if (closingVolume > 0m)
 			ResetPositionState();
 
-		SellMarket(totalVolume);
+		SellMarket();
 		SetPositionTargets(price, false, volume > 0m);
 	}
 
@@ -358,11 +352,11 @@ public class BrakeoutTraderV1Strategy : Strategy
 				volume = Math.Floor(volume / s) * s;
 			}
 
-			var min = security.VolumeMin;
+			var min = security.MinVolume;
 			if (min is decimal minVol && volume < minVol)
 				volume = minVol;
 
-			var max = security.VolumeMax;
+			var max = security.MaxVolume;
 			if (max is decimal maxVol && maxVol > 0m && volume > maxVol)
 				volume = maxVol;
 

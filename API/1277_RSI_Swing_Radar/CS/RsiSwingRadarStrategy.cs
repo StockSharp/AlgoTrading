@@ -71,12 +71,12 @@ public class RsiSwingRadarStrategy : Strategy
 			
 			.SetOptimize(0.1m, 2m, 0.1m);
 
-		_rsiOversold = Param(nameof(RsiOversold), 35m)
+		_rsiOversold = Param(nameof(RsiOversold), 55m)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "Indicators")
 			
 			.SetOptimize(10m, 60m, 5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -111,20 +111,9 @@ public class RsiSwingRadarStrategy : Strategy
 			.Bind(_rsi, _atr, ProcessCandle)
 			.Start();
 
-		var priceArea = CreateChartArea();
-		var rsiArea = CreateChartArea();
-		if (priceArea != null)
-		{
-			DrawCandles(priceArea, subscription);
-			DrawOwnTrades(priceArea);
-		}
-		if (rsiArea != null)
-		{
-			DrawIndicator(rsiArea, _rsi);
-			DrawIndicator(rsiArea, _rsiMa);
-		}
+		// no chart
 
-		StartProtection(null, null);
+		// no separate protection
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal atr)
@@ -132,7 +121,7 @@ public class RsiSwingRadarStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var rsiMaValue = _rsiMa.Process(new DecimalIndicatorValue(_rsiMa, rsi)).ToDecimal();
+		var rsiMaValue = _rsiMa.Process(new DecimalIndicatorValue(_rsiMa, rsi, candle.ServerTime)).ToDecimal();
 
 		if (!_rsi.IsFormed || !_rsiMa.IsFormed || !_atr.IsFormed)
 		{

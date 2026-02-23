@@ -8,6 +8,7 @@ using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -115,7 +116,7 @@ public class ColorStepXccxStrategy : Strategy
 		_allowShortExit = Param(nameof(AllowShortExit), true)
 			.SetDisplay("Allow Short Exit", string.Empty, "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -144,7 +145,9 @@ public class ColorStepXccxStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(null, null);
+		StartProtection(
+			takeProfit: new Unit(2000, UnitTypes.Absolute),
+			stopLoss: new Unit(1000, UnitTypes.Absolute));
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -154,7 +157,7 @@ public class ColorStepXccxStrategy : Strategy
 
 		var price = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
 
-		var (mPlus, mMinus) = _calc.Process(price);
+		var (mPlus, mMinus) = _calc.Process(price, candle.CloseTime);
 		if (mPlus is null || mMinus is null)
 			return;
 
@@ -169,18 +172,18 @@ public class ColorStepXccxStrategy : Strategy
 		if (_mPlusPrev2 > _mMinusPrev2)
 		{
 			if (AllowShortExit && Position < 0)
-				ClosePosition();
+				BuyMarket(Math.Abs(Position));
 
-			if (AllowLongEntry && _mPlusPrev1 <= _mMinusPrev1 && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
-				BuyMarket();
+			if (AllowLongEntry && _mPlusPrev1 <= _mMinusPrev1 && Position <= 0 && IsOnline)
+				BuyMarket(Volume + Math.Abs(Position));
 		}
 		else if (_mPlusPrev2 < _mMinusPrev2)
 		{
 			if (AllowLongExit && Position > 0)
-				ClosePosition();
+				SellMarket(Position);
 
-			if (AllowShortEntry && _mPlusPrev1 >= _mMinusPrev1 && Position >= 0 && IsFormedAndOnlineAndAllowTrading())
-				SellMarket();
+			if (AllowShortEntry && _mPlusPrev1 >= _mMinusPrev1 && Position >= 0 && IsOnline)
+				SellMarket(Volume + Math.Abs(Position));
 		}
 	}
 
@@ -211,19 +214,25 @@ public class ColorStepXccxStrategy : Strategy
 		public int StepFast { get; private set; }
 		public int StepSlow { get; private set; }
 
-		public (decimal? mPlus, decimal? mMinus) Process(decimal price)
+		public (decimal? mPlus, decimal? mMinus) Process(decimal price, DateTime time)
 		{
-			var maValue = _priceMa.Process(price);
+			var maValue = _priceMa.Process(price, time, true);
 			if (!_priceMa.IsFormed)
 				return default;
 
-			var up = price - maValue.Value;
+			var up = price - maValue.GetValue<decimal>();
 			var dn = Math.Abs(up);
 
-			var upMa = _devUpMa.Process(up).Value;
-			var dnMa = _devDnMa.Process(dn).Value;
+			var upMaVal = _devUpMa.Process(up, time, true);
+			var dnMaVal = _devDnMa.Process(dn, time, true);
 
-			if (!_devUpMa.IsFormed || !_devDnMa.IsFormed || dnMa == 0m)
+			if (!_devUpMa.IsFormed || !_devDnMa.IsFormed)
+				return default;
+
+			var upMa = upMaVal.GetValue<decimal>();
+			var dnMa = dnMaVal.GetValue<decimal>();
+
+			if (dnMa == 0m)
 				return default;
 
 			var xccx = 100m * upMa / dnMa;

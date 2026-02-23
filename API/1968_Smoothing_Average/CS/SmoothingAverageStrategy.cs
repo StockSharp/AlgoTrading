@@ -48,7 +48,7 @@ public class SmoothingAverageStrategy : Strategy
 		_smoothing = Param(nameof(Smoothing), 1400m)
 			.SetDisplay("Smoothing", "Price offset from moving average", "General")
 			;
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -62,7 +62,7 @@ public class SmoothingAverageStrategy : Strategy
 		base.OnStarted2(time);
 
 		// create moving average indicator
-		var sma = new SMA { Length = MaPeriod };
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
 
 		// subscribe to candles
 		var subscription = SubscribeCandles(CandleType);

@@ -353,7 +353,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		_lotSize = Param(nameof(LotSize), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Size", "Base trading volume", "Trading");
-		_useTimeFilter = Param(nameof(UseTimeFilter), true)
+		_useTimeFilter = Param(nameof(UseTimeFilter), false)
 			.SetDisplay("Use Time Filter", "Enable trading window", "Trading");
 		_sessionStart = Param(nameof(SessionStart), new TimeSpan(7, 0, 0))
 			.SetDisplay("Session Start", "Trading start time", "Trading");
@@ -361,7 +361,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 			.SetDisplay("Session End", "Trading end time", "Trading");
 		_useMartingale = Param(nameof(UseMartingale), true)
 			.SetDisplay("Use Martingale", "Double volume after losses", "Trading");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Base candle type", "Trading");
 	}
 
@@ -1025,7 +1025,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		base.OnStarted2(time);
 
 		_pointSize = Security?.PriceStep ?? 0.0001m;
-		_pointValue = Security?.PriceStepCost ?? 1m;
+		_pointValue = 1m;
 		_currentVolume = LotSize;
 		Volume = LotSize;
 
@@ -1043,21 +1043,34 @@ public class MacdPatternTraderSessionStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_macd1, _macd2, _macd3, _macd4, _macd5, _macd6, _ema1, _ema2, _sma1, _ema3, ProcessCandle)
+			.Bind(ProcessCandleRaw)
 			.Start();
 	}
 
 	private static MovingAverageConvergenceDivergenceSignal CreateMacd(int fast, int slow)
 	{
-		return new()
-		{
-			Macd =
-			{
-				ShortMa = new EMA { Length = fast },
-				LongMa = new EMA { Length = slow },
-			},
-			SignalMa = new EMA { Length = 1 },
-		};
+		var innerMacd = new MovingAverageConvergenceDivergence(new EMA { Length = slow }, new EMA { Length = fast });
+		return new MovingAverageConvergenceDivergenceSignal(innerMacd, new EMA { Length = 1 });
+	}
+
+	private void ProcessCandleRaw(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var candleValue = new CandleIndicatorValue(_macd1, candle) { IsFinal = true };
+		var macd1Value = _macd1.Process(candleValue);
+		var macd2Value = _macd2.Process(new CandleIndicatorValue(_macd2, candle) { IsFinal = true });
+		var macd3Value = _macd3.Process(new CandleIndicatorValue(_macd3, candle) { IsFinal = true });
+		var macd4Value = _macd4.Process(new CandleIndicatorValue(_macd4, candle) { IsFinal = true });
+		var macd5Value = _macd5.Process(new CandleIndicatorValue(_macd5, candle) { IsFinal = true });
+		var macd6Value = _macd6.Process(new CandleIndicatorValue(_macd6, candle) { IsFinal = true });
+		var ema1Value = _ema1.Process(new CandleIndicatorValue(_ema1, candle) { IsFinal = true });
+		var ema2Value = _ema2.Process(new CandleIndicatorValue(_ema2, candle) { IsFinal = true });
+		var sma1Value = _sma1.Process(new CandleIndicatorValue(_sma1, candle) { IsFinal = true });
+		var ema3Value = _ema3.Process(new CandleIndicatorValue(_ema3, candle) { IsFinal = true });
+
+		ProcessCandle(candle, macd1Value, macd2Value, macd3Value, macd4Value, macd5Value, macd6Value, ema1Value, ema2Value, sma1Value, ema3Value);
 	}
 
 	private void ProcessCandle(
@@ -1073,19 +1086,17 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		IIndicatorValue sma1Value,
 		IIndicatorValue ema3Value)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
 		_history.Add(candle);
 		if (_history.Count > HistoryLimit)
 			_history.RemoveAt(0);
 
-		var macd1 = (MovingAverageConvergenceDivergenceSignalValue)macd1Value;
-		var macd2 = (MovingAverageConvergenceDivergenceSignalValue)macd2Value;
-		var macd3 = (MovingAverageConvergenceDivergenceSignalValue)macd3Value;
-		var macd4 = (MovingAverageConvergenceDivergenceSignalValue)macd4Value;
-		var macd5 = (MovingAverageConvergenceDivergenceSignalValue)macd5Value;
-		var macd6 = (MovingAverageConvergenceDivergenceSignalValue)macd6Value;
+		if (macd1Value is not MovingAverageConvergenceDivergenceSignalValue macd1 ||
+			macd2Value is not MovingAverageConvergenceDivergenceSignalValue macd2 ||
+			macd3Value is not MovingAverageConvergenceDivergenceSignalValue macd3 ||
+			macd4Value is not MovingAverageConvergenceDivergenceSignalValue macd4 ||
+			macd5Value is not MovingAverageConvergenceDivergenceSignalValue macd5 ||
+			macd6Value is not MovingAverageConvergenceDivergenceSignalValue macd6)
+			return;
 
 		if (macd1.Macd is not decimal macd1Current ||
 			macd2.Macd is not decimal macd2Current ||
@@ -1127,7 +1138,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		CheckRiskManagement(candle);
 
 		var inSession = !UseTimeFilter || IsInSession(candle.OpenTime.TimeOfDay);
-		var canTrade = inSession && IsFormedAndOnlineAndAllowTrading();
+		var canTrade = inSession;
 
 		if (canTrade)
 		{
@@ -1375,7 +1386,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		if (totalVolume <= 0m)
 			return;
 
-		BuyMarket(totalVolume);
+		BuyMarket();
 
 		_entryDirection = 1;
 		_entryPrice = candle.ClosePrice;
@@ -1398,7 +1409,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		if (totalVolume <= 0m)
 			return;
 
-		SellMarket(totalVolume);
+		SellMarket();
 
 		_entryDirection = -1;
 		_entryPrice = candle.ClosePrice;
@@ -1428,7 +1439,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 				var volume = NormalizeVolume(_openVolume / 3m);
 				if (volume > 0m)
 				{
-					SellMarket(volume);
+					SellMarket();
 					RegisterClose(volume, candle.ClosePrice);
 					_longPartialStage = 1;
 				}
@@ -1438,7 +1449,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 				var volume = NormalizeVolume(_openVolume / 2m);
 				if (volume > 0m)
 				{
-					SellMarket(volume);
+					SellMarket();
 					RegisterClose(volume, candle.ClosePrice);
 					_longPartialStage = 2;
 				}
@@ -1451,7 +1462,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 				var volume = NormalizeVolume(_openVolume / 3m);
 				if (volume > 0m)
 				{
-					BuyMarket(volume);
+					BuyMarket();
 					RegisterClose(volume, candle.ClosePrice);
 					_shortPartialStage = 1;
 				}
@@ -1461,7 +1472,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 				var volume = NormalizeVolume(_openVolume / 2m);
 				if (volume > 0m)
 				{
-					BuyMarket(volume);
+					BuyMarket();
 					RegisterClose(volume, candle.ClosePrice);
 					_shortPartialStage = 2;
 				}
@@ -1478,14 +1489,14 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		{
 			if (_currentStopLoss.HasValue && candle.LowPrice <= _currentStopLoss.Value)
 			{
-				SellMarket(_openVolume);
+				SellMarket();
 				RegisterClose(_openVolume, _currentStopLoss.Value);
 				return true;
 			}
 
 			if (_currentTakeProfit.HasValue && candle.HighPrice >= _currentTakeProfit.Value)
 			{
-				SellMarket(_openVolume);
+				SellMarket();
 				RegisterClose(_openVolume, _currentTakeProfit.Value);
 				return true;
 			}
@@ -1494,14 +1505,14 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		{
 			if (_currentStopLoss.HasValue && candle.HighPrice >= _currentStopLoss.Value)
 			{
-				BuyMarket(_openVolume);
+				BuyMarket();
 				RegisterClose(_openVolume, _currentStopLoss.Value);
 				return true;
 			}
 
 			if (_currentTakeProfit.HasValue && candle.LowPrice <= _currentTakeProfit.Value)
 			{
-				BuyMarket(_openVolume);
+				BuyMarket();
 				RegisterClose(_openVolume, _currentTakeProfit.Value);
 				return true;
 			}
@@ -1597,7 +1608,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		return true;
 	}
 
-	private static decimal NormalizeVolume(decimal volume)
+	private decimal NormalizeVolume(decimal volume)
 	{
 		var normalized = Math.Round(volume, 2, MidpointRounding.AwayFromZero);
 		return normalized < MinPartialVolume ? MinPartialVolume : normalized;
@@ -1613,12 +1624,12 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		if (isLong)
 		{
 			var lowest = GetLowestLow(stopBars);
-			return lowest?.Minus(offset);
+			return lowest.HasValue ? lowest.Value - offset : null;
 		}
 		else
 		{
 			var highest = GetHighestHigh(stopBars);
-			return highest?.Plus(offset);
+			return highest.HasValue ? highest.Value + offset : null;
 		}
 	}
 

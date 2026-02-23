@@ -30,9 +30,6 @@ public class ColorZerolagRviStrategy : Strategy
 	private readonly StrategyParam<bool> _sellClose;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeVigorIndex _rvi;
-	private SimpleMovingAverage _signal;
-
 	private decimal? _prevRvi;
 	private decimal? _prevSignal;
 
@@ -123,7 +120,7 @@ public class ColorZerolagRviStrategy : Strategy
 		_sellClose = Param(nameof(SellClose), true)
 			.SetDisplay("Sell Close", "Allow closing short positions", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -137,8 +134,6 @@ public class ColorZerolagRviStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_rvi = default;
-		_signal = default;
 		_prevRvi = default;
 		_prevSignal = default;
 	}
@@ -148,40 +143,33 @@ public class ColorZerolagRviStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_rvi = new RelativeVigorIndex { Length = RviLength };
-		_signal = new SMA { Length = SignalLength };
+		var rvi = new RelativeVigorIndex();
+		rvi.Average.Length = RviLength;
+		rvi.Signal.Length = SignalLength;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		StartProtection(null, null);
+		subscription.BindEx(rvi, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _rvi);
-			DrawIndicator(area, _signal);
+			DrawIndicator(area, rvi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rviValue)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		var rviValue = _rvi.Process(candle);
-		var signalValue = _signal.Process(rviValue);
-
-		if (!rviValue.IsFinal || !signalValue.IsFinal)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var rvi = rviValue.ToDecimal();
-		var signal = signalValue.ToDecimal();
+		var value = (IRelativeVigorIndexValue)rviValue;
+		if (value.Average is not decimal rvi || value.Signal is not decimal signal)
+			return;
 
 		if (_prevRvi is null || _prevSignal is null)
 		{

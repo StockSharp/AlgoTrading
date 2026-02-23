@@ -187,11 +187,11 @@ public class RandomStateMachineStrategy : Strategy
 			.SetDisplay("R/R Short", "Risk/reward ratio for short", "Risk")
 			.SetGreaterThanZero();
 
-		_riskPtsLong = Param(nameof(RiskPtsLong), 1m)
+		_riskPtsLong = Param(nameof(RiskPtsLong), 500m)
 			.SetDisplay("Risk Long", "Risk per long trade", "Risk")
 			.SetGreaterThanZero();
 
-		_riskPtsShort = Param(nameof(RiskPtsShort), 1m)
+		_riskPtsShort = Param(nameof(RiskPtsShort), 500m)
 			.SetDisplay("Risk Short", "Risk per short trade", "Risk")
 			.SetGreaterThanZero();
 

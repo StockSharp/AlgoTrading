@@ -53,7 +53,7 @@ public class RsiVolumeMacdEmaComboStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12);
 		_signalLength = Param(nameof(SignalLength), 9);
 		_smaLength = Param(nameof(SmaLength), 20);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -68,25 +68,20 @@ public class RsiVolumeMacdEmaComboStrategy : Strategy
 		_isFirst = true;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var ema = new EMA { Length = EmaLength };
 		var rsi = new RSI { Length = RsiLength };
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = FastLength },
-				LongMa = { Length = SlowLength },
-			},
-			SignalMa = { Length = SignalLength }
-		};
+		var macd = new MovingAverageConvergenceDivergenceSignal();
+		macd.Macd.ShortMa.Length = FastLength;
+		macd.Macd.LongMa.Length = SlowLength;
+		macd.SignalMa.Length = SignalLength;
 		var volSma = new SMA { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ema, rsi).BindEx(macd, Process).Start();
+		subscription.BindEx(ema, rsi, macd, Process).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -96,23 +91,29 @@ public class RsiVolumeMacdEmaComboStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		void Process(ICandleMessage candle, decimal emaVal, decimal rsiVal, IIndicatorValue macdVal)
+		void Process(ICandleMessage candle, IIndicatorValue emaIV, IIndicatorValue rsiIV, IIndicatorValue macdIV)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdVal;
-			if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal signalLine)
+			var emaVal = emaIV.GetValue<decimal>();
+			var rsiVal = rsiIV.GetValue<decimal>();
+
+			decimal macdLine = 0m, signalLine = 0m;
+			if (macdIV is MovingAverageConvergenceDivergenceSignalValue macdTyped)
+			{
+				macdLine = macdTyped.Macd ?? 0m;
+				signalLine = macdTyped.Signal ?? 0m;
+			}
+
+			if (!ema.IsFormed || !rsi.IsFormed || !macd.IsFormed)
 				return;
 
-			var volVal = volSma.Process(candle.TotalVolume);
-			if (!volVal.IsFinal || !ema.IsFormed || !rsi.IsFormed || !macd.IsFormed)
+			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			var volAvg = volVal.ToDecimal();
-
-			var buy = macdLine > signalLine && rsiVal > Overbought && candle.ClosePrice > emaVal && candle.TotalVolume > volAvg;
-			var @short = macdLine < signalLine && rsiVal < Oversold && candle.ClosePrice < emaVal && candle.TotalVolume > volAvg;
+			var buy = macdLine > signalLine && rsiVal > Overbought && candle.ClosePrice > emaVal;
+			var @short = macdLine < signalLine && rsiVal < Oversold && candle.ClosePrice < emaVal;
 			var sell = !_isFirst && _prevRsi >= 50m && rsiVal < 50m;
 			var cover = !_isFirst && _prevRsi <= 50m && rsiVal > 50m;
 

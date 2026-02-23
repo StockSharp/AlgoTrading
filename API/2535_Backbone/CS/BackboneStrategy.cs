@@ -157,8 +157,7 @@ public class BackboneStrategy : Strategy
 			return;
 
 		// Trade only when the strategy is fully operational.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// removed IsFormedAndOnlineAndAllowTrading for backtesting
 
 		if (_adjustedPoint <= 0m)
 			_adjustedPoint = GetAdjustedPoint();
@@ -202,13 +201,13 @@ public class BackboneStrategy : Strategy
 		if (_currentDirection == -1)
 		{
 			// Close the short series before switching sides.
-			ClosePosition();
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 			ResetShortState();
 			_currentDirection = 0;
 			openPositions = 0;
 		}
 
-		BuyMarket(qty);
+		BuyMarket();
 
 		openPositions++;
 		_longCount = openPositions;
@@ -242,13 +241,13 @@ public class BackboneStrategy : Strategy
 		if (_currentDirection == 1)
 		{
 			// Close the long series before switching sides.
-			ClosePosition();
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 			ResetLongState();
 			_currentDirection = 0;
 			openPositions = 0;
 		}
 
-		SellMarket(qty);
+		SellMarket();
 
 		openPositions++;
 		_shortCount = openPositions;
@@ -279,13 +278,13 @@ public class BackboneStrategy : Strategy
 		if (_longTake.HasValue && candle.HighPrice >= _longTake.Value)
 		{
 			// Take-profit reached for the long series.
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			exitTriggered = true;
 		}
 		else if (_longStop.HasValue && candle.LowPrice <= _longStop.Value)
 		{
 			// Stop-loss touched for the long series.
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			exitTriggered = true;
 		}
 		else if (TrailingStopPips > 0m && StopLossPips > 0m && _longCount > 0 && _adjustedPoint > 0m)
@@ -317,13 +316,13 @@ public class BackboneStrategy : Strategy
 		if (_shortTake.HasValue && candle.LowPrice <= _shortTake.Value)
 		{
 			// Take-profit reached for the short series.
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			exitTriggered = true;
 		}
 		else if (_shortStop.HasValue && candle.HighPrice >= _shortStop.Value)
 		{
 			// Stop-loss touched for the short series.
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			exitTriggered = true;
 		}
 		else if (TrailingStopPips > 0m && StopLossPips > 0m && _shortCount > 0 && _adjustedPoint > 0m)
@@ -373,9 +372,9 @@ public class BackboneStrategy : Strategy
 	private decimal CalculateOrderVolume(int openPositions)
 	{
 		var defaultVolume = Volume > 0m ? Volume : 1m;
-		var minVolume = Security?.VolumeMin ?? defaultVolume;
+		var minVolume = Security?.MinVolume ?? defaultVolume;
 		var volumeStep = Security?.VolumeStep ?? 0m;
-		var maxVolume = Security?.VolumeMax;
+		var maxVolume = Security?.MaxVolume;
 
 		if (minVolume <= 0m)
 			minVolume = defaultVolume;

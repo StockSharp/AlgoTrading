@@ -150,8 +150,8 @@ public class ERp250Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var highValue = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime)).ToNullableDecimal();
-		var lowValue = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime)).ToNullableDecimal();
+		var highValue = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime) { IsFinal = true }).ToNullableDecimal();
+		var lowValue = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.OpenTime) { IsFinal = true }).ToNullableDecimal();
 
 		if (highValue is null || lowValue is null)
 			return;
@@ -168,16 +168,16 @@ public class ERp250Strategy : Strategy
 		{
 			_bestLongPrice = (_bestLongPrice is null || candle.HighPrice > _bestLongPrice) ? candle.HighPrice : _bestLongPrice;
 
-			if (_trailingDistance > 0m && _bestLongPrice is decimal bestLong && bestLong - candle.ClosePrice >= _trailingDistance && IsFormedAndOnlineAndAllowTrading())
+			if (_trailingDistance > 0m && _bestLongPrice is decimal bestLong && bestLong - candle.ClosePrice >= _trailingDistance)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_bestLongPrice = null;
 				return;
 			}
 
-			if (_latestHighSignal != 0m && _latestHighSignal != _lastExecutedHigh && IsFormedAndOnlineAndAllowTrading())
+			if (_latestHighSignal != 0m && _latestHighSignal != _lastExecutedHigh)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_bestLongPrice = null;
 				return;
 			}
@@ -186,16 +186,16 @@ public class ERp250Strategy : Strategy
 		{
 			_bestShortPrice = (_bestShortPrice is null || candle.LowPrice < _bestShortPrice) ? candle.LowPrice : _bestShortPrice;
 
-			if (_trailingDistance > 0m && _bestShortPrice is decimal bestShort && candle.ClosePrice - bestShort >= _trailingDistance && IsFormedAndOnlineAndAllowTrading())
+			if (_trailingDistance > 0m && _bestShortPrice is decimal bestShort && candle.ClosePrice - bestShort >= _trailingDistance)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_bestShortPrice = null;
 				return;
 			}
 
-			if (_latestLowSignal != 0m && _latestLowSignal != _lastExecutedLow && IsFormedAndOnlineAndAllowTrading())
+			if (_latestLowSignal != 0m && _latestLowSignal != _lastExecutedLow)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_bestShortPrice = null;
 				return;
 			}
@@ -205,9 +205,6 @@ public class ERp250Strategy : Strategy
 			_bestLongPrice = null;
 			_bestShortPrice = null;
 		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (Position != 0)
 			return;

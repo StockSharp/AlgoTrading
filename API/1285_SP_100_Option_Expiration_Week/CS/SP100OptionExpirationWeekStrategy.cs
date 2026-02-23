@@ -48,25 +48,26 @@ public class SP100OptionExpirationWeekStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
+		// no separate protection
 
+		var ema = new ExponentialMovingAverage { Length = 5 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(ema, ProcessCandle)
 			.Start();
 	}
 
-	private static bool IsOptionExpirationWeek(DateTimeOffset time)
+	private static bool IsOptionExpirationWeek(DateTime time)
 	{
 		return time.Day >= 15 && time.Day <= 21 && time.DayOfWeek >= DayOfWeek.Monday && time.DayOfWeek <= DayOfWeek.Friday;
 	}
 
-	private static bool IsThirdFriday(DateTimeOffset time)
+	private static bool IsThirdFriday(DateTime time)
 	{
 		return time.DayOfWeek == DayOfWeek.Friday && time.Day >= 15 && time.Day <= 21;
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -82,7 +83,10 @@ public class SP100OptionExpirationWeekStrategy : Strategy
 		}
 		else if (IsThirdFriday(time) && Position > 0)
 		{
-			ClosePosition();
+			if (Position > 0)
+				SellMarket(Position);
+			else if (Position < 0)
+				BuyMarket(Math.Abs(Position));
 		}
 	}
 }

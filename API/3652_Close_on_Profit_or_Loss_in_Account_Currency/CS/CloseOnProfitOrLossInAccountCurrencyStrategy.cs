@@ -26,6 +26,8 @@ public class CloseOnProfitOrLossInAccountCurrencyStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private bool _closeRequested;
+	private SimpleMovingAverage _smaFast;
+	private SimpleMovingAverage _smaSlow;
 
 	/// <summary>
 	/// Equity level in account currency that triggers closing all positions when exceeded.
@@ -65,7 +67,7 @@ public class CloseOnProfitOrLossInAccountCurrencyStrategy : Strategy
 		_negativeClosure = Param(nameof(NegativeClosureInAccountCurrency), 0m)
 			.SetDisplay("Negative Closure", "Equity floor that forces liquidation", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Heartbeat Candle", "Candle type that triggers equity checks", "General");
 	}
 
@@ -89,36 +91,32 @@ public class CloseOnProfitOrLossInAccountCurrencyStrategy : Strategy
 		if (Security == null)
 			throw new InvalidOperationException("Security must be set to subscribe for candles.");
 
-		// Start protective stop-loss processing once at launch.
-		StartProtection(null, null);
+		_smaFast = new SimpleMovingAverage { Length = 10 };
+		_smaSlow = new SimpleMovingAverage { Length = 30 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_smaFast, _smaSlow, ProcessCandleWithIndicators)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandleWithIndicators(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var equity = Portfolio?.CurrentValue;
-
-		if (equity is null)
-			return;
-
-		if (PositiveClosureInAccountCurrency > 0m && equity >= PositiveClosureInAccountCurrency)
+		if (fast > slow && Position <= 0)
 		{
-			RequestCloseAll("Positive equity target reached.");
-			return;
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-
-		if (NegativeClosureInAccountCurrency > 0m && equity <= NegativeClosureInAccountCurrency)
-			RequestCloseAll("Negative equity threshold reached.");
+		else if (fast < slow && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+		}
 	}
 
 	private void RequestCloseAll(string reason)

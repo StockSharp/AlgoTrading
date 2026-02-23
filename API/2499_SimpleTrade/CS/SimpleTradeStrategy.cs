@@ -110,9 +110,6 @@ public class SimpleTradeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		// Exit existing trades before evaluating new entries to mimic the original MQL behaviour.
 		if (TryCloseExistingPosition(candle))
 			return;
@@ -135,11 +132,11 @@ public class SimpleTradeStrategy : Strategy
 			// Close long trades at the protective stop or at the bar change.
 			if (_stopPrice is decimal stop && candle.LowPrice <= stop)
 			{
-				SellMarket(volume);
+				SellMarket();
 			}
 			else
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 			}
 
 			_stopPrice = null;
@@ -153,11 +150,11 @@ public class SimpleTradeStrategy : Strategy
 			// Close short trades at the protective stop or at the bar change.
 			if (_stopPrice is decimal stop && candle.HighPrice >= stop)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 			}
 			else
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 			}
 
 			_stopPrice = null;
@@ -187,12 +184,12 @@ public class SimpleTradeStrategy : Strategy
 		// Enter long when the current open is above the open three bars ago, otherwise enter short.
 		if (_openCurrent > _openMinus3)
 		{
-			BuyMarket(TradeVolume);
+			BuyMarket();
 			_stopPrice = candle.OpenPrice - stopOffset;
 		}
 		else
 		{
-			SellMarket(TradeVolume);
+			SellMarket();
 			_stopPrice = candle.OpenPrice + stopOffset;
 		}
 	}

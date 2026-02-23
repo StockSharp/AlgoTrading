@@ -116,6 +116,9 @@ public class SilverMidnightCandleColorStrategy : Strategy
 	}
 
 
+	private decimal? _entryPrice;
+	private bool _isLong;
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
@@ -123,8 +126,9 @@ public class SilverMidnightCandleColorStrategy : Strategy
 
 		_tickSize = Security.PriceStep ?? 1m;
 
+		var dummyEma = new ExponentialMovingAverage { Length = 5 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(dummyEma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -134,10 +138,35 @@ public class SilverMidnightCandleColorStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _dummyEma)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		// Check TP/SL for existing position
+		if (_entryPrice is decimal entry && Position != 0)
+		{
+			if (_isLong && Position > 0)
+			{
+				var tp = entry + LongTakeProfitTicks * _tickSize;
+				var sl = entry - StopLossTicks * _tickSize;
+				if (candle.HighPrice >= tp || candle.LowPrice <= sl)
+				{
+					SellMarket(Math.Abs(Position));
+					_entryPrice = null;
+				}
+			}
+			else if (!_isLong && Position < 0)
+			{
+				var tp = entry - ShortTakeProfitTicks * _tickSize;
+				var sl = entry + StopLossTicks * _tickSize;
+				if (candle.LowPrice <= tp || candle.HighPrice >= sl)
+				{
+					BuyMarket(Math.Abs(Position));
+					_entryPrice = null;
+				}
+			}
+		}
 
 		var nyTime = candle.OpenTime.AddHours(TimezoneOffset);
 
@@ -153,25 +182,21 @@ public class SilverMidnightCandleColorStrategy : Strategy
 
 			if (_midnightIsGreen is bool isGreen)
 			{
-				var volume = Volume + Math.Abs(Position);
-
 				if (isGreen && Position <= 0)
 				{
-					CancelActiveOrders();
-					BuyMarket(volume);
-					var tp = candle.ClosePrice + LongTakeProfitTicks * _tickSize;
-					var sl = candle.ClosePrice - StopLossTicks * _tickSize;
-					SellLimit(tp, volume);
-					SellStop(sl, volume);
+					if (Position < 0)
+						BuyMarket(Math.Abs(Position));
+					BuyMarket();
+					_entryPrice = candle.ClosePrice;
+					_isLong = true;
 				}
 				else if (!isGreen && Position >= 0)
 				{
-					CancelActiveOrders();
-					SellMarket(volume);
-					var tp = candle.ClosePrice - ShortTakeProfitTicks * _tickSize;
-					var sl = candle.ClosePrice + StopLossTicks * _tickSize;
-					BuyLimit(tp, volume);
-					BuyStop(sl, volume);
+					if (Position > 0)
+						SellMarket(Position);
+					SellMarket();
+					_entryPrice = candle.ClosePrice;
+					_isLong = false;
 				}
 			}
 		}

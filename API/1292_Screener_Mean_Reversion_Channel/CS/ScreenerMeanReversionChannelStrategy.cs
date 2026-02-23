@@ -69,7 +69,7 @@ public class ScreenerMeanReversionChannelStrategy : Strategy
 			
 			.SetOptimize(1m, 4m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for calculations", "General");
 	}
 
@@ -84,21 +84,24 @@ public class ScreenerMeanReversionChannelStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		// no separate protection
 
 		var mean = new SMA { Length = Length };
 		var atr = new AverageTrueRange { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(mean, atr, ProcessCandle)
+			.BindEx(mean, atr, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal meanValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue meanIV, IIndicatorValue atrIV)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var meanValue = meanIV.GetValue<decimal>();
+		var atrValue = atrIV.GetValue<decimal>();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

@@ -132,15 +132,15 @@ public class RviCrossoverStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_rvi = new RelativeVigorIndex { Length = RviLength };
+		_rvi = new RelativeVigorIndex { Average = { Length = RviLength } };
 		_signal = new SMA { Length = SignalLength };
 		_ema = new EMA { Length = EmaLength };
 		_vwma = new VolumeWeightedMovingAverage { Length = VwmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.BindEx(_rvi, _ema, _vwma, ProcessCandle).Start();
 
-		StartProtection(null, null);
+		// no separate protection
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -154,26 +154,24 @@ public class RviCrossoverStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rviIV, IIndicatorValue emaIV, IIndicatorValue vwmaIV)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var rviValue = _rvi.Process(candle);
-		var signalValue = _signal.Process(rviValue);
-		var emaValue = _ema.Process(candle);
-		var vwmaValue = _vwma.Process(candle);
+		var ema = emaIV.GetValue<decimal>();
+		var vwma = vwmaIV.GetValue<decimal>();
 
-		if (!rviValue.IsFinal || !signalValue.IsFinal || !emaValue.IsFinal || !vwmaValue.IsFinal)
+		// RVI returns IRelativeVigorIndexValue with Average and Signal
+		var rviTyped = rviIV as IRelativeVigorIndexValue;
+		var rvi = rviTyped?.Average ?? 0m;
+		var signal = rviTyped?.Signal ?? 0m;
+
+		if (!_rvi.IsFormed || !_ema.IsFormed || !_vwma.IsFormed)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-
-		var rvi = rviValue.ToDecimal();
-		var signal = signalValue.ToDecimal();
-		var ema = emaValue.ToDecimal();
-		var vwma = vwmaValue.ToDecimal();
 
 		var bullish = ema < vwma;
 		var bearish = ema > vwma;

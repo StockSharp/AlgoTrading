@@ -209,7 +209,7 @@ public class IvanCciAveragingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Volume", "Fallback trade volume", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 	}
 
@@ -359,7 +359,7 @@ public class IvanCciAveragingStrategy : Strategy
 
 			if (_longStop > 0m && candle.ClosePrice <= _longStop)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_hasLongEntry = false;
 				_longBreakEvenActivated = false;
 			}
@@ -382,7 +382,7 @@ public class IvanCciAveragingStrategy : Strategy
 
 			if (_shortStop > 0m && candle.ClosePrice >= _shortStop)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_hasShortEntry = false;
 				_shortBreakEvenActivated = false;
 			}
@@ -402,7 +402,7 @@ public class IvanCciAveragingStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		BuyMarket(volume);
+		BuyMarket();
 		_longEntryPrice = candle.ClosePrice;
 		_longStop = stopMaValue;
 		_longBreakEvenActivated = false;
@@ -423,7 +423,7 @@ public class IvanCciAveragingStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		SellMarket(volume);
+		SellMarket();
 		_shortEntryPrice = candle.ClosePrice;
 		_shortStop = stopMaValue;
 		_shortBreakEvenActivated = false;
@@ -464,11 +464,11 @@ public class IvanCciAveragingStrategy : Strategy
 	{
 		if (Position > 0)
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
 		else if (Position < 0)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 
 		_hasLongEntry = false;

@@ -13,8 +13,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 /// <summary>
 /// Swap-based mean reversion strategy converted from the MetaTrader expert "Swaper 1.1".
 /// Calculates a synthetic fair value using closed trades, adjusts the open position, and keeps the volume within the available margin.
@@ -205,12 +203,6 @@ public class SwaperStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-		_previousCandle = candle;
-		return;
-		}
-
 		if (_previousCandle == null)
 		{
 		_previousCandle = candle;
@@ -259,7 +251,7 @@ public class SwaperStrategy : Strategy
 		return;
 		}
 
-		var lots = Math.Floor((double)dtAlt) / 10m;
+		var lots = (decimal)Math.Floor((double)dtAlt) / 10m;
 		AdjustShort(lots);
 		}
 		else
@@ -271,7 +263,7 @@ public class SwaperStrategy : Strategy
 		return;
 		}
 
-		var lots = Math.Floor((double)dt) / 10m;
+		var lots = (decimal)Math.Floor((double)dt) / 10m;
 		AdjustLong(lots);
 		}
 
@@ -366,13 +358,13 @@ public class SwaperStrategy : Strategy
 		var availableCapital = Portfolio?.CurrentValue ?? (_initialCapital + _realizedPnL);
 
 		if (marginPerLot <= 0m || availableCapital <= 0m)
-		return Math.Floor((double)(desiredLots * 10m)) / 10m;
+		return (decimal)Math.Floor((double)(desiredLots * 10m)) / 10m;
 
-		var maxLots = Math.Floor((double)((availableCapital / marginPerLot) * 10m)) / 10m;
+		var maxLots = (decimal)Math.Floor((double)((availableCapital / marginPerLot) * 10m)) / 10m;
 		if (maxLots <= 0m)
 		return 0m;
 
-		return Math.Min(desiredLots, maxLots);
+		return Math.Min(desiredLots, (decimal)maxLots);
 	}
 
 	/// <inheritdoc />
@@ -389,7 +381,7 @@ public class SwaperStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		var signedVolume = order.Direction == Sides.Buy ? volume : -volume;
+		var signedVolume = order.Side == Sides.Buy ? volume : -volume;
 		var price = tradeInfo.Price;
 
 		if (_positionVolume == 0m || Math.Sign(_positionVolume) == Math.Sign(signedVolume))

@@ -50,7 +50,7 @@ public class RevolutionVolatilityBandsWithRangeContractionSignalVIIStrategy : St
 			
 			.SetOptimize(10, 50, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -92,16 +92,16 @@ public class RevolutionVolatilityBandsWithRangeContractionSignalVIIStrategy : St
 		var diff = candle.ClosePrice - emaClose;
 		var absDiff = Math.Abs(diff);
 
-		var emaAbs = _emaAbs.Process(new DecimalIndicatorValue(_emaAbs, absDiff)).GetValue<decimal>();
+		var emaAbs = _emaAbs.Process(new DecimalIndicatorValue(_emaAbs, absDiff, candle.ServerTime)).GetValue<decimal>();
 
 		var upper = emaClose + emaAbs;
 		var lower = emaClose - emaAbs;
 
 		var maxVal = Math.Max(upper, candle.ClosePrice);
-		var smooth = _emaMax.Process(new DecimalIndicatorValue(_emaMax, maxVal)).GetValue<decimal>();
+		var smooth = _emaMax.Process(new DecimalIndicatorValue(_emaMax, maxVal, candle.ServerTime)).GetValue<decimal>();
 
 		var minVal = Math.Min(candle.ClosePrice, lower);
-		var smooth2 = _emaMin.Process(new DecimalIndicatorValue(_emaMin, minVal)).GetValue<decimal>();
+		var smooth2 = _emaMin.Process(new DecimalIndicatorValue(_emaMin, minVal, candle.ServerTime)).GetValue<decimal>();
 
 		var range = smooth - smooth2;
 
@@ -110,7 +110,7 @@ public class RevolutionVolatilityBandsWithRangeContractionSignalVIIStrategy : St
 		else
 			_fallingCount = 0;
 
-		if (_fallingCount >= Length)
+		if (_fallingCount >= 3)
 		{
 			if (candle.ClosePrice > smooth && Position <= 0)
 				BuyMarket(Volume + Math.Abs(Position));

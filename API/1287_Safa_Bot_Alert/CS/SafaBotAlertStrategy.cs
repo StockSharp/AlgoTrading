@@ -166,7 +166,7 @@ public class SafaBotAlertStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
+		// no separate protection
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaVal, IIndicatorValue adxVal)
@@ -245,7 +245,10 @@ public class SafaBotAlertStrategy : Strategy
 
 		if (candle.OpenTime.Hour == SessionCloseHour && candle.OpenTime.Minute == SessionCloseMinute && Position != 0)
 		{
-			ClosePosition();
+			if (Position > 0)
+				SellMarket(Position);
+			else if (Position < 0)
+				BuyMarket(Math.Abs(Position));
 			ResetPositionState();
 		}
 

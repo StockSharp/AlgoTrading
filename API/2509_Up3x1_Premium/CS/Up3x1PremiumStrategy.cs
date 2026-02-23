@@ -341,7 +341,7 @@ public class Up3x1PremiumStrategy : Strategy
 
 			if (longSignal && OrderVolume > 0m)
 			{
-				BuyMarket(OrderVolume);
+				BuyMarket();
 				_entryPrice = candle.ClosePrice;
 				_stopPrice = StopLoss > 0m ? _entryPrice - StopLoss : null;
 				_takeProfitPrice = TakeProfit > 0m ? _entryPrice + TakeProfit : null;
@@ -349,7 +349,7 @@ public class Up3x1PremiumStrategy : Strategy
 			}
 			else if (shortSignal && OrderVolume > 0m)
 			{
-				SellMarket(OrderVolume);
+				SellMarket();
 				_entryPrice = candle.ClosePrice;
 				_stopPrice = StopLoss > 0m ? _entryPrice + StopLoss : null;
 				_takeProfitPrice = TakeProfit > 0m ? _entryPrice - TakeProfit : null;
@@ -386,7 +386,7 @@ public class Up3x1PremiumStrategy : Strategy
 
 			if (exit)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ClearTradeLevels();
 			}
 		}
@@ -407,7 +407,7 @@ public class Up3x1PremiumStrategy : Strategy
 
 			if (exit)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ClearTradeLevels();
 			}
 		}

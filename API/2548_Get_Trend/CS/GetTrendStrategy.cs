@@ -49,10 +49,10 @@ public class GetTrendStrategy : Strategy
 	/// </summary>
 	public GetTrendStrategy()
 	{
-		_m15CandleType = Param(nameof(M15CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_m15CandleType = Param(nameof(M15CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("M15 Candle", "Primary timeframe", "General");
 
-		_h1CandleType = Param(nameof(H1CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_h1CandleType = Param(nameof(H1CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("H1 Candle", "Higher timeframe", "General");
 
 		_maM15Length = Param(nameof(MaM15Length), 99)
@@ -224,11 +224,9 @@ public class GetTrendStrategy : Strategy
 
 		_maM15 = new SmoothedMovingAverage { Length = MaM15Length };
 		_maH1 = new SmoothedMovingAverage { Length = MaH1Length };
-		_stochastic = new StochasticOscillator
-		{
-			K = { Length = StochasticLength },
-			D = { Length = StochasticSignalLength },
-		};
+		_stochastic = new StochasticOscillator();
+		_stochastic.K.Length = StochasticLength;
+		_stochastic.D.Length = StochasticSignalLength;
 
 		// Subscribe to 15-minute candles and bind the required indicators.
 		var m15Subscription = SubscribeCandles(M15CandleType);
@@ -285,9 +283,6 @@ public class GetTrendStrategy : Strategy
 		// Manage protective levels before looking for new entries.
 		ManageOpenPosition(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			goto UpdateStochastic;
-
 		if (_maH1Value is not decimal maH1 || _lastH1Close is not decimal priceH1)
 			goto UpdateStochastic;
 
@@ -320,8 +315,7 @@ public class GetTrendStrategy : Strategy
 		// Cancel opposite orders and flip the position if needed.
 		CancelActiveOrders();
 
-		var volume = TradeVolume + Math.Max(0m, -Position);
-		BuyMarket(volume);
+		BuyMarket();
 
 		_entryPrice = entryPrice;
 		_takePrice = entryPrice + TakeProfitPoints * priceStep;
@@ -333,8 +327,7 @@ public class GetTrendStrategy : Strategy
 		// Cancel opposite orders and flip the position if needed.
 		CancelActiveOrders();
 
-		var volume = TradeVolume + Math.Max(0m, Position);
-		SellMarket(volume);
+		SellMarket();
 
 		_entryPrice = entryPrice;
 		_takePrice = entryPrice - TakeProfitPoints * priceStep;
@@ -359,14 +352,14 @@ public class GetTrendStrategy : Strategy
 
 			if (_takePrice is decimal take && candle.HighPrice >= take)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetProtection();
 				return;
 			}
 
 			if (_stopPrice is decimal stop && candle.LowPrice <= stop)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetProtection();
 			}
 		}
@@ -380,14 +373,14 @@ public class GetTrendStrategy : Strategy
 
 			if (_takePrice is decimal take && candle.LowPrice <= take)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetProtection();
 				return;
 			}
 
 			if (_stopPrice is decimal stop && candle.HighPrice >= stop)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetProtection();
 			}
 		}

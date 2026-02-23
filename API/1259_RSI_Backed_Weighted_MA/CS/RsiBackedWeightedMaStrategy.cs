@@ -173,14 +173,14 @@ public class RsiBackedWeightedMaStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Order Increase", "Amount added per step", "Money Management");
 
-		var startDate = new DateTimeOffset(new DateTime(2017, 1, 1));
-		var endDate = new DateTimeOffset(new DateTime(2024, 7, 1));
+		var startDate = new DateTimeOffset(new DateTime(2020, 1, 1));
+		var endDate = new DateTimeOffset(new DateTime(2030, 1, 1));
 		_startDate = Param(nameof(StartDate), startDate)
 		.SetDisplay("Start Date", "Backtest start", "Backtesting");
 		_endDate = Param(nameof(EndDate), endDate)
 		.SetDisplay("End Date", "Backtest end", "Backtesting");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -214,20 +214,18 @@ public class RsiBackedWeightedMaStrategy : Strategy
 		_capitalRef = Portfolio?.CurrentValue ?? 0m;
 		_cashOrder = _capitalRef * 0.95m;
 
-		DecimalLengthIndicator ma = MaTypes switch
-		{
-			MaTypes.SMA => new SMA { Length = MaLength },
-			_ => new RetroWeightedMovingAverage { Length = MaLength }
-		};
+		var ma = MaType == MaTypes.SMA
+			? (BaseIndicator)new SimpleMovingAverage { Length = MaLength }
+			: new RetroWeightedMovingAverage { Length = MaLength };
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var atr = new AverageTrueRange { Length = 20 };
 		_rocMa = new RateOfChange { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ma, rsi, atr, OnProcess).Start();
+		subscription.BindEx(ma, rsi, atr, OnProcess).Start();
 
-		StartProtection(null, null);
+		// strategy manages its own SL/TP via trailing stop logic
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -239,8 +237,11 @@ public class RsiBackedWeightedMaStrategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal maValue, decimal rsiValue, decimal atrValue)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue maVal, IIndicatorValue rsiVal, IIndicatorValue atrVal)
 	{
+		var maValue = maVal.GetValue<decimal>();
+		var rsiValue = rsiVal.GetValue<decimal>();
+		var atrValue = atrVal.GetValue<decimal>();
 		var rocValue = _rocMa.Process(new DecimalIndicatorValue(_rocMa, maValue, candle.OpenTime)).GetValue<decimal>();
 		ProcessCandle(candle, maValue, rsiValue, rocValue, atrValue);
 	}
@@ -255,7 +256,8 @@ public class RsiBackedWeightedMaStrategy : Strategy
 
 		if (Position != 0 && !inRange)
 		{
-			ClosePosition();
+			if (Position > 0) SellMarket(Math.Abs(Position));
+			else if (Position < 0) BuyMarket(Math.Abs(Position));
 			_trailingActive = false;
 			_longActive = false;
 			_shortActive = false;

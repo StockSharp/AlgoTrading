@@ -86,7 +86,7 @@ public class AsimmetricStochNrStrategy : Strategy
 		_sellClose = Param(nameof(SellClose), true)
 			.SetDisplay("Close Short", "Allow closing short positions", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator calculation", "General");
 	}
 
@@ -227,11 +227,9 @@ public class AsimmetricStochNrStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var stochastic = new StochasticOscillator
-		{ K = { Length = KPeriodLong },
-			K = { Length = Slowing },
-			D = { Length = DPeriod }
-		};
+		var stochastic = new StochasticOscillator();
+		stochastic.K.Length = KPeriodLong;
+		stochastic.D.Length = DPeriod;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

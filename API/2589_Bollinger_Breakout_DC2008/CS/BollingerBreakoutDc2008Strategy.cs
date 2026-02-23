@@ -36,6 +36,7 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private BollingerBands _bollinger;
+	private decimal _entryPrice;
 
 	public int BandsPeriod
 	{
@@ -78,7 +79,7 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Applied Price", "Candle price source for Bollinger Bands", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to analyze", "General");
 	}
 
@@ -93,6 +94,7 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 	{
 		base.OnReseted();
 		_bollinger = null;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -127,7 +129,7 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 			return;
 
 		// Calculate Bollinger Bands for the selected price source.
-		var indicatorValue = _bollinger.Process(new DecimalIndicatorValue(_bollinger, GetAppliedPrice(candle), candle.OpenTime));
+		var indicatorValue = _bollinger.Process(new DecimalIndicatorValue(_bollinger, GetAppliedPrice(candle), candle.OpenTime) { IsFinal = true });
 
 		if (!indicatorValue.IsFinal)
 			return;
@@ -136,9 +138,6 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 			return;
 
 		if (bands.UpBand is not decimal upper || bands.LowBand is not decimal lower || bands.MovingAverage is not decimal middle)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var high = candle.HighPrice;
@@ -153,7 +152,7 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 			return;
 
 		// Compute unrealized profit to mimic original position filter.
-		var unrealizedPnL = Position == 0 ? 0m : Position * (close - PositionPrice);
+		var unrealizedPnL = Position == 0 ? 0m : Position * (close - _entryPrice);
 
 		if (buySignal)
 		{
@@ -161,6 +160,7 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 			{
 				// No position open, start a new long.
 				BuyMarket();
+				_entryPrice = close;
 			}
 			else
 			{
@@ -170,7 +170,8 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 				if (Position < 0)
 				{
 					// Reverse from short to long while preserving target volume.
-					BuyMarket(Volume + Math.Abs(Position));
+					BuyMarket();
+					_entryPrice = close;
 				}
 			}
 
@@ -183,6 +184,7 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 			{
 				// No position open, start a new short.
 				SellMarket();
+				_entryPrice = close;
 			}
 			else
 			{
@@ -192,7 +194,8 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 				if (Position > 0)
 				{
 					// Reverse from long to short while preserving target volume.
-					SellMarket(Volume + Math.Abs(Position));
+					SellMarket();
+					_entryPrice = close;
 				}
 			}
 		}

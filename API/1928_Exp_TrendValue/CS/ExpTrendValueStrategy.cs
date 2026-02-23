@@ -111,7 +111,7 @@ public class ExpTrendValueStrategy : Strategy
 		_shiftPercent = Param(nameof(ShiftPercent), 0m).SetDisplay("Shift Percent", "Percentage offset for bands", "Indicator");
 		_atrPeriod = Param(nameof(AtrPeriod), 15).SetGreaterThanZero().SetDisplay("ATR Period", "ATR calculation period", "Indicator");
 		_atrSensitivity = Param(nameof(AtrSensitivity), 1.5m).SetGreaterThanZero().SetDisplay("ATR Sensitivity", "Multiplier for ATR shift", "Indicator");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Timeframe for calculations", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
 	/// <inheritdoc />
@@ -146,7 +146,7 @@ public class ExpTrendValueStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(atr, ProcessCandle).Start();
 
-		StartProtection(null, null);
+		// protection handled manually
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -164,8 +164,8 @@ public class ExpTrendValueStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var highMa = _wmaHigh.Process(candle.HighPrice).ToDecimal();
-		var lowMa = _wmaLow.Process(candle.LowPrice).ToDecimal();
+		var highMa = _wmaHigh.Process(new DecimalIndicatorValue(_wmaHigh, candle.HighPrice, candle.OpenTime)).ToDecimal();
+		var lowMa = _wmaLow.Process(new DecimalIndicatorValue(_wmaLow, candle.LowPrice, candle.OpenTime)).ToDecimal();
 
 		if (!_wmaHigh.IsFormed || !_wmaLow.IsFormed)
 			return;

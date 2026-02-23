@@ -71,8 +71,8 @@ public class TengriStrategy : Strategy
 	private bool _silence2Ready;
 	private decimal _maValue;
 	private bool _maReady;
-	private DateTimeOffset? _lastEntryBarTime;
-	private DateTimeOffset? _lastScaleBarTime;
+	private DateTime? _lastEntryBarTime;
+	private DateTime? _lastScaleBarTime;
 
 	private decimal _netVolume;
 	private int _longCount;
@@ -527,14 +527,14 @@ public class TengriStrategy : Strategy
 
 	_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 	_silenceAtr1 = new AverageTrueRange { Length = SilencePeriod1 };
-	_silenceSmooth1 = new EMA { Length = Math.Max(1, SilenceInterpolation1) };
+	_silenceSmooth1 = new ExponentialMovingAverage { Length = Math.Max(1, SilenceInterpolation1) };
 	_silenceAtr2 = new AverageTrueRange { Length = SilencePeriod2 };
-	_silenceSmooth2 = new EMA { Length = Math.Max(1, SilenceInterpolation2) };
-	_ema = new EMA { Length = MaPeriod };
+	_silenceSmooth2 = new ExponentialMovingAverage { Length = Math.Max(1, SilenceInterpolation2) };
+	_ema = new ExponentialMovingAverage { Length = MaPeriod };
 
 	ResetPositionTracking();
 
-	var step = Security.Step;
+	var step = Security?.PriceStep ?? 0m;
 	if (step <= 0m)
 	step = 1m;
 
@@ -562,6 +562,16 @@ public class TengriStrategy : Strategy
 	if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var ask))
 	_lastAsk = (decimal)ask;
 
+	if (_lastBid <= 0m && message.Changes.TryGetValue(Level1Fields.LastTradePrice, out var last))
+	{
+	var lp = (decimal)last;
+	if (lp > 0m)
+	{
+	_lastBid = lp;
+	_lastAsk = lp;
+	}
+	}
+
 	CheckTakeProfitTargets();
 	}
 
@@ -582,11 +592,13 @@ public class TengriStrategy : Strategy
 
 	private void ProcessSilence1(ICandleMessage candle)
 	{
-	var atrValue = _silenceAtr1.Process(new DecimalIndicatorValue(_silenceAtr1, candle).ToNullableDecimal();
+	var atrResult = _silenceAtr1.Process(new CandleIndicatorValue(_silenceAtr1, candle));
+	var atrValue = atrResult.IsEmpty ? (decimal?)null : atrResult.GetValue<decimal>();
 	if (atrValue == null)
 	return;
 
-	var smoothed = _silenceSmooth1.Process(atrValue.Value, candle.OpenTime)).ToNullableDecimal();
+	var smoothedResult = _silenceSmooth1.Process(new DecimalIndicatorValue(_silenceSmooth1, atrValue.Value, candle.OpenTime));
+	var smoothed = smoothedResult.IsEmpty ? (decimal?)null : smoothedResult.GetValue<decimal>();
 	if (smoothed == null)
 	return;
 
@@ -596,11 +608,13 @@ public class TengriStrategy : Strategy
 
 	private void ProcessSilence2(ICandleMessage candle)
 	{
-	var atrValue = _silenceAtr2.Process(new DecimalIndicatorValue(_silenceAtr2, candle).ToNullableDecimal();
+	var atrResult = _silenceAtr2.Process(new CandleIndicatorValue(_silenceAtr2, candle));
+	var atrValue = atrResult.IsEmpty ? (decimal?)null : atrResult.GetValue<decimal>();
 	if (atrValue == null)
 	return;
 
-	var smoothed = _silenceSmooth2.Process(atrValue.Value, candle.OpenTime)).ToNullableDecimal();
+	var smoothedResult2 = _silenceSmooth2.Process(new DecimalIndicatorValue(_silenceSmooth2, atrValue.Value, candle.OpenTime));
+	var smoothed = smoothedResult2.IsEmpty ? (decimal?)null : smoothedResult2.GetValue<decimal>();
 	if (smoothed == null)
 	return;
 
@@ -626,6 +640,12 @@ public class TengriStrategy : Strategy
 	return;
 
 	_lastEntryBarTime = candle.OpenTime;
+
+	if (_lastBid <= 0m && candle.ClosePrice > 0m)
+	{
+	_lastBid = candle.ClosePrice;
+	_lastAsk = candle.ClosePrice;
+	}
 
 	if (!IsFormedAndOnlineAndAllowTrading())
 	return;
@@ -834,16 +854,15 @@ public class TengriStrategy : Strategy
 	return 0;
 	}
 
-	private bool ShouldSkipFriday(DateTimeOffset time)
+	private bool ShouldSkipFriday(DateTime time)
 	{
 	if (!CloseFriday)
 	return false;
 
-	var local = time.ToLocalTime();
-	if (local.DayOfWeek != DayOfWeek.Friday)
+	if (time.DayOfWeek != DayOfWeek.Friday)
 	return false;
 
-	return local.TimeOfDay >= TimeSpan.FromHours(CloseFridayHour);
+	return time.TimeOfDay >= TimeSpan.FromHours(CloseFridayHour);
 	}
 
 	private void CheckTakeProfitTargets()
@@ -906,11 +925,11 @@ public class TengriStrategy : Strategy
 			volume = steps * step;
 		}
 
-		var minVolume = Security.VolumeMin.GetValueOrDefault();
+		var minVolume = Security.MinVolume.GetValueOrDefault();
 		if (minVolume > 0m && volume < minVolume)
 			volume = minVolume;
 
-		var maxVolume = Security.VolumeMax.GetValueOrDefault();
+		var maxVolume = Security.MaxVolume.GetValueOrDefault();
 		if (maxVolume > 0m && volume > maxVolume)
 			volume = maxVolume;
 
@@ -922,11 +941,11 @@ public class TengriStrategy : Strategy
 		if (Portfolio is null)
 			return 0m;
 
-		if (Portfolio.CurrentValue > 0m)
-			return Portfolio.CurrentValue;
+		if (Portfolio.CurrentValue is decimal cv && cv > 0m)
+			return cv;
 
-		if (Portfolio.BeginValue > 0m)
-			return Portfolio.BeginValue;
+		if (Portfolio.BeginValue is decimal bv && bv > 0m)
+			return bv;
 
 		return 0m;
 	}

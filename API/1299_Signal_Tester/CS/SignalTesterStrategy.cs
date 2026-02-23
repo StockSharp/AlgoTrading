@@ -35,7 +35,7 @@ public class SignalTesterStrategy : Strategy
 	/// </summary>
 	public SignalTesterStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -50,15 +50,19 @@ public class SignalTesterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var dummyEma = new ExponentialMovingAverage { Length = 5 };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(dummyEma, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _dummyEma)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (Position <= 0)

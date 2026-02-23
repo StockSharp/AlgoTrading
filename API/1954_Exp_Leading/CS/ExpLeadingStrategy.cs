@@ -74,7 +74,7 @@ public class ExpLeadingStrategy : Strategy
 		_alpha2 = Param(nameof(Alpha2), 0.33m)
 			.SetDisplay("Alpha2", "Alpha2 coefficient", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle data type", "General");
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)

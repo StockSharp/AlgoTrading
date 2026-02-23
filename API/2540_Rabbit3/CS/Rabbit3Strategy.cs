@@ -135,7 +135,7 @@ public class Rabbit3Strategy : Strategy
 
 	public Rabbit3Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signals", "General");
 
 		_cciPeriod = Param(nameof(CciPeriod), 15)
@@ -240,8 +240,8 @@ public class Rabbit3Strategy : Strategy
 
                 // Register protective orders using MetaTrader-like pip distances.
                 StartProtection(
-                        takeProfit: new Unit(takeDistance, UnitTypes.Point),
-                        stopLoss: new Unit(stopDistance, UnitTypes.Point));
+                        new Unit(stopDistance, UnitTypes.Absolute),
+                        new Unit(takeDistance, UnitTypes.Absolute));
         }
 
         private void ProcessCandle(ICandleMessage candle, decimal williamsValue, decimal cciValue, decimal fastEmaValue, decimal slowEmaValue)
@@ -265,8 +265,7 @@ public class Rabbit3Strategy : Strategy
                         return;
                 }
 
-                if (!IsFormedAndOnlineAndAllowTrading())
-                        return;
+                // removed IFOAAT for backtesting
 
                 if (williamsValue == 0m)
                         williamsValue = -1m;
@@ -288,16 +287,12 @@ public class Rabbit3Strategy : Strategy
                 if (longSignal)
                 {
                         // Stack another long position using the dynamically selected volume.
-                        var volume = GetTradeVolume();
-                        BuyMarket(volume);
-                        LogInfo($"Enter long at {candle.ClosePrice:F4} with volume {volume}");
+                        BuyMarket();
                 }
                 else if (shortSignal)
                 {
                         // Stack another short position using the dynamically selected volume.
-                        var volume = GetTradeVolume();
-                        SellMarket(volume);
-                        LogInfo($"Enter short at {candle.ClosePrice:F4} with volume {volume}");
+                        SellMarket();
                 }
 
                 _previousWilliams = williamsValue;

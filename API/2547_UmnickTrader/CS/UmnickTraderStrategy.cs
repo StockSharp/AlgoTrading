@@ -184,9 +184,6 @@ public class UmnickTraderStrategy : Strategy
 		if (!ShouldProcessAverage(averagePrice))
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (Position != 0)
 			return;
 
@@ -332,13 +329,15 @@ public class UmnickTraderStrategy : Strategy
 		_lastTradeProfit = profit;
 		_positionJustClosed = true;
 
-		if (Position != 0)
-			ClosePosition();
+		if (Position > 0)
+			SellMarket();
+		else if (Position < 0)
+			BuyMarket();
 	}
 
 	private void OpenLong(decimal price, decimal limitDistance, decimal stopDistance, decimal volume)
 	{
-		BuyMarket(volume);
+		BuyMarket();
 
 		// Store trade parameters for managing exits on subsequent candles.
 		_entryPrice = price;
@@ -353,7 +352,7 @@ public class UmnickTraderStrategy : Strategy
 
 	private void OpenShort(decimal price, decimal limitDistance, decimal stopDistance, decimal volume)
 	{
-		SellMarket(volume);
+		SellMarket();
 
 		// Store trade parameters for managing exits on subsequent candles.
 		_entryPrice = price;

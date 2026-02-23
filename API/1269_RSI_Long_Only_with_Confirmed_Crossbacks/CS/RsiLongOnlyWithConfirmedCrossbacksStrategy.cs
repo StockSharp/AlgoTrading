@@ -137,7 +137,7 @@ public class RsiLongOnlyWithConfirmedCrossbacksStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_rsi, ProcessCandle).Start();
 
-		StartProtection(null, null);
+		// no separate protection needed
 
 		var area = CreateChartArea();
 		if (area != null)

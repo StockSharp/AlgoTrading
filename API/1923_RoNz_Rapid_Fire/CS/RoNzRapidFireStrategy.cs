@@ -155,7 +155,7 @@ public class RoNzRapidFireStrategy : Strategy
 		_closeType = Param(nameof(CloseType), CloseTypes.SlClose)
 			.SetDisplay("Close Type", "Use stops or trend reversals", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for calculations", "General");
 	}
 
@@ -172,7 +172,7 @@ public class RoNzRapidFireStrategy : Strategy
 
 		_tick = Security?.PriceStep ?? 1m;
 
-		var sma = new Sma { Length = MaPeriod };
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
 		var psar = new ParabolicSar
 		{
 			Acceleration = PsarStep,

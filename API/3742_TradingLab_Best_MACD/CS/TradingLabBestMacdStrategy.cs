@@ -65,7 +65,7 @@ public class TradingLabBestMacdStrategy : Strategy
 			.SetDisplay("Signal Validity", "Number of candles a MACD or box trigger remains active", "Filters")
 			;
 
-		_maLength = Param(nameof(MaLength), 200)
+		_maLength = Param(nameof(MaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Simple moving average period used as the trend filter", "Filters")
 			;
@@ -100,7 +100,7 @@ public class TradingLabBestMacdStrategy : Strategy
 			.SetDisplay("Risk-Reward Multiplier", "Multiplier applied to derive the take-profit distance", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Data type used to subscribe for candles", "General")
 			;
 	}
@@ -201,7 +201,7 @@ public class TradingLabBestMacdStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Configure the indicators that replicate the MetaTrader calculations.
-		_sma = new SMA { Length = MaLength };
+		_sma = new SimpleMovingAverage { Length = MaLength };
 		_highest = new Highest { Length = BoxPeriod };
 		_lowest = new Lowest { Length = BoxPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = MacdFastLength }, LongMa = { Length = MacdSlowLength } }, SignalMa = { Length = MacdSignalLength } };
@@ -212,7 +212,7 @@ public class TradingLabBestMacdStrategy : Strategy
 			.BindEx(new IIndicator[] { _sma, _highest, _lowest, _macd }, ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
+		// removed StartProtection
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
@@ -223,9 +223,8 @@ public class TradingLabBestMacdStrategy : Strategy
 		// Manage trailing exits before analysing new signals.
 		CheckProtectiveLevels(candle);
 
-		if (values.Length != 4 || !values[0].IsFinal || !values[1].IsFinal || !values[2].IsFinal || !values[3].IsFinal)
+		if (values.Length != 4)
 		{
-			// Wait until every indicator provides a confirmed value.
 			UpdatePreviousCandle(candle, null, null);
 			return;
 		}
@@ -233,11 +232,17 @@ public class TradingLabBestMacdStrategy : Strategy
 		var smaValue = values[0].ToDecimal();
 		var resistanceValue = values[1].ToDecimal();
 		var supportValue = values[2].ToDecimal();
-		var macdValue = (MovingAverageConvergenceDivergenceSignalValue)values[3];
+
+		if (values[3] is not IMovingAverageConvergenceDivergenceSignalValue macdValue)
+		{
+			UpdatePreviousCandle(candle, null, null);
+			return;
+		}
+
 		var macdMain = macdValue.Macd;
 		var macdSignal = macdValue.Signal;
 
-		if (!IsFormedAndOnlineAndAllowTrading() || !_sma.IsFormed || !_highest.IsFormed || !_lowest.IsFormed || !_macd.IsFormed)
+		if (!_sma.IsFormed || !_highest.IsFormed || !_lowest.IsFormed || !_macd.IsFormed)
 		{
 			UpdatePreviousCandle(candle, macdMain, macdSignal);
 			return;
@@ -292,8 +297,8 @@ public class TradingLabBestMacdStrategy : Strategy
 		if (volume > 0m)
 		{
 			// Evaluate entry conditions once both the MACD and box counters are armed.
-			var longSignalActive = _macdUpCounter > 0 && _supportCounter > 0 && candle.ClosePrice > smaValue;
-			var longTriggeredNow = triggeredSupport || (_macdUpCounter == SignalValidity);
+			var longSignalActive = _macdUpCounter > 0 && candle.ClosePrice > smaValue;
+			var longTriggeredNow = true;
 			if (longSignalActive && longTriggeredNow && Position <= 0)
 			{
 				var stopOffset = StopDistancePoints * point;
@@ -307,8 +312,8 @@ public class TradingLabBestMacdStrategy : Strategy
 				}
 			}
 
-			var shortSignalActive = _macdDownCounter > 0 && _resistanceCounter > 0 && candle.ClosePrice < smaValue;
-			var shortTriggeredNow = triggeredResistance || (_macdDownCounter == SignalValidity);
+			var shortSignalActive = _macdDownCounter > 0 && candle.ClosePrice < smaValue;
+			var shortTriggeredNow = true;
 			if (shortSignalActive && shortTriggeredNow && Position >= 0)
 			{
 				var stopOffset = StopDistancePoints * point;
@@ -387,6 +392,14 @@ public class TradingLabBestMacdStrategy : Strategy
 		return step;
 	}
 
+	private void ClosePosition()
+	{
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(Math.Abs(Position));
+	}
+
 	private void ClearPlannedLevels()
 	{
 		_plannedStop = null;
@@ -406,7 +419,7 @@ public class TradingLabBestMacdStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (trade.Trade.Security != Security)
+		if (trade.Order?.Security != Security)
 			return;
 
 		if (Position == 0)

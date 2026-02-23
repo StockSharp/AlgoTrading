@@ -15,21 +15,31 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy that mirrors the MetaTrader "Trailing Sl" expert by managing trailing stops for existing positions.
+/// Adds SMA crossover entries for backtesting.
 /// </summary>
 public class TrailingStopTriggerManagerStrategy : Strategy
 {
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _trailingPoints;
 	private readonly StrategyParam<int> _triggerPoints;
 
-	private decimal? _bestBidPrice;
-	private decimal? _bestAskPrice;
+	private decimal _lastEntryPrice;
 	private decimal? _activeStopPrice;
 	private bool _trailingEnabled;
 	private decimal _trailingDistance;
 	private decimal _triggerDistance;
 
 	/// <summary>
-	/// Trailing stop distance expressed in price steps.
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Trailing stop distance in price steps.
 	/// </summary>
 	public int TrailingPoints
 	{
@@ -38,7 +48,7 @@ public class TrailingStopTriggerManagerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Profit distance that activates the trailing stop mechanism.
+	/// Profit distance that activates trailing stop.
 	/// </summary>
 	public int TriggerPoints
 	{
@@ -51,27 +61,31 @@ public class TrailingStopTriggerManagerStrategy : Strategy
 	/// </summary>
 	public TrailingStopTriggerManagerStrategy()
 	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe", "General");
+
 		_trailingPoints = Param(nameof(TrailingPoints), 1000)
 			.SetGreaterThanZero()
-			.SetDisplay("Trailing Points", "Distance of the trailing stop in price steps", "Trailing Management")
-			
-			.SetOptimize(100, 5000, 100);
+			.SetDisplay("Trailing Points", "Trailing stop distance", "Trailing Management");
 
 		_triggerPoints = Param(nameof(TriggerPoints), 1500)
 			.SetGreaterThanZero()
-			.SetDisplay("Trigger Points", "Profit in price steps required to activate the trailing stop", "Trailing Management")
-			
-			.SetOptimize(100, 7500, 100);
+			.SetDisplay("Trigger Points", "Profit to activate trailing", "Trailing Management");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		ResetTrailingState();
-		_bestBidPrice = null;
-		_bestAskPrice = null;
+		_lastEntryPrice = 0m;
+		_activeStopPrice = null;
+		_trailingEnabled = false;
 		_trailingDistance = 0m;
 		_triggerDistance = 0m;
 	}
@@ -81,145 +95,102 @@ public class TrailingStopTriggerManagerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		UpdateDistances();
+		var step = Security?.PriceStep ?? 1m;
+		if (step <= 0m) step = 1m;
+		_trailingDistance = step * TrailingPoints;
+		_triggerDistance = step * TriggerPoints;
 
-		// Subscribe to the order book to receive real-time best bid/ask updates.
-		SubscribeOrderBook()
-			.Bind(ProcessOrderBook)
+		var smaFast = new SimpleMovingAverage { Length = 10 };
+		var smaSlow = new SimpleMovingAverage { Length = 30 };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(smaFast, smaSlow, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnPositionReceived(position);
-
-		if (Position == 0m)
-		{
-			// No exposure to manage, reset the trailing context.
-			ResetTrailingState();
-			return;
-		}
-
-		_trailingEnabled = false;
-		_activeStopPrice = null;
-		UpdateDistances();
+		base.OnOwnTradeReceived(trade);
+		_lastEntryPrice = trade.Trade.Price;
 	}
 
-	private void ProcessOrderBook(QuoteChangeMessage depth)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
-		var bestBid = depth.GetBestBid()?.Price;
-		if (bestBid.HasValue)
-			_bestBidPrice = bestBid.Value;
-
-		var bestAsk = depth.GetBestAsk()?.Price;
-		if (bestAsk.HasValue)
-			_bestAskPrice = bestAsk.Value;
-
-		if (Position > 0m)
-		{
-			ProcessLongPosition();
-		}
-		else if (Position < 0m)
-		{
-			ProcessShortPosition();
-		}
-		else
-		{
-			ResetTrailingState();
-		}
-	}
-
-	private void ProcessLongPosition()
-	{
-		if (!_bestBidPrice.HasValue)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		var entryPrice = PositionPrice;
-		if (entryPrice <= 0m)
-			return;
+		var price = candle.ClosePrice;
 
-		// Calculate the floating profit using the best bid price.
-		var profit = _bestBidPrice.Value - entryPrice;
-		if (!_trailingEnabled)
+		// Trailing stop management
+		if (Position > 0 && _lastEntryPrice > 0)
 		{
-			if (profit < _triggerDistance)
+			var profit = price - _lastEntryPrice;
+			if (!_trailingEnabled && profit >= _triggerDistance)
+			{
+				_trailingEnabled = true;
+				_activeStopPrice = price - _trailingDistance;
+			}
+			else if (_trailingEnabled)
+			{
+				var desiredStop = price - _trailingDistance;
+				if (!_activeStopPrice.HasValue || desiredStop > _activeStopPrice.Value)
+					_activeStopPrice = desiredStop;
+			}
+
+			if (_trailingEnabled && _activeStopPrice.HasValue && price <= _activeStopPrice.Value)
+			{
+				SellMarket();
+				ResetTrailingState();
 				return;
-
-			// Activate the trailing stop once the trigger distance is reached.
-_trailingEnabled = true;
-_activeStopPrice = _bestBidPrice.Value - _trailingDistance;
-LogInfo($"Trailing stop activated for long position at {_activeStopPrice:F4}.");
+			}
 		}
-		else
+		else if (Position < 0 && _lastEntryPrice > 0)
 		{
-			// Move the stop only forward to lock in more profit.
-			var desiredStop = _bestBidPrice.Value - _trailingDistance;
-			if (!_activeStopPrice.HasValue || desiredStop > _activeStopPrice.Value)
-				_activeStopPrice = desiredStop;
-		}
+			var profit = _lastEntryPrice - price;
+			if (!_trailingEnabled && profit >= _triggerDistance)
+			{
+				_trailingEnabled = true;
+				_activeStopPrice = price + _trailingDistance;
+			}
+			else if (_trailingEnabled)
+			{
+				var desiredStop = price + _trailingDistance;
+				if (!_activeStopPrice.HasValue || desiredStop < _activeStopPrice.Value)
+					_activeStopPrice = desiredStop;
+			}
 
-		if (!_activeStopPrice.HasValue)
-			return;
-
-		// Exit when the best bid falls back to the trailing stop level.
-		if (_bestBidPrice.Value <= _activeStopPrice.Value && Position > 0m)
-		{
-			SellMarket(Position);
-			LogInfo($"Trailing stop hit for long position at {_bestBidPrice:F4}.");
-			ResetTrailingState();
-		}
-	}
-
-	private void ProcessShortPosition()
-	{
-		if (!_bestAskPrice.HasValue)
-			return;
-
-		var entryPrice = PositionPrice;
-		if (entryPrice <= 0m)
-			return;
-
-		// Calculate the floating profit using the best ask price.
-		var profit = entryPrice - _bestAskPrice.Value;
-		if (!_trailingEnabled)
-		{
-			if (profit < _triggerDistance)
+			if (_trailingEnabled && _activeStopPrice.HasValue && price >= _activeStopPrice.Value)
+			{
+				BuyMarket();
+				ResetTrailingState();
 				return;
-
-			// Activate the trailing stop for the short position.
-_trailingEnabled = true;
-_activeStopPrice = _bestAskPrice.Value + _trailingDistance;
-LogInfo($"Trailing stop activated for short position at {_activeStopPrice:F4}.");
-		}
-		else
-		{
-			// Move the stop closer to the market as the price drops.
-			var desiredStop = _bestAskPrice.Value + _trailingDistance;
-			if (!_activeStopPrice.HasValue || desiredStop < _activeStopPrice.Value)
-				_activeStopPrice = desiredStop;
+			}
 		}
 
-		if (!_activeStopPrice.HasValue)
-			return;
-
-		// Exit when the best ask climbs back to the trailing stop level.
-		if (_bestAskPrice.Value >= _activeStopPrice.Value && Position < 0m)
+		// SMA crossover entries
+		if (fast > slow && Position <= 0)
 		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Trailing stop hit for short position at {_bestAskPrice:F4}.");
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 			ResetTrailingState();
 		}
-	}
-
-	private void UpdateDistances()
-	{
-		var step = Security?.PriceStep ?? 1m;
-		if (step <= 0m)
-			step = 1m;
-
-		_trailingDistance = step * TrailingPoints;
-		_triggerDistance = step * TriggerPoints;
+		else if (fast < slow && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+			ResetTrailingState();
+		}
 	}
 
 	private void ResetTrailingState()
@@ -228,4 +199,3 @@ LogInfo($"Trailing stop activated for short position at {_activeStopPrice:F4}.")
 		_activeStopPrice = null;
 	}
 }
-

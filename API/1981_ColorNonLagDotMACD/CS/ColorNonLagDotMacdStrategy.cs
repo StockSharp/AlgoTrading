@@ -207,7 +207,7 @@ public class ColorNonLagDotMacdStrategy : Strategy
 	        .SetNotNegative()
 	        .SetDisplay("Stop Loss %", "Stop loss in percent", "Risk Management");
 
-	    _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 	        .SetDisplay("Candle Type", "Type of candles to use", "Data");
 	}
 
@@ -226,9 +226,9 @@ public class ColorNonLagDotMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted(time);
+	    base.OnStarted2(time);
 
 	    var macd = new MovingAverageConvergenceDivergenceSignal
 	    {
@@ -265,8 +265,8 @@ public class ColorNonLagDotMacdStrategy : Strategy
 	        return;
 
 	    var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-	    var macd = (decimal)macdTyped.Macd;
-	    var signal = (decimal)macdTyped.Signal;
+	    if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+	        return;
 
 	    bool buySignal = false;
 	    bool sellSignal = false;

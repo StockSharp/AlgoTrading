@@ -26,6 +26,8 @@ public class WellMartinStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 
+	private BollingerBands _bollinger;
+	private AverageDirectionalIndex _adx;
 	private decimal _entryPrice;
 	private int _lastDealType; // 0 - none, 1 - sell, 2 - buy
 
@@ -74,7 +76,6 @@ public class WellMartinStrategy : Strategy
 		set => _adxLevel.Value = value;
 	}
 
-
 	/// <summary>
 	/// Take profit in price units.
 	/// </summary>
@@ -98,7 +99,7 @@ public class WellMartinStrategy : Strategy
 	/// </summary>
 	public WellMartinStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 84)
@@ -112,8 +113,6 @@ public class WellMartinStrategy : Strategy
 
 		_adxLevel = Param<decimal>(nameof(AdxLevel), 45m)
 			.SetDisplay("ADX Level", "ADX threshold", "Parameters");
-
-
 
 		_takeProfit = Param<decimal>(nameof(TakeProfit), 1200m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
@@ -142,72 +141,76 @@ public class WellMartinStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var bollinger = new BollingerBands
+		_bollinger = new BollingerBands
 		{
 			Length = BollingerPeriod,
 			Width = BollingerWidth
 		};
 
-		var adx = new ADX
+		_adx = new AverageDirectionalIndex
 		{
 			Length = AdxPeriod
 		};
 
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(bollinger, adx, ProcessCandle)
-			.Start();
+		subscription.Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal adx)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
+
+		var bbResult = _bollinger.Process(candle);
+		var adxResult = _adx.Process(candle);
+
+		if (!_bollinger.IsFormed || !_adx.IsFormed)
+			return;
+
+		if (!IsOnline)
+			return;
+
+		var bbValue = (IBollingerBandsValue)bbResult;
+		var adxValue = (IAverageDirectionalIndexValue)adxResult;
+
+		if (bbValue.UpBand is not decimal upper || bbValue.LowBand is not decimal lower)
+			return;
+
+		if (adxValue.MovingAverage is not decimal adxVal)
+			return;
 
 		if (Position == 0)
 		{
-		if (candle.ClosePrice < lower && adx < AdxLevel && (_lastDealType == 0 || _lastDealType == 2))
-		{
-		BuyMarket(Volume);
-		_entryPrice = candle.ClosePrice;
-		}
-		else if (candle.ClosePrice > upper && adx < AdxLevel && (_lastDealType == 0 || _lastDealType == 1))
-		{
-		SellMarket(Volume);
-		_entryPrice = candle.ClosePrice;
-		}
+			if (candle.ClosePrice < lower && adxVal < AdxLevel && (_lastDealType == 0 || _lastDealType == 2))
+			{
+				BuyMarket(Volume);
+				_entryPrice = candle.ClosePrice;
+			}
+			else if (candle.ClosePrice > upper && adxVal < AdxLevel && (_lastDealType == 0 || _lastDealType == 1))
+			{
+				SellMarket(Volume);
+				_entryPrice = candle.ClosePrice;
+			}
 		}
 		else if (Position > 0)
 		{
-		var profit = candle.ClosePrice - _entryPrice;
+			var profit = candle.ClosePrice - _entryPrice;
 
-		if (candle.ClosePrice >= upper || (TakeProfit > 0 && profit >= TakeProfit) || (StopLoss > 0 && -profit >= StopLoss))
-		{
-		SellMarket(Position);
-		_lastDealType = 2;
-		}
+			if (candle.ClosePrice >= upper || (TakeProfit > 0 && profit >= TakeProfit) || (StopLoss > 0 && -profit >= StopLoss))
+			{
+				SellMarket(Position);
+				_lastDealType = 2;
+			}
 		}
 		else if (Position < 0)
 		{
-		var profit = _entryPrice - candle.ClosePrice;
+			var profit = _entryPrice - candle.ClosePrice;
 
-		if (candle.ClosePrice <= lower || (TakeProfit > 0 && profit >= TakeProfit) || (StopLoss > 0 && -profit >= StopLoss))
-		{
-		BuyMarket(Math.Abs(Position));
-		_lastDealType = 1;
-		}
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position == 0 && delta != 0)
-		{
-		_entryPrice = 0m;
+			if (candle.ClosePrice <= lower || (TakeProfit > 0 && profit >= TakeProfit) || (StopLoss > 0 && -profit >= StopLoss))
+			{
+				BuyMarket(Math.Abs(Position));
+				_lastDealType = 1;
+			}
 		}
 	}
 }

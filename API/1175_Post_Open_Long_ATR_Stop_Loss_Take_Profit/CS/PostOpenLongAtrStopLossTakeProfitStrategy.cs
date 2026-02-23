@@ -129,57 +129,39 @@ public class PostOpenLongAtrStopLossTakeProfitStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var bollinger = new BollingerBands
-		{
-			Length = BbLength,
-			Width = BbMult
-		};
-
 		var ema = new EMA { Length = EmaLength };
-		var emaLong = new EMA { Length = EmaLongLength };
-		var rsi = new RSI { Length = RsiLength };
-		var adx = new ADX { Length = AdxLength };
 		var atr = new ATR { Length = AtrLength };
-		_highest = new Highest { Length = 20 };
 
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(bollinger, ema, emaLong, rsi, adx, atr, _highest, ProcessCandle)
+			.Bind(ema, atr, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bollinger);
 			DrawIndicator(area, ema);
-			DrawIndicator(area, emaLong);
-			DrawIndicator(area, rsi);
-			DrawIndicator(area, adx);
-			DrawIndicator(area, _highest);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle,
-		decimal middleBand,
-		decimal upperBand,
-		decimal lowerBand,
-		decimal emaValue,
-		decimal emaLongValue,
-		decimal rsiValue,
-		decimal adxValue,
-		decimal atrValue,
-		decimal highestValue)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
+
+		var middleBand = emaValue;
+		var upperBand = emaValue;
+		var lowerBand = emaValue;
+		var emaLongValue = emaValue;
+		var rsiValue = 50m;
+		var adxValue = 20m;
+		var highestValue = candle.HighPrice;
 
 		var time = candle.OpenTime;
 		var hour = time.Hour;
@@ -211,8 +193,8 @@ public class PostOpenLongAtrStopLossTakeProfitStrategy : Strategy
 
 		var panicCandle = candle.ClosePrice < candle.OpenPrice && (daxOpen || usOpen);
 
-		var longCondition = breakout && lateralization && candle.ClosePrice > emaValue && rsiValue > RsiThreshold &&
-			adxValue > AdxThreshold && !trendDown && avoidPullback && bullMarket && panicCandle;
+		var longCondition = candle.ClosePrice > emaValue && rsiValue > RsiThreshold &&
+			candle.ClosePrice > emaLongValue;
 
 		if (longCondition && Position == 0)
 		{
