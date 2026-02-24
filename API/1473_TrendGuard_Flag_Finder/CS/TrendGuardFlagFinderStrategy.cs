@@ -15,227 +15,148 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// TrendGuard Flag Finder strategy.
-/// Uses SuperTrend to confirm trend and searches for bull/bear flag patterns.
+/// Uses EMA trend direction and detects consolidation (flag) patterns
+/// after a strong move (pole), then enters on breakout from consolidation.
 /// </summary>
 public class TrendGuardFlagFinderStrategy : Strategy
 {
-private readonly StrategyParam<Sides?> _direction;
-	private readonly StrategyParam<int> _supertrendPeriod;
-	private readonly StrategyParam<decimal> _supertrendFactor;
-	private readonly StrategyParam<decimal> _maxDepth;
-	private readonly StrategyParam<int> _minFlagLength;
-	private readonly StrategyParam<int> _maxFlagLength;
-	private readonly StrategyParam<decimal> _maxRally;
-	private readonly StrategyParam<int> _minFlagLengthBear;
-	private readonly StrategyParam<int> _maxFlagLengthBear;
-	private readonly StrategyParam<decimal> _poleMin;
-	private readonly StrategyParam<int> _poleLength;
-	private readonly StrategyParam<decimal> _poleMinBear;
-	private readonly StrategyParam<int> _poleLengthBear;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _lookback;
+	private readonly StrategyParam<decimal> _poleMinPct;
+	private readonly StrategyParam<decimal> _squeezePct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SuperTrend _superTrend = null!;
-	private Lowest _poleLow = null!;
-	private Highest _poleHigh = null!;
+	private readonly List<ICandleMessage> _candles = new();
 
-	private decimal _baseHigh;
-	private decimal _baseLow;
-	private int _flagLength;
-	private bool _flagActive;
-
-	private decimal _baseLowBear;
-	private decimal _baseHighBear;
-	private int _flagLengthBear;
-	private bool _flagActiveBear;
-
-	/// <summary>
-	/// Trading direction.
-	/// </summary>
-	public Sides? TradingDirection
-{
-		get => _direction.Value;
-		set => _direction.Value = value;
-}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
+	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
+	public decimal PoleMinPct { get => _poleMinPct.Value; set => _poleMinPct.Value = value; }
+	public decimal SqueezePct { get => _squeezePct.Value; set => _squeezePct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public TrendGuardFlagFinderStrategy()
 	{
-		_direction = Param(nameof(TradingDirection), (Sides?)null)
-			.SetDisplay("Direction", "Trading direction", "General");
+		_emaLength = Param(nameof(EmaLength), 20)
+			.SetDisplay("EMA Length", "EMA for trend direction", "Trend");
 
-		_supertrendPeriod = Param(nameof(_supertrendPeriod), 10)
-		.SetDisplay("SuperTrend Length", "ATR period", "SuperTrend")
-		;
+		_lookback = Param(nameof(Lookback), 10)
+			.SetDisplay("Lookback", "Bars to look back for pole and flag", "Flag");
 
-		_supertrendFactor = Param(nameof(_supertrendFactor), 4m)
-		.SetDisplay("SuperTrend Factor", "ATR multiplier", "SuperTrend")
-		;
+		_poleMinPct = Param(nameof(PoleMinPct), 0.3m)
+			.SetDisplay("Pole Min %", "Min percent move for pole detection", "Flag");
 
-		_maxDepth = Param(nameof(_maxDepth), 5m)
-		.SetDisplay("Max Flag Depth", "Max pullback percent", "Bull Flag")
-		;
-
-		_minFlagLength = Param(nameof(_minFlagLength), 3)
-		.SetDisplay("Min Flag Length", "Min bars for flag", "Bull Flag")
-		;
-
-		_maxFlagLength = Param(nameof(_maxFlagLength), 7)
-		.SetDisplay("Max Flag Length", "Max bars for flag", "Bull Flag")
-		;
-
-		_maxRally = Param(nameof(_maxRally), 5m)
-		.SetDisplay("Max Flag Rally", "Max rally percent", "Bear Flag")
-		;
-
-		_minFlagLengthBear = Param(nameof(_minFlagLengthBear), 3)
-		.SetDisplay("Min Bear Flag Length", "Min bars", "Bear Flag")
-		;
-
-		_maxFlagLengthBear = Param(nameof(_maxFlagLengthBear), 7)
-		.SetDisplay("Max Bear Flag Length", "Max bars", "Bear Flag")
-		;
-
-		_poleMin = Param(nameof(_poleMin), 3m)
-		.SetDisplay("Prior Uptrend Minimum", "Min percent run-up", "Bull Flag")
-		;
-
-		_poleLength = Param(nameof(_poleLength), 7)
-		.SetDisplay("Flag Pole Length", "Bars for run-up", "Bull Flag")
-		;
-
-		_poleMinBear = Param(nameof(_poleMinBear), 3m)
-		.SetDisplay("Prior Downtrend Minimum", "Min percent drop", "Bear Flag")
-		;
-
-		_poleLengthBear = Param(nameof(_poleLengthBear), 7)
-		.SetDisplay("Flag Pole Length Bear", "Bars for drop", "Bear Flag")
-		;
+		_squeezePct = Param(nameof(SqueezePct), 0.5m)
+			.SetDisplay("Squeeze %", "Max range percent for flag consolidation", "Flag");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_superTrend = null!;
-		_poleLow = null!;
-		_poleHigh = null!;
-		_baseHigh = default;
-		_baseLow = default;
-		_flagLength = default;
-		_flagActive = default;
-		_baseLowBear = default;
-		_baseHighBear = default;
-		_flagLengthBear = default;
-		_flagActiveBear = default;
+		_candles.Clear();
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_superTrend = new SuperTrend { Length = _supertrendPeriod.Value, Multiplier = _supertrendFactor.Value };
-		_poleLow = new Lowest { Length = _poleLength.Value };
-		_poleHigh = new Highest { Length = _poleLengthBear.Value };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_superTrend, ProcessCandle).Start();
+		subscription.Bind(ema, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _superTrend);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal superTrendValue)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// update pole indicators
-		_poleLow.Process(candle.LowPrice);
-		_poleHigh.Process(candle.HighPrice);
+		_candles.Add(candle);
 
-		var isUptrend = candle.ClosePrice > superTrendValue;
+		// Keep enough candles for analysis
+		var needed = Lookback * 2 + 2;
+		if (_candles.Count > needed)
+			_candles.RemoveAt(0);
 
-		// Bull flag detection
-		if (candle.HighPrice > _baseHigh)
+		if (_candles.Count < Lookback + 2)
+			return;
+
+		var count = _candles.Count;
+		var isUptrend = candle.ClosePrice > emaVal;
+		var isDowntrend = candle.ClosePrice < emaVal;
+
+		// Split into pole period (first half) and flag period (second half)
+		var halfLen = Lookback / 2;
+		if (halfLen < 2) halfLen = 2;
+
+		// Pole: bars from [count - Lookback] to [count - halfLen - 1]
+		// Flag: bars from [count - halfLen] to [count - 2] (excluding current)
+		var poleStart = count - Lookback;
+		var poleEnd = count - halfLen - 1;
+		var flagStart = count - halfLen;
+		var flagEnd = count - 2;
+
+		if (poleStart < 0 || poleEnd <= poleStart || flagEnd < flagStart)
+			return;
+
+		// Calculate pole move
+		var poleOpenPrice = _candles[poleStart].OpenPrice;
+		var poleClosePrice = _candles[poleEnd].ClosePrice;
+
+		var poleHighest = 0m;
+		var poleLowest = decimal.MaxValue;
+		for (var i = poleStart; i <= poleEnd; i++)
 		{
-			var poleLow = _poleLow.GetCurrentValue();
-			var poleDepth = ((candle.HighPrice / poleLow) - 1m) * 100m;
-			_flagActive = poleDepth >= _poleMin.Value;
-			_baseHigh = candle.HighPrice;
-			_baseLow = candle.LowPrice;
-			_flagLength = 0;
+			if (_candles[i].HighPrice > poleHighest) poleHighest = _candles[i].HighPrice;
+			if (_candles[i].LowPrice < poleLowest) poleLowest = _candles[i].LowPrice;
 		}
-		else if (_flagActive)
+
+		var poleRange = poleLowest > 0 ? ((poleHighest - poleLowest) / poleLowest) * 100m : 0m;
+		var poleBullish = poleClosePrice > poleOpenPrice;
+		var poleBearish = poleClosePrice < poleOpenPrice;
+
+		// Calculate flag consolidation range
+		var flagHigh = 0m;
+		var flagLow = decimal.MaxValue;
+		for (var i = flagStart; i <= flagEnd; i++)
 		{
-			if (candle.LowPrice < _baseLow)
-				_baseLow = candle.LowPrice;
-
-			_flagLength++;
-			var depth = ((_baseHigh / _baseLow) - 1m) * 100m;
-
-			if (depth > _maxDepth.Value || _flagLength > _maxFlagLength.Value)
-			{
-				_flagActive = false;
-			}
-		else if (_flagLength >= _minFlagLength.Value && candle.ClosePrice > _baseHigh && isUptrend &&
-			(TradingDirection != Sides.Sell) && IsFormedAndOnlineAndAllowTrading() && Position <= 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-				_flagActive = false;
-			}
+			if (_candles[i].HighPrice > flagHigh) flagHigh = _candles[i].HighPrice;
+			if (_candles[i].LowPrice < flagLow) flagLow = _candles[i].LowPrice;
 		}
 
-		// Bear flag detection
-		if (candle.LowPrice < _baseLowBear)
+		var flagRange = flagLow > 0 ? ((flagHigh - flagLow) / flagLow) * 100m : 0m;
+
+		// Flag must be a tighter range than the pole (consolidation)
+		var hasStrongPole = poleRange >= PoleMinPct;
+		var hasTightFlag = flagRange <= SqueezePct && flagRange < poleRange;
+
+		if (!hasStrongPole || !hasTightFlag)
+			return;
+
+		// Bull flag: pole was up, flag consolidates, breakout above flag high
+		if (poleBullish && isUptrend && candle.ClosePrice > flagHigh && Position <= 0)
 		{
-			var poleHigh = _poleHigh.GetCurrentValue();
-			var poleDepth = ((poleHigh / candle.LowPrice) - 1m) * 100m;
-			_flagActiveBear = poleDepth >= _poleMinBear.Value;
-			_baseLowBear = candle.LowPrice;
-			_baseHighBear = candle.HighPrice;
-			_flagLengthBear = 0;
+			BuyMarket();
 		}
-		else if (_flagActiveBear)
+		// Bear flag: pole was down, flag consolidates, breakout below flag low
+		else if (poleBearish && isDowntrend && candle.ClosePrice < flagLow && Position >= 0)
 		{
-			if (candle.HighPrice > _baseHighBear)
-				_baseHighBear = candle.HighPrice;
-
-			_flagLengthBear++;
-			var rally = ((_baseHighBear / _baseLowBear) - 1m) * 100m;
-
-			if (rally > _maxRally.Value || _flagLengthBear > _maxFlagLengthBear.Value)
-			{
-				_flagActiveBear = false;
-			}
-		else if (_flagLengthBear >= _minFlagLengthBear.Value && candle.ClosePrice < _baseLowBear && !isUptrend &&
-			(TradingDirection != Sides.Buy) && IsFormedAndOnlineAndAllowTrading() && Position >= 0)
-			{
-				SellMarket(Volume + Math.Abs(Position));
-				_flagActiveBear = false;
-			}
+			SellMarket();
 		}
 	}
 }
