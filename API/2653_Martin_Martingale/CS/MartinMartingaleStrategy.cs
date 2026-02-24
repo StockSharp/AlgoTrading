@@ -21,13 +21,8 @@ public class MartinMartingaleStrategy : Strategy
 	private readonly StrategyParam<int> _stepPoints;
 	private readonly StrategyParam<int> _entryOffsetPoints;
 	private readonly StrategyParam<decimal> _profitTarget;
+	private readonly StrategyParam<int> _maxLevel;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private readonly HashSet<long> _processedOrders = new();
-
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
-	private Order _reversalOrder;
 
 	private decimal _stepSize;
 	private decimal _entryOffset;
@@ -36,6 +31,7 @@ public class MartinMartingaleStrategy : Strategy
 	private int _martingaleLevel;
 	private Sides? _lastTradeSide;
 	private bool _isClosing;
+	private decimal? _initialPrice;
 
 	/// <summary>
 	/// Distance in points that defines when the next reversal is triggered.
@@ -47,7 +43,7 @@ public class MartinMartingaleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Offset in points for the initial stop orders around the current price.
+	/// Offset in points for the initial breakout entry.
 	/// </summary>
 	public int EntryOffsetPoints
 	{
@@ -62,6 +58,15 @@ public class MartinMartingaleStrategy : Strategy
 	{
 		get => _profitTarget.Value;
 		set => _profitTarget.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum martingale doubling level before resetting.
+	/// </summary>
+	public int MaxLevel
+	{
+		get => _maxLevel.Value;
+		set => _maxLevel.Value = value;
 	}
 
 	/// <summary>
@@ -85,12 +90,17 @@ public class MartinMartingaleStrategy : Strategy
 
 		_entryOffsetPoints = Param(nameof(EntryOffsetPoints), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Entry Offset (points)", "Offset for initial stop orders", "General")
+			.SetDisplay("Entry Offset (points)", "Offset for initial breakout entry", "General")
 			;
 
 		_profitTarget = Param(nameof(ProfitTarget), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Target", "Total profit to close all positions", "Risk")
+			;
+
+		_maxLevel = Param(nameof(MaxLevel), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Level", "Maximum martingale levels", "Risk")
 			;
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -107,10 +117,9 @@ public class MartinMartingaleStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		CancelActiveOrders();
 		ResetCycle();
 		_isClosing = false;
+		_initialPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -131,93 +140,9 @@ public class MartinMartingaleStrategy : Strategy
 		}
 	}
 
-	/// <inheritdoc />
-	protected override void OnOrderReceived(Order order)
-	{
-		base.OnOrderReceived(order);
-
-		if (order.State != OrderStates.Done &&
-			order.State != OrderStates.Failed &&
-			order.State != OrderStates.Cancelled)
-		{
-			return;
-		}
-
-		if (order == _buyStopOrder)
-		{
-			_buyStopOrder = null;
-		}
-		else if (order == _sellStopOrder)
-		{
-			_sellStopOrder = null;
-		}
-		else if (order == _reversalOrder)
-		{
-			_reversalOrder = null;
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade.Trade is null)
-			return;
-
-		var order = trade.Order;
-		if (order is null)
-			return;
-
-		if (order.TransactionId == 0)
-			return;
-
-		if (!_processedOrders.Add(order.TransactionId))
-			return;
-
-		if (order != _buyStopOrder && order != _sellStopOrder && order != _reversalOrder)
-			return;
-
-		_lastTradePrice = trade.Trade.Price;
-
-		var volume = order.Volume;
-		if (volume <= 0m)
-		{
-			volume = trade.Trade.Volume;
-		}
-
-		if (volume > 0m)
-		{
-			_lastTradeVolume = volume;
-		}
-
-		_lastTradeSide = order.Direction;
-
-		if (_martingaleLevel == 0)
-		{
-			_martingaleLevel = 1;
-		}
-		else
-		{
-			_martingaleLevel++;
-		}
-
-		if (order == _buyStopOrder && _sellStopOrder != null)
-		{
-			CancelOrderIfActive(ref _sellStopOrder);
-		}
-		else if (order == _sellStopOrder && _buyStopOrder != null)
-		{
-			CancelOrderIfActive(ref _buyStopOrder);
-		}
-	}
-
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		UpdateStepSettings();
@@ -227,6 +152,7 @@ public class MartinMartingaleStrategy : Strategy
 
 		var price = candle.ClosePrice;
 
+		// If closing, flatten and wait
 		if (_isClosing)
 		{
 			if (Position == 0)
@@ -234,97 +160,102 @@ public class MartinMartingaleStrategy : Strategy
 				_isClosing = false;
 				ResetCycle();
 			}
-			else
-			{
-				return;
-			}
+			return;
 		}
 
-		if (!_isClosing && Position == 0 && _martingaleLevel > 0)
+		// If flat after a cycle, reset
+		if (Position == 0 && _martingaleLevel > 0)
 		{
 			ResetCycle();
 		}
 
-		var totalProfit = CalculateTotalProfit(price);
-		if (ProfitTarget > 0m && totalProfit >= ProfitTarget && (Position != 0 || _martingaleLevel > 0))
+		// Check profit target
+		if (ProfitTarget > 0m && PnL >= ProfitTarget && Position != 0)
 		{
 			_isClosing = true;
-			CloseAll();
-			CancelActiveOrders();
+			if (Position > 0)
+				SellMarket(Position);
+			else if (Position < 0)
+				BuyMarket(Math.Abs(Position));
 			return;
 		}
 
+		// Max level reached -> close and reset
+		if (_martingaleLevel >= MaxLevel && Position != 0)
+		{
+			_isClosing = true;
+			if (Position > 0)
+				SellMarket(Position);
+			else if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			return;
+		}
+
+		// Initial entry: wait for breakout from first candle
 		if (_martingaleLevel == 0 && Position == 0)
 		{
-			EnsureInitialOrders(price);
+			if (!_initialPrice.HasValue)
+			{
+				_initialPrice = price;
+				return;
+			}
+
+			if (_entryOffset <= 0m)
+				return;
+
+			if (price >= _initialPrice.Value + _entryOffset)
+			{
+				BuyMarket(Volume);
+				_lastTradePrice = price;
+				_lastTradeVolume = Volume;
+				_lastTradeSide = Sides.Buy;
+				_martingaleLevel = 1;
+				_initialPrice = null;
+			}
+			else if (price <= _initialPrice.Value - _entryOffset)
+			{
+				SellMarket(Volume);
+				_lastTradePrice = price;
+				_lastTradeVolume = Volume;
+				_lastTradeSide = Sides.Sell;
+				_martingaleLevel = 1;
+				_initialPrice = null;
+			}
+
 			return;
 		}
 
 		if (_lastTradeSide is null || _martingaleLevel == 0)
 			return;
 
-		if (IsOrderActive(_reversalOrder))
-			return;
-
-		var threshold = _martingaleLevel * _stepSize;
+		var threshold = _stepSize;
 
 		if (_lastTradeSide == Sides.Buy)
 		{
 			if (price <= _lastTradePrice - threshold)
 			{
-				PlaceReversal(Sides.Sell);
+				var nextVolume = _lastTradeVolume * 2m;
+				var totalVolume = nextVolume + Math.Abs(Position);
+				SellMarket(totalVolume);
+				_lastTradePrice = price;
+				_lastTradeVolume = nextVolume;
+				_lastTradeSide = Sides.Sell;
+				_martingaleLevel++;
 			}
 		}
 		else
 		{
 			if (price >= _lastTradePrice + threshold)
 			{
-				PlaceReversal(Sides.Buy);
+				var nextVolume = _lastTradeVolume * 2m;
+				var totalVolume = nextVolume + Math.Abs(Position);
+				BuyMarket(totalVolume);
+				_lastTradePrice = price;
+				_lastTradeVolume = nextVolume;
+				_lastTradeSide = Sides.Buy;
+				_martingaleLevel++;
 			}
 		}
-	}
-
-	private void EnsureInitialOrders(decimal price)
-	{
-		if (_entryOffset <= 0m || price <= 0m)
-			return;
-
-		if (!IsOrderActive(_buyStopOrder))
-		{
-			_buyStopOrder = BuyStop(Volume, price + _entryOffset);
-		}
-
-		if (!IsOrderActive(_sellStopOrder))
-		{
-			_sellStopOrder = SellStop(Volume, price - _entryOffset);
-		}
-	}
-
-	private void PlaceReversal(Sides side)
-	{
-		var nextVolume = GetNextVolume();
-		if (nextVolume <= 0m)
-			return;
-
-		_reversalOrder = side == Sides.Buy
-			? BuyMarket(nextVolume)
-			: SellMarket(nextVolume);
-	}
-
-	private decimal GetNextVolume()
-	{
-		if (_martingaleLevel == 0 || _lastTradeVolume <= 0m)
-		{
-			return Volume;
-		}
-
-		return _lastTradeVolume * 2m;
-	}
-
-	private decimal CalculateTotalProfit(decimal price)
-	{
-		var unrealized = Position != 0 ? Position * (price - PositionPrice) : 0m;
-		return PnL + unrealized;
 	}
 
 	private void UpdateStepSettings()
@@ -339,46 +270,11 @@ public class MartinMartingaleStrategy : Strategy
 		_entryOffset = EntryOffsetPoints * priceStep;
 	}
 
-	private void CancelActiveOrders()
-	{
-		CancelOrderIfActive(ref _buyStopOrder);
-		CancelOrderIfActive(ref _sellStopOrder);
-		CancelOrderIfActive(ref _reversalOrder);
-	}
-
-	private void CancelOrderIfActive(ref Order order)
-	{
-		if (order == null)
-			return;
-
-		if (IsOrderActive(order))
-		{
-			CancelOrder(order);
-		}
-
-		order = null;
-	}
-
-	private static bool IsOrderActive(Order order)
-	{
-		if (order == null)
-		{
-			return false;
-		}
-
-		return order.State == OrderStates.Active ||
-			order.State == OrderStates.Pending ||
-			order.State == OrderStates.PartiallyFilled ||
-			order.State == OrderStates.None;
-	}
-
 	private void ResetCycle()
 	{
 		_martingaleLevel = 0;
 		_lastTradePrice = 0m;
 		_lastTradeVolume = 0m;
 		_lastTradeSide = null;
-		_processedOrders.Clear();
-		_reversalOrder = null;
 	}
 }

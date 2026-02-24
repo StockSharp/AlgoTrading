@@ -67,7 +67,7 @@ public class ForceTrendStrategy : Strategy
 			.SetDisplay("Enable Short Exit", "Allow closing short positions", "Trading")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for ForceTrend calculations", "General");
 	}
 
@@ -163,8 +163,8 @@ public class ForceTrendStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var highestValue = _highest.Process(candle).ToDecimal();
-		var lowestValue = _lowest.Process(candle).ToDecimal();
+		var highestValue = _highest.Process(new CandleIndicatorValue(_highest, candle)).ToDecimal();
+		var lowestValue = _lowest.Process(new CandleIndicatorValue(_lowest, candle)).ToDecimal();
 
 		if (!_highest.IsFormed || !_lowest.IsFormed)
 			return;
@@ -217,8 +217,7 @@ public class ForceTrendStrategy : Strategy
 		var bullishFlip = bullish && previousDirection.HasValue && previousDirection.Value <= 0;
 		var bearishFlip = bearish && previousDirection.HasValue && previousDirection.Value >= 0;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// indicators processed manually, no BindEx
 
 		if (bullish)
 		{

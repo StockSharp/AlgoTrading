@@ -225,57 +225,57 @@ public class TipuEaStrategy : Strategy
 		_enableTakeProfit = Param(nameof(EnableTakeProfit), true)
 			.SetDisplay("Enable Take Profit", "Enable fixed take profit target", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 50000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
 
-		_maxRiskPips = Param(nameof(MaxRiskPips), 50m)
+		_maxRiskPips = Param(nameof(MaxRiskPips), 100000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Risk (pips)", "Maximum stop distance allowed in pips", "Risk");
 
-		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
+		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Base order volume", "General");
 
 		_enableRiskFreePyramiding = Param(nameof(EnableRiskFreePyramiding), true)
 			.SetDisplay("Enable Risk Free", "Allow risk-free pyramiding of winners", "Risk");
 
-		_riskFreeStepPips = Param(nameof(RiskFreeStepPips), 10m)
+		_riskFreeStepPips = Param(nameof(RiskFreeStepPips), 30000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Free Step (pips)", "Profit distance required before locking and adding", "Risk");
 
-		_pyramidIncrementVolume = Param(nameof(PyramidIncrementVolume), 0.01m)
+		_pyramidIncrementVolume = Param(nameof(PyramidIncrementVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Pyramid Increment", "Additional volume added on each pyramid step", "Risk");
 
-		_pyramidMaxVolume = Param(nameof(PyramidMaxVolume), 0.03m)
+		_pyramidMaxVolume = Param(nameof(PyramidMaxVolume), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Pyramid Max Volume", "Maximum accumulated position volume", "Risk");
 
 		_enableTrailingStop = Param(nameof(EnableTrailingStop), true)
 			.SetDisplay("Enable Trailing", "Enable trailing stop once trade is in profit", "Risk");
 
-		_trailingStartPips = Param(nameof(TrailingStartPips), 10m)
+		_trailingStartPips = Param(nameof(TrailingStartPips), 30000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Start (pips)", "Profit in pips required before trailing", "Risk");
 
-		_trailingCushionPips = Param(nameof(TrailingCushionPips), 5m)
+		_trailingCushionPips = Param(nameof(TrailingCushionPips), 15000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Cushion (pips)", "Distance between price and trailing stop", "Risk");
 
-		_higherFastLength = Param(nameof(HigherFastLength), 21)
+		_higherFastLength = Param(nameof(HigherFastLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Higher Fast EMA", "Fast EMA length on higher timeframe", "Signals");
 
-		_higherSlowLength = Param(nameof(HigherSlowLength), 55)
+		_higherSlowLength = Param(nameof(HigherSlowLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Higher Slow EMA", "Slow EMA length on higher timeframe", "Signals");
 
-		_lowerFastLength = Param(nameof(LowerFastLength), 13)
+		_lowerFastLength = Param(nameof(LowerFastLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Lower Fast EMA", "Fast EMA length on signal timeframe", "Signals");
 
-		_lowerSlowLength = Param(nameof(LowerSlowLength), 34)
+		_lowerSlowLength = Param(nameof(LowerSlowLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Lower Slow EMA", "Slow EMA length on signal timeframe", "Signals");
 
@@ -295,17 +295,17 @@ public class TipuEaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "Multiplier applied to ATR for the initial stop", "Risk");
 
-		_higherSignalWindowMinutes = Param(nameof(HigherSignalWindowMinutes), 120)
+		_higherSignalWindowMinutes = Param(nameof(HigherSignalWindowMinutes), 720)
 			.SetGreaterThanZero()
 			.SetDisplay("Higher Signal Window", "Minutes within which the higher timeframe signal must be recent", "Signals");
 
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(1).TimeFrame())
+		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Higher Timeframe", "Higher timeframe candles used for context", "General");
 
-		_lowerCandleType = Param(nameof(LowerCandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_lowerCandleType = Param(nameof(LowerCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Signal Timeframe", "Primary timeframe used for entries", "General");
 
-		Volume = TradeVolume;
+		// Volume is set externally or defaults to TradeVolume
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -341,7 +341,7 @@ public class TipuEaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		Volume = TradeVolume;
+		// Volume is set externally or defaults to TradeVolume
 
 		_higherFast = new EMA { Length = HigherFastLength };
 		_higherSlow = new EMA { Length = HigherSlowLength };
@@ -473,8 +473,7 @@ public class TipuEaStrategy : Strategy
 		if (!IsHigherSignalValid(closeTime, 1))
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// indicators checked via BindEx
 
 		if (Position < 0)
 		{
@@ -537,8 +536,7 @@ public class TipuEaStrategy : Strategy
 		if (!IsHigherSignalValid(closeTime, -1))
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// indicators checked via BindEx
 
 		if (Position > 0)
 		{

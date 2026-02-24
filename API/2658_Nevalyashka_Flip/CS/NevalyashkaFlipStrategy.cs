@@ -15,72 +15,77 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Alternating long-short strategy that mirrors the original Nevalyashka MQL logic.
-/// Opens an initial sell position and flips direction each time the market becomes flat.
+/// Opens an initial sell position and flips direction each time the position is closed.
 /// </summary>
 public class NevalyashkaFlipStrategy : Strategy
 {
-	// User parameters.
-	private readonly StrategyParam<int> _lotMultiplier;
-	private readonly StrategyParam<int> _stopLossPips;
-	private readonly StrategyParam<int> _takeProfitPips;
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
+	private readonly StrategyParam<DataType> _candleType;
 
-	// Cached instrument information and current quotes.
-	private decimal _pipSize;
-	private decimal _bestBid;
-	private decimal _bestAsk;
-
-	// Active protective orders attached to the open position.
-	private Order _stopOrder;
-	private Order _takeOrder;
-
-	// Internal state for managing entries and direction flips.
-	private bool _isEntryPending;
-	private Sides? _pendingEntrySide;
-	private decimal? _pendingEntryPrice;
+	private decimal _entryPrice;
 	private Sides? _currentSide;
 	private Sides? _lastCompletedSide;
+	private bool _initialized;
 
 	/// <summary>
-	/// Multiplier for the minimum tradable volume.
+	/// Stop loss distance in price steps.
 	/// </summary>
-	public int LotMultiplier
+	public int StopLossPoints
 	{
-		get => _lotMultiplier.Value;
-		set => _lotMultiplier.Value = value;
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Stop loss distance in pips.
+	/// Take profit distance in price steps.
 	/// </summary>
-	public int StopLossPips
+	public int TakeProfitPoints
 	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Take profit distance in pips.
+	/// Candle type for monitoring price.
 	/// </summary>
-	public int TakeProfitPips
+	public DataType CandleType
 	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
-/// Initializes a new instance of the <see cref="NevalyashkaFlipStrategy"/> class.
-/// </summary>
-public NevalyashkaFlipStrategy()
+	/// Initializes a new instance of the <see cref="NevalyashkaFlipStrategy"/> class.
+	/// </summary>
+	public NevalyashkaFlipStrategy()
 	{
-		_lotMultiplier = Param(nameof(LotMultiplier), 1)
+		_stopLossPoints = Param(nameof(StopLossPoints), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Lot Multiplier", "Multiplier of minimum tradable volume", "General");
+			.SetDisplay("Stop Loss (pts)", "Stop loss distance in price steps", "Risk");
 
-		_stopLossPips = Param(nameof(StopLossPips), 50)
-			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Take Profit (pts)", "Take profit distance in price steps", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0m;
+		_currentSide = null;
+		_lastCompletedSide = null;
+		_initialized = false;
 	}
 
 	/// <inheritdoc />
@@ -88,205 +93,79 @@ public NevalyashkaFlipStrategy()
 	{
 		base.OnStarted2(time);
 
-		InitializePipSize();
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 
-		// Subscribe to top-of-book updates to emulate the tick feed from the MQL version.
-		SubscribeOrderBook()
-			.Bind(OnOrderBook)
-			.Start();
-	}
-
-	private void OnOrderBook(QuoteChangeMessage depth)
-	{
-		// Store the latest best bid and ask prices for placing market orders and protective offsets.
-		var bestBid = depth.GetBestBid()?.Price;
-		if (bestBid.HasValue && bestBid.Value > 0)
-			_bestBid = bestBid.Value;
-
-		var bestAsk = depth.GetBestAsk()?.Price;
-		if (bestAsk.HasValue && bestAsk.Value > 0)
-			_bestAsk = bestAsk.Value;
-
-		TryOpenNextPosition();
-	}
-
-	private void InitializePipSize()
-	{
-		// Calculate pip size the same way as the MQL expert did for 3/5 digit symbols.
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0)
-			step = 1m;
-
-		if (Security?.Decimals is int decimals && (decimals == 3 || decimals == 5))
-			_pipSize = step * 10m;
-		else
-			_pipSize = step;
-
-		if (_pipSize <= 0)
-			_pipSize = 1m;
-	}
-
-	private void TryOpenNextPosition()
-	{
-		// Skip if we already have a position or a market order waiting for execution.
-		if (Position != 0 || _isEntryPending)
-			return;
-
-		// Entry requires valid quotes and connection state.
-		if (_bestBid <= 0 || _bestAsk <= 0)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_pipSize <= 0)
-			InitializePipSize();
-
-		// Alternate direction: start with sell, then flip on every completed trade.
-		var sideToOpen = _lastCompletedSide switch
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			Sides.Buy => Sides.Sell,
-			Sides.Sell => Sides.Buy,
-			_ => Sides.Sell,
-		};
-
-		var entryPrice = sideToOpen == Sides.Buy ? _bestAsk : _bestBid;
-		if (entryPrice <= 0)
-			return;
-
-		var volume = GetOrderVolume();
-		if (volume <= 0)
-			return;
-
-		CancelProtectionOrders();
-
-		_isEntryPending = true;
-		_pendingEntrySide = sideToOpen;
-		_pendingEntryPrice = entryPrice;
-
-		if (sideToOpen == Sides.Buy)
-		{
-			// Buy after a completed sell position.
-			BuyMarket(volume);
-		}
-		else
-		{
-			// Sell on the very first trade and after a completed buy position.
-			SellMarket(volume);
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private decimal GetOrderVolume()
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Replicate the "Number of minimum lots" input by multiplying the exchange minimum volume.
-		var minVolume = Security?.MinVolume ?? Volume;
-		if (minVolume <= 0)
-			minVolume = Volume > 0 ? Volume : 1m;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		var volume = LotMultiplier * minVolume;
+		var step = Security?.PriceStep ?? 1m;
+		var stopDistance = StopLossPoints * step;
+		var takeDistance = TakeProfitPoints * step;
+		var price = candle.ClosePrice;
 
-		// Respect the exchange volume step if it is available.
-		var step = Security?.VolumeStep;
-		if (step is decimal volumeStep && volumeStep > 0)
+		// Check SL/TP for current position
+		if (Position != 0 && _entryPrice > 0)
 		{
-			var stepsCount = Math.Ceiling(volume / volumeStep);
-			volume = stepsCount * volumeStep;
-		}
+			var hit = false;
 
-		return volume;
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position != 0)
-		{
-			// We are now in the market: clear the pending flag and remember the direction.
-			_isEntryPending = false;
-
-			_currentSide = Position > 0 ? Sides.Buy : Sides.Sell;
-
-			// Attach protective orders once the entry is confirmed.
-			if (_pendingEntrySide.HasValue && _pendingEntrySide == _currentSide)
+			if (_currentSide == Sides.Buy)
 			{
-				var entryPrice = _pendingEntryPrice ?? (_currentSide == Sides.Buy ? _bestAsk : _bestBid);
-				if (entryPrice > 0)
-					RegisterProtectionOrders(_currentSide.Value, entryPrice);
+				if (stopDistance > 0 && candle.LowPrice <= _entryPrice - stopDistance)
+					hit = true;
+				if (takeDistance > 0 && candle.HighPrice >= _entryPrice + takeDistance)
+					hit = true;
+			}
+			else if (_currentSide == Sides.Sell)
+			{
+				if (stopDistance > 0 && candle.HighPrice >= _entryPrice + stopDistance)
+					hit = true;
+				if (takeDistance > 0 && candle.LowPrice <= _entryPrice - takeDistance)
+					hit = true;
 			}
 
-			_pendingEntrySide = null;
-			_pendingEntryPrice = null;
-
-			return;
-		}
-
-		// Position closed: reset state and prepare the next flip.
-		_isEntryPending = false;
-
-		if (_currentSide.HasValue)
-		{
-			_lastCompletedSide = _currentSide;
-			_currentSide = null;
-		}
-
-		CancelProtectionOrders();
-
-		TryOpenNextPosition();
-	}
-
-	private void RegisterProtectionOrders(Sides side, decimal entryPrice)
-	{
-		CancelProtectionOrders();
-
-		var positionVolume = Math.Abs(Position);
-		if (positionVolume <= 0)
-			positionVolume = GetOrderVolume();
-
-		// Create stop loss orders if the distance is configured.
-		if (StopLossPips > 0)
-		{
-			var stopOffset = StopLossPips * _pipSize;
-			var stopPrice = side == Sides.Buy
-				? entryPrice - stopOffset
-				: entryPrice + stopOffset;
-
-			if (stopPrice > 0)
+			if (hit)
 			{
-				_stopOrder = side == Sides.Buy
-					? SellStop(positionVolume, stopPrice)
-					: BuyStop(positionVolume, stopPrice);
+				// Close position
+				if (Position > 0)
+					SellMarket(Position);
+				else if (Position < 0)
+					BuyMarket(Math.Abs(Position));
+
+				_lastCompletedSide = _currentSide;
+				_currentSide = null;
+				_entryPrice = 0m;
 			}
 		}
 
-		// Create take profit orders if the distance is configured.
-		if (TakeProfitPips > 0)
+		// If flat, open next position
+		if (Position == 0 && _currentSide == null)
 		{
-			var takeOffset = TakeProfitPips * _pipSize;
-			var takePrice = side == Sides.Buy
-				? entryPrice + takeOffset
-				: entryPrice - takeOffset;
-
-			if (takePrice > 0)
+			// Alternate direction: start with sell, then flip
+			var sideToOpen = _lastCompletedSide switch
 			{
-				_takeOrder = side == Sides.Buy
-					? SellLimit(positionVolume, takePrice)
-					: BuyLimit(positionVolume, takePrice);
-			}
+				Sides.Buy => Sides.Sell,
+				Sides.Sell => Sides.Buy,
+				_ => Sides.Sell,
+			};
+
+			if (sideToOpen == Sides.Buy)
+				BuyMarket(Volume);
+			else
+				SellMarket(Volume);
+
+			_currentSide = sideToOpen;
+			_entryPrice = price;
 		}
-	}
-
-	private void CancelProtectionOrders()
-	{
-		// Cancel any leftover protective orders before placing new ones.
-		if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
-			CancelOrder(_stopOrder);
-
-		if (_takeOrder != null && _takeOrder.State == OrderStates.Active)
-			CancelOrder(_takeOrder);
-
-		_stopOrder = null;
-		_takeOrder = null;
 	}
 }

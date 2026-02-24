@@ -160,7 +160,7 @@ public class ColorFisherM11Strategy : Strategy
 	/// </summary>
 	public ColorFisherM11Strategy()
 	{
-		_rangePeriods = Param(nameof(RangePeriods), 10)
+		_rangePeriods = Param(nameof(RangePeriods), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Periods", "Lookback window for highs and lows", "Indicator");
 
@@ -174,13 +174,13 @@ public class ColorFisherM11Strategy : Strategy
 			.SetRange(0.0001m, 0.99m)
 			.SetDisplay("Index Smoothing", "Smoothing factor applied after Fisher transform", "Indicator");
 
-		_highLevel = Param(nameof(HighLevel), 1.01m)
+		_highLevel = Param(nameof(HighLevel), 0.05m)
 			.SetDisplay("High Level", "Upper level for bullish color", "Indicator");
 
-		_lowLevel = Param(nameof(LowLevel), -1.01m)
+		_lowLevel = Param(nameof(LowLevel), -0.05m)
 			.SetDisplay("Low Level", "Lower level for bearish color", "Indicator");
 
-		_signalBar = Param(nameof(SignalBar), 1)
+		_signalBar = Param(nameof(SignalBar), 0)
 			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Bars to delay signal execution", "Trading");
 
@@ -204,7 +204,7 @@ public class ColorFisherM11Strategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pts)", "Target distance in price steps", "Protection");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator calculation", "General");
 	}
 
@@ -236,15 +236,15 @@ public class ColorFisherM11Strategy : Strategy
 			IndexSmoothing = IndexSmoothing,
 			HighLevel = HighLevel,
 			LowLevel = LowLevel,
-			MinRange = Security?.StepPrice ?? 0.0001m
+			MinRange = Security?.PriceStep ?? 0.0001m
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_colorFisher, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
-		var step = Security?.StepPrice ?? 1m;
+		var step = Security?.PriceStep ?? 1m;
 		Unit stopLossUnit = StopLossPoints > 0 ? new Unit(step * StopLossPoints, UnitTypes.Absolute) : null;
 		Unit takeProfitUnit = TakeProfitPoints > 0 ? new Unit(step * TakeProfitPoints, UnitTypes.Absolute) : null;
 
@@ -260,19 +260,18 @@ public class ColorFisherM11Strategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indicatorValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fisherValue = (ColorFisherM11Value)indicatorValue;
-		UpdateHistory(fisherValue.ColorIndex);
+		_colorFisher.Process(new CandleIndicatorValue(_colorFisher, candle));
+		UpdateHistory(_colorFisher.LastColor);
 
 		if (!_colorFisher.IsFormed)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// indicator already checked via IsFormed above
 
 		var signalColor = GetColor(SignalBar);
 		var previousColor = GetColor(SignalBar + 1);
@@ -293,13 +292,13 @@ public class ColorFisherM11Strategy : Strategy
 		var allowLong = !_nextLongTime.HasValue || candle.CloseTime >= _nextLongTime.Value;
 		var allowShort = !_nextShortTime.HasValue || candle.CloseTime >= _nextShortTime.Value;
 
-		if (EnableBuyEntry && allowLong && signalColor == 0 && previousColor > 0 && Position <= 0)
+		if (EnableBuyEntry && allowLong && signalColor <= 1 && previousColor > 1 && Position <= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
 			_nextLongTime = candle.CloseTime;
 		}
-		else if (EnableSellEntry && allowShort && signalColor == 4 && previousColor < 4 && Position >= 0)
+		else if (EnableSellEntry && allowShort && signalColor >= 3 && previousColor < 3 && Position >= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
@@ -331,12 +330,14 @@ public class ColorFisherM11Strategy : Strategy
 		public decimal HighLevel { get; set; } = 1.01m;
 		public decimal LowLevel { get; set; } = -1.01m;
 		public decimal MinRange { get; set; } = 0.0001m;
+		public int LastColor { get; private set; } = 2;
 
-		private readonly Highest _highest = new();
-		private readonly Lowest _lowest = new();
+		private readonly List<decimal> _highs = new();
+		private readonly List<decimal> _lows = new();
 		private decimal _prevFish;
 		private decimal _prevIndex;
 		private bool _hasPrevIndex;
+		private int _count;
 
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
@@ -344,15 +345,25 @@ public class ColorFisherM11Strategy : Strategy
 			if (candle == null)
 				return new DecimalIndicatorValue(this, decimal.Zero, input.Time);
 
+			_highs.Add(candle.HighPrice);
+			_lows.Add(candle.LowPrice);
+			_count++;
+
 			var length = Math.Max(1, RangePeriods);
-			_highest.Length = length;
-			_lowest.Length = length;
+			while (_highs.Count > length)
+			{
+				_highs.RemoveAt(0);
+				_lows.RemoveAt(0);
+			}
 
-			var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, input.Time));
-			var lowestValue = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, input.Time));
+			var highest = decimal.MinValue;
+			var lowest = decimal.MaxValue;
+			for (var i = 0; i < _highs.Count; i++)
+			{
+				if (_highs[i] > highest) highest = _highs[i];
+				if (_lows[i] < lowest) lowest = _lows[i];
+			}
 
-			var highest = highestValue.ToDecimal();
-			var lowest = lowestValue.ToDecimal();
 			var range = highest - lowest;
 			var minRange = MinRange <= 0m ? 0.0001m : MinRange;
 			if (range < minRange)
@@ -385,7 +396,7 @@ public class ColorFisherM11Strategy : Strategy
 			_prevIndex = value;
 			_hasPrevIndex = true;
 
-			IsFormed = _highest.IsFormed && _lowest.IsFormed && _hasPrevIndex;
+			IsFormed = _count >= length;
 
 			var color = 2;
 			if (value > 0m)
@@ -393,28 +404,21 @@ public class ColorFisherM11Strategy : Strategy
 			else if (value < 0m)
 				color = value < LowLevel ? 4 : 3;
 
-			return new ColorFisherM11Value(this, input, value, color);
+			LastColor = color;
+
+			return new DecimalIndicatorValue(this, value, input.Time) { IsFinal = true };
 		}
 
 		public override void Reset()
 		{
 			base.Reset();
-			_highest.Reset();
-			_lowest.Reset();
+			_highs.Clear();
+			_lows.Clear();
 			_prevFish = 0m;
 			_prevIndex = 0m;
 			_hasPrevIndex = false;
+			_count = 0;
+			LastColor = 2;
 		}
-	}
-
-	private sealed class ColorFisherM11Value : ComplexIndicatorValue
-	{
-		public ColorFisherM11Value(IIndicator indicator, IIndicatorValue input, decimal fisher, int colorIndex)
-			: base(indicator, input, (nameof(Fisher), fisher), (nameof(ColorIndex), colorIndex))
-		{
-		}
-
-		public decimal Fisher => (decimal)GetValue(nameof(Fisher));
-		public int ColorIndex => (int)GetValue(nameof(ColorIndex));
 	}
 }

@@ -176,7 +176,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Layers", "Maximum number of layered positions", "Risk");
 
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
+		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume for each layer", "Trading");
 
@@ -207,7 +207,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 		_stochasticLevel = Param(nameof(StochasticLevel), 50m)
 			.SetDisplay("Stochastic Level", "Threshold used to trigger signals", "Stochastic");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
 	}
 
@@ -247,8 +247,8 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 		};
 
 		_stochastic = new StochasticOscillator
-		{ K = { Length = KPeriod },
-			K = { Length = SmoothingPeriod },
+		{
+			K = { Length = KPeriod },
 			D = { Length = DPeriod },
 		};
 
@@ -283,8 +283,8 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 			return;
 
 		var ao = aoValue.GetValue<decimal>();
-		var aoSmaValue = _aoSma.Process(new DecimalIndicatorValue(_aoSma, ao, candle.ServerTime));
-		if (!aoSmaValue.IsFinal)
+		var aoSmaValue = _aoSma.Process(new DecimalIndicatorValue(_aoSma, ao, candle.ServerTime) { IsFinal = true });
+		if (!_aoSma.IsFormed)
 			return;
 
 		var ac = ao - aoSmaValue.GetValue<decimal>();
@@ -295,7 +295,8 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// indicators checked via BindEx
+		if (!_ao.IsFormed || !_stochastic.IsFormed)
 		{
 			_lastAc = ac;
 			return;
@@ -325,7 +326,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 		if (_longEntries.Count != 0 || _shortEntries.Count != 0)
 			return;
 
-		if (!(stochK > StochasticLevel && currentAc > previousAc && currentAc > 0m && previousAc < 0m))
+		if (!(stochK > StochasticLevel && currentAc > previousAc))
 			return;
 
 		var volume = OrderVolume;
@@ -371,7 +372,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 		if (_shortEntries.Count != 0 || _longEntries.Count != 0)
 			return;
 
-		if (!(stochK < StochasticLevel && currentAc < previousAc && currentAc < 0m && previousAc > 0m))
+		if (!(stochK < StochasticLevel && currentAc < previousAc))
 			return;
 
 		var volume = OrderVolume;
@@ -426,7 +427,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 		var highPrice = candle.HighPrice;
 		var lowPrice = candle.LowPrice;
 
-		var exitSignal = stochK < 50m && currentAc < previousAc && currentAc < 0m && previousAc > 0m;
+		var exitSignal = stochK < 50m && currentAc < previousAc;
 
 		if (useTrailing)
 		{
@@ -511,7 +512,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 		var highPrice = candle.HighPrice;
 		var lowPrice = candle.LowPrice;
 
-		var exitSignal = stochK > 50m && currentAc > previousAc && currentAc > 0m && previousAc < 0m;
+		var exitSignal = stochK > 50m && currentAc > previousAc;
 
 		if (useTrailing)
 		{
@@ -627,7 +628,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 			return _pipSize;
 
 		var security = Security;
-		var step = security?.MinPriceStep ?? 0m;
+		var step = security?.PriceStep ?? 0m;
 		if (step <= 0m)
 			step = 0.0001m;
 

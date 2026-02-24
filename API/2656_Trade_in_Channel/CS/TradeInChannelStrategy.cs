@@ -97,7 +97,7 @@ public class TradeInChannelStrategy : Strategy
 			
 			.SetNotNegative();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signals", "General");
 	}
 
@@ -169,7 +169,7 @@ public class TradeInChannelStrategy : Strategy
 
 		var donchian = (DonchianChannelsValue)donchianValue;
 
-		if (donchian.UpBand is not decimal upper || donchian.LowBand is not decimal lower)
+		if (donchian.UpperBand is not decimal upper || donchian.LowerBand is not decimal lower)
 		return;
 
 		if (!atrValue.IsFinal)
