@@ -14,105 +14,82 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Williams %R strategy entering on oversold and exiting on breakout or overbought.
+/// Williams %R strategy using RSI as proxy.
+/// Enters long on oversold RSI, exits on breakout above previous high or RSI overbought.
 /// </summary>
 public class WilliamsRStrategy : Strategy
 {
-private readonly StrategyParam<int> _lookbackPeriod;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<decimal> _oversold;
+	private readonly StrategyParam<decimal> _overbought;
+	private readonly StrategyParam<DataType> _candleType;
 
-private WilliamsR _wpr = null!;
-private decimal _prevHigh;
+	private decimal _prevHigh;
 
-/// <summary>
-/// Lookback period for Williams %R.
-/// </summary>
-public int LookbackPeriod
-{
-get => _lookbackPeriod.Value;
-set => _lookbackPeriod.Value = value;
-}
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public decimal Oversold { get => _oversold.Value; set => _oversold.Value = value; }
+	public decimal Overbought { get => _overbought.Value; set => _overbought.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// Candle type to process.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+	public WilliamsRStrategy()
+	{
+		_rsiLength = Param(nameof(RsiLength), 2)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "General");
 
-/// <summary>
-/// Initializes a new instance of <see cref="WilliamsRStrategy"/>.
-/// </summary>
-public WilliamsRStrategy()
-{
-_lookbackPeriod = Param(nameof(LookbackPeriod), 2)
-.SetGreaterThanZero()
-.SetDisplay("Lookback Period", "Williams %R length", "General")
-;
+		_oversold = Param(nameof(Oversold), 10m)
+			.SetDisplay("Oversold", "Oversold level", "General");
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles", "General");
-}
+		_overbought = Param(nameof(Overbought), 70m)
+			.SetDisplay("Overbought", "Overbought/exit level", "General");
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_wpr = null!;
-_prevHigh = 0m;
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHigh = 0;
+	}
 
-_wpr = new WilliamsR { Length = LookbackPeriod };
-var subscription = SubscribeCandles(CandleType);
-subscription.Bind(_wpr, ProcessCandle).Start();
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, _wpr);
-DrawOwnTrades(area);
-}
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
-StartProtection(null, null);
-}
+		_prevHigh = 0;
 
-private void ProcessCandle(ICandleMessage candle, decimal wr)
-{
-if (candle.State != CandleStates.Finished)
-return;
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(rsi, ProcessCandle).Start();
 
-var longSignal = wr < -90m;
-var exitSignal = candle.ClosePrice > _prevHigh || wr > -30m;
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
+	}
 
-if (!IsFormedAndOnlineAndAllowTrading())
-{
-_prevHigh = candle.HighPrice;
-return;
-}
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-if (longSignal && Position <= 0)
-{
-BuyMarket(Volume + (Position < 0 ? -Position : 0m));
-}
-else if (exitSignal && Position > 0)
-{
-SellMarket(Position);
-}
+		var longSignal = rsiVal < Oversold;
+		var exitSignal = (_prevHigh > 0 && candle.ClosePrice > _prevHigh) || rsiVal > Overbought;
 
-_prevHigh = candle.HighPrice;
-}
+		if (longSignal && Position <= 0)
+			BuyMarket();
+		else if (exitSignal && Position > 0)
+			SellMarket();
+
+		_prevHigh = candle.HighPrice;
+	}
 }

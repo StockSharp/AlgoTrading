@@ -19,193 +19,105 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class WeightedIchimokuStrategy : Strategy
 {
-private readonly StrategyParam<int> _tenkanPeriod;
-private readonly StrategyParam<int> _kijunPeriod;
-private readonly StrategyParam<int> _senkouSpanBPeriod;
-private readonly StrategyParam<int> _offset;
-private readonly StrategyParam<decimal> _buyThreshold;
-private readonly StrategyParam<bool> _useSellThreshold;
-private readonly StrategyParam<decimal> _sellThreshold;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _tenkanPeriod;
+	private readonly StrategyParam<int> _kijunPeriod;
+	private readonly StrategyParam<int> _senkouSpanBPeriod;
+	private readonly StrategyParam<decimal> _buyThreshold;
+	private readonly StrategyParam<decimal> _sellThreshold;
+	private readonly StrategyParam<DataType> _candleType;
 
-/// <summary>
-/// Tenkan-sen period.
-/// </summary>
-public int TenkanPeriod
-{
-get => _tenkanPeriod.Value;
-set => _tenkanPeriod.Value = value;
-}
+	public int TenkanPeriod { get => _tenkanPeriod.Value; set => _tenkanPeriod.Value = value; }
+	public int KijunPeriod { get => _kijunPeriod.Value; set => _kijunPeriod.Value = value; }
+	public int SenkouSpanBPeriod { get => _senkouSpanBPeriod.Value; set => _senkouSpanBPeriod.Value = value; }
+	public decimal BuyThreshold { get => _buyThreshold.Value; set => _buyThreshold.Value = value; }
+	public decimal SellThreshold { get => _sellThreshold.Value; set => _sellThreshold.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// Kijun-sen period.
-/// </summary>
-public int KijunPeriod
-{
-get => _kijunPeriod.Value;
-set => _kijunPeriod.Value = value;
-}
+	public WeightedIchimokuStrategy()
+	{
+		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("Tenkan Period", "Tenkan length", "Ichimoku");
 
-/// <summary>
-/// Senkou Span B period.
-/// </summary>
-public int SenkouSpanBPeriod
-{
-get => _senkouSpanBPeriod.Value;
-set => _senkouSpanBPeriod.Value = value;
-}
+		_kijunPeriod = Param(nameof(KijunPeriod), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Kijun Period", "Kijun length", "Ichimoku");
 
-/// <summary>
-/// Offset for leading spans.
-/// </summary>
-public int Offset
-{
-get => _offset.Value;
-set => _offset.Value = value;
-}
+		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
+			.SetGreaterThanZero()
+			.SetDisplay("Senkou B Period", "Span B length", "Ichimoku");
 
-/// <summary>
-/// Buy threshold for combined score.
-/// </summary>
-public decimal BuyThreshold
-{
-get => _buyThreshold.Value;
-set => _buyThreshold.Value = value;
-}
+		_buyThreshold = Param(nameof(BuyThreshold), 40m)
+			.SetDisplay("Buy Threshold", "Score to enter long", "General");
 
-/// <summary>
-/// Use sell threshold instead of crossing zero.
-/// </summary>
-public bool UseSellThreshold
-{
-get => _useSellThreshold.Value;
-set => _useSellThreshold.Value = value;
-}
+		_sellThreshold = Param(nameof(SellThreshold), -20m)
+			.SetDisplay("Sell Threshold", "Score to exit/short", "General");
 
-/// <summary>
-/// Sell threshold for combined score.
-/// </summary>
-public decimal SellThreshold
-{
-get => _sellThreshold.Value;
-set => _sellThreshold.Value = value;
-}
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
 
-/// <summary>
-/// Candle type to process.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <summary>
-/// Initializes a new instance of <see cref="WeightedIchimokuStrategy"/>.
-/// </summary>
-public WeightedIchimokuStrategy()
-{
-_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
-.SetGreaterThanZero()
-.SetDisplay("Tenkan Period", "Tenkan length", "Ichimoku")
-;
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-_kijunPeriod = Param(nameof(KijunPeriod), 26)
-.SetGreaterThanZero()
-.SetDisplay("Kijun Period", "Kijun length", "Ichimoku")
-;
+		var ichimoku = new Ichimoku
+		{
+			Tenkan = { Length = TenkanPeriod },
+			Kijun = { Length = KijunPeriod },
+			SenkouB = { Length = SenkouSpanBPeriod }
+		};
 
-_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
-.SetGreaterThanZero()
-.SetDisplay("Senkou Span B Period", "Span B length", "Ichimoku")
-;
+		var subscription = SubscribeCandles(CandleType);
+		subscription.BindEx(ichimoku, ProcessCandle).Start();
 
-_offset = Param(nameof(Offset), 26)
-.SetGreaterThanZero()
-.SetDisplay("Offset", "Leading span offset", "Ichimoku")
-;
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ichimoku);
+			DrawOwnTrades(area);
+		}
+	}
 
-_buyThreshold = Param(nameof(BuyThreshold), 60m)
-.SetDisplay("Buy Threshold", "Score to enter long", "General")
-;
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-_useSellThreshold = Param(nameof(UseSellThreshold), true)
-.SetDisplay("Use Sell Threshold", "Enable sell threshold", "General");
+		var ichimokuValue = (IchimokuValue)value;
 
-_sellThreshold = Param(nameof(SellThreshold), -49m)
-.SetDisplay("Sell Threshold", "Score to exit", "General")
-;
+		if (ichimokuValue.Tenkan is not decimal tenkan ||
+			ichimokuValue.Kijun is not decimal kijun ||
+			ichimokuValue.SenkouA is not decimal senkouA ||
+			ichimokuValue.SenkouB is not decimal senkouB)
+		{
+			return;
+		}
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles", "General");
-}
+		var cloudTop = Math.Max(senkouA, senkouB);
+		var cloudBottom = Math.Min(senkouA, senkouB);
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+		decimal score = 0m;
+		// Tenkan/Kijun cross score
+		score += tenkan > kijun ? 25m : tenkan < kijun ? -25m : 0m;
+		// Cloud position score
+		score += candle.ClosePrice > cloudTop ? 30m : candle.ClosePrice < cloudBottom ? -30m : 0m;
+		// Price vs Kijun
+		score += candle.ClosePrice > kijun ? 15m : candle.ClosePrice < kijun ? -15m : 0m;
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
-
-var ichimoku = new Ichimoku
-{
-Tenkan = { Length = TenkanPeriod },
-Kijun = { Length = KijunPeriod },
-SenkouB = { Length = SenkouSpanBPeriod }
-};
-
-var subscription = SubscribeCandles(CandleType);
-subscription.BindEx(ichimoku, ProcessCandle).Start();
-
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, ichimoku);
-DrawOwnTrades(area);
-}
-
-StartProtection(null, null);
-}
-
-private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-var ichimokuValue = (IchimokuValue)value;
-
-if (ichimokuValue.Tenkan is not decimal tenkan ||
-ichimokuValue.Kijun is not decimal kijun ||
-ichimokuValue.SenkouA is not decimal senkouA ||
-ichimokuValue.SenkouB is not decimal senkouB)
-{
-return;
-}
-
-var cloudTop = Math.Max(senkouA, senkouB);
-var cloudBottom = Math.Min(senkouA, senkouB);
-
-decimal score = 0m;
-score += tenkan > kijun ? 25m : tenkan < kijun ? -25m : 0m;
-score += candle.ClosePrice > cloudTop ? 30m : candle.ClosePrice < cloudBottom ? -30m : 0m;
-
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
-
-if (score >= BuyThreshold && Position <= 0)
-{
-BuyMarket();
-}
-else if (Position > 0)
-{
-var exitScore = UseSellThreshold ? score <= SellThreshold : score <= 0m;
-if (exitScore)
-SellMarket(Position);
-}
-}
+		if (score >= BuyThreshold && Position <= 0)
+			BuyMarket();
+		else if (score <= SellThreshold && Position >= 0)
+			SellMarket();
+		else if (Position > 0 && score <= 0)
+			SellMarket();
+		else if (Position < 0 && score >= 0)
+			BuyMarket();
+	}
 }

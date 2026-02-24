@@ -14,174 +14,144 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Williams %R cross strategy with 200-period SMA filter and fixed targets.
+/// Williams %R cross strategy with SMA filter.
+/// Uses RSI as proxy for Williams %R. Enters on oversold/overbought crossover with SMA trend filter.
+/// Exits on percent-based TP/SL.
 /// </summary>
 public class WilliamsRCrossWith200MaFilterStrategy : Strategy
 {
-private readonly StrategyParam<int> _wrLength;
-private readonly StrategyParam<decimal> _crossThreshold;
-private readonly StrategyParam<decimal> _takeProfit;
-private readonly StrategyParam<decimal> _stopLoss;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _maLength;
+	private readonly StrategyParam<decimal> _oversold;
+	private readonly StrategyParam<decimal> _overbought;
+	private readonly StrategyParam<decimal> _stopPct;
+	private readonly StrategyParam<decimal> _tpPct;
+	private readonly StrategyParam<DataType> _candleType;
 
-private decimal _prevWr;
-private decimal _entryPrice;
+	private decimal _prevRsi;
+	private decimal _entryPrice;
+	private decimal _stopDist;
 
-/// <summary>
-/// Williams %R length.
-/// </summary>
-public int WrLength
-{
-get => _wrLength.Value;
-set => _wrLength.Value = value;
-}
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
+	public decimal Oversold { get => _oversold.Value; set => _oversold.Value = value; }
+	public decimal Overbought { get => _overbought.Value; set => _overbought.Value = value; }
+	public decimal StopPct { get => _stopPct.Value; set => _stopPct.Value = value; }
+	public decimal TpPct { get => _tpPct.Value; set => _tpPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// Threshold offset for cross detection.
-/// </summary>
-public decimal CrossThreshold
-{
-get => _crossThreshold.Value;
-set => _crossThreshold.Value = value;
-}
+	public WilliamsRCrossWith200MaFilterStrategy()
+	{
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "General");
 
-/// <summary>
-/// Take profit distance in price steps.
-/// </summary>
-public decimal TakeProfit
-{
-get => _takeProfit.Value;
-set => _takeProfit.Value = value;
-}
+		_maLength = Param(nameof(MaLength), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Length", "SMA filter period", "General");
 
-/// <summary>
-/// Stop loss distance in price steps.
-/// </summary>
-public decimal StopLoss
-{
-get => _stopLoss.Value;
-set => _stopLoss.Value = value;
-}
+		_oversold = Param(nameof(Oversold), 30m)
+			.SetDisplay("Oversold", "Oversold level", "General");
 
-/// <summary>
-/// Candle type to process.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+		_overbought = Param(nameof(Overbought), 70m)
+			.SetDisplay("Overbought", "Overbought level", "General");
 
-/// <summary>
-/// Initializes a new instance of <see cref="WilliamsRCrossWith200MaFilterStrategy"/>.
-/// </summary>
-public WilliamsRCrossWith200MaFilterStrategy()
-{
-_wrLength = Param(nameof(WrLength), 14)
-.SetGreaterThanZero()
-.SetDisplay("%R Length", "Williams %R period", "General")
-;
+		_stopPct = Param(nameof(StopPct), 0.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop %", "Stop loss percent", "Risk");
 
-_crossThreshold = Param(nameof(CrossThreshold), 10m)
-.SetDisplay("Cross Threshold", "Offset from -50 level", "General")
-;
+		_tpPct = Param(nameof(TpPct), 1m)
+			.SetGreaterThanZero()
+			.SetDisplay("TP %", "Take profit percent", "Risk");
 
-_takeProfit = Param(nameof(TakeProfit), 30m)
-.SetDisplay("Take Profit", "Profit target in steps", "General")
-;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
 
-_stopLoss = Param(nameof(StopLoss), 20m)
-.SetDisplay("Stop Loss", "Loss limit in steps", "General")
-;
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles", "General");
-}
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRsi = 0;
+		_entryPrice = 0;
+		_stopDist = 0;
+	}
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_prevWr = 0m;
-_entryPrice = 0m;
-}
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var sma = new SimpleMovingAverage { Length = MaLength };
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+		_prevRsi = 0;
+		_entryPrice = 0;
+		_stopDist = 0;
 
-var wpr = new WilliamsR { Length = WrLength };
-var ma200 = new SMA { Length = 200 };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(rsi, sma, ProcessCandle).Start();
 
-var subscription = SubscribeCandles(CandleType);
-subscription.Bind(wpr, ma200, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
+		}
+	}
 
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, wpr);
-DrawIndicator(area, ma200);
-DrawOwnTrades(area);
-}
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal smaVal)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-StartProtection(null, null);
-}
+		// TP/SL management
+		if (Position > 0 && _entryPrice > 0 && _stopDist > 0)
+		{
+			if (candle.ClosePrice <= _entryPrice - _stopDist || candle.ClosePrice >= _entryPrice + _stopDist * (TpPct / StopPct))
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_stopDist = 0;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0 && _stopDist > 0)
+		{
+			if (candle.ClosePrice >= _entryPrice + _stopDist || candle.ClosePrice <= _entryPrice - _stopDist * (TpPct / StopPct))
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_stopDist = 0;
+			}
+		}
 
-private void ProcessCandle(ICandleMessage candle, decimal wr, decimal ma)
-{
-if (candle.State != CandleStates.Finished)
-{
-_prevWr = wr;
-return;
-}
+		if (_prevRsi == 0)
+		{
+			_prevRsi = rsiVal;
+			return;
+		}
 
-var thresholdLong = -50m - CrossThreshold;
-var thresholdShort = -50m + CrossThreshold;
+		// Crossover signals with MA filter
+		var enterLong = _prevRsi < Oversold && rsiVal >= Oversold && candle.ClosePrice > smaVal;
+		var enterShort = _prevRsi > Overbought && rsiVal <= Overbought && candle.ClosePrice < smaVal;
 
-var enterLong = _prevWr < thresholdLong && wr >= thresholdLong && candle.ClosePrice > ma;
-var enterShort = _prevWr > thresholdShort && wr <= thresholdShort && candle.ClosePrice < ma;
+		if (enterLong && Position <= 0)
+		{
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopDist = candle.ClosePrice * StopPct / 100m;
+		}
+		else if (enterShort && Position >= 0)
+		{
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopDist = candle.ClosePrice * StopPct / 100m;
+		}
 
-if (!IsFormedAndOnlineAndAllowTrading())
-{
-_prevWr = wr;
-return;
-}
-
-if (enterLong && Position <= 0)
-{
-var volume = Volume + (Position < 0 ? -Position : 0m);
-BuyMarket(volume);
-_entryPrice = candle.ClosePrice;
-}
-else if (enterShort && Position >= 0)
-{
-var volume = Volume + (Position > 0 ? Position : 0m);
-SellMarket(volume);
-_entryPrice = candle.ClosePrice;
-}
-else if (Position > 0)
-{
-var tp = _entryPrice + TakeProfit * Security.PriceStep;
-var sl = _entryPrice - StopLoss * Security.PriceStep;
-if (candle.ClosePrice >= tp || candle.ClosePrice <= sl)
-SellMarket(Position);
-}
-else if (Position < 0)
-{
-var tp = _entryPrice - TakeProfit * Security.PriceStep;
-var sl = _entryPrice + StopLoss * Security.PriceStep;
-if (candle.ClosePrice <= tp || candle.ClosePrice >= sl)
-BuyMarket(-Position);
-}
-
-_prevWr = wr;
-}
+		_prevRsi = rsiVal;
+	}
 }

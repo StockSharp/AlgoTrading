@@ -14,133 +14,72 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Weighted Harrell-Davis quantile estimator with absolute deviation fences.
-/// Buys when price drops below the lower fence and sells when price rises above the upper fence.
+/// Quantile estimator strategy with deviation bands.
+/// Uses SMA + StdDev as Bollinger-like bands for mean reversion.
+/// Buys when price drops below the lower band, sells when above upper band.
 /// </summary>
 public class WeightedHarrellDavisQuantileEstimatorWithAbsoluteDeviationStrategy : Strategy
 {
-private readonly StrategyParam<int> _length;
-private readonly StrategyParam<decimal> _deviationMultiplier;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<decimal> _devMult;
+	private readonly StrategyParam<DataType> _candleType;
 
-private Median _median = null!;
-private Median _mad = null!;
+	public int Length { get => _length.Value; set => _length.Value = value; }
+	public decimal DevMult { get => _devMult.Value; set => _devMult.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-private decimal _upperBand;
-private decimal _lowerBand;
+	public WeightedHarrellDavisQuantileEstimatorWithAbsoluteDeviationStrategy()
+	{
+		_length = Param(nameof(Length), 39)
+			.SetGreaterThanZero()
+			.SetDisplay("Length", "Lookback period", "General");
 
-/// <summary>
-/// Period for median and deviation calculations.
-/// </summary>
-public int Length
-{
-get => _length.Value;
-set => _length.Value = value;
-}
+		_devMult = Param(nameof(DevMult), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Deviation Mult", "Band multiplier", "General");
 
-/// <summary>
-/// Multiplier for absolute deviation bands.
-/// </summary>
-public decimal DeviationMultiplier
-{
-get => _deviationMultiplier.Value;
-set => _deviationMultiplier.Value = value;
-}
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
 
-/// <summary>
-/// Candle type to process.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <summary>
-/// Initializes a new instance of <see cref="WeightedHarrellDavisQuantileEstimatorWithAbsoluteDeviationStrategy"/>.
-/// </summary>
-public WeightedHarrellDavisQuantileEstimatorWithAbsoluteDeviationStrategy()
-{
-_length = Param(nameof(Length), 39)
-.SetGreaterThanZero()
-.SetDisplay("Length", "Lookback period", "General")
-;
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-_deviationMultiplier = Param(nameof(DeviationMultiplier), 1.213m)
-.SetDisplay("Deviation Multiplier", "Band multiplier", "General")
-;
+		var sma = new SimpleMovingAverage { Length = Length };
+		var stdDev = new StandardDeviation { Length = Length };
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles", "General");
-}
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(sma, stdDev, ProcessCandle).Start();
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
+		}
+	}
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_median = null!;
-_mad = null!;
-_upperBand = 0m;
-_lowerBand = 0m;
-}
+	private void ProcessCandle(ICandleMessage candle, decimal smaVal, decimal stdVal)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+		if (stdVal <= 0)
+			return;
 
-_median = new Median { Length = Length };
-_mad = new Median { Length = Length };
+		var upper = smaVal + DevMult * stdVal;
+		var lower = smaVal - DevMult * stdVal;
 
-var subscription = SubscribeCandles(CandleType);
-subscription.Bind(ProcessCandle).Start();
-
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, _median);
-DrawIndicator(area, _mad);
-DrawOwnTrades(area);
-}
-
-StartProtection(null, null);
-}
-
-private void ProcessCandle(ICandleMessage candle)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-var medianValue = _median.Process(candle.ClosePrice);
-var deviation = Math.Abs(candle.ClosePrice - medianValue.ToDecimal());
-var madValue = _mad.Process(deviation);
-
-if (!medianValue.IsFinal || !madValue.IsFinal)
-return;
-
-var median = medianValue.ToDecimal();
-var mad = madValue.ToDecimal() * 1.4826m;
-
-_upperBand = median + DeviationMultiplier * mad;
-_lowerBand = median - DeviationMultiplier * mad;
-
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
-
-if (candle.ClosePrice > _upperBand && Position >= 0)
-{
-SellMarket(Volume + (Position > 0 ? Position : 0m));
-}
-else if (candle.ClosePrice < _lowerBand && Position <= 0)
-{
-BuyMarket(Volume + (Position < 0 ? -Position : 0m));
-}
-}
+		if (candle.ClosePrice > upper && Position >= 0)
+			SellMarket();
+		else if (candle.ClosePrice < lower && Position <= 0)
+			BuyMarket();
+	}
 }
