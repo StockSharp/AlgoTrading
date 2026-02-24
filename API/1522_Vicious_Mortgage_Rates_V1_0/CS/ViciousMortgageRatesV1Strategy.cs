@@ -15,125 +15,100 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Vicious Mortgage Rates strategy.
-/// Combines four volatility indexes and trades on EMA cross of their product.
+/// Uses fast/slow EMA crossover with volatility filter (StdDev).
+/// Trades on EMA cross when volatility is elevated.
 /// </summary>
 public class ViciousMortgageRatesV1Strategy : Strategy
 {
-private readonly StrategyParam<int> _fastLength;
-private readonly StrategyParam<int> _slowLength;
-private readonly StrategyParam<Security> _security2;
-private readonly StrategyParam<Security> _security3;
-private readonly StrategyParam<Security> _security4;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<int> _volLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-private ExponentialMovingAverage _fastEma;
-private ExponentialMovingAverage _slowEma;
+	private decimal _prevFast;
+	private decimal _prevSlow;
 
-private decimal _close1;
-private decimal _close2;
-private decimal _close3;
-private decimal _close4;
-private bool _ready2;
-private bool _ready3;
-private bool _ready4;
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public int VolLength { get => _volLength.Value; set => _volLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
-public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-public Security Security2 { get => _security2.Value; set => _security2.Value = value; }
-public Security Security3 { get => _security3.Value; set => _security3.Value = value; }
-public Security Security4 { get => _security4.Value; set => _security4.Value = value; }
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public ViciousMortgageRatesV1Strategy()
+	{
+		_fastLength = Param(nameof(FastLength), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA length", "General");
 
-public ViciousMortgageRatesV1Strategy()
-{
-_fastLength = Param(nameof(FastLength), 8)
-.SetGreaterThanZero()
-.SetDisplay("Fast EMA", "Fast EMA length", "General")
-;
+		_slowLength = Param(nameof(SlowLength), 21)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA length", "General");
 
-_slowLength = Param(nameof(SlowLength), 21)
-.SetGreaterThanZero()
-.SetDisplay("Slow EMA", "Slow EMA length", "General")
-;
+		_volLength = Param(nameof(VolLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Vol Length", "Volatility lookback", "General");
 
-_security2 = Param(nameof(Security2), new Security())
-.SetDisplay("Symbol 2", "Second volatility index", "Securities");
-_security3 = Param(nameof(Security3), new Security())
-.SetDisplay("Symbol 3", "Third volatility index", "Securities");
-_security4 = Param(nameof(Security4), new Security())
-.SetDisplay("Symbol 4", "Fourth volatility index", "Securities");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe", "General");
+	}
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Timeframe for all securities", "General");
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+	}
 
-_fastEma = new EMA { Length = FastLength };
-_slowEma = new EMA { Length = SlowLength };
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-var mainSub = SubscribeCandles(CandleType);
-mainSub.Bind(ProcessMain).Start();
+		var fastEma = new ExponentialMovingAverage { Length = FastLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		var stdDev = new StandardDeviation { Length = VolLength };
+		var smaVol = new SimpleMovingAverage { Length = VolLength };
 
-SubscribeComponent(Security2, v => { _close2 = v; _ready2 = true; });
-SubscribeComponent(Security3, v => { _close3 = v; _ready3 = true; });
-SubscribeComponent(Security4, v => { _close4 = v; _ready4 = true; });
+		_prevFast = 0;
+		_prevSlow = 0;
 
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, mainSub);
-DrawOwnTrades(area);
-}
-}
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastEma, slowEma, stdDev, smaVol, ProcessCandle).Start();
 
-private void SubscribeComponent(Security security, Action<decimal> setter)
-{
-if (security == null)
-return;
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
+	}
 
-var sub = SubscribeCandles(CandleType, false, security);
-sub.Bind(candle =>
-{
-if (candle.State != CandleStates.Finished)
-return;
-setter(candle.ClosePrice);
-}).Start();
-}
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal stdVal, decimal smaVal)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-private void ProcessMain(ICandleMessage candle)
-{
-if (candle.State != CandleStates.Finished)
-return;
+		if (_prevFast == 0)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
 
-_close1 = candle.ClosePrice;
+		var longCross = _prevFast <= _prevSlow && fast > slow;
+		var shortCross = _prevFast >= _prevSlow && fast < slow;
 
-if (!(_ready2 && _ready3 && _ready4))
-return;
+		if (longCross && Position <= 0)
+			BuyMarket();
+		else if (shortCross && Position >= 0)
+			SellMarket();
 
-var product = _close1 * _close2 * _close3 * _close4;
-
-var fastValue = _fastEma.Process(product);
-var slowValue = _slowEma.Process(product);
-
-if (!fastValue.IsFinal || !slowValue.IsFinal)
-return;
-
-var fast = fastValue.GetValue<decimal>();
-var slow = slowValue.GetValue<decimal>();
-
-if (fast > slow && Position <= 0)
-{
-var volume = Volume + (Position < 0 ? -Position : 0m);
-BuyMarket(volume);
-}
-else if (fast < slow && Position >= 0)
-{
-var volume = Volume + (Position > 0 ? Position : 0m);
-SellMarket(volume);
-}
-}
+		_prevFast = fast;
+		_prevSlow = slow;
+	}
 }
