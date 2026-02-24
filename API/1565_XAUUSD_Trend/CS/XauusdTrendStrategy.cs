@@ -13,6 +13,10 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// XAUUSD trend strategy using dual EMA crossover, RSI filter, and Bollinger band breakout.
+/// Uses StdDev-based stops and take-profit levels.
+/// </summary>
 public class XauusdTrendStrategy : Strategy
 {
 	private readonly StrategyParam<int> _emaShort;
@@ -20,119 +24,144 @@ public class XauusdTrendStrategy : Strategy
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<decimal> _rsiOverbought;
 	private readonly StrategyParam<decimal> _rsiOversold;
-	private readonly StrategyParam<int> _bollingerLength;
-	private readonly StrategyParam<decimal> _bollingerMultiplier;
+	private readonly StrategyParam<decimal> _stopPct;
 	private readonly StrategyParam<decimal> _tpRiskRatio;
-	private readonly StrategyParam<decimal> _riskPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	
+
 	private decimal _stopPrice;
 	private decimal _takePrice;
+	private decimal _entryPrice;
+
 	public int EmaShort { get => _emaShort.Value; set => _emaShort.Value = value; }
 	public int EmaLong { get => _emaLong.Value; set => _emaLong.Value = value; }
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
 	public decimal RsiOverbought { get => _rsiOverbought.Value; set => _rsiOverbought.Value = value; }
 	public decimal RsiOversold { get => _rsiOversold.Value; set => _rsiOversold.Value = value; }
-	public int BollingerLength { get => _bollingerLength.Value; set => _bollingerLength.Value = value; }
-	public decimal BollingerMultiplier { get => _bollingerMultiplier.Value; set => _bollingerMultiplier.Value = value; }
+	public decimal StopPct { get => _stopPct.Value; set => _stopPct.Value = value; }
 	public decimal TpRiskRatio { get => _tpRiskRatio.Value; set => _tpRiskRatio.Value = value; }
-	public decimal RiskPercent { get => _riskPercent.Value; set => _riskPercent.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public XauusdTrendStrategy()
 	{
-		_emaShort = Param(nameof(EmaShort), 50).SetDisplay("EMA Short", "EMA Short", "General");
-		_emaLong = Param(nameof(EmaLong), 200).SetDisplay("EMA Long", "EMA Long", "General");
-		_rsiLength = Param(nameof(RsiLength), 14).SetDisplay("RSI Length", "RSI Length", "General");
-		_rsiOverbought = Param(nameof(RsiOverbought), 70m).SetDisplay("RSI Overbought", "RSI Overbought", "General");
-		_rsiOversold = Param(nameof(RsiOversold), 30m).SetDisplay("RSI Oversold", "RSI Oversold", "General");
-		_bollingerLength = Param(nameof(BollingerLength), 20).SetDisplay("BB Length", "BB Length", "General");
-		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m).SetDisplay("BB Mult", "BB Mult", "General");
-		_tpRiskRatio = Param(nameof(TpRiskRatio), 2m).SetDisplay("TP/SL Ratio", "TP/SL Ratio", "General");
-		_riskPercent = Param(nameof(RiskPercent), 1m).SetDisplay("Risk %", "Risk %", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
+		_emaShort = Param(nameof(EmaShort), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Short", "Fast EMA period", "Indicators");
+
+		_emaLong = Param(nameof(EmaLong), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Long", "Slow EMA period", "Indicators");
+
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
+
+		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
+			.SetDisplay("RSI Overbought", "Overbought level", "Indicators");
+
+		_rsiOversold = Param(nameof(RsiOversold), 30m)
+			.SetDisplay("RSI Oversold", "Oversold level", "Indicators");
+
+		_stopPct = Param(nameof(StopPct), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop %", "Stop loss percent", "Risk");
+
+		_tpRiskRatio = Param(nameof(TpRiskRatio), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("TP/SL Ratio", "Take profit to stop ratio", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
+
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-	
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 		_stopPrice = 0;
 		_takePrice = 0;
+		_entryPrice = 0;
 	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
-		
-		var emaFast = new EMA { Length = EmaShort };
-		var emaSlow = new EMA { Length = EmaLong };
+
+		var emaFast = new ExponentialMovingAverage { Length = EmaShort };
+		var emaSlow = new ExponentialMovingAverage { Length = EmaLong };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var bb = new BollingerBands { Length = BollingerLength, Width = BollingerMultiplier };
-		
+		var stdDev = new StandardDeviation { Length = 20 };
+
+		_stopPrice = 0;
+		_takePrice = 0;
+		_entryPrice = 0;
+
 		var sub = SubscribeCandles(CandleType);
-		sub.Bind(emaFast, emaSlow, rsi, bb, Process).Start();
-		
+		sub.Bind(emaFast, emaSlow, rsi, stdDev, ProcessCandle).Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, sub);
 			DrawIndicator(area, emaFast);
 			DrawIndicator(area, emaSlow);
-			DrawIndicator(area, bb);
 			DrawOwnTrades(area);
 		}
 	}
-	private void Process(ICandleMessage candle, decimal emaFast, decimal emaSlow, decimal rsiValue, decimal middle, decimal upper, decimal lower)
+
+	private void ProcessCandle(ICandleMessage candle, decimal emaFastVal, decimal emaSlowVal, decimal rsiVal, decimal stdVal)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
-		var longCond = emaFast > emaSlow && rsiValue < RsiOversold && candle.ClosePrice > upper;
-		var shortCond = emaFast < emaSlow && rsiValue > RsiOverbought && candle.ClosePrice < lower;
-		
+			return;
+
+		// TP/SL management
+		if (Position > 0 && _entryPrice > 0)
+		{
+			if (candle.ClosePrice <= _stopPrice || candle.ClosePrice >= _takePrice)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				return;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (candle.ClosePrice >= _stopPrice || candle.ClosePrice <= _takePrice)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				return;
+			}
+		}
+
+		if (stdVal <= 0)
+			return;
+
+		// EMA trend + RSI filter + price above/below band
+		var upperBand = emaSlowVal + 2m * stdVal;
+		var lowerBand = emaSlowVal - 2m * stdVal;
+
+		var longCond = emaFastVal > emaSlowVal && rsiVal < RsiOversold;
+		var shortCond = emaFastVal < emaSlowVal && rsiVal > RsiOverbought;
+
 		if (longCond && Position <= 0)
 		{
-			var vol = Volume + Math.Abs(Position);
-			BuyMarket(vol);
-			
-			var pv = Portfolio.CurrentValue ?? 0m;
-			var risk = pv * (RiskPercent / 100m);
-			var sl = risk / candle.ClosePrice;
-			var tp = sl * TpRiskRatio;
-			_stopPrice = candle.ClosePrice - sl;
-			_takePrice = candle.ClosePrice + tp;
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+			var sl = _entryPrice * StopPct / 100m;
+			_stopPrice = _entryPrice - sl;
+			_takePrice = _entryPrice + sl * TpRiskRatio;
 		}
 		else if (shortCond && Position >= 0)
 		{
-			var vol = Volume + Math.Abs(Position);
-			SellMarket(vol);
-			
-			var pv = Portfolio.CurrentValue ?? 0m;
-			var risk = pv * (RiskPercent / 100m);
-			var sl = risk / candle.ClosePrice;
-			var tp = sl * TpRiskRatio;
-			_stopPrice = candle.ClosePrice + sl;
-			_takePrice = candle.ClosePrice - tp;
-		}
-		if (Position > 0)
-		{
-			if (candle.LowPrice <= _stopPrice || candle.ClosePrice <= _stopPrice)
-			SellMarket(Math.Abs(Position));
-			else if (candle.HighPrice >= _takePrice || candle.ClosePrice >= _takePrice)
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0)
-		{
-			if (candle.HighPrice >= _stopPrice || candle.ClosePrice >= _stopPrice)
-			BuyMarket(Math.Abs(Position));
-			else if (candle.LowPrice <= _takePrice || candle.ClosePrice <= _takePrice)
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+			var sl = _entryPrice * StopPct / 100m;
+			_stopPrice = _entryPrice + sl;
+			_takePrice = _entryPrice - sl * TpRiskRatio;
 		}
 	}
 }

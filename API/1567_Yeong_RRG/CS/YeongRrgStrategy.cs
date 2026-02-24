@@ -11,215 +11,136 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using Ecng.ComponentModel;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Yeong Relative Rotation Graph strategy.
-/// Uses normalized relative strength and momentum to trade.
+/// Uses normalized relative strength (price vs SMA) and momentum
+/// to classify market into quadrants and trade accordingly.
 /// </summary>
 public class YeongRrgStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<Security> _indexSecurity;
 
-	private SimpleMovingAverage _rsSma;
-	private RateOfChange _rsRoc;
-	private SimpleMovingAverage _rsRatioMean;
-	private StandardDeviation _rsRatioStd;
-	private SimpleMovingAverage _rmRatioMean;
-	private StandardDeviation _rmRatioStd;
+	private readonly List<decimal> _rsRatioHistory = new();
+	private readonly List<decimal> _rmRatioHistory = new();
+	private decimal _prevRsRatio;
 
-	private decimal _lastIndexClose;
-        private States _state = States.None;
+	public int Length { get => _length.Value; set => _length.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Period used for calculations.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Index security for relative strength.
-	/// </summary>
-	public Security IndexSecurity
-	{
-		get => _indexSecurity.Value;
-		set => _indexSecurity.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="YeongRrgStrategy"/>.
-	/// </summary>
 	public YeongRrgStrategy()
 	{
 		_length = Param(nameof(Length), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Length", "Period for SMA and ROC calculations", "Indicators")
-			
-			.SetOptimize(10, 30, 2);
+			.SetDisplay("Length", "Period for calculations", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_indexSecurity = Param<Security>(nameof(IndexSecurity))
-			.SetDisplay("Index Security", "Security used as benchmark", "General")
-			.SetRequired();
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return
-		[
-			(Security, CandleType),
-			(IndexSecurity, CandleType)
-		];
+		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_rsSma = null;
-		_rsRoc = null;
-		_rsRatioMean = null;
-		_rsRatioStd = null;
-		_rmRatioMean = null;
-		_rmRatioStd = null;
-		_lastIndexClose = 0m;
-                _state = States.None;
+		_rsRatioHistory.Clear();
+		_rmRatioHistory.Clear();
+		_prevRsRatio = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (IndexSecurity == null)
-			throw new InvalidOperationException("Index security is not specified.");
+		var sma = new SimpleMovingAverage { Length = Length };
 
-		_rsSma = new SMA { Length = Length };
-		_rsRoc = new RateOfChange { Length = Length };
-		_rsRatioMean = new SMA { Length = Length };
-		_rsRatioStd = new StandardDeviation { Length = Length };
-		_rmRatioMean = new SMA { Length = Length };
-		_rmRatioStd = new StandardDeviation { Length = Length };
+		_rsRatioHistory.Clear();
+		_rmRatioHistory.Clear();
+		_prevRsRatio = 0;
 
-		var mainSubscription = SubscribeCandles(CandleType);
-		var indexSubscription = SubscribeCandles(CandleType, security: IndexSecurity);
-
-		mainSubscription
-			.Bind(ProcessMainCandle)
-			.Start();
-
-		indexSubscription
-			.Bind(ProcessIndexCandle)
-			.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(sma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, mainSubscription);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessIndexCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_lastIndexClose = candle.ClosePrice;
-	}
-
-	private void ProcessMainCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
+		if (smaVal <= 0)
 			return;
 
-		if (_lastIndexClose == 0m)
+		// RS ratio: price relative to its SMA (like relative strength vs benchmark)
+		var rsRatio = (candle.ClosePrice / smaVal) * 100m;
+
+		_rsRatioHistory.Add(rsRatio);
+		if (_rsRatioHistory.Count > Length * 3)
+			_rsRatioHistory.RemoveAt(0);
+
+		// RM ratio: momentum of RS ratio
+		decimal rmRatio;
+		if (_prevRsRatio > 0)
+			rmRatio = rsRatio - _prevRsRatio;
+		else
+			rmRatio = 0;
+
+		_prevRsRatio = rsRatio;
+
+		_rmRatioHistory.Add(rmRatio);
+		if (_rmRatioHistory.Count > Length * 3)
+			_rmRatioHistory.RemoveAt(0);
+
+		if (_rsRatioHistory.Count < Length || _rmRatioHistory.Count < Length)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// Normalize RS ratio
+		var rsMean = _rsRatioHistory.Skip(_rsRatioHistory.Count - Length).Average();
+		var rsStd = StdDev(_rsRatioHistory.Skip(_rsRatioHistory.Count - Length));
+		if (rsStd == 0) rsStd = 1;
 
-		var stockClose = candle.ClosePrice;
-		var rs = (stockClose / _lastIndexClose) * 100m;
+		// Normalize RM ratio
+		var rmMean = _rmRatioHistory.Skip(_rmRatioHistory.Count - Length).Average();
+		var rmStd = StdDev(_rmRatioHistory.Skip(_rmRatioHistory.Count - Length));
+		if (rmStd == 0) rmStd = 1;
 
-		var rsRatioValue = _rsSma.Process(new DecimalIndicatorValue(_rsSma, rs, candle.ServerTime));
-		if (!_rsSma.IsFormed)
-			return;
-		var rsRatio = rsRatioValue.ToDecimal();
+		var jdkRs = 100m + ((rsRatio - rsMean) / rsStd);
+		var jdkRm = 100m + ((rmRatio - rmMean) / rmStd);
 
-		var rmRatioValue = _rsRoc.Process(new DecimalIndicatorValue(_rsRoc, rsRatio, candle.ServerTime));
-		if (!_rsRoc.IsFormed)
-			return;
-		var rmRatio = rmRatioValue.ToDecimal();
-
-		var meanRsRatioValue = _rsRatioMean.Process(new DecimalIndicatorValue(_rsRatioMean, rsRatio, candle.ServerTime));
-		var stdRsRatioValue = _rsRatioStd.Process(new DecimalIndicatorValue(_rsRatioStd, rsRatio, candle.ServerTime));
-		var meanRmRatioValue = _rmRatioMean.Process(new DecimalIndicatorValue(_rmRatioMean, rmRatio, candle.ServerTime));
-		var stdRmRatioValue = _rmRatioStd.Process(new DecimalIndicatorValue(_rmRatioStd, rmRatio, candle.ServerTime));
-
-		if (!_rsRatioMean.IsFormed || !_rsRatioStd.IsFormed || !_rmRatioMean.IsFormed || !_rmRatioStd.IsFormed)
-			return;
-
-		var meanRsRatio = meanRsRatioValue.ToDecimal();
-		var stdRsRatio = stdRsRatioValue.ToDecimal();
-		var meanRmRatio = meanRmRatioValue.ToDecimal();
-		var stdRmRatio = stdRmRatioValue.ToDecimal();
-
-		if (stdRsRatio == 0m || stdRmRatio == 0m)
-			return;
-
-		var jdkRs = 100m + ((rsRatio - meanRsRatio) / stdRsRatio + 1m);
-		var jdkRm = 100m + ((rmRatio - meanRmRatio) / stdRmRatio + 1m);
-
-                if (jdkRs > 100m && jdkRm > 100m)
-                        _state = States.Green;
-                else if (jdkRs > 100m && jdkRm < 100m)
-                        _state = States.Yellow;
-                else if (jdkRs < 100m && jdkRm < 100m)
-                        _state = States.Red;
-                else if (jdkRs < 100m && jdkRm > 100m)
-                        _state = States.Blue;
-
-                var buySignal = _state == States.Green && candle.ServerTime.Year >= 2010;
-                var sellSignal = _state == States.Red;
+		// Quadrant classification
+		// Green: RS > 100 && RM > 100 (leading)
+		// Red: RS < 100 && RM < 100 (lagging)
+		var buySignal = jdkRs > 100m && jdkRm > 100m;
+		var sellSignal = jdkRs < 100m && jdkRm < 100m;
 
 		if (buySignal && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 		}
 		else if (sellSignal && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 	}
 
-        private enum States
+	private static decimal StdDev(IEnumerable<decimal> values)
 	{
-		None,
-		Green,
-		Yellow,
-		Red,
-		Blue
+		var list = values.ToList();
+		if (list.Count < 2) return 0;
+		var mean = list.Average();
+		var sumSq = list.Sum(v => (v - mean) * (v - mean));
+		return (decimal)Math.Sqrt((double)(sumSq / list.Count));
 	}
 }
