@@ -60,7 +60,7 @@ public class Up3x1InvestorStrategy : Strategy
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetDisplay("Trailing Step (pips)", "Increment required to move trailing stop", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for signals", "General");
 	}
 
@@ -97,10 +97,8 @@ public class Up3x1InvestorStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// If there is an open position without cached information, initialize tracking from broker data.
-		if (Position != 0 && _entryPrice == null && PositionPrice != 0)
-			InitializePositionTracking(PositionPrice);
-		else if (Position == 0 && _entryPrice != null)
+		// If position was closed externally, reset tracking.
+		if (Position == 0 && _entryPrice != null)
 			ResetPositionTracking();
 
 		var pipSize = GetPipSize();
@@ -119,11 +117,7 @@ public class Up3x1InvestorStrategy : Strategy
 			}
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousCandle = candle;
-			return;
-		}
+		// no indicators bound, skip IsFormedAndOnlineAndAllowTrading
 
 		if (Position != 0)
 		{

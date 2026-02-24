@@ -137,7 +137,7 @@ public class LastZz50Strategy : Strategy
 		// Store new pivot if zigzag returned a value
 		if (result is ZigZagIndicatorValue zzVal && !zzVal.IsEmpty)
 		{
-			var pivotPrice = zzVal.GetValue<decimal>();
+			var pivotPrice = zzVal.ToDecimal();
 			if (pivotPrice > 0)
 			{
 				// Update or add pivot

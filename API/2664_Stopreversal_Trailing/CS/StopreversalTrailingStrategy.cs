@@ -11,8 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -49,7 +47,7 @@ public class StopreversalTrailingStrategy : Strategy
 	/// </summary>
 	public StopreversalTrailingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Stopreversal timeframe", "General");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 15)
@@ -248,7 +246,7 @@ public class StopreversalTrailingStrategy : Strategy
 			BuySignal = buySignal,
 			SellSignal = sellSignal,
 			ClosePrice = candle.ClosePrice,
-			Time = candle.CloseTime ?? candle.OpenTime
+			Time = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime
 		});
 
 		TrimSignals();
@@ -261,7 +259,7 @@ public class StopreversalTrailingStrategy : Strategy
 		return;
 
 		var signal = _signals[index];
-		var allowTrading = IsFormedAndOnlineAndAllowTrading();
+		var allowTrading = _atr.IsFormed;
 
 		ExecuteSignal(signal, allowTrading);
 	}
@@ -395,10 +393,6 @@ public class StopreversalTrailingStrategy : Strategy
 		var step = Security?.PriceStep;
 		if (step is decimal s && s > 0)
 		return s;
-
-		step = Security?.MinPriceStep;
-		if (step is decimal min && min > 0)
-		return min;
 
 		return 0.0001m;
 	}
