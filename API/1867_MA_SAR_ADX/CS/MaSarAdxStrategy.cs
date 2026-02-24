@@ -68,7 +68,7 @@ public class MaSarAdxStrategy : Strategy
 
 		StartProtection(null, null);
 
-		var sma = new SMA { Length = MaPeriod };
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		var sar = new ParabolicSar
 		{
@@ -104,9 +104,6 @@ public class MaSarAdxStrategy : Strategy
 		if (!maValue.IsFinal || !sarValue.IsFinal || !adxValue.IsFinal)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var price = candle.ClosePrice;
 		var ma = maValue.ToDecimal();
 		var sar = sarValue.ToDecimal();
@@ -126,12 +123,12 @@ public class MaSarAdxStrategy : Strategy
 		else if (Position > 0)
 		{
 			if (price < sar)
-				ClosePosition();
+				SellMarket();
 		}
 		else
 		{
 			if (price > sar)
-				ClosePosition();
+				BuyMarket();
 		}
 	}
 }

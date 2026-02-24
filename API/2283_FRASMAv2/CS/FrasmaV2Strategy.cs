@@ -1,91 +1,39 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Fractal Adaptive Simple Moving Average (FRASMAv2).
-/// Opens long when indicator changes from bullish to neutral or bearish.
-/// Opens short when indicator changes from bearish to neutral or bullish.
+/// Computes FRAMA from fractal dimension, trades on color (slope direction) changes.
 /// </summary>
 public class FrasmaV2Strategy : Strategy
 {
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
 
 	private bool _isFirst;
 	private decimal _prevFrama;
 	private int _prevColor;
 
-	/// <summary>
-	/// FRAMA calculation period.
-	/// </summary>
-	public int Period
-	{
-		get => _period.Value;
-		set => _period.Value = value;
-	}
+	public int Period { get => _period.Value; set => _period.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="FrasmaV2Strategy"/>.
-	/// </summary>
 	public FrasmaV2Strategy()
 	{
 		_period = Param(nameof(Period), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "FRAMA calculation period", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_takeProfit = Param(nameof(TakeProfit), 2000m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit in points", "Risk");
-
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss in points", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -95,19 +43,13 @@ public class FrasmaV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnReseted();
+		base.OnStarted2(time);
 
 		_isFirst = true;
 		_prevFrama = 0;
 		_prevColor = 1;
-	}
-
-	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
-	{
-		base.OnStarted2(time);
 
 		var fdi = new FractalDimension { Length = Period };
 
@@ -122,10 +64,6 @@ public class FrasmaV2Strategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(
-			new Unit(TakeProfit, UnitTypes.Point),
-			new Unit(StopLoss, UnitTypes.Point));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fdiValue)
@@ -138,6 +76,8 @@ public class FrasmaV2Strategy : Strategy
 
 		var fdi = fdiValue.GetValue<decimal>();
 		var alpha = (decimal)Math.Exp(-4.6 * ((double)fdi - 1.0));
+		alpha = Math.Max(0.01m, Math.Min(1m, alpha));
+
 		var price = candle.ClosePrice;
 		var frama = _isFirst ? price : alpha * price + (1 - alpha) * _prevFrama;
 
@@ -148,39 +88,18 @@ public class FrasmaV2Strategy : Strategy
 			_isFirst = false;
 		}
 		else if (frama > _prevFrama)
-		{
 			color = 0; // Uptrend
-		}
 		else if (frama < _prevFrama)
-		{
 			color = 2; // Downtrend
-		}
 		else
-		{
 			color = 1; // Flat
-		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevFrama = frama;
-			_prevColor = color;
-			return;
-		}
-
-		if (_prevColor == 0 && color > 0)
-		{
-			if (Position < 0)
-				ClosePosition();
-			if (Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (_prevColor == 2 && color < 2)
-		{
-			if (Position > 0)
-				ClosePosition();
-			if (Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-		}
+		// Uptrend ended (color was 0, now > 0) -> sell signal
+		if (_prevColor == 0 && color > 0 && Position >= 0)
+			SellMarket();
+		// Downtrend ended (color was 2, now < 2) -> buy signal
+		else if (_prevColor == 2 && color < 2 && Position <= 0)
+			BuyMarket();
 
 		_prevFrama = frama;
 		_prevColor = color;

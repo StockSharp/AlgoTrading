@@ -11,8 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -141,7 +139,7 @@ public class MaLWorldStrategy : Strategy
 
 		_fastMa = new WeightedMovingAverage { Length = FastMaLength };
 		_slowMa = new WeightedMovingAverage { Length = SlowMaLength };
-		_trailingMa = new EMA { Length = TrailingMaPeriod };
+		_trailingMa = new ExponentialMovingAverage { Length = TrailingMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_fastMa, _slowMa, _trailingMa, ProcessCandle).Start();
@@ -169,9 +167,6 @@ public class MaLWorldStrategy : Strategy
 		if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_trailingMa.IsFormed)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!_initialized)
 		{
 			_prevFast = fast;
@@ -184,16 +179,22 @@ public class MaLWorldStrategy : Strategy
 		var crossDown = _prevFast >= _prevSlow && fast < slow;
 
 		if (crossUp && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
 		else if (crossDown && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
 
 		_prevFast = fast;
 		_prevSlow = slow;
 
 		if (Position > 0 && candle.LowPrice <= trail)
-			SellMarket(Position);
+			SellMarket();
 		else if (Position < 0 && candle.HighPrice >= trail)
-			BuyMarket(-Position);
+			BuyMarket();
 	}
 }

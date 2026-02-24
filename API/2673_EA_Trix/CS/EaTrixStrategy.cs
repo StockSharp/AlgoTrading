@@ -209,13 +209,13 @@ public class EaTrixStrategy : Strategy
 
 		StartProtection(null, null);
 
-		_trixEma1 = new EMA { Length = EmaPeriod };
-		_trixEma2 = new EMA { Length = EmaPeriod };
-		_trixEma3 = new EMA { Length = EmaPeriod };
+		_trixEma1 = new ExponentialMovingAverage { Length = EmaPeriod };
+		_trixEma2 = new ExponentialMovingAverage { Length = EmaPeriod };
+		_trixEma3 = new ExponentialMovingAverage { Length = EmaPeriod };
 
-		_signalEma1 = new EMA { Length = SignalPeriod };
-		_signalEma2 = new EMA { Length = SignalPeriod };
-		_signalEma3 = new EMA { Length = SignalPeriod };
+		_signalEma1 = new ExponentialMovingAverage { Length = SignalPeriod };
+		_signalEma2 = new ExponentialMovingAverage { Length = SignalPeriod };
+		_signalEma3 = new ExponentialMovingAverage { Length = SignalPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -247,7 +247,7 @@ public class EaTrixStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_trixEma3.IsFormed || !_signalEma3.IsFormed)
 		{
 			_prevTrix = trix;
 			_prevSignal = signal;
@@ -281,7 +281,7 @@ public class EaTrixStrategy : Strategy
 		if (_pendingSignal is null)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_trixEma3.IsFormed || !_signalEma3.IsFormed)
 			return;
 
 		ExecuteSignal(_pendingSignal.Value, candle, candle.OpenPrice);
@@ -394,17 +394,9 @@ public class EaTrixStrategy : Strategy
 		trix = 0m;
 		signal = 0m;
 
-		var ema1Value = _trixEma1.Process(new DecimalIndicatorValue(_trixEma1, candle.ClosePrice, candle.OpenTime));
-		if (ema1Value is not DecimalIndicatorValue { IsFinal: true, Value: var ema1 })
-			return false;
-
-		var ema2Value = _trixEma2.Process(new DecimalIndicatorValue(_trixEma2, ema1, candle.OpenTime));
-		if (ema2Value is not DecimalIndicatorValue { IsFinal: true, Value: var ema2 })
-			return false;
-
-		var ema3Value = _trixEma3.Process(new DecimalIndicatorValue(_trixEma3, ema2, candle.OpenTime));
-		if (ema3Value is not DecimalIndicatorValue { IsFinal: true, Value: var ema3 })
-			return false;
+		var ema1 = _trixEma1.Process(new DecimalIndicatorValue(_trixEma1, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var ema2 = _trixEma2.Process(new DecimalIndicatorValue(_trixEma2, ema1, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var ema3 = _trixEma3.Process(new DecimalIndicatorValue(_trixEma3, ema2, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (_prevThirdTrix is null)
 		{
@@ -415,17 +407,9 @@ public class EaTrixStrategy : Strategy
 		trix = _prevThirdTrix != 0m ? (ema3 - _prevThirdTrix.Value) / _prevThirdTrix.Value : 0m;
 		_prevThirdTrix = ema3;
 
-		var signal1Value = _signalEma1.Process(new DecimalIndicatorValue(_signalEma1, candle.ClosePrice, candle.OpenTime));
-		if (signal1Value is not DecimalIndicatorValue { IsFinal: true, Value: var signal1 })
-			return false;
-
-		var signal2Value = _signalEma2.Process(new DecimalIndicatorValue(_signalEma2, signal1, candle.OpenTime));
-		if (signal2Value is not DecimalIndicatorValue { IsFinal: true, Value: var signal2 })
-			return false;
-
-		var signal3Value = _signalEma3.Process(new DecimalIndicatorValue(_signalEma3, signal2, candle.OpenTime));
-		if (signal3Value is not DecimalIndicatorValue { IsFinal: true, Value: var signalBase })
-			return false;
+		var signal1 = _signalEma1.Process(new DecimalIndicatorValue(_signalEma1, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var signal2 = _signalEma2.Process(new DecimalIndicatorValue(_signalEma2, signal1, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var signalBase = _signalEma3.Process(new DecimalIndicatorValue(_signalEma3, signal2, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (_prevThirdSignal is null)
 		{

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -23,8 +20,7 @@ public class DeMarkerSignStrategy : Strategy
 	private readonly StrategyParam<decimal> _downLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevDeMarker;
-	private bool _isFirst = true;
+	private decimal? _prevDeMarker;
 
 	public int DeMarkerPeriod { get => _deMarkerPeriod.Value; set => _deMarkerPeriod.Value = value; }
 	public decimal UpLevel { get => _upLevel.Value; set => _upLevel.Value = value; }
@@ -42,24 +38,34 @@ public class DeMarkerSignStrategy : Strategy
 		_downLevel = Param(nameof(DownLevel), 0.3m)
 			.SetDisplay("Lower Level", "Buy when DeMarker rises above", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_prevDeMarker = null;
 
 		var deMarker = new DeMarker { Length = DeMarkerPeriod };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(deMarker, ProcessCandle).Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, deMarker);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal deMarker)
@@ -67,32 +73,22 @@ public class DeMarkerSignStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_isFirst)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_prevDeMarker is null)
 		{
 			_prevDeMarker = deMarker;
-			_isFirst = false;
 			return;
 		}
 
-		var buySignal = deMarker > DownLevel && _prevDeMarker <= DownLevel;
-		var sellSignal = deMarker < UpLevel && _prevDeMarker >= UpLevel;
+		// DeMarker crosses above lower level -> buy
+		if (deMarker > DownLevel && _prevDeMarker <= DownLevel && Position <= 0)
+			BuyMarket();
+		// DeMarker crosses below upper level -> sell
+		else if (deMarker < UpLevel && _prevDeMarker >= UpLevel && Position >= 0)
+			SellMarket();
+
 		_prevDeMarker = deMarker;
-
-		if (buySignal)
-		{
-			if (Position < 0)
-				ClosePosition();
-
-			if (Position == 0)
-				BuyMarket();
-		}
-		else if (sellSignal)
-		{
-			if (Position > 0)
-				ClosePosition();
-
-			if (Position == 0)
-				SellMarket();
-		}
 	}
 }

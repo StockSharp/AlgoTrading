@@ -23,114 +23,86 @@ public class TrendFollowingKnnStrategy : Strategy
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _ma;
-	private SimpleMovingAverage _changeSma;
-	private decimal? _prevClose;
+	private readonly List<decimal> _changes = new();
+	private decimal _prevClose;
 
-	/// <summary>
-	/// Number of bars for average change calculation.
-	/// </summary>
-	public int WindowSize
-	{
-		get => _windowSize.Value;
-		set => _windowSize.Value = value;
-	}
+	public int WindowSize { get => _windowSize.Value; set => _windowSize.Value = value; }
+	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Moving average length.
-	/// </summary>
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="TrendFollowingKnnStrategy"/>.
-	/// </summary>
 	public TrendFollowingKnnStrategy()
 	{
 		_windowSize = Param(nameof(WindowSize), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("Window Size", "Bars for average change", "General")
-		;
+			.SetGreaterThanZero()
+			.SetDisplay("Window Size", "Bars for average change", "General");
 
 		_maLength = Param(nameof(MaLength), 50)
-		.SetGreaterThanZero()
-		.SetDisplay("MA Length", "Moving average length", "General")
-		;
+			.SetGreaterThanZero()
+			.SetDisplay("MA Length", "Moving average length", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_ma = default;
-		_changeSma = default;
-		_prevClose = default;
+		_changes.Clear();
+		_prevClose = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ma = new SMA { Length = MaLength };
-		_changeSma = new SMA { Length = WindowSize };
+		var ma = new SimpleMovingAverage { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_ma, ProcessCandle).Start();
+		subscription.Bind(ma, ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ma);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (_prevClose == null)
+		if (_prevClose == 0)
 		{
-				_prevClose = candle.ClosePrice;
-				return;
+			_prevClose = candle.ClosePrice;
+			return;
 		}
 
-		var change = candle.ClosePrice - _prevClose.Value;
+		var change = candle.ClosePrice - _prevClose;
 		_prevClose = candle.ClosePrice;
 
-		var changeValue = _changeSma.Process(change);
-		if (!changeValue.IsFinal)
-		return;
+		_changes.Add(change);
+		if (_changes.Count > WindowSize)
+			_changes.RemoveAt(0);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		if (_changes.Count < WindowSize)
+			return;
 
-		var avgChange = changeValue.ToDecimal();
+		var avgChange = 0m;
+		for (var i = 0; i < _changes.Count; i++)
+			avgChange += _changes[i];
+		avgChange /= _changes.Count;
 
 		if (avgChange > 0 && candle.ClosePrice > maValue && Position <= 0)
-		{
-				BuyMarket();
-		}
+			BuyMarket();
 		else if (avgChange < 0 && candle.ClosePrice < maValue && Position >= 0)
-		{
-				SellMarket();
-		}
+			SellMarket();
 	}
 }

@@ -157,7 +157,7 @@ public class LiquidexStrategy : Strategy
 			return;
 
 		var kc = (KeltnerChannelsValue)keltnerValue;
-		if (kc.UpBand is not decimal upper || kc.LowBand is not decimal lower || kc.MovingAverage is not decimal middle)
+		if (kc.Upper is not decimal upper || kc.Lower is not decimal lower || kc.Middle is not decimal middle)
 			return;
 
 		var price = candle.ClosePrice;

@@ -11,9 +11,8 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
 /// <summary>
-/// Strategy trading Bollinger Band breakouts with additional RSI, EMA and MACD filters.
+/// Strategy trading Bollinger Band breakouts with additional RSI and MACD filters.
 /// Executes one trade per breakout and trails stop at the middle band.
 /// </summary>
 public class BollingerBreakoutMomentumStrategy : Strategy
@@ -32,66 +31,24 @@ public class BollingerBreakoutMomentumStrategy : Strategy
 	private decimal _takePrice;
 	private bool _hasPrev;
 
-	/// <summary>
-	/// Bollinger Bands period.
-	/// </summary>
-	public int BollingerLength
-	{
-		get => _bollingerLength.Value;
-		set => _bollingerLength.Value = value;
-	}
-
-	/// <summary>
-	/// Bollinger Bands standard deviation multiplier.
-	/// </summary>
-	public decimal BollingerDeviation
-	{
-		get => _bollingerDeviation.Value;
-		set => _bollingerDeviation.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum band width to consider a breakout.
-	/// </summary>
-	public decimal BreakoutFactor
-	{
-		get => _breakoutFactor.Value;
-		set => _breakoutFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance in pips.
-	/// </summary>
-	public int TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int BollingerLength { get => _bollingerLength.Value; set => _bollingerLength.Value = value; }
+	public decimal BollingerDeviation { get => _bollingerDeviation.Value; set => _bollingerDeviation.Value = value; }
+	public decimal BreakoutFactor { get => _breakoutFactor.Value; set => _breakoutFactor.Value = value; }
+	public int TakeProfitPips { get => _takeProfitPips.Value; set => _takeProfitPips.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public BollingerBreakoutMomentumStrategy()
 	{
 		_bollingerLength = Param(nameof(BollingerLength), 18)
 			.SetDisplay("BB Length", "Bollinger Bands length", "Parameters")
-			
 			.SetOptimize(10, 40, 2);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetDisplay("BB Deviation", "Bollinger Bands deviation", "Parameters")
-			
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_breakoutFactor = Param(nameof(BreakoutFactor), 0.0015m)
 			.SetDisplay("Breakout Factor", "Minimum width of bands", "Parameters")
-			
 			.SetOptimize(0.0005m, 0.003m, 0.0005m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
@@ -102,10 +59,15 @@ public class BollingerBreakoutMomentumStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
 		_breakoutFlag = false;
 		_prevUpper = 0m;
 		_prevLower = 0m;
@@ -126,77 +88,80 @@ public class BollingerBreakoutMomentumStrategy : Strategy
 			Width = BollingerDeviation
 		};
 
-		var ema = new EMA { Length = 3 };
-
-		var macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = 12 },
-			LongMa = { Length = 26 },
-			SignalPeriod = 9
-		};
-
+		var macd = new MovingAverageConvergenceDivergence();
 		var rsi = new RelativeStrengthIndex { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bollinger, ema, macd, rsi, ProcessCandle)
+			.BindEx(bollinger, macd, rsi, ProcessCandle)
 			.Start();
 
 		StartProtection(null, null);
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, bollinger);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal emaValue, decimal macdValue, decimal signal, decimal histogram, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue macdValue, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!bbValue.IsFinal || !macdValue.IsFinal || !rsiValue.IsFinal)
+			return;
+
+		var bb = (BollingerBandsValue)bbValue;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal middle)
+			return;
+
+		var macdVal = macdValue.ToDecimal();
+		var rsiVal = rsiValue.ToDecimal();
+		var step = Security.PriceStep ?? 1m;
+
 		var diff = upper - lower;
 
-		// Reset flag when band width contracts
 		if (_breakoutFlag && diff < BreakoutFactor)
 			_breakoutFlag = false;
 
 		if (Position > 0)
 		{
-			// Check stop or take profit for long position
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
-				ClosePosition();
-
-			// Update trailing stop to middle band
+				SellMarket();
 			_stopPrice = middle;
 		}
 		else if (Position < 0)
 		{
-			// Check stop or take profit for short position
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
-				ClosePosition();
-
-			// Update trailing stop to middle band
+				BuyMarket();
 			_stopPrice = middle;
 		}
 		else if (!_breakoutFlag && _hasPrev)
 		{
 			var breakout = diff >= BreakoutFactor;
-			var buySignal = breakout && macdValue > 0m && rsiValue > 50m && emaValue > middle && _prevClose >= _prevUpper;
-			var sellSignal = breakout && macdValue < 0m && rsiValue < 50m && emaValue < middle && _prevClose <= _prevLower;
+			var buySignal = breakout && macdVal > 0m && rsiVal > 50m && _prevClose >= _prevUpper;
+			var sellSignal = breakout && macdVal < 0m && rsiVal < 50m && _prevClose <= _prevLower;
 
 			if (buySignal)
 			{
 				BuyMarket();
 				_stopPrice = middle;
-				_takePrice = candle.ClosePrice + TakeProfitPips * Security.Step;
+				_takePrice = candle.ClosePrice + TakeProfitPips * step;
 				_breakoutFlag = true;
 			}
 			else if (sellSignal)
 			{
 				SellMarket();
 				_stopPrice = middle;
-				_takePrice = candle.ClosePrice - TakeProfitPips * Security.Step;
+				_takePrice = candle.ClosePrice - TakeProfitPips * step;
 				_breakoutFlag = true;
 			}
 		}
 
-		// Store current values for next candle analysis
 		_prevUpper = upper;
 		_prevLower = lower;
 		_prevClose = candle.ClosePrice;
