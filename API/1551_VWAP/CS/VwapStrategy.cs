@@ -168,19 +168,26 @@ public class VwapStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		var sma = new SimpleMovingAverage { Length = 2 };
 
-		StartProtection(null, null);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(sma, ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _dummy)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		var date = candle.OpenTime.Date;
-		var vol = candle.TotalVolume ?? 0m;
+		var vol = candle.TotalVolume;
 		var src = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
 
 		if (date != _sessionDate)

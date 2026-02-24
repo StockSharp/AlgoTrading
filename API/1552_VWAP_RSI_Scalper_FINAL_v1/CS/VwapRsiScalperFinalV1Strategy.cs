@@ -14,7 +14,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Scalping strategy using VWAP and RSI with session and daily trade limits.
+/// Scalping strategy using RSI and EMA with StdDev-based stops.
+/// Buys on RSI oversold with bullish EMA trend, sells on RSI overbought with bearish EMA.
 /// </summary>
 public class VwapRsiScalperFinalV1Strategy : Strategy
 {
@@ -22,12 +23,9 @@ public class VwapRsiScalperFinalV1Strategy : Strategy
 	private readonly StrategyParam<decimal> _rsiOversold;
 	private readonly StrategyParam<decimal> _rsiOverbought;
 	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<TimeSpan> _sessionStart;
-	private readonly StrategyParam<TimeSpan> _sessionEnd;
 	private readonly StrategyParam<int> _maxTradesPerDay;
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<decimal> _stopAtrMult;
-	private readonly StrategyParam<decimal> _targetAtrMult;
+	private readonly StrategyParam<decimal> _stopMult;
+	private readonly StrategyParam<decimal> _targetMult;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private int _tradesToday;
@@ -39,154 +37,134 @@ public class VwapRsiScalperFinalV1Strategy : Strategy
 	public decimal RsiOversold { get => _rsiOversold.Value; set => _rsiOversold.Value = value; }
 	public decimal RsiOverbought { get => _rsiOverbought.Value; set => _rsiOverbought.Value = value; }
 	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
-	public TimeSpan SessionStart { get => _sessionStart.Value; set => _sessionStart.Value = value; }
-	public TimeSpan SessionEnd { get => _sessionEnd.Value; set => _sessionEnd.Value = value; }
 	public int MaxTradesPerDay { get => _maxTradesPerDay.Value; set => _maxTradesPerDay.Value = value; }
-	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
-	public decimal StopAtrMult { get => _stopAtrMult.Value; set => _stopAtrMult.Value = value; }
-	public decimal TargetAtrMult { get => _targetAtrMult.Value; set => _targetAtrMult.Value = value; }
+	public decimal StopMult { get => _stopMult.Value; set => _stopMult.Value = value; }
+	public decimal TargetMult { get => _targetMult.Value; set => _targetMult.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public VwapRsiScalperFinalV1Strategy()
 	{
 		_rsiLength = Param(nameof(RsiLength), 3)
-			.SetDisplay("RSI Length", "RSI period", "Indicators")
-			
-			.SetOptimize(2, 6, 1);
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
 		_rsiOversold = Param(nameof(RsiOversold), 35m)
-			.SetDisplay("RSI Oversold", "Oversold level", "Indicators")
-			
-			.SetOptimize(25m, 45m, 5m);
+			.SetDisplay("RSI Oversold", "Oversold level", "Indicators");
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
-			.SetDisplay("RSI Overbought", "Overbought level", "Indicators")
-			
-			.SetOptimize(60m, 80m, 5m);
+			.SetDisplay("RSI Overbought", "Overbought level", "Indicators");
 
 		_emaLength = Param(nameof(EmaLength), 50)
-			.SetDisplay("EMA Length", "EMA period", "Indicators")
-			
-			.SetOptimize(20, 80, 5);
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "EMA period", "Indicators");
 
-		_sessionStart = Param(nameof(SessionStart), TimeSpan.FromHours(9))
-			.SetDisplay("Session Start", "Session start hour", "Session");
+		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Trades", "Max trades per day", "Risk");
 
-		_sessionEnd = Param(nameof(SessionEnd), TimeSpan.FromHours(16))
-			.SetDisplay("Session End", "Session end hour", "Session");
+		_stopMult = Param(nameof(StopMult), 1m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Mult", "StdDev multiplier for stop", "Risk");
 
-		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 3)
-			.SetDisplay("Max Trades Per Day", "Daily trade limit", "Risk")
-			
-			.SetOptimize(1, 5, 1);
+		_targetMult = Param(nameof(TargetMult), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Target Mult", "StdDev multiplier for target", "Risk");
 
-		_atrLength = Param(nameof(AtrLength), 14)
-			.SetDisplay("ATR Length", "ATR period", "Risk")
-			
-			.SetOptimize(7, 21, 7);
-
-		_stopAtrMult = Param(nameof(StopAtrMult), 1m)
-			.SetDisplay("Stop ATR Mult", "ATR multiplier for stop", "Risk")
-			
-			.SetOptimize(0.5m, 2m, 0.5m);
-
-		_targetAtrMult = Param(nameof(TargetAtrMult), 2m)
-			.SetDisplay("Target ATR Mult", "ATR multiplier for target", "Risk")
-			
-			.SetOptimize(1m, 4m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 		_tradesToday = 0;
 		_currentDay = default;
-		_stopPrice = 0m;
-		_takeProfitPrice = 0m;
+		_stopPrice = 0;
+		_takeProfitPrice = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var ema = new EMA { Length = EmaLength };
-		var vwap = new VolumeWeightedMovingAverage();
-		var atr = new AverageTrueRange { Length = AtrLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var stdDev = new StandardDeviation { Length = 14 };
+
+		_tradesToday = 0;
+		_currentDay = default;
+		_stopPrice = 0;
+		_takeProfitPrice = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(vwap, ema, rsi, atr, ProcessCandle)
-			.Start();
+		subscription.Bind(rsi, ema, stdDev, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, vwap);
 			DrawIndicator(area, ema);
-			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal vwapValue, decimal emaValue, decimal rsiValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal emaVal, decimal stdVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-	var day = candle.OpenTime.Date;
+		var day = candle.OpenTime.Date;
 		if (day != _currentDay)
 		{
 			_currentDay = day;
 			_tradesToday = 0;
 		}
 
-		var time = candle.OpenTime.TimeOfDay;
-		var inSession = time >= SessionStart && time < SessionEnd;
-
-	if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-	if (Position > 0)
+		// TP/SL exit
+		if (Position > 0)
 		{
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
-				SellMarket(Position);
+			{
+				SellMarket();
+				return;
+			}
 		}
-	else if (Position < 0)
+		else if (Position < 0)
 		{
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
-				BuyMarket(-Position);
+			{
+				BuyMarket();
+				return;
+			}
 		}
-	else if (inSession && _tradesToday < MaxTradesPerDay)
+
+		if (stdVal <= 0 || _tradesToday >= MaxTradesPerDay)
+			return;
+
+		// Entry signals
+		if (Position == 0)
 		{
-			var canLong = rsiValue < RsiOversold && candle.ClosePrice > vwapValue && candle.ClosePrice > emaValue;
-			var canShort = rsiValue > RsiOverbought && candle.ClosePrice < vwapValue && candle.ClosePrice < emaValue;
+			var canLong = rsiVal < RsiOversold && candle.ClosePrice > emaVal;
+			var canShort = rsiVal > RsiOverbought && candle.ClosePrice < emaVal;
 
 			if (canLong)
 			{
-			BuyMarket();
-			_tradesToday++;
-			_stopPrice = candle.ClosePrice - atrValue * StopAtrMult;
-			_takeProfitPrice = candle.ClosePrice + atrValue * TargetAtrMult;
+				BuyMarket();
+				_tradesToday++;
+				_stopPrice = candle.ClosePrice - stdVal * StopMult;
+				_takeProfitPrice = candle.ClosePrice + stdVal * TargetMult;
 			}
 			else if (canShort)
 			{
-			SellMarket();
-			_tradesToday++;
-			_stopPrice = candle.ClosePrice + atrValue * StopAtrMult;
-			_takeProfitPrice = candle.ClosePrice - atrValue * TargetAtrMult;
+				SellMarket();
+				_tradesToday++;
+				_stopPrice = candle.ClosePrice + stdVal * StopMult;
+				_takeProfitPrice = candle.ClosePrice - stdVal * TargetMult;
 			}
 		}
 	}

@@ -15,128 +15,102 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Warrior Trading inspired momentum strategy.
+/// Detects red-to-green reversals and volume spikes with EMA trend filter.
+/// Uses StdDev-based stops with risk/reward targeting.
 /// </summary>
 public class WarriorTradingMomentumStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _gapThreshold;
-	private readonly StrategyParam<decimal> _gapVolumeMultiplier;
-	private readonly StrategyParam<decimal> _vwapDistance;
 	private readonly StrategyParam<int> _minRedCandles;
-	private readonly StrategyParam<decimal> _riskRewardRatio;
-	private readonly StrategyParam<decimal> _trailingStopTrigger;
+	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<int> _maxDailyTrades;
+	private readonly StrategyParam<int> _volAvgLength;
+	private readonly StrategyParam<decimal> _volMult;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _volumeMa;
-	private AverageTrueRange _atr;
-	private RelativeStrengthIndex _rsi;
-	private ExponentialMovingAverage _ema20;
-	private VolumeWeightedMovingAverage _vwap;
-
+	private readonly List<decimal> _volumes = new();
 	private decimal _stopPrice;
 	private decimal _takeProfitPrice;
 	private int _redCount;
 	private DateTime _currentDay;
-	private decimal _prevDayClose;
-	private bool _gapUp;
 	private int _dailyTrades;
 
-	public decimal GapThreshold { get => _gapThreshold.Value; set => _gapThreshold.Value = value; }
-	public decimal GapVolumeMultiplier { get => _gapVolumeMultiplier.Value; set => _gapVolumeMultiplier.Value = value; }
-	public decimal VwapDistance { get => _vwapDistance.Value; set => _vwapDistance.Value = value; }
 	public int MinRedCandles { get => _minRedCandles.Value; set => _minRedCandles.Value = value; }
-	public decimal RiskRewardRatio { get => _riskRewardRatio.Value; set => _riskRewardRatio.Value = value; }
-	public decimal TrailingStopTrigger { get => _trailingStopTrigger.Value; set => _trailingStopTrigger.Value = value; }
+	public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
 	public int MaxDailyTrades { get => _maxDailyTrades.Value; set => _maxDailyTrades.Value = value; }
+	public int VolAvgLength { get => _volAvgLength.Value; set => _volAvgLength.Value = value; }
+	public decimal VolMult { get => _volMult.Value; set => _volMult.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public WarriorTradingMomentumStrategy()
 	{
-		_gapThreshold = Param(nameof(GapThreshold), 2m)
-			.SetDisplay("Gap %", "Minimum gap percent", "Gap")
-			
-			.SetOptimize(1m, 5m, 0.5m);
+		_minRedCandles = Param(nameof(MinRedCandles), 2)
+			.SetGreaterThanZero()
+			.SetDisplay("Min Red", "Red candles before reversal", "Momentum");
 
-		_gapVolumeMultiplier = Param(nameof(GapVolumeMultiplier), 2m)
-			.SetDisplay("Gap Vol Mult", "Volume multiplier", "Gap")
-			
-			.SetOptimize(1m, 4m, 0.5m);
+		_riskReward = Param(nameof(RiskReward), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Risk Reward", "TP to SL ratio", "Risk");
 
-		_vwapDistance = Param(nameof(VwapDistance), 0.5m)
-			.SetDisplay("VWAP Dist %", "Distance from VWAP", "VWAP")
-			
-			.SetOptimize(0.1m, 1m, 0.1m);
+		_maxDailyTrades = Param(nameof(MaxDailyTrades), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Trades", "Daily trade limit", "Risk");
 
-		_minRedCandles = Param(nameof(MinRedCandles), 3)
-			.SetDisplay("Min Red", "Red candles", "Momentum")
-			
-			.SetOptimize(2, 6, 1);
+		_volAvgLength = Param(nameof(VolAvgLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Vol Avg Length", "Volume average period", "Parameters");
 
-		_riskRewardRatio = Param(nameof(RiskRewardRatio), 2m)
-			.SetDisplay("Risk Reward", "Risk reward", "Risk")
-			
-			.SetOptimize(1m, 3m, 0.5m);
+		_volMult = Param(nameof(VolMult), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Vol Mult", "Volume spike multiplier", "Parameters");
 
-		_trailingStopTrigger = Param(nameof(TrailingStopTrigger), 1m)
-			.SetDisplay("Trail Trigger %", "Trigger percent", "Risk")
-			
-			.SetOptimize(0.5m, 2m, 0.5m);
-
-		_maxDailyTrades = Param(nameof(MaxDailyTrades), 2)
-			.SetDisplay("Max Trades", "Daily trade limit", "Risk")
-			
-			.SetOptimize(1, 3, 1);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_stopPrice = 0m;
-		_takeProfitPrice = 0m;
+		_volumes.Clear();
+		_stopPrice = 0;
+		_takeProfitPrice = 0;
 		_redCount = 0;
 		_currentDay = default;
-		_prevDayClose = 0m;
-		_gapUp = false;
 		_dailyTrades = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_volumeMa = new SMA { Length = 20 };
-		_atr = new AverageTrueRange { Length = 14 };
-		_rsi = new RelativeStrengthIndex { Length = 14 };
-		_ema20 = new EMA { Length = 20 };
-		_vwap = new VolumeWeightedMovingAverage();
+
+		var ema = new ExponentialMovingAverage { Length = 20 };
+		var rsi = new RelativeStrengthIndex { Length = 14 };
+		var stdDev = new StandardDeviation { Length = 14 };
+
+		_volumes.Clear();
+		_stopPrice = 0;
+		_takeProfitPrice = 0;
+		_redCount = 0;
+		_currentDay = default;
+		_dailyTrades = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_vwap, _ema20, _rsi, _atr, ProcessCandle)
-			.Start();
+		subscription.Bind(ema, rsi, stdDev, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _vwap);
-			DrawIndicator(area, _ema20);
-			DrawIndicator(area, _rsi);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal vwapValue, decimal emaValue, decimal rsiValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal, decimal rsiVal, decimal stdVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -144,47 +118,68 @@ public class WarriorTradingMomentumStrategy : Strategy
 		var day = candle.OpenTime.Date;
 		if (day != _currentDay)
 		{
-			if (_currentDay != default)
-			{
-				var gap = Math.Abs(candle.OpenPrice - _prevDayClose) / _prevDayClose * 100m;
-				_gapUp = candle.OpenPrice > _prevDayClose && gap >= GapThreshold;
-			}
 			_currentDay = day;
 			_dailyTrades = 0;
 		}
 
-		_prevDayClose = candle.ClosePrice;
+		// Track volume
+		_volumes.Add(candle.TotalVolume);
+		while (_volumes.Count > VolAvgLength + 1)
+			_volumes.RemoveAt(0);
 
-		var volumeMa = _volumeMa.Process(candle.TotalVolume).ToDecimal();
-		var volumeSpike = candle.TotalVolume > volumeMa * GapVolumeMultiplier;
-
-		if (candle.ClosePrice < candle.OpenPrice)
-		{
-			_redCount++;
-		}
-		else
-		{
-			_redCount = 0;
-		}
-
-		var redToGreen = _redCount >= MinRedCandles && candle.ClosePrice > candle.OpenPrice && volumeSpike;
-		var nearVwap = Math.Abs(candle.ClosePrice - vwapValue) / candle.ClosePrice * 100m <= VwapDistance && candle.ClosePrice > vwapValue && candle.ClosePrice > emaValue && volumeSpike;
-		var gapAndGo = _gapUp && volumeSpike && candle.ClosePrice > candle.OpenPrice && rsiValue > 50 && candle.ClosePrice > emaValue;
-		var prioritySetup = gapAndGo || redToGreen || nearVwap;
-
+		// TP/SL exit
 		if (Position > 0)
 		{
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
-				SellMarket(Position);
-			else if ((candle.ClosePrice - _stopPrice) / _stopPrice * 100m >= TrailingStopTrigger)
-				_stopPrice = Math.Max(_stopPrice, candle.ClosePrice - atrValue * 1.5m);
+			{
+				SellMarket();
+				_stopPrice = 0;
+				_takeProfitPrice = 0;
+			}
 		}
-		else if (prioritySetup && _dailyTrades < MaxDailyTrades && Position == 0)
+		else if (Position < 0)
 		{
-			var stopDist = atrValue * 2m;
+			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
+			{
+				BuyMarket();
+				_stopPrice = 0;
+				_takeProfitPrice = 0;
+			}
+		}
+
+		// Red candle tracking
+		if (candle.ClosePrice < candle.OpenPrice)
+			_redCount++;
+		else
+			_redCount = 0;
+
+		if (stdVal <= 0 || _volumes.Count < VolAvgLength || _dailyTrades >= MaxDailyTrades)
+			return;
+
+		var volAvg = _volumes.Take(VolAvgLength).Sum() / VolAvgLength;
+		var volumeSpike = candle.TotalVolume > volAvg * VolMult;
+		var bullish = candle.ClosePrice > candle.OpenPrice;
+
+		// Red-to-green reversal with volume spike
+		var redToGreen = _redCount >= MinRedCandles && bullish && volumeSpike;
+
+		// Momentum buy: price above EMA with RSI confirmation
+		var momentumBuy = bullish && candle.ClosePrice > emaVal && rsiVal > 50 && volumeSpike;
+
+		if ((redToGreen || momentumBuy) && Position <= 0)
+		{
 			BuyMarket();
+			var stopDist = stdVal * 2m;
 			_stopPrice = candle.ClosePrice - stopDist;
-			_takeProfitPrice = candle.ClosePrice + stopDist * RiskRewardRatio;
+			_takeProfitPrice = candle.ClosePrice + stopDist * RiskReward;
+			_dailyTrades++;
+		}
+		else if (candle.ClosePrice < emaVal && rsiVal < 50 && volumeSpike && Position >= 0)
+		{
+			SellMarket();
+			var stopDist = stdVal * 2m;
+			_stopPrice = candle.ClosePrice + stopDist;
+			_takeProfitPrice = candle.ClosePrice - stopDist * RiskReward;
 			_dailyTrades++;
 		}
 	}
