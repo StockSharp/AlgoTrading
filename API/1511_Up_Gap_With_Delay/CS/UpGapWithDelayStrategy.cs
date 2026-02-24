@@ -25,91 +25,57 @@ public class UpGapWithDelayStrategy : Strategy
 	private readonly StrategyParam<int> _holdingPeriods;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _prevClose;
-	private long? _entryIndex;
+	private decimal _prevClose;
+	private long _entryIndex;
 	private long _currentIndex;
 
-	/// <summary>
-	/// Gap size threshold in percent.
-	/// </summary>
-	public decimal GapThreshold
-	{
-		get => _gapThreshold.Value;
-		set => _gapThreshold.Value = value;
-	}
+	public decimal GapThreshold { get => _gapThreshold.Value; set => _gapThreshold.Value = value; }
+	public int DelayPeriods { get => _delayPeriods.Value; set => _delayPeriods.Value = value; }
+	public int HoldingPeriods { get => _holdingPeriods.Value; set => _holdingPeriods.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Bars to wait before next entry.
-	/// </summary>
-	public int DelayPeriods
-	{
-		get => _delayPeriods.Value;
-		set => _delayPeriods.Value = value;
-	}
-
-	/// <summary>
-	/// Bars to hold position.
-	/// </summary>
-	public int HoldingPeriods
-	{
-		get => _holdingPeriods.Value;
-		set => _holdingPeriods.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="UpGapWithDelayStrategy"/>.
-	/// </summary>
 	public UpGapWithDelayStrategy()
 	{
-		_gapThreshold = Param(nameof(GapThreshold), 1m)
-			.SetDisplay("Gap Threshold (%)", "Minimum gap size", "General")
-			;
+		_gapThreshold = Param(nameof(GapThreshold), 0.1m)
+			.SetDisplay("Gap Threshold (%)", "Minimum gap size", "General");
 
 		_delayPeriods = Param(nameof(DelayPeriods), 0)
-			.SetDisplay("Delay Periods", "Bars to wait", "General")
-			;
+			.SetDisplay("Delay Periods", "Bars to wait", "General");
 
 		_holdingPeriods = Param(nameof(HoldingPeriods), 7)
 			.SetGreaterThanZero()
-			.SetDisplay("Holding Periods", "Bars to hold", "General")
-			;
+			.SetDisplay("Holding Periods", "Bars to hold", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevClose = default;
-		_entryIndex = default;
+		_prevClose = 0;
+		_entryIndex = -100;
 		_currentIndex = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
+		// Need a dummy indicator for Bind to work in backtest
+		var sma = new SimpleMovingAverage { Length = 2 };
+
+		_prevClose = 0;
+		_entryIndex = -100;
+		_currentIndex = 0;
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(sma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -119,30 +85,28 @@ public class UpGapWithDelayStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		_currentIndex++;
 
-		if (_prevClose != null)
+		if (_prevClose > 0)
 		{
-			var gapSize = (candle.OpenPrice - _prevClose.Value) / _prevClose.Value * 100m;
+			var gapSize = (candle.OpenPrice - _prevClose) / _prevClose * 100m;
 			var upGap = gapSize >= GapThreshold;
-			var canEnter = upGap && (_entryIndex == null || _currentIndex > _entryIndex + DelayPeriods);
+			var canEnter = upGap && (_currentIndex > _entryIndex + DelayPeriods);
 
-			if (canEnter && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
+			if (canEnter && Position <= 0)
 			{
-				var volume = Volume + (Position < 0 ? -Position : 0m);
-				BuyMarket(volume);
+				BuyMarket();
 				_entryIndex = _currentIndex;
 			}
 
-			if (_entryIndex != null && _currentIndex >= _entryIndex + DelayPeriods + HoldingPeriods && Position > 0)
+			if (Position > 0 && _currentIndex >= _entryIndex + HoldingPeriods)
 			{
-				SellMarket(Position);
-				_entryIndex = null;
+				SellMarket();
 			}
 		}
 
