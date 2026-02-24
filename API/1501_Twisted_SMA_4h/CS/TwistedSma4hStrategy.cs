@@ -14,7 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Twisted SMA strategy for 4h candles.
+/// Twisted SMA strategy.
 /// Opens long when three SMAs align bullish and price is above main SMA while KAMA is moving.
 /// Exits when SMAs align bearish.
 /// </summary>
@@ -27,148 +27,75 @@ public class TwistedSma4hStrategy : Strategy
 	private readonly StrategyParam<int> _kamaLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _fastSma;
-	private SimpleMovingAverage _midSma;
-	private SimpleMovingAverage _slowSma;
-	private SimpleMovingAverage _mainSma;
-	private KAMA _kama;
-
 	private decimal _prevKama;
 
-	/// <summary>
-	/// Fast SMA length.
-	/// </summary>
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int MidLength { get => _midLength.Value; set => _midLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public int MainSmaLength { get => _mainSmaLength.Value; set => _mainSmaLength.Value = value; }
+	public int KamaLength { get => _kamaLength.Value; set => _kamaLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Middle SMA length.
-	/// </summary>
-	public int MidLength
-	{
-		get => _midLength.Value;
-		set => _midLength.Value = value;
-	}
-
-	/// <summary>
-	/// Slow SMA length.
-	/// </summary>
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
-
-	/// <summary>
-	/// Main SMA length.
-	/// </summary>
-	public int MainSmaLength
-	{
-		get => _mainSmaLength.Value;
-		set => _mainSmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// KAMA length.
-	/// </summary>
-	public int KamaLength
-	{
-		get => _kamaLength.Value;
-		set => _kamaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="TwistedSma4hStrategy"/> class.
-	/// </summary>
 	public TwistedSma4hStrategy()
 	{
 		_fastLength = Param(nameof(FastLength), 4)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast SMA Length", "Length of the fastest SMA", "SMA")
-			
-			.SetOptimize(2, 10, 1);
+			.SetDisplay("Fast SMA Length", "Length of the fastest SMA", "SMA");
 
 		_midLength = Param(nameof(MidLength), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("Middle SMA Length", "Length of the middle SMA", "SMA")
-			
-			.SetOptimize(5, 20, 1);
+			.SetDisplay("Middle SMA Length", "Length of the middle SMA", "SMA");
 
 		_slowLength = Param(nameof(SlowLength), 18)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow SMA Length", "Length of the slow SMA", "SMA")
-			
-			.SetOptimize(10, 40, 1);
+			.SetDisplay("Slow SMA Length", "Length of the slow SMA", "SMA");
 
-		_mainSmaLength = Param(nameof(MainSmaLength), 100)
+		_mainSmaLength = Param(nameof(MainSmaLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Main SMA Length", "Length of the main SMA", "SMA")
-			
-			.SetOptimize(50, 200, 10);
+			.SetDisplay("Main SMA Length", "Length of the main SMA", "SMA");
 
-		_kamaLength = Param(nameof(KamaLength), 25)
+		_kamaLength = Param(nameof(KamaLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("KAMA Length", "Length of KAMA", "KAMA")
-			
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("KAMA Length", "Length of KAMA", "KAMA");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 		_prevKama = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_fastSma = new SMA { Length = FastLength };
-		_midSma = new SMA { Length = MidLength };
-		_slowSma = new SMA { Length = SlowLength };
-		_mainSma = new SMA { Length = MainSmaLength };
-		_kama = new KAMA { Length = KamaLength };
+		var fastSma = new SimpleMovingAverage { Length = FastLength };
+		var midSma = new SimpleMovingAverage { Length = MidLength };
+		var slowSma = new SimpleMovingAverage { Length = SlowLength };
+		var mainSma = new SimpleMovingAverage { Length = MainSmaLength };
+		var kama = new KaufmanAdaptiveMovingAverage { Length = KamaLength };
 		_prevKama = 0m;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastSma, _midSma, _slowSma, _mainSma, _kama, ProcessCandle)
+			.Bind(fastSma, midSma, slowSma, mainSma, kama, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastSma);
-			DrawIndicator(area, _midSma);
-			DrawIndicator(area, _slowSma);
-			DrawIndicator(area, _mainSma);
-			DrawIndicator(area, _kama);
+			DrawIndicator(area, fastSma);
+			DrawIndicator(area, midSma);
+			DrawIndicator(area, slowSma);
 			DrawOwnTrades(area);
 		}
 	}
@@ -178,21 +105,21 @@ public class TwistedSma4hStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_fastSma.IsFormed || !_midSma.IsFormed || !_slowSma.IsFormed || !_mainSma.IsFormed || !_kama.IsFormed)
+		if (_prevKama == 0m)
+		{
+			_prevKama = kamaValue;
 			return;
+		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var isFlat = _prevKama != 0m && Math.Abs(kamaValue - _prevKama) / _prevKama < 0.001m;
+		var isFlat = Math.Abs(kamaValue - _prevKama) / _prevKama < 0.0005m;
 
 		var longCond = fast > mid && mid > slow && candle.ClosePrice > main && !isFlat;
 		var shortCond = fast < mid && mid < slow;
 
 		if (longCond && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		else if (shortCond && Position > 0)
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 
 		_prevKama = kamaValue;
 	}

@@ -14,297 +14,154 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Ultimate Balance Strategy combines multiple indicators into a weighted oscillator.
-/// Opens long when the oscillator MA crosses above the oversold level and exits or reverses on overbought.
+/// Ultimate Balance Strategy combines RSI and momentum into a weighted oscillator.
+/// Opens long when the smoothed oscillator crosses above the oversold level and exits on overbought.
 /// </summary>
 public class UltimateBalanceStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _weightRoc;
-	private readonly StrategyParam<decimal> _weightRsi;
-	private readonly StrategyParam<decimal> _weightCci;
-	private readonly StrategyParam<decimal> _weightWilliams;
-	private readonly StrategyParam<decimal> _weightAdx;
-	private readonly StrategyParam<bool> _enableShort;
 	private readonly StrategyParam<decimal> _overboughtLevel;
 	private readonly StrategyParam<decimal> _oversoldLevel;
-	private readonly StrategyParam<string> _maType;
-	private readonly StrategyParam<int> _maLength;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _smoothLength;
+	private readonly StrategyParam<bool> _enableShort;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RateOfChange _roc;
-	private Highest _rocMax;
-	private Lowest _rocMin;
-	private RSI _rsi;
-	private CCI _cci;
-	private Highest _cciMax;
-	private Lowest _cciMin;
-	private WilliamsR _williams;
-	private Highest _williamsMax;
-	private Lowest _williamsMin;
-	private ADX _adx;
-	private IIndicator _ma;
+	private readonly List<decimal> _closes = new();
+	private readonly List<decimal> _oscillators = new();
+	private decimal _prevSmoothed;
+	private bool _initialized;
 
-	private decimal _prevMa;
+	public decimal OverboughtLevel { get => _overboughtLevel.Value; set => _overboughtLevel.Value = value; }
+	public decimal OversoldLevel { get => _oversoldLevel.Value; set => _oversoldLevel.Value = value; }
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public int SmoothLength { get => _smoothLength.Value; set => _smoothLength.Value = value; }
+	public bool EnableShort { get => _enableShort.Value; set => _enableShort.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ROC weight.
-	/// </summary>
-	public decimal WeightRoc
-	{
-		get => _weightRoc.Value;
-		set => _weightRoc.Value = value;
-	}
-
-	/// <summary>
-	/// RSI weight.
-	/// </summary>
-	public decimal WeightRsi
-	{
-		get => _weightRsi.Value;
-		set => _weightRsi.Value = value;
-	}
-
-	/// <summary>
-	/// CCI weight.
-	/// </summary>
-	public decimal WeightCci
-	{
-		get => _weightCci.Value;
-		set => _weightCci.Value = value;
-	}
-
-	/// <summary>
-	/// Williams %R weight.
-	/// </summary>
-	public decimal WeightWilliams
-	{
-		get => _weightWilliams.Value;
-		set => _weightWilliams.Value = value;
-	}
-
-	/// <summary>
-	/// ADX weight.
-	/// </summary>
-	public decimal WeightAdx
-	{
-		get => _weightAdx.Value;
-		set => _weightAdx.Value = value;
-	}
-
-	/// <summary>
-	/// Enable short positions.
-	/// </summary>
-	public bool EnableShort
-	{
-		get => _enableShort.Value;
-		set => _enableShort.Value = value;
-	}
-
-	/// <summary>
-	/// Overbought level.
-	/// </summary>
-	public decimal OverboughtLevel
-	{
-		get => _overboughtLevel.Value;
-		set => _overboughtLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Oversold level.
-	/// </summary>
-	public decimal OversoldLevel
-	{
-		get => _oversoldLevel.Value;
-		set => _oversoldLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average type.
-	/// </summary>
-	public string MaType
-	{
-		get => _maType.Value;
-		set => _maType.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average length.
-	/// </summary>
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="UltimateBalanceStrategy"/> class.
-	/// </summary>
 	public UltimateBalanceStrategy()
 	{
-		_weightRoc = Param(nameof(WeightRoc), 2m)
-			.SetDisplay("ROC Weight", "Weight of ROC", "Weightings")
-			
-			.SetOptimize(0m, 5m, 0.5m);
+		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
+			.SetDisplay("Overbought Level", "Overbought threshold", "General");
 
-		_weightRsi = Param(nameof(WeightRsi), 0.5m)
-			.SetDisplay("RSI Weight", "Weight of RSI", "Weightings")
-			
-			.SetOptimize(0m, 5m, 0.5m);
+		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
+			.SetDisplay("Oversold Level", "Oversold threshold", "General");
 
-		_weightCci = Param(nameof(WeightCci), 2m)
-			.SetDisplay("CCI Weight", "Weight of CCI", "Weightings")
-			
-			.SetOptimize(0m, 5m, 0.5m);
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "General");
 
-		_weightWilliams = Param(nameof(WeightWilliams), 0.5m)
-			.SetDisplay("Williams %R Weight", "Weight of Williams %R", "Weightings")
-			
-			.SetOptimize(0m, 5m, 0.5m);
+		_smoothLength = Param(nameof(SmoothLength), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("Smooth Length", "Smoothing period for oscillator", "General");
 
-		_weightAdx = Param(nameof(WeightAdx), 0.5m)
-			.SetDisplay("ADX Weight", "Weight of ADX", "Weightings")
-			
-			.SetOptimize(0m, 5m, 0.5m);
-
-		_enableShort = Param(nameof(EnableShort), false)
+		_enableShort = Param(nameof(EnableShort), true)
 			.SetDisplay("Enable Short", "Allow short positions", "General");
 
-		_overboughtLevel = Param(nameof(OverboughtLevel), 0.75m)
-			.SetDisplay("Overbought Level", "Overbought threshold", "General")
-			
-			.SetOptimize(0.6m, 0.9m, 0.05m);
-
-		_oversoldLevel = Param(nameof(OversoldLevel), 0.25m)
-			.SetDisplay("Oversold Level", "Oversold threshold", "General")
-			
-			.SetOptimize(0.1m, 0.4m, 0.05m);
-
-		_maType = Param(nameof(MaType), "SMA")
-			.SetDisplay("MA Type", "Moving average type", "MA");
-
-		_maLength = Param(nameof(MaLength), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Length of MA", "MA")
-			
-			.SetOptimize(5, 50, 1);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevMa = 0m;
+		_closes.Clear();
+		_oscillators.Clear();
+		_prevSmoothed = 0m;
+		_initialized = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_roc = new RateOfChange { Length = 20 };
-		_rocMax = new Highest { Length = 20 };
-		_rocMin = new Lowest { Length = 20 };
-		_rsi = new RSI { Length = 14 };
-		_cci = new CCI { Length = 20 };
-		_cciMax = new Highest { Length = 20 };
-		_cciMin = new Lowest { Length = 20 };
-		_williams = new WilliamsR { Length = 14 };
-		_williamsMax = new Highest { Length = 14 };
-		_williamsMin = new Lowest { Length = 14 };
-		_adx = new ADX { Length = 14 };
-		_ma = CreateMa();
-		_prevMa = 0m;
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+
+		_closes.Clear();
+		_oscillators.Clear();
+		_prevSmoothed = 0m;
+		_initialized = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_roc, _rocMax, _rocMin, _rsi, _cci, _cciMax, _cciMin, _williams, _williamsMax, _williamsMin, _adx, ProcessCandle)
+			.Bind(rsi, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
+			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rocValue, decimal rocMax, decimal rocMin, decimal rsiValue, decimal cciValue, decimal cciMax, decimal cciMin, decimal wrValue, decimal wrMax, decimal wrMin, decimal adxValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_roc.IsFormed || !_rsi.IsFormed || !_cci.IsFormed || !_williams.IsFormed || !_adx.IsFormed)
+		_closes.Add(candle.ClosePrice);
+
+		// Calculate momentum component (rate of change)
+		var rocLen = 20;
+		decimal normRoc = 0.5m;
+		if (_closes.Count > rocLen)
+		{
+			var prevPrice = _closes[_closes.Count - 1 - rocLen];
+			if (prevPrice > 0)
+			{
+				var roc = (candle.ClosePrice - prevPrice) / prevPrice * 100m;
+				// Normalize ROC to 0-100 range (roughly)
+				normRoc = Math.Max(0, Math.Min(100, 50m + roc * 5m));
+			}
+		}
+
+		// Weighted oscillator: RSI (60%) + normalized ROC (40%)
+		var oscillator = rsiValue * 0.6m + normRoc * 0.4m;
+		_oscillators.Add(oscillator);
+
+		// Keep buffer
+		while (_closes.Count > 200)
+			_closes.RemoveAt(0);
+		while (_oscillators.Count > SmoothLength + 5)
+			_oscillators.RemoveAt(0);
+
+		if (_oscillators.Count < SmoothLength)
 			return;
 
-		var normRoc = rocMax != rocMin ? (rocValue - rocMin) / (rocMax - rocMin) : 0m;
-		var normRsi = rsiValue / 100m;
-		var normCci = cciMax != cciMin ? (cciValue - cciMin) / (cciMax - cciMin) : 0m;
-		var normWr = wrMax != wrMin ? (wrValue - wrMin) / (wrMax - wrMin) : 0m;
-		var normAdx = adxValue / 50m;
+		// Smooth the oscillator with SMA
+		decimal sum = 0;
+		for (int i = _oscillators.Count - SmoothLength; i < _oscillators.Count; i++)
+			sum += _oscillators[i];
+		var smoothed = sum / SmoothLength;
 
-		var sum = WeightRoc + WeightRsi + WeightCci + WeightWilliams + WeightAdx;
-		var oscillator = sum == 0m ? 0m : (normRoc * WeightRoc + normRsi * WeightRsi + normCci * WeightCci + normWr * WeightWilliams + normAdx * WeightAdx) / sum;
-
-		var maValue = _ma.Process(new DecimalIndicatorValue(_ma, oscillator, candle.OpenTime)).ToDecimal();
-
-		if (!_ma.IsFormed)
+		if (!_initialized)
 		{
-			_prevMa = maValue;
+			_prevSmoothed = smoothed;
+			_initialized = true;
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevMa = maValue;
-			return;
-		}
-
-		var buySignal = _prevMa <= OversoldLevel && maValue > OversoldLevel;
-		var sellSignal = _prevMa >= OverboughtLevel && maValue < OverboughtLevel;
+		// Crossover signals
+		var buySignal = _prevSmoothed <= OversoldLevel && smoothed > OversoldLevel;
+		var sellSignal = _prevSmoothed >= OverboughtLevel && smoothed < OverboughtLevel;
 
 		if (buySignal && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 
 		if (sellSignal && Position >= 0)
 		{
 			if (EnableShort)
-				SellMarket(Volume + Math.Max(Position, 0m));
+				SellMarket();
 			else if (Position > 0)
-				SellMarket(Position);
+				SellMarket();
 		}
 
-		_prevMa = maValue;
-	}
-
-	private IIndicator CreateMa()
-	{
-		return MaType switch
-		{
-			"EMA" => new EMA { Length = MaLength },
-			"WMA" => new WeightedMovingAverage { Length = MaLength },
-			"DEMA" => new DoubleExponentialMovingAverage { Length = MaLength },
-			_ => new SMA { Length = MaLength },
-		};
+		_prevSmoothed = smoothed;
 	}
 }

@@ -23,94 +23,59 @@ public class UhlMaCrossoverSystemStrategy : Strategy
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma;
-	private Variance _variance;
-
 	private decimal _cma;
 	private decimal _cts;
 	private bool _wasCtsAbove;
+	private bool _initialized;
 
-	/// <summary>
-	/// Lookback length.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
+	public int Length { get => _length.Value; set => _length.Value = value; }
+	public decimal Multiplier { get => _multiplier.Value; set => _multiplier.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Variance multiplier.
-	/// </summary>
-	public decimal Multiplier
-	{
-		get => _multiplier.Value;
-		set => _multiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="UhlMaCrossoverSystemStrategy"/> class.
-	/// </summary>
 	public UhlMaCrossoverSystemStrategy()
 	{
-		_length = Param(nameof(Length), 100)
+		_length = Param(nameof(Length), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Length", "Lookback length", "General")
-			
-			.SetOptimize(20, 200, 10);
+			.SetDisplay("Length", "Lookback length", "General");
 
 		_multiplier = Param(nameof(Multiplier), 1m)
 			.SetGreaterThanZero()
-			.SetDisplay("Multiplier", "Variance multiplier", "General")
-			
-			.SetOptimize(0.5m, 2m, 0.5m);
+			.SetDisplay("Multiplier", "Variance multiplier", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 		_cma = 0m;
 		_cts = 0m;
 		_wasCtsAbove = false;
+		_initialized = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = Length };
-		_variance = new Variance { Length = Length };
+		var sma = new SimpleMovingAverage { Length = Length };
+		var stdDev = new StandardDeviation { Length = Length };
 
 		_cma = 0m;
 		_cts = 0m;
 		_wasCtsAbove = false;
+		_initialized = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_sma, _variance, ProcessCandle)
+			.Bind(sma, stdDev, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -120,16 +85,13 @@ public class UhlMaCrossoverSystemStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal varValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal stdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_sma.IsFormed || !_variance.IsFormed)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// Use stdDev^2 as variance
+		var varValue = stdValue * stdValue * Multiplier;
 
 		var prevCma = _cma == 0m ? candle.ClosePrice : _cma;
 		var prevCts = _cts == 0m ? candle.ClosePrice : _cts;
@@ -137,22 +99,29 @@ public class UhlMaCrossoverSystemStrategy : Strategy
 		var secma = (smaValue - prevCma) * (smaValue - prevCma);
 		var sects = (candle.ClosePrice - prevCts) * (candle.ClosePrice - prevCts);
 
-		var ka = varValue < secma ? 1m - varValue / secma : 0m;
-		var kb = varValue < sects ? 1m - varValue / sects : 0m;
+		var ka = secma > 0 && varValue < secma ? 1m - varValue / secma : 0m;
+		var kb = sects > 0 && varValue < sects ? 1m - varValue / sects : 0m;
 
 		_cma = ka * smaValue + (1m - ka) * prevCma;
 		_cts = kb * candle.ClosePrice + (1m - kb) * prevCts;
 
 		var isCtsAbove = _cts > _cma;
 
+		if (!_initialized)
+		{
+			_wasCtsAbove = isCtsAbove;
+			_initialized = true;
+			return;
+		}
+
 		if (_wasCtsAbove != isCtsAbove)
 		{
 			if (isCtsAbove && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 			else if (!isCtsAbove && Position >= 0)
-				SellMarket(Volume + Math.Max(Position, 0m));
-
-			_wasCtsAbove = isCtsAbove;
+				SellMarket();
 		}
+
+		_wasCtsAbove = isCtsAbove;
 	}
 }
