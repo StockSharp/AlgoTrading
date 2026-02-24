@@ -136,10 +136,6 @@ public class CciAutomatedStrategy : Strategy
 			.Bind(cci, ProcessCandle)
 			.Start();
 
-		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
-
 		var area = CreateChartArea();
 		if (area != null)
 		{

@@ -98,7 +98,7 @@ public class DigitalCciWoodiesStrategy : Strategy
 	/// </summary>
 	public DigitalCciWoodiesStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for candles", "General");
 		
 		_fastLength = Param(nameof(FastLength), 14)
@@ -168,7 +168,6 @@ public class DigitalCciWoodiesStrategy : Strategy
 			DrawIndicator(indicatorArea, slowCci);
 		}
 		
-		StartProtection(null, null);
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
@@ -219,7 +218,7 @@ public class DigitalCciWoodiesStrategy : Strategy
 		else
 		{
 			if (fast > slow && SellClose && Position < 0)
-			BuyMarket(-Position);
+			BuyMarket(Math.Abs(Position));
 			if (fast < slow && BuyClose && Position > 0)
 			SellMarket(Position);
 		}

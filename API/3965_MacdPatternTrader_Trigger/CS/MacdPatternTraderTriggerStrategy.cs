@@ -31,7 +31,7 @@ public class MacdPatternTraderTriggerStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergence _macd = null!;
+	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
 	private decimal? _macdPrev1;
 	private decimal? _macdPrev2;
@@ -175,19 +175,19 @@ public class MacdPatternTraderTriggerStrategy : Strategy
 			
 			.SetOptimize(1, 5, 1);
 
-		_bullishTrigger = Param(nameof(BullishTrigger), 0.0015m)
+		_bullishTrigger = Param(nameof(BullishTrigger), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bullish Trigger", "MACD level that arms the bullish pattern", "Logic");
 
-		_bullishReset = Param(nameof(BullishReset), 0.0005m)
+		_bullishReset = Param(nameof(BullishReset), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bullish Reset", "MACD pullback threshold for bullish setup", "Logic");
 
-		_bearishTrigger = Param(nameof(BearishTrigger), 0.0015m)
+		_bearishTrigger = Param(nameof(BearishTrigger), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bearish Trigger", "Absolute MACD level that arms the bearish pattern", "Logic");
 
-		_bearishReset = Param(nameof(BearishReset), 0.0005m)
+		_bearishReset = Param(nameof(BearishReset), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bearish Reset", "MACD pullback threshold for bearish setup", "Logic");
 
@@ -203,7 +203,7 @@ public class MacdPatternTraderTriggerStrategy : Strategy
 			
 			.SetOptimize(100m, 400m, 50m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for indicator calculations", "Data");
 	}
 
@@ -229,25 +229,23 @@ public class MacdPatternTraderTriggerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_priceStep = Security?.PriceStep ?? 1m;
 		if (_priceStep <= 0m)
 			_priceStep = 1m;
 
-		var takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * _priceStep, UnitTypes.Point) : null;
-		var stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints * _priceStep, UnitTypes.Point) : null;
+		var takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * _priceStep, UnitTypes.Absolute) : null;
+		var stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints * _priceStep, UnitTypes.Absolute) : null;
 
 		StartProtection(takeProfit, stopLoss);
 
-		_macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = FastPeriod },
-			LongMa = { Length = SlowPeriod },
-			SignalPeriod = SignalPeriod
-		};
+		_macd = new MovingAverageConvergenceDivergenceSignal();
+		_macd.Macd.ShortMa.Length = FastPeriod;
+		_macd.Macd.LongMa.Length = SlowPeriod;
+		_macd.SignalMa.Length = SignalPeriod;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -268,11 +266,17 @@ public class MacdPatternTraderTriggerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!macdValue.IsFinal || macdValue is not MovingAverageConvergenceDivergenceValue macdLineValue)
+		if (!macdValue.IsFinal || macdValue is not MovingAverageConvergenceDivergenceSignalValue macdLineValue)
 			return;
 
 		if (macdLineValue.Macd is not decimal currentMacd)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			ShiftHistory(currentMacd);
+			return;
+		}
 
 		if (_macdPrev1 is null || _macdPrev2 is null || _macdPrev3 is null)
 		{

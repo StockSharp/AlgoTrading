@@ -55,7 +55,7 @@ public class Mbkasctrend3Strategy : Strategy
 		_w3 = Param(nameof(Weight3),1m).SetDisplay("Weight 3","Weight for WPR3","Indicator");
 		_sl = Param(nameof(StopLoss),1000m).SetGreaterThanZero().SetDisplay("Stop Loss","Stop loss in points","Protection");
 		_tp = Param(nameof(TakeProfit),2000m).SetGreaterThanZero().SetDisplay("Take Profit","Take profit in points","Protection");
-		_candle = Param(nameof(CandleType),TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type","Time frame for calculations","General");
+		_candle = Param(nameof(CandleType),TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type","Time frame for calculations","General");
 	}
 	
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -65,12 +65,21 @@ public class Mbkasctrend3Strategy : Strategy
 	
 	protected override void OnStarted2(DateTime time)
 	{
+		base.OnStarted2(time);
+
 		var w1 = new WilliamsR { Length = WprLength1 };
 		var w2 = new WilliamsR { Length = WprLength2 };
 		var w3 = new WilliamsR { Length = WprLength3 };
-		SubscribeCandles(CandleType).Bind(w1, w2, w3, ProcessCandle).Start();
-		StartProtection(stopLoss: new Unit(StopLoss, UnitTypes.Absolute), takeProfit: new Unit(TakeProfit, UnitTypes.Absolute));
-		base.OnStarted2(time);
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(w1, w2, w3, ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, decimal v1, decimal v2, decimal v3)

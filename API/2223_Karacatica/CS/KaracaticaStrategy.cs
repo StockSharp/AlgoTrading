@@ -22,8 +22,6 @@ namespace StockSharp.Samples.Strategies;
 public class KaracaticaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private AverageDirectionalIndex _adx;
@@ -40,24 +38,6 @@ public class KaracaticaStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Take-profit percentage parameter.
-	/// </summary>
-	public decimal TakeProfitPercent
-	{
-		get => _takeProfitPercent.Value;
-		set => _takeProfitPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss percentage parameter.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
 	/// Candle type parameter.
 	/// </summary>
 	public DataType CandleType
@@ -71,24 +51,12 @@ public class KaracaticaStrategy : Strategy
 	/// </summary>
 	public KaracaticaStrategy()
 	{
-		_period = Param(nameof(Period), 70)
+		_period = Param(nameof(Period), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "ADX period and lookback for close comparison", "Indicators")
-			
-			.SetOptimize(50, 100, 10);
+			.SetOptimize(20, 50, 10);
 
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
-			.SetDisplay("Take Profit %", "Take-profit as percentage of entry price", "Risk Management")
-			
-			.SetOptimize(1m, 5m, 1m);
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop-loss as percentage of entry price", "Risk Management")
-			
-			.SetOptimize(1m, 5m, 1m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -120,8 +88,6 @@ public class KaracaticaStrategy : Strategy
 			.BindEx(_adx, ProcessCandle)
 			.Start();
 
-		StartProtection(new Unit(TakeProfitPercent, UnitTypes.Percent), new Unit(StopLossPercent, UnitTypes.Percent));
-
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -143,11 +109,20 @@ public class KaracaticaStrategy : Strategy
 		if (_closeQueue.Count <= Period)
 			return;
 
+		if (!adxValue.IsFormed)
+			return;
+
 		var pastClose = _closeQueue.Peek();
 
-		var typedAdx = (AverageDirectionalIndexValue)adxValue;
-		var plusDi = typedAdx.PlusDI;
-		var minusDi = typedAdx.MinusDI;
+		var adxTyped = adxValue as IAverageDirectionalIndexValue;
+		if (adxTyped?.Dx is not IDirectionalIndexValue dxVal)
+			return;
+
+		var plusDi = dxVal.Plus;
+		var minusDi = dxVal.Minus;
+
+		if (plusDi is null || minusDi is null)
+			return;
 
 		var buySignal = candle.ClosePrice > pastClose && plusDi > minusDi && _lastSignal != 1;
 		var sellSignal = candle.ClosePrice < pastClose && minusDi > plusDi && _lastSignal != -1;
@@ -157,14 +132,12 @@ public class KaracaticaStrategy : Strategy
 
 		if (buySignal && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 			_lastSignal = 1;
 		}
 		else if (sellSignal && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket();
 			_lastSignal = -1;
 		}
 	}

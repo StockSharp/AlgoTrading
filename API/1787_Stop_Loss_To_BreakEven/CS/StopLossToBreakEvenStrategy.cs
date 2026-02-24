@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,54 +10,50 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Strategy that moves stop loss to break-even after reaching a profit in pips.
+/// Strategy that enters on EMA crossover and moves stop to breakeven after profit.
 /// </summary>
 public class StopLossToBreakEvenStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _breakEvenPips;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<decimal> _breakEvenDist;
+	private readonly StrategyParam<decimal> _initialStop;
+	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal? _entryPrice;
+	private decimal _entryPrice;
+	private decimal _stopPrice;
 	private bool _stopMoved;
 
-	/// <summary>
-	/// Profit in pips required to move the stop loss to the entry price.
-	/// </summary>
-	public decimal BreakEvenPips
-	{
-		get => _breakEvenPips.Value;
-		set => _breakEvenPips.Value = value;
-	}
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public decimal BreakEvenDist { get => _breakEvenDist.Value; set => _breakEvenDist.Value = value; }
+	public decimal InitialStop { get => _initialStop.Value; set => _initialStop.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type used for monitoring price movements.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public StopLossToBreakEvenStrategy()
 	{
-		_breakEvenPips = Param(nameof(BreakEvenPips), 30m)
+		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Break-even Pips", "Profit in pips before moving stop to entry price", "Risk");
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for monitoring", "General");
-	}
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
+		_breakEvenDist = Param(nameof(BreakEvenDist), 200m)
+			.SetDisplay("Break-even Distance", "Profit before moving stop to breakeven", "Risk");
+
+		_initialStop = Param(nameof(InitialStop), 400m)
+			.SetDisplay("Initial Stop", "Initial stop loss distance", "Risk");
+
+		_takeProfit = Param(nameof(TakeProfit), 600m)
+			.SetDisplay("Take Profit", "Take profit distance", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
@@ -66,58 +61,79 @@ public class StopLossToBreakEvenStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_entryPrice = 0;
+		_stopPrice = 0;
+		_stopMoved = false;
+
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		subscription.Bind(fast, slow, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var price = candle.ClosePrice;
 
-		var step = Security.PriceStep;
-		if (step is null)
-			return;
-
-		var offset = BreakEvenPips * step.Value;
-
+		// Manage existing position
 		if (Position > 0)
 		{
-			_entryPrice ??= candle.ClosePrice;
-
-			if (!_stopMoved && candle.ClosePrice >= _entryPrice.Value + offset)
+			// Move stop to breakeven when profit exceeds threshold
+			if (!_stopMoved && price - _entryPrice >= BreakEvenDist)
 			{
-				SellStop(Math.Abs(Position), _entryPrice.Value);
+				_stopPrice = _entryPrice;
 				_stopMoved = true;
+			}
+
+			// Check stop or TP
+			if (price - _entryPrice >= TakeProfit || price <= _stopPrice)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_stopPrice = 0;
+				_stopMoved = false;
+				return;
 			}
 		}
 		else if (Position < 0)
 		{
-			_entryPrice ??= candle.ClosePrice;
-
-			if (!_stopMoved && candle.ClosePrice <= _entryPrice.Value - offset)
+			if (!_stopMoved && _entryPrice - price >= BreakEvenDist)
 			{
-				BuyStop(Math.Abs(Position), _entryPrice.Value);
+				_stopPrice = _entryPrice;
 				_stopMoved = true;
 			}
+
+			if (_entryPrice - price >= TakeProfit || price >= _stopPrice)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_stopPrice = 0;
+				_stopMoved = false;
+				return;
+			}
 		}
-		else
+
+		// Entry on EMA crossover
+		if (Position == 0)
 		{
-			_entryPrice = null;
-			_stopMoved = false;
+			if (fast > slow)
+			{
+				BuyMarket();
+				_entryPrice = price;
+				_stopPrice = price - InitialStop;
+				_stopMoved = false;
+			}
+			else if (fast < slow)
+			{
+				SellMarket();
+				_entryPrice = price;
+				_stopPrice = price + InitialStop;
+				_stopMoved = false;
+			}
 		}
 	}
 }

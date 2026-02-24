@@ -47,7 +47,7 @@ public class ExampleOfMacdAutomatedStrategy : Strategy
 	/// </summary>
 	public ExampleOfMacdAutomatedStrategy()
 	{
-		_baseVolume = Param(nameof(BaseVolume), 0.01m)
+		_baseVolume = Param(nameof(BaseVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Starting order volume for AdvancedMM", "Risk")
 			;
@@ -77,10 +77,10 @@ public class ExampleOfMacdAutomatedStrategy : Strategy
 			.SetDisplay("MACD Signal", "Signal EMA length", "Indicators")
 			;
 
-		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_entryCandleType = Param(nameof(EntryCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Entry Timeframe", "Working timeframe for entries", "General");
 
-		_filterCandleType = Param(nameof(FilterCandleType), TimeSpan.FromDays(1).TimeFrame())
+		_filterCandleType = Param(nameof(FilterCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Filter Timeframe", "Higher timeframe used as trend filter", "General");
 	}
 
@@ -181,9 +181,9 @@ public class ExampleOfMacdAutomatedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Create MACD indicators for entry and filter timeframes.
 		_entryMacd = CreateMacd();
@@ -229,7 +229,7 @@ public class ExampleOfMacdAutomatedStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var macd = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		var macd = (IMovingAverageConvergenceDivergenceSignalValue)macdValue;
 		_lastFilterMacd = macd.Macd;
 	}
 
@@ -239,7 +239,7 @@ public class ExampleOfMacdAutomatedStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var macd = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		var macd = (IMovingAverageConvergenceDivergenceSignalValue)macdValue;
 		_lastEntryMacd = macd.Macd;
 
 		// Manage protective exits before searching for new entries.

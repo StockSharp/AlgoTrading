@@ -137,7 +137,7 @@ public class RsiHistogramStrategy : Strategy
 		_sellPosClose = Param(nameof(SellPosClose), true)
 			.SetDisplay("Close Sell Positions", "Allow closing shorts on opposite signal", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for RSI calculation", "General");
 	}
 
@@ -169,10 +169,14 @@ public class RsiHistogramStrategy : Strategy
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-
 			var currentClass = rsiValue > HighLevel ? 0 : rsiValue < LowLevel ? 2 : 1;
+
+			if (!IsFormedAndOnlineAndAllowTrading())
+			{
+				_prevPrevClass = _prevClass;
+				_prevClass = currentClass;
+				return;
+			}
 
 			if (_prevPrevClass == 0 && _prevClass > 0)
 			{
@@ -180,7 +184,7 @@ public class RsiHistogramStrategy : Strategy
 					BuyMarket(Math.Abs(Position));
 
 				if (BuyPosOpen && Position <= 0)
-					BuyMarket(Volume + Math.Abs(Position));
+					BuyMarket();
 			}
 			else if (_prevPrevClass == 2 && _prevClass < 2)
 			{
@@ -188,15 +192,13 @@ public class RsiHistogramStrategy : Strategy
 					SellMarket(Math.Abs(Position));
 
 				if (SellPosOpen && Position >= 0)
-					SellMarket(Volume + Math.Abs(Position));
+					SellMarket();
 			}
 
 			_prevPrevClass = _prevClass;
 			_prevClass = currentClass;
 		})
 		.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

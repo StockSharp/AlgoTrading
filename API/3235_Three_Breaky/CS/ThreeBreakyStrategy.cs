@@ -1,171 +1,80 @@
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// ThreeBreaky strategy converted from the MetaTrader expert advisor "ThreeBreaky_v1.mq4".
-/// The system combines three independent breakout modules that fire on strong candle ranges,
-/// Ichimoku cloud flips, and exceptional single bar bodies while using a common Parabolic SAR exit.
+/// ThreeBreaky strategy: combines ATR expansion breakout, Ichimoku cloud flip,
+/// and large body exhaustion with Parabolic SAR exit.
 /// </summary>
 public class ThreeBreakyStrategy : Strategy
 {
-	private sealed class SystemState
-	{
-		public bool HasPosition;
-		public bool IsLong;
-		public decimal Volume;
-		public decimal? EntryPrice;
-		public DateTimeOffset? LastLongSignal;
-		public DateTimeOffset? LastShortSignal;
-	}
-
-	private readonly StrategyParam<bool> _useSystem1;
-	private readonly StrategyParam<bool> _useSystem2;
-	private readonly StrategyParam<bool> _useSystem3;
-	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<decimal> _bodyMultiplier;
 
-	private AverageTrueRange _atrAverage = null!;
-	private ParabolicSar _parabolic = null!;
-	private Ichimoku _ichimoku = null!;
-
-	private readonly Queue<decimal> _bodyHistory = [];
-
-	private ICandleMessage _previousCandle;
-	private ICandleMessage _secondPreviousCandle;
-	private decimal? _previousAtrAverage;
-	private decimal? _previousSpanA;
-	private decimal? _previousSpanB;
-	private decimal? _previousSar;
-	private decimal? _prePreviousSar;
-
-	private decimal _pipSize;
-
-	private readonly SystemState _system1 = new();
-	private readonly SystemState _system2 = new();
-	private readonly SystemState _system3 = new();
+	private readonly Queue<decimal> _bodyHistory = new();
+	private decimal _prevClose;
+	private decimal _prevSar;
+	private decimal _prePrevSar;
+	private decimal _prevSpanA;
+	private decimal _prevSpanB;
+	private decimal _prevRange;
+	private bool _hasPrev;
+	private bool _hasPrePrev;
+	private int _candleCount;
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="ThreeBreakyStrategy"/> class.
+	/// Constructor.
 	/// </summary>
 	public ThreeBreakyStrategy()
 	{
-		_useSystem1 = Param(nameof(UseSystem1), true)
-			.SetDisplay("Use System 1", "Enable the ATR expansion breakout module", "General")
-			;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
-		_useSystem2 = Param(nameof(UseSystem2), true)
-			.SetDisplay("Use System 2", "Enable the Ichimoku cloud flip module", "General")
-			;
-
-		_useSystem3 = Param(nameof(UseSystem3), true)
-			.SetDisplay("Use System 3", "Enable the large body exhaustion module", "General")
-			;
-
-		_orderVolume = Param(nameof(OrderVolume), 1m)
+		_atrLength = Param(nameof(AtrLength), 72)
 			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Default volume used for every entry", "Trading")
-			;
+			.SetDisplay("ATR Length", "ATR period for expansion detection", "Indicators");
 
-		_stopLossPips = Param(nameof(StopLossPips), 20m)
-			.SetRange(0m, 1000m)
-			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk Management")
-			;
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Multiplier", "Range must exceed ATR * this for System 1", "Signals");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
-			.SetRange(0m, 2000m)
-			.SetDisplay("Take Profit (pips)", "Optional take-profit distance expressed in pips", "Risk Management")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Primary timeframe used for signal generation", "Data");
+		_bodyMultiplier = Param(nameof(BodyMultiplier), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Body Multiplier", "Body must exceed max body * this for System 3", "Signals");
 	}
 
-	/// <summary>
-	/// Enable or disable the ATR expansion breakout module.
-	/// </summary>
-	public bool UseSystem1
-	{
-		get => _useSystem1.Value;
-		set => _useSystem1.Value = value;
-	}
-
-	/// <summary>
-	/// Enable or disable the Ichimoku cloud flip module.
-	/// </summary>
-	public bool UseSystem2
-	{
-		get => _useSystem2.Value;
-		set => _useSystem2.Value = value;
-	}
-
-	/// <summary>
-	/// Enable or disable the large body exhaustion module.
-	/// </summary>
-	public bool UseSystem3
-	{
-		get => _useSystem3.Value;
-		set => _useSystem3.Value = value;
-	}
-
-	/// <summary>
-	/// Volume applied to every market order.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance expressed in pips.
-	/// </summary>
-	public decimal StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance expressed in pips. A value of zero disables the target.
-	/// </summary>
-	public decimal TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Timeframe used to build working candles.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public int AtrLength
 	{
-		if (Security != null)
-			yield return (Security, CandleType);
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
+
+	public decimal AtrMultiplier
+	{
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
+	}
+
+	public decimal BodyMultiplier
+	{
+		get => _bodyMultiplier.Value;
+		set => _bodyMultiplier.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -173,265 +82,127 @@ public class ThreeBreakyStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_atrAverage = new AverageTrueRange { Length = 72 };
-		_parabolic = new ParabolicSar
-		{
-			AccelerationFactor = 0.005m,
-			MaximumAccelerationFactor = 0.2m
-		};
-		_ichimoku = new Ichimoku
+		_hasPrev = false;
+		_hasPrePrev = false;
+		_candleCount = 0;
+		_bodyHistory.Clear();
+
+		var atr = new AverageTrueRange { Length = AtrLength };
+		var sar = new ParabolicSar { Acceleration = 0.02m, AccelerationMax = 0.2m };
+		var ichimoku = new Ichimoku
 		{
 			Tenkan = { Length = 9 },
 			Kijun = { Length = 26 },
 			SenkouB = { Length = 52 }
 		};
 
-		_pipSize = ResolvePipSize();
-
-		_bodyHistory.Clear();
-		_previousCandle = null;
-		_secondPreviousCandle = null;
-		_previousAtrAverage = null;
-		_previousSpanA = null;
-		_previousSpanB = null;
-		_previousSar = null;
-		_prePreviousSar = null;
-
-		ResetState(_system1);
-		ResetState(_system2);
-		ResetState(_system3);
-		_system1.LastLongSignal = null;
-		_system1.LastShortSignal = null;
-		_system2.LastLongSignal = null;
-		_system2.LastShortSignal = null;
-		_system3.LastLongSignal = null;
-		_system3.LastShortSignal = null;
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.BindEx(atr, sar, ichimoku, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sar);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue, IIndicatorValue sarValue, IIndicatorValue ichValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var atrAverageValue = _atrAverage.Process(candle).ToNullableDecimal();
-		var sarValue = _parabolic.Process(candle).ToNullableDecimal();
-		var ichimokuValue = (IchimokuValue)_ichimoku.Process(candle);
-		var spanAValue = ichimokuValue.SenkouA as decimal?;
-		var spanBValue = ichimokuValue.SenkouB as decimal?;
-
-		if (_previousCandle is null)
-		{
-			_previousCandle = candle;
-			_previousAtrAverage = atrAverageValue;
-			_previousSpanA = spanAValue;
-			_previousSpanB = spanBValue;
-			_previousSar = sarValue;
-			return;
-		}
-
-		var previous = _previousCandle;
-		var beforePrevious = _secondPreviousCandle;
-		var previousRange = Math.Abs(previous.HighPrice - previous.LowPrice);
-		var previousBody = Math.Abs(previous.ClosePrice - previous.OpenPrice);
-		var averageRange = _previousAtrAverage;
-		var spanA = _previousSpanA;
-		var spanB = _previousSpanB;
-		var sar1 = _previousSar;
-		var sar2 = _prePreviousSar;
-
-		var stopOffset = GetPriceOffset(StopLossPips);
-		var takeOffset = GetPriceOffset(TakeProfitPips);
-
-		if (averageRange is null || spanA is null || spanB is null)
-			goto UpdateState;
-
-		if (stopOffset > 0m || takeOffset > 0m)
-		{
-			ApplyRiskManagement(_system1, previous, stopOffset, takeOffset);
-			ApplyRiskManagement(_system2, previous, stopOffset, takeOffset);
-			ApplyRiskManagement(_system3, previous, stopOffset, takeOffset);
-		}
-
-		if (beforePrevious != null && sar1 is decimal sarOne && sar2 is decimal sarTwo)
-		{
-			var sarCrossDown = beforePrevious.ClosePrice > sarTwo && previous.ClosePrice < sarOne;
-			var sarCrossUp = beforePrevious.ClosePrice < sarTwo && previous.ClosePrice > sarOne;
-
-			HandleSarExit(_system1, sarCrossDown, sarCrossUp);
-			HandleSarExit(_system2, sarCrossDown, sarCrossUp);
-			HandleSarExit(_system3, sarCrossDown, sarCrossUp);
-		}
-
 		if (!IsFormedAndOnlineAndAllowTrading())
-			goto UpdateState;
+			return;
 
-		var candleOpenTime = previous.OpenTime;
+		var atrVal = atrValue.ToDecimal();
+		var sarVal = sarValue.ToDecimal();
 
-		if (OrderVolume > 0m)
-		{
-			if (UseSystem1 && !_system1.HasPosition)
-			{
-				var atrThreshold = averageRange.Value * 4m;
-				if (previous.ClosePrice > previous.OpenPrice && previousRange > atrThreshold &&
-					(_system1.LastLongSignal is null || _system1.LastLongSignal.Value < candleOpenTime))
-				{
-					OpenLong(_system1, previous.ClosePrice, candleOpenTime);
-				}
-				else if (previous.ClosePrice < previous.OpenPrice && previousRange > atrThreshold &&
-					(_system1.LastShortSignal is null || _system1.LastShortSignal.Value < candleOpenTime))
-				{
-					OpenShort(_system1, previous.ClosePrice, candleOpenTime);
-				}
-			}
+		var ich = (IchimokuValue)ichValue;
+		if (ich.SenkouA is not decimal spanA || ich.SenkouB is not decimal spanB)
+			return;
 
-			if (UseSystem2 && !_system2.HasPosition && beforePrevious != null)
-			{
-				var crossedAbove = beforePrevious.ClosePrice < spanA && beforePrevious.ClosePrice < spanB &&
-					previous.ClosePrice > spanA && previous.ClosePrice > spanB;
-				var crossedBelow = beforePrevious.ClosePrice > spanA && beforePrevious.ClosePrice > spanB &&
-					previous.ClosePrice < spanA && previous.ClosePrice < spanB;
+		var range = candle.HighPrice - candle.LowPrice;
+		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
+		var isBullish = candle.ClosePrice > candle.OpenPrice;
 
-				if (crossedAbove && (_system2.LastLongSignal is null || _system2.LastLongSignal.Value < candleOpenTime))
-				{
-					OpenLong(_system2, previous.ClosePrice, candleOpenTime);
-				}
-				else if (crossedBelow && (_system2.LastShortSignal is null || _system2.LastShortSignal.Value < candleOpenTime))
-				{
-					OpenShort(_system2, previous.ClosePrice, candleOpenTime);
-				}
-			}
-
-			if (UseSystem3 && !_system3.HasPosition)
-			{
-				var maxBody = GetMaxBody();
-
-				if (maxBody > 0m)
-				{
-					var buySignal = previous.ClosePrice > previous.OpenPrice && previousBody > maxBody * 3m &&
-						(_system3.LastLongSignal is null || _system3.LastLongSignal.Value < candleOpenTime);
-					var sellSignal = previous.ClosePrice < previous.OpenPrice && previousBody > maxBody * 3m &&
-						(_system3.LastShortSignal is null || _system3.LastShortSignal.Value < candleOpenTime);
-
-					if (buySignal)
-						OpenLong(_system3, previous.ClosePrice, candleOpenTime);
-					else if (sellSignal)
-						OpenShort(_system3, previous.ClosePrice, candleOpenTime);
-				}
-			}
-		}
-
-UpdateState:
-		if (_bodyHistory.Count == 20)
+		// Store body history for System 3
+		_bodyHistory.Enqueue(body);
+		while (_bodyHistory.Count > 20)
 			_bodyHistory.Dequeue();
 
-		_bodyHistory.Enqueue(previousBody);
+		_candleCount++;
 
-		_secondPreviousCandle = previous;
-		_previousCandle = candle;
-		_prePreviousSar = _previousSar;
-		_previousSar = sarValue;
-		_previousAtrAverage = atrAverageValue;
-		_previousSpanA = spanAValue;
-		_previousSpanB = spanBValue;
-	}
-
-	private void ApplyRiskManagement(SystemState state, ICandleMessage candle, decimal stopOffset, decimal takeOffset)
-	{
-		if (!state.HasPosition || state.EntryPrice is not decimal entryPrice || state.Volume <= 0m)
-			return;
-
-		if (state.IsLong)
+		if (_hasPrev)
 		{
-			var stopPrice = stopOffset > 0m ? entryPrice - stopOffset : (decimal?)null;
-			var takePrice = takeOffset > 0m ? entryPrice + takeOffset : (decimal?)null;
+			var longSignal = false;
+			var shortSignal = false;
 
-			if (stopPrice is decimal stop && candle.LowPrice <= stop)
+			// System 1: ATR expansion breakout
+			if (range > atrVal * AtrMultiplier && atrVal > 0)
 			{
-				SellMarket(state.Volume);
-				ResetState(state);
-				return;
+				if (isBullish)
+					longSignal = true;
+				else
+					shortSignal = true;
 			}
 
-			if (takePrice is decimal take && candle.HighPrice >= take)
+			// System 2: Ichimoku cloud flip
+			if (_hasPrePrev)
 			{
-				SellMarket(state.Volume);
-				ResetState(state);
-			}
-		}
-		else
-		{
-			var stopPrice = stopOffset > 0m ? entryPrice + stopOffset : (decimal?)null;
-			var takePrice = takeOffset > 0m ? entryPrice - takeOffset : (decimal?)null;
+				var prevAboveCloud = _prevClose > _prevSpanA && _prevClose > _prevSpanB;
+				var prevBelowCloud = _prevClose < _prevSpanA && _prevClose < _prevSpanB;
+				var nowAboveCloud = candle.ClosePrice > spanA && candle.ClosePrice > spanB;
+				var nowBelowCloud = candle.ClosePrice < spanA && candle.ClosePrice < spanB;
 
-			if (stopPrice is decimal stop && candle.HighPrice >= stop)
-			{
-				BuyMarket(state.Volume);
-				ResetState(state);
-				return;
+				if (!prevAboveCloud && nowAboveCloud)
+					longSignal = true;
+				if (!prevBelowCloud && nowBelowCloud)
+					shortSignal = true;
 			}
 
-			if (takePrice is decimal take && candle.LowPrice <= take)
+			// System 3: Large body exhaustion
+			var maxBody = GetMaxBody();
+			if (maxBody > 0 && body > maxBody * BodyMultiplier)
 			{
-				BuyMarket(state.Volume);
-				ResetState(state);
+				if (isBullish)
+					longSignal = true;
+				else
+					shortSignal = true;
+			}
+
+			// SAR exit
+			if (_hasPrePrev && Position > 0 && _prevClose > _prevSar && candle.ClosePrice < sarVal)
+			{
+				SellMarket();
+			}
+			else if (_hasPrePrev && Position < 0 && _prevClose < _prevSar && candle.ClosePrice > sarVal)
+			{
+				BuyMarket();
+			}
+
+			// Entry signals
+			if (longSignal && Position <= 0)
+			{
+				BuyMarket();
+			}
+			else if (shortSignal && Position >= 0)
+			{
+				SellMarket();
 			}
 		}
-	}
 
-	private void HandleSarExit(SystemState state, bool crossDown, bool crossUp)
-	{
-		if (!state.HasPosition || state.Volume <= 0m)
-			return;
-
-		if (state.IsLong && crossDown)
-		{
-			SellMarket(state.Volume);
-			ResetState(state);
-		}
-		else if (!state.IsLong && crossUp)
-		{
-			BuyMarket(state.Volume);
-			ResetState(state);
-		}
-	}
-
-	private void OpenLong(SystemState state, decimal referencePrice, DateTimeOffset signalTime)
-	{
-		var order = BuyMarket(OrderVolume);
-		if (order is null)
-			return;
-
-		state.HasPosition = true;
-		state.IsLong = true;
-		state.Volume = OrderVolume;
-		state.EntryPrice = referencePrice;
-		state.LastLongSignal = signalTime;
-	}
-
-	private void OpenShort(SystemState state, decimal referencePrice, DateTimeOffset signalTime)
-	{
-		var order = SellMarket(OrderVolume);
-		if (order is null)
-			return;
-
-		state.HasPosition = true;
-		state.IsLong = false;
-		state.Volume = OrderVolume;
-		state.EntryPrice = referencePrice;
-		state.LastShortSignal = signalTime;
-	}
-
-	private void ResetState(SystemState state)
-	{
-		state.HasPosition = false;
-		state.IsLong = false;
-		state.Volume = 0m;
-		state.EntryPrice = null;
+		_hasPrePrev = _hasPrev;
+		_prePrevSar = _prevSar;
+		_prevClose = candle.ClosePrice;
+		_prevSar = sarVal;
+		_prevSpanA = spanA;
+		_prevSpanB = spanB;
+		_prevRange = range;
+		_hasPrev = true;
 	}
 
 	private decimal GetMaxBody()
@@ -442,30 +213,6 @@ UpdateState:
 			if (value > max)
 				max = value;
 		}
-
 		return max;
 	}
-
-	private decimal GetPriceOffset(decimal pips)
-	{
-		if (pips <= 0m || _pipSize <= 0m)
-			return 0m;
-
-		return pips * _pipSize;
-	}
-
-	private decimal ResolvePipSize()
-	{
-		if (Security?.Step is not decimal step || step <= 0m)
-			return 0m;
-
-		if (step == 0.00001m)
-			return 0.0001m;
-
-		if (step == 0.001m)
-			return 0.01m;
-
-		return step;
-	}
 }
-

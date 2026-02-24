@@ -122,17 +122,16 @@ public class MacdZeroFilteredCrossStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Fixed take-profit distance in price points", "Risk Management");
 
-		_lotVolume = Param(nameof(LotVolume), 0.1m)
+		_lotVolume = Param(nameof(LotVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Volume", "Trading volume per order", "Trading")
-			
-			.SetOptimize(0.05m, 0.5m, 0.05m);
+			.SetOptimize(1m, 5m, 1m);
 
 		_minimumBalancePerVolume = Param(nameof(MinimumBalancePerVolume), 1000m)
 			.SetNotNegative()
 			.SetDisplay("Balance per Volume", "Required balance per volume unit before opening trades", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe that drives MACD calculations", "General");
 	}
 
@@ -152,9 +151,8 @@ public class MacdZeroFilteredCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
 
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -180,8 +178,10 @@ public class MacdZeroFilteredCrossStrategy : Strategy
 
 		if (TakeProfitPoints > 0m)
 		{
-			StartProtection(takeProfit: new Unit(TakeProfitPoints, UnitTypes.Point));
+			StartProtection(new Unit(TakeProfitPoints, UnitTypes.Absolute), null);
 		}
+
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
@@ -208,7 +208,7 @@ public class MacdZeroFilteredCrossStrategy : Strategy
 			// Close existing long position when MACD crosses below the signal line.
 			if (crossDown && Position > 0m)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				_previousMacd = macdLine;
 				_previousSignal = signalLine;
 				return;
@@ -217,7 +217,7 @@ public class MacdZeroFilteredCrossStrategy : Strategy
 			// Close existing short position when MACD crosses above the signal line.
 			if (crossUp && Position < 0m)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				_previousMacd = macdLine;
 				_previousSignal = signalLine;
 				return;
@@ -256,7 +256,6 @@ public class MacdZeroFilteredCrossStrategy : Strategy
 		if (balance.Value >= required)
 			return true;
 
-		LogInfo($"Balance filter blocked entry. Current balance={balance.Value}, required={required}.");
 		return false;
 	}
 }

@@ -109,24 +109,27 @@ public class SupertrendHombrokBotStrategy : Strategy
 
 		var atr = atrVal.ToDecimal();
 		var rsi = rsiVal.ToDecimal();
-		var volAvg = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume ?? 0m, candle.OpenTime)).ToDecimal();
+		var volAvg = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).GetValue<decimal>();
 		var volOk = candle.TotalVolume > volAvg * VolumeMultiplier;
 		var bodySize = Math.Abs(candle.ClosePrice - candle.OpenPrice);
 		var bodyOk = bodySize > atr * BodyPctOfAtr;
 		var st = (SuperTrendIndicatorValue)stVal;
 		var isUp = st.IsUpTrend;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		var buyCond = isUp && volOk && bodyOk && rsi < RsiOverbought;
 		var sellCond = !isUp && volOk && bodyOk && rsi > RsiOversold;
 
-		if (buyCond)
+		if (buyCond && Position <= 0)
 		{
 			var qty = CapitalPerTrade / candle.ClosePrice;
 			BuyMarket(qty);
 			_stopLevel = candle.ClosePrice - atr;
 			_tpLevel = candle.ClosePrice + atr * RiskRewardRatio;
 		}
-		else if (sellCond)
+		else if (sellCond && Position >= 0)
 		{
 			var qty = CapitalPerTrade / candle.ClosePrice;
 			SellMarket(qty);

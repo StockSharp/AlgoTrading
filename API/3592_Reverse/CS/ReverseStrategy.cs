@@ -1,75 +1,38 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
+namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Simplified from "Reverse" MetaTrader expert.
+/// Uses Bollinger Band touches with RSI confirmation for mean-reversion entries.
+/// Enters long when price crosses above lower band with RSI oversold,
+/// enters short when price crosses below upper band with RSI overbought.
+/// </summary>
 public class ReverseStrategy : Strategy
 {
-	// Candle subscription parameter using the high level API.
 	private readonly StrategyParam<DataType> _candleType;
-	// Bollinger Bands moving average length.
 	private readonly StrategyParam<int> _bollingerPeriod;
-	// Bollinger Bands width expressed in standard deviations.
 	private readonly StrategyParam<decimal> _bollingerWidth;
-	// Relative Strength Index length.
 	private readonly StrategyParam<int> _rsiPeriod;
-	// RSI threshold used to detect overbought conditions.
 	private readonly StrategyParam<decimal> _rsiOverbought;
-	// RSI threshold used to detect oversold conditions.
 	private readonly StrategyParam<decimal> _rsiOversold;
 
-	// Cached indicator instances for reuse between runs.
 	private BollingerBands _bollinger;
 	private RelativeStrengthIndex _rsi;
 
-	// Previous candle context required to detect band and RSI crossovers.
-	private decimal _previousClose;
-	private decimal _previousLowerBand;
-	private decimal _previousUpperBand;
-	private decimal _previousRsi;
-	private bool _hasPrevious;
-
-	// Tracking of protective stop and take-profit prices.
-	private decimal? _longStop;
-	private decimal? _longTarget;
-	private decimal? _shortStop;
-	private decimal? _shortTarget;
-
-	public ReverseStrategy()
-	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame used for signals", "General");
-
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Period", "Moving average length for Bollinger Bands", "Indicators");
-
-		_bollingerWidth = Param(nameof(BollingerWidth), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Width", "Standard deviation multiplier for the bands", "Indicators");
-
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Length of the RSI oscillator", "Indicators");
-
-		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
-			.SetDisplay("RSI Overbought", "Upper threshold used for short signals", "Signals");
-
-		_rsiOversold = Param(nameof(RsiOversold), 30m)
-			.SetDisplay("RSI Oversold", "Lower threshold used for long signals", "Signals");
-	}
+	private decimal _prevClose;
+	private decimal _prevRsi;
+	private decimal _prevLower;
+	private decimal _prevUpper;
+	private bool _hasPrev;
 
 	public DataType CandleType
 	{
@@ -107,155 +70,134 @@ public class ReverseStrategy : Strategy
 		set => _rsiOversold.Value = value;
 	}
 
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
-
-	protected override void OnReseted()
+	public ReverseStrategy()
 	{
-		base.OnReseted();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for signals", "General");
 
-		_bollinger = new()
-		{
-			Length = BollingerPeriod,
-			Width = BollingerWidth,
-		};
+		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Bollinger Period", "MA length for Bollinger Bands", "Indicators");
 
-		_rsi = new()
-		{
-			Length = RsiPeriod,
-		};
+		_bollingerWidth = Param(nameof(BollingerWidth), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Bollinger Width", "Standard deviation multiplier", "Indicators");
 
-		_previousClose = 0m;
-		_previousLowerBand = 0m;
-		_previousUpperBand = 0m;
-		_previousRsi = 0m;
-		_hasPrevious = false;
-		ResetTargets();
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "RSI period", "Indicators");
+
+		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
+			.SetDisplay("RSI Overbought", "Upper threshold for short signals", "Signals");
+
+		_rsiOversold = Param(nameof(RsiOversold), 30m)
+			.SetDisplay("RSI Oversold", "Lower threshold for long signals", "Signals");
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
+		_bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerWidth };
+		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		_hasPrev = false;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_bollinger, _rsi, ProcessCandle)
+			.Bind(_rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, _rsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_bollinger.IsFormed || !_rsi.IsFormed)
+		if (!_rsi.IsFormed)
+			return;
+
+		var close = candle.ClosePrice;
+
+		// Manually compute Bollinger Bands via indicator
+		var bbInput = new CandleIndicatorValue(_bollinger, candle) { IsFinal = true };
+		var bbResult = _bollinger.Process(bbInput);
+
+		if (!_bollinger.IsFormed)
 		{
-			// Indicator values are not ready yet, remember the latest context only.
-			StorePrevious(candle.ClosePrice, lowerBand, upperBand, rsiValue, false);
+			_prevClose = close;
+			_prevRsi = rsiValue;
 			return;
 		}
 
-		if (!_hasPrevious)
+		if (bbResult is not BollingerBandsValue bbVal)
 		{
-			// Wait for one fully formed candle to use as historical reference.
-			StorePrevious(candle.ClosePrice, lowerBand, upperBand, rsiValue, true);
+			_prevClose = close;
+			_prevRsi = rsiValue;
 			return;
 		}
 
-		if (BollingerWidth <= 0m)
+		if (bbVal.UpBand is not decimal upperBand || bbVal.LowBand is not decimal lowerBand)
+		{
+			_prevClose = close;
+			_prevRsi = rsiValue;
 			return;
+		}
 
-		var standardDeviation = (upperBand - middleBand) / BollingerWidth;
-		if (standardDeviation <= 0m)
+		if (!_hasPrev)
+		{
+			_prevClose = close;
+			_prevRsi = rsiValue;
+			_prevLower = lowerBand;
+			_prevUpper = upperBand;
+			_hasPrev = true;
 			return;
+		}
 
-		// Enter long when price and RSI cross up from oversold near the lower band.
-		var longSignal = Position <= 0
-			&& _previousClose < _previousLowerBand
-			&& candle.ClosePrice >= lowerBand
-			&& _previousRsi < RsiOversold
-			&& rsiValue >= RsiOversold;
+		var volume = Volume;
+		if (volume <= 0)
+			volume = 1;
 
-		// Enter short when price and RSI cross down from overbought near the upper band.
-		var shortSignal = Position >= 0
-			&& _previousClose > _previousUpperBand
-			&& candle.ClosePrice <= upperBand
-			&& _previousRsi > RsiOverbought
-			&& rsiValue <= RsiOverbought;
+		// Long: price crosses up from below lower band + RSI was oversold
+		var longSignal = _prevClose < _prevLower && close >= lowerBand && _prevRsi < RsiOversold;
+		// Short: price crosses down from above upper band + RSI was overbought
+		var shortSignal = _prevClose > _prevUpper && close <= upperBand && _prevRsi > RsiOverbought;
 
 		if (longSignal)
 		{
-			// Place protective stop one deviation below and target two deviations above.
-			_longStop = candle.ClosePrice - standardDeviation;
-			_longTarget = candle.ClosePrice + (standardDeviation * 2m);
-			_shortStop = null;
-			_shortTarget = null;
-			BuyMarket();
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+
+			if (Position <= 0)
+				BuyMarket(volume);
 		}
 		else if (shortSignal)
 		{
-			// Place protective stop one deviation above and target two deviations below.
-			_shortStop = candle.ClosePrice + standardDeviation;
-			_shortTarget = candle.ClosePrice - (standardDeviation * 2m);
-			_longStop = null;
-			_longTarget = null;
-			SellMarket();
+			if (Position > 0)
+				SellMarket(Position);
+
+			if (Position >= 0)
+				SellMarket(volume);
 		}
 
-		if (Position > 0)
-		{
-			// Exit long positions on an upper band touch or when stop/target are reached.
-			if (candle.ClosePrice >= upperBand)
-			{
-				SellMarket();
-				ResetTargets();
-			}
-			else if ((_longStop.HasValue && candle.ClosePrice <= _longStop) || (_longTarget.HasValue && candle.ClosePrice >= _longTarget))
-			{
-				SellMarket();
-				ResetTargets();
-			}
-		}
-		else if (Position < 0)
-		{
-			// Exit short positions on a lower band touch or when stop/target are reached.
-			if (candle.ClosePrice <= lowerBand)
-			{
-				BuyMarket();
-				ResetTargets();
-			}
-			else if ((_shortStop.HasValue && candle.ClosePrice >= _shortStop) || (_shortTarget.HasValue && candle.ClosePrice <= _shortTarget))
-			{
-				BuyMarket();
-				ResetTargets();
-			}
-		}
+		// Exit long at upper band
+		if (Position > 0 && close >= upperBand)
+			SellMarket(Position);
 
-		StorePrevious(candle.ClosePrice, lowerBand, upperBand, rsiValue, true);
-	}
+		// Exit short at lower band
+		if (Position < 0 && close <= lowerBand)
+			BuyMarket(Math.Abs(Position));
 
-	private void StorePrevious(decimal closePrice, decimal lowerBand, decimal upperBand, decimal rsiValue, bool hasPrevious)
-	{
-		_previousClose = closePrice;
-		_previousLowerBand = lowerBand;
-		_previousUpperBand = upperBand;
-		_previousRsi = rsiValue;
-		_hasPrevious = hasPrevious;
-	}
-
-	private void ResetTargets()
-	{
-		_longStop = null;
-		_longTarget = null;
-		_shortStop = null;
-		_shortTarget = null;
+		_prevClose = close;
+		_prevRsi = rsiValue;
+		_prevLower = lowerBand;
+		_prevUpper = upperBand;
 	}
 }
-

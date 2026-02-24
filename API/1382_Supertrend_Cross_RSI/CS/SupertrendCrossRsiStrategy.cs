@@ -118,6 +118,10 @@ public class SupertrendCrossRsiStrategy : Strategy
 		set => _takeProfitPercent.Value = value;
 	}
 
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType), (Security, SuperTrendType), (Security, RsiType)];
+
 	/// <summary>
 	/// Initialize strategy parameters.
 	/// </summary>
@@ -165,12 +169,13 @@ public class SupertrendCrossRsiStrategy : Strategy
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		SubscribeCandles(RsiType).Bind(rsi, OnRsi).Start();
 
-		SubscribeCandles(CandleType).Bind(OnMain).Start();
+		var mainSub = SubscribeCandles(CandleType);
+		mainSub.Bind(OnMain).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, SubscribeCandles(CandleType));
+			DrawCandles(area, mainSub);
 			DrawIndicator(area, st);
 			DrawOwnTrades(area);
 		}
@@ -198,6 +203,13 @@ public class SupertrendCrossRsiStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished || !_stReady)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevClose = candle.ClosePrice;
+			_prevSuperTrendValue = _superTrendValue;
+			return;
+		}
 
 		var longCond = _prevClose < _prevSuperTrendValue && candle.ClosePrice > _superTrendValue;
 		var shortCond = _prevClose > _prevSuperTrendValue && candle.ClosePrice < _superTrendValue;

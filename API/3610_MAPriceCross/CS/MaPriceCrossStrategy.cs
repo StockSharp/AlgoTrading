@@ -1,313 +1,114 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Conversion of the MA Price Cross MetaTrader 4 strategy to StockSharp.
-/// Generates entries when the selected moving average crosses the current price inside a trading window.
+/// Simplified from "MA Price Cross" MetaTrader expert.
+/// Enters when SMA crosses above/below the current close price.
 /// </summary>
 public class MaPriceCrossStrategy : Strategy
 {
-	public enum MovingAverageMethods
-	{
-		Simple,
-		Exponential,
-		Smoothed,
-		LinearWeighted
-	}
-
-	public enum AppliedPrices
-	{
-		Close,
-		Open,
-		High,
-		Low,
-		Median,
-		Typical,
-		Weighted
-	}
-
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<MovingAverageMethods> _maMethod;
-	private readonly StrategyParam<AppliedPrices> _priceType;
-	private readonly StrategyParam<TimeSpan> _startTime;
-	private readonly StrategyParam<TimeSpan> _stopTime;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _orderVolume;
 
-	private IIndicator _movingAverage = null!;
-	private decimal? _previousAverage;
+	private SimpleMovingAverage _sma;
+	private decimal? _prevAverage;
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="MaPriceCrossStrategy"/> class.
-	/// </summary>
-	public MaPriceCrossStrategy()
-	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe used to feed the strategy", "General");
-
-		_maPeriod = Param(nameof(MaPeriod), 160)
-		.SetGreaterThanZero()
-		.SetDisplay("MA Period", "Number of bars used for the moving average", "Moving Average");
-
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
-		.SetDisplay("MA Method", "Moving average calculation method", "Moving Average")
-		;
-
-		_priceType = Param(nameof(PriceType), AppliedPrices.Close)
-		.SetDisplay("Applied Price", "Price source forwarded to the moving average", "Moving Average")
-		;
-
-		_startTime = Param(nameof(StartTime), new TimeSpan(1, 0, 0))
-		.SetDisplay("Start Time", "Time of day when order processing becomes active", "Trading Window");
-
-		_stopTime = Param(nameof(StopTime), new TimeSpan(22, 0, 0))
-		.SetDisplay("Stop Time", "Time of day when new orders are blocked", "Trading Window");
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 200m)
-		.SetNotNegative()
-		.SetDisplay("Stop Loss Points", "Protective stop distance expressed in price points", "Protection")
-		;
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 600m)
-		.SetNotNegative()
-		.SetDisplay("Take Profit Points", "Target distance expressed in price points", "Protection")
-		;
-
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Order Volume", "Default volume for market orders", "Orders")
-		;
-	}
-
-	/// <summary>
-	/// Candle type used to drive calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Length of the moving average window.
-	/// </summary>
 	public int MaPeriod
 	{
 		get => _maPeriod.Value;
 		set => _maPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Moving average calculation method.
-	/// </summary>
-	public MovingAverageMethods MaMethod
+	public MaPriceCrossStrategy()
 	{
-		get => _maMethod.Value;
-		set => _maMethod.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for MA cross detection", "General");
+
+		_maPeriod = Param(nameof(MaPeriod), 160)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "SMA period", "Indicators");
 	}
 
-	/// <summary>
-	/// Price source used by the moving average.
-	/// </summary>
-	public AppliedPrices PriceType
-	{
-		get => _priceType.Value;
-		set => _priceType.Value = value;
-	}
-
-	/// <summary>
-	/// Time of day when trading becomes active.
-	/// </summary>
-	public TimeSpan StartTime
-	{
-		get => _startTime.Value;
-		set => _startTime.Value = value;
-	}
-
-	/// <summary>
-	/// Time of day when new entries are disallowed.
-	/// </summary>
-	public TimeSpan StopTime
-	{
-		get => _stopTime.Value;
-		set => _stopTime.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance expressed in MetaTrader points.
-	/// </summary>
-	public decimal StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance expressed in MetaTrader points.
-	/// </summary>
-	public decimal TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Volume submitted with new market orders.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_previousAverage = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_movingAverage = CreateMovingAverage(MaMethod, MaPeriod);
+		_sma = new SimpleMovingAverage { Length = MaPeriod };
+		_prevAverage = null;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(ProcessCandle)
-		.Start();
+			.Bind(_sma, ProcessCandle)
+			.Start();
 
-		Volume = OrderVolume;
-
-		var stopLoss = ToPriceDistance(StopLossPoints);
-		var takeProfit = ToPriceDistance(TakeProfitPoints);
-
-		StartProtection(
-		stopLoss: stopLoss > 0m ? new Unit(stopLoss, UnitTypes.Absolute) : null,
-		takeProfit: takeProfit > 0m ? new Unit(takeProfit, UnitTypes.Absolute) : null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _sma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var currentPrice = GetAppliedPrice(candle, PriceType);
-		var maValue = _movingAverage.Process(new DecimalIndicatorValue(_movingAverage, currentPrice, candle.OpenTime));
-
-		if (!maValue.IsFinal || !_movingAverage.IsFormed)
-			return;
-
-		var currentAverage = maValue.GetValue<decimal>();
-
-		if (_previousAverage is null)
+		if (!_sma.IsFormed)
 		{
-			_previousAverage = currentAverage;
+			_prevAverage = smaValue;
 			return;
 		}
 
-		var timeOfDay = candle.CloseTime.TimeOfDay;
-
-		if (!IsWithinTradingWindow(timeOfDay) || !IsFormedAndOnlineAndAllowTrading())
+		if (_prevAverage is null)
 		{
-			_previousAverage = currentAverage;
+			_prevAverage = smaValue;
 			return;
 		}
 
-		var previousAverage = _previousAverage.Value;
+		var close = candle.ClosePrice;
+		var volume = Volume;
+		if (volume <= 0)
+			volume = 1;
 
-		var buySignal = previousAverage < currentPrice && currentAverage > currentPrice;
-		var sellSignal = previousAverage > currentPrice && currentAverage < currentPrice;
+		// MA was below price, now crosses above -> sell signal (price goes under MA)
+		var sellSignal = _prevAverage.Value < close && smaValue > close;
+		// MA was above price, now crosses below -> buy signal (price goes above MA)
+		var buySignal = _prevAverage.Value > close && smaValue < close;
 
-		if (buySignal && Position <= 0)
+		if (buySignal)
 		{
 			if (Position < 0)
 				BuyMarket(Math.Abs(Position));
 
-			BuyMarket();
+			if (Position <= 0)
+				BuyMarket(volume);
 		}
-		else if (sellSignal && Position >= 0)
+		else if (sellSignal)
 		{
 			if (Position > 0)
 				SellMarket(Position);
 
-			SellMarket();
+			if (Position >= 0)
+				SellMarket(volume);
 		}
 
-		_previousAverage = currentAverage;
-	}
-
-	private bool IsWithinTradingWindow(TimeSpan time)
-	{
-		var start = StartTime;
-		var stop = StopTime;
-
-		if (start == stop)
-			return true;
-
-		if (start < stop)
-			return time >= start && time < stop;
-
-		return time >= start || time < stop;
-	}
-
-	private decimal ToPriceDistance(decimal points)
-	{
-		var priceStep = Security?.PriceStep ?? 0m;
-
-		if (priceStep <= 0m)
-			return points;
-
-		return points * priceStep;
-	}
-
-	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
-	{
-		return method switch
-		{
-			MovingAverageMethods.Simple => new SMA { Length = length },
-			MovingAverageMethods.Exponential => new EMA { Length = length },
-			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length }
-		};
-	}
-
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices priceType)
-	{
-		return priceType switch
-		{
-			AppliedPrices.Open => candle.OpenPrice,
-			AppliedPrices.High => candle.HighPrice,
-			AppliedPrices.Low => candle.LowPrice,
-			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
-			_ => candle.ClosePrice
-		};
+		_prevAverage = smaValue;
 	}
 }

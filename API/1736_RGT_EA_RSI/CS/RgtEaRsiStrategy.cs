@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -39,39 +36,29 @@ public class RgtEaRsiStrategy : Strategy
 
 	public RgtEaRsiStrategy()
 	{
-
 		_rsiPeriod = Param(nameof(RsiPeriod), 8)
-			.SetDisplay("RSI Period", "RSI calculation period", "Indicator")
-			;
+			.SetDisplay("RSI Period", "RSI calculation period", "Indicator");
 
-		_rsiHigh = Param(nameof(RsiHigh), 90)
-			.SetDisplay("RSI High", "Overbought threshold", "Indicator")
-			;
+		_rsiHigh = Param(nameof(RsiHigh), 55)
+			.SetDisplay("RSI High", "Overbought threshold", "Indicator");
 
-		_rsiLow = Param(nameof(RsiLow), 10)
-			.SetDisplay("RSI Low", "Oversold threshold", "Indicator")
-			;
+		_rsiLow = Param(nameof(RsiLow), 45)
+			.SetDisplay("RSI Low", "Oversold threshold", "Indicator");
 
-		_stopLoss = Param(nameof(StopLoss), 70m)
+		_stopLoss = Param(nameof(StopLoss), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss size in price units", "Risk");
 
-		_trailingStop = Param(nameof(TrailingStop), 35m)
+		_trailingStop = Param(nameof(TrailingStop), 300m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk");
 
-		_minProfit = Param(nameof(MinProfit), 30m)
+		_minProfit = Param(nameof(MinProfit), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Profit", "Minimum profit before trailing", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -83,28 +70,36 @@ public class RgtEaRsiStrategy : Strategy
 		var bb = new BollingerBands { Length = 20, Width = 2m };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(rsi, bb, ProcessCandle).Start();
-
-		StartProtection(null, null);
+		subscription.BindEx(new IIndicator[] { rsi, bb }, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (values[0].IsEmpty || values[1].IsEmpty)
+			return;
+
+		var rsiVal = values[0].GetValue<decimal>();
+		var bbVal = (BollingerBandsValue)values[1];
+
+		if (bbVal.UpBand is not decimal upper ||
+			bbVal.LowBand is not decimal lower)
+			return;
+
 		if (Position == 0)
 		{
-			if (rsi < RsiLow && candle.ClosePrice < lower && Position <= 0)
+			if (rsiVal < RsiLow && candle.ClosePrice < lower)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				_entryPrice = candle.ClosePrice;
 				_stopPrice = _entryPrice - StopLoss;
 				return;
 			}
-			if (rsi > RsiHigh && candle.ClosePrice > upper && Position >= 0)
+			if (rsiVal > RsiHigh && candle.ClosePrice > upper)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				_entryPrice = candle.ClosePrice;
 				_stopPrice = _entryPrice + StopLoss;
 				return;

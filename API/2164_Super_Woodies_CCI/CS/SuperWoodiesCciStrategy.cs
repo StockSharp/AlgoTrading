@@ -95,7 +95,7 @@ public class SuperWoodiesCciStrategy : Strategy
 			
 			.SetOptimize(20, 100, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_allowLongEntry = Param(nameof(AllowLongEntry), true)
@@ -136,8 +136,6 @@ public class SuperWoodiesCciStrategy : Strategy
 		subscription
 			.Bind(_cci, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)

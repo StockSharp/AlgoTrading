@@ -70,35 +70,34 @@ public class ColorMetroStochasticStrategy : Strategy
 	{
 		_kPeriod = Param(nameof(KPeriod), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("K Period")
-			
+			.SetDisplay("K Period", "K calculation period", "Indicator")
 			.SetOptimize(3, 15, 1);
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("D Period")
-			
+			.SetDisplay("D Period", "D smoothing period", "Indicator")
 			.SetOptimize(2, 10, 1);
 
 		_slowing = Param(nameof(Slowing), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("Slowing")
-			
+			.SetDisplay("Slowing", "Additional smoothing", "Indicator")
 			.SetOptimize(1, 5, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		var stoch = new StochasticOscillator
-		{
-			K = { Length = Slowing },
-			D = { Length = DPeriod },
-			Length = KPeriod,
-		};
+		base.OnStarted2(time);
+
+		_prevK = null;
+		_prevD = null;
+
+		var stoch = new StochasticOscillator();
+		stoch.K.Length = KPeriod;
+		stoch.D.Length = DPeriod;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -116,8 +115,6 @@ public class ColorMetroStochasticStrategy : Strategy
 		StartProtection(
 			takeProfit: new Unit(2, UnitTypes.Percent),
 			stopLoss: new Unit(2, UnitTypes.Percent));
-
-		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
@@ -125,7 +122,10 @@ public class ColorMetroStochasticStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var stoch = (StochasticOscillatorValue)stochValue;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var stoch = (IStochasticOscillatorValue)stochValue;
 
 		if (stoch.K is not decimal k || stoch.D is not decimal d)
 			return;

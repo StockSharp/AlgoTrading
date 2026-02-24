@@ -81,7 +81,7 @@ public class NrtrTrailingStopStrategy : Strategy
 	/// </summary>
 	public NrtrTrailingStopStrategy()
 	{
-		_length = Param(nameof(Length), 10)
+		_length = Param(nameof(Length), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("NRTR Length", "Number of bars for average range", "Indicator")
 			
@@ -102,7 +102,7 @@ public class NrtrTrailingStopStrategy : Strategy
 			
 			.SetOptimize(500m, 3000m, 500m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for processing", "General");
 	}
 
@@ -138,11 +138,6 @@ public class NrtrTrailingStopStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		var step = Security.PriceStep ?? 1m;
-		Unit tp = TakeProfit > 0 ? new Unit(TakeProfit * step, UnitTypes.Point) : null;
-		Unit sl = StopLoss > 0 ? new Unit(StopLoss * step, UnitTypes.Point) : null;
-		if (tp != null || sl != null)
-			StartProtection(tp, sl);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue)
@@ -150,10 +145,7 @@ public class NrtrTrailingStopStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!atrValue.IsFinal)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!atrValue.IsFormed)
 			return;
 
 		var atr = atrValue.GetValue<decimal>();
@@ -168,6 +160,8 @@ public class NrtrTrailingStopStrategy : Strategy
 			return;
 		}
 
+		var isOnline = IsFormedAndOnlineAndAllowTrading();
+
 		if (_trend >= 0)
 		{
 			_price = Math.Max(_price, candle.ClosePrice);
@@ -177,8 +171,8 @@ public class NrtrTrailingStopStrategy : Strategy
 				_price = candle.ClosePrice;
 				_value = _price * (1m + dK);
 				_trend = -1;
-				if (Position >= 0)
-					SellMarket(Volume + Math.Abs(Position));
+				if (isOnline && Position >= 0)
+					SellMarket();
 			}
 		}
 		else
@@ -190,8 +184,8 @@ public class NrtrTrailingStopStrategy : Strategy
 				_price = candle.ClosePrice;
 				_value = _price * (1m - dK);
 				_trend = 1;
-				if (Position <= 0)
-					BuyMarket(Volume + Math.Abs(Position));
+				if (isOnline && Position <= 0)
+					BuyMarket();
 			}
 		}
 	}

@@ -11,8 +11,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Heiken-Ashi strategy using EMA-smoothed candles.
 /// Opens long positions when candle color turns bullish and short positions when it turns bearish.
@@ -56,10 +54,9 @@ public class HeikenAshiSmoothedTrendStrategy : Strategy
 	{
 		_emaLength = Param(nameof(EmaLength), 30)
 			.SetDisplay("EMA Length", "Length for smoothing", "General")
-			.SetGreaterThanZero()
-			;
+			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -73,10 +70,10 @@ public class HeikenAshiSmoothedTrendStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_openEma = default;
-		_closeEma = default;
-		_highEma = default;
-		_lowEma = default;
+		_openEma = null;
+		_closeEma = null;
+		_highEma = null;
+		_lowEma = null;
 		_prevHaOpen = null;
 		_prevHaClose = null;
 		_prevIsGreen = null;
@@ -87,27 +84,46 @@ public class HeikenAshiSmoothedTrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_openEma = new EMA { Length = EmaLength };
-		_closeEma = new EMA { Length = EmaLength };
-		_highEma = new EMA { Length = EmaLength };
-		_lowEma = new EMA { Length = EmaLength };
+		_openEma = new ExponentialMovingAverage { Length = EmaLength };
+		_closeEma = new ExponentialMovingAverage { Length = EmaLength };
+		_highEma = new ExponentialMovingAverage { Length = EmaLength };
+		_lowEma = new ExponentialMovingAverage { Length = EmaLength };
+
+		// Use a dummy SMA for warmup/binding, do manual EMA processing inside
+		var warmup = new SimpleMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(_openEma, _closeEma, _highEma, _lowEma, ProcessCandle)
+			.Bind(warmup, ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal openEma, decimal closeEma, decimal highEma, decimal lowEma)
+	private void ProcessCandle(ICandleMessage candle, decimal _warmupVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_openEma.IsFormed || !_closeEma.IsFormed || !_highEma.IsFormed || !_lowEma.IsFormed)
+		var t = candle.OpenTime;
+
+		var oResult = _openEma.Process(new DecimalIndicatorValue(_openEma, candle.OpenPrice, t) { IsFinal = true });
+		var cResult = _closeEma.Process(new DecimalIndicatorValue(_closeEma, candle.ClosePrice, t) { IsFinal = true });
+		var hResult = _highEma.Process(new DecimalIndicatorValue(_highEma, candle.HighPrice, t) { IsFinal = true });
+		var lResult = _lowEma.Process(new DecimalIndicatorValue(_lowEma, candle.LowPrice, t) { IsFinal = true });
+
+		if (!oResult.IsFormed || !cResult.IsFormed || !hResult.IsFormed || !lResult.IsFormed)
 			return;
+
+		var openEma = oResult.GetValue<decimal>();
+		var closeEma = cResult.GetValue<decimal>();
+		var highEma = hResult.GetValue<decimal>();
+		var lowEma = lResult.GetValue<decimal>();
 
 		var haClose = (openEma + highEma + lowEma + closeEma) / 4m;
 		var haOpen = _prevHaOpen is null ? (openEma + closeEma) / 2m : (_prevHaOpen.Value + _prevHaClose!.Value) / 2m;
@@ -119,15 +135,9 @@ public class HeikenAshiSmoothedTrendStrategy : Strategy
 		if (IsFormedAndOnlineAndAllowTrading())
 		{
 			if (buySignal && Position <= 0)
-			{
-				var volume = Volume + (Position < 0 ? -Position : 0m);
-				BuyMarket(volume);
-			}
+				BuyMarket();
 			else if (sellSignal && Position >= 0)
-			{
-				var volume = Volume + (Position > 0 ? Position : 0m);
-				SellMarket(volume);
-			}
+				SellMarket();
 		}
 
 		_prevHaOpen = haOpen;

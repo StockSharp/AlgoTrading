@@ -1,10 +1,6 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,97 +10,50 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Conversion of the MetaTrader expert advisor grr-al.
-/// Captures one breakout per candle once the price travels a configurable distance from the candle open.
-/// Applies symmetric stop-loss and take-profit protections expressed in points.
+/// Grr-Al Breakout strategy: captures breakout from candle open price.
+/// When price moves a configurable ATR-based distance from the open, enters in that direction.
+/// Uses ATR for dynamic breakout distance measurement.
 /// </summary>
 public class GrrAlBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _riskFraction;
-	private readonly StrategyParam<int> _deltaPoints;
-	private readonly StrategyParam<int> _stopLossPoints;
-	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
 
-	private decimal _pointSize;
 	private DateTimeOffset? _currentCandleTime;
 	private decimal _anchorPrice;
 	private bool _hasTriggered;
 
-
-	/// <summary>
-	/// Fraction of the maximum available volume to risk per trade (0 disables risk-based sizing).
-	/// </summary>
-	public decimal RiskFraction
-	{
-		get => _riskFraction.Value;
-		set => _riskFraction.Value = value;
-	}
-
-	/// <summary>
-	/// Distance in points that price has to move away from the candle open to trigger an entry.
-	/// </summary>
-	public int DeltaPoints
-	{
-		get => _deltaPoints.Value;
-		set => _deltaPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Protective stop size expressed in points.
-	/// </summary>
-	public int StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Profit target expressed in points.
-	/// </summary>
-	public int TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type that defines the trading timeframe.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="GrrAlBreakoutStrategy"/>.
-	/// </summary>
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
+
+	public decimal AtrMultiplier
+	{
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
+	}
+
 	public GrrAlBreakoutStrategy()
 	{
-
-		_riskFraction = Param(nameof(RiskFraction), 0m)
-		.SetGreaterOrEqualToZero()
-		.SetLessOrEqualTo(1m)
-		.SetDisplay("Risk Fraction", "Fraction of maximum volume used when sizing trades", "Trading");
-
-		_deltaPoints = Param(nameof(DeltaPoints), 30)
-		.SetGreaterThanZero()
-		.SetDisplay("Breakout Distance", "Required distance from the candle open in points", "Logic")
-		;
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 100)
-		.SetGreaterOrEqualToZero()
-		.SetDisplay("Stop Loss", "Protective stop in points", "Risk")
-		;
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 700)
-		.SetGreaterOrEqualToZero()
-		.SetDisplay("Take Profit", "Profit target in points", "Risk")
-		;
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe used for anchoring the breakout", "Data");
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "ATR length for breakout distance", "Indicators");
+
+		_atrMultiplier = Param(nameof(AtrMultiplier), 0.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Multiplier", "Multiplier for breakout distance", "Signals");
 	}
 
 	/// <inheritdoc />
@@ -112,164 +61,64 @@ public class GrrAlBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		UpdatePointSize();
+		_currentCandleTime = null;
+		_hasTriggered = false;
+
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(ProcessCandle)
-		.Start();
+			.BindEx(atr, ProcessCandle)
+			.Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue)
 	{
-		if (candle.State == CandleStates.Empty)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_pointSize <= 0m)
-		{
-			UpdatePointSize();
-			if (_pointSize <= 0m)
-				return;
-		}
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
+		var atr = atrValue.ToDecimal();
+		if (atr <= 0)
+			return;
+
+		// Reset trigger on new candle
 		if (_currentCandleTime != candle.OpenTime)
 		{
 			_currentCandleTime = candle.OpenTime;
-			_anchorPrice = candle.OpenPrice > 0m ? candle.OpenPrice : candle.ClosePrice;
+			_anchorPrice = candle.OpenPrice;
 			_hasTriggered = false;
 		}
 
 		if (_hasTriggered)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var deltaPrice = atr * AtrMultiplier;
+		if (deltaPrice <= 0)
 			return;
 
-		var anchor = _anchorPrice;
-		if (anchor <= 0m)
-			return;
+		var close = candle.ClosePrice;
 
-		var lastPrice = candle.ClosePrice;
-		if (lastPrice <= 0m)
-			return;
-
-		var deltaPrice = DeltaPoints * _pointSize;
-		if (deltaPrice <= 0m)
-			return;
-
-		if (lastPrice - anchor >= deltaPrice)
+		// Breakout up - buy
+		if (close - _anchorPrice >= deltaPrice && Position <= 0)
 		{
-			ExecuteSell(lastPrice);
+			BuyMarket();
+			_hasTriggered = true;
 		}
-		else if (anchor - lastPrice >= deltaPrice)
+		// Breakout down - sell
+		else if (_anchorPrice - close >= deltaPrice && Position >= 0)
 		{
-			ExecuteBuy(lastPrice);
+			SellMarket();
+			_hasTriggered = true;
 		}
-	}
-
-	private void ExecuteBuy(decimal price)
-	{
-		var volume = CalculateTradeVolume();
-		if (volume <= 0m)
-			return;
-
-		var resultingPosition = Position + volume;
-		BuyMarket(volume);
-		_hasTriggered = true;
-
-		if (resultingPosition > 0m)
-			ApplyProtection(price, resultingPosition);
-	}
-
-	private void ExecuteSell(decimal price)
-	{
-		var volume = CalculateTradeVolume();
-		if (volume <= 0m)
-			return;
-
-		var resultingPosition = Position - volume;
-		SellMarket(volume);
-		_hasTriggered = true;
-
-		if (resultingPosition < 0m)
-			ApplyProtection(price, resultingPosition);
-	}
-
-	private void ApplyProtection(decimal price, decimal resultingPosition)
-	{
-		if (TakeProfitPoints > 0)
-			SetTakeProfit(TakeProfitPoints, price, resultingPosition);
-
-		if (StopLossPoints > 0)
-			SetStopLoss(StopLossPoints, price, resultingPosition);
-	}
-
-	private decimal CalculateTradeVolume()
-	{
-		var volume = Volume;
-
-		if (RiskFraction > 0m)
-		{
-			var security = Security;
-			if (security != null)
-			{
-				var max = security.VolumeMax ?? decimal.MaxValue;
-				var riskVolume = max * RiskFraction;
-				if (riskVolume > 0m)
-					volume = Math.Min(volume, riskVolume);
-			}
-		}
-
-		return NormalizeVolume(volume);
-	}
-
-	private decimal NormalizeVolume(decimal volume)
-	{
-		var security = Security;
-		if (security == null)
-			return volume;
-
-		var step = security.VolumeStep ?? 0m;
-		if (step > 0m)
-			volume = step * Math.Round(volume / step, MidpointRounding.AwayFromZero);
-
-		var min = security.VolumeMin ?? 0m;
-		if (min > 0m && volume < min)
-			return 0m;
-
-		var max = security.VolumeMax ?? decimal.MaxValue;
-		if (volume > max)
-			volume = max;
-
-		return volume;
-	}
-
-	private void UpdatePointSize()
-	{
-		var security = Security;
-		if (security == null)
-		{
-			_pointSize = 0m;
-			return;
-		}
-
-		var step = security.PriceStep ?? 0m;
-		if (step > 0m)
-		{
-			_pointSize = step;
-			return;
-		}
-
-		if (security.Decimals is int decimals && decimals > 0)
-		{
-			_pointSize = (decimal)Math.Pow(10, -decimals);
-			return;
-		}
-
-		_pointSize = 0m;
 	}
 }
-
-

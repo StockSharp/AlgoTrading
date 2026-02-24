@@ -104,7 +104,7 @@ public class MfiHistogramStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), new Unit(2000, UnitTypes.Step))
 		.SetDisplay("Take Profit", "Take-profit in ticks", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe of candles", "General");
 	}
 
@@ -135,7 +135,16 @@ public class MfiHistogramStrategy : Strategy
 	var subscription = SubscribeCandles(CandleType);
 	subscription.Bind(mfi, ProcessCandle).Start();
 
-	StartProtection(stopLoss: StopLoss, takeProfit: TakeProfit);
+	var area = CreateChartArea();
+	if (area != null)
+	{
+		DrawCandles(area, subscription);
+		DrawOwnTrades(area);
+
+		var area2 = CreateChartArea();
+		if (area2 != null)
+			DrawIndicator(area2, mfi);
+	}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal mfiValue)
@@ -144,19 +153,22 @@ public class MfiHistogramStrategy : Strategy
 	return;
 
 	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
+	{
+		_prevMfi = mfiValue;
+		return;
+	}
 
 	// MFI crosses above high level
 	if (mfiValue > HighLevel && _prevMfi <= HighLevel)
 	{
 	if (Position <= 0)
-	BuyMarket(Volume + Math.Abs(Position));
+	BuyMarket();
 	}
 	// MFI crosses below low level
 	else if (mfiValue < LowLevel && _prevMfi >= LowLevel)
 	{
 	if (Position >= 0)
-	SellMarket(Volume + Math.Abs(Position));
+	SellMarket();
 	}
 
 	_prevMfi = mfiValue;

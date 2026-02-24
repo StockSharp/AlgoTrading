@@ -107,24 +107,33 @@ public class SupplyDemandOrderBlockStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var donchian = new DonchianChannel { Length = Length };
+		var donchian = new DonchianChannels { Length = Length };
 		var ema = new EMA { Length = 50 };
-		var volumeSma = new SMA { Length = 20 };
+		_volumeSma = new SMA { Length = 20 };
 
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(donchian, ema, volumeSma, ProcessCandle)
+			.BindEx(donchian, ema, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal upper, decimal lower, decimal emaValue, decimal volumeAvg)
+	private SMA _volumeSma;
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue dcValue, IIndicatorValue emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var volumeAvg = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).GetValue<decimal>();
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
+
+		var dc = (IDonchianChannelsValue)dcValue;
+		if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
+			return;
+		var emaValue = emaVal.ToDecimal();
 
 		var trendUp = candle.ClosePrice > emaValue;
 		var trendDown = candle.ClosePrice < emaValue;
@@ -137,23 +146,23 @@ public class SupplyDemandOrderBlockStrategy : Strategy
 		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
-			_slLevel = candle.ClosePrice - StopLossTicks * Security.PriceStep;
-			_trailingStart = candle.ClosePrice + TrailingStartTicks * Security.PriceStep;
+			_slLevel = candle.ClosePrice - StopLossTicks * (Security.PriceStep ?? 0.01m);
+			_trailingStart = candle.ClosePrice + TrailingStartTicks * (Security.PriceStep ?? 0.01m);
 			_trailingSl = null;
 		}
 		else if (shortBreakout)
 		{
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-			_slLevel = candle.ClosePrice + StopLossTicks * Security.PriceStep;
-			_trailingStart = candle.ClosePrice - TrailingStartTicks * Security.PriceStep;
+			_slLevel = candle.ClosePrice + StopLossTicks * (Security.PriceStep ?? 0.01m);
+			_trailingStart = candle.ClosePrice - TrailingStartTicks * (Security.PriceStep ?? 0.01m);
 			_trailingSl = null;
 		}
 
 		if (Position > 0)
 		{
 			if (_trailingStart != null && candle.ClosePrice > _trailingStart)
-				_trailingSl = Math.Max(_trailingSl ?? (candle.ClosePrice - StopLossTicks * Security.PriceStep), candle.ClosePrice - StopLossTicks * Security.PriceStep);
+				_trailingSl = Math.Max(_trailingSl ?? (candle.ClosePrice - StopLossTicks * (Security.PriceStep ?? 0.01m)), candle.ClosePrice - StopLossTicks * (Security.PriceStep ?? 0.01m));
 
 			if ((_slLevel != null && candle.LowPrice <= _slLevel) || (_trailingSl != null && candle.LowPrice <= _trailingSl))
 				SellMarket(Position);
@@ -161,7 +170,7 @@ public class SupplyDemandOrderBlockStrategy : Strategy
 		else if (Position < 0)
 		{
 			if (_trailingStart != null && candle.ClosePrice < _trailingStart)
-				_trailingSl = Math.Min(_trailingSl ?? (candle.ClosePrice + StopLossTicks * Security.PriceStep), candle.ClosePrice + StopLossTicks * Security.PriceStep);
+				_trailingSl = Math.Min(_trailingSl ?? (candle.ClosePrice + StopLossTicks * (Security.PriceStep ?? 0.01m)), candle.ClosePrice + StopLossTicks * (Security.PriceStep ?? 0.01m));
 
 			if ((_slLevel != null && candle.HighPrice >= _slLevel) || (_trailingSl != null && candle.HighPrice >= _trailingSl))
 				BuyMarket(Math.Abs(Position));

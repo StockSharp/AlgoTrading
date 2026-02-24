@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,159 +12,144 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Stochastic crossover strategy with trailing stop and take profit.
+/// Buys when %K crosses above %D in oversold zone, sells when crosses below in overbought zone.
 /// </summary>
 public class StochTpTsV3103Strategy : Strategy
 {
-	private readonly StrategyParam<int> _triggerMinute;
-	private readonly StrategyParam<decimal> _signalThreshold;
+	private readonly StrategyParam<int> _stochLength;
+	private readonly StrategyParam<int> _dPeriod;
 	private readonly StrategyParam<decimal> _startOffset;
 	private readonly StrategyParam<decimal> _trailStopOffset;
 	private readonly StrategyParam<decimal> _stopLossOffset;
-	private readonly StrategyParam<int> _stochLength;
-	private readonly StrategyParam<int> _kPeriod;
-	private readonly StrategyParam<int> _dPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private StochasticOscillator _stochastic = null!;
-	private int _lastTradeHour = -1;
+
 	private decimal _entryPrice;
-	private decimal _longStopPrice;
-	private decimal _longTakeProfit;
-	private decimal _shortStopPrice;
-	private decimal _shortTakeProfit;
-	
-	public int TriggerMinute { get => _triggerMinute.Value; set => _triggerMinute.Value = value; }
-	public decimal SignalThreshold { get => _signalThreshold.Value; set => _signalThreshold.Value = value; }
+	private decimal _trailingStop;
+	private decimal? _prevK;
+	private decimal? _prevD;
+
+	public int StochLength { get => _stochLength.Value; set => _stochLength.Value = value; }
+	public int DPeriod { get => _dPeriod.Value; set => _dPeriod.Value = value; }
 	public decimal StartOffset { get => _startOffset.Value; set => _startOffset.Value = value; }
 	public decimal TrailStopOffset { get => _trailStopOffset.Value; set => _trailStopOffset.Value = value; }
 	public decimal StopLossOffset { get => _stopLossOffset.Value; set => _stopLossOffset.Value = value; }
-	public int StochLength { get => _stochLength.Value; set => _stochLength.Value = value; }
-	public int KPeriod { get => _kPeriod.Value; set => _kPeriod.Value = value; }
-	public int DPeriod { get => _dPeriod.Value; set => _dPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	
+
 	public StochTpTsV3103Strategy()
 	{
-		_triggerMinute = Param(nameof(TriggerMinute), 56).SetDisplay("Trigger Minute", "Minute of hour to evaluate", "General");
-		_signalThreshold = Param(nameof(SignalThreshold), 0m).SetDisplay("Signal Threshold", "Minimum difference between %K and %D", "Logic");
-		_startOffset = Param(nameof(StartOffset), 95m).SetDisplay("Start Offset", "Profit in price units to activate trailing", "Risk");
-		_trailStopOffset = Param(nameof(TrailStopOffset), 15m).SetDisplay("Trail Stop Offset", "Trailing stop distance in price units", "Risk");
-		_stopLossOffset = Param(nameof(StopLossOffset), 830m).SetDisplay("Stop Loss Offset", "Initial stop loss in price units", "Risk");
-		_stochLength = Param(nameof(StochLength), 5).SetDisplay("Stochastic Length", "Stochastic oscillator length", "Indicators");
-		_kPeriod = Param(nameof(KPeriod), 3).SetDisplay("K Period", "Smoothing period for %K", "Indicators");
-		_dPeriod = Param(nameof(DPeriod), 3).SetDisplay("D Period", "Smoothing period for %D", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles to use", "General");
+		_stochLength = Param(nameof(StochLength), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Stochastic Length", "Stochastic K length", "Indicators");
+		_dPeriod = Param(nameof(DPeriod), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("D Period", "Smoothing period for %D", "Indicators");
+		_startOffset = Param(nameof(StartOffset), 400m)
+			.SetDisplay("Start Offset", "Profit to activate trailing stop", "Risk");
+		_trailStopOffset = Param(nameof(TrailStopOffset), 200m)
+			.SetDisplay("Trail Stop Offset", "Trailing stop distance", "Risk");
+		_stopLossOffset = Param(nameof(StopLossOffset), 500m)
+			.SetDisplay("Stop Loss Offset", "Initial stop loss distance", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
-	
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
-	
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_lastTradeHour = -1;
-		_entryPrice = 0m;
-		_longStopPrice = _longTakeProfit = 0m;
-		_shortStopPrice = _shortTakeProfit = 0m;
-	}
-	
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
-		
-		_stochastic = new StochasticOscillator
-		{ K = { Length = StochLength },
-			K = { Length = KPeriod },
-			D = { Length = DPeriod }
-		};
-		
+
+		_entryPrice = 0;
+		_trailingStop = 0;
+		_prevK = null;
+		_prevD = null;
+
+		var stoch = new StochasticOscillator();
+		stoch.K.Length = StochLength;
+		stoch.D.Length = DPeriod;
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(_stochastic, ProcessCandle).Start();
+		subscription.BindEx(stoch, ProcessCandle).Start();
 	}
-	
+
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
-		var stoch = (StochasticOscillatorValue)stochValue;
-		var k = stoch.K;
-		var d = stoch.D;
-		
-		var currentMinute = candle.OpenTime.Minute;
-		var currentHour = candle.OpenTime.Hour;
-		
-		if (currentMinute == TriggerMinute && currentHour != _lastTradeHour)
-		{
-			_lastTradeHour = currentHour;
-			
-			if (k >= 20m && k <= 80m)
-			{
-				if (d - k >= SignalThreshold && Position <= 0)
-				{
-					SellMarket(Volume + Math.Abs(Position));
-					_entryPrice = candle.ClosePrice;
-					_shortStopPrice = _entryPrice + StopLossOffset;
-					_shortTakeProfit = _entryPrice - StartOffset * 3m;
-					_longStopPrice = _longTakeProfit = 0m;
-				}
-				else if (k - d > SignalThreshold && Position >= 0)
-				{
-					BuyMarket(Volume + Math.Abs(Position));
-					_entryPrice = candle.ClosePrice;
-					_longStopPrice = _entryPrice - StopLossOffset;
-					_longTakeProfit = _entryPrice + StartOffset * 3m;
-					_shortStopPrice = _shortTakeProfit = 0m;
-				}
-			}
-		}
-		
+			return;
+
+		var typed = (StochasticOscillatorValue)stochValue;
+		var k = typed.K;
+		var d = typed.D;
+
+		if (k is not decimal kVal || d is not decimal dVal)
+			return;
+
+		var price = candle.ClosePrice;
+
+		// Trailing stop / SL / TP management
 		if (Position > 0)
 		{
-			if (_longTakeProfit > 0m && candle.HighPrice >= _longTakeProfit)
+			// Activate trailing once we reach the start offset
+			if (price - _entryPrice >= StartOffset)
 			{
-				SellMarket(Position);
-				_longTakeProfit = _longStopPrice = 0m;
+				var newStop = price - TrailStopOffset;
+				if (newStop > _trailingStop)
+					_trailingStop = newStop;
+			}
+
+			// Check stop loss or trailing stop hit
+			if ((_trailingStop > 0 && price <= _trailingStop) || (_entryPrice - price >= StopLossOffset))
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_trailingStop = 0;
+				_prevK = kVal;
+				_prevD = dVal;
 				return;
-			}
-			
-			if (candle.ClosePrice - _entryPrice >= StartOffset)
-			{
-				var newStop = candle.ClosePrice - TrailStopOffset;
-				_longStopPrice = Math.Max(_longStopPrice, newStop);
-				_longTakeProfit = 0m;
-			}
-			
-			if (_longStopPrice > 0m && candle.LowPrice <= _longStopPrice)
-			{
-				SellMarket(Position);
-				_longStopPrice = 0m;
 			}
 		}
 		else if (Position < 0)
 		{
-			if (_shortTakeProfit > 0m && candle.LowPrice <= _shortTakeProfit)
+			if (_entryPrice - price >= StartOffset)
 			{
-				BuyMarket(Math.Abs(Position));
-				_shortTakeProfit = _shortStopPrice = 0m;
+				var newStop = price + TrailStopOffset;
+				if (_trailingStop == 0 || newStop < _trailingStop)
+					_trailingStop = newStop;
+			}
+
+			if ((_trailingStop > 0 && price >= _trailingStop) || (price - _entryPrice >= StopLossOffset))
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_trailingStop = 0;
+				_prevK = kVal;
+				_prevD = dVal;
 				return;
 			}
-			
-			if (_entryPrice - candle.ClosePrice >= StartOffset)
+		}
+
+		// Entry on stochastic crossover
+		if (Position == 0 && _prevK.HasValue && _prevD.HasValue)
+		{
+			var prevKv = _prevK.Value;
+			var prevDv = _prevD.Value;
+
+			// Buy: %K crosses above %D (previous K <= D, current K > D)
+			if (prevKv <= prevDv && kVal > dVal)
 			{
-				var newStop = candle.ClosePrice + TrailStopOffset;
-				_shortStopPrice = _shortStopPrice == 0m ? newStop : Math.Min(_shortStopPrice, newStop);
-				_shortTakeProfit = 0m;
+				BuyMarket();
+				_entryPrice = price;
+				_trailingStop = 0;
 			}
-			
-			if (_shortStopPrice > 0m && candle.HighPrice >= _shortStopPrice)
+			// Sell: %K crosses below %D (previous K >= D, current K < D)
+			else if (prevKv >= prevDv && kVal < dVal)
 			{
-				BuyMarket(Math.Abs(Position));
-				_shortStopPrice = 0m;
+				SellMarket();
+				_entryPrice = price;
+				_trailingStop = 0;
 			}
 		}
+
+		_prevK = kVal;
+		_prevD = dVal;
 	}
 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 using Ecng.Collections;
+using Ecng.Logging;
 using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
@@ -32,6 +33,7 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 
 	private decimal? _stopPrice;
 	private decimal? _takeProfitPrice;
+	private decimal _entryPrice;
 
 	private decimal _priceStep;
 
@@ -120,7 +122,7 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pts)", "Minimal trailing increment", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -138,6 +140,7 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 		_prevPrevBulls = null;
 		_stopPrice = null;
 		_takeProfitPrice = null;
+		_entryPrice = 0m;
 		_priceStep = 0m;
 	}
 
@@ -148,7 +151,7 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 
 		if (TrailingStopPoints > 0m && TrailingStopPoints <= TrailingStepPoints)
 		{
-			LogError("Trailing stop must be greater than trailing step.");
+			this.AddErrorLog("Trailing stop must be greater than trailing step.");
 			Stop();
 			return;
 		}
@@ -171,8 +174,6 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 		subscription
 			.Bind(_bullsPower, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -251,7 +252,7 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 		if (Position > 0)
 		{
 			// Update trailing stop for long positions when profit exceeds the trigger distance.
-			var profit = candle.ClosePrice - PositionPrice;
+			var profit = candle.ClosePrice - _entryPrice;
 			if (profit <= trailingDistance)
 				return;
 
@@ -262,7 +263,7 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 		else
 		{
 			// Update trailing stop for short positions when profit exceeds the trigger distance.
-			var profit = PositionPrice - candle.ClosePrice;
+			var profit = _entryPrice - candle.ClosePrice;
 			if (profit <= trailingDistance)
 				return;
 
@@ -314,6 +315,7 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 
 	private void InitializeTargets(bool isLong, decimal entryPrice)
 	{
+		_entryPrice = entryPrice;
 		var stopDistance = StopLossPoints * _priceStep;
 		var takeDistance = TakeProfitPoints * _priceStep;
 

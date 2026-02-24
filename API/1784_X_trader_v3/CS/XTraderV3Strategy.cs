@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,117 +11,45 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// X Trader V3 strategy based on two median price moving averages.
+/// X Trader V3 strategy based on two moving averages crossover.
+/// Uses SMA crossover for entries with SL/TP protection.
 /// </summary>
 public class XTraderV3Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _ma1Period;
-	private readonly StrategyParam<int> _ma2Period;
-	private readonly StrategyParam<TimeSpan> _startTime;
-	private readonly StrategyParam<TimeSpan> _endTime;
-	private readonly StrategyParam<bool> _allowBuy;
-	private readonly StrategyParam<bool> _allowSell;
-	private readonly StrategyParam<bool> _closeOnReverse;
-	private readonly StrategyParam<int> _takeProfitTicks;
-	private readonly StrategyParam<int> _stopLossTicks;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
 
-	private SimpleMovingAverage _ma1;
-	private SimpleMovingAverage _ma2;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private decimal _entryPrice;
 
-	private decimal _ma1Prev;
-	private decimal _ma1Prev2;
-	private decimal _ma2Prev;
-	private decimal _ma2Prev2;
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 
-	/// <summary>
-	/// Period of the first moving average.
-	/// </summary>
-	public int Ma1Period { get => _ma1Period.Value; set => _ma1Period.Value = value; }
-
-	/// <summary>
-	/// Period of the second moving average.
-	/// </summary>
-	public int Ma2Period { get => _ma2Period.Value; set => _ma2Period.Value = value; }
-
-	/// <summary>
-	/// Start time of the trading window.
-	/// </summary>
-	public TimeSpan StartTime { get => _startTime.Value; set => _startTime.Value = value; }
-
-	/// <summary>
-	/// End time of the trading window.
-	/// </summary>
-	public TimeSpan EndTime { get => _endTime.Value; set => _endTime.Value = value; }
-
-	/// <summary>
-	/// Allow long positions.
-	/// </summary>
-	public bool AllowBuy { get => _allowBuy.Value; set => _allowBuy.Value = value; }
-
-	/// <summary>
-	/// Allow short positions.
-	/// </summary>
-	public bool AllowSell { get => _allowSell.Value; set => _allowSell.Value = value; }
-
-	/// <summary>
-	/// Close position when opposite signal appears.
-	/// </summary>
-	public bool CloseOnReverseSignal { get => _closeOnReverse.Value; set => _closeOnReverse.Value = value; }
-
-	/// <summary>
-	/// Take profit in ticks.
-	/// </summary>
-	public int TakeProfitTicks { get => _takeProfitTicks.Value; set => _takeProfitTicks.Value = value; }
-
-	/// <summary>
-	/// Stop loss in ticks.
-	/// </summary>
-	public int StopLossTicks { get => _stopLossTicks.Value; set => _stopLossTicks.Value = value; }
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public XTraderV3Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_ma1Period = Param(nameof(Ma1Period), 16)
-			.SetDisplay("MA1 Period", "Period for first moving average", "Indicators")
-			;
+		_fastPeriod = Param(nameof(FastPeriod), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast SMA period", "Indicators");
 
-		_ma2Period = Param(nameof(Ma2Period), 1)
-			.SetDisplay("MA2 Period", "Period for second moving average", "Indicators")
-			;
+		_slowPeriod = Param(nameof(SlowPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow SMA period", "Indicators");
 
-		_startTime = Param(nameof(StartTime), TimeSpan.Zero)
-			.SetDisplay("Start Time", "Trading window start", "Time");
+		_takeProfit = Param(nameof(TakeProfit), 500m)
+			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
 
-		_endTime = Param(nameof(EndTime), new TimeSpan(23, 59, 0))
-			.SetDisplay("End Time", "Trading window end", "Time");
-
-		_allowBuy = Param(nameof(AllowBuy), true)
-			.SetDisplay("Allow Buy", "Enable long trades", "Trading");
-
-		_allowSell = Param(nameof(AllowSell), true)
-			.SetDisplay("Allow Sell", "Enable short trades", "Trading");
-
-		_closeOnReverse = Param(nameof(CloseOnReverseSignal), true)
-			.SetDisplay("Close On Reverse", "Close on opposite signal", "Trading");
-
-		_takeProfitTicks = Param(nameof(TakeProfitTicks), 150)
-			.SetDisplay("Take Profit Ticks", "Take profit in ticks", "Risk")
-			;
-
-		_stopLossTicks = Param(nameof(StopLossTicks), 100)
-			.SetDisplay("Stop Loss Ticks", "Stop loss in ticks", "Risk")
-			;
+		_stopLoss = Param(nameof(StopLoss), 300m)
+			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -132,60 +57,58 @@ public class XTraderV3Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma1 = new SMA { Length = Ma1Period };
-		_ma2 = new SMA { Length = Ma2Period };
+		_prevFast = 0;
+		_prevSlow = 0;
+		_entryPrice = 0;
 
-		SubscribeCandles(CandleType)
-			.Bind(ProcessCandle)
-			.Start();
+		var fastSma = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowSma = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		var step = Security.PriceStep ?? 1m;
-		StartProtection(
-			takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Point),
-			stopLoss: new Unit(StopLossTicks * step, UnitTypes.Point));
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastSma, slowSma, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var time = candle.OpenTime.TimeOfDay;
-		if (time < StartTime || time > EndTime)
-			return;
+		var price = candle.ClosePrice;
 
-		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-		var ma1 = _ma1.Process(median).ToDecimal();
-		var ma2 = _ma2.Process(median).ToDecimal();
-
-		var buySignal = ma1 < ma2 && _ma1Prev < _ma2Prev && _ma1Prev2 > _ma2Prev2;
-		var sellSignal = ma1 > ma2 && _ma1Prev > _ma2Prev && _ma1Prev2 < _ma2Prev2;
-		var closeBuy = ma1 > ma2 && _ma1Prev > _ma2Prev && _ma1Prev2 < _ma2Prev2;
-		var closeSell = ma1 < ma2 && _ma1Prev < _ma2Prev && _ma1Prev2 > _ma2Prev2;
-
-		if (buySignal && Position <= 0 && AllowBuy)
+		// Exit management
+		if (Position > 0)
 		{
-			if (CloseOnReverseSignal && Position < 0)
-				BuyMarket(-Position);
-			BuyMarket();
+			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
 		}
-		else if (sellSignal && Position >= 0 && AllowSell)
+		else if (Position < 0)
 		{
-			if (CloseOnReverseSignal && Position > 0)
-				SellMarket(Position);
-			SellMarket();
-		}
-		else if (CloseOnReverseSignal)
-		{
-			if (closeBuy && Position > 0)
-				SellMarket(Position);
-			else if (closeSell && Position < 0)
-				BuyMarket(-Position);
+			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
 		}
 
-		_ma1Prev2 = _ma1Prev;
-		_ma1Prev = ma1;
-		_ma2Prev2 = _ma2Prev;
-		_ma2Prev = ma2;
+		// Entry on crossover
+		if (Position == 0 && _prevFast != 0 && _prevSlow != 0)
+		{
+			if (fast > slow && _prevFast <= _prevSlow)
+			{
+				BuyMarket();
+				_entryPrice = price;
+			}
+			else if (fast < slow && _prevFast >= _prevSlow)
+			{
+				SellMarket();
+				_entryPrice = price;
+			}
+		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

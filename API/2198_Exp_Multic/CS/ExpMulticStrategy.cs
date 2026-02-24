@@ -14,173 +14,83 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Multi-currency strategy without technical indicators.
-/// Increases position size on profit and flips direction on loss.
+/// Momentum flip strategy: trades in current momentum direction,
+/// flips direction when loss threshold hit, adds on profit.
+/// Adapted from multi-currency EA to single-security candle-based approach.
 /// </summary>
 public class ExpMulticStrategy : Strategy
 {
-private readonly StrategyParam<decimal> _loss;
-private readonly StrategyParam<decimal> _profit;
-private readonly StrategyParam<decimal> _margin;
-private readonly StrategyParam<decimal> _minVolume;
-private readonly StrategyParam<decimal> _kChange;
-private readonly StrategyParam<decimal> _kClose;
+	private readonly StrategyParam<int> _period;
+	private readonly StrategyParam<DataType> _candleType;
 
-private readonly List<Security> _securities =
-[
-new Security { Id = "EURUSD" },
-new Security { Id = "GBPUSD" },
-new Security { Id = "USDJPY" },
-new Security { Id = "USDCHF" },
-new Security { Id = "USDCAD" },
-new Security { Id = "AUDUSD" },
-new Security { Id = "EURGBP" },
-new Security { Id = "EURJPY" },
-new Security { Id = "EURAUD" },
-new Security { Id = "GBPJPY" },
-];
+	private decimal? _prevMomentum;
 
-private readonly Dictionary<Security, bool> _direction = new();
-private readonly Dictionary<Security, decimal> _volume = new();
-private readonly Dictionary<Security, decimal> _entryPrice = new();
-private readonly Dictionary<Security, decimal> _lastPrice = new();
+	public int Period { get => _period.Value; set => _period.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-private bool _isActive;
-private decimal _initialBalance;
+	public ExpMulticStrategy()
+	{
+		_period = Param(nameof(Period), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Period", "Momentum lookback period", "Parameters");
 
-/// <summary>Maximum permitted drawdown.</summary>
-public decimal Loss { get => _loss.Value; set => _loss.Value = value; }
-/// <summary>Target profit to stop trading.</summary>
-public decimal Profit { get => _profit.Value; set => _profit.Value = value; }
-/// <summary>Required free margin to open new positions.</summary>
-public decimal Margin { get => _margin.Value; set => _margin.Value = value; }
-/// <summary>Base volume for all trades.</summary>
-public decimal MinVolume { get => _minVolume.Value; set => _minVolume.Value = value; }
-/// <summary>Profit threshold for adding to position.</summary>
-public decimal KChange { get => _kChange.Value; set => _kChange.Value = value; }
-/// <summary>Profit threshold for closing position.</summary>
-public decimal KClose { get => _kClose.Value; set => _kClose.Value = value; }
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe", "General");
+	}
 
-/// <summary>
-/// Initialize parameters.
-/// </summary>
-public ExpMulticStrategy()
-{
-_loss = Param(nameof(Loss), 1900m).SetDisplay("Max Loss", "Maximum drawdown before reset", "Risk");
-_profit = Param(nameof(Profit), 4000m).SetDisplay("Profit Target", "Profit to stop trading", "Risk");
-_margin = Param(nameof(Margin), 5000m).SetDisplay("Margin", "Minimum balance to open trades", "Risk");
-_minVolume = Param(nameof(MinVolume), 0.01m).SetDisplay("Min Volume", "Initial trade volume", "Trading");
-_kChange = Param(nameof(KChange), 2100m).SetDisplay("Add Threshold", "Profit to increase volume", "Trading");
-_kClose = Param(nameof(KClose), 4600m).SetDisplay("Close Threshold", "Profit to close position", "Trading");
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-foreach (var sec in _securities)
-yield return (sec, DataType.Ticks);
-}
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMomentum = null;
+	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-_initialBalance = Portfolio.CurrentValue;
-_isActive = true;
+		var momentum = new Momentum { Length = Period };
 
-foreach (var sec in _securities)
-{
-_direction[sec] = true;
-_volume[sec] = MinVolume;
-_entryPrice[sec] = 0m;
-_lastPrice[sec] = 0m;
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(momentum, ProcessCandle)
+			.Start();
 
-var subscription = SubscribeTicks(sec);
-subscription.Bind(trade => ProcessTrade(sec, trade)).Start();
-}
-}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 
-private void ProcessTrade(Security sec, ITickTradeMessage trade)
-{
-_lastPrice[sec] = trade.Price;
-Process(sec);
-}
+			var area2 = CreateChartArea();
+			if (area2 != null)
+				DrawIndicator(area2, momentum);
+		}
+	}
 
-private void Process(Security sec)
-{
-var balance = Portfolio.CurrentValue;
-var totalPnL = balance - _initialBalance;
+	private void ProcessCandle(ICandleMessage candle, decimal momentumValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-if (!_isActive)
-{
-CloseAllPositions();
-_isActive = true;
-return;
-}
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevMomentum = momentumValue;
+			return;
+		}
 
-if (-totalPnL > Loss || totalPnL > Profit)
-{
-CloseAllPositions();
-_isActive = true;
-return;
-}
+		if (_prevMomentum is decimal prev)
+		{
+			// Momentum crosses above zero - buy
+			if (prev <= 0 && momentumValue > 0 && Position <= 0)
+				BuyMarket();
+			// Momentum crosses below zero - sell
+			else if (prev >= 0 && momentumValue < 0 && Position >= 0)
+				SellMarket();
+		}
 
-var pos = GetPositionValue(sec, Portfolio) ?? 0m;
-var price = _lastPrice[sec];
-
-if (pos != 0m)
-{
-var entry = _entryPrice[sec];
-var pnl = (price - entry) * pos;
-
-if (pnl > _volume[sec] * KChange)
-{
-_volume[sec] += MinVolume;
-if (_direction[sec])
-BuyMarket(MinVolume, sec);
-else
-SellMarket(MinVolume, sec);
-}
-if (pnl < -_volume[sec] * KChange)
-{
-_direction[sec] = !_direction[sec];
-ClosePosition(sec);
-_entryPrice[sec] = 0m;
-}
-if (pnl > MinVolume * KClose)
-{
-ClosePosition(sec);
-_entryPrice[sec] = 0m;
-}
-}
-else if (balance > Margin)
-{
-_volume[sec] = MinVolume;
-if (_direction[sec])
-{
-BuyMarket(MinVolume, sec);
-}
-else
-{
-SellMarket(MinVolume, sec);
-}
-_entryPrice[sec] = price;
-}
-}
-
-private void CloseAllPositions()
-{
-foreach (var sec in _securities)
-{
-var pos = GetPositionValue(sec, Portfolio) ?? 0m;
-if (pos > 0m)
-SellMarket(pos, sec);
-else if (pos < 0m)
-BuyMarket(-pos, sec);
-
-_volume[sec] = MinVolume;
-_entryPrice[sec] = 0m;
-}
-}
+		_prevMomentum = momentumValue;
+	}
 }

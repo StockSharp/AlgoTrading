@@ -77,10 +77,10 @@ public class KlossSimpleStrategy : Strategy
 			
 			.SetOptimize(3, 20, 1);
 
-		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
+		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "Period of the %D line", "Indicators")
-			
+
 			.SetOptimize(1, 10, 1);
 
 		_stochasticSmooth = Param(nameof(StochasticSmooth), 3)
@@ -230,12 +230,9 @@ public class KlossSimpleStrategy : Strategy
 
 		_ema = new EMA { Length = MaPeriod };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
-		_stochastic = new StochasticOscillator
-		{
-			KPeriod = StochasticKPeriod,
-			D = {  K = { Length = StochasticDPeriod } },
-			Smooth = StochasticSmooth
-		};
+		_stochastic = new StochasticOscillator();
+		_stochastic.K.Length = StochasticKPeriod;
+		_stochastic.D.Length = StochasticDPeriod;
 
 		Volume = OrderVolume;
 

@@ -42,7 +42,7 @@ private readonly StrategyParam<Sides?> _tradeDirection;
 	private AverageTrueRange _atr;
 	private ExponentialMovingAverage _ema;
 	private RelativeStrengthIndex _rsi;
-	private MovingAverageConvergenceDivergence _macd;
+	private MovingAverageConvergenceDivergenceSignal _macd;
 	private CommodityChannelIndex _cci;
 
 	private decimal _prevSupertrend;
@@ -246,24 +246,23 @@ private readonly StrategyParam<Sides?> _tradeDirection;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_ema = new EMA { Length = EmaLength };
 		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_macd = new MovingAverageConvergenceDivergence
+		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortMa = { Length = MacdFastLength },
-			LongMa = { Length = MacdSlowLength },
-			SignalPeriod = MacdSignalLength
+			Macd = { ShortMa = { Length = MacdFastLength }, LongMa = { Length = MacdSlowLength } },
+			SignalMa = { Length = MacdSignalLength }
 		};
 		_cci = new CommodityChannelIndex { Length = CciLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_atr, _ema, _rsi, _macd, _cci, ProcessCandle)
+			.BindEx(_atr, _ema, _rsi, _macd, _cci, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -275,7 +274,7 @@ private readonly StrategyParam<Sides?> _tradeDirection;
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atr, decimal ema, decimal rsi, decimal macd, decimal macdSignal, decimal _, decimal cci)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrVal, IIndicatorValue emaVal, IIndicatorValue rsiVal, IIndicatorValue macdVal, IIndicatorValue cciVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -290,6 +289,14 @@ private readonly StrategyParam<Sides?> _tradeDirection;
 			return;
 		if (UseCciFilter && !_cci.IsFormed)
 			return;
+
+		var atr = atrVal.ToDecimal();
+		var ema = emaVal.ToDecimal();
+		var rsi = rsiVal.ToDecimal();
+		var cci = cciVal.ToDecimal();
+
+		var macdComplex = (MovingAverageConvergenceDivergenceSignalValue)macdVal;
+		var macd = macdComplex.Macd ?? 0m;
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 		var upper = median + Factor * atr;

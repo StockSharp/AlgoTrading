@@ -92,7 +92,7 @@ public class FiboCandlesTrendStrategy : Strategy
 	/// </summary>
 	public FiboCandlesTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type and timeframe of candles", "General");
 
 		_period = Param(nameof(Period), 10)
@@ -147,11 +147,6 @@ public class FiboCandlesTrendStrategy : Strategy
 		subscription
 			.Bind(_highest, _lowest, ProcessCandle)
 			.Start();
-
-		StartProtection(
-			new Unit(TakeProfit, UnitTypes.Point),
-			new Unit(StopLoss, UnitTypes.Point),
-			false);
 
 		var area = CreateChartArea();
 		if (area != null)

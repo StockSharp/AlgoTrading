@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -24,23 +22,13 @@ public class RaviIaoStrategy : Strategy
 	private readonly StrategyParam<decimal> _threshold;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _tradeVolume;
 
-	private SimpleMovingAverage _fastMa = null!;
-	private SimpleMovingAverage _slowMa = null!;
-	private AwesomeOscillator _ao = null!;
-	private SimpleMovingAverage _aoAverage = null!;
+	private SMA _aoAverage;
 
 	private decimal? _prevRavi;
 	private decimal? _prevPrevRavi;
 	private decimal? _prevAc;
 	private decimal? _prevPrevAc;
-
-	private decimal? _entryPrice;
-	private decimal? _stopPrice;
-	private decimal? _takePrice;
-	private bool _isLongPosition;
-	private decimal _priceStep;
 
 	/// <summary>
 	/// Type of candles used for indicator calculations.
@@ -79,7 +67,7 @@ public class RaviIaoStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss distance expressed in instrument points.
+	/// Stop-loss distance in absolute price units.
 	/// </summary>
 	public decimal StopLossPoints
 	{
@@ -88,7 +76,7 @@ public class RaviIaoStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Take-profit distance expressed in instrument points.
+	/// Take-profit distance in absolute price units.
 	/// </summary>
 	public decimal TakeProfitPoints
 	{
@@ -97,20 +85,11 @@ public class RaviIaoStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Market order volume sent on each entry.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
 	/// Initializes a new instance of <see cref="RaviIaoStrategy"/>.
 	/// </summary>
 	public RaviIaoStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time-frame for analysis", "General");
 
 		_fastLength = Param(nameof(FastLength), 12)
@@ -124,23 +103,19 @@ public class RaviIaoStrategy : Strategy
 		_threshold = Param(nameof(Threshold), 0.3m)
 			.SetDisplay("RAVI Threshold", "Minimum absolute RAVI value to confirm the trend", "Signals");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
 			.SetNotNegative()
-			.SetDisplay("Stop Loss (points)", "Stop-loss distance in price points", "Risk");
+			.SetDisplay("Stop Loss", "Stop-loss distance in price units", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
 			.SetNotNegative()
-			.SetDisplay("Take Profit (points)", "Take-profit distance in price points", "Risk");
-
-		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "General");
+			.SetDisplay("Take Profit", "Take-profit distance in price units", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		return new[] { (Security, CandleType) };
 	}
 
 	/// <inheritdoc />
@@ -152,155 +127,91 @@ public class RaviIaoStrategy : Strategy
 		_prevPrevRavi = null;
 		_prevAc = null;
 		_prevPrevAc = null;
-		_entryPrice = null;
-		_stopPrice = null;
-		_takePrice = null;
-		_isLongPosition = false;
-		_priceStep = 0m;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted2(time);
-
-		_priceStep = Security?.PriceStep ?? 0m;
-		if (_priceStep <= 0m)
-			throw new InvalidOperationException("Security must expose a positive price step.");
-
-		_fastMa = new SMA { Length = FastLength };
-		_slowMa = new SMA { Length = SlowLength };
-		_ao = new AwesomeOscillator();
+		var fastMa = new SMA { Length = FastLength };
+		var slowMa = new SMA { Length = SlowLength };
+		var ao = new AwesomeOscillator();
 		_aoAverage = new SMA { Length = 5 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastMa, _slowMa, ProcessCandle)
+			.BindEx(new IIndicator[] { fastMa, slowMa, ao }, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastMa);
-			DrawIndicator(area, _slowMa);
+			DrawIndicator(area, fastMa);
+			DrawIndicator(area, slowMa);
 			DrawOwnTrades(area);
 		}
+
+		// Use StartProtection for SL/TP
+		var tp = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null;
+		var sl = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Absolute) : null;
+		StartProtection(tp, sl);
+
+		base.OnStarted2(time);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		// Exit early if an active position hits its protective boundaries on this candle.
-		CheckProtectiveLevels(candle);
+		var fastVal = values[0];
+		var slowVal = values[1];
+		var aoVal = values[2];
 
-		// Feed the candle into the Awesome Oscillator to obtain the raw momentum estimate.
-		var aoValue = _ao.Process(candle.HighPrice, candle.LowPrice);
-		if (!aoValue.IsFinal)
-		return;
+		if (fastVal.IsEmpty || slowVal.IsEmpty || aoVal.IsEmpty)
+			return;
 
-		// Smooth the oscillator with a 5-period SMA to match the MT4 Acceleration/Deceleration formula.
-		var aoAverageValue = _aoAverage.Process(aoValue.GetValue<decimal>());
-		if (!aoAverageValue.IsFinal)
-		return;
+		var fastValue = fastVal.ToDecimal();
+		var slowValue = slowVal.ToDecimal();
+		var aoValue = aoVal.ToDecimal();
 
-		var ac = aoValue.GetValue<decimal>() - aoAverageValue.GetValue<decimal>();
+		// Compute AC = AO - SMA(AO)
+		var aoAvgResult = _aoAverage.Process(aoVal);
+		if (aoAvgResult.IsEmpty)
+			return;
+
+		var aoAvgValue = aoAvgResult.ToDecimal();
+		var ac = aoValue - aoAvgValue;
 
 		if (slowValue == 0m)
 		{
-		UpdateHistory(null, ac);
-		return;
+			UpdateHistory(null, ac);
+			return;
 		}
 
 		var ravi = 100m * (fastValue - slowValue) / slowValue;
 
 		if (_prevRavi is decimal prevRavi &&
-		_prevPrevRavi is decimal prevPrevRavi &&
-		_prevAc is decimal prevAc &&
-		_prevPrevAc is decimal prevPrevAc &&
-		Position == 0 &&
-		IsFormedAndOnlineAndAllowTrading())
+			_prevPrevRavi is decimal prevPrevRavi &&
+			_prevAc is decimal prevAc &&
+			_prevPrevAc is decimal prevPrevAc &&
+			Position == 0 &&
+			IsFormedAndOnlineAndAllowTrading())
 		{
-		var bullish = prevAc > prevPrevAc && prevPrevAc > 0m && prevRavi > prevPrevRavi && prevRavi > Threshold;
-		var bearish = prevAc < prevPrevAc && prevPrevAc < 0m && prevRavi < prevPrevRavi && prevRavi < -Threshold;
+			var bullish = prevAc > prevPrevAc && prevPrevAc > 0m && prevRavi > prevPrevRavi && prevRavi > Threshold;
+			var bearish = prevAc < prevPrevAc && prevPrevAc < 0m && prevRavi < prevPrevRavi && prevRavi < -Threshold;
 
-		if (bullish)
-		EnterLong(candle.ClosePrice);
-		else if (bearish)
-		EnterShort(candle.ClosePrice);
+			if (bullish)
+			{
+				BuyMarket(Volume);
+			}
+			else if (bearish)
+			{
+				SellMarket(Volume);
+			}
 		}
 
 		UpdateHistory(ravi, ac);
-	}
-
-	private void EnterLong(decimal price)
-	{
-		BuyMarket(TradeVolume);
-		_isLongPosition = true;
-		InitializeProtection(price);
-	}
-
-	private void EnterShort(decimal price)
-	{
-		SellMarket(TradeVolume);
-		_isLongPosition = false;
-		InitializeProtection(price);
-	}
-
-	private void InitializeProtection(decimal entryPrice)
-	{
-		_entryPrice = entryPrice;
-		var offset = StopLossPoints * _priceStep;
-		_stopPrice = StopLossPoints > 0m ? entryPrice + (_isLongPosition ? -offset : offset) : null;
-		var takeOffset = TakeProfitPoints * _priceStep;
-		_takePrice = TakeProfitPoints > 0m ? entryPrice + (_isLongPosition ? takeOffset : -takeOffset) : null;
-	}
-
-	private void CheckProtectiveLevels(ICandleMessage candle)
-	{
-		if (Position == 0 || _entryPrice is null)
-		return;
-
-		if (_isLongPosition)
-		{
-		if (_stopPrice is decimal stop && candle.LowPrice <= stop)
-		{
-		SellMarket(Math.Abs(Position));
-		ResetProtection();
-		return;
-		}
-
-		if (_takePrice is decimal take && candle.HighPrice >= take)
-		{
-		SellMarket(Math.Abs(Position));
-		ResetProtection();
-		}
-		}
-		else
-		{
-		if (_stopPrice is decimal stop && candle.HighPrice >= stop)
-		{
-		BuyMarket(Math.Abs(Position));
-		ResetProtection();
-		return;
-		}
-
-		if (_takePrice is decimal take && candle.LowPrice <= take)
-		{
-		BuyMarket(Math.Abs(Position));
-		ResetProtection();
-		}
-		}
-	}
-
-	private void ResetProtection()
-	{
-		_entryPrice = null;
-		_stopPrice = null;
-		_takePrice = null;
-		_isLongPosition = false;
 	}
 
 	private void UpdateHistory(decimal? ravi, decimal ac)
@@ -311,4 +222,3 @@ public class RaviIaoStrategy : Strategy
 		_prevAc = ac;
 	}
 }
-

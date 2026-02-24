@@ -13,92 +13,141 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Price rollback strategy that detects price gaps (large moves) and trades the pullback.
+/// When price gaps up beyond a corridor, it sells expecting rollback.
+/// When price gaps down beyond a corridor, it buys expecting rollback.
+/// Uses trailing stop and take profit for exits.
+/// </summary>
 public class PriceRollbackStrategy : Strategy
 {
-	// Parameters and state
-	readonly StrategyParam<decimal> _corridor,_stopLoss,_takeProfit,_trailingStop,_trailingStep;
-	readonly StrategyParam<int> _day;
-	readonly StrategyParam<DataType> _type;
-	readonly Queue<decimal> _opens = new();
-	decimal _prevClose,_entry,_stop;
+	private readonly StrategyParam<decimal> _corridor;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _trailingStop;
+	private readonly StrategyParam<DataType> _type;
 
-	public decimal Corridor{get=>_corridor.Value;set=>_corridor.Value=value;}
-	public decimal StopLoss{get=>_stopLoss.Value;set=>_stopLoss.Value=value;}
-	public decimal TakeProfit{get=>_takeProfit.Value;set=>_takeProfit.Value=value;}
-	public decimal TrailingStop{get=>_trailingStop.Value;set=>_trailingStop.Value=value;}
-	public decimal TrailingStep{get=>_trailingStep.Value;set=>_trailingStep.Value=value;}
-	public int TradingDay{get=>_day.Value;set=>_day.Value=value;}
-	public DataType CandleType{get=>_type.Value;set=>_type.Value=value;}
+	private decimal _prevClose;
+	private decimal _entryPrice;
+	private decimal _trailPrice;
+	private bool _hasPrev;
+
+	public decimal Corridor { get => _corridor.Value; set => _corridor.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
+	public DataType CandleType { get => _type.Value; set => _type.Value = value; }
 
 	public PriceRollbackStrategy()
 	{
-		_corridor=Param(nameof(Corridor),1m).SetDisplay("Corridor","Gap","General");
-		_stopLoss=Param(nameof(StopLoss),50m).SetDisplay("Stop","Stop","Risk");
-		_takeProfit=Param(nameof(TakeProfit),50m).SetDisplay("Take","Target","Risk");
-		_trailingStop=Param(nameof(TrailingStop),5m).SetDisplay("Trail","Trail","Risk");
-		_trailingStep=Param(nameof(TrailingStep),5m).SetDisplay("Step","Step","Risk");
-		_day=Param(nameof(TradingDay),5).SetDisplay("Day","0=Sun","Time");
-		_type=Param(nameof(CandleType),TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Type","Frame","General");
+		_corridor = Param(nameof(Corridor), 1000m)
+			.SetDisplay("Corridor", "Minimum gap size for entry", "General");
+		_stopLoss = Param(nameof(StopLoss), 500m)
+			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
+		_takeProfit = Param(nameof(TakeProfit), 400m)
+			.SetDisplay("Take Profit", "Take profit distance", "Risk");
+		_trailingStop = Param(nameof(TrailingStop), 300m)
+			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk");
+		_type = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 
-	public override IEnumerable<(Security,DataType)> GetWorkingSecurities() => [(Security,CandleType)];
-
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_opens.Clear(); _prevClose=_entry=_stop=0;
-	}
+	public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => [(Security, CandleType)];
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
-		SubscribeCandles(CandleType).Bind(Process).Start();
+
+		_hasPrev = false;
+		_entryPrice = 0;
+		_trailPrice = 0;
+
+		var atr = new AverageTrueRange { Length = 14 };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, atr);
+			DrawOwnTrades(area);
+		}
 	}
 
-	void Process(ICandleMessage c)
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
-		var t=c.CloseTime;
-		if(Position!=0 && t.Hour==22 && t.Minute>=45) Close();
-
-		// Open positions at day start if gap exceeds corridor
-		if(c.State==CandleStates.Active)
-		{
-			if(!IsFormedAndOnlineAndAllowTrading()) return;
-			var o=c.OpenTime;
-			if(_opens.Count==24 && Position==0 && o.Hour==0 && o.Minute<=3 && o.DayOfWeek==(DayOfWeek)TradingDay)
-			{
-				var o24=_opens.Peek();
-				if(o24-_prevClose>Corridor){_entry=c.OpenPrice;_stop=_entry-StopLoss;BuyMarket();}
-				else if(_prevClose-o24>Corridor){_entry=c.OpenPrice;_stop=_entry+StopLoss;SellMarket();}
-			}
+		if (candle.State != CandleStates.Finished)
 			return;
-		}
 
-		if(c.State!=CandleStates.Finished) return;
-		if(_opens.Count==24) _opens.Dequeue();
-		_opens.Enqueue(c.OpenPrice);
-		_prevClose=c.ClosePrice;
-		if(!IsFormedAndOnlineAndAllowTrading()) return;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		if(Position>0)
+		var close = candle.ClosePrice;
+		var open = candle.OpenPrice;
+
+		if (_hasPrev)
 		{
-			var p=c.ClosePrice-_entry;
-			if(p>TrailingStop+TrailingStep && _stop<c.ClosePrice-(TrailingStop+TrailingStep)) _stop=c.ClosePrice-TrailingStop;
-			if(c.ClosePrice<=_stop || c.ClosePrice>=_entry+TakeProfit) Close();
-		}
-		else if(Position<0)
-		{
-			var p=_entry-c.ClosePrice;
-			if(p>TrailingStop+TrailingStep && (_stop==0 || _stop>c.ClosePrice+(TrailingStop+TrailingStep))) _stop=c.ClosePrice+TrailingStop;
-			if(c.ClosePrice>=_stop || c.ClosePrice<=_entry-TakeProfit) Close();
-		}
-	}
+			// Check gap between previous close and current open
+			var gap = open - _prevClose;
 
-	void Close()
-	{
-		if(Position>0) SellMarket(Position);
-		else if(Position<0) BuyMarket(-Position);
-		_entry=_stop=0;
+			if (Position == 0)
+			{
+				// Gap up beyond corridor - sell expecting rollback
+				if (gap > Corridor)
+				{
+					SellMarket();
+					_entryPrice = close;
+					_trailPrice = close;
+				}
+				// Gap down beyond corridor - buy expecting rollback
+				else if (gap < -Corridor)
+				{
+					BuyMarket();
+					_entryPrice = close;
+					_trailPrice = close;
+				}
+			}
+			else if (Position > 0)
+			{
+				// Update trailing stop for long
+				if (close > _trailPrice)
+					_trailPrice = close;
+
+				var trailStop = _trailPrice - TrailingStop;
+				var stopPrice = _entryPrice - StopLoss;
+				var takePrice = _entryPrice + TakeProfit;
+
+				if (close <= Math.Max(trailStop, stopPrice) || close >= takePrice)
+				{
+					SellMarket(Math.Abs(Position));
+					_entryPrice = 0;
+					_trailPrice = 0;
+				}
+			}
+			else if (Position < 0)
+			{
+				// Update trailing stop for short
+				if (close < _trailPrice)
+					_trailPrice = close;
+
+				var trailStop = _trailPrice + TrailingStop;
+				var stopPrice = _entryPrice + StopLoss;
+				var takePrice = _entryPrice - TakeProfit;
+
+				if (close >= Math.Min(trailStop, stopPrice) || close <= takePrice)
+				{
+					BuyMarket(Math.Abs(Position));
+					_entryPrice = 0;
+					_trailPrice = 0;
+				}
+			}
+		}
+
+		_prevClose = close;
+		_hasPrev = true;
 	}
 }

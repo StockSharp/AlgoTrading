@@ -92,29 +92,29 @@ public class RsiMaTrendStrategy : Strategy
 			
 			.SetOptimize(10, 30, 5);
 
-		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 30m)
+		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 45m)
 			.SetDisplay("RSI Buy Level", "Value below which long is opened", "Indicators")
 			
 			.SetOptimize(20m, 40m, 5m);
 
-		_rsiSellLevel = Param(nameof(RsiSellLevel), 70m)
+		_rsiSellLevel = Param(nameof(RsiSellLevel), 55m)
 			.SetDisplay("RSI Sell Level", "Value above which short is opened", "Indicators")
 			
 			.SetOptimize(60m, 80m, 5m);
 
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 50)
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Period", "Length of fast moving average", "Indicators")
 			
 			.SetOptimize(20, 80, 10);
 
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 200)
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Period", "Length of slow moving average", "Indicators")
 			
 			.SetOptimize(100, 300, 20);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

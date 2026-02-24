@@ -285,13 +285,8 @@ public class StochasticMartingaleStrategy : Strategy
 		if (step > 0)
 			volume = step * Math.Floor(volume / step);
 
-		var min = Security.VolumeMin ?? 0m;
-		if (volume < min)
+		if (volume <= 0)
 			volume = 0m;
-
-		var max = Security.VolumeMax ?? decimal.MaxValue;
-		if (volume > max)
-			volume = max;
 
 		return volume;
 	}

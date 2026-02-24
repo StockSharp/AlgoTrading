@@ -11,476 +11,172 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Momentum strategy converted from the WOC 0.1.2 MetaTrader expert advisor.
-/// Tracks rapid ask price runs and opens positions in the breakout direction.
+/// Momentum strategy based on WOC 0.1.2 concept.
+/// Detects consecutive candle close runs in one direction and enters on breakout.
+/// Uses ATR-based stop loss and trailing stop.
 /// </summary>
 public class Woc012Strategy : Strategy
 {
-	// Strategy parameters controlling risk, entry detection and volume management.
-	private readonly StrategyParam<int> _stopLossTicks;
-	private readonly StrategyParam<int> _trailingStopTicks;
 	private readonly StrategyParam<int> _sequenceLength;
-	private readonly StrategyParam<decimal> _sequenceTimeoutSeconds;
-	private readonly StrategyParam<decimal> _lotSize;
-	private readonly StrategyParam<bool> _autoLotSizing;
+	private readonly StrategyParam<decimal> _stopLossAtrMult;
+	private readonly StrategyParam<decimal> _trailingAtrMult;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-	// Live market data snapshot.
-	private decimal _currentAsk;
-	private decimal _currentBid;
-
-	// Fields used to accumulate directional ask price streaks.
-	private decimal _upReferencePrice;
-	private decimal _downReferencePrice;
+	private decimal _prevClose;
 	private int _upCount;
 	private int _downCount;
-	private bool _upSequenceActive;
-	private bool _downSequenceActive;
-	private DateTimeOffset _upStartTime;
-	private DateTimeOffset _downStartTime;
+	private decimal _entryPrice;
+	private decimal? _stopPrice;
 
-	// Risk parameters translated to absolute price distances.
-	private decimal _stopLossDistance;
-	private decimal _trailingDistance;
-	private decimal _longStopPrice;
-	private decimal _shortStopPrice;
-
-	// Remember previous position value to detect new entries.
-	private decimal _previousPosition;
-
-	public int StopLossTicks
-	{
-		get => _stopLossTicks.Value;
-		set => _stopLossTicks.Value = value;
-	}
-
-	public int TrailingStopTicks
-	{
-		get => _trailingStopTicks.Value;
-		set => _trailingStopTicks.Value = value;
-	}
-
-	public int SequenceLength
-	{
-		get => _sequenceLength.Value;
-		set => _sequenceLength.Value = value;
-	}
-
-	public decimal SequenceTimeoutSeconds
-	{
-		get => _sequenceTimeoutSeconds.Value;
-		set => _sequenceTimeoutSeconds.Value = value;
-	}
-
-	public decimal LotSize
-	{
-		get => _lotSize.Value;
-		set => _lotSize.Value = value;
-	}
-
-	public bool UseAutoLotSizing
-	{
-		get => _autoLotSizing.Value;
-		set => _autoLotSizing.Value = value;
-	}
+	public int SequenceLength { get => _sequenceLength.Value; set => _sequenceLength.Value = value; }
+	public decimal StopLossAtrMult { get => _stopLossAtrMult.Value; set => _stopLossAtrMult.Value = value; }
+	public decimal TrailingAtrMult { get => _trailingAtrMult.Value; set => _trailingAtrMult.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public Woc012Strategy()
 	{
-		_stopLossTicks = Param(nameof(StopLossTicks), 6)
+		_sequenceLength = Param(nameof(SequenceLength), 4)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss Ticks", "Stop loss distance expressed in price steps", "Risk Management")
-			
-			.SetOptimize(3, 12, 1);
+			.SetDisplay("Sequence Length", "Consecutive bars in same direction to trigger entry", "Signals");
 
-		_trailingStopTicks = Param(nameof(TrailingStopTicks), 6)
-			.SetNotNegative()
-			.SetDisplay("Trailing Stop Ticks", "Trailing distance expressed in price steps", "Risk Management")
-			
-			.SetOptimize(2, 12, 1);
-
-		_sequenceLength = Param(nameof(SequenceLength), 5)
+		_stopLossAtrMult = Param(nameof(StopLossAtrMult), 1.5m)
 			.SetGreaterThanZero()
-			.SetDisplay("Sequence Length", "Consecutive ask changes required before entry", "Signals")
-			
-			.SetOptimize(3, 10, 1);
+			.SetDisplay("SL ATR Mult", "Stop loss as ATR multiple", "Risk");
 
-		_sequenceTimeoutSeconds = Param(nameof(SequenceTimeoutSeconds), 3m)
+		_trailingAtrMult = Param(nameof(TrailingAtrMult), 1.0m)
 			.SetGreaterThanZero()
-			.SetDisplay("Sequence Timeout (s)", "Maximum seconds allowed for the momentum sequence", "Signals");
+			.SetDisplay("Trail ATR Mult", "Trailing stop as ATR multiple", "Risk");
 
-		_lotSize = Param(nameof(LotSize), 0.01m)
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Lot Size", "Fixed order volume when auto sizing is disabled", "Trading");
+			.SetDisplay("ATR Period", "ATR calculation length", "Risk");
 
-		_autoLotSizing = Param(nameof(UseAutoLotSizing), false)
-			.SetDisplay("Auto Lots", "Enable balance dependent volume calculation", "Trading");
-
-		// Keep default volume aligned with the fixed lot parameter.
-		Volume = LotSize;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, DataType.Level1)];
+		return [(Security, CandleType)];
 	}
 
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_currentAsk = 0m;
-		_currentBid = 0m;
-		_upReferencePrice = 0m;
-		_downReferencePrice = 0m;
+		_prevClose = 0;
 		_upCount = 0;
 		_downCount = 0;
-		_upSequenceActive = false;
-		_downSequenceActive = false;
-		_upStartTime = default;
-		_downStartTime = default;
-		_stopLossDistance = 0m;
-		_trailingDistance = 0m;
-		_longStopPrice = 0m;
-		_shortStopPrice = 0m;
-		_previousPosition = 0m;
+		_entryPrice = 0;
+		_stopPrice = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		UpdateRiskDistances();
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		// Subscribe to best bid/ask updates to mimic tick level decision making.
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
+	private void ProcessCandle(ICandleMessage candle, decimal atr)
 	{
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askObj) && askObj is decimal ask)
-			_currentAsk = ask;
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidObj) && bidObj is decimal bid)
-			_currentBid = bid;
-
-		// Skip until both sides of the spread are known.
-		if (_currentAsk <= 0m || _currentBid <= 0m)
+		if (candle.State != CandleStates.Finished)
 			return;
-
-		UpdateRiskDistances();
-
-		var time = level1.ServerTime != default ? level1.ServerTime : CurrentTime;
-
-		if (Position == 0)
-		{
-			// Flat state: accumulate directional streaks to detect breakouts.
-			ProcessFlatState(time);
-		}
-		else
-		{
-			// Position exists: manage protective stops and trailing logic.
-			ProcessPositionState();
-		}
-
-		_previousPosition = Position;
-	}
-
-	private void ProcessFlatState(DateTimeOffset time)
-	{
-		if (_upReferencePrice == 0m)
-			_upReferencePrice = _currentAsk;
-
-		if (_downReferencePrice == 0m)
-			_downReferencePrice = _currentAsk;
-
-		// Increase the upward streak counter when ask keeps printing higher values.
-		if (_currentAsk > _upReferencePrice)
-		{
-			_upCount++;
-			_upReferencePrice = _currentAsk;
-
-			if (!_upSequenceActive)
-			{
-				_upSequenceActive = true;
-				_upStartTime = time;
-			}
-		}
-		else
-		{
-			// Sequence failed, reset the upward tracker.
-			ResetUpSequence();
-		}
-
-		// Increase the downward streak counter when ask trades lower.
-		if (_currentAsk < _downReferencePrice)
-		{
-			_downCount++;
-			_downReferencePrice = _currentAsk;
-
-			if (!_downSequenceActive)
-			{
-				_downSequenceActive = true;
-				_downStartTime = time;
-			}
-		}
-		else
-		{
-			// Sequence failed, reset the downward tracker.
-			ResetDownSequence();
-		}
-
-		// When either side reached the configured streak length try to enter.
-		if (_upCount >= SequenceLength || _downCount >= SequenceLength)
-			TryOpenPosition(time);
-	}
-
-	private void ProcessPositionState()
-	{
-		// While in position we ignore new streaks and focus on exit management.
-		ResetSequencesAfterTrade();
-
-		if (Position > 0)
-		{
-			// New long position: set initial stop below current bid.
-			if (_previousPosition <= 0)
-			{
-				ResetProtectionLevels();
-				_longStopPrice = Math.Max(0m, _currentBid - _stopLossDistance);
-			}
-
-			if (_longStopPrice <= 0m)
-				_longStopPrice = Math.Max(0m, _currentBid - _stopLossDistance);
-
-			// Exit long if the stop level is touched.
-			if (_longStopPrice > 0m && _currentBid <= _longStopPrice)
-			{
-				SellMarket(Position);
-				ResetProtectionLevels();
-				return;
-			}
-
-			// Move trailing stop once price advanced enough distance.
-			if (_trailingDistance > 0m)
-			{
-				var entryPrice = Position.AveragePrice;
-				if (entryPrice > 0m && _currentBid - entryPrice > _trailingDistance)
-				{
-					var candidate = _currentBid - _trailingDistance;
-					if (_longStopPrice < _currentBid - 2m * _trailingDistance)
-						_longStopPrice = Math.Max(_longStopPrice, candidate);
-				}
-			}
-		}
-		else if (Position < 0)
-		{
-			// New short position: set initial stop above current ask.
-			if (_previousPosition >= 0)
-			{
-				ResetProtectionLevels();
-				_shortStopPrice = _currentAsk + _stopLossDistance;
-			}
-
-			if (_shortStopPrice <= 0m)
-				_shortStopPrice = _currentAsk + _stopLossDistance;
-
-			// Exit short if the protective stop is touched.
-			if (_shortStopPrice > 0m && _currentAsk >= _shortStopPrice)
-			{
-				BuyMarket(Math.Abs(Position));
-				ResetProtectionLevels();
-				return;
-			}
-
-			// Trail the short position when price falls enough.
-			if (_trailingDistance > 0m)
-			{
-				var entryPrice = Position.AveragePrice;
-				if (entryPrice > 0m && entryPrice - _currentAsk > _trailingDistance)
-				{
-					var candidate = _currentAsk + _trailingDistance;
-					if (_shortStopPrice > _currentAsk + 2m * _trailingDistance)
-						_shortStopPrice = Math.Min(_shortStopPrice, candidate);
-				}
-			}
-		}
-		else
-		{
-			ResetProtectionLevels();
-		}
-	}
-
-	private void TryOpenPosition(DateTimeOffset time)
-	{
-		if (Position != 0)
-		{
-			ResetSequencesAfterTrade();
-			return;
-		}
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			ResetSequencesAfterTrade();
 			return;
-		}
 
-		var volume = GetTradeVolume();
+		var close = candle.ClosePrice;
 
-		if (volume <= 0m)
+		// Track consecutive direction
+		if (_prevClose > 0)
 		{
-			ResetSequencesAfterTrade();
-			return;
-		}
-
-		var timeout = TimeSpan.FromSeconds((double)SequenceTimeoutSeconds);
-
-		// Decide direction based on which streak was stronger, same as the MQL logic.
-		if (_upCount < _downCount)
-		{
-			if (_downSequenceActive && _downCount >= SequenceLength && (time - _downStartTime) <= timeout)
+			if (close > _prevClose)
 			{
-				SellMarket(volume);
-				ResetProtectionLevels();
+				_upCount++;
+				_downCount = 0;
 			}
-		}
-		else
-		{
-			if (_upSequenceActive && _upCount >= SequenceLength && (time - _upStartTime) <= timeout)
+			else if (close < _prevClose)
 			{
-				BuyMarket(volume);
-				ResetProtectionLevels();
+				_downCount++;
+				_upCount = 0;
+			}
+			else
+			{
+				_upCount = 0;
+				_downCount = 0;
 			}
 		}
 
-		ResetSequencesAfterTrade();
-	}
+		_prevClose = close;
 
-	private void ResetSequencesAfterTrade()
-	{
-		ResetUpSequence();
-		ResetDownSequence();
-	}
+		// Manage existing position
+		if (Position != 0)
+		{
+			if (Position > 0)
+			{
+				// Trail up
+				var trail = close - TrailingAtrMult * atr;
+				if (_stopPrice == null || trail > _stopPrice)
+					_stopPrice = trail;
 
-	private void ResetUpSequence()
-	{
-		_upCount = 0;
-		_upSequenceActive = false;
-		_upStartTime = default;
-		_upReferencePrice = _currentAsk;
-	}
+				if (close <= _stopPrice)
+				{
+					SellMarket(Math.Abs(Position));
+					_stopPrice = null;
+					_entryPrice = 0;
+					return;
+				}
+			}
+			else
+			{
+				// Trail down
+				var trail = close + TrailingAtrMult * atr;
+				if (_stopPrice == null || trail < _stopPrice)
+					_stopPrice = trail;
 
-	private void ResetDownSequence()
-	{
-		_downCount = 0;
-		_downSequenceActive = false;
-		_downStartTime = default;
-		_downReferencePrice = _currentAsk;
-	}
+				if (close >= _stopPrice)
+				{
+					BuyMarket(Math.Abs(Position));
+					_stopPrice = null;
+					_entryPrice = 0;
+					return;
+				}
+			}
+		}
 
-	private void ResetProtectionLevels()
-	{
-		_longStopPrice = 0m;
-		_shortStopPrice = 0m;
-	}
-
-	private void UpdateRiskDistances()
-	{
-		var step = Security?.PriceStep ?? 0m;
-
-		if (step <= 0m)
-			step = 1m;
-
-		_stopLossDistance = StopLossTicks * step;
-		_trailingDistance = TrailingStopTicks * step;
-	}
-
-	private decimal GetTradeVolume()
-	{
-		if (!UseAutoLotSizing)
-			return LotSize;
-
-		var balance = Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? 0m;
-		var volume = LotSize;
-
-		// Reproduce the tiered balance to lot mapping from the MetaTrader version.
-		if (balance < 200m)
-			volume = 0.02m;
-		if (balance > 200m)
-			volume = 0.04m;
-		if (balance > 300m)
-			volume = 0.05m;
-		if (balance > 400m)
-			volume = 0.06m;
-		if (balance > 500m)
-			volume = 0.07m;
-		if (balance > 600m)
-			volume = 0.08m;
-		if (balance > 700m)
-			volume = 0.09m;
-		if (balance > 800m)
-			volume = 0.1m;
-		if (balance > 900m)
-			volume = 0.2m;
-		if (balance > 1000m)
-			volume = 0.3m;
-		if (balance > 2000m)
-			volume = 0.4m;
-		if (balance > 3000m)
-			volume = 0.5m;
-		if (balance > 4000m)
-			volume = 0.6m;
-		if (balance > 5000m)
-			volume = 0.7m;
-		if (balance > 6000m)
-			volume = 0.8m;
-		if (balance > 7000m)
-			volume = 0.9m;
-		if (balance > 8000m)
-			volume = 1m;
-		if (balance > 9000m)
-			volume = 2m;
-		if (balance > 10000m)
-			volume = 3m;
-		if (balance > 11000m)
-			volume = 4m;
-		if (balance > 12000m)
-			volume = 5m;
-		if (balance > 13000m)
-			volume = 6m;
-		if (balance > 14000m)
-			volume = 7m;
-		if (balance > 15000m)
-			volume = 8m;
-		if (balance > 20000m)
-			volume = 9m;
-		if (balance > 30000m)
-			volume = 10m;
-		if (balance > 40000m)
-			volume = 11m;
-		if (balance > 50000m)
-			volume = 12m;
-		if (balance > 60000m)
-			volume = 13m;
-		if (balance > 70000m)
-			volume = 14m;
-		if (balance > 80000m)
-			volume = 15m;
-		if (balance > 90000m)
-			volume = 16m;
-		if (balance > 100000m)
-			volume = 17m;
-		if (balance > 110000m)
-			volume = 18m;
-		if (balance > 120000m)
-			volume = 19m;
-		if (balance > 130000m)
-			volume = 20m;
-
-		return Math.Max(volume, 0m);
+		// Entry: consecutive sequence completed
+		if (_upCount >= SequenceLength && Position <= 0)
+		{
+			var vol = Volume + Math.Abs(Position);
+			BuyMarket(vol);
+			_entryPrice = close;
+			_stopPrice = close - StopLossAtrMult * atr;
+			_upCount = 0;
+		}
+		else if (_downCount >= SequenceLength && Position >= 0)
+		{
+			var vol = Volume + Math.Abs(Position);
+			SellMarket(vol);
+			_entryPrice = close;
+			_stopPrice = close + StopLossAtrMult * atr;
+			_downCount = 0;
+		}
 	}
 }

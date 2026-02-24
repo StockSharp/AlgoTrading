@@ -11,8 +11,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Simple SuperTrend crossover strategy.
 /// </summary>
@@ -22,39 +20,12 @@ public class SupertrendSignalStrategy : Strategy
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevTrend;
-	private decimal _prevClose;
+	private bool? _prevIsUpTrend;
 
-	/// <summary>
-	/// ATR period for SuperTrend calculation.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal Multiplier { get => _multiplier.Value; set => _multiplier.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ATR multiplier for SuperTrend.
-	/// </summary>
-	public decimal Multiplier
-	{
-		get => _multiplier.Value;
-		set => _multiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for market data.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="SupertrendSignalStrategy"/>.
-	/// </summary>
 	public SupertrendSignalStrategy()
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 5)
@@ -63,25 +34,19 @@ public class SupertrendSignalStrategy : Strategy
 		_multiplier = Param(nameof(Multiplier), 3m)
 			.SetDisplay("Multiplier", "ATR multiplier for SuperTrend", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "Parameters");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevTrend = 0m;
-		_prevClose = 0m;
+		_prevIsUpTrend = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -99,8 +64,6 @@ public class SupertrendSignalStrategy : Strategy
 			DrawIndicator(area, st);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stValue)
@@ -108,24 +71,23 @@ public class SupertrendSignalStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!stValue.IsFormed)
 			return;
 
-		if (!stValue.IsFinal)
+		var stv = stValue as SuperTrendIndicatorValue;
+		if (stv == null)
 			return;
 
-		var st = (SuperTrendIndicatorValue)stValue;
-		var trend = st.Value;
+		var isUpTrend = stv.IsUpTrend;
 
-		var longSignal = _prevClose <= _prevTrend && candle.ClosePrice > trend;
-		var shortSignal = _prevClose >= _prevTrend && candle.ClosePrice < trend;
+		if (IsFormedAndOnlineAndAllowTrading() && _prevIsUpTrend.HasValue)
+		{
+			if (isUpTrend && !_prevIsUpTrend.Value && Position <= 0)
+				BuyMarket();
+			else if (!isUpTrend && _prevIsUpTrend.Value && Position >= 0)
+				SellMarket();
+		}
 
-		if (longSignal && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (shortSignal && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-
-		_prevClose = candle.ClosePrice;
-		_prevTrend = trend;
+		_prevIsUpTrend = isUpTrend;
 	}
 }

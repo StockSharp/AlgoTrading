@@ -1,4 +1,3 @@
-
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -31,9 +30,8 @@ public class SunilHighFrequencyMacdRsiStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrMultiplierTrail;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevMacd;
-	private decimal _prevSignal;
-	private bool _initialized;
+	private decimal? _prevMacd;
+	private decimal? _prevSignal;
 	private decimal _entryPrice;
 	private decimal _stop;
 	private decimal _take;
@@ -64,7 +62,7 @@ public class SunilHighFrequencyMacdRsiStrategy : Strategy
 		_atrMultiplierSl = Param(nameof(AtrMultiplierSl), 0.5m);
 		_atrMultiplierTp = Param(nameof(AtrMultiplierTp), 1.5m);
 		_atrMultiplierTrail = Param(nameof(AtrMultiplierTrail), 0.5m);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -75,9 +73,8 @@ public class SunilHighFrequencyMacdRsiStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevMacd = 0m;
-		_prevSignal = 0m;
-		_initialized = false;
+		_prevMacd = null;
+		_prevSignal = null;
 		_entryPrice = 0m;
 		_stop = 0m;
 		_take = 0m;
@@ -85,9 +82,9 @@ public class SunilHighFrequencyMacdRsiStrategy : Strategy
 		_lowest = 0m;
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -99,81 +96,88 @@ public class SunilHighFrequencyMacdRsiStrategy : Strategy
 			SignalMa = { Length = SignalLength }
 		};
 
-		var rsi = new RelativeStrengthIndex
-		{
-			Length = RsiLength
-		};
-
-		var atr = new AverageTrueRange
-		{
-			Length = AtrLength
-		};
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(macd, rsi, atr, ProcessCandle)
+			.BindEx(macd, rsi, atr, ProcessCandle)
 			.Start();
 
-		StartProtection();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, macd);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macd, decimal signal, decimal _, decimal rsi, decimal atr)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdVal, IIndicatorValue rsiVal, IIndicatorValue atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_initialized)
-		{
-			_prevMacd = macd;
-			_prevSignal = signal;
-			_initialized = true;
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		var longCondition = _prevMacd <= _prevSignal && macd > signal && rsi < RsiOverbought;
-		var shortCondition = _prevMacd >= _prevSignal && macd < signal && rsi > RsiOversold;
+		var typed = (MovingAverageConvergenceDivergenceSignalValue)macdVal;
+		if (typed.Macd is not decimal macd || typed.Signal is not decimal signal)
+			return;
 
-		if (Position == 0)
+		var rsi = rsiVal.GetValue<decimal>();
+		var atr = atrVal.GetValue<decimal>();
+
+		if (atr == 0m)
+			return;
+
+		if (_prevMacd is decimal pm && _prevSignal is decimal ps)
 		{
-			if (longCondition)
-			{
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-				_stop = _entryPrice - AtrMultiplierSl * atr;
-				_take = _entryPrice + AtrMultiplierTp * atr;
-				_highest = candle.HighPrice;
-			}
-			else if (shortCondition)
-			{
-				SellMarket();
-				_entryPrice = candle.ClosePrice;
-				_stop = _entryPrice + AtrMultiplierSl * atr;
-				_take = _entryPrice - AtrMultiplierTp * atr;
-				_lowest = candle.LowPrice;
-			}
-		}
-		else if (Position > 0)
-		{
-			_highest = Math.Max(_highest, candle.HighPrice);
-			var trail = _highest - AtrMultiplierTrail * atr;
+			var longCondition = pm <= ps && macd > signal && rsi < RsiOverbought;
+			var shortCondition = pm >= ps && macd < signal && rsi > RsiOversold;
 
-			if (candle.LowPrice <= _stop || candle.LowPrice <= trail || candle.HighPrice >= _take)
+			if (Position == 0)
 			{
-				SellMarket();
-				_stop = 0m;
-				_take = 0m;
+				if (longCondition)
+				{
+					BuyMarket(Volume);
+					_entryPrice = candle.ClosePrice;
+					_stop = _entryPrice - AtrMultiplierSl * atr;
+					_take = _entryPrice + AtrMultiplierTp * atr;
+					_highest = candle.HighPrice;
+				}
+				else if (shortCondition)
+				{
+					SellMarket(Volume);
+					_entryPrice = candle.ClosePrice;
+					_stop = _entryPrice + AtrMultiplierSl * atr;
+					_take = _entryPrice - AtrMultiplierTp * atr;
+					_lowest = candle.LowPrice;
+				}
 			}
-		}
-		else
-		{
-			_lowest = Math.Min(_lowest, candle.LowPrice);
-			var trail = _lowest + AtrMultiplierTrail * atr;
-
-			if (candle.HighPrice >= _stop || candle.HighPrice >= trail || candle.LowPrice <= _take)
+			else if (Position > 0)
 			{
-				BuyMarket();
-				_stop = 0m;
-				_take = 0m;
+				_highest = Math.Max(_highest, candle.HighPrice);
+				var trail = _highest - AtrMultiplierTrail * atr;
+
+				if (candle.LowPrice <= _stop || candle.LowPrice <= trail || candle.HighPrice >= _take)
+				{
+					SellMarket(Math.Abs(Position));
+					_stop = 0m;
+					_take = 0m;
+				}
+			}
+			else if (Position < 0)
+			{
+				_lowest = Math.Min(_lowest, candle.LowPrice);
+				var trail = _lowest + AtrMultiplierTrail * atr;
+
+				if (candle.HighPrice >= _stop || candle.HighPrice >= trail || candle.LowPrice <= _take)
+				{
+					BuyMarket(Math.Abs(Position));
+					_stop = 0m;
+					_take = 0m;
+				}
 			}
 		}
 

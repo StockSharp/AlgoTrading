@@ -1,10 +1,6 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,32 +10,27 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that replicates the MACD Four Colors 2 Martingale expert advisor.
-/// It opens new positions when the MACD color sequence matches the original rules and scales volume using a martingale factor.
+/// MACD histogram crossover with martingale volume scaling.
+/// Based on the MACD Four Colors 2 Martingale expert advisor.
 /// </summary>
 public class MacdFourColors2MartingaleStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _initialVolume;
-	private readonly StrategyParam<decimal> _lotCoefficient;
-	private readonly StrategyParam<decimal> _maxDrawdown;
-	private readonly StrategyParam<decimal> _targetProfit;
 	private readonly StrategyParam<int> _fastEmaPeriod;
 	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
+	private readonly StrategyParam<decimal> _lotCoefficient;
+	private readonly StrategyParam<int> _maxMartingale;
 
-	// Indicator state history for color calculations.
-	private readonly List<decimal> _macdHistory = new();
-	private readonly List<int> _colorHistory = new();
-
-	// Martingale bookkeeping.
-	private decimal _lastVolume;
-	private decimal? _lowestLongPrice;
-	private decimal? _highestShortPrice;
-	private Sides? _pendingEntryDirection;
+	private MovingAverageConvergenceDivergence _macd;
+	private readonly System.Collections.Generic.Queue<decimal> _macdHistory = new();
+	private decimal? _prevHistogram;
+	private decimal _currentVolume;
+	private int _consecutiveLosses;
+	private decimal _entryPrice;
 
 	/// <summary>
-	/// Type of candles used for indicator calculations.
+	/// Type of candles used for MACD analysis.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -48,43 +39,7 @@ public class MacdFourColors2MartingaleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Base volume for the first order in the sequence.
-	/// </summary>
-	public decimal InitialVolume
-	{
-		get => _initialVolume.Value;
-		set => _initialVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier applied to the previous filled volume when martingale is active.
-	/// </summary>
-	public decimal LotCoefficient
-	{
-		get => _lotCoefficient.Value;
-		set => _lotCoefficient.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum allowed floating loss before forcing a full exit.
-	/// </summary>
-	public decimal MaxDrawdown
-	{
-		get => _maxDrawdown.Value;
-		set => _maxDrawdown.Value = value;
-	}
-
-	/// <summary>
-	/// Floating profit target that triggers closing all positions.
-	/// </summary>
-	public decimal TargetProfit
-	{
-		get => _targetProfit.Value;
-		set => _targetProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Period of the fast EMA inside the MACD calculation.
+	/// Period of the fast EMA inside MACD.
 	/// </summary>
 	public int FastEmaPeriod
 	{
@@ -93,7 +48,7 @@ public class MacdFourColors2MartingaleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period of the slow EMA inside the MACD calculation.
+	/// Period of the slow EMA inside MACD.
 	/// </summary>
 	public int SlowEmaPeriod
 	{
@@ -102,7 +57,7 @@ public class MacdFourColors2MartingaleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period of the signal EMA that smooths MACD.
+	/// Period of the signal line.
 	/// </summary>
 	public int SignalPeriod
 	{
@@ -111,300 +66,169 @@ public class MacdFourColors2MartingaleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize strategy parameters with defaults close to the original EA.
+	/// Multiplier applied after a losing trade.
+	/// </summary>
+	public decimal LotCoefficient
+	{
+		get => _lotCoefficient.Value;
+		set => _lotCoefficient.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of martingale steps before resetting.
+	/// </summary>
+	public int MaxMartingale
+	{
+		get => _maxMartingale.Value;
+		set => _maxMartingale.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize strategy parameters.
 	/// </summary>
 	public MacdFourColors2MartingaleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for MACD analysis", "General");
 
-		_initialVolume = Param(nameof(InitialVolume), 1m)
-			.SetDisplay("Initial Volume", "Volume of the first order in a martingale cycle", "Trading")
-			
-			.SetOptimize(0.1m, 5m, 0.1m);
-
-		_lotCoefficient = Param(nameof(LotCoefficient), 2m)
-			.SetDisplay("Lot Coefficient", "Multiplier applied after a losing position", "Money management")
-			
-			.SetOptimize(1m, 5m, 0.5m);
-
-		_maxDrawdown = Param(nameof(MaxDrawdown), 50m)
-			.SetDisplay("Max Drawdown", "Negative floating PnL that forces liquidation", "Risk")
-			
-			.SetOptimize(20m, 200m, 20m);
-
-		_targetProfit = Param(nameof(TargetProfit), 150m)
-			.SetDisplay("Target Profit", "Positive floating PnL that locks profits", "Risk")
-			
-			.SetOptimize(50m, 400m, 25m);
-
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 12)
-			.SetDisplay("Fast EMA Period", "Length of the fast EMA in MACD", "Indicators")
-			
-			.SetOptimize(6, 18, 2);
+			.SetDisplay("Fast EMA", "Fast EMA period for MACD", "Indicators")
+			.SetGreaterThanZero();
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
-			.SetDisplay("Slow EMA Period", "Length of the slow EMA in MACD", "Indicators")
-			
-			.SetOptimize(18, 40, 2);
+			.SetDisplay("Slow EMA", "Slow EMA period for MACD", "Indicators")
+			.SetGreaterThanZero();
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
-			.SetDisplay("Signal Period", "Length of the signal EMA", "Indicators")
-			
-			.SetOptimize(5, 15, 1);
+			.SetDisplay("Signal Period", "Signal line smoothing period", "Indicators")
+			.SetGreaterThanZero();
+
+		_lotCoefficient = Param(nameof(LotCoefficient), 1.5m)
+			.SetDisplay("Lot Coefficient", "Multiplier after a loss", "Money Management")
+			.SetGreaterThanZero();
+
+		_maxMartingale = Param(nameof(MaxMartingale), 5)
+			.SetDisplay("Max Martingale", "Maximum consecutive doublings", "Money Management")
+			.SetGreaterThanZero();
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	protected override void OnStarted2(DateTime time)
 	{
-		return [(Security, CandleType)];
-	}
+		base.OnStarted2(time);
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		ResetState();
-	}
+		_prevHistogram = null;
+		_currentVolume = Volume > 0 ? Volume : 1;
+		_consecutiveLosses = 0;
+		_entryPrice = 0;
+		_macdHistory.Clear();
 
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
-	{
-		base.OnStarted(time);
-
-		// Configure MACD with signal smoothing to reproduce color transitions.
-		var macd = new MovingAverageConvergenceDivergenceSignal
+		_macd = new MovingAverageConvergenceDivergence
 		{
-			Macd =
-			{
-				ShortMa = { Length = FastEmaPeriod },
-				LongMa = { Length = SlowEmaPeriod },
-			},
-			SignalMa = { Length = SignalPeriod }
+			ShortMa = { Length = FastEmaPeriod },
+			LongMa = { Length = SlowEmaPeriod }
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(macd, ProcessCandle)
+			.Bind(_macd, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, macd);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	private void ProcessCandle(ICandleMessage candle, decimal macdValue)
 	{
-		// Work only with finished candles.
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!macdValue.IsFinal)
-			return;
+		_macdHistory.Enqueue(macdValue);
+		while (_macdHistory.Count > SignalPeriod)
+			_macdHistory.Dequeue();
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		if (macdTyped.Macd is not decimal macd)
-			return;
-
-		UpdateMacdHistory(macd);
-
-		var floatingPnL = CalculateUnrealizedPnL(candle.ClosePrice);
-		if (ShouldCloseAll(floatingPnL))
+		if (!_macd.IsFormed || _macdHistory.Count < SignalPeriod)
 		{
-			if (Position != 0)
-				ClosePosition();
-
-			ResetState();
+			_prevHistogram = 0;
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// Calculate signal line (SMA of MACD)
+		var sum = 0m;
+		foreach (var v in _macdHistory)
+			sum += v;
+		var signalValue = sum / SignalPeriod;
 
-		if (_pendingEntryDirection != null)
-			return;
+		var histogram = macdValue - signalValue;
 
-		if (_macdHistory.Count < 3)
-			return;
-
-		var prev2Color = _colorHistory[^3];
-		var prevColor = _colorHistory[^2];
-		var prevMacd = _macdHistory[^2];
-
-		var buySignal = prev2Color == 1 && prevColor == 4 && prevMacd < 0m;
-		var sellSignal = prev2Color == 2 && prevColor == 3 && prevMacd > 0m;
-
-		if (buySignal)
+		if (_prevHistogram is null)
 		{
+			_prevHistogram = histogram;
+			return;
+		}
+
+		var crossUp = _prevHistogram < 0 && histogram >= 0;
+		var crossDown = _prevHistogram >= 0 && histogram < 0;
+
+		if (crossUp)
+		{
+			// Check for loss on closing short
 			if (Position < 0)
-				return;
+			{
+				var pnl = _entryPrice - candle.ClosePrice;
+				if (pnl < 0)
+				{
+					_consecutiveLosses++;
+					if (_consecutiveLosses <= MaxMartingale)
+						_currentVolume *= LotCoefficient;
+				}
+				else
+				{
+					_consecutiveLosses = 0;
+					_currentVolume = Volume > 0 ? Volume : 1;
+				}
 
-			var price = candle.ClosePrice;
-			if (_lowestLongPrice.HasValue && price >= _lowestLongPrice.Value)
-				return;
+				BuyMarket(Math.Abs(Position));
+			}
 
-			var volume = CalculateNextVolume();
-			if (volume <= 0m)
-				return;
-
-			_pendingEntryDirection = Sides.Buy;
-			BuyMarket(volume);
+			if (Position <= 0)
+			{
+				BuyMarket(_currentVolume);
+				_entryPrice = candle.ClosePrice;
+			}
 		}
-		else if (sellSignal)
+		else if (crossDown)
 		{
+			// Check for loss on closing long
 			if (Position > 0)
-				return;
-
-			var price = candle.ClosePrice;
-			if (_highestShortPrice.HasValue && price <= _highestShortPrice.Value)
-				return;
-
-			var volume = CalculateNextVolume();
-			if (volume <= 0m)
-				return;
-
-			_pendingEntryDirection = Sides.Sell;
-			SellMarket(volume);
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade.Order.Security != Security)
-			return;
-
-		var direction = trade.Order.Side;
-		var volume = trade.Trade.Volume;
-
-		if (_pendingEntryDirection != null && direction == _pendingEntryDirection && volume > 0m)
-		{
-			_lastVolume = volume;
-
-			if (direction == Sides.Buy)
 			{
-				var price = trade.Trade.Price;
-				_lowestLongPrice = _lowestLongPrice.HasValue
-					? Math.Min(_lowestLongPrice.Value, price)
-					: price;
-				_highestShortPrice = null;
-			}
-			else if (direction == Sides.Sell)
-			{
-				var price = trade.Trade.Price;
-				_highestShortPrice = _highestShortPrice.HasValue
-					? Math.Max(_highestShortPrice.Value, price)
-					: price;
-				_lowestLongPrice = null;
+				var pnl = candle.ClosePrice - _entryPrice;
+				if (pnl < 0)
+				{
+					_consecutiveLosses++;
+					if (_consecutiveLosses <= MaxMartingale)
+						_currentVolume *= LotCoefficient;
+				}
+				else
+				{
+					_consecutiveLosses = 0;
+					_currentVolume = Volume > 0 ? Volume : 1;
+				}
+
+				SellMarket(Math.Abs(Position));
 			}
 
-			_pendingEntryDirection = null;
-		}
-		else
-		{
-			if (Position == 0)
+			if (Position >= 0)
 			{
-				ResetState();
-			}
-			else if (Position > 0)
-			{
-				_highestShortPrice = null;
-			}
-			else if (Position < 0)
-			{
-				_lowestLongPrice = null;
+				SellMarket(_currentVolume);
+				_entryPrice = candle.ClosePrice;
 			}
 		}
-	}
 
-	private void UpdateMacdHistory(decimal macd)
-	{
-		var color = 0;
-		if (_macdHistory.Count > 0)
-		{
-			var prev = _macdHistory[^1];
-			if (macd > prev && macd < 0m)
-				color = 1;
-			else if (macd > prev && macd > 0m)
-				color = 2;
-			else if (macd < prev && macd > 0m)
-				color = 3;
-			else if (macd < prev && macd < 0m)
-				color = 4;
-		}
-
-		_macdHistory.Add(macd);
-		_colorHistory.Add(color);
-
-		const int maxHistory = 10;
-		if (_macdHistory.Count > maxHistory)
-		{
-			_macdHistory.RemoveAt(0);
-			_colorHistory.RemoveAt(0);
-		}
-	}
-
-	private decimal CalculateNextVolume()
-	{
-		var volume = _lastVolume <= 0m ? InitialVolume : _lastVolume;
-		if (volume <= 0m)
-			return 0m;
-
-		if (_lastVolume > 0m && LotCoefficient > 0m)
-			volume *= LotCoefficient;
-
-		return volume;
-	}
-
-	private bool ShouldCloseAll(decimal floatingPnL)
-	{
-		if (MaxDrawdown != 0m)
-		{
-			if (MaxDrawdown > 0m && floatingPnL <= -MaxDrawdown)
-				return true;
-
-			if (MaxDrawdown < 0m && floatingPnL <= MaxDrawdown)
-				return true;
-		}
-
-		if (TargetProfit != 0m)
-		{
-			if (TargetProfit > 0m && floatingPnL >= TargetProfit)
-				return true;
-
-			if (TargetProfit < 0m && floatingPnL >= -TargetProfit)
-				return true;
-		}
-
-		return false;
-	}
-
-	private decimal CalculateUnrealizedPnL(decimal price)
-	{
-		var priceStep = Security.PriceStep ?? 0m;
-		var stepPrice = Security.StepPrice ?? 0m;
-		if (priceStep <= 0m || stepPrice <= 0m || Position == 0)
-			return 0m;
-
-		var diff = price - PositionPrice;
-		var steps = diff / priceStep;
-		return steps * stepPrice * Position;
-	}
-
-	private void ResetState()
-	{
-		_lastVolume = 0m;
-		_lowestLongPrice = null;
-		_highestShortPrice = null;
-		_pendingEntryDirection = null;
-		_macdHistory.Clear();
-		_colorHistory.Clear();
+		_prevHistogram = histogram;
 	}
 }
-

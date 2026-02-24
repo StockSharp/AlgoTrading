@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,9 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Parabolic SAR strategy with ATR based risk management.
-/// Implements entry and exit SAR settings, optional trailing stop,
-/// partial closing and break-even logic.
+/// Parabolic SAR strategy with ATR-based trailing stop.
+/// Uses two SARs - one for entry signals and one for exit signals.
 /// </summary>
 public class PzParabolicSarEaStrategy : Strategy
 {
@@ -26,17 +22,9 @@ public class PzParabolicSarEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopMax;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<bool> _useTrailing;
-	private readonly StrategyParam<int> _trailingAtrPeriod;
-	private readonly StrategyParam<decimal> _trailingAtrMultiplier;
-	private readonly StrategyParam<bool> _partialClosing;
-	private readonly StrategyParam<decimal> _percentageToClose;
-	private readonly StrategyParam<bool> _breakEven;
-	private readonly StrategyParam<decimal> _lotSize;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
-	private bool _partialClosed;
 	private decimal _trailStop;
 
 	public decimal TradeStep { get => _tradeStep.Value; set => _tradeStep.Value = value; }
@@ -45,13 +33,6 @@ public class PzParabolicSarEaStrategy : Strategy
 	public decimal StopMax { get => _stopMax.Value; set => _stopMax.Value = value; }
 	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
 	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
-	public bool UseTrailing { get => _useTrailing.Value; set => _useTrailing.Value = value; }
-	public int TrailingAtrPeriod { get => _trailingAtrPeriod.Value; set => _trailingAtrPeriod.Value = value; }
-	public decimal TrailingAtrMultiplier { get => _trailingAtrMultiplier.Value; set => _trailingAtrMultiplier.Value = value; }
-	public bool PartialClosing { get => _partialClosing.Value; set => _partialClosing.Value = value; }
-	public decimal PercentageToClose { get => _percentageToClose.Value; set => _percentageToClose.Value = value; }
-	public bool BreakEven { get => _breakEven.Value; set => _breakEven.Value = value; }
-	public decimal LotSize { get => _lotSize.Value; set => _lotSize.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public PzParabolicSarEaStrategy()
@@ -67,38 +48,9 @@ public class PzParabolicSarEaStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 30)
 			.SetDisplay("ATR Period", "ATR period for stop distance", "Risk");
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2.5m)
-			.SetDisplay("ATR Mult", "ATR multiplier for stop distance", "Risk");
-		_useTrailing = Param(nameof(UseTrailing), false)
-			.SetDisplay("Use Trailing", "Enable ATR trailing stop", "Risk");
-		_trailingAtrPeriod = Param(nameof(TrailingAtrPeriod), 30)
-			.SetDisplay("Trail ATR Period", "ATR period for trailing stop", "Risk");
-		_trailingAtrMultiplier = Param(nameof(TrailingAtrMultiplier), 1.75m)
-			.SetDisplay("Trail ATR Mult", "ATR multiplier for trailing stop", "Risk");
-		_partialClosing = Param(nameof(PartialClosing), true)
-			.SetDisplay("Partial Close", "Enable partial closing", "Risk");
-		_percentageToClose = Param(nameof(PercentageToClose), 0.5m)
-			.SetDisplay("Close %", "Part of position to close", "Risk");
-		_breakEven = Param(nameof(BreakEven), true)
-			.SetDisplay("Break Even", "Move stop to breakeven on partial close", "Risk");
-		_lotSize = Param(nameof(LotSize), 0.1m)
-			.SetDisplay("Lot Size", "Base volume to trade", "General");
+			.SetDisplay("ATR Mult", "ATR multiplier for trailing stop", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_entryPrice = 0m;
-		_partialClosed = false;
-		_trailStop = 0m;
 	}
 
 	/// <inheritdoc />
@@ -106,102 +58,68 @@ public class PzParabolicSarEaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		Volume = LotSize;
+		_entryPrice = 0;
+		_trailStop = 0;
 
 		var tradeSar = new ParabolicSar { AccelerationStep = TradeStep, AccelerationMax = TradeMax };
 		var stopSar = new ParabolicSar { AccelerationStep = StopStep, AccelerationMax = StopMax };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var trailAtr = new AverageTrueRange { Length = TrailingAtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(tradeSar, stopSar, atr, trailAtr, ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, tradeSar);
-			DrawIndicator(area, stopSar);
-			DrawOwnTrades(area);
-		}
+		subscription.Bind(tradeSar, stopSar, atr, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal tradeSar, decimal stopSar, decimal atr, decimal trailAtr)
+	private void ProcessCandle(ICandleMessage candle, decimal tradeSar, decimal stopSar, decimal atr)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		var price = candle.ClosePrice;
 
-		// Exit on stop SAR flip
-		if (Position > 0 && stopSar > candle.ClosePrice)
-		{
-		ClosePosition();
-		}
-		else if (Position < 0 && stopSar < candle.ClosePrice)
-		{
-		ClosePosition();
-		}
-
-		// Trailing stop management
-		if (UseTrailing && Position != 0)
-		{
+		// Exit on stop SAR flip or trailing stop hit
 		if (Position > 0)
 		{
-		var newStop = candle.ClosePrice - trailAtr * TrailingAtrMultiplier;
-		if (newStop > _trailStop)
-		_trailStop = newStop;
+			// Update trailing stop
+			var newStop = price - atr * AtrMultiplier;
+			if (newStop > _trailStop)
+				_trailStop = newStop;
 
-		if (candle.LowPrice <= _trailStop)
-		ClosePosition();
+			if (stopSar > price || price <= _trailStop)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_trailStop = 0;
+			}
 		}
-		else
+		else if (Position < 0)
 		{
-		var newStop = candle.ClosePrice + trailAtr * TrailingAtrMultiplier;
-		if (_trailStop == 0m || newStop < _trailStop)
-		_trailStop = newStop;
+			var newStop = price + atr * AtrMultiplier;
+			if (_trailStop == 0 || newStop < _trailStop)
+				_trailStop = newStop;
 
-		if (candle.HighPrice >= _trailStop)
-		ClosePosition();
-		}
+			if (stopSar < price || price >= _trailStop)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_trailStop = 0;
+			}
 		}
 
-		// Partial closing and break even
-		if (Position != 0 && !_partialClosed && PartialClosing)
+		// Entry on trade SAR signal when flat
+		if (Position == 0)
 		{
-		var profit = Position > 0 ? candle.ClosePrice - _entryPrice : _entryPrice - candle.ClosePrice;
-		var stopDistance = atr * AtrMultiplier;
-
-		if (profit > stopDistance)
-		{
-		var volumeToClose = Math.Abs(Position) * PercentageToClose;
-		if (Position > 0)
-		SellMarket(volumeToClose);
-		else
-		BuyMarket(volumeToClose);
-
-		if (BreakEven)
-		_trailStop = _entryPrice;
-
-		_partialClosed = true;
-		}
-		}
-
-		// Entry logic
-		if (Position <= 0 && tradeSar < candle.ClosePrice && stopSar < candle.ClosePrice)
-		{
-		BuyMarket();
-		_entryPrice = candle.ClosePrice;
-		_partialClosed = false;
-		_trailStop = candle.ClosePrice - atr * AtrMultiplier;
-		}
-		else if (Position >= 0 && tradeSar > candle.ClosePrice && stopSar > candle.ClosePrice)
-		{
-		SellMarket();
-		_entryPrice = candle.ClosePrice;
-		_partialClosed = false;
-		_trailStop = candle.ClosePrice + atr * AtrMultiplier;
+			if (tradeSar < price && stopSar < price)
+			{
+				BuyMarket();
+				_entryPrice = price;
+				_trailStop = price - atr * AtrMultiplier;
+			}
+			else if (tradeSar > price && stopSar > price)
+			{
+				SellMarket();
+				_entryPrice = price;
+				_trailStop = price + atr * AtrMultiplier;
+			}
 		}
 	}
 }

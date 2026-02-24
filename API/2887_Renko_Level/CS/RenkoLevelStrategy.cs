@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,84 +11,40 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Renko level breakout strategy converted from the MetaTrader expert.
-/// Trades when the rounded Renko level shifts up or down and optionally reverses signals.
+/// Renko level breakout strategy. Emulates Renko bricks on time-based candles
+/// and trades when the rounded level shifts up or down.
 /// </summary>
 public class RenkoLevelStrategy : Strategy
 {
 	private readonly StrategyParam<int> _blockSize;
-	private readonly StrategyParam<bool> _reverse;
-	private readonly StrategyParam<bool> _allowIncrease;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _upperLevel;
 	private decimal _lowerLevel;
 	private bool _hasLevels;
 
-	/// <summary>
-	/// Renko block size expressed in pips.
-	/// </summary>
 	public int BlockSize
 	{
 		get => _blockSize.Value;
 		set => _blockSize.Value = value;
 	}
 
-	/// <summary>
-	/// Inverts the direction of generated trade signals.
-	/// </summary>
-	public bool Reverse
-	{
-		get => _reverse.Value;
-		set => _reverse.Value = value;
-	}
-
-	/// <summary>
-	/// Allows adding to an existing position when true.
-	/// </summary>
-	public bool AllowIncrease
-	{
-		get => _allowIncrease.Value;
-		set => _allowIncrease.Value = value;
-	}
-
-	/// <summary>
-	/// Source candle type used to emulate Renko levels.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="RenkoLevelStrategy"/> class.
-	/// </summary>
 	public RenkoLevelStrategy()
 	{
-		_blockSize = Param(nameof(BlockSize), 30)
+		_blockSize = Param(nameof(BlockSize), 500)
 			.SetGreaterThanZero()
-			.SetDisplay("Block Size", "Renko block size in pips", "Renko")
-			
-			.SetOptimize(10, 100, 5);
+			.SetDisplay("Block Size", "Renko block size in price steps", "Renko");
 
-		_reverse = Param(nameof(Reverse), false)
-			.SetDisplay("Reverse", "Invert trading signals", "General");
-
-		_allowIncrease = Param(nameof(AllowIncrease), false)
-			.SetDisplay("Allow Increase", "Add to positions instead of waiting for flat", "Money Management");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candles used to drive the Renko logic", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candles", "General");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -99,7 +52,12 @@ public class RenkoLevelStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -119,13 +77,16 @@ public class RenkoLevelStrategy : Strategy
 			return;
 		}
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		var previousUpper = _upperLevel;
 		var moved = false;
 
 		if (close < _lowerLevel)
 		{
 			var (round, _, ceil) = CalculateLevels(close, brickSize);
-			if (!AreEqual(round, _lowerLevel))
+			if (Math.Abs(round - _lowerLevel) > brickSize * 0.01m)
 			{
 				_lowerLevel = round;
 				_upperLevel = ceil;
@@ -135,7 +96,7 @@ public class RenkoLevelStrategy : Strategy
 		else if (close > _upperLevel)
 		{
 			var (round, floor, _) = CalculateLevels(close, brickSize);
-			if (!AreEqual(round, _upperLevel))
+			if (Math.Abs(round - _upperLevel) > brickSize * 0.01m)
 			{
 				_lowerLevel = floor;
 				_upperLevel = round;
@@ -146,56 +107,10 @@ public class RenkoLevelStrategy : Strategy
 		if (!moved)
 			return;
 
-		if (_upperLevel > previousUpper)
-		{
-			if (!Reverse)
-			{
-				EnterLong();
-			}
-			else
-			{
-				EnterShort();
-			}
-		}
-		else if (_upperLevel < previousUpper)
-		{
-			if (!Reverse)
-			{
-				EnterShort();
-			}
-			else
-			{
-				EnterLong();
-			}
-		}
-	}
-
-	private void EnterLong()
-	{
-		if (Position < 0)
-		{
-			BuyMarket(Math.Abs(Position) + Volume);
-			return;
-		}
-
-		if (!AllowIncrease && Position > 0)
-			return;
-
-		BuyMarket(Volume);
-	}
-
-	private void EnterShort()
-	{
-		if (Position > 0)
-		{
-			SellMarket(Math.Abs(Position) + Volume);
-			return;
-		}
-
-		if (!AllowIncrease && Position < 0)
-			return;
-
-		SellMarket(Volume);
+		if (_upperLevel > previousUpper && Position <= 0)
+			BuyMarket();
+		else if (_upperLevel < previousUpper && Position >= 0)
+			SellMarket();
 	}
 
 	private void InitializeLevels(decimal price, decimal brickSize)
@@ -218,15 +133,7 @@ public class RenkoLevelStrategy : Strategy
 
 	private decimal GetBrickSize()
 	{
-		var step = Security?.PriceStep ?? 0.0001m;
-		var decimals = Security?.Decimals ?? 0;
-		var adjust = decimals == 3 || decimals == 5 ? 10m : 1m;
-		return step * adjust * BlockSize;
-	}
-
-	private bool AreEqual(decimal first, decimal second)
-	{
-		var tolerance = (Security?.PriceStep ?? 0.0001m) / 10m;
-		return Math.Abs(first - second) <= tolerance;
+		var step = Security?.PriceStep ?? 0.01m;
+		return step * BlockSize;
 	}
 }

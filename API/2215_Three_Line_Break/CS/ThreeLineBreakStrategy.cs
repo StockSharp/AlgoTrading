@@ -14,110 +14,109 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on the Three Line Break indicator.
+/// Strategy based on the Three Line Break pattern.
+/// Detects trend reversals when price breaks above/below recent N-bar high/low.
 /// </summary>
 public class ThreeLineBreakStrategy : Strategy
 {
 	private readonly StrategyParam<int> _linesBreak;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-
+	private Lowest _lowest;
 	private decimal _prevHigh;
 	private decimal _prevLow;
 	private bool _trendUp = true;
 
-	/// <summary>
-	/// Number of lines used to detect breakouts.
-	/// </summary>
-	public int LinesBreak
-	{
-		get => _linesBreak.Value;
-		set => _linesBreak.Value = value;
-	}
+	public int LinesBreak { get => _linesBreak.Value; set => _linesBreak.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public ThreeLineBreakStrategy()
 	{
 		_linesBreak = Param(nameof(LinesBreak), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Lines Break", "Number of lines for trend detection", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(12).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_lowest = null;
+		_prevHigh = 0;
+		_prevLow = 0;
+		_trendUp = true;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_highest = new Highest { Length = LinesBreak };
+		var highest = new Highest { Length = LinesBreak };
 		_lowest = new Lowest { Length = LinesBreak };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.BindEx(highest, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _highest);
-			DrawIndicator(area, _lowest);
+			DrawIndicator(area, highest);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue highValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_highest.IsFormed && _lowest.IsFormed)
+		var lowValue = _lowest.Process(highValue);
+
+		if (!highValue.IsFormed || !lowValue.IsFormed)
+			return;
+
+		var currentHigh = highValue.GetValue<decimal>();
+		var currentLow = lowValue.GetValue<decimal>();
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			var trendUp = _trendUp;
-
-			if (trendUp && candle.LowPrice < _prevLow)
-				trendUp = false;
-			else if (!trendUp && candle.HighPrice > _prevHigh)
-				trendUp = true;
-
-			if (trendUp != _trendUp)
-			{
-				if (trendUp && Position <= 0)
-				{
-					BuyMarket(Volume + Math.Abs(Position));
-				}
-				else if (!trendUp && Position >= 0)
-				{
-					SellMarket(Volume + Math.Abs(Position));
-				}
-			}
-
-			_trendUp = trendUp;
+			_prevHigh = currentHigh;
+			_prevLow = currentLow;
+			return;
 		}
 
-		_prevHigh = _highest.Process(candle).ToDecimal();
-		_prevLow = _lowest.Process(candle).ToDecimal();
+		if (_prevHigh == 0 || _prevLow == 0)
+		{
+			_prevHigh = currentHigh;
+			_prevLow = currentLow;
+			return;
+		}
+
+		var trendUp = _trendUp;
+
+		if (trendUp && candle.LowPrice < _prevLow)
+			trendUp = false;
+		else if (!trendUp && candle.HighPrice > _prevHigh)
+			trendUp = true;
+
+		if (trendUp != _trendUp)
+		{
+			if (trendUp && Position <= 0)
+				BuyMarket();
+			else if (!trendUp && Position >= 0)
+				SellMarket();
+		}
+
+		_trendUp = trendUp;
+		_prevHigh = currentHigh;
+		_prevLow = currentLow;
 	}
 }

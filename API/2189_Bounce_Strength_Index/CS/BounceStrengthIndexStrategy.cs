@@ -15,187 +15,102 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Bounce Strength Index strategy.
-/// Uses a custom indicator to measure bounce strength within a price range.
-/// Opens long positions when the indicator turns upward and short positions when it turns downward.
+/// Uses close price position within recent range to generate momentum signals.
 /// </summary>
 public class BounceStrengthIndexStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rangePeriod;
-	private readonly StrategyParam<int> _slowing;
-	private readonly StrategyParam<int> _avgPeriod;
-	
-	private BounceStrengthIndex _bsi = null!;
-	private decimal? _prevValue;
+	private readonly StrategyParam<int> _smaPeriod;
+
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
+	private decimal? _prevBsi;
 	private bool? _prevRising;
-	
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// Period for searching highest and lowest values.
-	/// </summary>
-	public int RangePeriod
-	{
-		get => _rangePeriod.Value;
-		set => _rangePeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// Fast smoothing period.
-	/// </summary>
-	public int Slowing
-	{
-		get => _slowing.Value;
-		set => _slowing.Value = value;
-	}
-	
-	/// <summary>
-	/// Slow smoothing period.
-	/// </summary>
-	public int AvgPeriod
-	{
-		get => _avgPeriod.Value;
-		set => _avgPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// Initializes a new instance of the <see cref="BounceStrengthIndexStrategy"/> class.
-	/// </summary>
+
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int RangePeriod { get => _rangePeriod.Value; set => _rangePeriod.Value = value; }
+	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
+
 	public BounceStrengthIndexStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
-		_rangePeriod = Param(nameof(RangePeriod), 20)
-		.SetDisplay("Range Period", "Period for highest and lowest search", "Indicator");
-		_slowing = Param(nameof(Slowing), 3)
-		.SetDisplay("Slowing", "Fast smoothing period", "Indicator");
-		_avgPeriod = Param(nameof(AvgPeriod), 3)
-		.SetDisplay("Average Period", "Slow smoothing period", "Indicator");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_rangePeriod = Param(nameof(RangePeriod), 10)
+			.SetDisplay("Range Period", "Period for highest and lowest search", "Indicator");
+		_smaPeriod = Param(nameof(SmaPeriod), 10)
+			.SetDisplay("SMA Period", "SMA period for trend filter", "Indicator");
 	}
-	
-	/// <inheritdoc />
+
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	=> [(Security, CandleType)];
-	
-	/// <inheritdoc />
+		=> [(Security, CandleType)];
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevValue = null;
+		_highs.Clear();
+		_lows.Clear();
+		_prevBsi = null;
 		_prevRising = null;
 	}
-	
-	/// <inheritdoc />
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
-		
-		_bsi = new BounceStrengthIndex
-		{
-			RangePeriod = RangePeriod,
-			Slowing = Slowing,
-			AvgPeriod = AvgPeriod,
-		};
-		
+
+		var sma = new SMA { Length = SmaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(_bsi, ProcessCandle)
-		.Start();
+			.Bind(sma, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
+		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle, decimal bsiValue)
+
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (_prevValue is decimal prev)
+			return;
+
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+		if (_highs.Count > RangePeriod) _highs.RemoveAt(0);
+		if (_lows.Count > RangePeriod) _lows.RemoveAt(0);
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_highs.Count < 3)
+			return;
+
+		var high = _highs.Max();
+		var low = _lows.Min();
+		var range = high - low;
+
+		if (range <= 0)
+			return;
+
+		var bsi = (candle.ClosePrice - low) / range * 100m;
+
+		if (_prevBsi is decimal prev)
 		{
-			var rising = bsiValue > prev;
-			
-			if (rising && _prevRising != true)
-			{
-				if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-				
-				if (Position <= 0)
+			var rising = bsi > prev;
+
+			if (rising && _prevRising != true && Position <= 0)
 				BuyMarket();
-			}
-			else if (!rising && _prevRising != false)
-			{
-				if (Position > 0)
-				SellMarket(Position);
-				
-				if (Position >= 0)
+			else if (!rising && _prevRising != false && Position >= 0)
 				SellMarket();
-			}
-			
+
 			_prevRising = rising;
 		}
-		
-		_prevValue = bsiValue;
-	}
-}
 
-/// <summary>
-/// Simplified Bounce Strength Index indicator.
-/// Calculates the position of the close price within the recent range
-/// and applies double smoothing to produce a momentum-like value.
-/// </summary>
-public class BounceStrengthIndex : BaseIndicator
-{
-	/// <summary>
-	/// Period for highest and lowest search.
-	/// </summary>
-	public int RangePeriod { get; set; } = 20;
-	
-	/// <summary>
-	/// Fast smoothing period.
-	/// </summary>
-	public int Slowing { get; set; } = 3;
-	
-	/// <summary>
-	/// Slow smoothing period.
-	/// </summary>
-	public int AvgPeriod { get; set; } = 3;
-	
-	private readonly Highest _highest = new();
-	private readonly Lowest _lowest = new();
-	private readonly SimpleMovingAverage _fastSma = new();
-	private readonly SimpleMovingAverage _slowSma = new();
-	
-	/// <inheritdoc />
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
-	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-		return new DecimalIndicatorValue(this, default, input.Time);
-		
-		_highest.Length = RangePeriod;
-		_lowest.Length = RangePeriod;
-		_fastSma.Length = Slowing;
-		_slowSma.Length = AvgPeriod;
-		
-		var high = _highest.Process(input).GetValue<decimal>();
-		var low = _lowest.Process(input).GetValue<decimal>();
-		var range = high - low;
-		
-		if (range <= 0)
-		return new DecimalIndicatorValue(this, default, input.Time);
-		
-		var pos = (candle.ClosePrice - low) / range * 100m;
-		var neg = (high - candle.ClosePrice) / range * 100m;
-		var diff = pos - neg;
-		
-		var fast = _fastSma.Process(new DecimalIndicatorValue(_fastSma, diff, input.Time)).GetValue<decimal>();
-		var slow = _slowSma.Process(new DecimalIndicatorValue(_slowSma, fast, input.Time)).GetValue<decimal>();
-		
-		return new DecimalIndicatorValue(this, slow, input.Time);
+		_prevBsi = bsi;
 	}
 }

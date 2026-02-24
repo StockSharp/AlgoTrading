@@ -133,7 +133,7 @@ public class PipsoverStrategy : Strategy
 	/// </summary>
 	public PipsoverStrategy()
 	{
-		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
+		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order size used for market entries", "Trading");
 
@@ -165,7 +165,7 @@ public class PipsoverStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Chaikin Slow Length", "Slow EMA length for Chaikin oscillator", "Chaikin");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "Data");
 	}
 
@@ -232,8 +232,8 @@ public class PipsoverStrategy : Strategy
 		return;
 
 		// Rebuild Chaikin oscillator values via EMA of the ADL indicator.
-		var fastResult = _chaikinFast.Process(new DecimalIndicatorValue(_chaikinFast, adlValue));
-		var slowResult = _chaikinSlow.Process(new DecimalIndicatorValue(_chaikinSlow, adlValue));
+		var fastResult = _chaikinFast.Process(new DecimalIndicatorValue(_chaikinFast, adlValue, candle.ServerTime) { IsFinal = true });
+		var slowResult = _chaikinSlow.Process(new DecimalIndicatorValue(_chaikinSlow, adlValue, candle.ServerTime) { IsFinal = true });
 		var chaikinValue = fastResult.ToDecimal() - slowResult.ToDecimal();
 
 		// Wait for all indicators to be fully formed before trading.
@@ -308,7 +308,6 @@ public class PipsoverStrategy : Strategy
 		else
 		{
 			// No position is open, evaluate entry signals.
-			CancelActiveOrders();
 
 			var allowLong = prevBullish && _prevLow < _prevSma && _prevChaikin < -OpenLevel;
 			var allowShort = prevBearish && _prevHigh > _prevSma && _prevChaikin > OpenLevel;

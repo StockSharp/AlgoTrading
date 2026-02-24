@@ -1,22 +1,18 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
+namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Triple exponential moving average crossover strategy.
+/// Triple EMA crossover strategy.
+/// Goes long when fast > medium > slow EMA (bullish stack).
+/// Goes short when fast &lt; medium &lt; slow EMA (bearish stack).
 /// </summary>
 public class ThreeEMAStrategy : Strategy
 {
@@ -24,38 +20,6 @@ public class ThreeEMAStrategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _mediumPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-
-	private ExponentialMovingAverage _fastEma;
-	private ExponentialMovingAverage _mediumEma;
-	private ExponentialMovingAverage _slowEma;
-
-	public ThreeEMAStrategy()
-	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle type", "Time frame of candles used for analysis.", "General");
-
-		_fastPeriod = Param(nameof(FastPeriod), 5)
-		.SetDisplay("Fast EMA", "Length of the fast EMA.", "Parameters")
-		;
-
-		_mediumPeriod = Param(nameof(MediumPeriod), 12)
-		.SetDisplay("Medium EMA", "Length of the medium EMA.", "Parameters")
-		;
-
-		_slowPeriod = Param(nameof(SlowPeriod), 24)
-		.SetDisplay("Slow EMA", "Length of the slow EMA.", "Parameters")
-		;
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 400m)
-		.SetDisplay("Stop loss", "Protective distance in points.", "Risk")
-		;
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 900m)
-		.SetDisplay("Take profit", "Target distance in points.", "Risk")
-		;
-	}
 
 	public DataType CandleType
 	{
@@ -81,100 +45,66 @@ public class ThreeEMAStrategy : Strategy
 		set => _slowPeriod.Value = value;
 	}
 
-	public decimal StopLossPoints
+	public ThreeEMAStrategy()
 	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+
+		_fastPeriod = Param(nameof(FastPeriod), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_mediumPeriod = Param(nameof(MediumPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Medium EMA", "Medium EMA period", "Indicators");
+
+		_slowPeriod = Param(nameof(SlowPeriod), 24)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 	}
 
-	public decimal TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (FastPeriod <= 0 || MediumPeriod <= 0 || SlowPeriod <= 0)
-		{
-			throw new InvalidOperationException("EMA periods must be positive.");
-		}
+		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		var mediumEma = new ExponentialMovingAverage { Length = MediumPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		if (FastPeriod >= MediumPeriod)
-		{
-			throw new InvalidOperationException("Medium EMA period must be greater than fast EMA period.");
-		}
-
-		if (MediumPeriod >= SlowPeriod)
-		{
-			throw new InvalidOperationException("Slow EMA period must be greater than medium EMA period.");
-		}
-
-		_fastEma = new EMA { Length = FastPeriod };
-		_mediumEma = new EMA { Length = MediumPeriod };
-		_slowEma = new EMA { Length = SlowPeriod };
-
-		// Subscribe to candle data and feed EMA indicators.
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(_fastEma, _mediumEma, _slowEma, ProcessCandle)
-		.Start();
+			.Bind(fastEma, mediumEma, slowEma, ProcessCandle)
+			.Start();
 
-		// Attach indicators to chart if UI is available.
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastEma);
-			DrawIndicator(area, _mediumEma);
-			DrawIndicator(area, _slowEma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, mediumEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
-		}
-
-		// Enable protective stop loss and take profit distances.
-		var step = Security.PriceStep ?? 1m;
-		Unit takeProfitUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null;
-		Unit stopLossUnit = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Point) : null;
-
-		if (takeProfitUnit != null || stopLossUnit != null)
-		{
-			StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal mediumValue, decimal slowValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal medium, decimal slow)
 	{
-		// Work only with completed candles to avoid noise.
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
-		var isBullishStack = fastValue > mediumValue && mediumValue > slowValue;
-		var isBearishStack = fastValue < mediumValue && mediumValue < slowValue;
+		var bullishStack = fast > medium && medium > slow;
+		var bearishStack = fast < medium && medium < slow;
 
-		if (isBullishStack && Position <= 0)
+		if (bullishStack && Position <= 0)
 		{
-			// Close shorts (if any) and go long.
-			CancelActiveOrders();
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
-		else if (isBearishStack && Position >= 0)
+		else if (bearishStack && Position >= 0)
 		{
-			// Close longs (if any) and go short.
-			CancelActiveOrders();
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 	}
 }
-

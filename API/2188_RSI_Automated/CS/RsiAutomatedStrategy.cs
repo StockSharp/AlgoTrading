@@ -105,7 +105,7 @@ public class RsiAutomatedStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Trailing", "Trailing stop distance in points", "Risk");
 
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -128,8 +128,6 @@ public class RsiAutomatedStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 	base.OnStarted2(time);
-
-	StartProtection(null, null);
 
 	var rsi = new RelativeStrengthIndex
 	{

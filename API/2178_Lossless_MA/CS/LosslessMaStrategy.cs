@@ -15,18 +15,16 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Lossless Moving Average strategy.
-/// Trades fast and slow SMA crossovers with optional break-even protection.
+/// Trades fast and slow SMA crossovers.
 /// </summary>
 public class LosslessMaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<int> _maxDeals;
-	private readonly StrategyParam<bool> _closeLosses;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
-	private int _orderType; // 1 = buy, -1 = sell, 0 = none
+	private decimal? _prevFast;
+	private decimal? _prevSlow;
 
 	/// <summary>
 	/// Fast SMA period.
@@ -37,17 +35,6 @@ public class LosslessMaStrategy : Strategy
 	/// Slow SMA period.
 	/// </summary>
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-
-	/// <summary>
-	/// Maximum number of simultaneous deals.
-	/// </summary>
-	public int MaxDeals { get => _maxDeals.Value; set => _maxDeals.Value = value; }
-
-	/// <summary>
-	/// Close trades even if loss.
-	/// </summary>
-	public bool CloseLosses { get => _closeLosses.Value; set => _closeLosses.Value = value; }
-
 
 	/// <summary>
 	/// Type of candles used for calculations.
@@ -67,15 +54,7 @@ public class LosslessMaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow SMA length", "Parameters");
 
-		_maxDeals = Param(nameof(MaxDeals), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Max Deals", "Maximum open deals", "Risk");
-
-		_closeLosses = Param(nameof(CloseLosses), true)
-			.SetDisplay("Close Losses", "Close losing trades immediately", "Risk");
-
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for strategy", "General");
 	}
 
@@ -89,8 +68,7 @@ public class LosslessMaStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = 0m;
-		_orderType = 0;
+		_prevFast = _prevSlow = null;
 	}
 
 	/// <inheritdoc />
@@ -125,49 +103,27 @@ public class LosslessMaStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var deals = Volume == 0 ? 0 : (int)(Math.Abs(Position) / Volume);
+		var prevFast = _prevFast;
+		var prevSlow = _prevSlow;
 
-		// Closing logic
-		if (Position > 0 && fastValue < slowValue)
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
+
+		if (prevFast is null || prevSlow is null)
+			return;
+
+		// Bullish crossover
+		if (prevFast <= prevSlow && fastValue > slowValue && Position <= 0)
 		{
-			if (CloseLosses || candle.ClosePrice > _entryPrice)
-			{
-				SellMarket(Math.Abs(Position));
-				_orderType = -1;
-			}
-			else
-			{
-				SellLimit(_entryPrice, Math.Abs(Position));
-			}
-		}
-		else if (Position < 0 && fastValue > slowValue)
-		{
-			if (CloseLosses || candle.ClosePrice < _entryPrice)
-			{
-				BuyMarket(Math.Abs(Position));
-				_orderType = 1;
-			}
-			else
-			{
-				BuyLimit(_entryPrice, Math.Abs(Position));
-			}
+			var volume = Volume + Math.Abs(Position);
+			BuyMarket(volume);
 		}
 
-		// Opening logic
-		if (deals == 0 || (!CloseLosses && deals < MaxDeals))
+		// Bearish crossover
+		if (prevFast >= prevSlow && fastValue < slowValue && Position >= 0)
 		{
-			if (fastValue > slowValue && _orderType != 1)
-			{
-				BuyMarket(Volume);
-				_entryPrice = candle.ClosePrice;
-				_orderType = 1;
-			}
-			else if (fastValue < slowValue && _orderType != -1)
-			{
-				SellMarket(Volume);
-				_entryPrice = candle.ClosePrice;
-				_orderType = -1;
-			}
+			var volume = Volume + Math.Abs(Position);
+			SellMarket(volume);
 		}
 	}
 }

@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -12,7 +10,6 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -30,13 +27,7 @@ public class MamacdNovltStrategy : Strategy
 	private readonly StrategyParam<int> _fastSignalEmaPeriod;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private WeightedMovingAverage _firstLowWma = null!;
-	private WeightedMovingAverage _secondLowWma = null!;
-	private ExponentialMovingAverage _fastCloseEma = null!;
-	private MovingAverageConvergenceDivergence _macd = null!;
 
 	private bool _isLongSetupPrepared;
 	private bool _isShortSetupPrepared;
@@ -88,7 +79,7 @@ public class MamacdNovltStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss distance expressed in price steps.
+	/// Stop-loss distance in absolute price units.
 	/// </summary>
 	public int StopLossPoints
 	{
@@ -97,21 +88,12 @@ public class MamacdNovltStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Take-profit distance expressed in price steps.
+	/// Take-profit distance in absolute price units.
 	/// </summary>
 	public int TakeProfitPoints
 	{
 		get => _takeProfitPoints.Value;
 		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Order volume used for market entries.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
 	}
 
 	/// <summary>
@@ -129,167 +111,131 @@ public class MamacdNovltStrategy : Strategy
 	public MamacdNovltStrategy()
 	{
 		_firstLowWmaPeriod = Param(nameof(FirstLowWmaPeriod), 85)
-		.SetGreaterThanZero()
-		.SetDisplay("First LWMA Period", "First LWMA period on lows", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("First LWMA Period", "First LWMA period on lows", "Indicators");
 
 		_secondLowWmaPeriod = Param(nameof(SecondLowWmaPeriod), 75)
-		.SetGreaterThanZero()
-		.SetDisplay("Second LWMA Period", "Second LWMA period on lows", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("Second LWMA Period", "Second LWMA period on lows", "Indicators");
 
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 5)
-		.SetGreaterThanZero()
-		.SetDisplay("Fast EMA Period", "Fast EMA period on closes", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA Period", "Fast EMA period on closes", "Indicators");
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
-		.SetGreaterThanZero()
-		.SetDisplay("MACD Slow Period", "Slow EMA period for MACD", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow Period", "Slow EMA period for MACD", "Indicators");
 
 		_fastSignalEmaPeriod = Param(nameof(FastSignalEmaPeriod), 15)
-		.SetGreaterThanZero()
-		.SetDisplay("MACD Fast Period", "Fast EMA period for MACD", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast Period", "Fast EMA period for MACD", "Indicators");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 15)
-		.SetNotNegative()
-		.SetDisplay("Stop Loss (steps)", "Stop-loss distance in price steps", "Risk");
+		_stopLossPoints = Param(nameof(StopLossPoints), 500)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop-loss distance", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 15)
-		.SetNotNegative()
-		.SetDisplay("Take Profit (steps)", "Take-profit distance in price steps", "Risk");
-
-		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Trade Volume", "Default order volume", "Trading");
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take-profit distance", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
+			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return new[] { (Security, CandleType) };
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-	base.OnReseted();
+		base.OnReseted();
 
-	_isLongSetupPrepared = false;
-	_isShortSetupPrepared = false;
-	_previousMacd = null;
+		_isLongSetupPrepared = false;
+		_isShortSetupPrepared = false;
+		_previousMacd = null;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted(time);
+		var fastCloseEma = new EMA { Length = FastEmaPeriod };
+		var firstLowWma = new WeightedMovingAverage { Length = FirstLowWmaPeriod };
+		var secondLowWma = new WeightedMovingAverage { Length = SecondLowWmaPeriod };
 
-	Volume = TradeVolume;
+		var macd = new MovingAverageConvergenceDivergence();
+		macd.ShortMa.Length = FastSignalEmaPeriod;
+		macd.LongMa.Length = SlowEmaPeriod;
 
-	_firstLowWma = new WeightedMovingAverage
-	{
-	Length = FirstLowWmaPeriod
-	};
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastCloseEma, firstLowWma, secondLowWma, macd, ProcessCandle)
+			.Start();
 
-	_secondLowWma = new WeightedMovingAverage
-	{
-	Length = SecondLowWmaPeriod
-	};
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastCloseEma);
+			DrawOwnTrades(area);
+		}
 
-	_fastCloseEma = new EMA
-	{
-	Length = FastEmaPeriod
-	};
+		var takeProfitUnit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null;
+		var stopLossUnit = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Absolute) : null;
+		StartProtection(takeProfitUnit, stopLossUnit);
 
-	_macd = new MovingAverageConvergenceDivergence
-	{
-	Fast = FastSignalEmaPeriod,
-	Slow = SlowEmaPeriod
-	};
-
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.BindEx(_fastCloseEma, _firstLowWma, _secondLowWma, _macd, ProcessCandle)
-	.Start();
-
-	var mainArea = CreateChartArea();
-	if (mainArea != null)
-	{
-	DrawCandles(mainArea, subscription);
-	DrawIndicator(mainArea, _fastCloseEma);
-	DrawIndicator(mainArea, _firstLowWma);
-	DrawIndicator(mainArea, _secondLowWma);
-	DrawOwnTrades(mainArea);
+		base.OnStarted2(time);
 	}
 
-	var macdArea = CreateChartArea();
-	if (macdArea != null)
+	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal firstLwma, decimal secondLwma, decimal macdLine)
 	{
-	DrawIndicator(macdArea, _macd);
-	}
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	var takeProfitUnit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.PriceStep) : null;
-	var stopLossUnit = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.PriceStep) : null;
+		// Track when the fast EMA moves below both LWMA values to arm the long setup.
+		if (ema < firstLwma && ema < secondLwma)
+		{
+			_isLongSetupPrepared = true;
+		}
 
-	StartProtection(takeProfitUnit, stopLossUnit);
-	}
+		// Track when the fast EMA moves above both LWMA values to arm the short setup.
+		if (ema > firstLwma && ema > secondLwma)
+		{
+			_isShortSetupPrepared = true;
+		}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue firstLwmaValue, IIndicatorValue secondLwmaValue, IIndicatorValue macdValue)
-	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		var hasPreviousMacd = _previousMacd.HasValue;
+		var macdPrev = _previousMacd ?? macdLine;
 
-	if (!emaValue.IsFinal || !firstLwmaValue.IsFinal || !secondLwmaValue.IsFinal || !macdValue.IsFinal)
-	return;
+		var macdBullish = macdLine > 0m || (hasPreviousMacd && macdLine > macdPrev);
+		var macdBearish = macdLine < 0m || (hasPreviousMacd && macdLine < macdPrev);
 
-	var ema = emaValue.ToDecimal();
-	var firstLwma = firstLwmaValue.ToDecimal();
-	var secondLwma = secondLwmaValue.ToDecimal();
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_previousMacd = macdLine;
+			return;
+		}
 
-	var macdData = (MovingAverageConvergenceDivergenceValue)macdValue;
-	if (macdData.Macd is not decimal macdLine)
-	return;
+		// Enter long when EMA crosses above both LWMAs after being below, with bullish MACD
+		if (ema > firstLwma && ema > secondLwma && _isLongSetupPrepared && macdBullish && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+			_isLongSetupPrepared = false;
+		}
 
-	// Track when the fast EMA moves below both LWMA values to arm the long setup.
-	if (ema < firstLwma && ema < secondLwma)
-	{
-	_isLongSetupPrepared = true;
-	}
+		// Enter short when EMA crosses below both LWMAs after being above, with bearish MACD
+		if (ema < firstLwma && ema < secondLwma && _isShortSetupPrepared && macdBearish && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Position);
+			SellMarket(Volume);
+			_isShortSetupPrepared = false;
+		}
 
-	// Track when the fast EMA moves above both LWMA values to arm the short setup.
-	if (ema > firstLwma && ema > secondLwma)
-	{
-	_isShortSetupPrepared = true;
-	}
-
-	var hasPreviousMacd = _previousMacd.HasValue;
-	var macdPrev = _previousMacd ?? macdLine;
-
-	var macdBullish = macdLine > 0m || (hasPreviousMacd && macdLine > macdPrev);
-	var macdBearish = macdLine < 0m || (hasPreviousMacd && macdLine < macdPrev);
-
-	if (!IsFormedAndOnlineAndAllowTrading())
-	{
-	_previousMacd = macdLine;
-	return;
-	}
-
-	// Enter long position once the EMA breaks above both LWMA values after being below and MACD momentum turns positive.
-	if (ema > firstLwma && ema > secondLwma && _isLongSetupPrepared && macdBullish && Position <= 0)
-	{
-	BuyMarket(Volume + Math.Abs(Position));
-	_isLongSetupPrepared = false;
-	}
-
-	// Enter short position once the EMA breaks below both LWMA values after being above and MACD momentum turns negative.
-	if (ema < firstLwma && ema < secondLwma && _isShortSetupPrepared && macdBearish && Position >= 0)
-	{
-	SellMarket(Volume + Math.Abs(Position));
-	_isShortSetupPrepared = false;
-	}
-
-	_previousMacd = macdLine;
+		_previousMacd = macdLine;
 	}
 }
-

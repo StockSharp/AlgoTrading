@@ -95,7 +95,7 @@ public class BillWilliamsTraderStrategy : Strategy
 			
 			.SetOptimize(3, 10, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -144,9 +144,10 @@ public class BillWilliamsTraderStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-		var jawVal = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.ServerTime));
-		var teethVal = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.ServerTime));
-		var lipsVal = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.ServerTime));
+		var isFinal = candle.State == CandleStates.Finished;
+		var jawVal = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.ServerTime) { IsFinal = isFinal });
+		var teethVal = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.ServerTime) { IsFinal = isFinal });
+		var lipsVal = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.ServerTime) { IsFinal = isFinal });
 
 		// shift buffers for fractal detection
 		for (var i = 0; i < 4; i++)
@@ -157,7 +158,7 @@ public class BillWilliamsTraderStrategy : Strategy
 		_highBuffer[4] = candle.HighPrice;
 		_lowBuffer[4] = candle.LowPrice;
 
-		if (candle.State != CandleStates.Finished || !jawVal.IsFormed || !teethVal.IsFormed || !lipsVal.IsFormed)
+		if (candle.State != CandleStates.Finished || !_jaw.IsFormed || !_teeth.IsFormed || !_lips.IsFormed)
 			return;
 
 		// detect fractals using the middle bar
@@ -173,13 +174,13 @@ public class BillWilliamsTraderStrategy : Strategy
 		var teeth = teethVal.ToDecimal();
 		var lips = lipsVal.ToDecimal();
 
-		// entry conditions
-		if (_upFractal is decimal up && candle.ClosePrice > up && up > teeth && Position <= 0)
+		// entry conditions: fractal breakout with Alligator trend filter
+		if (_upFractal is decimal up && candle.ClosePrice > up && lips > teeth && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
 			_upFractal = null;
 		}
-		else if (_downFractal is decimal down && candle.ClosePrice < down && down < teeth && Position >= 0)
+		else if (_downFractal is decimal down && candle.ClosePrice < down && lips < teeth && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
 			_downFractal = null;

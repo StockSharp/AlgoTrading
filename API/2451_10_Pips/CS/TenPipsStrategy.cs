@@ -14,44 +14,49 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Hedging strategy opening simultaneous long and short positions with fixed take profit,
-/// stop loss and trailing stop.
+/// Simple breakout strategy that enters on momentum moves
+/// with fixed take profit and stop loss protection.
 /// </summary>
 public class TenPipsStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfitBuy;
-	private readonly StrategyParam<decimal> _stopLossBuy;
-	private readonly StrategyParam<decimal> _trailingStopBuy;
-	private readonly StrategyParam<decimal> _takeProfitSell;
-	private readonly StrategyParam<decimal> _stopLossSell;
-	private readonly StrategyParam<decimal> _trailingStopSell;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _lookback;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private Order _longStop, _longTake;
-	private decimal _longEntryPrice;
-	private bool _hasLong;
+	private decimal _entryPrice;
 
-	private Order _shortStop, _shortTake;
-	private decimal _shortEntryPrice;
-	private bool _hasShort;
-
-	public decimal TakeProfitBuy { get => _takeProfitBuy.Value; set => _takeProfitBuy.Value = value; }
-	public decimal StopLossBuy { get => _stopLossBuy.Value; set => _stopLossBuy.Value = value; }
-	public decimal TrailingStopBuy { get => _trailingStopBuy.Value; set => _trailingStopBuy.Value = value; }
-	public decimal TakeProfitSell { get => _takeProfitSell.Value; set => _takeProfitSell.Value = value; }
-	public decimal StopLossSell { get => _stopLossSell.Value; set => _stopLossSell.Value = value; }
-	public decimal TrailingStopSell { get => _trailingStopSell.Value; set => _trailingStopSell.Value = value; }
+	/// <summary>Take profit distance.</summary>
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	/// <summary>Stop loss distance.</summary>
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	/// <summary>Lookback period for momentum.</summary>
+	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
+	/// <summary>Candle type.</summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public TenPipsStrategy()
 	{
-		_takeProfitBuy = Param(nameof(TakeProfitBuy), 10m).SetDisplay("Take Profit Buy", "Take Profit Buy", "General");
-		_stopLossBuy = Param(nameof(StopLossBuy), 50m).SetDisplay("Stop Loss Buy", "Stop Loss Buy", "General");
-		_trailingStopBuy = Param(nameof(TrailingStopBuy), 50m).SetDisplay("Trailing Stop Buy", "Trailing Stop Buy", "General");
-		_takeProfitSell = Param(nameof(TakeProfitSell), 10m).SetDisplay("Take Profit Sell", "Take Profit Sell", "General");
-		_stopLossSell = Param(nameof(StopLossSell), 50m).SetDisplay("Stop Loss Sell", "Stop Loss Sell", "General");
-		_trailingStopSell = Param(nameof(TrailingStopSell), 50m).SetDisplay("Trailing Stop Sell", "Trailing Stop Sell", "General");
+		_takeProfit = Param(nameof(TakeProfit), 500m)
+			.SetDisplay("Take Profit", "Take profit distance", "Risk")
+			.SetGreaterThanZero();
+		_stopLoss = Param(nameof(StopLoss), 300m)
+			.SetDisplay("Stop Loss", "Stop loss distance", "Risk")
+			.SetGreaterThanZero();
+		_lookback = Param(nameof(Lookback), 10)
+			.SetDisplay("Lookback", "Momentum lookback period", "Indicators")
+			.SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -59,72 +64,60 @@ public class TenPipsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var trades = SubscribeTicks();
-		trades.Bind(ProcessTrade).Start();
+		_entryPrice = 0;
 
-		BuyMarket(Volume);
-		SellMarket(Volume);
-	}
+		var roc = new RateOfChange { Length = Lookback };
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		if (_hasLong && TrailingStopBuy > 0 && _longStop != null)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(roc, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			var newStop = trade.Price - TrailingStopBuy;
-			if (newStop > _longStop.Price)
-			{
-				CancelOrder(_longStop);
-				_longStop = SellStop(Volume, newStop);
-			}
-		}
-
-		if (_hasShort && TrailingStopSell > 0 && _shortStop != null)
-		{
-			var newStop = trade.Price + TrailingStopSell;
-			if (newStop < _shortStop.Price)
-			{
-				CancelOrder(_shortStop);
-				_shortStop = BuyStop(Volume, newStop);
-			}
+			DrawCandles(area, subscription);
+			DrawIndicator(area, roc);
+			DrawOwnTrades(area);
 		}
 	}
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
+	private void ProcessCandle(ICandleMessage candle, decimal rocValue)
 	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade.Order == _longStop || trade.Order == _longTake)
-		{
-			_hasLong = false;
-			_longStop = null;
-			_longTake = null;
-			BuyMarket(Volume);
+		if (candle.State != CandleStates.Finished)
 			return;
-		}
 
-		if (trade.Order == _shortStop || trade.Order == _shortTake)
-		{
-			_hasShort = false;
-			_shortStop = null;
-			_shortTake = null;
-			SellMarket(Volume);
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		if (trade.Order.Side == Sides.Buy)
+		var close = candle.ClosePrice;
+
+		if (Position == 0)
 		{
-			_hasLong = true;
-			_longEntryPrice = trade.Trade.Price;
-			_longStop = SellStop(Volume, _longEntryPrice - StopLossBuy);
-			_longTake = SellLimit(Volume, _longEntryPrice + TakeProfitBuy);
+			if (rocValue > 0.5m)
+			{
+				BuyMarket();
+				_entryPrice = close;
+			}
+			else if (rocValue < -0.5m)
+			{
+				SellMarket();
+				_entryPrice = close;
+			}
 		}
-		else if (trade.Order.Side == Sides.Sell)
+		else if (Position > 0)
 		{
-			_hasShort = true;
-			_shortEntryPrice = trade.Trade.Price;
-			_shortStop = BuyStop(Volume, _shortEntryPrice + StopLossSell);
-			_shortTake = BuyLimit(Volume, _shortEntryPrice - TakeProfitSell);
+			if (close >= _entryPrice + TakeProfit || close <= _entryPrice - StopLoss)
+			{
+				SellMarket(Math.Abs(Position));
+			}
+		}
+		else if (Position < 0)
+		{
+			if (close <= _entryPrice - TakeProfit || close >= _entryPrice + StopLoss)
+			{
+				BuyMarket(Math.Abs(Position));
+			}
 		}
 	}
 }

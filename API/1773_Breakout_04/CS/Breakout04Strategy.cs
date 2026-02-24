@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,148 +11,135 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy trading previous day high/low.
+/// Breakout strategy trading previous session high/low with trailing stop.
 /// </summary>
 public class Breakout04Strategy : Strategy
 {
-	private readonly StrategyParam<int> _mondayHour;
-	private readonly StrategyParam<int> _fridayHour;
-	private readonly StrategyParam<int> _trailingStop;
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<int> _stopLoss;
-	private readonly StrategyParam<bool> _useMm;
-	private readonly StrategyParam<decimal> _percentMm;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _trailingDist;
+	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevHigh;
 	private decimal _prevLow;
-	private DateTimeOffset _lastDaily;
-	private decimal _stopPrice;
-	private decimal _takePrice;
+	private decimal _sessionHigh;
+	private decimal _sessionLow;
+	private DateTime _currentDate;
+	private decimal _entryPrice;
+	private decimal _trailingStop;
 
-	public int MondayHour { get => _mondayHour.Value; set => _mondayHour.Value = value; }
-	public int FridayHour { get => _fridayHour.Value; set => _fridayHour.Value = value; }
-	public int TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
-	public int TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public int StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-	public bool UseMoneyManagement { get => _useMm.Value; set => _useMm.Value = value; }
-	public decimal PercentMM { get => _percentMm.Value; set => _percentMm.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TrailingDist { get => _trailingDist.Value; set => _trailingDist.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public Breakout04Strategy()
 	{
-		_mondayHour = Param(nameof(MondayHour), 18)
-			.SetDisplay("Monday Hour", "Trading allowed after this hour on Monday", "General");
-		_fridayHour = Param(nameof(FridayHour), 14)
-			.SetDisplay("Friday Hour", "Trading stops after this hour on Friday", "General");
-		_trailingStop = Param(nameof(TrailingStop), 21)
-			.SetGreaterThanZero()
-			.SetDisplay("Trailing Stop", "Trailing stop in points", "Risk Management");
-		_takeProfit = Param(nameof(TakeProfit), 550)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit in points", "Risk Management");
-		_stopLoss = Param(nameof(StopLoss), 124)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Initial stop loss in points", "Risk Management");
-		_useMm = Param(nameof(UseMoneyManagement), false)
-			.SetDisplay("Use MM", "Enable simple money management", "General");
-		_percentMm = Param(nameof(PercentMM), 8m)
-			.SetGreaterThanZero()
-			.SetDisplay("Percent MM", "Risk percent of free capital", "General");
+		_takeProfit = Param(nameof(TakeProfit), 500m)
+			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 300m)
+			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
+
+		_trailingDist = Param(nameof(TrailingDist), 200m)
+			.SetDisplay("Trailing Dist", "Trailing stop distance", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, DataType.Ticks), (Security, TimeSpan.FromMinutes(5).TimeFrame())];
-	}
-
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		SubscribeTicks().Bind(ProcessTrade).Start();
-		SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame()).Bind(ProcessDaily).Start();
+		_prevHigh = 0;
+		_prevLow = 0;
+		_sessionHigh = 0;
+		_sessionLow = decimal.MaxValue;
+		_currentDate = default;
+		_entryPrice = 0;
+		_trailingStop = 0;
 
-		StartProtection(null, null);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 	}
 
-	private decimal GetVolume()
-	{
-		if (!UseMoneyManagement)
-			return Volume;
-
-		var account = Portfolio?.CurrentValue ?? 0m;
-		if (account <= 0)
-			return 0m;
-
-		var vol = PercentMM / 100m * account / 100000m;
-		return vol > 0 ? vol : 0m;
-	}
-
-	private void ProcessDaily(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_prevHigh = candle.HighPrice;
-		_prevLow = candle.LowPrice;
-		_lastDaily = candle.OpenTime;
-	}
+		var price = candle.ClosePrice;
+		var date = candle.OpenTime.Date;
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var time = trade.ServerTime.ToLocalTime();
-
-		if (time.DayOfWeek == DayOfWeek.Friday && time.Hour > FridayHour)
-			return;
-
-		if (time.DayOfWeek == DayOfWeek.Monday && time.Hour < MondayHour)
-			return;
-
-		if (_prevHigh == 0m && _prevLow == 0m)
-			return;
-
-		var price = trade.Price;
-		var step = Security.PriceStep ?? 1m;
-		var stopOffset = StopLoss * step;
-		var takeOffset = TakeProfit * step;
-		var trailOffset = TrailingStop * step;
-
-		if (Position == 0)
+		// Track daily high/low for previous day reference
+		if (date != _currentDate)
 		{
-			var volume = GetVolume();
-			if (volume <= 0)
-				return;
-
-			if (price > _prevHigh)
+			if (_currentDate != default)
 			{
-				BuyMarket(volume);
-				_stopPrice = price - stopOffset;
-				_takePrice = price + takeOffset;
+				_prevHigh = _sessionHigh;
+				_prevLow = _sessionLow;
 			}
-			else if (price < _prevLow)
-			{
-				SellMarket(volume);
-				_stopPrice = price + stopOffset;
-				_takePrice = price - takeOffset;
-			}
-		}
-		else if (Position > 0)
-		{
-			if (price - _stopPrice > trailOffset)
-				_stopPrice = price - trailOffset;
-
-			if (price <= _stopPrice || price >= _takePrice)
-				SellMarket(Position);
+			_currentDate = date;
+			_sessionHigh = candle.HighPrice;
+			_sessionLow = candle.LowPrice;
 		}
 		else
 		{
-			if (_stopPrice - price > trailOffset)
-				_stopPrice = price + trailOffset;
+			if (candle.HighPrice > _sessionHigh)
+				_sessionHigh = candle.HighPrice;
+			if (candle.LowPrice < _sessionLow)
+				_sessionLow = candle.LowPrice;
+		}
 
-			if (price >= _stopPrice || price <= _takePrice)
-				BuyMarket(-Position);
+		if (_prevHigh == 0)
+			return;
+
+		// Manage exits with trailing stop
+		if (Position > 0)
+		{
+			// Update trailing stop
+			var newTrail = price - TrailingDist;
+			if (newTrail > _trailingStop)
+				_trailingStop = newTrail;
+
+			if (price - _entryPrice >= TakeProfit || price <= _trailingStop || _entryPrice - price >= StopLoss)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				return;
+			}
+		}
+		else if (Position < 0)
+		{
+			var newTrail = price + TrailingDist;
+			if (newTrail < _trailingStop || _trailingStop == 0)
+				_trailingStop = newTrail;
+
+			if (_entryPrice - price >= TakeProfit || price >= _trailingStop || price - _entryPrice >= StopLoss)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				return;
+			}
+		}
+
+		// Entry on breakout
+		if (Position == 0)
+		{
+			if (price > _prevHigh)
+			{
+				BuyMarket();
+				_entryPrice = price;
+				_trailingStop = price - TrailingDist;
+			}
+			else if (price < _prevLow)
+			{
+				SellMarket();
+				_entryPrice = price;
+				_trailingStop = price + TrailingDist;
+			}
 		}
 	}
 }

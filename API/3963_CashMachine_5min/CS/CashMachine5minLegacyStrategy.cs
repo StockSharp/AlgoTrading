@@ -39,6 +39,7 @@ public class CashMachine5minLegacyStrategy : Strategy
 	private int _longStage;
 	private int _shortStage;
 	private decimal _pipSize;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Hidden take profit distance expressed in pips.
@@ -188,6 +189,7 @@ public class CashMachine5minLegacyStrategy : Strategy
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
 		_pipSize = 0.0001m;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -208,6 +210,7 @@ public class CashMachine5minLegacyStrategy : Strategy
 		_longStage = 0;
 		_shortStage = 0;
 		_pipSize = 0.0001m;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -222,11 +225,9 @@ public class CashMachine5minLegacyStrategy : Strategy
 			Length = DeMarkerLength,
 		};
 
-		var stochastic = new StochasticOscillator
-		{ K = { Length = StochasticLength },
-			K = { Length = StochasticK },
-			D = { Length = StochasticD },
-		};
+		var stochastic = new StochasticOscillator();
+		stochastic.K.Length = StochasticLength;
+		stochastic.D.Length = StochasticD;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -280,11 +281,13 @@ public class CashMachine5minLegacyStrategy : Strategy
 			if (longSignal && OrderVolume > 0m)
 			{
 				// Both oscillators crossed up from oversold zones.
+				_entryPrice = candle.ClosePrice;
 				BuyMarket(OrderVolume);
 			}
 			else if (shortSignal && OrderVolume > 0m)
 			{
 				// Both oscillators crossed down from overbought zones.
+				_entryPrice = candle.ClosePrice;
 				SellMarket(OrderVolume);
 			}
 		}
@@ -303,7 +306,7 @@ public class CashMachine5minLegacyStrategy : Strategy
 
 	private void ManageLongPosition(ICandleMessage candle)
 	{
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m || _pipSize <= 0m)
 			return;
 
@@ -354,7 +357,7 @@ public class CashMachine5minLegacyStrategy : Strategy
 
 	private void ManageShortPosition(ICandleMessage candle)
 	{
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m || _pipSize <= 0m)
 			return;
 
@@ -364,7 +367,7 @@ public class CashMachine5minLegacyStrategy : Strategy
 		// Close short position if hidden protective levels are reached.
 		if (candle.HighPrice >= stopLossPrice || candle.LowPrice <= takeProfitPrice)
 		{
-			BuyMarket(-Position);
+			BuyMarket(Math.Abs(Position));
 			return;
 		}
 
@@ -398,7 +401,7 @@ public class CashMachine5minLegacyStrategy : Strategy
 
 		if (_shortTrailingStop is decimal trailing && candle.HighPrice >= trailing)
 		{
-			BuyMarket(-Position);
+			BuyMarket(Math.Abs(Position));
 		}
 	}
 

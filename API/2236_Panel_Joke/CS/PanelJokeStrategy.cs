@@ -81,18 +81,24 @@ public class PanelJokeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var warmup = new SimpleMovingAverage { Length = 5 };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(warmup, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _warmupVal)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (!_hasPrev)
@@ -102,6 +108,15 @@ public class PanelJokeStrategy : Strategy
 			_prevLow = candle.LowPrice;
 			_prevClose = candle.ClosePrice;
 			_hasPrev = true;
+			return;
+		}
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevOpen = candle.OpenPrice;
+			_prevHigh = candle.HighPrice;
+			_prevLow = candle.LowPrice;
+			_prevClose = candle.ClosePrice;
 			return;
 		}
 
@@ -150,13 +165,10 @@ public class PanelJokeStrategy : Strategy
 		else
 			sell++;
 
-		if (EnableAutopilot)
-		{
-			if (buy > sell && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-			else if (sell > buy && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-		}
+		if (buy > sell && Position <= 0)
+			BuyMarket();
+		else if (sell > buy && Position >= 0)
+			SellMarket();
 
 		_prevOpen = candle.OpenPrice;
 		_prevHigh = candle.HighPrice;

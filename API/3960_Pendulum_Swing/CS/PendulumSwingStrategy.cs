@@ -1,19 +1,13 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
+namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Port of the "Pendulum 1_01" MetaTrader strategy.
@@ -36,15 +30,16 @@ public class PendulumSwingStrategy : Strategy
 
 	private decimal _pipSize;
 	private decimal _currentStep;
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
+	private decimal _pendingBuyPrice;
+	private decimal _pendingSellPrice;
+	private decimal _pendingBuyVolume;
+	private decimal _pendingSellVolume;
 	private int _longLevel;
 	private int _shortLevel;
 	private decimal _initialEquity;
 	private decimal _takeProfitMoney;
 	private decimal _stopLossMoney;
-	private ISubscriptionHandler<ICandleMessage> _tradingSubscription;
-	private ISubscriptionHandler<ICandleMessage> _dailySubscription;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Initializes a new instance of the strategy.
@@ -105,7 +100,7 @@ public class PendulumSwingStrategy : Strategy
 			
 			.SetOptimize(1m, 5m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Trading candle", "Primary timeframe used to manage pending stops.", "Data");
 	}
 
@@ -238,15 +233,16 @@ public class PendulumSwingStrategy : Strategy
 
 		_pipSize = 0m;
 		_currentStep = 0m;
-		_buyStopOrder = null;
-		_sellStopOrder = null;
+		_pendingBuyPrice = 0m;
+		_pendingSellPrice = 0m;
+		_pendingBuyVolume = 0m;
+		_pendingSellVolume = 0m;
 		_longLevel = 0;
 		_shortLevel = 0;
 		_initialEquity = 0m;
 		_takeProfitMoney = 0m;
 		_stopLossMoney = 0m;
-		_tradingSubscription = null;
-		_dailySubscription = null;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -258,59 +254,17 @@ public class PendulumSwingStrategy : Strategy
 		InitializePipSize();
 		InitializeEquityTargets();
 
-		_tradingSubscription = SubscribeCandles(CandleType);
-		_tradingSubscription
+		var subscription = SubscribeCandles(CandleType);
+		subscription
 			.Bind(ProcessTradingCandle)
 			.Start();
 
 		if (UseDynamicRange)
 		{
-			_dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
-			_dailySubscription
+			var dailySub = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+			dailySub
 				.Bind(ProcessDailyCandle)
 				.Start();
-		}
-
-		StartProtection(null, null);
-	}
-
-	/// <inheritdoc />
-	protected override void OnStopped()
-	{
-		base.OnStopped();
-
-		CancelPendingOrders();
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade.Order == null || trade.Order.Security != Security)
-			return;
-
-		if (trade.Order == _buyStopOrder)
-		{
-			_buyStopOrder = null;
-			_longLevel = Math.Min(_longLevel + 1, MaxLevels);
-		}
-		else if (trade.Order == _sellStopOrder)
-		{
-			_sellStopOrder = null;
-			_shortLevel = Math.Min(_shortLevel + 1, MaxLevels);
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position == 0m)
-		{
-			_longLevel = 0;
-			_shortLevel = 0;
 		}
 	}
 
@@ -352,53 +306,38 @@ public class PendulumSwingStrategy : Strategy
 			return;
 
 		var buffer = SlippagePips > 0 ? SlippagePips * _pipSize : 0m;
-		var buyPrice = candle.ClosePrice + step + buffer;
-		var sellPrice = candle.ClosePrice - step - buffer;
 
-		buyPrice = NormalizePrice(buyPrice);
-		sellPrice = NormalizePrice(sellPrice);
-
-		if (buyPrice <= 0m || sellPrice <= 0m)
-			return;
-
-		var buyVolume = GetNextVolume(Sides.Buy);
-		var sellVolume = GetNextVolume(Sides.Sell);
-
-		_buyStopOrder = PlaceOrUpdateStop(_buyStopOrder, Sides.Buy, buyPrice, buyVolume);
-		_sellStopOrder = PlaceOrUpdateStop(_sellStopOrder, Sides.Sell, sellPrice, sellVolume);
-	}
-
-	private Order PlaceOrUpdateStop(Order existing, Sides side, decimal price, decimal volume)
-	{
-		if (volume <= 0m)
+		// Check if pending buy level was breached
+		if (_pendingBuyPrice > 0m && _pendingBuyVolume > 0m && candle.HighPrice >= _pendingBuyPrice)
 		{
-			CancelStrategyOrder(ref existing);
-			return null;
+			BuyMarket(_pendingBuyVolume);
+			_entryPrice = candle.ClosePrice;
+			_longLevel = Math.Min(_longLevel + 1, MaxLevels);
+			_pendingBuyPrice = 0m;
+			_pendingBuyVolume = 0m;
 		}
 
-		if (existing != null)
+		// Check if pending sell level was breached
+		if (_pendingSellPrice > 0m && _pendingSellVolume > 0m && candle.LowPrice <= _pendingSellPrice)
 		{
-			if (existing.State != OrderStates.Active)
-			{
-				existing = null;
-			}
-			else
-			{
-				var priceDiff = Math.Abs(existing.Price - price);
-				var volumeDiff = existing.Volume != volume;
-				var tolerance = GetPriceTolerance();
-
-				if (priceDiff <= tolerance && !volumeDiff)
-				return existing;
-
-				CancelOrder(existing);
-				existing = null;
-			}
+			SellMarket(_pendingSellVolume);
+			_entryPrice = candle.ClosePrice;
+			_shortLevel = Math.Min(_shortLevel + 1, MaxLevels);
+			_pendingSellPrice = 0m;
+			_pendingSellVolume = 0m;
 		}
 
-		return side == Sides.Buy
-			? BuyStop(price: price, volume: volume)
-			: SellStop(price: price, volume: volume);
+		if (Position == 0m)
+		{
+			_longLevel = 0;
+			_shortLevel = 0;
+		}
+
+		// Set new pending levels
+		_pendingBuyPrice = candle.ClosePrice + step + buffer;
+		_pendingSellPrice = candle.ClosePrice - step - buffer;
+		_pendingBuyVolume = GetNextVolume(Sides.Buy);
+		_pendingSellVolume = GetNextVolume(Sides.Sell);
 	}
 
 	private decimal GetNextVolume(Sides side)
@@ -421,14 +360,10 @@ public class PendulumSwingStrategy : Strategy
 		if (TakeProfitPips <= 0 || Position == 0m)
 			return;
 
-		if (_pipSize <= 0m)
+		if (_pipSize <= 0m || _entryPrice <= 0m)
 			return;
 
-		var entryPrice = PositionPrice;
-		if (entryPrice <= 0m)
-			return;
-
-		var diff = candle.ClosePrice - entryPrice;
+		var diff = candle.ClosePrice - _entryPrice;
 		var threshold = TakeProfitPips * _pipSize;
 
 		if (Position > 0 && diff >= threshold)
@@ -472,24 +407,10 @@ public class PendulumSwingStrategy : Strategy
 			BuyMarket(-Position);
 		}
 
-		CancelPendingOrders();
-	}
-
-	private void CancelPendingOrders()
-	{
-		CancelStrategyOrder(ref _buyStopOrder);
-		CancelStrategyOrder(ref _sellStopOrder);
-	}
-
-	private void CancelStrategyOrder(ref Order order)
-	{
-		if (order == null)
-			return;
-
-		if (order.State == OrderStates.Active)
-			CancelOrder(order);
-
-		order = null;
+		_pendingBuyPrice = 0m;
+		_pendingSellPrice = 0m;
+		_pendingBuyVolume = 0m;
+		_pendingSellVolume = 0m;
 	}
 
 	private decimal GetEffectiveStep()
@@ -512,19 +433,19 @@ public class PendulumSwingStrategy : Strategy
 			return volume;
 
 		var step = security.VolumeStep;
-		if (step > 0m)
+		if (step is > 0m)
 		{
 			var steps = Math.Max(1m, Math.Round(volume / step.Value, MidpointRounding.AwayFromZero));
 			volume = steps * step.Value;
 		}
 
-		var minVolume = security.VolumeMin;
-		if (minVolume > 0m && volume < minVolume.Value)
-			volume = minVolume.Value;
+		var minVol = security.MinVolume;
+		if (minVol is > 0m && volume < minVol.Value)
+			volume = minVol.Value;
 
-		var maxVolume = security.VolumeMax;
-		if (maxVolume > 0m && volume > maxVolume.Value)
-			volume = maxVolume.Value;
+		var maxVol = security.MaxVolume;
+		if (maxVol is > 0m && volume > maxVol.Value)
+			volume = maxVol.Value;
 
 		return volume;
 	}
@@ -534,20 +455,15 @@ public class PendulumSwingStrategy : Strategy
 		var security = Security;
 		if (security == null)
 		{
-			_pipSize = 0.0001m;
+			_pipSize = 0.01m;
 			return;
 		}
 
-		var priceStep = security.PriceStep;
-		var decimals = security.Decimals ?? 0;
+		var step = security.PriceStep ?? 0m;
+		if (step <= 0m)
+			step = 0.01m;
 
-		if (priceStep <= 0m)
-		{
-			priceStep = (decimal)Math.Pow(10, -Math.Max(1, decimals));
-		}
-
-		var multiplier = decimals is 3 or 5 ? 10m : 1m;
-		_pipSize = priceStep.Value * multiplier;
+		_pipSize = step;
 	}
 
 	private void InitializeEquityTargets()
@@ -561,9 +477,9 @@ public class PendulumSwingStrategy : Strategy
 			return;
 		}
 
-		var currentValue = portfolio.CurrentValue;
+		var currentValue = portfolio.CurrentValue ?? 0m;
 		if (currentValue <= 0m)
-			currentValue = portfolio.BeginValue;
+			currentValue = portfolio.BeginValue ?? 0m;
 
 		_initialEquity = currentValue;
 
@@ -571,24 +487,5 @@ public class PendulumSwingStrategy : Strategy
 		_stopLossMoney = _initialEquity * GlobalStopPercent / 100m;
 	}
 
-	private decimal NormalizePrice(decimal price)
-	{
-		var security = Security;
-		if (security?.PriceStep is null or <= 0m)
-			return price;
-
-		var step = security.PriceStep.Value;
-		var steps = Math.Round(price / step, MidpointRounding.AwayFromZero);
-		return steps * step;
-	}
-
-	private decimal GetPriceTolerance()
-	{
-		var security = Security;
-		if (security?.PriceStep is null or <= 0m)
-			return 0m;
-
-		return security.PriceStep.Value / 2m;
-	}
 }
 

@@ -90,7 +90,7 @@ public class GazonkosExpertStrategy : Strategy
 			.SetGreaterThanZero()
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to evaluate the momentum signal", "General");
 	}
 
@@ -206,6 +206,14 @@ public class GazonkosExpertStrategy : Strategy
 		SubscribeCandles(CandleType)
 			.Bind(ProcessCandle)
 			.Start();
+
+		var takeProfit = TakeProfitPips * _pointValue;
+		var stopLoss = StopLossPips * _pointValue;
+
+		StartProtection(
+			takeProfit: takeProfit > 0m ? new Unit(takeProfit, UnitTypes.Absolute) : null,
+			stopLoss: stopLoss > 0m ? new Unit(stopLoss, UnitTypes.Absolute) : null,
+			useMarketOrders: true);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -341,28 +349,15 @@ public class GazonkosExpertStrategy : Strategy
 			return;
 		}
 
-		var takeProfit = TakeProfitPips * _pointValue;
-		var stopLoss = StopLossPips * _pointValue;
-
 		if (_pendingDirection == Sides.Buy)
 		{
-			var resultingPosition = Position + volume;
 			BuyMarket(volume);
-			if (takeProfit > 0m)
-				SetTakeProfit(takeProfit, candle.ClosePrice, resultingPosition);
-			if (stopLoss > 0m)
-				SetStopLoss(stopLoss, candle.ClosePrice, resultingPosition);
 			_lastTradeHour = candle.CloseTime.Hour;
 			LogInfo($"Opened long position at {candle.CloseTime:u} with volume {volume}.");
 		}
 		else if (_pendingDirection == Sides.Sell)
 		{
-			var resultingPosition = Position - volume;
 			SellMarket(volume);
-			if (takeProfit > 0m)
-				SetTakeProfit(takeProfit, candle.ClosePrice, resultingPosition);
-			if (stopLoss > 0m)
-				SetStopLoss(stopLoss, candle.ClosePrice, resultingPosition);
 			_lastTradeHour = candle.CloseTime.Hour;
 			LogInfo($"Opened short position at {candle.CloseTime:u} with volume {volume}.");
 		}

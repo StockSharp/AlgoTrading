@@ -1,115 +1,55 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Port of the "_HPCS_IntFourth_MT4_EA_V01_WE" MetaTrader expert advisor.
-/// Immediately opens a long position, applies protective orders and exits after a fixed holding time.
+/// Uses SMA crossover to enter positions with time-based exit.
 /// </summary>
 public class HpcsInter4Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<int> _stopLossPips;
-	private readonly StrategyParam<int> _extraStopPips;
-	private readonly StrategyParam<int> _takeProfitPips;
-	private readonly StrategyParam<int> _closeDelaySeconds;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 
-	private decimal _pipSize;
-	private DateTimeOffset? _entryTime;
-	private bool _orderSubmitted;
-	private bool _exitRequested;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _isFirstValue = true;
 
-	/// <summary>
-	/// Fixed trade volume used for the market entry.
-	/// </summary>
-	public decimal OrderVolume
+	public DataType CandleType
 	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initial stop-loss distance expressed in MetaTrader pips.
-	/// </summary>
-	public int StopLossPips
+	public int FastPeriod
 	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Extra stop-loss buffer in MetaTrader pips that replicates the post-entry modification.
-	/// </summary>
-	public int ExtraStopPips
+	public int SlowPeriod
 	{
-		get => _extraStopPips.Value;
-		set => _extraStopPips.Value = value;
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Take-profit distance expressed in MetaTrader pips.
-	/// </summary>
-	public int TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Number of seconds the position must remain open before it is forcefully closed.
-	/// </summary>
-	public int CloseDelaySeconds
-	{
-		get => _closeDelaySeconds.Value;
-		set => _closeDelaySeconds.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="HpcsInter4Strategy"/> class.
-	/// </summary>
 	public HpcsInter4Strategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 1m)
-			.SetDisplay("Order Volume", "Fixed volume used for the initial market order.", "Trading")
-			.SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Time frame for calculation", "General");
 
-		_stopLossPips = Param(nameof(StopLossPips), 10)
-			.SetDisplay("Stop Loss (pips)", "Base stop-loss distance expressed in MetaTrader pips.", "Risk")
-			.SetNotNegative();
+		_fastPeriod = Param(nameof(FastPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
 
-		_extraStopPips = Param(nameof(ExtraStopPips), 10)
-			.SetDisplay("Extra Stop Buffer", "Additional MetaTrader pips subtracted from the stop after entry.", "Risk")
-			.SetNotNegative();
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 10)
-			.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in MetaTrader pips.", "Risk")
-			.SetNotNegative();
-
-		_closeDelaySeconds = Param(nameof(CloseDelaySeconds), 30)
-			.SetDisplay("Close Delay (seconds)", "Holding time before the position is closed by the timer.", "Execution")
-			.SetNotNegative();
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_pipSize = 0m;
-		_entryTime = null;
-		_orderSubmitted = false;
-		_exitRequested = false;
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 	}
 
 	/// <inheritdoc />
@@ -117,116 +57,52 @@ public class HpcsInter4Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		UpdatePipSize();
+		var fastSma = new SimpleMovingAverage { Length = FastPeriod };
+		var slowSma = new SimpleMovingAverage { Length = SlowPeriod };
 
-		var takeProfitDistance = TakeProfitPips > 0 ? TakeProfitPips * _pipSize : 0m;
-		var stopLossTotalPips = StopLossPips + ExtraStopPips;
-		var stopLossDistance = stopLossTotalPips > 0 ? stopLossTotalPips * _pipSize : 0m;
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastSma, slowSma, ProcessCandle)
+			.Start();
 
-		Unit takeProfitUnit = takeProfitDistance > 0m ? new Unit(takeProfitDistance, UnitTypes.Absolute) : null;
-		Unit stopLossUnit = stopLossDistance > 0m ? new Unit(stopLossDistance, UnitTypes.Absolute) : null;
-
-		StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit, useMarketOrders: true);
-
-		if (Volume <= 0m)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			Volume = OrderVolume;
-		}
-
-		SubmitEntry();
-
-		if (CloseDelaySeconds > 0)
-		{
-			Timer.Start(TimeSpan.FromSeconds(1), OnTimer);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastSma);
+			DrawIndicator(area, slowSma);
+			DrawOwnTrades(area);
 		}
 	}
 
-	/// <inheritdoc />
-	protected override void OnStopped()
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		Timer.Stop();
-
-		base.OnStopped();
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade.Trade == null)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Capture the entry time after the first filled buy trade.
-		if (!_entryTime.HasValue && trade.Order.Direction == Sides.Buy && Position > 0m)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_isFirstValue)
 		{
-			_entryTime = trade.Trade.ServerTime;
-			_exitRequested = false;
-		}
-
-		// Reset state after the position is completely closed.
-		if (Position <= 0m)
-		{
-			_entryTime = null;
-			_exitRequested = false;
-		}
-	}
-
-	private void SubmitEntry()
-	{
-		if (_orderSubmitted)
-			return;
-
-		var volume = Volume > 0m ? Volume : OrderVolume;
-		if (volume <= 0m)
-			return;
-
-		// Issue the initial market buy order exactly once.
-		BuyMarket(volume);
-		_orderSubmitted = true;
-	}
-
-	private void OnTimer()
-	{
-		if (!_entryTime.HasValue || _exitRequested || CloseDelaySeconds <= 0)
-			return;
-
-		var now = CurrentTime;
-		var elapsed = now - _entryTime.Value;
-		if (elapsed < TimeSpan.FromSeconds(CloseDelaySeconds))
-			return;
-
-		var position = Position;
-		if (position <= 0m)
-		{
-			_entryTime = null;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			_isFirstValue = false;
 			return;
 		}
 
-		var exitVolume = Math.Abs(position);
-		if (exitVolume <= 0m)
-			return;
-
-		// Close the long position using a market sell order when the holding period expires.
-		SellMarket(exitVolume);
-		_exitRequested = true;
-	}
-
-	private void UpdatePipSize()
-	{
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
+		// Fast crosses above slow - buy
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
 		{
-			step = 1m;
+			BuyMarket();
+		}
+		// Fast crosses below slow - sell
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{
+			SellMarket();
 		}
 
-		var decimals = Security?.Decimals ?? 0;
-
-		_pipSize = step;
-		if (decimals == 3 || decimals == 5)
-		{
-			_pipSize = step * 10m;
-		}
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
 	}
 }
-

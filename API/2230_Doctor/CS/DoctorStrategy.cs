@@ -90,7 +90,7 @@ public class DoctorStrategy : Strategy
 		_trailingStop = Param(nameof(TrailingStop), true)
 		.SetDisplay("Trailing Stop", "Use trailing stop", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -144,12 +144,9 @@ public class DoctorStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal wma40, decimal wma400, decimal rsi14, decimal rsi5, decimal psar)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		// Shift history arrays
+		// Shift history arrays (always, even during warmup)
 		_wma40[1] = _wma40[0];
 		_wma40[0] = wma40;
 
@@ -165,7 +162,10 @@ public class DoctorStrategy : Strategy
 		_low[0] = candle.LowPrice;
 
 		if (_wma40[1] == 0m || _wma400[3] == 0m)
-		return; // Not enough data yet
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
 		// Determine slope direction
 		var slope = _wma40[0] > _wma40[1] ? 2 : 1;
@@ -214,21 +214,19 @@ public class DoctorStrategy : Strategy
 		}
 
 		// Entry conditions
-		var volume = Volume + Math.Abs(Position);
-
 		if (slope == 2 && maLinear == 2 && rsiState == 2 && Position <= 0)
 		{
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice - stopDistance;
 			_takePrice = _entryPrice + takeDistance;
-			BuyMarket(volume);
+			BuyMarket();
 		}
 		else if (slope == 1 && maLinear == 1 && rsiState == 1 && Position >= 0)
 		{
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice + stopDistance;
 			_takePrice = _entryPrice - takeDistance;
-			SellMarket(volume);
+			SellMarket();
 		}
 	}
 }

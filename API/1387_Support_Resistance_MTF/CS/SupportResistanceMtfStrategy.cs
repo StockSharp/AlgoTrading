@@ -93,15 +93,28 @@ public class SupportResistanceMtfStrategy : Strategy
 		var highPrice = UseHighLow ? candle.HighPrice : Math.Max(candle.ClosePrice, candle.OpenPrice);
 		var lowPrice = UseHighLow ? candle.LowPrice : Math.Min(candle.ClosePrice, candle.OpenPrice);
 
-		var highVal = _highest.Process(highPrice);
-		var lowVal = _lowest.Process(lowPrice);
+		var highVal = _highest.Process(highPrice, candle.ServerTime, true);
+		var lowVal = _lowest.Process(lowPrice, candle.ServerTime, true);
 
-		if (highVal.IsFinal)
-			_currentResistance = highVal.ToDecimal();
+		if (!_highest.IsFormed || !_lowest.IsFormed)
+			return;
 
-		if (lowVal.IsFinal)
-			_currentSupport = lowVal.ToDecimal();
+		_currentResistance = highVal.GetValue<decimal>();
+		_currentSupport = lowVal.GetValue<decimal>();
 
-		LogInfo($"Support={_currentSupport:F2} Resistance={_currentResistance:F2}");
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_currentSupport == 0m || _currentResistance == 0m)
+			return;
+
+		// Buy near support, sell near resistance
+		var range = _currentResistance - _currentSupport;
+		if (range <= 0m) return;
+
+		if (candle.ClosePrice <= _currentSupport + range * 0.1m && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (candle.ClosePrice >= _currentResistance - range * 0.1m && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

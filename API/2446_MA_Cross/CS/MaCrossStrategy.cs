@@ -15,25 +15,17 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Moving average crossover strategy converted from MetaTrader 5 script.
-/// Implements dual moving average signals with configurable methods, price sources, and shifts.
+/// Implements dual SMA crossover signals.
 /// </summary>
 public class MaCrossStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<MovingAverageMethods> _fastMethod;
-	private readonly StrategyParam<MovingAverageMethods> _slowMethod;
-	private readonly StrategyParam<AppliedPrices> _fastPriceType;
-	private readonly StrategyParam<AppliedPrices> _slowPriceType;
-	private readonly StrategyParam<int> _fastShift;
-	private readonly StrategyParam<int> _slowShift;
-	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DecimalLengthIndicator _fastIndicator = null!;
-	private DecimalLengthIndicator _slowIndicator = null!;
-	private readonly List<decimal> _fastHistory = new();
-	private readonly List<decimal> _slowHistory = new();
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrevValues;
 
 	/// <summary>
 	/// Fast moving average period.
@@ -41,7 +33,7 @@ public class MaCrossStrategy : Strategy
 	public int FastPeriod
 	{
 		get => _fastPeriod.Value;
-		set => _fastPeriod.Value = Math.Max(1, value);
+		set => _fastPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -50,70 +42,7 @@ public class MaCrossStrategy : Strategy
 	public int SlowPeriod
 	{
 		get => _slowPeriod.Value;
-		set => _slowPeriod.Value = Math.Max(1, value);
-	}
-
-	/// <summary>
-	/// Calculation method for the fast moving average.
-	/// </summary>
-	public MovingAverageMethods FastMethod
-	{
-		get => _fastMethod.Value;
-		set => _fastMethod.Value = value;
-	}
-
-	/// <summary>
-	/// Calculation method for the slow moving average.
-	/// </summary>
-	public MovingAverageMethods SlowMethod
-	{
-		get => _slowMethod.Value;
-		set => _slowMethod.Value = value;
-	}
-
-	/// <summary>
-	/// Applied price for the fast moving average.
-	/// </summary>
-	public AppliedPrices FastPriceType
-	{
-		get => _fastPriceType.Value;
-		set => _fastPriceType.Value = value;
-	}
-
-	/// <summary>
-	/// Applied price for the slow moving average.
-	/// </summary>
-	public AppliedPrices SlowPriceType
-	{
-		get => _slowPriceType.Value;
-		set => _slowPriceType.Value = value;
-	}
-
-	/// <summary>
-	/// Shift (in bars) for the fast moving average output.
-	/// </summary>
-	public int FastShift
-	{
-		get => _fastShift.Value;
-		set => _fastShift.Value = Math.Max(0, value);
-	}
-
-	/// <summary>
-	/// Shift (in bars) for the slow moving average output.
-	/// </summary>
-	public int SlowShift
-	{
-		get => _slowShift.Value;
-		set => _slowShift.Value = Math.Max(0, value);
-	}
-
-	/// <summary>
-	/// Order volume used for entries.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = Math.Max(0.0001m, value);
+		set => _slowPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -133,38 +62,14 @@ public class MaCrossStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Period for the fast moving average", "Moving Averages")
-			
 			.SetOptimize(2, 20, 1);
 
 		_slowPeriod = Param(nameof(SlowPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Period for the slow moving average", "Moving Averages")
-			
 			.SetOptimize(5, 60, 1);
 
-		_fastMethod = Param(nameof(FastMethod), MovingAverageMethods.Simple)
-			.SetDisplay("Fast MA Method", "Calculation method for the fast moving average", "Moving Averages");
-
-		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethods.LinearWeighted)
-			.SetDisplay("Slow MA Method", "Calculation method for the slow moving average", "Moving Averages");
-
-		_fastPriceType = Param(nameof(FastPriceType), AppliedPrices.Close)
-			.SetDisplay("Fast MA Price", "Applied price for the fast moving average", "Moving Averages");
-
-		_slowPriceType = Param(nameof(SlowPriceType), AppliedPrices.Median)
-			.SetDisplay("Slow MA Price", "Applied price for the slow moving average", "Moving Averages");
-
-		_fastShift = Param(nameof(FastShift), 0)
-			.SetDisplay("Fast MA Shift", "Shift of the fast moving average in bars", "Moving Averages");
-
-		_slowShift = Param(nameof(SlowShift), 0)
-			.SetDisplay("Slow MA Shift", "Shift of the slow moving average in bars", "Moving Averages");
-
-		_orderVolume = Param(nameof(OrderVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Volume for each market order", "Trading");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "Data");
 	}
 
@@ -175,197 +80,55 @@ public class MaCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_fastHistory.Clear();
-		_slowHistory.Clear();
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_fastIndicator = CreateMovingAverage(FastMethod, FastPeriod);
-		_slowIndicator = CreateMovingAverage(SlowMethod, SlowPeriod);
+		_hasPrevValues = false;
+
+		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastIndicator);
-			DrawIndicator(area, _slowIndicator);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
-		// Work only with completed candles to avoid premature signals.
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Calculate applied prices according to user configuration.
-		var fastPrice = GetAppliedPrice(candle, FastPriceType);
-		var slowPrice = GetAppliedPrice(candle, SlowPriceType);
-
-		// Update indicators with the selected prices.
-		var fastValue = _fastIndicator.Process(new DecimalIndicatorValue(_fastIndicator, fastPrice, candle.OpenTime)).ToDecimal();
-		var slowValue = _slowIndicator.Process(new DecimalIndicatorValue(_slowIndicator, slowPrice, candle.OpenTime)).ToDecimal();
-
-		// Ensure both moving averages are fully formed before trading.
-		if (!_fastIndicator.IsFormed || !_slowIndicator.IsFormed)
-			return;
-
-		UpdateHistory(_fastHistory, fastValue, FastShift);
-		UpdateHistory(_slowHistory, slowValue, SlowShift);
-
-		if (!HasEnoughValues(_fastHistory, FastShift) || !HasEnoughValues(_slowHistory, SlowShift))
-			return;
-
-		var fastCurrent = GetShiftedValue(_fastHistory, FastShift, 0);
-		var fastPrevious = GetShiftedValue(_fastHistory, FastShift, 1);
-		var slowCurrent = GetShiftedValue(_slowHistory, SlowShift, 0);
-
-		var crossUp = IsCrossUp(fastPrevious, fastCurrent, slowCurrent);
-		var crossDown = IsCrossDown(fastPrevious, fastCurrent, slowCurrent);
-
-		if (!crossUp && !crossDown)
-			return;
-
-		// Trade only when strategy is ready and trading is allowed.
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (crossUp)
+		if (_hasPrevValues)
 		{
-			// Close short exposure and open or add to a long position.
-			if (Position < 0)
+			var crossUp = _prevFast <= _prevSlow && fast > slow;
+			var crossDown = _prevFast >= _prevSlow && fast < slow;
+
+			if (crossUp && Position <= 0)
 			{
-				BuyMarket(OrderVolume + Math.Abs(Position));
+				BuyMarket(Volume + Math.Abs(Position));
 			}
-			else if (Position == 0)
+			else if (crossDown && Position >= 0)
 			{
-				BuyMarket(OrderVolume);
-			}
-		}
-		else if (crossDown)
-		{
-			// Close long exposure and open or add to a short position.
-			if (Position > 0)
-			{
-				SellMarket(OrderVolume + Math.Abs(Position));
-			}
-			else if (Position == 0)
-			{
-				SellMarket(OrderVolume);
+				SellMarket(Volume + Math.Abs(Position));
 			}
 		}
-	}
 
-	private static bool HasEnoughValues(List<decimal> history, int shift)
-	{
-		return history.Count >= Math.Max(shift + 2, 2);
-	}
-
-	private static void UpdateHistory(List<decimal> history, decimal value, int shift)
-	{
-		history.Add(value);
-
-		var maxCount = Math.Max(shift + 2, 2);
-		while (history.Count > maxCount)
-		{
-			history.RemoveAt(0);
-		}
-	}
-
-	private static decimal GetShiftedValue(List<decimal> history, int shift, int offset)
-	{
-		var index = history.Count - 1 - shift - offset;
-		return history[index];
-	}
-
-	private static bool IsCrossUp(decimal fastPrevious, decimal fastCurrent, decimal slowCurrent)
-	{
-		return (fastPrevious <= slowCurrent && fastCurrent > slowCurrent)
-			|| (fastPrevious < slowCurrent && fastCurrent >= slowCurrent);
-	}
-
-	private static bool IsCrossDown(decimal fastPrevious, decimal fastCurrent, decimal slowCurrent)
-	{
-		return (fastPrevious >= slowCurrent && fastCurrent < slowCurrent)
-			|| (fastPrevious > slowCurrent && fastCurrent <= slowCurrent);
-	}
-
-	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
-	{
-		return method switch
-		{
-			MovingAverageMethods.Simple => new SMA { Length = length },
-			MovingAverageMethods.Exponential => new EMA { Length = length },
-			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length },
-		};
-	}
-
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices priceType)
-	{
-		return priceType switch
-		{
-			AppliedPrices.Close => candle.ClosePrice,
-			AppliedPrices.Open => candle.OpenPrice,
-			AppliedPrices.High => candle.HighPrice,
-			AppliedPrices.Low => candle.LowPrice,
-			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
-			_ => candle.ClosePrice,
-		};
-	}
-
-	/// <summary>
-	/// Moving average calculation methods supported by the strategy.
-	/// </summary>
-	public enum MovingAverageMethods
-	{
-		/// <summary>Simple moving average.</summary>
-		Simple,
-		/// <summary>Exponential moving average.</summary>
-		Exponential,
-		/// <summary>Smoothed moving average.</summary>
-		Smoothed,
-		/// <summary>Linear weighted moving average.</summary>
-		LinearWeighted,
-	}
-
-	/// <summary>
-	/// Applied price modes compatible with MetaTrader inputs.
-	/// </summary>
-	public enum AppliedPrices
-	{
-		/// <summary>Use closing price of the candle.</summary>
-		Close,
-		/// <summary>Use opening price of the candle.</summary>
-		Open,
-		/// <summary>Use highest price of the candle.</summary>
-		High,
-		/// <summary>Use lowest price of the candle.</summary>
-		Low,
-		/// <summary>Use median price (high + low) / 2.</summary>
-		Median,
-		/// <summary>Use typical price (high + low + close) / 3.</summary>
-		Typical,
-		/// <summary>Use weighted price (high + low + 2 * close) / 4.</summary>
-		Weighted,
+		_prevFast = fast;
+		_prevSlow = slow;
+		_hasPrevValues = true;
 	}
 }

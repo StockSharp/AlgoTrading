@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,125 +10,41 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Strategy based on Arrows & Curves indicator.
+/// Strategy based on Arrows and Curves channel indicator.
+/// Trades breakouts of a Highest/Lowest channel.
 /// </summary>
 public class ArrowsCurvesStrategy : Strategy
 {
-	private readonly StrategyParam<int> _ssp;
-	private readonly StrategyParam<decimal> _channel;
-	private readonly StrategyParam<decimal> _stopChannel;
+	private readonly StrategyParam<int> _period;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<bool> _buyOpen;
-	private readonly StrategyParam<bool> _sellOpen;
-	private readonly StrategyParam<bool> _buyClose;
-	private readonly StrategyParam<bool> _sellClose;
 
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private bool _uptrend;
-	private bool _oldUptrend;
-	private bool _uptrend2;
-	private bool _oldUptrend2;
+	private decimal _entryPrice;
+	private bool _prevAbove;
+	private bool _prevBelow;
+	private bool _initialized;
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="ArrowsCurvesStrategy"/>.
-	/// </summary>
+	public int Period { get => _period.Value; set => _period.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public ArrowsCurvesStrategy()
 	{
-		_ssp = Param(nameof(SspPeriod), 20)
-			.SetDisplay("SSP", "Period for channel", "Parameters")
-			;
+		_period = Param(nameof(Period), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Period", "Period for channel", "Parameters");
 
-		_channel = Param(nameof(Channel), 0m)
-			.SetDisplay("Channel", "Channel expansion percent", "Parameters")
-			;
+		_takeProfit = Param(nameof(TakeProfit), 500m)
+			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
 
-		_stopChannel = Param(nameof(StopChannel), 30m)
-			.SetDisplay("Stop Channel", "Inner stop channel percent", "Parameters")
-			;
+		_stopLoss = Param(nameof(StopLoss), 300m)
+			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_buyOpen = Param(nameof(BuyPosOpen), true)
-			.SetDisplay("Buy Open", "Allow opening long positions", "General");
-
-		_sellOpen = Param(nameof(SellPosOpen), true)
-			.SetDisplay("Sell Open", "Allow opening short positions", "General");
-		_buyClose = Param(nameof(BuyPosClose), true)
-			.SetDisplay("Buy Close", "Allow closing long positions", "General");
-
-		_sellClose = Param(nameof(SellPosClose), true)
-			.SetDisplay("Sell Close", "Allow closing short positions", "General");
-	}
-
-	public int SspPeriod
-	{
-		get => _ssp.Value;
-		set => _ssp.Value = value;
-	}
-
-	public decimal Channel
-	{
-		get => _channel.Value;
-		set => _channel.Value = value;
-	}
-
-	public decimal StopChannel
-	{
-		get => _stopChannel.Value;
-		set => _stopChannel.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public bool BuyPosOpen
-	{
-		get => _buyOpen.Value;
-		set => _buyOpen.Value = value;
-	}
-
-	public bool SellPosOpen
-	{
-		get => _sellOpen.Value;
-		set => _sellOpen.Value = value;
-	}
-
-	public bool BuyPosClose
-	{
-		get => _buyClose.Value;
-		set => _buyClose.Value = value;
-	}
-
-	public bool SellPosClose
-	{
-		get => _sellClose.Value;
-		set => _sellClose.Value = value;
-	}
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_highest = null!;
-		_lowest = null!;
-		_uptrend = default;
-		_oldUptrend = default;
-		_uptrend2 = default;
-		_oldUptrend2 = default;
 	}
 
 	/// <inheritdoc />
@@ -137,103 +52,72 @@ public class ArrowsCurvesStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_highest = new Highest { Length = SspPeriod };
-		_lowest = new Lowest { Length = SspPeriod };
+		_entryPrice = 0;
+		_prevAbove = false;
+		_prevBelow = false;
+		_initialized = false;
+
+		var highest = new Highest { Length = Period };
+		var lowest = new Lowest { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		subscription.Bind(highest, lowest, ProcessCandle).Start();
 	}
-	private void ProcessCandle(ICandleMessage candle)
+
+	private void ProcessCandle(ICandleMessage candle, decimal high, decimal low)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var highValue = _highest.Process(candle.HighPrice);
-		var lowValue = _lowest.Process(candle.LowPrice);
-
-		if (!highValue.IsFinal || !lowValue.IsFinal)
-			return;
-
-		var high = highValue.ToDecimal();
-		var low = lowValue.ToDecimal();
-		var diff = high - low;
-
-		var smax = high + diff * Channel / 100m;
-		var smin = low + diff * Channel / 100m;
-		var smax2 = high - diff * (Channel + StopChannel) / 100m;
-		var smin2 = low + diff * (Channel + StopChannel) / 100m;
-
 		var close = candle.ClosePrice;
+		var mid = (high + low) / 2m;
 
-		if (close < smin && close < smax && _uptrend2)
-			_uptrend = false;
-		if (close > smax && close > smin && !_uptrend2)
-			_uptrend = true;
-		if ((close > smax2 || close > smin2) && !_uptrend)
-			_uptrend2 = false;
-		if ((close < smin2 || close < smax2) && _uptrend)
-			_uptrend2 = true;
+		var above = close > mid;
+		var below = close < mid;
 
-		var buy = false;
-		var sell = false;
-		var buyStop = false;
-		var sellStop = false;
-
-		if (close < smin && close < smax && !_uptrend2)
+		// Manage exits
+		if (Position > 0)
 		{
-			sell = true;
-			_uptrend2 = true;
+			if (close - _entryPrice >= TakeProfit || _entryPrice - close >= StopLoss)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_prevAbove = above;
+				_prevBelow = below;
+				_initialized = true;
+				return;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (_entryPrice - close >= TakeProfit || close - _entryPrice >= StopLoss)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_prevAbove = above;
+				_prevBelow = below;
+				_initialized = true;
+				return;
+			}
 		}
 
-		if (close > smax && close > smin && _uptrend2)
+		// Entry on channel midpoint crossing
+		if (Position == 0 && _initialized)
 		{
-			buy = true;
-			_uptrend2 = false;
+			if (above && !_prevAbove)
+			{
+				BuyMarket();
+				_entryPrice = close;
+			}
+			else if (below && !_prevBelow)
+			{
+				SellMarket();
+				_entryPrice = close;
+			}
 		}
 
-		if (_uptrend != _oldUptrend)
-		{
-			if (_uptrend)
-				buy = true;
-			else
-				sell = true;
-		}
-
-		if (_uptrend2 != _oldUptrend2)
-		{
-			if (_uptrend2)
-				buyStop = true;
-			else
-				sellStop = true;
-		}
-
-		_oldUptrend = _uptrend;
-		_oldUptrend2 = _uptrend2;
-
-		if (sellStop && Position > 0 && BuyPosClose)
-			ClosePosition();
-
-		if (buyStop && Position < 0 && SellPosClose)
-			ClosePosition();
-
-		if (buy && BuyPosOpen && Position <= 0)
-		{
-			if (SellPosClose && Position < 0)
-				ClosePosition();
-			BuyMarket();
-		}
-		else if (sell && SellPosOpen && Position >= 0)
-		{
-			if (BuyPosClose && Position > 0)
-				ClosePosition();
-			SellMarket();
-		}
+		_prevAbove = above;
+		_prevBelow = below;
+		_initialized = true;
 	}
 }

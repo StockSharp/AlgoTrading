@@ -1,613 +1,264 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Martingale averaging strategy converted from the MetaTrader expert "MartingaleEA-5 Levels".
+/// Martingale averaging strategy converted from "MartingaleEA-5 Levels".
+/// Opens initial position on simple momentum, then averages down with
+/// increasing lot sizes up to 5 levels. Closes when floating profit
+/// reaches target or stop threshold.
 /// </summary>
 public class MartingaleEa5LevelsStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _enableMartingale;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<decimal> _volumeMultiplier;
 	private readonly StrategyParam<int> _maxAdditions;
-	private readonly StrategyParam<decimal> _level1DistancePips;
-	private readonly StrategyParam<decimal> _level2DistancePips;
-	private readonly StrategyParam<decimal> _level3DistancePips;
-	private readonly StrategyParam<decimal> _level4DistancePips;
-	private readonly StrategyParam<decimal> _level5DistancePips;
-	private readonly StrategyParam<decimal> _takeProfitCurrency;
-	private readonly StrategyParam<decimal> _stopLossCurrency;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private readonly List<PositionEntry> _longEntries = new();
-	private readonly List<PositionEntry> _shortEntries = new();
+	private SimpleMovingAverage _sma;
+	private decimal? _prevClose;
+	private decimal? _prevMa;
 
-	private int _longAdditions;
-	private int _shortAdditions;
-	private decimal _longBaseVolume;
-	private decimal _shortBaseVolume;
-	private decimal _longLastVolume;
-	private decimal _shortLastVolume;
-	private decimal _pointSize;
+	private readonly List<(decimal price, decimal vol)> _entries = new();
+	private int _additions;
+	private decimal _lastVolume;
+	private Sides? _activeSide;
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="MartingaleEa5LevelsStrategy"/>.
-	/// </summary>
-	public MartingaleEa5LevelsStrategy()
-	{
-		_enableMartingale = Param(nameof(EnableMartingale), true)
-			.SetDisplay("Enable Martingale", "Toggle averaging logic", "General");
-
-		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume Multiplier", "Multiplier applied to each additional order", "Money Management")
-			;
-
-		_maxAdditions = Param(nameof(MaxAdditions), 4)
-			.SetDisplay("Max Additions", "Maximum number of martingale additions", "Money Management")
-			.SetRange(0, 5)
-			;
-
-		_level1DistancePips = Param(nameof(Level1DistancePips), 300m)
-			.SetNotNegative()
-			.SetDisplay("Level 1 Distance", "Adverse movement (pips) triggering the first addition", "Distances")
-			;
-
-		_level2DistancePips = Param(nameof(Level2DistancePips), 400m)
-			.SetNotNegative()
-			.SetDisplay("Level 2 Distance", "Extra movement (pips) before the second addition", "Distances")
-			;
-
-		_level3DistancePips = Param(nameof(Level3DistancePips), 500m)
-			.SetNotNegative()
-			.SetDisplay("Level 3 Distance", "Extra movement (pips) before the third addition", "Distances")
-			;
-
-		_level4DistancePips = Param(nameof(Level4DistancePips), 600m)
-			.SetNotNegative()
-			.SetDisplay("Level 4 Distance", "Extra movement (pips) before the fourth addition", "Distances")
-			;
-
-		_level5DistancePips = Param(nameof(Level5DistancePips), 700m)
-			.SetNotNegative()
-			.SetDisplay("Level 5 Distance", "Extra movement (pips) before the fifth addition", "Distances")
-			;
-
-		_takeProfitCurrency = Param(nameof(TakeProfitCurrency), 200m)
-			.SetDisplay("Take Profit", "Floating profit required to liquidate a martingale group", "Risk")
-			;
-
-		_stopLossCurrency = Param(nameof(StopLossCurrency), -500m)
-			.SetDisplay("Stop Loss", "Floating loss threshold closing a martingale group", "Risk")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Data series driving the martingale checks", "General");
-	}
-
-	/// <summary>
-	/// Gets or sets whether the martingale logic is active.
-	/// </summary>
-	public bool EnableMartingale
-	{
-		get => _enableMartingale.Value;
-		set => _enableMartingale.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the multiplier applied to each new averaging order.
-	/// </summary>
-	public decimal VolumeMultiplier
-	{
-		get => _volumeMultiplier.Value;
-		set => _volumeMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the maximum number of averaging additions per direction.
-	/// </summary>
-	public int MaxAdditions
-	{
-		get => _maxAdditions.Value;
-		set => _maxAdditions.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the first adverse distance expressed in pips.
-	/// </summary>
-	public decimal Level1DistancePips
-	{
-		get => _level1DistancePips.Value;
-		set => _level1DistancePips.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the incremental distance before the second addition (pips).
-	/// </summary>
-	public decimal Level2DistancePips
-	{
-		get => _level2DistancePips.Value;
-		set => _level2DistancePips.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the incremental distance before the third addition (pips).
-	/// </summary>
-	public decimal Level3DistancePips
-	{
-		get => _level3DistancePips.Value;
-		set => _level3DistancePips.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the incremental distance before the fourth addition (pips).
-	/// </summary>
-	public decimal Level4DistancePips
-	{
-		get => _level4DistancePips.Value;
-		set => _level4DistancePips.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the incremental distance before the fifth addition (pips).
-	/// </summary>
-	public decimal Level5DistancePips
-	{
-		get => _level5DistancePips.Value;
-		set => _level5DistancePips.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the floating profit in currency required to close all long or short entries.
-	/// </summary>
-	public decimal TakeProfitCurrency
-	{
-		get => _takeProfitCurrency.Value;
-		set => _takeProfitCurrency.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the floating loss threshold that forces an emergency close.
-	/// </summary>
-	public decimal StopLossCurrency
-	{
-		get => _stopLossCurrency.Value;
-		set => _stopLossCurrency.Value = value;
-	}
-
-	/// <summary>
-	/// Gets or sets the candle type powering the evaluation loop.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public int MaPeriod
 	{
-		return [(Security, CandleType)];
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
 	}
 
-	/// <inheritdoc />
+	public decimal VolumeMultiplier
+	{
+		get => _volumeMultiplier.Value;
+		set => _volumeMultiplier.Value = value;
+	}
+
+	public int MaxAdditions
+	{
+		get => _maxAdditions.Value;
+		set => _maxAdditions.Value = value;
+	}
+
+	public decimal TakeProfitPercent
+	{
+		get => _takeProfitPercent.Value;
+		set => _takeProfitPercent.Value = value;
+	}
+
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	public MartingaleEa5LevelsStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe", "General");
+
+		_maPeriod = Param(nameof(MaPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "SMA period for entry signal", "Indicators");
+
+		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Multiplier", "Multiplier for each martingale level", "Money Management");
+
+		_maxAdditions = Param(nameof(MaxAdditions), 4)
+			.SetDisplay("Max Additions", "Maximum martingale additions", "Money Management");
+
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Take Profit %", "Floating profit % to close group", "Risk");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Floating loss % to close group", "Risk");
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_pointSize = GetPointSize();
+		_sma = new SimpleMovingAverage { Length = MaPeriod };
+		_prevClose = null;
+		_prevMa = null;
+		_entries.Clear();
+		_additions = 0;
+		_lastVolume = 0;
+		_activeSide = null;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_sma, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _sma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		UpdateEntryState();
-
-		if (!EnableMartingale)
+		if (!_sma.IsFormed)
+		{
+			_prevClose = candle.ClosePrice;
+			_prevMa = smaValue;
 			return;
-
-		var price = candle.ClosePrice;
-
-		HandleMartingaleAdditions(price);
-		HandleMartingaleClosures(price);
-	}
-
-	private void HandleMartingaleAdditions(decimal price)
-	{
-		if (_longEntries.Count > 0)
-		{
-			var floating = CalculateLongProfit(price);
-			if (floating < 0m)
-				TryOpenLongAdditions(price);
 		}
 
-		if (_shortEntries.Count > 0)
-		{
-			var floating = CalculateShortProfit(price);
-			if (floating < 0m)
-				TryOpenShortAdditions(price);
-		}
-	}
+		var close = candle.ClosePrice;
+		var volume = Volume;
+		if (volume <= 0)
+			volume = 1;
 
-	private void HandleMartingaleClosures(decimal price)
-	{
-		var longProfit = CalculateLongProfit(price);
-		if (_longEntries.Count > 0 && (longProfit >= TakeProfitCurrency || longProfit <= StopLossCurrency))
+		// Check martingale closure first
+		if (_entries.Count > 0)
 		{
-			var volume = AdjustVolume(GetTotalVolume(_longEntries));
-			if (volume > 0m)
+			var floatingPnl = CalculateFloatingPnl(close);
+			var totalCost = CalculateTotalCost();
+
+			if (totalCost > 0)
 			{
-				SellMarket(volume);
+				var pnlPercent = floatingPnl / totalCost * 100m;
+
+				if (pnlPercent >= TakeProfitPercent || pnlPercent <= -StopLossPercent)
+				{
+					// Close entire position
+					if (Position > 0)
+						SellMarket(Position);
+					else if (Position < 0)
+						BuyMarket(Math.Abs(Position));
+
+					_entries.Clear();
+					_additions = 0;
+					_lastVolume = 0;
+					_activeSide = null;
+
+					_prevClose = close;
+					_prevMa = smaValue;
+					return;
+				}
 			}
-			ResetLongState();
+
+			// Check for martingale additions
+			if (_additions < MaxAdditions)
+			{
+				var avgPrice = CalculateAvgPrice();
+				var adversePercent = _activeSide == Sides.Buy
+					? (avgPrice - close) / avgPrice * 100m
+					: (close - avgPrice) / avgPrice * 100m;
+
+				// Add at each 0.3% adverse move beyond previous level
+				var threshold = 0.3m * (_additions + 1);
+				if (adversePercent >= threshold)
+				{
+					var nextVol = _lastVolume * VolumeMultiplier;
+					if (nextVol < 1) nextVol = 1;
+
+					if (_activeSide == Sides.Buy)
+					{
+						BuyMarket(nextVol);
+						_entries.Add((close, nextVol));
+					}
+					else
+					{
+						SellMarket(nextVol);
+						_entries.Add((close, nextVol));
+					}
+
+					_lastVolume = nextVol;
+					_additions++;
+				}
+			}
 		}
 
-		var shortProfit = CalculateShortProfit(price);
-		if (_shortEntries.Count > 0 && (shortProfit >= TakeProfitCurrency || shortProfit <= StopLossCurrency))
+		// Initial entry signal: MA crossover
+		if (_prevClose != null && _prevMa != null && _activeSide == null)
 		{
-			var volume = AdjustVolume(GetTotalVolume(_shortEntries));
-			if (volume > 0m)
+			var buySignal = _prevClose.Value < _prevMa.Value && close > smaValue;
+			var sellSignal = _prevClose.Value > _prevMa.Value && close < smaValue;
+
+			if (buySignal)
 			{
 				BuyMarket(volume);
+				_entries.Clear();
+				_entries.Add((close, volume));
+				_additions = 0;
+				_lastVolume = volume;
+				_activeSide = Sides.Buy;
 			}
-			ResetShortState();
+			else if (sellSignal)
+			{
+				SellMarket(volume);
+				_entries.Clear();
+				_entries.Add((close, volume));
+				_additions = 0;
+				_lastVolume = volume;
+				_activeSide = Sides.Sell;
+			}
 		}
+
+		_prevClose = close;
+		_prevMa = smaValue;
 	}
 
-	private void TryOpenLongAdditions(decimal price)
+	private decimal CalculateFloatingPnl(decimal currentPrice)
 	{
-		var thresholds = GetCumulativeThresholds();
-		var maxLevels = Math.Min(MaxAdditions, thresholds.Length);
-
-		if (maxLevels <= 0)
-			return;
-
-		var referencePrice = GetHighestEntryPrice(_longEntries);
-		var adverseMove = referencePrice - price;
-
-		while (_longAdditions < maxLevels)
+		var pnl = 0m;
+		foreach (var (price, vol) in _entries)
 		{
-			var required = thresholds[_longAdditions];
-			if (adverseMove < required)
-				break;
-
-			var nextVolume = CalculateNextLongVolume();
-			if (nextVolume <= 0m)
-				break;
-
-			if (BuyMarket(nextVolume) != null)
-			{
-				_longAdditions++;
-				_longLastVolume = nextVolume;
-			}
+			if (_activeSide == Sides.Buy)
+				pnl += (currentPrice - price) * vol;
 			else
-			{
-				break;
-			}
+				pnl += (price - currentPrice) * vol;
 		}
+		return pnl;
 	}
 
-	private void TryOpenShortAdditions(decimal price)
+	private decimal CalculateTotalCost()
 	{
-		var thresholds = GetCumulativeThresholds();
-		var maxLevels = Math.Min(MaxAdditions, thresholds.Length);
+		var cost = 0m;
+		foreach (var (price, vol) in _entries)
+			cost += price * vol;
+		return cost;
+	}
 
-		if (maxLevels <= 0)
-			return;
-
-		var referencePrice = GetLowestEntryPrice(_shortEntries);
-		var adverseMove = price - referencePrice;
-
-		while (_shortAdditions < maxLevels)
+	private decimal CalculateAvgPrice()
+	{
+		var totalVol = 0m;
+		var totalCost = 0m;
+		foreach (var (price, vol) in _entries)
 		{
-			var required = thresholds[_shortAdditions];
-			if (adverseMove < required)
-				break;
-
-			var nextVolume = CalculateNextShortVolume();
-			if (nextVolume <= 0m)
-				break;
-
-			if (SellMarket(nextVolume) != null)
-			{
-				_shortAdditions++;
-				_shortLastVolume = nextVolume;
-			}
-			else
-			{
-				break;
-			}
+			totalVol += vol;
+			totalCost += price * vol;
 		}
-	}
-
-	private decimal CalculateNextLongVolume()
-	{
-		if (_longLastVolume <= 0m)
-		{
-			_longLastVolume = _longBaseVolume;
-		}
-
-		var next = _longLastVolume * VolumeMultiplier;
-		return AdjustVolume(next);
-	}
-
-	private decimal CalculateNextShortVolume()
-	{
-		if (_shortLastVolume <= 0m)
-		{
-			_shortLastVolume = _shortBaseVolume;
-		}
-
-		var next = _shortLastVolume * VolumeMultiplier;
-		return AdjustVolume(next);
-	}
-
-	private decimal CalculateLongProfit(decimal price)
-	{
-		var profit = 0m;
-		foreach (var entry in _longEntries)
-		{
-			profit += (price - entry.Price) * entry.Volume;
-		}
-		return profit;
-	}
-
-	private decimal CalculateShortProfit(decimal price)
-	{
-		var profit = 0m;
-		foreach (var entry in _shortEntries)
-		{
-			profit += (entry.Price - price) * entry.Volume;
-		}
-		return profit;
-	}
-
-	private void UpdateEntryState()
-	{
-		if (_longEntries.Count == 0)
-		{
-			ResetLongState();
-		}
-		else if (_longAdditions == 0 && _longBaseVolume <= 0m)
-		{
-			_longBaseVolume = _longEntries[0].Volume;
-			_longLastVolume = _longBaseVolume;
-		}
-
-		if (_shortEntries.Count == 0)
-		{
-			ResetShortState();
-		}
-		else if (_shortAdditions == 0 && _shortBaseVolume <= 0m)
-		{
-			_shortBaseVolume = _shortEntries[0].Volume;
-			_shortLastVolume = _shortBaseVolume;
-		}
-	}
-
-	private void ResetLongState()
-	{
-		_longEntries.Clear();
-		_longAdditions = 0;
-		_longBaseVolume = 0m;
-		_longLastVolume = 0m;
-	}
-
-	private void ResetShortState()
-	{
-		_shortEntries.Clear();
-		_shortAdditions = 0;
-		_shortBaseVolume = 0m;
-		_shortLastVolume = 0m;
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		var order = trade.Order;
-		var info = trade.Trade;
-
-		if (order == null || info == null)
-			return;
-
-		var volume = info.Volume;
-		var price = info.Price;
-
-		if (volume <= 0m)
-			return;
-
-		if (order.Direction == Sides.Buy)
-			ProcessBuyTrade(volume, price);
-		else
-			ProcessSellTrade(volume, price);
-	}
-
-	private void ProcessBuyTrade(decimal volume, decimal price)
-	{
-		var remaining = volume;
-
-		for (var i = 0; i < _shortEntries.Count && remaining > 0m;)
-		{
-			var entry = _shortEntries[i];
-			var portion = Math.Min(entry.Volume, remaining);
-			entry.Volume -= portion;
-			remaining -= portion;
-
-			if (entry.Volume <= 0m)
-			{
-				_shortEntries.RemoveAt(i);
-				continue;
-			}
-
-			_shortEntries[i] = entry;
-			break;
-		}
-
-		if (remaining > 0m)
-			_longEntries.Add(new PositionEntry(price, remaining));
-	}
-
-	private void ProcessSellTrade(decimal volume, decimal price)
-	{
-		var remaining = volume;
-
-		for (var i = 0; i < _longEntries.Count && remaining > 0m;)
-		{
-			var entry = _longEntries[i];
-			var portion = Math.Min(entry.Volume, remaining);
-			entry.Volume -= portion;
-			remaining -= portion;
-
-			if (entry.Volume <= 0m)
-			{
-				_longEntries.RemoveAt(i);
-				continue;
-			}
-
-			_longEntries[i] = entry;
-			break;
-		}
-
-		if (remaining > 0m)
-			_shortEntries.Add(new PositionEntry(price, remaining));
-	}
-
-	private decimal[] GetCumulativeThresholds()
-	{
-		var distances = new[]
-		{
-			Level1DistancePips,
-			Level2DistancePips,
-			Level3DistancePips,
-			Level4DistancePips,
-			Level5DistancePips
-		};
-
-		var thresholds = new List<decimal>(distances.Length);
-		var sum = 0m;
-		var multiplier = _pointSize <= 0m ? 1m : _pointSize;
-
-		foreach (var distance in distances)
-		{
-			if (distance > 0m)
-			{
-				sum += distance * multiplier;
-			}
-
-			thresholds.Add(sum);
-		}
-
-		return thresholds.ToArray();
-	}
-
-	private decimal GetPointSize()
-	{
-		var security = Security;
-		if (security == null)
-			return 0.0001m;
-
-		if (security.PriceStep is { } step && step > 0m)
-			return step;
-
-		if (security.MinPriceStep is { } minStep && minStep > 0m)
-			return minStep;
-
-		return 0.0001m;
-	}
-
-	private decimal AdjustVolume(decimal volume)
-	{
-		if (volume <= 0m)
-			return 0m;
-
-		var security = Security;
-		if (security == null)
-			return volume;
-
-		if (security.VolumeStep is { } step && step > 0m)
-		{
-			var steps = Math.Round(volume / step, MidpointRounding.AwayFromZero);
-			if (steps < 1m)
-				steps = 1m;
-
-			volume = steps * step;
-		}
-
-		if (security.MinVolume is { } min && volume < min)
-			volume = min;
-
-		if (security.MaxVolume is { } max && volume > max)
-			volume = max;
-
-		return volume;
-	}
-
-	private static decimal GetTotalVolume(List<PositionEntry> entries)
-	{
-		var total = 0m;
-		foreach (var entry in entries)
-			total += entry.Volume;
-		return total;
-	}
-
-	private static decimal GetHighestEntryPrice(List<PositionEntry> entries)
-	{
-		var price = 0m;
-		foreach (var entry in entries)
-		{
-			if (entry.Price > price)
-				price = entry.Price;
-		}
-		return price;
-	}
-
-	private static decimal GetLowestEntryPrice(List<PositionEntry> entries)
-	{
-		var price = 0m;
-		var isInitialized = false;
-		foreach (var entry in entries)
-		{
-			if (!isInitialized || entry.Price < price)
-			{
-				price = entry.Price;
-				isInitialized = true;
-			}
-		}
-		return price;
-	}
-
-	private sealed class PositionEntry
-	{
-		public PositionEntry(decimal price, decimal volume)
-		{
-			Price = price;
-			Volume = volume;
-		}
-
-		public decimal Price { get; }
-		public decimal Volume { get; set; }
+		return totalVol > 0 ? totalCost / totalVol : 0;
 	}
 }
-

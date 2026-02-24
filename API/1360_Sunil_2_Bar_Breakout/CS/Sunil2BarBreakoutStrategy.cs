@@ -46,7 +46,7 @@ public class Sunil2BarBreakoutStrategy : Strategy
 	/// </summary>
 	public Sunil2BarBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 
@@ -104,9 +104,9 @@ public class Sunil2BarBreakoutStrategy : Strategy
 			if (Position < 0)
 				BuyMarket(Math.Abs(Position));
 
-			if (Position == 0)
+			if (Position == 0 && IsFormedAndOnlineAndAllowTrading())
 			{
-				BuyStop(Volume, _prevClose);
+				BuyMarket(Volume);
 				_longStop = _prevLow1;
 			}
 		}
@@ -116,9 +116,9 @@ public class Sunil2BarBreakoutStrategy : Strategy
 			if (Position > 0)
 				SellMarket(Position);
 
-			if (Position == 0)
+			if (Position == 0 && IsFormedAndOnlineAndAllowTrading())
 			{
-				SellStop(Volume, _prevClose);
+				SellMarket(Volume);
 				_shortStop = _prevHigh1;
 			}
 		}

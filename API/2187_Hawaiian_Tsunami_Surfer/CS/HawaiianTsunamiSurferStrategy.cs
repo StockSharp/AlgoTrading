@@ -95,7 +95,7 @@ public class HawaiianTsunamiSurferStrategy : Strategy
 		.SetDisplay("Stop Loss Points", "Stop loss distance in price steps", "Risk Management")
 		.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -118,13 +118,6 @@ public class HawaiianTsunamiSurferStrategy : Strategy
 		subscription
 		.Bind(momentum, ProcessCandle)
 		.Start();
-
-		// Configure protective stop-loss and take-profit
-		var priceStep = Security?.PriceStep ?? 1m;
-		StartProtection(
-		new Unit(TakeProfitPoints * priceStep, UnitTypes.Absolute),
-		new Unit(StopLossPoints * priceStep, UnitTypes.Absolute),
-		useMarketOrders: true);
 
 		// Setup chart
 		var area = CreateChartArea();
@@ -153,18 +146,13 @@ public class HawaiianTsunamiSurferStrategy : Strategy
 
 		var percentChange = (momentumValue / previousPrice) * 100m;
 
-		if (Position != 0)
-		return;
-
-		if (percentChange > TsunamiStrength)
+		if (percentChange > TsunamiStrength && Position >= 0)
 		{
-			// Strong upward move -> open short
-			SellMarket(Volume);
+			SellMarket();
 		}
-		else if (percentChange < -TsunamiStrength)
+		else if (percentChange < -TsunamiStrength && Position <= 0)
 		{
-			// Strong downward move -> open long
-			BuyMarket(Volume);
+			BuyMarket();
 		}
 	}
 }

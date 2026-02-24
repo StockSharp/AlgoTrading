@@ -388,9 +388,9 @@ var allowShort = Direction is null or Sides.Sell;
 						var qty = volume * percent / 100m;
 						var price = isLong ? entryPrice * (1m + level / 100m) : entryPrice * (1m - level / 100m);
 						if (isLong)
-								SellLimit(qty, price);
+								SellLimit(price, qty);
 						else
-								BuyLimit(qty, price);
+								BuyLimit(price, qty);
 				}
 
 				void PlaceAtr(decimal mult, decimal percent)
@@ -401,9 +401,9 @@ var allowShort = Direction is null or Sides.Sell;
 						var qty = volume * percent / 100m;
 						var price = isLong ? entryPrice + atr * mult : entryPrice - atr * mult;
 						if (isLong)
-								SellLimit(qty, price);
+								SellLimit(price, qty);
 						else
-								BuyLimit(qty, price);
+								BuyLimit(price, qty);
 				}
 
 				PlacePercent(TpLevelPercent1, TpPercent1 * factor);

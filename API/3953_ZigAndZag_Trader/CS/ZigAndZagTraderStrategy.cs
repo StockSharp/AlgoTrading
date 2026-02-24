@@ -28,10 +28,10 @@ public class ZigAndZagTraderStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 
-	private Lowest _longTermLow;
-	private Highest _longTermHigh;
-	private Lowest _shortTermLow;
-	private Highest _shortTermHigh;
+	private Lowest _longTermLow = null!;
+	private Highest _longTermHigh = null!;
+	private Lowest _shortTermLow = null!;
+	private Highest _shortTermHigh = null!;
 
 	private decimal _pipSize;
 	private decimal _volumeStep;
@@ -221,10 +221,11 @@ public class ZigAndZagTraderStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var longLow = _longTermLow?.Process(candle.LowPrice).ToDecimal();
-		var longHigh = _longTermHigh?.Process(candle.HighPrice).ToDecimal();
-		var shortLow = _shortTermLow?.Process(candle.LowPrice).ToDecimal();
-		var shortHigh = _shortTermHigh?.Process(candle.HighPrice).ToDecimal();
+		var t = candle.CloseTime;
+		var longLow = _longTermLow.Process(candle.LowPrice, t, true).ToDecimal();
+		var longHigh = _longTermHigh.Process(candle.HighPrice, t, true).ToDecimal();
+		var shortLow = _shortTermLow.Process(candle.LowPrice, t, true).ToDecimal();
+		var shortHigh = _shortTermHigh.Process(candle.HighPrice, t, true).ToDecimal();
 
 		var longFormed = _longTermLow?.IsFormed == true && _longTermHigh?.IsFormed == true;
 		var shortFormed = _shortTermLow?.IsFormed == true && _shortTermHigh?.IsFormed == true;
@@ -397,7 +398,12 @@ public class ZigAndZagTraderStrategy : Strategy
 		}
 
 		if (closeSignal && Position != 0m)
-			CloseAll();
+		{
+			if (Position > 0)
+				SellMarket(Position);
+			else
+				BuyMarket(Math.Abs(Position));
+		}
 	}
 
 	private enum PivotTypes

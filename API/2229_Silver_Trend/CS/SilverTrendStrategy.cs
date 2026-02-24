@@ -14,7 +14,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on the SilverTrend indicator to trade trend reversals.
+/// Strategy based on SilverTrend indicator -- trades reversals based on
+/// price channel breakouts with a risk-based filter.
 /// </summary>
 public class SilverTrendStrategy : Strategy
 {
@@ -22,38 +23,15 @@ public class SilverTrendStrategy : Strategy
 	private readonly StrategyParam<int> _risk;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SilverTrendSignalIndicator _indicator = null!;
+	private Highest _highest;
+	private Lowest _lowest;
+	private bool? _uptrend;
+	private bool? _prevUptrend;
 
-	/// <summary>
-	/// Indicator lookback period.
-	/// </summary>
-	public int Ssp
-	{
-		get => _ssp.Value;
-		set => _ssp.Value = value;
-	}
+	public int Ssp { get => _ssp.Value; set => _ssp.Value = value; }
+	public int Risk { get => _risk.Value; set => _risk.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Risk factor controlling channel width.
-	/// </summary>
-	public int Risk
-	{
-		get => _risk.Value;
-		set => _risk.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public SilverTrendStrategy()
 	{
 		_ssp = Param(nameof(Ssp), 9)
@@ -64,31 +42,32 @@ public class SilverTrendStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Risk", "Risk factor used to tighten the channel", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_highest = null;
+		_lowest = null;
+		_uptrend = null;
+		_prevUptrend = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_indicator = new SilverTrendSignalIndicator
-		{
-			Ssp = Ssp,
-			Risk = Risk
-		};
+		_highest = new Highest { Length = Ssp };
+		_lowest = new Lowest { Length = Ssp };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(_indicator, ProcessCandle)
+			.Bind(_highest, _lowest, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -99,74 +78,36 @@ public class SilverTrendStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal signal)
+	private void ProcessCandle(ICandleMessage candle, decimal maxHigh, decimal minLow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_highest.IsFormed || !_lowest.IsFormed)
 			return;
 
-		if (signal > 0m && Position <= 0)
+		var k = 33 - Risk;
+		var smin = minLow + (maxHigh - minLow) * k / 100m;
+		var smax = maxHigh - (maxHigh - minLow) * k / 100m;
+
+		var uptrend = _uptrend ?? false;
+
+		if (candle.ClosePrice < smin)
+			uptrend = false;
+		else if (candle.ClosePrice > smax)
+			uptrend = true;
+
+		var reversed = _uptrend is not null && uptrend != _uptrend;
+
+		if (IsFormedAndOnlineAndAllowTrading() && reversed)
 		{
-			// Reverse to long when buy signal appears
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (signal < 0m && Position >= 0)
-		{
-			// Reverse to short when sell signal appears
-			SellMarket(Volume + Math.Abs(Position));
-		}
-	}
-
-	private class SilverTrendSignalIndicator : BaseIndicator
-	{
-		public int Ssp { get; set; } = 9;
-		public int Risk { get; set; } = 3;
-
-		private readonly SimpleMovingAverage _range = new();
-		private readonly Highest _highest = new();
-		private readonly Lowest _lowest = new();
-		private bool? _uptrend;
-
-		protected override IIndicatorValue OnProcess(IIndicatorValue input)
-		{
-			var candle = input.GetValue<ICandleMessage>();
-
-			_range.Length = Ssp + 1;
-			_highest.Length = Ssp;
-			_lowest.Length = Ssp;
-
-			var range = _range.Process(candle.HighPrice - candle.LowPrice).GetValue<decimal>();
-			var maxHigh = _highest.Process(candle.HighPrice).GetValue<decimal>();
-			var minLow = _lowest.Process(candle.LowPrice).GetValue<decimal>();
-
-			var k = 33 - Risk;
-			var smin = minLow + (maxHigh - minLow) * k / 100m;
-			var smax = maxHigh - (maxHigh - minLow) * k / 100m;
-
-			var uptrend = _uptrend ?? false;
-
-			if (candle.ClosePrice < smin)
-				uptrend = false;
-			else if (candle.ClosePrice > smax)
-				uptrend = true;
-
-			decimal signal = 0m;
-			if (_uptrend is not null && uptrend != _uptrend)
-				signal = uptrend ? 1m : -1m;
-
-			_uptrend = uptrend;
-			return new DecimalIndicatorValue(this, signal, input.Time);
+			if (uptrend && Position <= 0)
+				BuyMarket();
+			else if (!uptrend && Position >= 0)
+				SellMarket();
 		}
 
-		public override void Reset()
-		{
-			base.Reset();
-			_range.Reset();
-			_highest.Reset();
-			_lowest.Reset();
-			_uptrend = null;
-		}
+		_prevUptrend = _uptrend;
+		_uptrend = uptrend;
 	}
 }

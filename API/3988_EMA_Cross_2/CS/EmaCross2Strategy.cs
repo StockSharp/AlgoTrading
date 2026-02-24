@@ -36,6 +36,7 @@ public class EmaCross2Strategy : Strategy
 	private decimal? _stopLossPrice;
 	private decimal? _takeProfitPrice;
 	private decimal _pointSize;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Candle type used for signal detection.
@@ -105,7 +106,7 @@ public class EmaCross2Strategy : Strategy
 	/// </summary>
 	public EmaCross2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for EMA calculations", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 2m)
@@ -114,19 +115,19 @@ public class EmaCross2Strategy : Strategy
 		
 		.SetOptimize(0.1m, 5m, 0.1m);
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Distance from entry to take-profit in broker points", "Risk")
 		
 		.SetOptimize(0m, 200m, 5m);
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Distance from entry to stop-loss in broker points", "Risk")
 		
 		.SetOptimize(0m, 200m, 5m);
 
-		_trailingStopPoints = Param(nameof(TrailingStopPoints), 50m)
+		_trailingStopPoints = Param(nameof(TrailingStopPoints), 500m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop (points)", "Trailing distance maintained after entry", "Risk")
 		
@@ -315,7 +316,7 @@ public class EmaCross2Strategy : Strategy
 		if (distance <= 0m)
 		return;
 
-		var entryPrice = PositionPrice ?? candle.ClosePrice;
+		var entryPrice = _entryPrice > 0 ? _entryPrice : candle.ClosePrice;
 
 		if (Position > 0)
 		{
@@ -362,28 +363,22 @@ public class EmaCross2Strategy : Strategy
 		_takeProfitPrice = null;
 	}
 
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+
+		if (Position != 0 && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+
+		if (Position == 0m)
+			_entryPrice = 0m;
+	}
+
 	private decimal CalculatePointSize()
 	{
-		var security = Security;
-		if (security == null)
-		return 0m;
-
-		var step = security.PriceStep ?? 0m;
-		var decimals = security.Decimals;
-
-		if (decimals.HasValue && decimals.Value >= 0)
-		{
-			var point = (decimal)Math.Pow(10, -decimals.Value);
-			if (point > 0m)
-			{
-				if (step > 0m)
-				return Math.Min(step, point);
-
-				return point;
-			}
-		}
-
-		return step > 0m ? step : 0m;
+		var step = Security?.PriceStep ?? 0m;
+		return step > 0m ? step : 1m;
 	}
 }
 

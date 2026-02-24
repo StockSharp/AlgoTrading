@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -21,89 +17,37 @@ public class BrakeParabolicStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _a;
 	private readonly StrategyParam<decimal> _b;
-	private readonly StrategyParam<decimal> _beginShift;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _maxPrice;
 	private decimal _minPrice;
 	private decimal _beginPrice;
 	private bool _isLong;
-	private int _barsFromBegin;
-	private decimal _bCoef;
-	private decimal _shiftValue;
+	private bool _prevIsLong;
+	private int _bar;
+	private bool _init;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Exponent that defines curve shape.
-	/// </summary>
-	public decimal A
-	{
-		get => _a.Value;
-		set => _a.Value = value;
-	}
+	public decimal A { get => _a.Value; set => _a.Value = value; }
+	public decimal B { get => _b.Value; set => _b.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Multiplier affecting curve speed.
-	/// </summary>
-	public decimal B
-	{
-		get => _b.Value;
-		set => _b.Value = value;
-	}
-
-	/// <summary>
-	/// Initial shift in points.
-	/// </summary>
-	public decimal BeginShift
-	{
-		get => _beginShift.Value;
-		set => _beginShift.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public BrakeParabolicStrategy()
 	{
 		_a = Param(nameof(A), 1.5m)
-		.SetDisplay("A", "Curve exponent", "Indicator")
-		
-		.SetOptimize(1m, 3m, 0.5m);
-
+			.SetDisplay("A", "Curve exponent", "Indicator");
 		_b = Param(nameof(B), 1.0m)
-		.SetDisplay("B", "Curve speed", "Indicator")
-		
-		.SetOptimize(0.5m, 2m, 0.1m);
-
-		_beginShift = Param(nameof(BeginShift), 10m)
-		.SetGreaterThanZero()
-		.SetDisplay("Shift", "Initial shift in points", "Indicator")
-		
-		.SetOptimize(5m, 20m, 5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		ResetState();
+			.SetDisplay("B", "Curve speed", "Indicator");
+		_takeProfit = Param(nameof(TakeProfit), 500m)
+			.SetDisplay("Take Profit", "Take profit distance", "Risk");
+		_stopLoss = Param(nameof(StopLoss), 300m)
+			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 
 	/// <inheritdoc />
@@ -111,36 +55,17 @@ public class BrakeParabolicStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		ResetState();
-
-		// Pre-calculate coefficients based on security settings
-		var priceStep = Security.PriceStep ?? 1m;
-		var seconds = (decimal)((TimeSpan)CandleType.Arg).TotalSeconds;
-		_bCoef = B * priceStep * seconds * 0.1m / 60m;
-		_shiftValue = BeginShift * priceStep;
-
-		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-		.Do(ProcessCandle)
-		.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-		}
-
-		StartProtection(null, null);
-	}
-
-	private void ResetState()
-	{
 		_maxPrice = decimal.MinValue;
 		_minPrice = decimal.MaxValue;
-		_beginPrice = 0m;
+		_beginPrice = 0;
 		_isLong = true;
-		_barsFromBegin = 0;
+		_prevIsLong = true;
+		_bar = 0;
+		_init = false;
+		_entryPrice = 0;
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -148,75 +73,90 @@ public class BrakeParabolicStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Initialize start price on first call
-		if (_beginPrice == 0m)
+		if (!_init)
 		{
 			_beginPrice = candle.LowPrice;
+			_init = true;
 		}
 
-		if (candle.HighPrice > _maxPrice)
-			_maxPrice = candle.HighPrice;
-		if (candle.LowPrice < _minPrice)
-			_minPrice = candle.LowPrice;
+		_maxPrice = Math.Max(_maxPrice, candle.HighPrice);
+		_minPrice = Math.Min(_minPrice, candle.LowPrice);
 
 		// Calculate parabolic level
-		var parab = (decimal)Math.Pow(_barsFromBegin, (double)A) * _bCoef;
+		var parab = (decimal)Math.Pow(_bar, (double)A) * B;
 		var level = _isLong ? _beginPrice + parab : _beginPrice - parab;
 
-		var buySignal = false;
-		var sellSignal = false;
-
-		// Check for trend change
 		if (_isLong && level > candle.LowPrice)
 		{
-			// Bullish trend broken - switch to short
 			_isLong = false;
-			_beginPrice = _maxPrice + _shiftValue;
-			level = _beginPrice;
-			_barsFromBegin = 0;
+			_beginPrice = _maxPrice;
+			_bar = 0;
 			_maxPrice = decimal.MinValue;
 			_minPrice = decimal.MaxValue;
-			sellSignal = true;
 		}
 		else if (!_isLong && level < candle.HighPrice)
 		{
-			// Bearish trend broken - switch to long
 			_isLong = true;
-			_beginPrice = _minPrice - _shiftValue;
-			level = _beginPrice;
-			_barsFromBegin = 0;
+			_beginPrice = _minPrice;
+			_bar = 0;
 			_maxPrice = decimal.MinValue;
 			_minPrice = decimal.MaxValue;
-			buySignal = true;
-		}
-		else
-		{
-			_barsFromBegin++;
 		}
 
-		// Execute trading actions
+		var buySignal = !_prevIsLong && _isLong;
+		var sellSignal = _prevIsLong && !_isLong;
+
+		_prevIsLong = _isLong;
+		_bar++;
+
+		var price = candle.ClosePrice;
+
+		// Exit management
+		if (Position > 0)
+		{
+			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				return;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				return;
+			}
+		}
+
+		// Entry on direction change
 		if (buySignal)
 		{
 			if (Position < 0)
-				BuyMarket(-Position);
-			BuyMarket(Volume);
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
+			if (Position == 0)
+			{
+				BuyMarket();
+				_entryPrice = price;
+			}
 		}
 		else if (sellSignal)
 		{
 			if (Position > 0)
-				SellMarket(Position);
-			SellMarket(Volume);
-		}
-		else
-		{
-			// Close opposite positions if trend opposes
-			if (_isLong && Position < 0)
-				BuyMarket(-Position);
-			else if (!_isLong && Position > 0)
-				SellMarket(Position);
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
+			if (Position == 0)
+			{
+				SellMarket();
+				_entryPrice = price;
+			}
 		}
 	}
 }

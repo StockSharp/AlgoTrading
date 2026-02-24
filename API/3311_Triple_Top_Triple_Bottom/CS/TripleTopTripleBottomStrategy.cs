@@ -1,363 +1,117 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Port of the "Triple Top and Triple Bottom" MetaTrader strategy.
-/// The strategy trades pullbacks in the prevailing trend using linear weighted averages,
-/// momentum strength confirmation and a MACD filter that avoids fading strong trends.
+/// Triple Top/Bottom strategy: WMA crossover + Momentum trend.
+/// Buys on fast WMA crossing above slow WMA with momentum > 100.
+/// Sells on fast WMA crossing below slow WMA with momentum < 100.
 /// </summary>
 public class TripleTopTripleBottomStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _fastMaPeriod;
-	private readonly StrategyParam<int> _slowMaPeriod;
-	private readonly StrategyParam<int> _momentumPeriod;
-	private readonly StrategyParam<decimal> _momentumThreshold;
-	private readonly StrategyParam<decimal> _stopLossDistance;
-	private readonly StrategyParam<decimal> _takeProfitDistance;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _momPeriod;
 
-	private WeightedMovingAverage _fastMa = null!;
-	private WeightedMovingAverage _slowMa = null!;
-	private Momentum _momentum = null!;
-	private MovingAverageConvergenceDivergenceSignal _macd = null!;
+	private decimal? _prevFast;
+	private decimal? _prevSlow;
 
-	private decimal? _momentumDeviation1;
-	private decimal? _momentumDeviation2;
-	private decimal? _momentumDeviation3;
-	private decimal? _macdMain;
-	private decimal? _macdSignal;
-
-	private decimal? _entryPrice;
-	private decimal _highestSinceEntry;
-	private decimal _lowestSinceEntry;
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="TripleTopTripleBottomStrategy"/>.
-	/// </summary>
-	public TripleTopTripleBottomStrategy()
-	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Entry Candle", "Time frame used to evaluate entry signals", "General");
-
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
-		.SetGreaterThanZero()
-		.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average", "Indicators");
-
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 85)
-		.SetGreaterThanZero()
-		.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average", "Indicators");
-
-		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("Momentum Period", "Momentum lookback used for strength confirmation", "Indicators");
-
-		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
-		.SetGreaterThanZero()
-		.SetDisplay("Momentum Threshold", "Minimal deviation from 100 required for confirmation", "Indicators");
-
-		_stopLossDistance = Param(nameof(StopLossDistance), 0.0020m)
-		.SetNonNegative()
-		.SetDisplay("Stop Loss", "Protective stop distance in price units", "Risk");
-
-		_takeProfitDistance = Param(nameof(TakeProfitDistance), 0.0050m)
-		.SetNonNegative()
-		.SetDisplay("Take Profit", "Profit target distance in price units", "Risk");
-	}
-
-	/// <summary>
-	/// Candle type used for indicator calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Length of the fast linear weighted moving average.
-	/// </summary>
-	public int FastMaPeriod
+	public int FastPeriod
 	{
-		get => _fastMaPeriod.Value;
-		set => _fastMaPeriod.Value = value;
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Length of the slow linear weighted moving average.
-	/// </summary>
-	public int SlowMaPeriod
+	public int SlowPeriod
 	{
-		get => _slowMaPeriod.Value;
-		set => _slowMaPeriod.Value = value;
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Momentum lookback period expressed in bars.
-	/// </summary>
-	public int MomentumPeriod
+	public int MomPeriod
 	{
-		get => _momentumPeriod.Value;
-		set => _momentumPeriod.Value = value;
+		get => _momPeriod.Value;
+		set => _momPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Minimal deviation from the neutral 100 momentum level required to trigger orders.
-	/// </summary>
-	public decimal MomentumThreshold
+	public TripleTopTripleBottomStrategy()
 	{
-		get => _momentumThreshold.Value;
-		set => _momentumThreshold.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+
+		_fastPeriod = Param(nameof(FastPeriod), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast WMA", "Fast WMA period", "Indicators");
+
+		_slowPeriod = Param(nameof(SlowPeriod), 18)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow WMA", "Slow WMA period", "Indicators");
+
+		_momPeriod = Param(nameof(MomPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Momentum", "Momentum period", "Indicators");
 	}
 
-	/// <summary>
-	/// Protective stop distance expressed in absolute price units.
-	/// </summary>
-	public decimal StopLossDistance
+	protected override void OnStarted2(DateTime time)
 	{
-		get => _stopLossDistance.Value;
-		set => _stopLossDistance.Value = value;
-	}
+		base.OnStarted2(time);
 
-	/// <summary>
-	/// Profit target distance expressed in absolute price units.
-	/// </summary>
-	public decimal TakeProfitDistance
-	{
-		get => _takeProfitDistance.Value;
-		set => _takeProfitDistance.Value = value;
-	}
+		_prevFast = null;
+		_prevSlow = null;
 
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
-	{
-		base.OnStarted(time);
-
-		StartProtection();
-
-		_fastMa = new WeightedMovingAverage
-		{
-			Length = FastMaPeriod
-		};
-
-		_slowMa = new WeightedMovingAverage
-		{
-			Length = SlowMaPeriod
-		};
-
-		_momentum = new Momentum
-		{
-			Length = MomentumPeriod
-		};
-
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			FastLength = 12,
-			SlowLength = 26,
-			SignalLength = 9
-		};
-
-		_momentumDeviation1 = null;
-		_momentumDeviation2 = null;
-		_momentumDeviation3 = null;
-		_macdMain = null;
-		_macdSignal = null;
-		_entryPrice = null;
-		_highestSinceEntry = 0m;
-		_lowestSinceEntry = 0m;
+		var fast = new WeightedMovingAverage { Length = FastPeriod };
+		var slow = new WeightedMovingAverage { Length = SlowPeriod };
+		var mom = new Momentum { Length = MomPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_fastMa, _slowMa, _momentum, ProcessCandle);
-		subscription.BindEx(_macd, ProcessMacd);
-		subscription.Start();
+		subscription
+			.Bind(fast, slow, mom, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastMa);
-			DrawIndicator(area, _slowMa);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
-
-			var oscArea = CreateChartArea();
-			if (oscArea != null)
-			{
-				DrawIndicator(oscArea, _momentum);
-				DrawIndicator(oscArea, _macd);
-			}
 		}
 	}
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position == 0m)
-		{
-			_entryPrice = null;
-			_highestSinceEntry = 0m;
-			_lowestSinceEntry = 0m;
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade.Trade == null)
-		return;
-
-		_entryPrice = trade.Trade.Price;
-		_highestSinceEntry = trade.Trade.Price;
-		_lowestSinceEntry = trade.Trade.Price;
-	}
-
-	private void ProcessMacd(ICandleMessage candle, IIndicatorValue value)
-	{
-		if (!value.IsFinal)
-		return;
-
-		if (value is not MovingAverageConvergenceDivergenceSignalValue typed)
-		return;
-
-		if (typed.Signal is not decimal signal || typed.Macd is not decimal macd)
-		return;
-
-		_macdSignal = signal;
-		_macdMain = macd;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal fastMa, decimal slowMa, decimal momentumValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal mom)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
-		UpdateMomentum(momentumValue);
-		ManageOpenPosition(candle);
-
-		if (!TryGetMomentumStrength(out var hasLongMomentum, out var hasShortMomentum))
-		return;
-
-		if (_macdMain is null || _macdSignal is null)
-		return;
-
-		var price = candle.ClosePrice;
-
-		if (fastMa > slowMa && hasLongMomentum && _macdMain > _macdSignal && Position <= 0m)
+		if (_prevFast.HasValue && _prevSlow.HasValue)
 		{
-			if (Position < 0m)
-			{
-				ClosePosition();
-				return;
-			}
+			var crossUp = _prevFast.Value <= _prevSlow.Value && fast > slow;
+			var crossDown = _prevFast.Value >= _prevSlow.Value && fast < slow;
 
-			BuyMarket();
-			ApplyRiskOrders(price, Position + Volume);
+			if (crossUp && mom > 100m && Position <= 0)
+				BuyMarket();
+			else if (crossDown && mom < 100m && Position >= 0)
+				SellMarket();
 		}
-		else if (fastMa < slowMa && hasShortMomentum && _macdMain < _macdSignal && Position >= 0m)
-		{
-			if (Position > 0m)
-			{
-				ClosePosition();
-				return;
-			}
 
-			SellMarket();
-			ApplyRiskOrders(price, Position - Volume);
-		}
-	}
-
-	private void UpdateMomentum(decimal momentumValue)
-	{
-		var deviation = Math.Abs(momentumValue - 100m);
-
-		_momentumDeviation1 = _momentumDeviation2;
-		_momentumDeviation2 = _momentumDeviation3;
-		_momentumDeviation3 = deviation;
-	}
-
-	private bool TryGetMomentumStrength(out bool hasLongMomentum, out bool hasShortMomentum)
-	{
-		hasLongMomentum = false;
-		hasShortMomentum = false;
-
-		if (_momentumDeviation1 is null || _momentumDeviation2 is null || _momentumDeviation3 is null)
-		return false;
-
-		var threshold = MomentumThreshold;
-		hasLongMomentum = _momentumDeviation1 >= threshold || _momentumDeviation2 >= threshold || _momentumDeviation3 >= threshold;
-		hasShortMomentum = hasLongMomentum;
-		return true;
-	}
-
-	private void ManageOpenPosition(ICandleMessage candle)
-	{
-		if (_entryPrice is null || Position == 0m)
-		return;
-
-		var entryPrice = _entryPrice.Value;
-		_highestSinceEntry = Math.Max(_highestSinceEntry, candle.HighPrice);
-		_lowestSinceEntry = _lowestSinceEntry == 0m ? candle.LowPrice : Math.Min(_lowestSinceEntry, candle.LowPrice);
-
-		var stopLoss = StopLossDistance;
-		var takeProfit = TakeProfitDistance;
-
-		if (Position > 0m)
-		{
-			if (stopLoss > 0m && candle.LowPrice <= entryPrice - stopLoss)
-			{
-				ClosePosition();
-				return;
-			}
-
-			if (takeProfit > 0m && candle.HighPrice >= entryPrice + takeProfit)
-			{
-				ClosePosition();
-			}
-		}
-		else if (Position < 0m)
-		{
-			if (stopLoss > 0m && candle.HighPrice >= entryPrice + stopLoss)
-			{
-				ClosePosition();
-				return;
-			}
-
-			if (takeProfit > 0m && candle.LowPrice <= entryPrice - takeProfit)
-			{
-				ClosePosition();
-			}
-		}
-	}
-
-	private void ApplyRiskOrders(decimal price, decimal resultingPosition)
-	{
-		var stopLoss = StopLossDistance;
-		var takeProfit = TakeProfitDistance;
-
-		if (stopLoss > 0m)
-		SetStopLoss(stopLoss, price, resultingPosition);
-
-		if (takeProfit > 0m)
-		SetTakeProfit(takeProfit, price, resultingPosition);
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }
-

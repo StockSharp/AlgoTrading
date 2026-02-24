@@ -238,10 +238,10 @@ public class MacdPatternTraderV02Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period for MACD", "Indicators");
 
-		_maxThreshold = Param(nameof(MaxThreshold), 0.0045m)
+		_maxThreshold = Param(nameof(MaxThreshold), 50m)
 			.SetDisplay("Upper Threshold", "Maximum MACD threshold for longs", "Signals");
 
-		_minThreshold = Param(nameof(MinThreshold), -0.0045m)
+		_minThreshold = Param(nameof(MinThreshold), -50m)
 			.SetDisplay("Lower Threshold", "Minimum MACD threshold for shorts", "Signals");
 
 		_ema1Period = Param(nameof(Ema1Period), 7)
@@ -305,9 +305,9 @@ public class MacdPatternTraderV02Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointSize = Security?.PriceStep ?? 0m;
 		if (_pointSize <= 0m)
@@ -320,12 +320,9 @@ public class MacdPatternTraderV02Strategy : Strategy
 		if (_pointSize <= 0m)
 			_pointSize = 0.0001m;
 
-		_macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = FastEmaPeriod },
-			LongMa = { Length = SlowEmaPeriod },
-			SignalPeriod = 1
-		};
+		_macd = new MovingAverageConvergenceDivergence();
+		_macd.ShortMa.Length = FastEmaPeriod;
+		_macd.LongMa.Length = SlowEmaPeriod;
 
 		_ema1 = new EMA { Length = Ema1Period };
 		_ema2 = new EMA { Length = Ema2Period };
@@ -335,8 +332,7 @@ public class MacdPatternTraderV02Strategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(_ema1, _ema2, _sma, _ema3, ProcessTrendIndicators)
-			.BindEx(_macd, ProcessMacd)
+			.Bind(_macd, _ema1, _ema2, _sma, _ema3, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -352,7 +348,7 @@ public class MacdPatternTraderV02Strategy : Strategy
 		}
 	}
 
-	private void ProcessTrendIndicators(ICandleMessage candle, decimal ema1Value, decimal ema2Value, decimal smaValue, decimal ema3Value)
+	private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal ema1Value, decimal ema2Value, decimal smaValue, decimal ema3Value)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -366,18 +362,8 @@ public class MacdPatternTraderV02Strategy : Strategy
 		_ema2Last = ema2Value;
 		_smaLast = smaValue;
 		_ema3Last = ema3Value;
-	}
 
-	private void ProcessMacd(ICandleMessage candle, IIndicatorValue indicatorValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_macd.IsFormed || !indicatorValue.IsFinal)
-			return;
-
-		var macdValue = (MovingAverageConvergenceDivergenceValue)indicatorValue;
-		if (macdValue.Macd is not decimal macdLine)
+		if (!_macd.IsFormed)
 			return;
 
 		var macdLast = _macdPrev1;

@@ -13,43 +13,30 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 /// <summary>
 /// Commodity Channel Index strategy converted from the MetaTrader "CCI_MA v1.5" expert advisor.
-/// The algorithm waits for the primary CCI to cross a simple moving average of its own values
-/// and relies on a secondary CCI to confirm overbought or oversold reversals.
+/// Uses a primary CCI with a manually computed SMA of CCI values as a signal line.
+/// A secondary CCI provides overbought/oversold exit confirmation.
 /// </summary>
 public class CciMaV15Strategy : Strategy
 {
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<int> _signalCciPeriod;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _lotVolume;
-	private readonly StrategyParam<bool> _useMoneyManagement;
-	private readonly StrategyParam<decimal> _depositPerLot;
-	private readonly StrategyParam<int> _maxMultiplier;
+	private readonly StrategyParam<decimal> _stopLossPoints;
+	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private CommodityChannelIndex _cci = null!;
-	private CommodityChannelIndex _signalCci = null!;
-	private SimpleMovingAverage _cciSignal = null!;
+	private CommodityChannelIndex _cci;
+	private CommodityChannelIndex _signalCci;
 
-	private decimal _pipSize;
-	private decimal _lotMultiplier = 1m;
-	private decimal? _entryPrice;
+	private readonly List<decimal> _cciHistory = new();
+	private decimal? _prevCciMa;
 	private decimal? _prevCci;
-	private decimal? _prev2Cci;
 	private decimal? _prevSignalCci;
-	private decimal? _prev2SignalCci;
-	private decimal? _prevMa;
-	private decimal? _prev2Ma;
-	private int _historyCount;
 
 	/// <summary>
-	/// Primary CCI period used to detect momentum swings.
+	/// Primary CCI period.
 	/// </summary>
 	public int CciPeriod
 	{
@@ -58,7 +45,7 @@ public class CciMaV15Strategy : Strategy
 	}
 
 	/// <summary>
-	/// Secondary CCI period that supervises exits around ±100.
+	/// Secondary CCI period for exit signals.
 	/// </summary>
 	public int SignalCciPeriod
 	{
@@ -67,7 +54,7 @@ public class CciMaV15Strategy : Strategy
 	}
 
 	/// <summary>
-	/// Length of the simple moving average applied to the primary CCI.
+	/// SMA period applied to the primary CCI values.
 	/// </summary>
 	public int MaPeriod
 	{
@@ -76,61 +63,25 @@ public class CciMaV15Strategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss distance expressed in pips (set to zero to disable).
+	/// Stop loss distance in absolute points.
 	/// </summary>
-	public decimal StopLossPips
+	public decimal StopLossPoints
 	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Take-profit distance expressed in pips (set to zero to disable).
+	/// Take profit distance in absolute points.
 	/// </summary>
-	public decimal TakeProfitPips
+	public decimal TakeProfitPoints
 	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Base volume traded on each signal before scaling.
-	/// </summary>
-	public decimal LotVolume
-	{
-		get => _lotVolume.Value;
-		set => _lotVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Enables deposit-based volume scaling.
-	/// </summary>
-	public bool UseMoneyManagement
-	{
-		get => _useMoneyManagement.Value;
-		set => _useMoneyManagement.Value = value;
-	}
-
-	/// <summary>
-	/// Balance amount required for one additional lot when money management is enabled.
-	/// </summary>
-	public decimal DepositPerLot
-	{
-		get => _depositPerLot.Value;
-		set => _depositPerLot.Value = value;
-	}
-
-	/// <summary>
-	/// Upper bound for the money management multiplier.
-	/// </summary>
-	public int MaxMultiplier
-	{
-		get => _maxMultiplier.Value;
-		set => _maxMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used to feed the indicators.
+	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -144,54 +95,32 @@ public class CciMaV15Strategy : Strategy
 	public CciMaV15Strategy()
 	{
 		_cciPeriod = Param(nameof(CciPeriod), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("CCI Period", "Length of the primary CCI", "CCI")
-		
-		.SetOptimize(7, 35, 7);
+			.SetGreaterThanZero()
+			.SetDisplay("CCI Period", "Length of the primary CCI", "CCI")
+			.SetOptimize(7, 35, 7);
 
 		_signalCciPeriod = Param(nameof(SignalCciPeriod), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("Exit CCI Period", "Length of the secondary CCI", "CCI")
-		
-		.SetOptimize(7, 35, 7);
+			.SetGreaterThanZero()
+			.SetDisplay("Exit CCI Period", "Length of the secondary CCI", "CCI")
+			.SetOptimize(7, 35, 7);
 
 		_maPeriod = Param(nameof(MaPeriod), 9)
-		.SetGreaterThanZero()
-		.SetDisplay("CCI MA Period", "Simple MA length applied to the CCI", "CCI")
-		
-		.SetOptimize(3, 21, 3);
+			.SetGreaterThanZero()
+			.SetDisplay("CCI MA Period", "SMA length applied to the CCI", "CCI")
+			.SetOptimize(3, 21, 3);
 
-		_stopLossPips = Param(nameof(StopLossPips), 40m)
-		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-		
-		.SetOptimize(0m, 120m, 20m);
+		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Protective stop distance in absolute points", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-		.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
-		
-		.SetOptimize(0m, 150m, 25m);
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Profit target distance in absolute points", "Risk");
 
-		_lotVolume = Param(nameof(LotVolume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Lot Volume", "Base order volume before scaling", "Trading")
-		
-		.SetOptimize(0.5m, 2m, 0.5m);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Market data series", "General");
 
-		_useMoneyManagement = Param(nameof(UseMoneyManagement), false)
-		.SetDisplay("Enable Money Management", "Toggle balance-based lot scaling", "Trading");
-
-		_depositPerLot = Param(nameof(DepositPerLot), 1000m)
-		.SetGreaterThanZero()
-		.SetDisplay("Deposit Per Lot", "Balance required to increase the lot multiplier", "Trading")
-		
-		.SetOptimize(500m, 5000m, 500m);
-
-		_maxMultiplier = Param(nameof(MaxMultiplier), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("Max Multiplier", "Upper bound for the lot multiplier", "Trading");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Candle Type", "Market data series used for calculations", "General");
+		Volume = 1;
 	}
 
 	/// <inheritdoc />
@@ -204,260 +133,109 @@ public class CciMaV15Strategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		ResetState();
+		_cci = null;
+		_signalCci = null;
+		_cciHistory.Clear();
+		_prevCciMa = null;
+		_prevCci = null;
+		_prevSignalCci = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted2(time);
-
-		ResetState();
-
-		_cci = new CommodityChannelIndex
-		{
-			Length = CciPeriod
-		};
-
-		_signalCci = new CommodityChannelIndex
-		{
-			Length = SignalCciPeriod
-		};
-
-		_cciSignal = new SMA
-		{
-			Length = MaPeriod,
-		};
-
-		_pipSize = CalculatePipSize();
+		_cci = new CommodityChannelIndex { Length = CciPeriod };
+		_signalCci = new CommodityChannelIndex { Length = SignalCciPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(_cci, _signalCci, ProcessCandle)
-		.Start();
+			.Bind(_cci, _signalCci, ProcessCandle)
+			.Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+
+			var indArea = CreateChartArea();
+			if (indArea != null)
+			{
+				DrawIndicator(indArea, _cci);
+				DrawIndicator(indArea, _signalCci);
+			}
+		}
+
+		var tp = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null;
+		var sl = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Absolute) : null;
+		if (tp != null || sl != null)
+			StartProtection(tp, sl);
+
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal cciValue, decimal signalCciValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		var maValue = _cciSignal.Process(new DecimalIndicatorValue(_cciSignal, cciValue, candle.OpenTime)).ToDecimal();
+		// Maintain CCI history for manual SMA calculation
+		_cciHistory.Add(cciValue);
+		if (_cciHistory.Count > MaPeriod)
+			_cciHistory.RemoveAt(0);
 
-		if (!_cci.IsFormed || !_signalCci.IsFormed || !_cciSignal.IsFormed)
+		// Compute SMA of CCI
+		decimal? cciMa = null;
+		if (_cciHistory.Count >= MaPeriod)
 		{
-			UpdateHistory(cciValue, signalCciValue, maValue);
+			decimal sum = 0;
+			for (int i = 0; i < _cciHistory.Count; i++)
+				sum += _cciHistory[i];
+			cciMa = sum / _cciHistory.Count;
+		}
+
+		if (cciMa == null || _prevCci == null || _prevCciMa == null || _prevSignalCci == null)
+		{
+			_prevCci = cciValue;
+			_prevCciMa = cciMa;
+			_prevSignalCci = signalCciValue;
 			return;
 		}
 
-		UpdateMoneyManagement();
-
-		if (_historyCount < 2)
+		// Exit logic: secondary CCI overbought/oversold reversal
+		if (Position > 0 && _prevSignalCci > 100 && signalCciValue <= 100)
 		{
-			UpdateHistory(cciValue, signalCciValue, maValue);
-			return;
+			SellMarket(Position);
 		}
-
-		HandleStops(candle);
+		else if (Position < 0 && _prevSignalCci < -100 && signalCciValue >= -100)
+		{
+			BuyMarket(Math.Abs(Position));
+		}
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			UpdateHistory(cciValue, signalCciValue, maValue);
+			_prevCci = cciValue;
+			_prevCciMa = cciMa;
+			_prevSignalCci = signalCciValue;
 			return;
 		}
 
-		var prevCci = _prevCci ?? cciValue;
-		var prev2Cci = _prev2Cci ?? prevCci;
-		var prevSignal = _prevSignalCci ?? signalCciValue;
-		var prev2Signal = _prev2SignalCci ?? prevSignal;
-		var prevMa = _prevMa ?? maValue;
-		var prev2Ma = _prev2Ma ?? prevMa;
-
-		var shouldCloseLong = (prev2Signal > 100m && prevSignal <= 100m) || (prevCci < prevMa && prev2Cci >= prev2Ma);
-		var shouldCloseShort = (prev2Signal < -100m && prevSignal >= -100m) || (prevCci > prevMa && prev2Cci <= prev2Ma);
-
-		if (Position > 0 && shouldCloseLong)
+		// Entry: CCI crosses above its MA (buy) or below (sell)
+		if (_prevCci < _prevCciMa && cciValue > cciMa.Value && Position <= 0)
 		{
-			SellMarket(Position);
-			_entryPrice = null;
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
 		}
-		else if (Position < 0 && shouldCloseShort)
+		else if (_prevCci > _prevCciMa && cciValue < cciMa.Value && Position >= 0)
 		{
-			BuyMarket(Math.Abs(Position));
-			_entryPrice = null;
-		}
-
-		var volume = AdjustVolume(LotVolume * _lotMultiplier);
-		if (volume > 0m)
-		{
-			if (prevCci > prevMa && prev2Cci < prev2Ma && Position <= 0)
-			{
-				var totalVolume = volume + Math.Abs(Position);
-				if (totalVolume > 0m)
-				{
-					BuyMarket(totalVolume);
-					_entryPrice = candle.ClosePrice;
-				}
-			}
-			else if (prevCci < prevMa && prev2Cci > prev2Ma && Position >= 0)
-			{
-				var totalVolume = volume + Math.Abs(Position);
-				if (totalVolume > 0m)
-				{
-					SellMarket(totalVolume);
-					_entryPrice = candle.ClosePrice;
-				}
-			}
-		}
-
-		if (Position == 0)
-		_entryPrice = null;
-
-		UpdateHistory(cciValue, signalCciValue, maValue);
-	}
-
-	private void HandleStops(ICandleMessage candle)
-	{
-		if (_entryPrice == null)
-		return;
-
-		var priceStep = _pipSize > 0m ? _pipSize : Security?.PriceStep ?? 0m;
-		if (priceStep <= 0m)
-		return;
-
-		var stopLossDistance = StopLossPips > 0m ? StopLossPips * priceStep : 0m;
-		var takeProfitDistance = TakeProfitPips > 0m ? TakeProfitPips * priceStep : 0m;
-
-		if (Position > 0)
-		{
-			var entry = _entryPrice.Value;
-
-			if (stopLossDistance > 0m && candle.LowPrice <= entry - stopLossDistance)
-			{
+			if (Position > 0)
 				SellMarket(Position);
-				_entryPrice = null;
-				return;
-			}
-
-			if (takeProfitDistance > 0m && candle.HighPrice >= entry + takeProfitDistance)
-			{
-				SellMarket(Position);
-				_entryPrice = null;
-			}
-		}
-		else if (Position < 0)
-		{
-			var entry = _entryPrice.Value;
-			var absPosition = Math.Abs(Position);
-
-			if (stopLossDistance > 0m && candle.HighPrice >= entry + stopLossDistance)
-			{
-				BuyMarket(absPosition);
-				_entryPrice = null;
-				return;
-			}
-
-			if (takeProfitDistance > 0m && candle.LowPrice <= entry - takeProfitDistance)
-			{
-				BuyMarket(absPosition);
-				_entryPrice = null;
-			}
-		}
-	}
-
-	private void UpdateMoneyManagement()
-	{
-		if (!UseMoneyManagement)
-		{
-			_lotMultiplier = 1m;
-			return;
+			SellMarket(Volume);
 		}
 
-		if (DepositPerLot <= 0m)
-		return;
-
-		var balance = Portfolio?.CurrentValue;
-		if (balance == null || balance <= 0m)
-		return;
-
-		var multiplier = (int)(balance.Value / DepositPerLot);
-		if (multiplier < 2)
-		{
-			_lotMultiplier = 1m;
-			return;
-		}
-
-		_lotMultiplier = Math.Min(MaxMultiplier, multiplier);
-	}
-
-	private void UpdateHistory(decimal cciValue, decimal signalCciValue, decimal maValue)
-	{
-		_prev2Cci = _prevCci;
 		_prevCci = cciValue;
-
-		_prev2SignalCci = _prevSignalCci;
+		_prevCciMa = cciMa;
 		_prevSignalCci = signalCciValue;
-
-		_prev2Ma = _prevMa;
-		_prevMa = maValue;
-
-		if (_historyCount < 2)
-		_historyCount++;
-	}
-
-	private decimal AdjustVolume(decimal volume)
-	{
-		if (volume <= 0m)
-		return 0m;
-
-		var security = Security;
-		if (security == null)
-		return volume;
-
-		var step = security.VolumeStep ?? 0m;
-		if (step > 0m)
-		{
-			var steps = Math.Floor(volume / step);
-			volume = steps * step;
-		}
-
-		var minVolume = security.MinVolume ?? 0m;
-		if (volume < minVolume)
-		return 0m;
-
-		var maxVolume = security.MaxVolume;
-		if (maxVolume != null && volume > maxVolume.Value)
-		volume = maxVolume.Value;
-
-		return volume;
-	}
-
-	private decimal CalculatePipSize()
-	{
-		var priceStep = Security?.PriceStep ?? 0m;
-		if (priceStep <= 0m)
-		return 0m;
-
-		var bits = decimal.GetBits(priceStep);
-		var scale = (bits[3] >> 16) & 0xFF;
-		var multiplier = scale == 3 || scale == 5 ? 10m : 1m;
-
-		return priceStep * multiplier;
-	}
-
-	private void ResetState()
-	{
-		_lotMultiplier = 1m;
-		_entryPrice = null;
-		_prevCci = null;
-		_prev2Cci = null;
-		_prevSignalCci = null;
-		_prev2SignalCci = null;
-		_prevMa = null;
-		_prev2Ma = null;
-		_historyCount = 0;
 	}
 }
-

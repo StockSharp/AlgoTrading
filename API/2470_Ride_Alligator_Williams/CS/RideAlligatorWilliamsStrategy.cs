@@ -107,19 +107,17 @@ public class RideAlligatorWilliamsStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
+		var isFinal = candle.State == CandleStates.Finished;
 
-		var jawVal = _jaw.Process(median);
-		var teethVal = _teeth.Process(median);
-		var lipsVal = _lips.Process(median);
+		var jawVal = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.ServerTime) { IsFinal = isFinal });
+		var teethVal = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.ServerTime) { IsFinal = isFinal });
+		var lipsVal = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.ServerTime) { IsFinal = isFinal });
 
-		if (!jawVal.IsFinal || !teethVal.IsFinal || !lipsVal.IsFinal)
+		if (!isFinal)
+			return;
+
+		if (!_jaw.IsFormed || !_teeth.IsFormed || !_lips.IsFormed)
 			return;
 
 		var jaw = jawVal.GetValue<decimal>();

@@ -169,30 +169,30 @@ public class NeuralNetworkMacdStrategy : Strategy
 	/// </summary>
 	public NeuralNetworkMacdStrategy()
 	{
-		_x11 = Param(nameof(X11), 100).SetDisplay("X11", "Weight 1 for perceptron 1", "Perceptron1");
-		_x12 = Param(nameof(X12), 100).SetDisplay("X12", "Weight 2 for perceptron 1", "Perceptron1");
-		_x13 = Param(nameof(X13), 100).SetDisplay("X13", "Weight 3 for perceptron 1", "Perceptron1");
-		_x14 = Param(nameof(X14), 100).SetDisplay("X14", "Weight 4 for perceptron 1", "Perceptron1");
+		_x11 = Param(nameof(X11), 120).SetDisplay("X11", "Weight 1 for perceptron 1", "Perceptron1");
+		_x12 = Param(nameof(X12), 80).SetDisplay("X12", "Weight 2 for perceptron 1", "Perceptron1");
+		_x13 = Param(nameof(X13), 110).SetDisplay("X13", "Weight 3 for perceptron 1", "Perceptron1");
+		_x14 = Param(nameof(X14), 90).SetDisplay("X14", "Weight 4 for perceptron 1", "Perceptron1");
 		_tp1 = Param(nameof(Tp1), 100m).SetDisplay("Take Profit 1", "Take profit for perceptron 1", "Perceptron1");
 		_sl1 = Param(nameof(Sl1), 50m).SetDisplay("Stop Loss 1", "Stop loss for perceptron 1", "Perceptron1");
 		_p1 = Param(nameof(P1), 10).SetDisplay("P1", "Shift parameter for perceptron 1", "Perceptron1");
 
-		_x21 = Param(nameof(X21), 100).SetDisplay("X21", "Weight 1 for perceptron 2", "Perceptron2");
-		_x22 = Param(nameof(X22), 100).SetDisplay("X22", "Weight 2 for perceptron 2", "Perceptron2");
-		_x23 = Param(nameof(X23), 100).SetDisplay("X23", "Weight 3 for perceptron 2", "Perceptron2");
-		_x24 = Param(nameof(X24), 100).SetDisplay("X24", "Weight 4 for perceptron 2", "Perceptron2");
+		_x21 = Param(nameof(X21), 130).SetDisplay("X21", "Weight 1 for perceptron 2", "Perceptron2");
+		_x22 = Param(nameof(X22), 70).SetDisplay("X22", "Weight 2 for perceptron 2", "Perceptron2");
+		_x23 = Param(nameof(X23), 115).SetDisplay("X23", "Weight 3 for perceptron 2", "Perceptron2");
+		_x24 = Param(nameof(X24), 85).SetDisplay("X24", "Weight 4 for perceptron 2", "Perceptron2");
 		_tp2 = Param(nameof(Tp2), 100m).SetDisplay("Take Profit 2", "Take profit for perceptron 2", "Perceptron2");
 		_sl2 = Param(nameof(Sl2), 50m).SetDisplay("Stop Loss 2", "Stop loss for perceptron 2", "Perceptron2");
 		_p2 = Param(nameof(P2), 10).SetDisplay("P2", "Shift parameter for perceptron 2", "Perceptron2");
 
-		_x31 = Param(nameof(X31), 100).SetDisplay("X31", "Weight 1 for perceptron 3", "Perceptron3");
-		_x32 = Param(nameof(X32), 100).SetDisplay("X32", "Weight 2 for perceptron 3", "Perceptron3");
-		_x33 = Param(nameof(X33), 100).SetDisplay("X33", "Weight 3 for perceptron 3", "Perceptron3");
-		_x34 = Param(nameof(X34), 100).SetDisplay("X34", "Weight 4 for perceptron 3", "Perceptron3");
+		_x31 = Param(nameof(X31), 125).SetDisplay("X31", "Weight 1 for perceptron 3", "Perceptron3");
+		_x32 = Param(nameof(X32), 75).SetDisplay("X32", "Weight 2 for perceptron 3", "Perceptron3");
+		_x33 = Param(nameof(X33), 105).SetDisplay("X33", "Weight 3 for perceptron 3", "Perceptron3");
+		_x34 = Param(nameof(X34), 95).SetDisplay("X34", "Weight 4 for perceptron 3", "Perceptron3");
 		_p3 = Param(nameof(P3), 10).SetDisplay("P3", "Shift parameter for perceptron 3", "Perceptron3");
 
 		_pass = Param(nameof(Pass), 3).SetDisplay("Pass", "Number of perceptrons to use", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -224,12 +224,14 @@ public class NeuralNetworkMacdStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = 12 },
-			LongMa = { Length = 26 },
-			SignalPeriod = 9
-		};
+		var macd = new MovingAverageConvergenceDivergenceSignal(
+			new MovingAverageConvergenceDivergence
+			{
+				ShortMa = { Length = 12 },
+				LongMa = { Length = 26 },
+			},
+			new ExponentialMovingAverage { Length = 9 }
+		);
 
 		var maxLag = Math.Max(Math.Max(P1, P2), P3) * 4 + 1;
 		_openHistory = new decimal[maxLag];
@@ -238,7 +240,7 @@ public class NeuralNetworkMacdStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 
-		subscription.Bind(macd, ProcessCandle).Start();
+		subscription.BindEx(macd, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -248,16 +250,20 @@ public class NeuralNetworkMacdStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
+		// Protection handled manually in ProcessCandle
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdValue, decimal signalValue, decimal histogram)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdInd)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
+
+		var macdSig = (IMovingAverageConvergenceDivergenceSignalValue)macdInd;
+		var macdValue = macdSig.Macd ?? 0m;
+		var signalValue = macdSig.Signal ?? 0m;
 
 		_currentClose = candle.ClosePrice;
 

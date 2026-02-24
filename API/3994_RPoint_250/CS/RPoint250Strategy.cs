@@ -40,11 +40,11 @@ public class RPoint250Strategy : Strategy
 
 	public RPoint250Strategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
+		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetDisplay("Order Volume", "Base volume for market entries.", "Trading")
 			;
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 15m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
 			.SetDisplay("Take Profit Points", "Take profit distance expressed in price points.", "Risk")
 			;
 
@@ -160,9 +160,10 @@ public class RPoint250Strategy : Strategy
 		_trailingDistance = TrailingStopPoints > 0m ? _priceStep * TrailingStopPoints : 0m;
 
 		// Apply the same static protection as in the original MQL script.
-		StartProtection(
-			takeDistance > 0m ? new Unit(takeDistance, UnitTypes.Absolute) : default,
-			stopDistance > 0m ? new Unit(stopDistance, UnitTypes.Absolute) : default);
+		var tp = takeDistance > 0m ? new Unit(takeDistance, UnitTypes.Absolute) : (Unit)null;
+		var sl = stopDistance > 0m ? new Unit(stopDistance, UnitTypes.Absolute) : (Unit)null;
+		if (tp != null || sl != null)
+			StartProtection(tp, sl);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -177,16 +178,6 @@ public class RPoint250Strategy : Strategy
 			DrawIndicator(area, _lowest);
 			DrawOwnTrades(area);
 		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		// Reset trailing anchors whenever the net position changes.
-		_bestLongPrice = null;
-		_bestShortPrice = null;
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue)

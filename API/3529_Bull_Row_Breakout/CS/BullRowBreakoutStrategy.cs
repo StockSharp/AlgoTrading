@@ -50,7 +50,7 @@ public class BullRowBreakoutStrategy : Strategy
 	/// </summary>
 	public BullRowBreakoutStrategy()
 	{
-		_candleTimeFrame = Param(nameof(CandleTimeFrame), TimeSpan.FromHours(1))
+		_candleTimeFrame = Param(nameof(CandleTimeFrame), TimeSpan.FromMinutes(5))
 		.SetDisplay("Timeframe", "Primary candle timeframe", "Market")
 		;
 
@@ -102,7 +102,7 @@ public class BullRowBreakoutStrategy : Strategy
 		.SetDisplay("Stochastic %K", "%K period", "Indicators")
 		;
 
-		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 8)
+		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 8)
 		.SetDisplay("Stochastic %D", "%D period", "Indicators")
 		;
 
@@ -294,11 +294,9 @@ public class BullRowBreakoutStrategy : Strategy
 		{
 			K = { Length = StochasticKPeriod },
 			D = { Length = StochasticDPeriod },
-			Smooth = StochasticSlowing
 		};
 
-		var series = new CandleSeries(typeof(TimeFrameCandleMessage), Security, CandleTimeFrame);
-		var subscription = SubscribeCandles(series);
+		var subscription = SubscribeCandles(CandleTimeFrame.TimeFrame());
 		subscription
 		.BindEx(_stochastic, ProcessCandle)
 		.Start();

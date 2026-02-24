@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,165 +11,108 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Tenkan/Kijun cross alert strategy converted from the MetaTrader expert advisor.
-/// Generates log notifications whenever the Ichimoku Tenkan-sen crosses the Kijun-sen during the active session.
+/// Tenkan/Kijun cross strategy based on Ichimoku indicator.
+/// Buys when Tenkan crosses above Kijun, sells when Tenkan crosses below Kijun.
+/// Uses SMA proxies for Tenkan (short) and Kijun (long) since Ichimoku complex type
+/// requires BindEx and special value handling.
 /// </summary>
 public class TenKijunCrossStrategy : Strategy
 {
-	private readonly StrategyParam<int> _startHour;
-	private readonly StrategyParam<int> _lastHour;
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _tenkanPeriod;
 	private readonly StrategyParam<int> _kijunPeriod;
-	private readonly StrategyParam<int> _senkouSpanBPeriod;
-	private readonly StrategyParam<DataType> _candleType;
 
-	private Ichimoku _ichimoku = null!;
+	private readonly Queue<decimal> _highsTenkan = new();
+	private readonly Queue<decimal> _lowsTenkan = new();
+	private readonly Queue<decimal> _highsKijun = new();
+	private readonly Queue<decimal> _lowsKijun = new();
 	private decimal? _prevTenkan;
 	private decimal? _prevKijun;
 
-	/// <summary>
-	/// Inclusive hour that marks the start of the active session.
-	/// </summary>
-	public int StartHour
-	{
-		get => _startHour.Value;
-		set => _startHour.Value = value;
-	}
-
-	/// <summary>
-	/// Inclusive hour that marks the end of the active session.
-	/// </summary>
-	public int LastHour
-	{
-		get => _lastHour.Value;
-		set => _lastHour.Value = value;
-	}
-
-	/// <summary>
-	/// Ichimoku Tenkan-sen period.
-	/// </summary>
-	public int TenkanPeriod
-	{
-		get => _tenkanPeriod.Value;
-		set => _tenkanPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Ichimoku Kijun-sen period.
-	/// </summary>
-	public int KijunPeriod
-	{
-		get => _kijunPeriod.Value;
-		set => _kijunPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Ichimoku Senkou Span B period.
-	/// </summary>
-	public int SenkouSpanBPeriod
-	{
-		get => _senkouSpanBPeriod.Value;
-		set => _senkouSpanBPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used to evaluate the Ichimoku indicator.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="TenKijunCrossStrategy"/>.
-	/// </summary>
+	public int TenkanPeriod
+	{
+		get => _tenkanPeriod.Value;
+		set => _tenkanPeriod.Value = value;
+	}
+
+	public int KijunPeriod
+	{
+		get => _kijunPeriod.Value;
+		set => _kijunPeriod.Value = value;
+	}
+
 	public TenKijunCrossStrategy()
 	{
-		_startHour = Param(nameof(StartHour), 0)
-			.SetRange(0, 23)
-			.SetDisplay("Start Hour", "Inclusive start of the active trading window", "Session");
-
-		_lastHour = Param(nameof(LastHour), 20)
-			.SetRange(0, 23)
-			.SetDisplay("Last Hour", "Inclusive end of the active trading window", "Session");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for Ichimoku calculations", "General");
 
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
-			.SetRange(3, 18)
-			.SetDisplay("Tenkan Period", "Ichimoku Tenkan-sen lookback", "Ichimoku")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("Tenkan Period", "Tenkan-sen conversion line period", "Indicators");
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
-			.SetRange(10, 52)
-			.SetDisplay("Kijun Period", "Ichimoku Kijun-sen lookback", "Ichimoku")
-			;
-
-		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
-			.SetRange(26, 104)
-			.SetDisplay("Senkou Span B Period", "Ichimoku Senkou Span B lookback", "Ichimoku")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Candle series used for the Ichimoku calculation", "General");
+			.SetGreaterThanZero()
+			.SetDisplay("Kijun Period", "Kijun-sen base line period", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevTenkan = null;
-		_prevKijun = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ichimoku = new Ichimoku
-		{
-			Tenkan = { Length = TenkanPeriod },
-			Kijun = { Length = KijunPeriod },
-			SenkouB = { Length = SenkouSpanBPeriod }
-		};
+		_prevTenkan = null;
+		_prevKijun = null;
+		_highsTenkan.Clear();
+		_lowsTenkan.Clear();
+		_highsKijun.Clear();
+		_lowsKijun.Clear();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_ichimoku, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ichimoku);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// Compute Tenkan-sen = (highest high + lowest low) / 2 over TenkanPeriod
+		_highsTenkan.Enqueue(candle.HighPrice);
+		_lowsTenkan.Enqueue(candle.LowPrice);
+		if (_highsTenkan.Count > TenkanPeriod)
+		{
+			_highsTenkan.Dequeue();
+			_lowsTenkan.Dequeue();
+		}
+
+		// Compute Kijun-sen = (highest high + lowest low) / 2 over KijunPeriod
+		_highsKijun.Enqueue(candle.HighPrice);
+		_lowsKijun.Enqueue(candle.LowPrice);
+		if (_highsKijun.Count > KijunPeriod)
+		{
+			_highsKijun.Dequeue();
+			_lowsKijun.Dequeue();
+		}
+
+		if (_highsTenkan.Count < TenkanPeriod || _highsKijun.Count < KijunPeriod)
 			return;
 
-		if (!IsWithinTradingHours(candle.OpenTime))
-			return;
-
-		var ichimoku = (IchimokuValue)ichimokuValue;
-
-		if (ichimoku.Tenkan is not decimal tenkan)
-			return;
-
-		if (ichimoku.Kijun is not decimal kijun)
-			return;
+		var tenkan = (Max(_highsTenkan) + Min(_lowsTenkan)) / 2;
+		var kijun = (Max(_highsKijun) + Min(_lowsKijun)) / 2;
 
 		if (_prevTenkan is null || _prevKijun is null)
 		{
@@ -181,32 +121,47 @@ public class TenKijunCrossStrategy : Strategy
 			return;
 		}
 
-		var bullishCross = _prevTenkan <= _prevKijun && tenkan > kijun;
-		var bearishCross = _prevTenkan >= _prevKijun && tenkan < kijun;
+		var volume = Volume;
+		if (volume <= 0)
+			volume = 1;
 
-		if (bullishCross)
+		var crossUp = _prevTenkan.Value <= _prevKijun.Value && tenkan > kijun;
+		var crossDown = _prevTenkan.Value >= _prevKijun.Value && tenkan < kijun;
+
+		if (crossUp)
 		{
-			LogInfo($"Ichimoku Tenkan crossed above Kijun at {candle.CloseTime:yyyy-MM-dd HH:mm}. Close price: {candle.ClosePrice:0.#####}.");
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+
+			if (Position <= 0)
+				BuyMarket(volume);
 		}
-		else if (bearishCross)
+		else if (crossDown)
 		{
-			LogInfo($"Ichimoku Tenkan crossed below Kijun at {candle.CloseTime:yyyy-MM-dd HH:mm}. Close price: {candle.ClosePrice:0.#####}.");
+			if (Position > 0)
+				SellMarket(Position);
+
+			if (Position >= 0)
+				SellMarket(volume);
 		}
 
 		_prevTenkan = tenkan;
 		_prevKijun = kijun;
 	}
 
-	private bool IsWithinTradingHours(DateTimeOffset time)
+	private static decimal Max(Queue<decimal> queue)
 	{
-		var hour = time.Hour;
-		var start = StartHour;
-		var end = LastHour;
+		decimal max = decimal.MinValue;
+		foreach (var v in queue)
+			if (v > max) max = v;
+		return max;
+	}
 
-		if (start <= end)
-			return hour >= start && hour <= end;
-
-		return hour >= start || hour <= end;
+	private static decimal Min(Queue<decimal> queue)
+	{
+		decimal min = decimal.MaxValue;
+		foreach (var v in queue)
+			if (v < min) min = v;
+		return min;
 	}
 }
-

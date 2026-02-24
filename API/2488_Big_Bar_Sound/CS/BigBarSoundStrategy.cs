@@ -14,13 +14,14 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that logs an alert when a candle exceeds a configurable size.
+/// Strategy that trades when a candle exceeds a configurable size threshold.
+/// Based on the BigBarSound MetaTrader EA concept - trades in the direction of
+/// large candles with ATR-based stop-loss and take-profit.
 /// </summary>
 public class BigBarSoundStrategy : Strategy
 {
 	/// <summary>
-	/// Strategy that emulates the BigBarSound MetaTrader expert advisor.
-	/// It monitors candle sizes and raises a log notification when a bar grows beyond the configured threshold.
+	/// Defines how the candle size is calculated.
 	/// </summary>
 	public enum BigBarDifferenceModes
 	{
@@ -37,11 +38,14 @@ public class BigBarSoundStrategy : Strategy
 
 	private readonly StrategyParam<int> _barPoint;
 	private readonly StrategyParam<BigBarDifferenceModes> _differenceMode;
-	private readonly StrategyParam<string> _soundFile;
-	private readonly StrategyParam<bool> _showAlert;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _atrStopMultiplier;
+	private readonly StrategyParam<decimal> _atrTpMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DateTimeOffset? _lastProcessedTime;
+	private decimal _stopPrice;
+	private decimal _takeProfitPrice;
+	private int _direction;
 
 	/// <summary>
 	/// Number of price steps required to trigger the alert.
@@ -62,21 +66,30 @@ public class BigBarSoundStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Name of the WAV file that should be played when the alert triggers.
+	/// ATR period for stop/take-profit calculations.
 	/// </summary>
-	public string SoundFile
+	public int AtrPeriod
 	{
-		get => _soundFile.Value;
-		set => _soundFile.Value = value;
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Enables an additional alert log entry.
+	/// ATR multiplier for stop-loss distance.
 	/// </summary>
-	public bool ShowAlert
+	public decimal AtrStopMultiplier
 	{
-		get => _showAlert.Value;
-		set => _showAlert.Value = value;
+		get => _atrStopMultiplier.Value;
+		set => _atrStopMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// ATR multiplier for take-profit distance.
+	/// </summary>
+	public decimal AtrTpMultiplier
+	{
+		get => _atrTpMultiplier.Value;
+		set => _atrTpMultiplier.Value = value;
 	}
 
 	/// <summary>
@@ -93,22 +106,30 @@ public class BigBarSoundStrategy : Strategy
 	/// </summary>
 	public BigBarSoundStrategy()
 	{
-		_barPoint = Param(nameof(BarPoint), 200)
+		_barPoint = Param(nameof(BarPoint), 100)
 			.SetGreaterThanZero()
-			.SetDisplay("Point Threshold", "Number of price steps required to trigger the alert", "General")
-			
+			.SetDisplay("Point Threshold", "Number of price steps required to trigger entry", "General")
 			.SetOptimize(50, 500, 50);
 
 		_differenceMode = Param(nameof(DifferenceMode), BigBarDifferenceModes.HighLow)
 			.SetDisplay("Difference Mode", "How the candle size is calculated", "General");
 
-		_soundFile = Param(nameof(SoundFile), "alert.wav")
-			.SetDisplay("Sound File", "Name of the WAV file to emulate", "Notifications");
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
+			.SetOptimize(7, 28, 7);
 
-		_showAlert = Param(nameof(ShowAlert), false)
-			.SetDisplay("Show Alert", "Write an additional alert message to the log", "Notifications");
+		_atrStopMultiplier = Param(nameof(AtrStopMultiplier), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Stop Mult", "ATR multiplier for stop-loss", "Risk")
+			.SetOptimize(1m, 3m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_atrTpMultiplier = Param(nameof(AtrTpMultiplier), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR TP Mult", "ATR multiplier for take-profit", "Risk")
+			.SetOptimize(1m, 4m, 0.5m);
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to monitor", "Data");
 	}
 
@@ -122,7 +143,9 @@ public class BigBarSoundStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_lastProcessedTime = null;
+		_stopPrice = 0m;
+		_takeProfitPrice = 0m;
+		_direction = 0;
 	}
 
 	/// <inheritdoc />
@@ -130,47 +153,87 @@ public class BigBarSoundStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Subscribe to candle updates for the configured timeframe.
-		var subscription = SubscribeCandles(CandleType);
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		// Process each candle update to evaluate the bar size.
+		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(atr, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, atr);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
-		// Skip incomplete candles because their size may still change.
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Avoid processing the same candle multiple times.
-		if (_lastProcessedTime == candle.CloseTime)
+		// Manage existing position
+		if (Position > 0 && _direction > 0)
+		{
+			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
+			{
+				SellMarket(Position);
+				_direction = 0;
+				_stopPrice = 0m;
+				_takeProfitPrice = 0m;
+			}
+		}
+		else if (Position < 0 && _direction < 0)
+		{
+			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
+			{
+				BuyMarket(Math.Abs(Position));
+				_direction = 0;
+				_stopPrice = 0m;
+				_takeProfitPrice = 0m;
+			}
+		}
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		_lastProcessedTime = candle.CloseTime;
+		if (Position != 0)
+			return;
 
-		// Calculate the candle size according to the selected measurement mode.
+		if (atrValue <= 0m)
+			return;
+
+		// Calculate candle size
 		var difference = DifferenceMode == BigBarDifferenceModes.OpenClose
 			? Math.Abs(candle.ClosePrice - candle.OpenPrice)
-			: Math.Abs(candle.HighPrice - candle.LowPrice);
+			: candle.HighPrice - candle.LowPrice;
 
 		var priceStep = Security?.PriceStep;
 		var step = priceStep is null or <= 0m ? 1m : priceStep.Value;
 		var threshold = step * BarPoint;
 
-		// Only react when the candle size crosses the threshold expressed in price steps.
 		if (difference < threshold)
 			return;
 
-		// Log the simulated sound playback for visibility in the strategy logs.
-		LogInfo($"Play sound '{SoundFile}' - candle size {difference:F4} exceeded threshold {threshold:F4}.");
+		var isBullish = candle.ClosePrice > candle.OpenPrice;
+		var stopDist = atrValue * AtrStopMultiplier;
+		var tpDist = atrValue * AtrTpMultiplier;
 
-		if (ShowAlert)
+		if (isBullish)
 		{
-			// Emit an additional alert style log message to mimic the MetaTrader alert window.
-			LogInfo($"Alert: large candle detected on {Security?.Id ?? "unknown"} at {candle.CloseTime:O}.");
+			BuyMarket(Volume);
+			_direction = 1;
+			_stopPrice = candle.ClosePrice - stopDist;
+			_takeProfitPrice = candle.ClosePrice + tpDist;
+		}
+		else
+		{
+			SellMarket(Volume);
+			_direction = -1;
+			_stopPrice = candle.ClosePrice + stopDist;
+			_takeProfitPrice = candle.ClosePrice - tpDist;
 		}
 	}
 }

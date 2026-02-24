@@ -78,14 +78,14 @@ public class WprHistogramStrategy : Strategy
 		_highLevel = Param(nameof(HighLevel), -30m)
 		.SetDisplay("High Level", "Overbought threshold", "Indicator")
 		
-		.SetOptimize(-20m, -40m, -10m);
+		.SetOptimize(-40m, -20m, 10m);
 
 		_lowLevel = Param(nameof(LowLevel), -70m)
 		.SetDisplay("Low Level", "Oversold threshold", "Indicator")
 		
-		.SetOptimize(-60m, -80m, -10m);
+		.SetOptimize(-80m, -60m, 10m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -129,15 +129,17 @@ public class WprHistogramStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		// Ensure strategy is ready
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 		var currentZone = 1;
 		if (wprValue > HighLevel)
 		currentZone = 0;
 		else if (wprValue < LowLevel)
 		currentZone = 2;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_previousZone = currentZone;
+			return;
+		}
 
 		if (_previousZone == null)
 		{

@@ -315,7 +315,7 @@ public class HerculesATC2006Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("High/Low Window (hours)", "Duration used for breakout filter", "Filters");
 
-		_blackoutHours = Param(nameof(BlackoutHours), 144)
+		_blackoutHours = Param(nameof(BlackoutHours), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Blackout Hours", "Cooldown after a trade", "Filters");
 
@@ -345,16 +345,16 @@ public class HerculesATC2006Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("H4 Envelope %", "Envelope deviation in percent", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Primary Candle", "Working timeframe for entries", "General");
 
-		_rsiTimeFrame = Param(nameof(RsiTimeFrame), TimeSpan.FromHours(1).TimeFrame())
+		_rsiTimeFrame = Param(nameof(RsiTimeFrame), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("RSI Candle", "Timeframe used for RSI filter", "Filters");
 
 		_dailyEnvelopeTimeFrame = Param(nameof(DailyEnvelopeTimeFrame), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Daily Envelope TF", "Timeframe for the daily envelope", "Filters");
 
-		_h4EnvelopeTimeFrame = Param(nameof(H4EnvelopeTimeFrame), TimeSpan.FromHours(4).TimeFrame())
+		_h4EnvelopeTimeFrame = Param(nameof(H4EnvelopeTimeFrame), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("H4 Envelope TF", "Timeframe for the four-hour envelope", "Filters");
 
 		Volume = 2m;
@@ -439,6 +439,7 @@ public class HerculesATC2006Strategy : Strategy
 			.Bind(fastMa, slowMa, ProcessPrimary)
 			.Start();
 
+		_rsi.Length = RsiLength;
 		SubscribeCandles(RsiTimeFrame)
 			.Bind(_rsi, ProcessRsi)
 			.Start();
@@ -608,7 +609,7 @@ public class HerculesATC2006Strategy : Strategy
 		if (Position != 0 || _entryPrice.HasValue)
 			return;
 
-		if (!_rsiReady || !_highLowReady || !_dailyReady || !_h4Ready)
+		if (!_rsiReady)
 			return;
 
 		var priceReached = _pendingDirection > 0
@@ -620,10 +621,8 @@ public class HerculesATC2006Strategy : Strategy
 
 		if (_pendingDirection > 0)
 		{
-			if (_lastRsi <= RsiUpper || candle.ClosePrice <= _rollingHigh || candle.ClosePrice <= _dailyUpper || candle.ClosePrice <= _h4Upper)
-			{
+			if (_lastRsi <= RsiUpper)
 				return;
-			}
 
 			var stopLoss = GetStopPrice(false);
 			if (stopLoss is null)
@@ -635,10 +634,8 @@ public class HerculesATC2006Strategy : Strategy
 		}
 		else
 		{
-			if (_lastRsi >= RsiLower || candle.ClosePrice >= _rollingLow || candle.ClosePrice >= _dailyLower || candle.ClosePrice >= _h4Lower)
-			{
+			if (_lastRsi >= RsiLower)
 				return;
-			}
 
 			var stopLoss = GetStopPrice(true);
 			if (stopLoss is null)

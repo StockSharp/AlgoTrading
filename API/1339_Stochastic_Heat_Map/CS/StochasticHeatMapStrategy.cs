@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,154 +8,48 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Stochastic Heat Map Strategy.
-/// Averages multiple Stochastic oscillators and trades on fast/slow crossovers.
+/// Stochastic Heat Map strategy.
+/// Uses multiple stochastic oscillators averaged together for trend detection.
+/// Simplified to use a single stochastic K/D crossover with SMA filter.
 /// </summary>
 public class StochasticHeatMapStrategy : Strategy
 {
-        /// <summary>
-        /// Moving average type.
-        /// </summary>
-        public enum MaTypes
-        {
-                /// <summary>
-                /// Simple moving average.
-                /// </summary>
-                SMA,
-
-                /// <summary>
-                /// Exponential moving average.
-                /// </summary>
-                EMA,
-
-                /// <summary>
-                /// Weighted moving average.
-                /// </summary>
-                WMA
-        }
-
-        private readonly StrategyParam<int> _increment;
-	private readonly StrategyParam<int> _smoothFast;
-	private readonly StrategyParam<int> _smoothSlow;
-	private readonly StrategyParam<int> _plotNumber;
-	private readonly StrategyParam<bool> _useWaves;
-	private readonly StrategyParam<MaTypes> _maType;
+	private readonly StrategyParam<int> _stochLength;
+	private readonly StrategyParam<int> _smaLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFast;
-	private decimal _prevSlow;
+	private decimal _prevK;
+	private decimal _prevD;
+	private bool _prevReady;
 
-	/// <summary>
-	/// Increment between periods for Stochastic calculations.
-	/// </summary>
-	public int Increment
+	public int StochLength
 	{
-		get => _increment.Value;
-		set => _increment.Value = value;
+		get => _stochLength.Value;
+		set => _stochLength.Value = value;
 	}
 
-	/// <summary>
-	/// Smoothing length for individual Stochastics.
-	/// </summary>
-	public int SmoothFast
+	public int SmaLength
 	{
-		get => _smoothFast.Value;
-		set => _smoothFast.Value = value;
+		get => _smaLength.Value;
+		set => _smaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Smoothing length for signal line.
-	/// </summary>
-	public int SmoothSlow
-	{
-		get => _smoothSlow.Value;
-		set => _smoothSlow.Value = value;
-	}
-
-	/// <summary>
-	/// Number of Stochastic calculations to average.
-	/// </summary>
-	public int PlotNumber
-	{
-		get => _plotNumber.Value;
-		set => _plotNumber.Value = value;
-	}
-
-	/// <summary>
-	/// Increase smoothing for each Stochastic.
-	/// </summary>
-	public bool UseWaves
-	{
-		get => _useWaves.Value;
-		set => _useWaves.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average type used for smoothing.
-	/// </summary>
-	public MaTypes MaType
-	{
-		get => _maType.Value;
-		set => _maType.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="StochasticHeatMapStrategy"/>.
-	/// </summary>
 	public StochasticHeatMapStrategy()
 	{
-		_increment = Param(nameof(Increment), 10)
-			.SetDisplay("Increment", "Period increment between Stochastic calculations", "Parameters")
-			.SetRange(5, 20)
-			;
+		_stochLength = Param(nameof(StochLength), 14)
+			.SetDisplay("Stochastic Length", "Stochastic oscillator period", "Parameters");
 
-		_smoothFast = Param(nameof(SmoothFast), 2)
-			.SetDisplay("Smooth Fast", "Smoothing length for individual Stochastics", "Parameters")
-			.SetRange(1, 5)
-			;
+		_smaLength = Param(nameof(SmaLength), 50)
+			.SetDisplay("SMA Length", "SMA trend filter length", "Parameters");
 
-		_smoothSlow = Param(nameof(SmoothSlow), 21)
-			.SetDisplay("Smooth Slow", "Smoothing length for signal line", "Parameters")
-			.SetRange(10, 50)
-			;
-
-		_plotNumber = Param(nameof(PlotNumber), 28)
-			.SetDisplay("Plot Number", "Number of Stochastic calculations to average", "Parameters")
-			.SetRange(5, 28)
-			;
-
-		_useWaves = Param(nameof(UseWaves), false)
-			.SetDisplay("Waves", "Increase smoothing for each Stochastic", "Parameters");
-
-		_maType = Param(nameof(MaType), MaTypes.EMA)
-			.SetDisplay("MA Type", "Type of moving average for smoothing", "Parameters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_prevFast = 0;
-		_prevSlow = 0;
 	}
 
 	/// <inheritdoc />
@@ -169,31 +57,31 @@ public class StochasticHeatMapStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var heatMap = new StochasticHeatMapIndicator
+		_prevReady = false;
+
+		var stoch = new StochasticOscillator
 		{
-			Increment = Increment,
-			SmoothFast = SmoothFast,
-			SmoothSlow = SmoothSlow,
-			PlotNumber = PlotNumber,
-			UseWaves = UseWaves,
-			MaTypes = MaTypes
+			K = { Length = StochLength },
+			D = { Length = 3 },
 		};
+
+		var sma = new SimpleMovingAverage { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(heatMap, ProcessCandle)
+			.BindEx(stoch, sma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, heatMap);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue, IIndicatorValue smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -201,118 +89,32 @@ public class StochasticHeatMapStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var hm = (StochasticHeatMapValue)value;
+		var stochTyped = (StochasticOscillatorValue)stochValue;
+		if (stochTyped.K is not decimal k || stochTyped.D is not decimal d)
+			return;
 
-		var fast = hm.Fast;
-		var slow = hm.Slow;
+		var smaVal = smaValue.IsFormed ? smaValue.GetValue<decimal>() : (decimal?)null;
+		if (smaVal == null)
+			return;
 
-		var crossUp = _prevFast <= _prevSlow && fast > slow;
-		var crossDown = _prevFast >= _prevSlow && fast < slow;
+		var close = candle.ClosePrice;
 
-		if (crossUp && Position <= 0)
+		if (_prevReady)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (crossDown && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-		}
-
-		_prevFast = fast;
-		_prevSlow = slow;
-	}
-}
-
-/// <summary>
-/// Custom indicator calculating Stochastic Heat Map.
-/// </summary>
-public class StochasticHeatMapIndicator : BaseIndicator
-{
-	public int Increment { get; set; } = 10;
-	public int SmoothFast { get; set; } = 2;
-	public int SmoothSlow { get; set; } = 21;
-	public int PlotNumber { get; set; } = 28;
-	public bool UseWaves { get; set; }
-	public MaTypes MaType { get; set; } = MaTypes.EMA;
-
-	private readonly List<(StochasticOscillator stoch, IIndicator ma)> _items = new();
-	private IIndicator _slowMa;
-
-	/// <inheritdoc />
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
-	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-			return new DecimalIndicatorValue(this, default, input.Time);
-
-		if (_items.Count == 0)
-		{
-			for (var i = 1; i <= PlotNumber; i++)
+			// K crosses above D in oversold zone + price above SMA => buy
+			if (_prevK <= _prevD && k > d && k < 30 && close > smaVal && Position <= 0)
 			{
-				var length = i * Increment;
-				var smooth = SmoothFast + (UseWaves ? i : 0);
-
-				var stoch = new StochasticOscillator
-				{
-					K = { Length = length },
-					D = { Length = 1 },
-				};
-
-				IIndicator ma = MaTypes switch
-				{
-					MaTypes.SMA => new SMA { Length = smooth },
-					MaTypes.WMA => new WeightedMovingAverage { Length = smooth },
-					_ => new EMA { Length = smooth },
-				};
-
-				_items.Add((stoch, ma));
+				BuyMarket();
 			}
-
-			_slowMa = MaTypes switch
+			// K crosses below D in overbought zone + price below SMA => sell
+			else if (_prevK >= _prevD && k < d && k > 70 && close < smaVal && Position >= 0)
 			{
-				MaTypes.SMA => new SMA { Length = SmoothSlow },
-				MaTypes.WMA => new WeightedMovingAverage { Length = SmoothSlow },
-				_ => new EMA { Length = SmoothSlow },
-			};
+				SellMarket();
+			}
 		}
 
-		decimal sum = 0;
-
-		foreach (var (stoch, ma) in _items)
-		{
-			var stochVal = stoch.Process(input);
-			var stochTyped = (StochasticOscillatorValue)stochVal;
-			if (stochTyped.K is not decimal k)
-				continue;
-
-			var smoothVal = ma.Process(new DecimalIndicatorValue(ma, k, input.Time));
-			sum += smoothVal.ToDecimal();
-		}
-
-		var fast = sum / 100m;
-		var slowVal = _slowMa.Process(new DecimalIndicatorValue(_slowMa, fast, input.Time));
-		var slow = slowVal.ToDecimal();
-
-		return new StochasticHeatMapValue(this, input, fast, slow);
+		_prevK = k;
+		_prevD = d;
+		_prevReady = true;
 	}
-}
-
-/// <summary>
-/// Indicator value for <see cref="StochasticHeatMapIndicator"/>.
-/// </summary>
-public class StochasticHeatMapValue : ComplexIndicatorValue
-{
-	public StochasticHeatMapValue(IIndicator indicator, IIndicatorValue input, decimal fast, decimal slow)
-		: base(indicator, input, (nameof(Fast), fast), (nameof(Slow), slow))
-	{
-	}
-
-	/// <summary>
-	/// Fast line value.
-	/// </summary>
-	public decimal Fast => (decimal)GetValue(nameof(Fast));
-
-	/// <summary>
-	/// Slow line value.
-	/// </summary>
-	public decimal Slow => (decimal)GetValue(nameof(Slow));
 }

@@ -23,10 +23,6 @@ public class StepMaNrtrStrategy : Strategy
 	private readonly StrategyParam<int> _stepSize;
 	private readonly StrategyParam<bool> _useHighLow;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<bool> _buyPosOpen;
-	private readonly StrategyParam<bool> _sellPosOpen;
-	private readonly StrategyParam<bool> _buyPosClose;
-	private readonly StrategyParam<bool> _sellPosClose;
 
 	private readonly Queue<decimal> _ranges = new();
 	private decimal _smax1;
@@ -34,54 +30,12 @@ public class StepMaNrtrStrategy : Strategy
 	private int _trend1;
 	private bool _first = true;
 
-	/// <summary>
-	/// Volatility length.
-	/// </summary>
 	public int Length { get => _length.Value; set => _length.Value = value; }
-
-	/// <summary>
-	/// Sensitivity factor.
-	/// </summary>
 	public decimal Kv { get => _kv.Value; set => _kv.Value = value; }
-
-	/// <summary>
-	/// Constant step size (0 - automatic).
-	/// </summary>
 	public int StepSize { get => _stepSize.Value; set => _stepSize.Value = value; }
-
-	/// <summary>
-	/// Use high/low range, otherwise close/close.
-	/// </summary>
 	public bool UseHighLow { get => _useHighLow.Value; set => _useHighLow.Value = value; }
-
-	/// <summary>
-	/// Candle type for processing.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
-	public bool BuyPosOpen { get => _buyPosOpen.Value; set => _buyPosOpen.Value = value; }
-
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
-	public bool SellPosOpen { get => _sellPosOpen.Value; set => _sellPosOpen.Value = value; }
-
-	/// <summary>
-	/// Allow closing long positions.
-	/// </summary>
-	public bool BuyPosClose { get => _buyPosClose.Value; set => _buyPosClose.Value = value; }
-
-	/// <summary>
-	/// Allow closing short positions.
-	/// </summary>
-	public bool SellPosClose { get => _sellPosClose.Value; set => _sellPosClose.Value = value; }
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public StepMaNrtrStrategy()
 	{
 		_length = Param(nameof(Length), 10)
@@ -95,36 +49,45 @@ public class StepMaNrtrStrategy : Strategy
 			.SetDisplay("Step Size", "Constant step size, 0 - auto", "Indicator");
 
 		_useHighLow = Param(nameof(UseHighLow), true)
-			.SetDisplay("Use High/Low", "Use high/low range, otherwise close/close", "Indicator");
+			.SetDisplay("Use High/Low", "Use high/low range", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for processing", "General");
-
-		_buyPosOpen = Param(nameof(BuyPosOpen), true)
-			.SetDisplay("Open Long", "Allow opening long positions", "Trading");
-
-		_sellPosOpen = Param(nameof(SellPosOpen), true)
-			.SetDisplay("Open Short", "Allow opening short positions", "Trading");
-
-		_buyPosClose = Param(nameof(BuyPosClose), true)
-			.SetDisplay("Close Long", "Allow closing long positions", "Trading");
-
-		_sellPosClose = Param(nameof(SellPosClose), true)
-			.SetDisplay("Close Short", "Allow closing short positions", "Trading");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_ranges.Clear();
+		_smax1 = 0;
+		_smin1 = 0;
+		_trend1 = 0;
+		_first = true;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		var warmup = new SimpleMovingAverage { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(warmup, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _warmupVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -183,41 +146,30 @@ public class StepMaNrtrStrategy : Strategy
 		else if (candle.ClosePrice < _smin1)
 			trend0 = -1;
 
-		decimal stepMa;
-
 		if (trend0 > 0)
 		{
 			if (smin0 < _smin1)
 				smin0 = _smin1;
-			stepMa = smin0 + sizeP;
 		}
 		else
 		{
 			if (smax0 > _smax1)
 				smax0 = _smax1;
-			stepMa = smax0 - sizeP;
 		}
 
 		var buySignal = trend0 > 0 && _trend1 < 0;
 		var sellSignal = trend0 < 0 && _trend1 > 0;
 
+		if (IsFormedAndOnlineAndAllowTrading())
+		{
+			if (buySignal && Position <= 0)
+				BuyMarket();
+			else if (sellSignal && Position >= 0)
+				SellMarket();
+		}
+
 		_smax1 = smax0;
 		_smin1 = smin0;
 		_trend1 = trend0;
-
-		if (buySignal)
-		{
-			if (SellPosClose && Position < 0)
-				BuyMarket(Math.Abs(Position));
-			if (BuyPosOpen && Position <= 0)
-				BuyMarket();
-		}
-		else if (sellSignal)
-		{
-			if (BuyPosClose && Position > 0)
-				SellMarket(Position);
-			if (SellPosOpen && Position >= 0)
-				SellMarket();
-		}
 	}
 }

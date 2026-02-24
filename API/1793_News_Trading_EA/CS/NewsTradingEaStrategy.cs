@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,100 +11,42 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// News trading straddle strategy.
-/// Places buy and sell stop orders around a scheduled news time.
+/// Volatility breakout strategy inspired by news-driven straddle trading.
+/// Uses ATR to detect high-volatility candles and enters on breakout.
 /// </summary>
 public class NewsTradingEaStrategy : Strategy
 {
-	private readonly StrategyParam<DateTime> _startDateTime;
-	private readonly StrategyParam<int> _startStraddle;
-	private readonly StrategyParam<int> _stopStraddle;
-	private readonly StrategyParam<decimal> _distance;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<int> _expiration;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
-	private DateTimeOffset _straddleStart;
-	private DateTimeOffset _straddleEnd;
-	private DateTimeOffset _expirationTime;
-	private decimal? _entryPrice;
-	private decimal _stopPrice;
-	private decimal _targetPrice;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Base date and time for straddle.
-	/// </summary>
-	public DateTime StartDateTime { get => _startDateTime.Value; set => _startDateTime.Value = value; }
-
-	/// <summary>
-	/// Minutes after <see cref="StartDateTime"/> to begin tracking price.
-	/// </summary>
-	public int StartStraddle { get => _startStraddle.Value; set => _startStraddle.Value = value; }
-
-	/// <summary>
-	/// Minutes after start to stop modifying pending orders.
-	/// </summary>
-	public int StopStraddle { get => _stopStraddle.Value; set => _stopStraddle.Value = value; }
-
-
-	/// <summary>
-	/// Distance from current price in points.
-	/// </summary>
-	public decimal Distance { get => _distance.Value; set => _distance.Value = value; }
-
-	/// <summary>
-	/// Take profit distance in points.
-	/// </summary>
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-
-	/// <summary>
-	/// Stop loss distance in points.
-	/// </summary>
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-
-	/// <summary>
-	/// Pending order lifetime in minutes.
-	/// </summary>
-	public int Expiration { get => _expiration.Value; set => _expiration.Value = value; }
-
-	/// <summary>
-	/// Candle type for price tracking.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initialize <see cref="NewsTradingEaStrategy"/>.
-	/// </summary>
 	public NewsTradingEaStrategy()
 	{
-		_startDateTime = Param(nameof(StartDateTime), DateTime.Now)
-			.SetDisplay("Start Date Time", "Base server time for straddle", "General");
-
-		_startStraddle = Param(nameof(StartStraddle), 0)
-			.SetDisplay("Start Straddle", "Delay in minutes after start time", "General");
-
-		_stopStraddle = Param(nameof(StopStraddle), 15)
-			.SetDisplay("Stop Straddle", "Duration in minutes for straddle", "General");
-
-
-		_distance = Param(nameof(Distance), 55m)
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Distance", "Distance from price in points", "General");
+			.SetDisplay("ATR Period", "ATR period for volatility", "Indicators");
 
-		_takeProfit = Param(nameof(TakeProfit), 30m)
-			.SetDisplay("Take Profit", "Take profit in points", "General");
+		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
+			.SetDisplay("ATR Multiplier", "Candle range vs ATR multiplier for breakout", "Indicators");
 
-		_stopLoss = Param(nameof(StopLoss), 30m)
-			.SetDisplay("Stop Loss", "Stop loss in points", "General");
+		_takeProfit = Param(nameof(TakeProfit), 500m)
+			.SetDisplay("Take Profit", "Take profit distance", "Risk");
 
-		_expiration = Param(nameof(Expiration), 20)
-			.SetDisplay("Expiration", "Pending order lifetime in minutes", "General");
+		_stopLoss = Param(nameof(StopLoss), 300m)
+			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for processing", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
@@ -115,91 +54,60 @@ public class NewsTradingEaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_straddleStart = StartDateTime + TimeSpan.FromMinutes(StartStraddle);
-		_straddleEnd = _straddleStart + TimeSpan.FromMinutes(StopStraddle);
+		_entryPrice = 0;
+
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(atr, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var now = candle.CloseTime;
-
-		if (now < _straddleStart)
-		{
-			CancelPending();
+		if (atrValue <= 0)
 			return;
-		}
 
-		if (now >= _straddleEnd)
-		{
-			CancelPending();
-			return;
-		}
+		var price = candle.ClosePrice;
+		var range = candle.HighPrice - candle.LowPrice;
 
-		// Manage open position and protective exits
-		if (Position != 0)
+		// Exit management
+		if (Position > 0)
 		{
-			if (_entryPrice is null)
+			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
 			{
-				_entryPrice = candle.ClosePrice;
-				var step = Security.PriceStep ?? 1m;
-				_stopPrice = Position > 0 ? _entryPrice.Value - StopLoss * step : _entryPrice.Value + StopLoss * step;
-				_targetPrice = Position > 0 ? _entryPrice.Value + TakeProfit * step : _entryPrice.Value - TakeProfit * step;
+				SellMarket();
+				_entryPrice = 0;
+				return;
 			}
-
-			if (Position > 0)
+		}
+		else if (Position < 0)
+		{
+			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
 			{
-				if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _targetPrice)
-					SellMarket(Math.Abs(Position));
+				BuyMarket();
+				_entryPrice = 0;
+				return;
 			}
-			else
+		}
+
+		// Entry: volatility breakout -- candle range exceeds ATR * multiplier
+		if (Position == 0 && range > atrValue * AtrMultiplier)
+		{
+			// Bullish breakout candle
+			if (candle.ClosePrice > candle.OpenPrice)
 			{
-				if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _targetPrice)
-					BuyMarket(Math.Abs(Position));
+				BuyMarket();
+				_entryPrice = price;
 			}
-
-			CancelPending();
-			return;
-		}
-
-		var stepSize = Security.PriceStep ?? 1m;
-		var buyPrice = candle.ClosePrice + Distance * stepSize;
-		var sellPrice = candle.ClosePrice - Distance * stepSize;
-
-		if (_buyStopOrder is null && _sellStopOrder is null)
-		{
-			_buyStopOrder = BuyStop(Volume, buyPrice);
-			_sellStopOrder = SellStop(Volume, sellPrice);
-			_expirationTime = now + TimeSpan.FromMinutes(Expiration);
-		}
-		else
-		{
-			ChangeOrder(_buyStopOrder!, buyPrice, _buyStopOrder!.Volume);
-			ChangeOrder(_sellStopOrder!, sellPrice, _sellStopOrder!.Volume);
-			_expirationTime = now + TimeSpan.FromMinutes(Expiration);
-		}
-
-		if (now >= _expirationTime)
-			CancelPending();
-	}
-
-	private void CancelPending()
-	{
-		if (_buyStopOrder != null)
-		{
-			CancelOrder(_buyStopOrder);
-			_buyStopOrder = null;
-		}
-
-		if (_sellStopOrder != null)
-		{
-			CancelOrder(_sellStopOrder);
-			_sellStopOrder = null;
+			// Bearish breakout candle
+			else if (candle.ClosePrice < candle.OpenPrice)
+			{
+				SellMarket();
+				_entryPrice = price;
+			}
 		}
 	}
 }

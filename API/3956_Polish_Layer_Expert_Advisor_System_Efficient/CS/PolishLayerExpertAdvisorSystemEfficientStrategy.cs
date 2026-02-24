@@ -1,11 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -44,9 +42,10 @@ private WeightedMovingAverage _longPriceMa = null!;
 private RelativeStrengthIndex _rsi = null!;
 private SimpleMovingAverage _shortRsiAverage = null!;
 private SimpleMovingAverage _longRsiAverage = null!;
+
 private StochasticOscillator _stochastic = null!;
 private DeMarker _deMarker = null!;
-private WilliamsPercentRange _williams = null!;
+private WilliamsR _williams = null!;
 
 private decimal? _previousStochasticMain;
 private decimal? _previousStochasticSignal;
@@ -238,7 +237,7 @@ set => _takeProfitPips.Value = value;
 public PolishLayerExpertAdvisorSystemEfficientStrategy()
 {
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Primary timeframe for calculations", "General");
 
 _rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -271,7 +270,7 @@ _stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
 .SetDisplay("%K Period", "Stochastic %K period", "Stochastic")
 ;
 
-_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
+_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
 .SetGreaterThanZero()
 .SetDisplay("%D Period", "Stochastic %D period", "Stochastic");
 
@@ -342,19 +341,16 @@ StartProtection(null, null);
 
 _priceStep = Security?.PriceStep ?? 0m;
 
-_shortPriceMa = new SMA { Length = ShortPricePeriod };
+_shortPriceMa = new SimpleMovingAverage { Length = ShortPricePeriod };
 _longPriceMa = new WeightedMovingAverage { Length = LongPricePeriod };
 _rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-_shortRsiAverage = new SMA { Length = ShortRsiPeriod };
-_longRsiAverage = new SMA { Length = LongRsiPeriod };
-_stochastic = new StochasticOscillator
-{
-KPeriod = StochasticKPeriod,
-D = {  K = { Length = StochasticDPeriod } },
-Slowing = StochasticSlowing
-};
+_shortRsiAverage = new SimpleMovingAverage { Length = ShortRsiPeriod };
+_longRsiAverage = new SimpleMovingAverage { Length = LongRsiPeriod };
+_stochastic = new StochasticOscillator();
+_stochastic.K.Length = StochasticKPeriod;
+_stochastic.D.Length = StochasticDPeriod;
 _deMarker = new DeMarker { Length = DemarkerPeriod };
-_williams = new WilliamsPercentRange { Length = WilliamsPeriod };
+_williams = new WilliamsR { Length = WilliamsPeriod };
 
 var subscription = SubscribeCandles(CandleType);
 subscription
@@ -394,8 +390,8 @@ var fastPrice = shortPriceValue.ToDecimal();
 var slowPrice = longPriceValue.ToDecimal();
 var rsi = rsiValue.ToDecimal();
 
-var fastRsi = _shortRsiAverage.Process(new DecimalIndicatorValue(_shortRsiAverage, rsi, candle.OpenTime)).ToDecimal();
-var slowRsi = _longRsiAverage.Process(new DecimalIndicatorValue(_longRsiAverage, rsi, candle.OpenTime)).ToDecimal();
+var fastRsi = _shortRsiAverage.Process(rsi, candle.OpenTime, true).ToDecimal();
+var slowRsi = _longRsiAverage.Process(rsi, candle.OpenTime, true).ToDecimal();
 
 var stochastic = (StochasticOscillatorValue)stochasticValue;
 if (stochastic.K is not decimal currentStochasticMain || stochastic.D is not decimal currentStochasticSignal)

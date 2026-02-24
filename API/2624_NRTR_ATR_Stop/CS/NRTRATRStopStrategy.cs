@@ -147,7 +147,7 @@ public class NRTRATRStopStrategy : Strategy
 			
 			.SetOptimize(0, 3, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame of the candles used for calculations", "General");
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)

@@ -1,81 +1,32 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// Strategy that trades TEMA slope reversals similar to the original Exp_TEMA expert advisor.
+/// Strategy that trades TEMA slope reversals from the original Exp_TEMA expert advisor.
+/// Enters long when TEMA slope turns positive, short when negative.
 /// </summary>
 public class ExpTemaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _temaPeriod;
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<int> _stopLossPoints;
-	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private TripleExponentialMovingAverage _tema = null!;
+	private TripleExponentialMovingAverage _tema;
 	private decimal? _prev1;
 	private decimal? _prev2;
 	private decimal? _prev3;
-
-	public ExpTemaStrategy()
-	{
-		_temaPeriod = Param(nameof(TemaPeriod), 15)
-			.SetDisplay("TEMA period", "Length of the Triple Exponential Moving Average.", "Indicators")
-			
-			.SetOptimize(5, 40, 5);
-
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetDisplay("Trade volume", "Base order size used for entries.", "Risk")
-			.SetGreaterThanZero();
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-			.SetDisplay("Stop-loss distance", "Protective stop distance expressed in price steps.", "Risk")
-			
-			.SetOptimize(100, 2000, 100);
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-			.SetDisplay("Take-profit distance", "Profit target distance expressed in price steps.", "Risk")
-			
-			.SetOptimize(200, 3000, 100);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle type", "Type of candles used to calculate the indicator.", "General");
-	}
 
 	public int TemaPeriod
 	{
 		get => _temaPeriod.Value;
 		set => _temaPeriod.Value = value;
-	}
-
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	public int StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	public int TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
 	}
 
 	public DataType CandleType
@@ -84,40 +35,29 @@ public class ExpTemaStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public ExpTemaStrategy()
 	{
-		return [(Security, CandleType)];
+		_temaPeriod = Param(nameof(TemaPeriod), 15)
+			.SetGreaterThanZero()
+			.SetDisplay("TEMA Period", "Length of Triple Exponential Moving Average", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for TEMA calculation", "General");
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_prev1 = null;
-		_prev2 = null;
-		_prev3 = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		Volume = TradeVolume;
-
-		Unit stop = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Step) : null;
-		Unit take = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Step) : null;
-		StartProtection(stop, take);
-
-		_tema = new TripleExponentialMovingAverage
-		{
-			Length = TemaPeriod
-		};
+		_tema = new TripleExponentialMovingAverage { Length = TemaPeriod };
+		_prev1 = null;
+		_prev2 = null;
+		_prev3 = null;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_tema, ProcessCandle).Start();
+		subscription
+			.Bind(_tema, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -133,8 +73,11 @@ public class ExpTemaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_tema.IsFormed)
+		{
+			_prev1 = temaValue;
 			return;
+		}
 
 		if (_prev1 is null)
 		{
@@ -157,36 +100,34 @@ public class ExpTemaStrategy : Strategy
 			return;
 		}
 
+		var volume = Volume;
+		if (volume <= 0)
+			volume = 1;
+
 		var dtema1 = _prev1.Value - _prev2.Value;
 		var dtema2 = _prev2.Value - _prev3.Value;
 
-		if (Position > 0m && dtema1 < 0m)
-		{
-			CancelActiveOrders();
+		// Exit on opposing slope
+		if (Position > 0 && dtema1 < 0)
 			SellMarket(Position);
-		}
-		else if (Position < 0m && dtema1 > 0m)
-		{
-			CancelActiveOrders();
-			BuyMarket(-Position);
-		}
+		else if (Position < 0 && dtema1 > 0)
+			BuyMarket(Math.Abs(Position));
 
-		var turnedUp = dtema2 < 0m && dtema1 > 0m;
-		var turnedDown = dtema2 > 0m && dtema1 < 0m;
+		// Entry on slope reversal
+		var turnedUp = dtema2 < 0 && dtema1 > 0;
+		var turnedDown = dtema2 > 0 && dtema1 < 0;
 
-		if (turnedUp && Position <= 0m)
+		if (turnedUp && Position <= 0)
 		{
-			CancelActiveOrders();
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0m)
-				BuyMarket(volume);
+			var vol = volume + Math.Abs(Position);
+			if (vol > 0)
+				BuyMarket(vol);
 		}
-		else if (turnedDown && Position >= 0m)
+		else if (turnedDown && Position >= 0)
 		{
-			CancelActiveOrders();
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0m)
-				SellMarket(volume);
+			var vol = volume + Position;
+			if (vol > 0)
+				SellMarket(vol);
 		}
 
 		_prev3 = _prev2;
@@ -194,4 +135,3 @@ public class ExpTemaStrategy : Strategy
 		_prev1 = temaValue;
 	}
 }
-

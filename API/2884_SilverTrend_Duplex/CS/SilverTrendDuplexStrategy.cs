@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,400 +11,78 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Port of the MetaTrader strategy Exp_SilverTrend_Duplex.
-/// The strategy evaluates a SilverTrend-like color indicator on separate long and short feeds.
+/// SilverTrend Duplex strategy (simplified). Uses ATR channel breakout.
 /// </summary>
 public class SilverTrendDuplexStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _longCandleType;
-	private readonly StrategyParam<int> _longSsp;
-	private readonly StrategyParam<int> _longRisk;
-	private readonly StrategyParam<int> _longSignalBar;
-	private readonly StrategyParam<bool> _enableLongEntries;
-	private readonly StrategyParam<bool> _enableLongExits;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<int> _emaLength;
 
-	private readonly StrategyParam<DataType> _shortCandleType;
-	private readonly StrategyParam<int> _shortSsp;
-	private readonly StrategyParam<int> _shortRisk;
-	private readonly StrategyParam<int> _shortSignalBar;
-	private readonly StrategyParam<bool> _enableShortEntries;
-	private readonly StrategyParam<bool> _enableShortExits;
-
-
-	private SilverTrendIndicator _longIndicator;
-	private SilverTrendIndicator _shortIndicator;
-
-	private readonly List<decimal> _longColorHistory = new();
-	private readonly List<decimal> _shortColorHistory = new();
-
-	/// <summary>
-	/// Candle type for the long-side SilverTrend evaluation.
-	/// </summary>
-	public DataType LongCandleType
+	public DataType CandleType
 	{
-		get => _longCandleType.Value;
-		set => _longCandleType.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// SilverTrend length for the long side.
-	/// </summary>
-	public int LongSsp
+	public int AtrLength
 	{
-		get => _longSsp.Value;
-		set => _longSsp.Value = value;
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
 	}
 
-	/// <summary>
-	/// Risk parameter for the long-side SilverTrend filter.
-	/// </summary>
-	public int LongRisk
+	public int EmaLength
 	{
-		get => _longRisk.Value;
-		set => _longRisk.Value = value;
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Number of finished candles to look back for long-side signals.
-	/// </summary>
-	public int LongSignalBar
-	{
-		get => _longSignalBar.Value;
-		set => _longSignalBar.Value = value;
-	}
-
-	/// <summary>
-	/// Enables opening long positions.
-	/// </summary>
-	public bool EnableLongEntries
-	{
-		get => _enableLongEntries.Value;
-		set => _enableLongEntries.Value = value;
-	}
-
-	/// <summary>
-	/// Enables closing long positions.
-	/// </summary>
-	public bool EnableLongExits
-	{
-		get => _enableLongExits.Value;
-		set => _enableLongExits.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for the short-side SilverTrend evaluation.
-	/// </summary>
-	public DataType ShortCandleType
-	{
-		get => _shortCandleType.Value;
-		set => _shortCandleType.Value = value;
-	}
-
-	/// <summary>
-	/// SilverTrend length for the short side.
-	/// </summary>
-	public int ShortSsp
-	{
-		get => _shortSsp.Value;
-		set => _shortSsp.Value = value;
-	}
-
-	/// <summary>
-	/// Risk parameter for the short-side SilverTrend filter.
-	/// </summary>
-	public int ShortRisk
-	{
-		get => _shortRisk.Value;
-		set => _shortRisk.Value = value;
-	}
-
-	/// <summary>
-	/// Number of finished candles to look back for short-side signals.
-	/// </summary>
-	public int ShortSignalBar
-	{
-		get => _shortSignalBar.Value;
-		set => _shortSignalBar.Value = value;
-	}
-
-	/// <summary>
-	/// Enables opening short positions.
-	/// </summary>
-	public bool EnableShortEntries
-	{
-		get => _enableShortEntries.Value;
-		set => _enableShortEntries.Value = value;
-	}
-
-	/// <summary>
-	/// Enables closing short positions.
-	/// </summary>
-	public bool EnableShortExits
-	{
-		get => _enableShortExits.Value;
-		set => _enableShortExits.Value = value;
-	}
-
-
-	/// <summary>
-	/// Initializes <see cref="SilverTrendDuplexStrategy"/>.
-	/// </summary>
 	public SilverTrendDuplexStrategy()
 	{
-		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Long Candle Type", "Candle type for the long-side SilverTrend", "Long SilverTrend");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candles", "General");
 
-		_longSsp = Param(nameof(LongSsp), 9)
+		_atrLength = Param(nameof(AtrLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Long SSP", "SilverTrend lookback for long entries", "Long SilverTrend")
-			
-			.SetOptimize(5, 30, 1);
+			.SetDisplay("ATR Length", "ATR period", "Indicators");
 
-		_longRisk = Param(nameof(LongRisk), 3)
+		_emaLength = Param(nameof(EmaLength), 21)
 			.SetGreaterThanZero()
-			.SetDisplay("Long Risk", "Risk parameter for long SilverTrend", "Long SilverTrend")
-			
-			.SetOptimize(1, 15, 1);
-
-		_longSignalBar = Param(nameof(LongSignalBar), 1)
-			.SetGreaterThanZero()
-			.SetDisplay("Long Signal Bar", "Offset for long-side signal evaluation", "Long SilverTrend");
-
-		_enableLongEntries = Param(nameof(EnableLongEntries), true)
-			.SetDisplay("Enable Long Entries", "Allow opening long positions", "Long SilverTrend");
-
-		_enableLongExits = Param(nameof(EnableLongExits), true)
-			.SetDisplay("Enable Long Exits", "Allow closing long positions", "Long SilverTrend");
-
-		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Short Candle Type", "Candle type for the short-side SilverTrend", "Short SilverTrend");
-
-		_shortSsp = Param(nameof(ShortSsp), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("Short SSP", "SilverTrend lookback for short entries", "Short SilverTrend")
-			
-			.SetOptimize(5, 30, 1);
-
-		_shortRisk = Param(nameof(ShortRisk), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Short Risk", "Risk parameter for short SilverTrend", "Short SilverTrend")
-			
-			.SetOptimize(1, 15, 1);
-
-		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
-			.SetGreaterThanZero()
-			.SetDisplay("Short Signal Bar", "Offset for short-side signal evaluation", "Short SilverTrend");
-
-		_enableShortEntries = Param(nameof(EnableShortEntries), true)
-			.SetDisplay("Enable Short Entries", "Allow opening short positions", "Short SilverTrend");
-
-		_enableShortExits = Param(nameof(EnableShortExits), true)
-			.SetDisplay("Enable Short Exits", "Allow closing short positions", "Short SilverTrend");
-
+			.SetDisplay("EMA Length", "EMA trend", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, LongCandleType);
-		if (!Equals(LongCandleType, ShortCandleType))
-			yield return (Security, ShortCandleType);
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_longColorHistory.Clear();
-		_shortColorHistory.Clear();
-		_longIndicator?.Reset();
-		_shortIndicator?.Reset();
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_longIndicator = new SilverTrendIndicator
-		{
-			Length = LongSsp,
-			Risk = LongRisk
-		};
+		var atr = new AverageTrueRange { Length = AtrLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
-		_shortIndicator = new SilverTrendIndicator
-		{
-			Length = ShortSsp,
-			Risk = ShortRisk
-		};
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, ema, (ICandleMessage candle, decimal atrValue, decimal emaValue) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
 
-		var longSubscription = SubscribeCandles(LongCandleType);
-		longSubscription
-			.Bind(_longIndicator, ProcessLongCandle)
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+
+				if (close > emaValue + atrValue && Position <= 0)
+					BuyMarket();
+				else if (close < emaValue - atrValue && Position >= 0)
+					SellMarket();
+			})
 			.Start();
 
-		var shortSubscription = SubscribeCandles(ShortCandleType);
-		shortSubscription
-			.Bind(_shortIndicator, ProcessShortCandle)
-			.Start();
-
-		var longArea = CreateChartArea();
-		if (longArea != null)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			longArea.Title = "Long SilverTrend";
-			DrawCandles(longArea, longSubscription);
-			DrawIndicator(longArea, _longIndicator);
-			DrawOwnTrades(longArea);
-		}
-
-		if (!Equals(LongCandleType, ShortCandleType))
-		{
-			var shortArea = CreateChartArea();
-			if (shortArea != null)
-			{
-				shortArea.Title = "Short SilverTrend";
-				DrawCandles(shortArea, shortSubscription);
-				DrawIndicator(shortArea, _shortIndicator);
-				DrawOwnTrades(shortArea);
-			}
-		}
-	}
-
-	private void ProcessLongCandle(ICandleMessage candle, decimal color)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Track SilverTrend color history for long signals.
-		_longColorHistory.Insert(0, color);
-		var maxHistory = Math.Max(1, LongSignalBar) + 1;
-		if (_longColorHistory.Count > maxHistory)
-			_longColorHistory.RemoveAt(_longColorHistory.Count - 1);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_longIndicator?.IsFormed != true)
-			return;
-
-		var offset = Math.Max(1, LongSignalBar);
-		if (_longColorHistory.Count <= offset)
-			return;
-
-		var currentColor = _longColorHistory[offset - 1];
-		var previousColor = _longColorHistory[offset];
-
-		var shouldClose = EnableLongExits && currentColor > 2m && Position > 0;
-		if (shouldClose)
-		{
-			SellMarket(Position);
-			LogInfo($"Exit long due to bearish SilverTrend at {candle.OpenTime:O}.");
-		}
-
-		var shouldOpen = EnableLongEntries && currentColor < 2m && previousColor > 1m && Position <= 0;
-		if (shouldOpen)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			LogInfo($"Enter long due to bullish SilverTrend switch at {candle.OpenTime:O}.");
-		}
-	}
-
-	private void ProcessShortCandle(ICandleMessage candle, decimal color)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Track SilverTrend color history for short signals.
-		_shortColorHistory.Insert(0, color);
-		var maxHistory = Math.Max(1, ShortSignalBar) + 1;
-		if (_shortColorHistory.Count > maxHistory)
-			_shortColorHistory.RemoveAt(_shortColorHistory.Count - 1);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_shortIndicator?.IsFormed != true)
-			return;
-
-		var offset = Math.Max(1, ShortSignalBar);
-		if (_shortColorHistory.Count <= offset)
-			return;
-
-		var currentColor = _shortColorHistory[offset - 1];
-		var previousColor = _shortColorHistory[offset];
-
-		var shouldClose = EnableShortExits && currentColor < 2m && Position < 0;
-		if (shouldClose)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short due to bullish SilverTrend at {candle.OpenTime:O}.");
-		}
-
-		var shouldOpen = EnableShortEntries && currentColor > 2m && previousColor > 0m && Position >= 0;
-		if (shouldOpen)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			LogInfo($"Enter short due to bearish SilverTrend switch at {candle.OpenTime:O}.");
-		}
-	}
-
-	private sealed class SilverTrendIndicator : BaseIndicator
-	{
-		public int Length { get; set; } = 9;
-		public int Risk { get; set; } = 3;
-
-		private readonly DonchianChannels _donchian = new();
-		private int _trend;
-
-		protected override IIndicatorValue OnProcess(IIndicatorValue input)
-		{
-			var candle = input.GetValue<ICandleMessage>();
-			_donchian.Length = Length;
-			var donchianValue = _donchian.Process(input);
-			var bands = donchianValue as DonchianChannelsValue;
-
-			if (bands?.UpperBand is not decimal upper || bands.LowerBand is not decimal lower)
-			{
-				IsFormed = false;
-				return new DecimalIndicatorValue(this, 2m, input.Time);
-			}
-
-			if (!donchianValue.IsFormed)
-			{
-				IsFormed = false;
-				return new DecimalIndicatorValue(this, 2m, input.Time);
-			}
-
-			var range = upper - lower;
-			var k = 33 - Risk;
-			var factor = k / 100m;
-			var smin = lower + range * factor;
-			var smax = upper - range * factor;
-
-			if (candle.ClosePrice < smin)
-				_trend = -1;
-			else if (candle.ClosePrice > smax)
-				_trend = 1;
-
-			decimal color;
-			if (_trend > 0)
-				color = candle.OpenPrice <= candle.ClosePrice ? 0m : 1m;
-			else if (_trend < 0)
-				color = candle.OpenPrice >= candle.ClosePrice ? 4m : 3m;
-			else
-				color = 2m;
-
-			IsFormed = true;
-			return new DecimalIndicatorValue(this, color, input.Time);
-		}
-
-		public override void Reset()
-		{
-			base.Reset();
-			_donchian.Reset();
-			_trend = 0;
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
 		}
 	}
 }

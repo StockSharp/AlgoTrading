@@ -156,7 +156,7 @@ public class MacdSignalStrategy : Strategy
 			SignalMa = { Length = SignalPeriod }
 		};
 
-		_atr = new() { Length = 200 };
+		_atr = new() { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -222,11 +222,11 @@ public class MacdSignalStrategy : Strategy
 		}
 		else if (Position > 0 && delta < 0)
 		{
-			ClosePosition();
+			SellMarket(Math.Abs(Position));
 		}
 		else if (Position < 0 && delta > 0)
 		{
-			ClosePosition();
+			BuyMarket(Math.Abs(Position));
 		}
 	}
 }

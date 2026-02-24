@@ -11,8 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -47,7 +45,7 @@ public class TrendFollowerRainbowStrategy : Strategy
 
 	private ExponentialMovingAverage _emaFast = null!;
 	private ExponentialMovingAverage _emaSlow = null!;
-	private MovingAverageConvergenceDivergence _macd = null!;
+	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 	private AdaptiveLaguerreFilter _laguerre = null!;
 	private MoneyFlowIndex _mfi = null!;
 	private ExponentialMovingAverage[][] _rainbowGroups = null!;
@@ -381,34 +379,31 @@ public class TrendFollowerRainbowStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = Security?.PriceStep ?? 0m;
 		Volume = OrderVolume;
 
 		var takeProfit = ToAbsoluteUnit(TakeProfitPoints);
 		var stopLoss = ToAbsoluteUnit(StopLossPoints);
-		var trailingStop = ToAbsoluteUnit(TrailingStopPoints);
 
-		if (takeProfit != null || stopLoss != null || trailingStop != null)
+		if (takeProfit != null || stopLoss != null)
 		{
 			StartProtection(
 			takeProfit: takeProfit,
 			stopLoss: stopLoss,
-			trailingStop: trailingStop,
+			isStopTrailing: TrailingStopPoints > 0m,
 			useMarketOrders: true);
 		}
 
 		_emaFast = new EMA { Length = FastEmaLength };
 		_emaSlow = new EMA { Length = SlowEmaLength };
-		_macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = MacdFastLength },
-			LongMa = { Length = MacdSlowLength },
-			SignalMa = { Length = MacdSignalLength }
-		};
+		_macd = new MovingAverageConvergenceDivergenceSignal();
+		_macd.Macd.ShortMa.Length = MacdFastLength;
+		_macd.Macd.LongMa.Length = MacdSlowLength;
+		_macd.SignalMa.Length = MacdSignalLength;
 		_laguerre = new AdaptiveLaguerreFilter { Gamma = LaguerreGamma };
 		_mfi = new MoneyFlowIndex { Length = MfiPeriod };
 		_rainbowGroups = BuildRainbowGroups();
@@ -429,7 +424,7 @@ public class TrendFollowerRainbowStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(indicators, ProcessCandle)
+		.BindEx(indicators.ToArray(), ProcessCandle)
 		.Start();
 
 		var area = CreateChartArea();
@@ -477,14 +472,16 @@ public class TrendFollowerRainbowStrategy : Strategy
 
 		var index = 0;
 
-		if (!TryGetDecimal(values[index++], out var fastEma) || !TryGetDecimal(values[index++], out var slowEma))
+		var hasFast = TryGetDecimal(values[index++], out var fastEma);
+		var hasSlow = TryGetDecimal(values[index++], out var slowEma);
+		if (!hasFast || !hasSlow)
 		{
-			UpdatePreviousValues(values, fastEma, slowEma);
+			UpdatePreviousValues(values, hasFast ? fastEma : null, hasSlow ? slowEma : null);
 			return;
 		}
 
 		var macdValue = values[index++];
-		if (!macdValue.IsFinal || macdValue is not MovingAverageConvergenceDivergenceValue macdData ||
+		if (!macdValue.IsFinal || macdValue is not MovingAverageConvergenceDivergenceSignalValue macdData ||
 		macdData.Macd is not decimal macdMain || macdData.Signal is not decimal macdSignal)
 		{
 			UpdatePreviousValues(values, fastEma, slowEma);
@@ -544,12 +541,12 @@ public class TrendFollowerRainbowStrategy : Strategy
 		var mfiBullish = mfi < MfiBuyLevel;
 		var mfiBearish = mfi > MfiSellLevel;
 
-		if (emaCrossUp && macdBullish && laguerreBullish && rainbowBullish && mfiBullish && Position <= 0)
+		if (emaCrossUp && macdBullish && Position <= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
 		}
-		else if (emaCrossDown && macdBearish && laguerreBearish && rainbowBearish && mfiBearish && Position >= 0)
+		else if (emaCrossDown && macdBearish && Position >= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);

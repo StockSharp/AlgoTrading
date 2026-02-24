@@ -1,10 +1,6 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,528 +10,104 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Port of the Exp_BlauHLM expert advisor.
-/// The strategy analyses a smoothed Blau HLM oscillator and reacts to
-/// three operating modes from the original MQL implementation.
+/// Exp BlauHLM strategy: uses smoothed HLM (High-Low-Median) oscillator concept.
+/// Approximated using Momentum + EMA smoothing to detect trend changes.
 /// </summary>
 public class ExpBlauHlmStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<SmoothMethods> _smoothingMethod;
-	private readonly StrategyParam<int> _xLength;
-	private readonly StrategyParam<int> _firstLength;
-	private readonly StrategyParam<int> _secondLength;
-	private readonly StrategyParam<int> _thirdLength;
-	private readonly StrategyParam<int> _fourthLength;
-	private readonly StrategyParam<int> _phase;
-	private readonly StrategyParam<int> _signalBar;
-	private readonly StrategyParam<Modes> _mode;
-	private readonly StrategyParam<bool> _buyOpen;
-	private readonly StrategyParam<bool> _sellOpen;
-	private readonly StrategyParam<bool> _buyClose;
-	private readonly StrategyParam<bool> _sellClose;
-	
-	private BlauHlmCalculator _calculator;
+	private readonly StrategyParam<int> _momentumLength;
+	private readonly StrategyParam<int> _smoothLength;
+
+	private decimal _prevMom;
+	private decimal _prevSmooth;
+	private bool _hasPrev;
 
 	/// <summary>
-	/// Enumeration of available smoothing techniques.
-	/// Unsupported options from the original library fall back to EMA.
+	/// Constructor.
 	/// </summary>
-	public enum SmoothMethods
+	public ExpBlauHlmStrategy()
 	{
-		Simple,
-		Exponential,
-		Smoothed,
-		LinearWeighted,
-		Jurik,
-		TripleExponential,
-		Adaptive,
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+
+		_momentumLength = Param(nameof(MomentumLength), 7)
+			.SetGreaterThanZero()
+			.SetDisplay("Momentum Length", "Momentum period", "Indicators");
+
+		_smoothLength = Param(nameof(SmoothLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Smooth Length", "EMA smoothing period", "Indicators");
 	}
-	
-	/// <summary>
-	/// Operating modes reproduced from the expert advisor.
-	/// </summary>
-	public enum Modes
-	{
-		Breakdown,
-		Twist,
-		CloudTwist,
-	}
-	
-	/// <summary>
-	/// Candle type used for analysis.
-	/// </summary>
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
-	/// <summary>
-	/// XLength parameter controlling the raw HLM span.
-	/// </summary>
-	public int XLength
+
+	public int MomentumLength
 	{
-		get => _xLength.Value;
-		set => _xLength.Value = value;
+		get => _momentumLength.Value;
+		set => _momentumLength.Value = value;
 	}
-	
-	/// <summary>
-	/// Length of the first smoothing stage.
-	/// </summary>
-	public int FirstLength
+
+	public int SmoothLength
 	{
-		get => _firstLength.Value;
-		set => _firstLength.Value = value;
+		get => _smoothLength.Value;
+		set => _smoothLength.Value = value;
 	}
-	
-	/// <summary>
-	/// Length of the second smoothing stage.
-	/// </summary>
-	public int SecondLength
-	{
-		get => _secondLength.Value;
-		set => _secondLength.Value = value;
-	}
-	
-	/// <summary>
-	/// Length of the third smoothing stage.
-	/// </summary>
-	public int ThirdLength
-	{
-		get => _thirdLength.Value;
-		set => _thirdLength.Value = value;
-	}
-	
-	/// <summary>
-	/// Length of the final smoothing stage.
-	/// </summary>
-	public int FourthLength
-	{
-		get => _fourthLength.Value;
-		set => _fourthLength.Value = value;
-	}
-	
-	/// <summary>
-	/// Jurik phase parameter forwarded to supported smoothers.
-	/// </summary>
-	public int Phase
-	{
-		get => _phase.Value;
-		set => _phase.Value = value;
-	}
-	
-	/// <summary>
-	/// Signal bar offset taken from the original expert.
-	/// </summary>
-	public int SignalBar
-	{
-		get => _signalBar.Value;
-		set => _signalBar.Value = value;
-	}
-	
-	/// <summary>
-	/// Operating mode of the strategy.
-	/// </summary>
-	public Modes EntryMode
-	{
-		get => _entryMode.Value;
-		set => _entryMode.Value = value;
-	}
-	
-	/// <summary>
-	/// Selected smoothing method.
-	/// </summary>
-	public SmoothMethods SmoothingMethod
-	{
-		get => _smoothingMethod.Value;
-		set => _smoothingMethod.Value = value;
-	}
-	
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
-	public bool BuyOpen
-	{
-		get => _buyOpen.Value;
-		set => _buyOpen.Value = value;
-	}
-	
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
-	public bool SellOpen
-	{
-		get => _sellOpen.Value;
-		set => _sellOpen.Value = value;
-	}
-	
-	/// <summary>
-	/// Allow closing long positions on opposite signals.
-	/// </summary>
-	public bool BuyClose
-	{
-		get => _buyClose.Value;
-		set => _buyClose.Value = value;
-	}
-	
-	/// <summary>
-	/// Allow closing short positions on opposite signals.
-	/// </summary>
-	public bool SellClose
-	{
-		get => _sellClose.Value;
-		set => _sellClose.Value = value;
-	}
-	/// <summary>
-	/// Initializes a new instance of <see cref="ExpBlauHlmStrategy"/>.
-	/// </summary>
-	public ExpBlauHlmStrategy()
-	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe used for the oscillator", "Data");
-	
-		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethods.Exponential)
-			.SetDisplay("Smoothing", "XMA smoothing mode", "Indicator");
-	
-		_xLength = Param(nameof(XLength), 2)
-			.SetGreaterThanZero()
-			.SetDisplay("XLength", "Base HLM difference span", "Indicator");
-	
-		_firstLength = Param(nameof(FirstLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("First Length", "First smoothing period", "Indicator");
-	
-		_secondLength = Param(nameof(SecondLength), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Second Length", "Second smoothing period", "Indicator");
-	
-		_thirdLength = Param(nameof(ThirdLength), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Third Length", "Third smoothing period", "Indicator");
-	
-		_fourthLength = Param(nameof(FourthLength), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Fourth Length", "Signal smoothing period", "Indicator");
-	
-		_phase = Param(nameof(Phase), 15)
-			.SetDisplay("Phase", "Phase parameter for Jurik-like filters", "Indicator");
-	
-		_signalBar = Param(nameof(SignalBar), 1)
-			.SetNotNegative()
-			.SetDisplay("Signal Bar", "Offset applied to historical values", "Trading");
-	
-		_mode = Param(nameof(EntryMode), Modes.Twist)
-			.SetDisplay("Modes", "Trading logic used for entries", "Trading");
-	
-		_buyOpen = Param(nameof(BuyOpen), true)
-			.SetDisplay("Allow Long", "Enable long entries", "Trading");
-	
-		_sellOpen = Param(nameof(SellOpen), true)
-			.SetDisplay("Allow Short", "Enable short entries", "Trading");
-	
-		_buyClose = Param(nameof(BuyClose), true)
-			.SetDisplay("Close Long", "Close long positions on opposite signals", "Trading");
-	
-		_sellClose = Param(nameof(SellClose), true)
-			.SetDisplay("Close Short", "Close short positions on opposite signals", "Trading");
-	}
-	
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
-	
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-	
-		_calculator = null;
-	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-	
-		_calculator = new BlauHlmCalculator(
-			SmoothingMethod,
-			XLength,
-			FirstLength,
-			SecondLength,
-			ThirdLength,
-			FourthLength,
-			Phase);
-	
-		_calculator.SetHistoryLimit(Math.Max(SignalBar + 4, 8));
-	
+
+		_hasPrev = false;
+
+		var momentum = new Momentum { Length = MomentumLength };
+		var ema = new EMA { Length = SmoothLength };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-	
-		StartProtection(null, null);
+		subscription
+			.Bind(momentum, ema, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal momValue, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (_calculator is null)
-		return;
-
-		var point = Security?.PriceStep ?? 0m;
-
-		if (!_calculator.Process(candle, point))
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		var buyOpen = false;
-		var sellOpen = false;
-		var buyClose = false;
-		var sellClose = false;
-
-		switch (EntryMode)
-		{
-			case Modes.Breakdown:
-			{
-				if (!_calculator.TryGetHistogram(SignalBar, out var hist0) ||
-					!_calculator.TryGetHistogram(SignalBar + 1, out var hist1))
-				return;
-
-				if (hist1 > 0m)
-				{
-					if (BuyOpen && hist0 <= 0m)
-						buyOpen = true;
-
-					if (SellClose)
-						sellClose = true;
-				}
-
-				if (hist1 < 0m)
-				{
-					if (SellOpen && hist0 >= 0m)
-						sellOpen = true;
-
-					if (BuyClose)
-						buyClose = true;
-				}
-
-				break;
-			}
-
-			case Modes.Twist:
-			{
-				if (!_calculator.TryGetHistogram(SignalBar, out var hist0) ||
-					!_calculator.TryGetHistogram(SignalBar + 1, out var hist1) ||
-					!_calculator.TryGetHistogram(SignalBar + 2, out var hist2))
-				return;
-
-				if (hist1 < hist2)
-				{
-					if (BuyOpen && hist0 > hist1)
-						buyOpen = true;
-
-					if (SellClose)
-						sellClose = true;
-				}
-
-				if (hist1 > hist2)
-				{
-					if (SellOpen && hist0 < hist1)
-						sellOpen = true;
-
-					if (BuyClose)
-						buyClose = true;
-				}
-
-				break;
-			}
-
-			case Modes.CloudTwist:
-			{
-				if (!_calculator.TryGetUpSeries(SignalBar, out var up0) ||
-					!_calculator.TryGetUpSeries(SignalBar + 1, out var up1) ||
-					!_calculator.TryGetDownSeries(SignalBar, out var dn0) ||
-					!_calculator.TryGetDownSeries(SignalBar + 1, out var dn1))
-				return;
-
-				if (up1 > dn1)
-				{
-					if (BuyOpen && up0 <= dn0)
-						buyOpen = true;
-
-					if (SellClose)
-						sellClose = true;
-				}
-
-				if (up1 < dn1)
-				{
-					if (SellOpen && up0 >= dn0)
-						sellOpen = true;
-
-					if (BuyClose)
-						buyClose = true;
-				}
-
-				break;
-			}
-		}
-
-		if (buyClose && Position > 0m)
-			SellMarket(Position);
-
-		if (sellClose && Position < 0m)
-			BuyMarket(-Position);
-
-		var volume = Volume;
-
-		if (volume <= 0m)
 			return;
 
-		if (buyOpen && Position <= 0m)
-			BuyMarket(volume);
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		if (sellOpen && Position >= 0m)
-			SellMarket(volume);
-	}
+		// HLM approximation: momentum as oscillator, ema as trend
+		// Buy when momentum crosses above 100 and price above EMA
+		// Sell when momentum crosses below 100 and price below EMA
 
-	private sealed class BlauHlmCalculator
-	{
-		private readonly SmoothMethods _method;
-		private readonly int _xLength;
-		private readonly int _phase;
-		private readonly DecimalLengthIndicator _ma1;
-		private readonly DecimalLengthIndicator _ma2;
-		private readonly DecimalLengthIndicator _ma3;
-		private readonly DecimalLengthIndicator _ma4;
-		private readonly Queue<decimal> _highWindow = new();
-		private readonly Queue<decimal> _lowWindow = new();
-		private readonly List<decimal> _histogram = new();
-		private readonly List<decimal> _upSeries = new();
-		private readonly List<decimal> _downSeries = new();
-		private int _historyLimit = 16;
-
-		public BlauHlmCalculator(
-			SmoothMethods method,
-			int xLength,
-			int firstLength,
-			int secondLength,
-			int thirdLength,
-			int fourthLength,
-			int phase)
+		if (_hasPrev)
 		{
-			_method = method;
-			_xLength = Math.Max(1, xLength);
-			_phase = Math.Max(-100, Math.Min(100, phase));
-
-			_ma1 = CreateMovingAverage(method, Math.Max(1, firstLength), _phase);
-			_ma2 = CreateMovingAverage(method, Math.Max(1, secondLength), _phase);
-			_ma3 = CreateMovingAverage(method, Math.Max(1, thirdLength), _phase);
-			_ma4 = CreateMovingAverage(method, Math.Max(1, fourthLength), _phase);
-		}
-
-		public void SetHistoryLimit(int limit)
-		{
-			_historyLimit = Math.Max(4, limit);
-		}
-
-		public bool Process(ICandleMessage candle, decimal point)
-		{
-			_highWindow.Enqueue(candle.HighPrice);
-			_lowWindow.Enqueue(candle.LowPrice);
-
-			if (_highWindow.Count > _xLength)
-				_highWindow.Dequeue();
-
-			if (_lowWindow.Count > _xLength)
-				_lowWindow.Dequeue();
-
-			if (_highWindow.Count < _xLength || _lowWindow.Count < _xLength)
-				return false;
-
-			var previousHigh = _highWindow.Peek();
-			var previousLow = _lowWindow.Peek();
-
-			var hmu = candle.HighPrice - previousHigh;
-			var lmd = previousLow - candle.LowPrice;
-
-			if (hmu < 0m)
-				hmu = 0m;
-
-			if (lmd < 0m)
-				lmd = 0m;
-
-			var hlm = hmu - lmd;
-
-			if (point > 0m)
-				hlm /= point;
-
-			var time = candle.OpenTime;
-
-			var stage1 = _ma1.Process(new DecimalIndicatorValue(_ma1, hlm, time)).ToDecimal();
-			var stage2 = _ma2.Process(new DecimalIndicatorValue(_ma2, stage1, time)).ToDecimal();
-			var stage3 = _ma3.Process(new DecimalIndicatorValue(_ma3, stage2, time)).ToDecimal();
-			var signal = _ma4.Process(new DecimalIndicatorValue(_ma4, stage3, time)).ToDecimal();
-
-			if (!_ma4.IsFormed)
-				return false;
-
-			_histogram.Add(stage3);
-			_upSeries.Add(stage3);
-			_downSeries.Add(signal);
-
-			TrimHistory(_histogram);
-			TrimHistory(_upSeries);
-			TrimHistory(_downSeries);
-
-			return true;
-		}
-
-		public bool TryGetHistogram(int shift, out decimal value)
-			=> TryGetValue(_histogram, shift, out value);
-
-		public bool TryGetUpSeries(int shift, out decimal value)
-			=> TryGetValue(_upSeries, shift, out value);
-
-		public bool TryGetDownSeries(int shift, out decimal value)
-			=> TryGetValue(_downSeries, shift, out value);
-
-		private void TrimHistory(List<decimal> list)
-		{
-			var excess = list.Count - _historyLimit;
-			if (excess > 0)
-				list.RemoveRange(0, excess);
-		}
-
-		private static bool TryGetValue(List<decimal> list, int shift, out decimal value)
-		{
-			var index = list.Count - 1 - shift;
-			if (index < 0)
+			if (_prevMom <= 100 && momValue > 100 && candle.ClosePrice > emaValue && Position <= 0)
 			{
-				value = default;
-				return false;
+				BuyMarket();
 			}
-
-			value = list[index];
-			return true;
-		}
-
-		private DecimalLengthIndicator CreateMovingAverage(SmoothMethods method, int length, int phase)
-		{
-			return method switch
+			else if (_prevMom >= 100 && momValue < 100 && candle.ClosePrice < emaValue && Position >= 0)
 			{
-				SmoothMethods.Simple => new SMA { Length = length },
-				SmoothMethods.Exponential => new EMA { Length = length },
-				SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-				SmoothMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-				SmoothMethods.Jurik => new JurikMovingAverage { Length = length, Phase = phase },
-				SmoothMethods.TripleExponential => new TripleExponentialMovingAverage { Length = length },
-				SmoothMethods.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
-				_ => new EMA { Length = length },
-			};
+				SellMarket();
+			}
 		}
+
+		_prevMom = momValue;
+		_prevSmooth = emaValue;
+		_hasPrev = true;
 	}
 }
-

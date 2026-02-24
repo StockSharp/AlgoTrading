@@ -138,14 +138,12 @@ public class AroonWprCrossoverStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		var aroon = new Aroon
 		{
 			Length = AroonPeriod
 		};
 
-		var wpr = new WilliamsPercentRange
+		var wpr = new WilliamsR
 		{
 			Length = WprPeriod
 		};
@@ -185,13 +183,8 @@ public class AroonWprCrossoverStrategy : Strategy
 			// Exit long when Williams %R exits the oversold zone.
 			if (wpr >= -CloseWprLevel)
 			{
-				ClosePosition();
+				SellMarket();
 				_entryPrice = null;
-			}
-			else
-			{
-				var entry = _entryPrice ?? candle.ClosePrice;
-				ApplyStopsForLong(candle, entry);
 			}
 		}
 		else if (Position < 0)
@@ -199,13 +192,8 @@ public class AroonWprCrossoverStrategy : Strategy
 			// Exit short when Williams %R exits the overbought zone.
 			if (wpr <= -(100m - CloseWprLevel))
 			{
-				ClosePosition();
+				BuyMarket();
 				_entryPrice = null;
-			}
-			else
-			{
-				var entry = _entryPrice ?? candle.ClosePrice;
-				ApplyStopsForShort(candle, entry);
 			}
 		}
 		else
@@ -240,48 +228,5 @@ public class AroonWprCrossoverStrategy : Strategy
 		_previousAroonDown = currentDown;
 	}
 
-	private void ApplyStopsForLong(ICandleMessage candle, decimal entry)
-	{
-		var step = Security?.PriceStep ?? 1m;
-		var take = TakeProfitSteps * step;
-		var stop = StopLossSteps * step;
-
-		// Close the position when the optional take-profit is reached.
-		if (TakeProfitSteps > 0m && candle.HighPrice >= entry + take)
-		{
-			ClosePosition();
-			_entryPrice = null;
-			return;
-		}
-
-		// Close the position when the optional stop-loss is hit.
-		if (StopLossSteps > 0m && candle.LowPrice <= entry - stop)
-		{
-			ClosePosition();
-			_entryPrice = null;
-		}
-	}
-
-	private void ApplyStopsForShort(ICandleMessage candle, decimal entry)
-	{
-		var step = Security?.PriceStep ?? 1m;
-		var take = TakeProfitSteps * step;
-		var stop = StopLossSteps * step;
-
-		// Close the position when the optional take-profit is reached.
-		if (TakeProfitSteps > 0m && candle.LowPrice <= entry - take)
-		{
-			ClosePosition();
-			_entryPrice = null;
-			return;
-		}
-
-		// Close the position when the optional stop-loss is hit.
-		if (StopLossSteps > 0m && candle.HighPrice >= entry + stop)
-		{
-			ClosePosition();
-			_entryPrice = null;
-		}
-	}
 }
 

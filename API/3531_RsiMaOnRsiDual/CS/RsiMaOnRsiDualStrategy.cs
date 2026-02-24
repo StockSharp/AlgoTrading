@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,6 +12,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Dual moving averages calculated on top of RSI values.
+/// Fast RSI MA crossing slow RSI MA generates entry signals.
 /// </summary>
 public class RsiMaOnRsiDualStrategy : Strategy
 {
@@ -22,86 +20,31 @@ public class RsiMaOnRsiDualStrategy : Strategy
 	private readonly StrategyParam<int> _fastRsiPeriod;
 	private readonly StrategyParam<int> _slowRsiPeriod;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
-	private readonly StrategyParam<decimal> _neutralLevel;
-	private readonly StrategyParam<bool> _allowLong;
-	private readonly StrategyParam<bool> _allowShort;
-	private readonly StrategyParam<bool> _reverseSignals;
-	private readonly StrategyParam<bool> _closeOpposite;
-	private readonly StrategyParam<bool> _onlyOnePosition;
-	private readonly StrategyParam<bool> _useTimeFilter;
-	private readonly StrategyParam<TimeSpan> _sessionStart;
-	private readonly StrategyParam<TimeSpan> _sessionEnd;
 
 	private RelativeStrengthIndex _fastRsi;
 	private RelativeStrengthIndex _slowRsi;
-	private SimpleMovingAverage _fastMa;
-	private SimpleMovingAverage _slowMa;
+	private readonly Queue<decimal> _fastRsiHistory = new();
+	private readonly Queue<decimal> _slowRsiHistory = new();
 
 	private decimal? _previousFastMa;
 	private decimal? _previousSlowMa;
 
-	private bool _pendingBuy;
-	private bool _pendingSell;
-	private bool _orderInFlight;
-
-	private DateTimeOffset? _lastLongSignalTime;
-	private DateTimeOffset? _lastShortSignalTime;
-
 	public RsiMaOnRsiDualStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Candles processed by the strategy.", "General");
 
 		_fastRsiPeriod = Param(nameof(FastRsiPeriod), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast RSI period", "Length of the fast RSI smoothing window.", "Indicators")
-			
-			.SetOptimize(3, 30, 1);
+			.SetDisplay("Fast RSI period", "Length of the fast RSI smoothing window.", "Indicators");
 
 		_slowRsiPeriod = Param(nameof(SlowRsiPeriod), 15)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow RSI period", "Length of the slow RSI smoothing window.", "Indicators")
-			
-			.SetOptimize(5, 60, 1);
+			.SetDisplay("Slow RSI period", "Length of the slow RSI smoothing window.", "Indicators");
 
 		_maPeriod = Param(nameof(MaPeriod), 6)
 			.SetGreaterThanZero()
-			.SetDisplay("MA period", "Number of RSI values averaged by the smoothing moving average.", "Indicators")
-			
-			.SetOptimize(2, 30, 1);
-
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
-			.SetDisplay("Applied price", "Price source used to build RSI values.", "Indicators");
-
-		_neutralLevel = Param(nameof(NeutralLevel), 50m)
-			.SetDisplay("Neutral level", "Neutral RSI level used to filter entries.", "Indicators")
-			
-			.SetOptimize(40m, 60m, 1m);
-
-		_allowLong = Param(nameof(AllowLong), true)
-			.SetDisplay("Allow long", "If disabled, long entries are ignored.", "Trading");
-
-		_allowShort = Param(nameof(AllowShort), true)
-			.SetDisplay("Allow short", "If disabled, short entries are ignored.", "Trading");
-
-		_reverseSignals = Param(nameof(ReverseSignals), false)
-			.SetDisplay("Reverse signals", "If enabled, swap long and short signals.", "Trading");
-
-		_closeOpposite = Param(nameof(CloseOpposite), false)
-			.SetDisplay("Close opposite", "Close the opposite position before opening a new one.", "Trading");
-
-		_onlyOnePosition = Param(nameof(OnlyOnePosition), false)
-			.SetDisplay("Only one position", "Restrict the strategy to a single open position.", "Trading");
-
-		_useTimeFilter = Param(nameof(UseTimeFilter), true)
-			.SetDisplay("Use time filter", "Restrict entries to a specified intraday interval.", "Timing");
-
-		_sessionStart = Param(nameof(SessionStart), new TimeSpan(10, 0, 0))
-			.SetDisplay("Session start", "Start time of the trading window (exchange timezone).", "Timing");
-
-		_sessionEnd = Param(nameof(SessionEnd), new TimeSpan(15, 0, 0))
-			.SetDisplay("Session end", "End time of the trading window (exchange timezone).", "Timing");
+			.SetDisplay("MA period", "Number of RSI values averaged by the smoothing moving average.", "Indicators");
 	}
 
 	public DataType CandleType
@@ -128,336 +71,93 @@ public class RsiMaOnRsiDualStrategy : Strategy
 		set => _maPeriod.Value = value;
 	}
 
-	public AppliedPriceTypes AppliedPrice
-	{
-		get => _appliedPrice.Value;
-		set => _appliedPrice.Value = value;
-	}
-
-	public decimal NeutralLevel
-	{
-		get => _neutralLevel.Value;
-		set => _neutralLevel.Value = value;
-	}
-
-	public bool AllowLong
-	{
-		get => _allowLong.Value;
-		set => _allowLong.Value = value;
-	}
-
-	public bool AllowShort
-	{
-		get => _allowShort.Value;
-		set => _allowShort.Value = value;
-	}
-
-	public bool ReverseSignals
-	{
-		get => _reverseSignals.Value;
-		set => _reverseSignals.Value = value;
-	}
-
-	public bool CloseOpposite
-	{
-		get => _closeOpposite.Value;
-		set => _closeOpposite.Value = value;
-	}
-
-	public bool OnlyOnePosition
-	{
-		get => _onlyOnePosition.Value;
-		set => _onlyOnePosition.Value = value;
-	}
-
-	public bool UseTimeFilter
-	{
-		get => _useTimeFilter.Value;
-		set => _useTimeFilter.Value = value;
-	}
-
-	public TimeSpan SessionStart
-	{
-		get => _sessionStart.Value;
-		set => _sessionStart.Value = value;
-	}
-
-	public TimeSpan SessionEnd
-	{
-		get => _sessionEnd.Value;
-		set => _sessionEnd.Value = value;
-	}
-
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, CandleType);
-	}
-
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_fastRsi = null;
-		_slowRsi = null;
-		_fastMa = null;
-		_slowMa = null;
-		_previousFastMa = null;
-		_previousSlowMa = null;
-		_pendingBuy = false;
-		_pendingSell = false;
-		_orderInFlight = false;
-		_lastLongSignalTime = null;
-		_lastShortSignalTime = null;
-	}
-
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_fastRsi = new RelativeStrengthIndex { Length = FastRsiPeriod };
-		_slowRsi = new RelativeStrengthIndex { Length = SlowRsiPeriod };
-		_fastMa = new SMA { Length = MaPeriod };
-		_slowMa = new SMA { Length = MaPeriod };
-
 		_previousFastMa = null;
 		_previousSlowMa = null;
+		_fastRsiHistory.Clear();
+		_slowRsiHistory.Clear();
 
-		StartProtection(null, null);
+		_fastRsi = new RelativeStrengthIndex { Length = FastRsiPeriod };
+		_slowRsi = new RelativeStrengthIndex { Length = SlowRsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_fastRsi, _slowRsi, ProcessCandle)
 			.Start();
 
 		var priceArea = CreateChartArea();
 		if (priceArea != null)
 		{
 			DrawCandles(priceArea, subscription);
-			if (_fastMa != null)
-				DrawIndicator(priceArea, _fastMa);
-			if (_slowMa != null)
-				DrawIndicator(priceArea, _slowMa);
-		}
-
-		if (_fastRsi != null && _slowRsi != null)
-		{
-			var rsiArea = CreateChartArea();
-			if (rsiArea != null)
-			{
-				DrawIndicator(rsiArea, _fastRsi);
-				DrawIndicator(rsiArea, _slowRsi);
-			}
+			DrawOwnTrades(priceArea);
 		}
 	}
 
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		_orderInFlight = false;
-
-		if (_pendingBuy || _pendingSell)
-			ProcessPendingOrders();
-	}
-
-	protected override void OnOrderRegisterFailed(OrderFail fail, bool calcRisk)
-	{
-		base.OnOrderRegisterFailed(fail, calcRisk);
-
-		_orderInFlight = false;
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastRsiValue, decimal slowRsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (!IsWithinSession(candle.OpenTime))
-			return;
-
-		if (_fastRsi == null || _slowRsi == null || _fastMa == null || _slowMa == null)
-			return;
-
-		var price = GetAppliedPrice(candle, AppliedPrice);
-		var time = candle.OpenTime;
-
-		var fastRsiValue = _fastRsi.Process(new DecimalIndicatorValue(_fastRsi, price, time.UtcDateTime)).ToDecimal();
-		var slowRsiValue = _slowRsi.Process(new DecimalIndicatorValue(_slowRsi, price, time.UtcDateTime)).ToDecimal();
+		_fastRsiHistory.Enqueue(fastRsiValue);
+		_slowRsiHistory.Enqueue(slowRsiValue);
+		while (_fastRsiHistory.Count > MaPeriod)
+			_fastRsiHistory.Dequeue();
+		while (_slowRsiHistory.Count > MaPeriod)
+			_slowRsiHistory.Dequeue();
 
 		if (!_fastRsi.IsFormed || !_slowRsi.IsFormed)
 			return;
 
-		var fastMaValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, fastRsiValue, time.UtcDateTime)).ToDecimal();
-		var slowMaValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, slowRsiValue, time.UtcDateTime)).ToDecimal();
-
-		if (!_fastMa.IsFormed || !_slowMa.IsFormed)
+		if (_fastRsiHistory.Count < MaPeriod || _slowRsiHistory.Count < MaPeriod)
 			return;
 
-		var buySignal = false;
-		var sellSignal = false;
+		// Calculate SMA of each RSI
+		var fastSum = 0m;
+		foreach (var v in _fastRsiHistory)
+			fastSum += v;
+		var fastMa = fastSum / MaPeriod;
 
-		if (_previousFastMa.HasValue && _previousSlowMa.HasValue)
+		var slowSum = 0m;
+		foreach (var v in _slowRsiHistory)
+			slowSum += v;
+		var slowMa = slowSum / MaPeriod;
+
+		if (_previousFastMa is null || _previousSlowMa is null)
 		{
-			var prevFast = _previousFastMa.Value;
-			var prevSlow = _previousSlowMa.Value;
-			var neutral = NeutralLevel;
-
-			// Detect bullish crossover below the neutral RSI level.
-			buySignal = prevFast < prevSlow && fastMaValue > slowMaValue && fastMaValue < neutral && slowMaValue < neutral;
-
-			// Detect bearish crossover above the neutral RSI level.
-			sellSignal = prevFast > prevSlow && fastMaValue < slowMaValue && fastMaValue > neutral && slowMaValue > neutral;
-		}
-
-		_previousFastMa = fastMaValue;
-		_previousSlowMa = slowMaValue;
-
-		if (ReverseSignals)
-		{
-			var tmp = buySignal;
-			buySignal = sellSignal;
-			sellSignal = tmp;
-		}
-
-		if (buySignal && AllowLong && _lastLongSignalTime != time)
-		{
-			_pendingBuy = true;
-			_pendingSell = false;
-			_lastLongSignalTime = time;
-		}
-		else if (sellSignal && AllowShort && _lastShortSignalTime != time)
-		{
-			_pendingSell = true;
-			_pendingBuy = false;
-			_lastShortSignalTime = time;
-		}
-
-		ProcessPendingOrders();
-	}
-
-	private void ProcessPendingOrders()
-	{
-		if (!_pendingBuy && !_pendingSell)
+			_previousFastMa = fastMa;
+			_previousSlowMa = slowMa;
 			return;
+		}
 
-		if (_orderInFlight)
-			return;
+		var crossUp = _previousFastMa < _previousSlowMa && fastMa > slowMa;
+		var crossDown = _previousFastMa > _previousSlowMa && fastMa < slowMa;
 
 		var volume = Volume;
-		if (volume <= 0m)
-			return;
+		if (volume <= 0)
+			volume = 1;
 
-		if (_pendingBuy)
+		if (crossUp)
 		{
-			if (!AllowLong)
-			{
-				_pendingBuy = false;
-			}
-			else if (_closeOpposite && Position < 0m)
-			{
-				ClosePosition();
-				_orderInFlight = true;
-				return;
-			}
-			else if (_onlyOnePosition && Position != 0m)
-			{
-				_pendingBuy = false;
-			}
-			else if (Position <= 0m)
-			{
-				if (Position == 0m)
-				{
-					BuyMarket(volume);
-					_orderInFlight = true;
-				}
-				_pendingBuy = false;
-			}
-			else
-			{
-				_pendingBuy = false;
-			}
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+
+			if (Position <= 0)
+				BuyMarket(volume);
+		}
+		else if (crossDown)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+
+			if (Position >= 0)
+				SellMarket(volume);
 		}
 
-		if (_pendingSell)
-		{
-			if (!AllowShort)
-			{
-				_pendingSell = false;
-			}
-			else if (_closeOpposite && Position > 0m)
-			{
-				ClosePosition();
-				_orderInFlight = true;
-				return;
-			}
-			else if (_onlyOnePosition && Position != 0m)
-			{
-				_pendingSell = false;
-			}
-			else if (Position >= 0m)
-			{
-				if (Position == 0m)
-				{
-					SellMarket(volume);
-					_orderInFlight = true;
-				}
-				_pendingSell = false;
-			}
-			else
-			{
-				_pendingSell = false;
-			}
-		}
-	}
-
-	private bool IsWithinSession(DateTimeOffset time)
-	{
-		if (!UseTimeFilter)
-			return true;
-
-		var start = SessionStart;
-		var end = SessionEnd;
-		var t = time.TimeOfDay;
-
-		if (start == end)
-			return true;
-
-		if (start < end)
-			return t >= start && t < end;
-
-		return t >= start || t < end;
-	}
-
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes priceType)
-	{
-		return priceType switch
-		{
-			AppliedPriceTypes.Close => candle.ClosePrice,
-			AppliedPriceTypes.Open => candle.OpenPrice,
-			AppliedPriceTypes.High => candle.HighPrice,
-			AppliedPriceTypes.Low => candle.LowPrice,
-			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-			AppliedPriceTypes.Average => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
-			_ => candle.ClosePrice,
-		};
-	}
-
-	public enum AppliedPriceTypes
-	{
-		Close,
-		Open,
-		High,
-		Low,
-		Median,
-		Typical,
-		Weighted,
-		Average,
+		_previousFastMa = fastMa;
+		_previousSlowMa = slowMa;
 	}
 }
-

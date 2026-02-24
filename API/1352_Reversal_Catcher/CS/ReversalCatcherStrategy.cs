@@ -218,7 +218,7 @@ public class ReversalCatcherStrategy : Strategy
 		_bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerDeviation };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_emaFast, _emaSlow, _rsi, _bollinger, ProcessCandle).Start();
+		subscription.BindEx(_emaFast, _emaSlow, _rsi, _bollinger, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -232,14 +232,22 @@ public class ReversalCatcherStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaFast, decimal emaSlow, decimal rsi, decimal bbMiddle, decimal bbUpper, decimal bbLower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaFastVal, IIndicatorValue emaSlowVal, IIndicatorValue rsiVal, IIndicatorValue bbVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var boardTz = Security.Board?.BoardTimeZone ?? TimeZoneInfo.Utc;
-		var localTime = TimeZoneInfo.ConvertTime(candle.CloseTime, boardTz);
-		var hourVal = localTime.Hour * 100 + localTime.Minute;
+		if (!emaFastVal.IsFormed || !emaSlowVal.IsFormed || !rsiVal.IsFormed || !bbVal.IsFormed)
+			return;
+
+		var emaFast = emaFastVal.GetValue<decimal>();
+		var emaSlow = emaSlowVal.GetValue<decimal>();
+		var rsi = rsiVal.GetValue<decimal>();
+		var bb = (BollingerBandsValue)bbVal;
+		if (bb.UpBand is not decimal bbUpper || bb.LowBand is not decimal bbLower || bb.MovingAverage is not decimal bbMiddle)
+			return;
+
+		var hourVal = candle.CloseTime.Hour * 100 + candle.CloseTime.Minute;
 
 		if (!MktAlwaysOn && hourVal >= EndOfDay)
 		{

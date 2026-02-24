@@ -11,123 +11,55 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp;
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Polynomial regression channel strategy. Calculates a regression midline with
+/// standard deviation bands and trades mean reversion between the bands and midline.
+/// </summary>
 public class ERegressionChannelStrategy : Strategy
 {
-	private static readonly DataType DailyTimeFrame = TimeSpan.FromMinutes(5).TimeFrame();
-
-	private readonly StrategyParam<decimal> _volume;
-	private readonly StrategyParam<TimeSpan> _tradeStartTime;
-	private readonly StrategyParam<TimeSpan> _tradeEndTime;
 	private readonly StrategyParam<int> _regressionLength;
 	private readonly StrategyParam<int> _degree;
 	private readonly StrategyParam<decimal> _stdMultiplier;
-	private readonly StrategyParam<bool> _enableTrailing;
-	private readonly StrategyParam<decimal> _trailingActivationPoints;
-	private readonly StrategyParam<decimal> _trailingDistancePoints;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _dailyRangePoints;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly Queue<decimal> _closes = new();
+	private ExponentialMovingAverage _ema;
 
 	private decimal? _previousMid;
-	private decimal? _previousUpper;
-	private decimal? _previousLower;
-	private DateTimeOffset _previousTime;
-	private decimal? _longTrailingStop;
-	private decimal? _shortTrailingStop;
-	private DateTimeOffset? _lastTradeBarTime;
-	private decimal _priceStep;
-	private decimal? _previousDailyRange;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ERegressionChannelStrategy"/> class.
 	/// </summary>
 	public ERegressionChannelStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
+		_regressionLength = Param(nameof(RegressionLength), 100)
 			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Trading volume per entry", "General");
-
-		_tradeStartTime = Param(nameof(TradeStartTime), new TimeSpan(3, 0, 0))
-			.SetDisplay("Trade Start", "Start time of the trading window", "Time");
-
-		_tradeEndTime = Param(nameof(TradeEndTime), new TimeSpan(21, 20, 0))
-			.SetDisplay("Trade End", "End time of the trading window", "Time");
-
-		_regressionLength = Param(nameof(RegressionLength), 250)
-			.SetGreaterThanZero()
-			.SetDisplay("Regression Length", "Number of bars used for regression", "Regression")
-			;
+			.SetDisplay("Regression Length", "Number of bars used for regression", "Regression");
 
 		_degree = Param(nameof(Degree), 3)
-			.SetRange(1, 6)
-			.SetDisplay("Degree", "Polynomial degree for the regression", "Regression")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("Degree", "Polynomial degree for the regression", "Regression");
 
 		_stdMultiplier = Param(nameof(StdDevMultiplier), 1m)
 			.SetGreaterThanZero()
-			.SetDisplay("Std Dev Multiplier", "Width multiplier for the regression bands", "Regression")
-			;
+			.SetDisplay("Std Dev Multiplier", "Width multiplier for the regression bands", "Regression");
 
-		_enableTrailing = Param(nameof(EnableTrailing), false)
-			.SetDisplay("Enable Trailing", "Enable trailing stop management", "Risk Management");
-
-		_trailingActivationPoints = Param(nameof(TrailingActivationPoints), 30m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
 			.SetNotNegative()
-			.SetDisplay("Trailing Activation", "Points of profit required before trailing starts", "Risk Management");
+			.SetDisplay("Stop Loss", "Protective stop in absolute points (0 disables)", "Risk");
 
-		_trailingDistancePoints = Param(nameof(TrailingDistancePoints), 30m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
 			.SetNotNegative()
-			.SetDisplay("Trailing Distance", "Distance in points maintained by trailing", "Risk Management");
+			.SetDisplay("Take Profit", "Target in absolute points (0 disables)", "Risk");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss", "Protective stop in points (0 disables)", "Risk Management");
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
-			.SetNotNegative()
-			.SetDisplay("Take Profit", "Protective target in points (0 disables)", "Risk Management");
-
-		_dailyRangePoints = Param(nameof(DailyRangePoints), 150m)
-			.SetNotNegative()
-			.SetDisplay("Daily Range Filter", "Maximum previous day range in points", "Filters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle type used for trading", "General");
-	}
 
-	/// <summary>
-	/// Trading volume per entry.
-	/// </summary>
-	public new decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
-
-	/// <summary>
-	/// Start time of the trading window.
-	/// </summary>
-	public TimeSpan TradeStartTime
-	{
-		get => _tradeStartTime.Value;
-		set => _tradeStartTime.Value = value;
-	}
-
-	/// <summary>
-	/// End time of the trading window.
-	/// </summary>
-	public TimeSpan TradeEndTime
-	{
-		get => _tradeEndTime.Value;
-		set => _tradeEndTime.Value = value;
+		Volume = 1;
 	}
 
 	/// <summary>
@@ -158,34 +90,7 @@ public class ERegressionChannelStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Enable trailing stop management.
-	/// </summary>
-	public bool EnableTrailing
-	{
-		get => _enableTrailing.Value;
-		set => _enableTrailing.Value = value;
-	}
-
-	/// <summary>
-	/// Profit in points required before trailing starts.
-	/// </summary>
-	public decimal TrailingActivationPoints
-	{
-		get => _trailingActivationPoints.Value;
-		set => _trailingActivationPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Distance in points maintained by trailing.
-	/// </summary>
-	public decimal TrailingDistancePoints
-	{
-		get => _trailingDistancePoints.Value;
-		set => _trailingDistancePoints.Value = value;
-	}
-
-	/// <summary>
-	/// Protective stop in points (0 disables).
+	/// Protective stop in absolute points (0 disables).
 	/// </summary>
 	public decimal StopLossPoints
 	{
@@ -194,21 +99,12 @@ public class ERegressionChannelStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Protective target in points (0 disables).
+	/// Target in absolute points (0 disables).
 	/// </summary>
 	public decimal TakeProfitPoints
 	{
 		get => _takeProfitPoints.Value;
 		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum allowed previous day range in points.
-	/// </summary>
-	public decimal DailyRangePoints
-	{
-		get => _dailyRangePoints.Value;
-		set => _dailyRangePoints.Value = value;
 	}
 
 	/// <summary>
@@ -223,65 +119,45 @@ public class ERegressionChannelStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, DailyTimeFrame)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
 		_closes.Clear();
 		_previousMid = null;
-		_previousUpper = null;
-		_previousLower = null;
-		_previousTime = default;
-		_longTrailingStop = null;
-		_shortTrailingStop = null;
-		_lastTradeBarTime = null;
-		_previousDailyRange = null;
+		_ema = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted2(time);
+		_ema = new ExponentialMovingAverage { Length = Math.Max(2, RegressionLength) };
 
-		_priceStep = Security?.PriceStep ?? 0m;
-		if (_priceStep <= 0m)
-			_priceStep = 1m;
-
-		var tradingSubscription = SubscribeCandles(CandleType);
-		tradingSubscription
-			.Bind(ProcessCandle)
-			.Start();
-
-		var dailySubscription = SubscribeCandles(DailyTimeFrame);
-		dailySubscription
-			.Bind(ProcessDailyCandle)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(_ema, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, tradingSubscription);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _ema);
 			DrawOwnTrades(area);
 		}
 
-		var stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Point) : null;
-		var takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Point) : null;
-		StartProtection(stopLoss: stopLoss, takeProfit: takeProfit);
+		var tp = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null;
+		var sl = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Absolute) : null;
+		if (tp != null || sl != null)
+			StartProtection(tp, sl);
+
+		base.OnStarted2(time);
 	}
 
-	private void ProcessDailyCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_previousDailyRange = candle.HighPrice - candle.LowPrice;
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -301,201 +177,41 @@ public class ERegressionChannelStrategy : Strategy
 		var upper = mid + std;
 		var lower = mid - std;
 
-		if (_previousMid.HasValue)
+		// Exit at midline
+		if (Position > 0 && candle.ClosePrice >= mid)
 		{
-			DrawLine(_previousTime, _previousMid.Value, candle.OpenTime, mid);
-			DrawLine(_previousTime, _previousUpper!.Value, candle.OpenTime, upper);
-			DrawLine(_previousTime, _previousLower!.Value, candle.OpenTime, lower);
+			SellMarket(Position);
+			_previousMid = mid;
+			return;
+		}
+		if (Position < 0 && candle.ClosePrice <= mid)
+		{
+			BuyMarket(Math.Abs(Position));
+			_previousMid = mid;
+			return;
+		}
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_previousMid = mid;
+			return;
+		}
+
+		// Entry signals: mean reversion from bands
+		if (candle.LowPrice <= lower && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+		}
+		else if (candle.HighPrice >= upper && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket(Position);
+			SellMarket(Volume);
 		}
 
 		_previousMid = mid;
-		_previousUpper = upper;
-		_previousLower = lower;
-		_previousTime = candle.OpenTime;
-
-		if (EnableTrailing && UpdateTrailing(candle))
-			return;
-
-		if (HandleMidlineExit(candle, mid))
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (!IsWithinTradeTime(candle.CloseTime))
-			return;
-
-		var dailyThreshold = GetPriceOffset(DailyRangePoints);
-		if (dailyThreshold > 0m && _previousDailyRange is decimal prevRange && prevRange > dailyThreshold)
-		{
-			CloseAllPositions(candle.OpenTime);
-			return;
-		}
-
-		if (_lastTradeBarTime == candle.OpenTime)
-			return;
-
-		if (candle.LowPrice <= lower && Position <= 0m)
-		{
-			OpenLong(candle.OpenTime);
-			return;
-		}
-
-		if (candle.HighPrice >= upper && Position >= 0m)
-		{
-			OpenShort(candle.OpenTime);
-		}
-	}
-
-	private bool UpdateTrailing(ICandleMessage candle)
-	{
-		if (TrailingDistancePoints <= 0m)
-		{
-			_longTrailingStop = null;
-			_shortTrailingStop = null;
-			return false;
-		}
-
-		var activation = GetPriceOffset(TrailingActivationPoints);
-		var distance = GetPriceOffset(TrailingDistancePoints);
-
-		if (Position > 0m)
-		{
-			var entryPrice = Position.AveragePrice;
-			if (entryPrice <= 0m)
-			return false;
-
-			if (candle.HighPrice - entryPrice >= activation)
-			{
-				var candidate = candle.ClosePrice - distance;
-				if (!_longTrailingStop.HasValue || candidate - _longTrailingStop.Value >= _priceStep)
-				_longTrailingStop = candidate;
-			}
-
-			if (_longTrailingStop.HasValue && candle.LowPrice <= _longTrailingStop.Value)
-			{
-			SellMarket(Position);
-			_longTrailingStop = null;
-			_shortTrailingStop = null;
-			_lastTradeBarTime = candle.OpenTime;
-			return true;
-			}
-		}
-		else if (Position < 0m)
-		{
-			var entryPrice = Position.AveragePrice;
-			if (entryPrice <= 0m)
-			return false;
-
-			if (entryPrice - candle.LowPrice >= activation)
-			{
-				var candidate = candle.ClosePrice + distance;
-				if (!_shortTrailingStop.HasValue || _shortTrailingStop.Value - candidate >= _priceStep)
-				_shortTrailingStop = candidate;
-			}
-
-			if (_shortTrailingStop.HasValue && candle.HighPrice >= _shortTrailingStop.Value)
-			{
-			BuyMarket(Math.Abs(Position));
-			_longTrailingStop = null;
-			_shortTrailingStop = null;
-			_lastTradeBarTime = candle.OpenTime;
-			return true;
-			}
-		}
-		else
-		{
-			_longTrailingStop = null;
-			_shortTrailingStop = null;
-		}
-
-		return false;
-	}
-
-	private bool HandleMidlineExit(ICandleMessage candle, decimal mid)
-	{
-		if (Position > 0m && candle.ClosePrice >= mid)
-		{
-			SellMarket(Position);
-			_longTrailingStop = null;
-			_lastTradeBarTime = candle.OpenTime;
-			return true;
-		}
-
-		if (Position < 0m && candle.ClosePrice <= mid)
-		{
-			BuyMarket(Math.Abs(Position));
-			_shortTrailingStop = null;
-			_lastTradeBarTime = candle.OpenTime;
-			return true;
-		}
-
-		return false;
-	}
-
-	private void OpenLong(DateTimeOffset barTime)
-	{
-		var volume = Volume;
-		if (volume <= 0m)
-			return;
-
-		if (Position < 0m)
-			BuyMarket(Math.Abs(Position));
-
-		BuyMarket(volume);
-		_longTrailingStop = null;
-		_shortTrailingStop = null;
-		_lastTradeBarTime = barTime;
-	}
-
-	private void OpenShort(DateTimeOffset barTime)
-	{
-		var volume = Volume;
-		if (volume <= 0m)
-			return;
-
-		if (Position > 0m)
-			SellMarket(Position);
-
-		SellMarket(volume);
-		_longTrailingStop = null;
-		_shortTrailingStop = null;
-		_lastTradeBarTime = barTime;
-	}
-
-	private void CloseAllPositions(DateTimeOffset barTime)
-	{
-		if (Position > 0m)
-			SellMarket(Position);
-		else if (Position < 0m)
-			BuyMarket(Math.Abs(Position));
-
-		_longTrailingStop = null;
-		_shortTrailingStop = null;
-		_lastTradeBarTime = barTime;
-	}
-
-	private bool IsWithinTradeTime(DateTimeOffset time)
-	{
-		var start = TradeStartTime;
-		var end = TradeEndTime;
-		var current = time.TimeOfDay;
-
-		return start <= end
-			? current >= start && current < end
-			: current >= start || current < end;
-	}
-
-	private decimal GetPriceOffset(decimal points)
-	{
-		if (points <= 0m)
-			return 0m;
-
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-			step = 1m;
-
-		return points * step;
 	}
 
 	private static decimal[] PolyFit(IReadOnlyList<decimal> y, int degree)
@@ -598,4 +314,3 @@ public class ERegressionChannelStrategy : Strategy
 		return (decimal)Math.Sqrt((double)(sum / n));
 	}
 }
-

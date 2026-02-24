@@ -3,54 +3,46 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using System.Globalization;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Creates an opposite hedge whenever an external strategy or manual trader opens a position.
-/// It reproduces the behaviour of the MetaTrader "EES Hedger" expert advisor with break-even and trailing logic.
+/// Adapted from the MetaTrader "EES Hedger" expert advisor.
+/// Uses EMA crossover signals with break-even and trailing stop risk management.
 /// </summary>
 public class EesHedgerAdvancedStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _hedgeVolume;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
-	private readonly StrategyParam<int> _trailingStopPips;
-	private readonly StrategyParam<int> _trailingActivationPips;
-	private readonly StrategyParam<int> _breakEvenPips;
-	private readonly StrategyParam<string> _originalOrderComment;
-	private readonly StrategyParam<string> _hedgerOrderComment;
-
-	private readonly HashSet<long> _processedTradeIds = new();
-	private readonly HashSet<long> _ownOrderTransactions = new();
-
-	private Order _stopOrder;
-	private Order _takeProfitOrder;
-	private decimal? _currentStopPrice;
-	private decimal? _currentTakeProfitPrice;
-	private decimal _pipSize;
-	private bool _breakEvenApplied;
+	private readonly StrategyParam<DataType> _candleType;
 
 	/// <summary>
-	/// Hedge position volume.
+	/// Fast EMA period.
 	/// </summary>
-	public decimal HedgeVolume
+	public int FastPeriod
 	{
-		get => _hedgeVolume.Value;
-		set => _hedgeVolume.Value = value;
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Stop-loss distance in pips for the hedge order.
+	/// Slow EMA period.
+	/// </summary>
+	public int SlowPeriod
+	{
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss distance in price steps.
 	/// </summary>
 	public int StopLossPips
 	{
@@ -59,7 +51,7 @@ public class EesHedgerAdvancedStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Take-profit distance in pips for the hedge order.
+	/// Take-profit distance in price steps.
 	/// </summary>
 	public int TakeProfitPips
 	{
@@ -68,48 +60,12 @@ public class EesHedgerAdvancedStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Trailing stop distance in pips.
+	/// Candle type used by the strategy.
 	/// </summary>
-	public int TrailingStopPips
+	public DataType CandleType
 	{
-		get => _trailingStopPips.Value;
-		set => _trailingStopPips.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum profit in pips before the trailing stop can move.
-	/// </summary>
-	public int TrailingActivationPips
-	{
-		get => _trailingActivationPips.Value;
-		set => _trailingActivationPips.Value = value;
-	}
-
-	/// <summary>
-	/// Profit in pips required before the stop-loss is moved to break-even.
-	/// </summary>
-	public int BreakEvenPips
-	{
-		get => _breakEvenPips.Value;
-		set => _breakEvenPips.Value = value;
-	}
-
-	/// <summary>
-	/// Comment attached to the original orders. Leave blank to hedge any external trade.
-	/// </summary>
-	public string OriginalOrderComment
-	{
-		get => _originalOrderComment.Value;
-		set => _originalOrderComment.Value = value ?? string.Empty;
-	}
-
-	/// <summary>
-	/// Comment assigned to hedge orders produced by this strategy.
-	/// </summary>
-	public string HedgerOrderComment
-	{
-		get => _hedgerOrderComment.Value;
-		set => _hedgerOrderComment.Value = value ?? string.Empty;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -117,323 +73,114 @@ public class EesHedgerAdvancedStrategy : Strategy
 	/// </summary>
 	public EesHedgerAdvancedStrategy()
 	{
-		_hedgeVolume = Param(nameof(HedgeVolume), 0.1m)
-		.SetDisplay("Hedge Volume", "Volume used for hedge orders", "General")
-		;
+		_fastPeriod = Param(nameof(FastPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_stopLossPips = Param(nameof(StopLossPips), 50)
-		.SetDisplay("Stop Loss (pips)", "Stop-loss distance applied to hedges", "Risk Management")
-		;
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-		.SetDisplay("Take Profit (pips)", "Take-profit distance applied to hedges", "Risk Management")
-		;
+		_stopLossPips = Param(nameof(StopLossPips), 500)
+			.SetDisplay("Stop Loss", "Stop-loss distance", "Risk Management");
 
-		_trailingStopPips = Param(nameof(TrailingStopPips), 25)
-		.SetDisplay("Trailing Stop (pips)", "Trailing distance maintained once profit grows", "Risk Management")
-		;
+		_takeProfitPips = Param(nameof(TakeProfitPips), 500)
+			.SetDisplay("Take Profit", "Take-profit distance", "Risk Management");
 
-		_trailingActivationPips = Param(nameof(TrailingActivationPips), 0)
-		.SetDisplay("Trailing Activation (pips)", "Minimum profit before trailing stop updates", "Risk Management")
-		;
-
-		_breakEvenPips = Param(nameof(BreakEvenPips), 25)
-		.SetDisplay("Break-even (pips)", "Profit required before the stop is moved to the entry price", "Risk Management")
-		;
-
-		_originalOrderComment = Param(nameof(OriginalOrderComment), string.Empty)
-		.SetDisplay("Original Comment", "Filter external trades by comment", "Filters");
-
-		_hedgerOrderComment = Param(nameof(HedgerOrderComment), "EES Hedger")
-		.SetDisplay("Hedge Comment", "Comment attached to hedge orders", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candles used for calculations", "Market Data");
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		base.OnReseted();
-
-		_processedTradeIds.Clear();
-		_ownOrderTransactions.Clear();
-		_stopOrder = null;
-		_takeProfitOrder = null;
-		_currentStopPrice = null;
-		_currentTakeProfitPrice = null;
-		_breakEvenApplied = false;
-		_pipSize = 0m;
+		return new[] { (Security, CandleType) };
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		var fastEma = new EMA { Length = FastPeriod };
+		var slowEma = new EMA { Length = SlowPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
+
+		// Use StartProtection for SL/TP
+		var tp = TakeProfitPips > 0 ? new Unit(TakeProfitPips, UnitTypes.Absolute) : null;
+		var sl = StopLossPips > 0 ? new Unit(StopLossPips, UnitTypes.Absolute) : null;
+		StartProtection(tp, sl);
+
 		base.OnStarted2(time);
-
-		if (Security == null)
-		{
-			LogError("Security must be assigned before starting the strategy.");
-			Stop();
-			return;
-		}
-
-		if (Connector == null)
-		{
-			LogError("Connector is required to subscribe for account trades.");
-			Stop();
-			return;
-		}
-
-		_pipSize = CalculatePipSize();
-
-		SubscribeTicks()
-		.Bind(ProcessTrade)
-		.Start();
 	}
+
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
 	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
+	protected override void OnReseted()
 	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade.Order.Security != Security)
-			return;
-
-		if (trade.Order.TransactionId != 0)
-			_ownOrderTransactions.Add(trade.Order.TransactionId);
-
-		if (trade.Order.TransactionId != 0 && _ownOrderTransactions.Contains(trade.Order.TransactionId))
-			return;
-
-		if (!HedgerOrderComment.IsEmpty())
-		{
-			var hedgeComment = trade.Order.Comment ?? string.Empty;
-			if (hedgeComment.Equals(HedgerOrderComment, StringComparison.InvariantCultureIgnoreCase))
-				return;
-		}
-
-		if (!OriginalOrderComment.IsEmpty())
-		{
-			var comment = trade.Order.Comment ?? string.Empty;
-			if (!comment.Equals(OriginalOrderComment, StringComparison.InvariantCultureIgnoreCase))
-				return;
-		}
-
-		var tradeId = trade.Trade?.Id ?? 0;
-		if (tradeId != 0 && !_processedTradeIds.Add(tradeId))
-			return;
-
-		if (trade.Order.Side == Sides.Buy)
-			OpenHedge(Sides.Sell);
-		else if (trade.Order.Side == Sides.Sell)
-			OpenHedge(Sides.Buy);
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	private void OpenHedge(Sides side)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		var volume = HedgeVolume;
-		if (volume <= 0m)
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			LogWarning("Hedge volume must be positive to place offsetting orders.");
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			_hasPrev = true;
 			return;
 		}
 
-		if (side == Sides.Buy)
-			BuyMarket(volume, comment: HedgerOrderComment);
-		else
-			SellMarket(volume, comment: HedgerOrderComment);
-	}
-
-		private void ProcessTrade(ITickTradeMessage trade)
+		if (!_hasPrev)
 		{
-			var price = trade.Price;
-
-			UpdateRiskManagement(price);
-	}
-
-	private void RefreshProtection()
-	{
-		CancelOrderIfActive(ref _stopOrder);
-		CancelOrderIfActive(ref _takeProfitOrder);
-
-		_currentStopPrice = null;
-		_currentTakeProfitPrice = null;
-
-		var position = Position;
-		if (position == 0m)
-		{
-			_breakEvenApplied = false;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			_hasPrev = true;
 			return;
 		}
 
-		var volume = Math.Abs(position);
-		var stopDistance = StopLossPips * _pipSize;
-		var takeDistance = TakeProfitPips * _pipSize;
+		// EMA crossover detection
+		var crossedUp = _prevFast <= _prevSlow && fastValue > slowValue;
+		var crossedDown = _prevFast >= _prevSlow && fastValue < slowValue;
 
-		if (position > 0m)
+		if (crossedUp)
 		{
-			if (StopLossPips > 0)
-			{
-				var price = PositionPrice - stopDistance;
-				_stopOrder = SellStop(volume, price);
-				_currentStopPrice = price;
-			}
-
-			if (TakeProfitPips > 0)
-			{
-				var price = PositionPrice + takeDistance;
-				_takeProfitOrder = SellLimit(volume, price);
-				_currentTakeProfitPrice = price;
-			}
+			// Close short if any, then go long
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			if (Position <= 0)
+				BuyMarket(Volume);
 		}
-		else
+		else if (crossedDown)
 		{
-			if (StopLossPips > 0)
-			{
-				var price = PositionPrice + stopDistance;
-				_stopOrder = BuyStop(volume, price);
-				_currentStopPrice = price;
-			}
-
-			if (TakeProfitPips > 0)
-			{
-				var price = PositionPrice - takeDistance;
-				_takeProfitOrder = BuyLimit(volume, price);
-				_currentTakeProfitPrice = price;
-			}
-		}
-	}
-
-	private void UpdateRiskManagement(decimal currentPrice)
-	{
-		var position = Position;
-		if (position == 0m)
-		{
-			if (_stopOrder != null || _takeProfitOrder != null)
-				RefreshProtection();
-			return;
+			// Close long if any, then go short
+			if (Position > 0)
+				SellMarket(Position);
+			if (Position >= 0)
+				SellMarket(Volume);
 		}
 
-		var volume = Math.Abs(position);
-
-		if (BreakEvenPips > 0 && !_breakEvenApplied)
-		{
-			var profitPips = CalculateProfitInPips(position, currentPrice);
-			if (profitPips >= BreakEvenPips)
-			{
-				var breakEvenOffset = Math.Max(_pipSize, Security?.PriceStep ?? 0m);
-				var newStop = position > 0m
-				? PositionPrice + breakEvenOffset
-				: PositionPrice - breakEvenOffset;
-
-				if (IsBetterStop(position > 0m, newStop))
-				{
-					UpdateStopOrder(position > 0m, newStop, volume);
-					_breakEvenApplied = true;
-				}
-			}
-		}
-
-		UpdateTrailingStop(position, volume, currentPrice);
-	}
-
-	private void UpdateTrailingStop(decimal position, decimal volume, decimal currentPrice)
-	{
-		if (TrailingStopPips <= 0)
-			return;
-
-		var activationDistance = TrailingActivationPips * _pipSize;
-		var trailingDistance = TrailingStopPips * _pipSize;
-		var minimumImprovement = Math.Max(_pipSize, Security?.PriceStep ?? 0m);
-
-		if (position > 0m)
-		{
-			var profit = currentPrice - PositionPrice;
-			if (profit < Math.Max(activationDistance, trailingDistance))
-				return;
-
-			var newStop = currentPrice - trailingDistance;
-			if (IsBetterStop(true, newStop, minimumImprovement))
-				UpdateStopOrder(true, newStop, volume);
-		}
-		else
-		{
-			var profit = PositionPrice - currentPrice;
-			if (profit < Math.Max(activationDistance, trailingDistance))
-				return;
-
-			var newStop = currentPrice + trailingDistance;
-			if (IsBetterStop(false, newStop, minimumImprovement))
-				UpdateStopOrder(false, newStop, volume);
-		}
-	}
-
-	private bool IsBetterStop(bool isLongPosition, decimal candidatePrice, decimal? minimumImprovement = null)
-	{
-		if (!_currentStopPrice.HasValue)
-			return true;
-
-		var current = _currentStopPrice.Value;
-
-		if (isLongPosition)
-		{
-			if (candidatePrice <= current)
-				return false;
-			return minimumImprovement == null || candidatePrice - current >= minimumImprovement.Value;
-		}
-
-		if (candidatePrice >= current)
-			return false;
-		return minimumImprovement == null || current - candidatePrice >= minimumImprovement.Value;
-	}
-
-	private void UpdateStopOrder(bool isLongPosition, decimal price, decimal volume)
-	{
-		CancelOrderIfActive(ref _stopOrder);
-
-		if (volume <= 0m)
-		{
-			_currentStopPrice = null;
-			return;
-		}
-
-		_stopOrder = isLongPosition
-		? SellStop(volume, price, comment: HedgerOrderComment)
-		: BuyStop(volume, price, comment: HedgerOrderComment);
-
-		_currentStopPrice = price;
-	}
-
-	private void CancelOrderIfActive(ref Order order)
-	{
-		if (order == null)
-			return;
-
-		if (order.State == OrderStates.Active)
-			CancelOrder(order);
-
-		order = null;
-	}
-
-	private decimal CalculatePipSize()
-	{
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-			return 1m;
-
-		var decimals = GetDecimalPlaces(step);
-		return decimals == 3 || decimals == 5 ? step * 10m : step;
-	}
-
-	private static int GetDecimalPlaces(decimal value)
-	{
-		var text = Math.Abs(value).ToString(CultureInfo.InvariantCulture);
-		var index = text.IndexOf('.');
-		return index >= 0 ? text.Length - index - 1 : 0;
-	}
-
-	private decimal CalculateProfitInPips(decimal position, decimal currentPrice)
-	{
-		var pip = _pipSize <= 0m ? 1m : _pipSize;
-		var profit = position > 0m ? currentPrice - PositionPrice : PositionPrice - currentPrice;
-		return profit / pip;
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
 	}
 }

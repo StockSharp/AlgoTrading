@@ -73,16 +73,16 @@ public class SupplyDemandEngulfmentStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var donchian = new DonchianChannel { Length = ZonePeriod };
+		var donchian = new DonchianChannels { Length = ZonePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(donchian, ProcessCandle)
+			.BindEx(donchian, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue dcValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -94,6 +94,13 @@ public class SupplyDemandEngulfmentStrategy : Strategy
 		}
 
 		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevCandle = candle;
+			return;
+		}
+
+		var dc = (IDonchianChannelsValue)dcValue;
+		if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
 		{
 			_prevCandle = candle;
 			return;

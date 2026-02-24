@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -26,120 +23,47 @@ public class BreakTheRangeBoundStrategy : Strategy
 	private readonly StrategyParam<int> _rangeLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _diffHighest = null!;
-	private Highest _rangeHigh = null!;
-	private Lowest _rangeLow = null!;
+	private Highest _rangeHigh;
+	private Lowest _rangeLow;
 
+	private readonly List<decimal> _diffBuffer = new();
 	private decimal _entryPrice;
 	private decimal _rangeHighAtEntry;
 	private decimal _rangeLowAtEntry;
+	private decimal _prevHighest;
+	private decimal _prevLowest;
 
-	/// <summary>
-	/// Fast SMA period.
-	/// </summary>
-	public int FastSma
-	{
-		get => _fastSma.Value;
-		set => _fastSma.Value = value;
-	}
+	public int FastSma { get => _fastSma.Value; set => _fastSma.Value = value; }
+	public int MidSma { get => _midSma.Value; set => _midSma.Value = value; }
+	public int SlowSma { get => _slowSma.Value; set => _slowSma.Value = value; }
+	public decimal ShakeThreshold { get => _shakeThreshold.Value; set => _shakeThreshold.Value = value; }
+	public int RangeLength { get => _rangeLength.Value; set => _rangeLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Mid SMA period.
-	/// </summary>
-	public int MidSma
-	{
-		get => _midSma.Value;
-		set => _midSma.Value = value;
-	}
-
-	/// <summary>
-	/// Slow SMA period.
-	/// </summary>
-	public int SlowSma
-	{
-		get => _slowSma.Value;
-		set => _slowSma.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum difference between SMAs during range period.
-	/// </summary>
-	public decimal ShakeThreshold
-	{
-		get => _shakeThreshold.Value;
-		set => _shakeThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Number of candles to analyse for range detection.
-	/// </summary>
-	public int RangeLength
-	{
-		get => _rangeLength.Value;
-		set => _rangeLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
 	public BreakTheRangeBoundStrategy()
 	{
-		_fastSma = Param(nameof(FastSma), 38)
+		_fastSma = Param(nameof(FastSma), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast SMA", "Fast moving average period", "Parameters")
-			
-			.SetOptimize(10, 100, 10);
+			.SetDisplay("Fast SMA", "Fast moving average period", "Parameters");
 
-		_midSma = Param(nameof(MidSma), 140)
+		_midSma = Param(nameof(MidSma), 30)
 			.SetGreaterThanZero()
-			.SetDisplay("Mid SMA", "Middle moving average period", "Parameters")
-			
-			.SetOptimize(50, 200, 10);
+			.SetDisplay("Mid SMA", "Middle moving average period", "Parameters");
 
-		_slowSma = Param(nameof(SlowSma), 210)
+		_slowSma = Param(nameof(SlowSma), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow SMA", "Slow moving average period", "Parameters")
-			
-			.SetOptimize(100, 300, 10);
+			.SetDisplay("Slow SMA", "Slow moving average period", "Parameters");
 
-		_shakeThreshold = Param(nameof(ShakeThreshold), 250m)
+		_shakeThreshold = Param(nameof(ShakeThreshold), 5000m)
 			.SetGreaterThanZero()
-			.SetDisplay("Shake Threshold", "Max SMA spread to treat as range", "Range")
-			
-			.SetOptimize(50m, 500m, 50m);
+			.SetDisplay("Shake Threshold", "Max SMA spread to treat as range", "Range");
 
-		_rangeLength = Param(nameof(RangeLength), 200)
+		_rangeLength = Param(nameof(RangeLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Range Length", "Number of candles in range", "Range")
-			
-			.SetOptimize(50, 300, 50);
+			.SetDisplay("Range Length", "Number of candles in range", "Range");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_entryPrice = 0m;
-		_rangeHighAtEntry = 0m;
-		_rangeLowAtEntry = 0m;
 	}
 
 	/// <inheritdoc />
@@ -151,57 +75,72 @@ public class BreakTheRangeBoundStrategy : Strategy
 		var midMa = new SMA { Length = MidSma };
 		var slowMa = new SMA { Length = SlowSma };
 
-		_diffHighest = new Highest { Length = RangeLength };
 		_rangeHigh = new Highest { Length = RangeLength };
 		_rangeLow = new Lowest { Length = RangeLength };
+		_diffBuffer.Clear();
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(fastMa, midMa, slowMa, ProcessCandle).Start();
+		subscription.BindEx(new IIndicator[] { fastMa, midMa, slowMa }, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, fastMa);
-			DrawIndicator(area, midMa);
-			DrawIndicator(area, slowMa);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal mid, decimal slow)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var maxSma = Math.Max(fast, Math.Max(mid, slow));
-		var minSma = Math.Min(fast, Math.Min(mid, slow));
+		var fast = values[0].IsEmpty ? (decimal?)null : values[0].GetValue<decimal>();
+		var mid = values[1].IsEmpty ? (decimal?)null : values[1].GetValue<decimal>();
+		var slow = values[2].IsEmpty ? (decimal?)null : values[2].GetValue<decimal>();
+
+		if (fast is null || mid is null || slow is null)
+			return;
+
+		var maxSma = Math.Max(fast.Value, Math.Max(mid.Value, slow.Value));
+		var minSma = Math.Min(fast.Value, Math.Min(mid.Value, slow.Value));
 		var diff = maxSma - minSma;
 
-		var maxDiff = _diffHighest.Process(diff).ToDecimal();
-		var highest = _rangeHigh.Process(candle).ToDecimal();
-		var lowest = _rangeLow.Process(candle).ToDecimal();
+		// Track max diff over RangeLength candles
+		_diffBuffer.Add(diff);
+		if (_diffBuffer.Count > RangeLength)
+			_diffBuffer.RemoveAt(0);
 
-		if (!_diffHighest.IsFormed || !_rangeHigh.IsFormed || !_rangeLow.IsFormed)
+		var highestVal = _rangeHigh.Process(candle);
+		var lowestVal = _rangeLow.Process(candle);
+
+		if (!_rangeHigh.IsFormed || !_rangeLow.IsFormed || _diffBuffer.Count < RangeLength)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// Find max diff in buffer
+		var maxDiff = decimal.MinValue;
+		for (var i = 0; i < _diffBuffer.Count; i++)
+		{
+			if (_diffBuffer[i] > maxDiff)
+				maxDiff = _diffBuffer[i];
+		}
+
+		var highest = highestVal.ToDecimal();
+		var lowest = lowestVal.ToDecimal();
 
 		if (Position == 0)
 		{
-			if (maxDiff < ShakeThreshold)
+			if (maxDiff < ShakeThreshold && _prevHighest > 0)
 			{
-				if (candle.ClosePrice > highest)
+				if (candle.ClosePrice > _prevHighest)
 				{
 					BuyMarket();
 					_entryPrice = candle.ClosePrice;
 					_rangeHighAtEntry = highest;
 					_rangeLowAtEntry = lowest;
 				}
-				else if (candle.ClosePrice < lowest)
+				else if (candle.ClosePrice < _prevLowest)
 				{
 					SellMarket();
 					_entryPrice = candle.ClosePrice;
@@ -222,5 +161,8 @@ public class BreakTheRangeBoundStrategy : Strategy
 				_entryPrice - candle.ClosePrice > 4m * (_rangeHighAtEntry - _rangeLowAtEntry))
 				BuyMarket(Math.Abs(Position));
 		}
+
+		_prevHighest = highest;
+		_prevLowest = lowest;
 	}
 }

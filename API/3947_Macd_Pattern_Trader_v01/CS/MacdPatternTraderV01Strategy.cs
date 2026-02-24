@@ -176,17 +176,17 @@ public class MacdPatternTraderV01Strategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal", "Signal EMA length for MACD", "Indicators");
 
-		_bearishThreshold = Param(nameof(BearishThreshold), 0.0045m)
+		_bearishThreshold = Param(nameof(BearishThreshold), 50m)
 		.SetDisplay("Bearish Threshold", "Positive MACD level that arms short trades", "Signals");
 
-		_bullishThreshold = Param(nameof(BullishThreshold), -0.0045m)
+		_bullishThreshold = Param(nameof(BullishThreshold), -50m)
 		.SetDisplay("Bullish Threshold", "Negative MACD level that arms long trades", "Signals");
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Trade volume for every market order", "General");
 
-		_emaShortMa = { Length = Param }(nameof(EmaShortPeriod), 7)
+		_emaShortPeriod = Param(nameof(EmaShortPeriod), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Short", "Short EMA period for position management", "Indicators");
 
@@ -198,14 +198,14 @@ public class MacdPatternTraderV01Strategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("SMA Period", "SMA period used in the composite exit", "Indicators");
 
-		_emaLongMa = { Length = Param }(nameof(EmaLongPeriod), 365)
+		_emaLongPeriod = Param(nameof(EmaLongPeriod), 365)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Long", "Long EMA period used in the composite exit", "Indicators");
 
 		_profitThreshold = Param(nameof(ProfitThreshold), 5m)
 		.SetDisplay("Profit Threshold", "Minimum floating profit before scaling out", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Source series for the strategy", "General");
 	}
 
@@ -244,12 +244,9 @@ protected override void OnStarted2(DateTime time)
 
 	Volume = OrderVolume;
 
-	_macd = new MACD
-	{
-		ShortMa = { Length = MacdFastPeriod },
-		LongMa = { Length = MacdSlowPeriod },
-		SignalPeriod = MacdSignalPeriod
-	};
+	_macd = new MACD();
+	_macd.ShortMa.Length = MacdFastPeriod;
+	_macd.LongMa.Length = MacdSlowPeriod;
 
 _emaShort = new EMA { Length = EmaShortPeriod };
 _emaMedium = new EMA { Length = EmaMediumPeriod };
@@ -271,12 +268,10 @@ if (area != null)
 }
 }
 
-private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal macdSignal, decimal emaShortValue, decimal emaMediumValue, decimal smaValue, decimal emaLongValue)
+private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal emaShortValue, decimal emaMediumValue, decimal smaValue, decimal emaLongValue)
 {
 	if (candle.State != CandleStates.Finished)
 	return;
-
-	_ = macdSignal;
 
 		// Check protective targets before generating new signals.
 	HandleProtectiveExits(candle);

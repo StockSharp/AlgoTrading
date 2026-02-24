@@ -135,8 +135,8 @@ public class SupertrendSslToggleStrategy : Strategy
 		var supertrendSell = !directionUp && _prevDirectionUp;
 		_prevDirectionUp = directionUp;
 
-		var highValue = _smaHigh.Process(new DecimalIndicatorValue(_smaHigh, candle.HighPrice));
-		var lowValue = _smaLow.Process(new DecimalIndicatorValue(_smaLow, candle.LowPrice));
+		var highValue = _smaHigh.Process(candle.HighPrice, candle.ServerTime, true);
+		var lowValue = _smaLow.Process(candle.LowPrice, candle.ServerTime, true);
 		if (!_smaHigh.IsFormed || !_smaLow.IsFormed)
 			return;
 

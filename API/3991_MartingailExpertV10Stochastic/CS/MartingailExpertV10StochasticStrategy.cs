@@ -23,16 +23,13 @@ public class MartingailExpertV10StochasticStrategy : Strategy
 	private readonly StrategyParam<int> _stepMode;
 	private readonly StrategyParam<decimal> _profitFactorPoints;
 	private readonly StrategyParam<decimal> _multiplier;
-	private readonly StrategyParam<decimal> _buyVolume;
-	private readonly StrategyParam<decimal> _sellVolume;
 	private readonly StrategyParam<int> _kPeriod;
 	private readonly StrategyParam<int> _dPeriod;
-	private readonly StrategyParam<int> _slowing;
 	private readonly StrategyParam<decimal> _zoneBuy;
 	private readonly StrategyParam<decimal> _zoneSell;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private StochasticOscillator _stochastic = null!;
+	private StochasticOscillator _stochastic;
 
 	private decimal _pointSize;
 	private decimal? _prevK;
@@ -62,7 +59,7 @@ public class MartingailExpertV10StochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Step mode from the original EA: 0 - fixed, 1 - fixed plus two extra points per filled order.
+	/// Step mode: 0 - fixed, 1 - fixed plus extra points per filled order.
 	/// </summary>
 	public int StepMode
 	{
@@ -89,24 +86,6 @@ public class MartingailExpertV10StochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initial long position volume.
-	/// </summary>
-	public decimal BuyVolume
-	{
-		get => _buyVolume.Value;
-		set => _buyVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Initial short position volume.
-	/// </summary>
-	public decimal SellVolume
-	{
-		get => _sellVolume.Value;
-		set => _sellVolume.Value = value;
-	}
-
-	/// <summary>
 	/// Stochastic %K lookback period.
 	/// </summary>
 	public int KPeriod
@@ -122,15 +101,6 @@ public class MartingailExpertV10StochasticStrategy : Strategy
 	{
 		get => _dPeriod.Value;
 		set => _dPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Additional smoothing length applied to %K line.
-	/// </summary>
-	public int Slowing
-	{
-		get => _slowing.Value;
-		set => _slowing.Value = value;
 	}
 
 	/// <summary>
@@ -165,381 +135,282 @@ public class MartingailExpertV10StochasticStrategy : Strategy
 	/// </summary>
 	public MartingailExpertV10StochasticStrategy()
 	{
-		_stepPoints = Param(nameof(StepPoints), 25m)
-		.SetGreaterThanZero()
-		.SetDisplay("Step", "Price step in points before averaging", "Martingale");
+		_stepPoints = Param(nameof(StepPoints), 500m)
+			.SetGreaterThanZero()
+			.SetDisplay("Step", "Price step in points before averaging", "Martingale");
 
 		_stepMode = Param(nameof(StepMode), 0)
-		.SetDisplay("Step Mode", "0 - fixed step, 1 - step plus two points per order", "Martingale");
+			.SetDisplay("Step Mode", "0 - fixed step, 1 - step plus extra points per order", "Martingale");
 
-		_profitFactorPoints = Param(nameof(ProfitFactorPoints), 10m)
-		.SetGreaterThanZero()
-		.SetDisplay("Profit Factor", "Points multiplied by order count for take profit", "Martingale");
+		_profitFactorPoints = Param(nameof(ProfitFactorPoints), 300m)
+			.SetGreaterThanZero()
+			.SetDisplay("Profit Factor", "Points multiplied by order count for take profit", "Martingale");
 
 		_multiplier = Param(nameof(Multiplier), 1.5m)
-		.SetGreaterThanZero()
-		.SetDisplay("Multiplier", "Martingale multiplier for averaging", "Martingale");
+			.SetGreaterThanZero()
+			.SetDisplay("Multiplier", "Martingale multiplier for averaging", "Martingale");
 
-		_buyVolume = Param(nameof(BuyVolume), 0.01m)
-		.SetGreaterThanZero()
-		.SetDisplay("Buy Volume", "Initial buy order volume", "Trading");
+		_kPeriod = Param(nameof(KPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("%K Period", "Stochastic %K lookback", "Indicators");
 
-		_sellVolume = Param(nameof(SellVolume), 0.01m)
-		.SetGreaterThanZero()
-		.SetDisplay("Sell Volume", "Initial sell order volume", "Trading");
-
-		_kPeriod = Param(nameof(KPeriod), 200)
-		.SetGreaterThanZero()
-		.SetDisplay("%K Period", "Stochastic %K lookback", "Indicators");
-
-		_dPeriod = Param(nameof(DPeriod), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("%D Period", "Stochastic %D smoothing", "Indicators");
-
-		_slowing = Param(nameof(Slowing), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("Slowing", "Additional smoothing for %K", "Indicators");
+		_dPeriod = Param(nameof(DPeriod), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("%D Period", "Stochastic %D smoothing", "Indicators");
 
 		_zoneBuy = Param(nameof(ZoneBuy), 50m)
-		.SetDisplay("Zone Buy", "%D lower bound to allow buys", "Indicators");
+			.SetDisplay("Zone Buy", "%D lower bound to allow buys", "Indicators");
 
 		_zoneSell = Param(nameof(ZoneSell), 50m)
-		.SetDisplay("Zone Sell", "%D upper bound to allow sells", "Indicators");
+			.SetDisplay("Zone Sell", "%D upper bound to allow sells", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe used for processing", "General");
+			.SetDisplay("Candle Type", "Timeframe used for processing", "General");
+
+		Volume = 1;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-	base.OnReseted();
-
-	_pointSize = 0m;
-	_prevK = null;
-	_prevD = null;
-
-	ResetLongState();
-	ResetShortState();
+		base.OnReseted();
+		_stochastic = null;
+		_pointSize = 0m;
+		_prevK = null;
+		_prevD = null;
+		ResetLongState();
+		ResetShortState();
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted2(time);
+		_pointSize = Security?.PriceStep ?? 1m;
+		if (_pointSize <= 0m) _pointSize = 1m;
 
-	_pointSize = CalculatePointSize();
+		_stochastic = new StochasticOscillator();
+		_stochastic.K.Length = KPeriod;
+		_stochastic.D.Length = DPeriod;
 
-	_stochastic = new StochasticOscillator
-	{ K = { Length = KPeriod },
-	K = { Length = Slowing },
-	D = { Length = DPeriod }
-	};
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.BindEx(_stochastic, ProcessCandle)
+			.Start();
 
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.BindEx(_stochastic, ProcessCandle)
-	.Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 
-	var area = CreateChartArea();
-	if (area != null)
-	{
-	DrawCandles(area, subscription);
-	DrawIndicator(area, _stochastic);
-	DrawOwnTrades(area);
-	}
+			var indArea = CreateChartArea();
+			if (indArea != null)
+				DrawIndicator(indArea, _stochastic);
+		}
 
-	StartProtection(null, null);
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochasticValue)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	if (stochasticValue is not StochasticOscillatorValue stoch)
-	return;
+		if (stochasticValue is not StochasticOscillatorValue stoch)
+			return;
 
-	if (stoch.K is not decimal currentK || stoch.D is not decimal currentD)
-	return;
+		if (stoch.K is not decimal currentK || stoch.D is not decimal currentD)
+			return;
 
-	if (!_stochastic.IsFormed)
-	{
-	_prevK = currentK;
-	_prevD = currentD;
-	return;
-	}
+		if (!_stochastic.IsFormed)
+		{
+			_prevK = currentK;
+			_prevD = currentD;
+			return;
+		}
 
-	var tradingAllowed = IsFormedAndOnlineAndAllowTrading();
+		var tradingAllowed = IsFormedAndOnlineAndAllowTrading();
 
-	ManageClusters(candle, tradingAllowed);
+		ManageClusters(candle, tradingAllowed);
 
-	if (!tradingAllowed)
-	{
-	_prevK = currentK;
-	_prevD = currentD;
-	return;
-	}
+		if (!tradingAllowed)
+		{
+			_prevK = currentK;
+			_prevD = currentD;
+			return;
+		}
 
-	if (Position == 0m && _prevK is decimal prevK && _prevD is decimal prevD)
-	{
-	if (prevK > prevD && prevD > ZoneBuy)
-	{
-	OpenLong(candle.ClosePrice);
-	}
-	else if (prevK < prevD && prevD < ZoneSell)
-	{
-	OpenShort(candle.ClosePrice);
-	}
-	}
+		// Entry logic: stochastic crossover in oversold/overbought zones
+		if (Position == 0m && _buyOrderCount == 0 && _sellOrderCount == 0
+			&& _prevK is decimal prevK && _prevD is decimal prevD)
+		{
+			if (prevK > prevD && prevD > ZoneBuy)
+			{
+				OpenLong(candle.ClosePrice);
+			}
+			else if (prevK < prevD && prevD < ZoneSell)
+			{
+				OpenShort(candle.ClosePrice);
+			}
+		}
 
-	_prevK = currentK;
-	_prevD = currentD;
+		_prevK = currentK;
+		_prevD = currentD;
 	}
 
 	private void ManageClusters(ICandleMessage candle, bool tradingAllowed)
 	{
-	if (Position > 0m && _buyOrderCount > 0)
-	{
-	HandleLongCluster(candle, tradingAllowed);
-	}
-	else if (Position < 0m && _sellOrderCount > 0)
-	{
-	HandleShortCluster(candle, tradingAllowed);
-	}
-	else if (Position == 0m)
-	{
-	if (_buyOrderCount > 0 || _sellOrderCount > 0)
-	{
-	ResetLongState();
-	ResetShortState();
-	}
-	}
+		if (Position > 0m && _buyOrderCount > 0)
+		{
+			HandleLongCluster(candle, tradingAllowed);
+		}
+		else if (Position < 0m && _sellOrderCount > 0)
+		{
+			HandleShortCluster(candle, tradingAllowed);
+		}
+		else if (Position == 0m)
+		{
+			if (_buyOrderCount > 0 || _sellOrderCount > 0)
+			{
+				ResetLongState();
+				ResetShortState();
+			}
+		}
 	}
 
 	private void HandleLongCluster(ICandleMessage candle, bool tradingAllowed)
 	{
-	if (!tradingAllowed || _pointSize <= 0m)
-	return;
+		if (!tradingAllowed || _pointSize <= 0m)
+			return;
 
-	var currentCount = Math.Max(1, _buyOrderCount);
-	var stepPoints = StepMode == 0
-	? StepPoints
-	: StepPoints + Math.Max(0m, currentCount * 2m - 2m);
-	var addTrigger = _buyLastPrice - stepPoints * _pointSize;
+		// Check take profit first
+		if (_buyTakeProfit > 0m && candle.HighPrice >= _buyTakeProfit)
+		{
+			SellMarket(Math.Abs(Position));
+			ResetLongState();
+			return;
+		}
 
-	// Try to add another long order when the bar trades below the trigger.
-	if (_buyLastVolume > 0m && candle.LowPrice <= addTrigger)
-	{
-	var desiredVolume = _buyLastVolume * Multiplier;
-	var nextVolume = PrepareNextVolume(desiredVolume, _buyTotalVolume);
-	if (nextVolume > 0m)
-	{
-	var executionPrice = Math.Min(addTrigger, candle.LowPrice);
-	BuyMarket(nextVolume);
+		// Average down
+		var currentCount = Math.Max(1, _buyOrderCount);
+		var stepPts = StepMode == 0
+			? StepPoints
+			: StepPoints + Math.Max(0m, currentCount * 2m - 2m);
+		var addTrigger = _buyLastPrice - stepPts * _pointSize;
 
-	_buyLastVolume = nextVolume;
-	_buyLastPrice = executionPrice;
-	_buyTotalVolume += nextVolume;
-	_buyWeightedSum += executionPrice * nextVolume;
-	_buyOrderCount++;
-	_buyTakeProfit = _buyLastPrice + ProfitFactorPoints * _pointSize * _buyOrderCount;
-	}
-	}
+		if (_buyLastVolume > 0m && candle.LowPrice <= addTrigger)
+		{
+			var nextVolume = Math.Max(1m, Math.Round(_buyLastVolume * Multiplier));
+			BuyMarket(nextVolume);
 
-// Exit the entire long cluster once the shared take profit is reached.
-if (_buyTakeProfit > 0m && candle.HighPrice >= _buyTakeProfit)
-{
-var estimatedPnL = (_buyTakeProfit - GetAveragePrice(true)) * _buyTotalVolume;
-if (estimatedPnL > 0m)
-{
-SellMarket(Math.Abs(Position));
-ResetLongState();
-}
-}
+			var executionPrice = candle.ClosePrice;
+			_buyLastVolume = nextVolume;
+			_buyLastPrice = executionPrice;
+			_buyTotalVolume += nextVolume;
+			_buyWeightedSum += executionPrice * nextVolume;
+			_buyOrderCount++;
+			RecalcLongTp();
+		}
 	}
 
 	private void HandleShortCluster(ICandleMessage candle, bool tradingAllowed)
 	{
-	if (!tradingAllowed || _pointSize <= 0m)
-	return;
+		if (!tradingAllowed || _pointSize <= 0m)
+			return;
 
-	var currentCount = Math.Max(1, _sellOrderCount);
-	var stepPoints = StepMode == 0
-	? StepPoints
-	: StepPoints + Math.Max(0m, currentCount * 2m - 2m);
-	var addTrigger = _sellLastPrice + stepPoints * _pointSize;
+		// Check take profit first
+		if (_sellTakeProfit > 0m && candle.LowPrice <= _sellTakeProfit)
+		{
+			BuyMarket(Math.Abs(Position));
+			ResetShortState();
+			return;
+		}
 
-	// Try to add another short order when the bar trades above the trigger.
-	if (_sellLastVolume > 0m && candle.HighPrice >= addTrigger)
-	{
-	var desiredVolume = _sellLastVolume * Multiplier;
-	var nextVolume = PrepareNextVolume(desiredVolume, _sellTotalVolume);
-	if (nextVolume > 0m)
-	{
-	var executionPrice = Math.Max(addTrigger, candle.HighPrice);
-	SellMarket(nextVolume);
+		// Average up
+		var currentCount = Math.Max(1, _sellOrderCount);
+		var stepPts = StepMode == 0
+			? StepPoints
+			: StepPoints + Math.Max(0m, currentCount * 2m - 2m);
+		var addTrigger = _sellLastPrice + stepPts * _pointSize;
 
-	_sellLastVolume = nextVolume;
-	_sellLastPrice = executionPrice;
-	_sellTotalVolume += nextVolume;
-	_sellWeightedSum += executionPrice * nextVolume;
-	_sellOrderCount++;
-	_sellTakeProfit = _sellLastPrice - ProfitFactorPoints * _pointSize * _sellOrderCount;
-	}
-	}
+		if (_sellLastVolume > 0m && candle.HighPrice >= addTrigger)
+		{
+			var nextVolume = Math.Max(1m, Math.Round(_sellLastVolume * Multiplier));
+			SellMarket(nextVolume);
 
-	// Exit the entire short cluster once the shared take profit is reached.
-	if (_sellTakeProfit > 0m && candle.LowPrice <= _sellTakeProfit)
-	{
-	var estimatedPnL = (GetAveragePrice(false) - _sellTakeProfit) * _sellTotalVolume;
-	if (estimatedPnL > 0m)
-	{
-	BuyMarket(Math.Abs(Position));
-	ResetShortState();
-	}
-	}
+			var executionPrice = candle.ClosePrice;
+			_sellLastVolume = nextVolume;
+			_sellLastPrice = executionPrice;
+			_sellTotalVolume += nextVolume;
+			_sellWeightedSum += executionPrice * nextVolume;
+			_sellOrderCount++;
+			RecalcShortTp();
+		}
 	}
 
 	private void OpenLong(decimal price)
 	{
-	var volume = PrepareNextVolume(BuyVolume, 0m);
-	if (volume <= 0m)
-	return;
+		BuyMarket(Volume);
 
-	BuyMarket(volume);
+		_buyLastPrice = price;
+		_buyLastVolume = Volume;
+		_buyTotalVolume = Volume;
+		_buyWeightedSum = price * Volume;
+		_buyOrderCount = 1;
+		RecalcLongTp();
 
-	_buyLastPrice = price;
-	_buyLastVolume = volume;
-	_buyTotalVolume = volume;
-	_buyWeightedSum = price * volume;
-	_buyOrderCount = 1;
-	_buyTakeProfit = price + ProfitFactorPoints * _pointSize;
-
-	ResetShortState();
+		ResetShortState();
 	}
 
 	private void OpenShort(decimal price)
 	{
-	var volume = PrepareNextVolume(SellVolume, 0m);
-	if (volume <= 0m)
-	return;
+		SellMarket(Volume);
 
-	SellMarket(volume);
+		_sellLastPrice = price;
+		_sellLastVolume = Volume;
+		_sellTotalVolume = Volume;
+		_sellWeightedSum = price * Volume;
+		_sellOrderCount = 1;
+		RecalcShortTp();
 
-	_sellLastPrice = price;
-	_sellLastVolume = volume;
-	_sellTotalVolume = volume;
-	_sellWeightedSum = price * volume;
-	_sellOrderCount = 1;
-	_sellTakeProfit = price - ProfitFactorPoints * _pointSize;
+		ResetLongState();
+	}
 
-	ResetLongState();
+	private void RecalcLongTp()
+	{
+		var avg = _buyTotalVolume > 0 ? _buyWeightedSum / _buyTotalVolume : _buyLastPrice;
+		_buyTakeProfit = avg + ProfitFactorPoints * _pointSize;
+	}
+
+	private void RecalcShortTp()
+	{
+		var avg = _sellTotalVolume > 0 ? _sellWeightedSum / _sellTotalVolume : _sellLastPrice;
+		_sellTakeProfit = avg - ProfitFactorPoints * _pointSize;
 	}
 
 	private void ResetLongState()
 	{
-	_buyLastPrice = 0m;
-	_buyLastVolume = 0m;
-	_buyTotalVolume = 0m;
-	_buyWeightedSum = 0m;
-	_buyOrderCount = 0;
-	_buyTakeProfit = 0m;
+		_buyLastPrice = 0m;
+		_buyLastVolume = 0m;
+		_buyTotalVolume = 0m;
+		_buyWeightedSum = 0m;
+		_buyOrderCount = 0;
+		_buyTakeProfit = 0m;
 	}
 
 	private void ResetShortState()
 	{
-	_sellLastPrice = 0m;
-	_sellLastVolume = 0m;
-	_sellTotalVolume = 0m;
-	_sellWeightedSum = 0m;
-	_sellOrderCount = 0;
-	_sellTakeProfit = 0m;
-	}
-
-	private decimal PrepareNextVolume(decimal requestedVolume, decimal currentTotal)
-	{
-	if (requestedVolume <= 0m)
-	return 0m;
-
-	var normalized = NormalizeVolume(requestedVolume);
-	if (normalized <= 0m)
-	return 0m;
-
-	var maxVolume = GetMaxVolumeLimit();
-	if (maxVolume < decimal.MaxValue)
-	{
-	var remaining = maxVolume - currentTotal;
-	if (remaining <= 0m)
-	return 0m;
-
-	if (normalized > remaining)
-	normalized = NormalizeVolume(remaining);
-	}
-
-	return normalized;
-	}
-
-	private decimal NormalizeVolume(decimal volume)
-	{
-	var security = Security;
-	if (security == null)
-	return volume;
-
-	var step = security.VolumeStep ?? 0m;
-	if (step > 0m)
-	volume = step * Math.Round(volume / step, MidpointRounding.AwayFromZero);
-
-	var min = security.VolumeMin ?? 0m;
-	if (min > 0m && volume < min)
-	return 0m;
-
-	var max = security.VolumeMax ?? decimal.MaxValue;
-	if (volume > max)
-	volume = max;
-
-	return volume;
-	}
-
-	private decimal GetMaxVolumeLimit()
-	{
-	var security = Security;
-	if (security?.VolumeMax is decimal max && max > 0m)
-	return max;
-
-	return decimal.MaxValue;
-	}
-
-	private decimal GetAveragePrice(bool isLong)
-	{
-	var total = isLong ? _buyTotalVolume : _sellTotalVolume;
-	if (total <= 0m)
-	return 0m;
-
-	var sum = isLong ? _buyWeightedSum : _sellWeightedSum;
-	return sum / total;
-	}
-
-	private decimal CalculatePointSize()
-	{
-	var security = Security;
-	if (security == null)
-	return 0m;
-
-	var step = security.PriceStep ?? 0m;
-	if (step <= 0m)
-	return 0m;
-
-	if (step == 0.00001m || step == 0.001m)
-	return step * 10m;
-
-	return step;
+		_sellLastPrice = 0m;
+		_sellLastVolume = 0m;
+		_sellTotalVolume = 0m;
+		_sellWeightedSum = 0m;
+		_sellOrderCount = 0;
+		_sellTakeProfit = 0m;
 	}
 }
-

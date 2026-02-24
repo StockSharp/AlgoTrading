@@ -190,10 +190,10 @@ public class MondayTypicalBreakoutStrategy : Strategy
 		if (TakeProfitPoints > 0 || StopLossPoints > 0)
 		{
 			var takeDistance = TakeProfitPoints > 0
-			? new Unit(TakeProfitPoints * _priceStep, UnitTypes.Point)
+			? new Unit(TakeProfitPoints * _priceStep, UnitTypes.Absolute)
 			: new Unit(0m);
 			var stopDistance = StopLossPoints > 0
-			? new Unit(StopLossPoints * _priceStep, UnitTypes.Point)
+			? new Unit(StopLossPoints * _priceStep, UnitTypes.Absolute)
 			: new Unit(0m);
 
 			StartProtection(takeProfit: takeDistance, stopLoss: stopDistance);
@@ -214,7 +214,7 @@ public class MondayTypicalBreakoutStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		if (Position != 0m || ActiveOrders.Count > 0)
+		if (Position != 0m)
 		return;
 
 		var candleTime = candle.OpenTime.ToLocalTime();
@@ -237,7 +237,6 @@ public class MondayTypicalBreakoutStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		CancelActiveOrders();
 		BuyMarket(volume);
 
 		_lastSignalTime = candle.OpenTime;
@@ -252,7 +251,7 @@ public class MondayTypicalBreakoutStrategy : Strategy
 		var security = Security;
 		var portfolio = Portfolio;
 
-		var minVolume = security?.VolumeMin ?? security?.MinVolume ?? 0m;
+		var minVolume = security?.MinVolume ?? 0m;
 		if (minVolume <= 0m)
 		minVolume = 0.01m;
 
@@ -285,8 +284,8 @@ public class MondayTypicalBreakoutStrategy : Strategy
 		if (security == null)
 		return volume;
 
-		var minVolume = security.VolumeMin ?? security.MinVolume ?? 0m;
-		var maxVolume = security.VolumeMax ?? 0m;
+		var minVolume = security.MinVolume ?? 0m;
+		var maxVolume = security.MaxVolume ?? 0m;
 		var step = security.VolumeStep ?? 0m;
 
 		if (minVolume > 0m && volume < minVolume)

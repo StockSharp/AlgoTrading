@@ -85,10 +85,6 @@ public class SheKanskigorDailyStrategy : Strategy
 	/// </summary>
 	public SheKanskigorDailyStrategy()
 	{
-		Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "General");
-
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 35m)
 			.SetDisplay("Take Profit", "Profit target in steps", "Risk")
 			;

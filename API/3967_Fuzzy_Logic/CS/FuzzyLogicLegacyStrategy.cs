@@ -148,7 +148,7 @@ public class FuzzyLogicLegacyStrategy : Strategy
 
 	public FuzzyLogicLegacyStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Data");
 
 		_longThreshold = Param(nameof(LongThreshold), 0.75m)
@@ -235,14 +235,12 @@ public class FuzzyLogicLegacyStrategy : Strategy
 
 		var step = Security?.PriceStep ?? 1m;
 		var stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Absolute) : null;
-		var trailingStop = TrailingStopPoints > 0m ? new Unit(TrailingStopPoints * step, UnitTypes.Absolute) : null;
 
 		// Mirror the MetaTrader risk rules via the built-in protection helper.
 		StartProtection(
+			takeProfit: null,
 			stopLoss: stopLoss,
 			isStopTrailing: TrailingStopPoints > 0m,
-			trailingStop: trailingStop,
-			trailingStep: trailingStop,
 			useMarketOrders: true
 		);
 
@@ -265,11 +263,11 @@ public class FuzzyLogicLegacyStrategy : Strategy
 		// Awesome Oscillator uses the median price of the candle.
 		var hl2 = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var jawValue = _jaw.Process(hl2);
-		var teethValue = _teeth.Process(hl2);
-		var lipsValue = _lips.Process(hl2);
-		var aoFastValue = _aoFast.Process(hl2);
-		var aoSlowValue = _aoSlow.Process(hl2);
+		var jawValue = _jaw.Process(hl2, candle.OpenTime, true);
+		var teethValue = _teeth.Process(hl2, candle.OpenTime, true);
+		var lipsValue = _lips.Process(hl2, candle.OpenTime, true);
+		var aoFastValue = _aoFast.Process(hl2, candle.OpenTime, true);
+		var aoSlowValue = _aoSlow.Process(hl2, candle.OpenTime, true);
 
 		if (!jawValue.IsFinal || !teethValue.IsFinal || !lipsValue.IsFinal || !aoFastValue.IsFinal || !aoSlowValue.IsFinal)
 		{
@@ -289,7 +287,7 @@ public class FuzzyLogicLegacyStrategy : Strategy
 		}
 
 		var ao = aoFastValue.GetValue<decimal>() - aoSlowValue.GetValue<decimal>();
-		var acAverageValue = _acAverage.Process(ao);
+		var acAverageValue = _acAverage.Process(ao, candle.OpenTime, true);
 		if (!acAverageValue.IsFinal)
 		{
 			UpdateDeMarker(candle);
@@ -406,7 +404,7 @@ public class FuzzyLogicLegacyStrategy : Strategy
 		var rang = new decimal[5, 5];
 		var summary = new decimal[5];
 
-		var gatorLevels = new[] { 0.010m, 0.020m, 0.030m, 0.040m, 0.040m, 0.030m, 0.020m, 0.010m };
+		var gatorLevels = new[] { 100m, 200m, 300m, 400m, 400m, 300m, 200m, 100m };
 		var wprLevels = new[] { -95m, -90m, -80m, -75m, -25m, -20m, -10m, -5m };
 		var acLevels = new[] { 5m, 4m, 3m, 2m, 2m, 3m, 4m, 5m };
 		var deMarkerLevels = new[] { 0.15m, 0.20m, 0.25m, 0.30m, 0.70m, 0.75m, 0.80m, 0.85m };

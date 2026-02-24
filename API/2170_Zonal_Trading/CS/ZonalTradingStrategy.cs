@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -19,10 +16,6 @@ namespace StockSharp.Samples.Strategies;
 public class ZonalTradingStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<Unit> _takeProfit;
-
-	private AwesomeOscillator _ao;
-	private SimpleMovingAverage _aoMa;
 
 	private decimal _aoPrev1;
 	private decimal _aoPrev2;
@@ -30,49 +23,12 @@ public class ZonalTradingStrategy : Strategy
 	private decimal _acPrev2;
 	private int _historyCount;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Take profit value.
-	/// </summary>
-	public Unit TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes <see cref="ZonalTradingStrategy"/>.
-	/// </summary>
 	public ZonalTradingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_takeProfit = Param(nameof(TakeProfit), new Unit(5000, UnitTypes.Absolute))
-			.SetDisplay("Take Profit", "Fixed take profit in price units", "Protection");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_aoPrev1 = _aoPrev2 = _acPrev1 = _acPrev2 = default;
-		_historyCount = 0;
 	}
 
 	/// <inheritdoc />
@@ -80,67 +36,78 @@ public class ZonalTradingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ao = new AwesomeOscillator();
-		_aoMa = new SMA { Length = 5, Input = _ao };
+		_aoPrev1 = _aoPrev2 = _acPrev1 = _acPrev2 = 0m;
+		_historyCount = 0;
+
+		var ao = new AwesomeOscillator();
+		var aoSma = new SimpleMovingAverage { Length = 5 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ao, ProcessCandle)
+			.Bind(ao, (candle, aoValue) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				// Calculate AC = AO - SMA(AO, 5)
+				var smaResult = aoSma.Process(aoValue, candle.OpenTime, true);
+				if (!aoSma.IsFormed)
+				{
+					_aoPrev2 = _aoPrev1;
+					_aoPrev1 = aoValue;
+					return;
+				}
+
+				var smaValue = smaResult.GetValue<decimal>();
+				var acValue = aoValue - smaValue;
+
+				if (_historyCount < 2)
+				{
+					_aoPrev2 = _aoPrev1;
+					_aoPrev1 = aoValue;
+					_acPrev2 = _acPrev1;
+					_acPrev1 = acValue;
+					_historyCount++;
+					return;
+				}
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var buySignal = aoValue > _aoPrev1 && acValue > _acPrev1 &&
+					(_acPrev1 < _acPrev2 || _aoPrev1 < _aoPrev2) &&
+					aoValue > 0 && acValue > 0;
+
+				var sellSignal = aoValue < _aoPrev1 && acValue < _acPrev1 &&
+					(_acPrev1 > _acPrev2 || _aoPrev1 > _aoPrev2) &&
+					aoValue < 0 && acValue < 0;
+
+				if (buySignal && Position <= 0)
+					BuyMarket();
+
+				if (sellSignal && Position >= 0)
+					SellMarket();
+
+				// Exit conditions
+				if (Position > 0 && aoValue < _aoPrev1 && acValue < _acPrev1)
+					SellMarket();
+
+				if (Position < 0 && aoValue > _aoPrev1 && acValue > _acPrev1)
+					BuyMarket();
+
+				_aoPrev2 = _aoPrev1;
+				_aoPrev1 = aoValue;
+				_acPrev2 = _acPrev1;
+				_acPrev1 = acValue;
+			})
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ao);
+			DrawIndicator(area, ao);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(TakeProfit, new Unit());
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal aoValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var maValue = _aoMa.Process(new DecimalIndicatorValue(_aoMa, aoValue));
-		if (!maValue.IsFinal)
-			return;
-
-		var acValue = aoValue - maValue.GetValue<decimal>();
-
-		if (_historyCount < 2)
-		{
-			_aoPrev2 = _aoPrev1;
-			_aoPrev1 = aoValue;
-			_acPrev2 = _acPrev1;
-			_acPrev1 = acValue;
-			_historyCount++;
-			return;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var buySignal = aoValue > _aoPrev1 && acValue > _acPrev1 && (_acPrev1 < _acPrev2 || _aoPrev1 < _aoPrev2) && aoValue > 0 && acValue > 0;
-		var sellSignal = aoValue < _aoPrev1 && acValue < _acPrev1 && (_acPrev1 > _acPrev2 || _aoPrev1 > _aoPrev2) && aoValue < 0 && acValue < 0;
-
-		if (buySignal && Position <= 0)
-			BuyMarket();
-
-		if (sellSignal && Position >= 0)
-			SellMarket();
-
-		if (Position > 0 && aoValue < _aoPrev1 && acValue < _acPrev1)
-			ClosePosition();
-
-		if (Position < 0 && aoValue > _aoPrev1 && acValue > _acPrev1)
-			ClosePosition();
-
-		_aoPrev2 = _aoPrev1;
-		_aoPrev1 = aoValue;
-		_acPrev2 = _acPrev1;
-		_acPrev1 = acValue;
 	}
 }

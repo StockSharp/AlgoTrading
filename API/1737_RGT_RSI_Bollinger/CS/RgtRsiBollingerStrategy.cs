@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,109 +12,54 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// RSI with Bollinger Bands strategy.
-/// Buys when RSI is oversold below the lower band and sells when RSI is overbought above the upper band.
-/// Includes stop-loss and trailing stop management based on price steps.
 /// </summary>
 public class RgtRsiBollingerStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _rsiHigh;
 	private readonly StrategyParam<int> _rsiLow;
-	private readonly StrategyParam<int> _stopLossPips;
-	private readonly StrategyParam<int> _trailingStopPips;
-	private readonly StrategyParam<int> _minProfitPips;
-	private readonly StrategyParam<decimal> _volume;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _trailingStop;
+	private readonly StrategyParam<decimal> _minProfit;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private bool _isLong;
 
-	/// <summary>
-	/// RSI period.
-	/// </summary>
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
-
-	/// <summary>
-	/// Overbought RSI level.
-	/// </summary>
 	public int RsiHigh { get => _rsiHigh.Value; set => _rsiHigh.Value = value; }
-
-	/// <summary>
-	/// Oversold RSI level.
-	/// </summary>
 	public int RsiLow { get => _rsiLow.Value; set => _rsiLow.Value = value; }
-
-	/// <summary>
-	/// Initial stop-loss distance in pips.
-	/// </summary>
-	public int StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
-
-	/// <summary>
-	/// Trailing stop distance in pips.
-	/// </summary>
-	public int TrailingStopPips { get => _trailingStopPips.Value; set => _trailingStopPips.Value = value; }
-
-	/// <summary>
-	/// Minimum profit in pips before trailing activates.
-	/// </summary>
-	public int MinProfitPips { get => _minProfitPips.Value; set => _minProfitPips.Value = value; }
-
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal VolumeParam { get => _volume.Value; set => _volume.Value = value; }
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
+	public decimal MinProfit { get => _minProfit.Value; set => _minProfit.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public RgtRsiBollingerStrategy()
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 8)
-			.SetDisplay("RSI Period", "RSI calculation period", "Indicator")
-			
-			.SetOptimize(5, 20, 1);
+			.SetDisplay("RSI Period", "RSI calculation period", "Indicator");
 
-		_rsiHigh = Param(nameof(RsiHigh), 90)
+		_rsiHigh = Param(nameof(RsiHigh), 55)
 			.SetDisplay("RSI High", "Overbought RSI level", "Indicator");
 
-		_rsiLow = Param(nameof(RsiLow), 10)
+		_rsiLow = Param(nameof(RsiLow), 45)
 			.SetDisplay("RSI Low", "Oversold RSI level", "Indicator");
 
-		_stopLossPips = Param(nameof(StopLossPips), 70)
-			.SetDisplay("Stop Loss (pips)", "Initial stop-loss distance in pips", "Risk Management");
+		_stopLoss = Param(nameof(StopLoss), 500m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
 
-		_trailingStopPips = Param(nameof(TrailingStopPips), 35)
-			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk Management");
+		_trailingStop = Param(nameof(TrailingStop), 300m)
+			.SetGreaterThanZero()
+			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk");
 
-		_minProfitPips = Param(nameof(MinProfitPips), 30)
-			.SetDisplay("Min Profit (pips)", "Minimum profit before trailing", "Risk Management");
-
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume", "General");
+		_minProfit = Param(nameof(MinProfit), 200m)
+			.SetGreaterThanZero()
+			.SetDisplay("Min Profit", "Minimum profit before trailing", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "Data");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_entryPrice = 0;
-		_stopPrice = 0;
-		_isLong = false;
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
@@ -125,78 +67,72 @@ public class RgtRsiBollingerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var rsi = new RSI { Length = RsiPeriod };
 		var bb = new BollingerBands { Length = 20, Width = 2m };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(rsi, bb, ProcessCandle)
+			.BindEx(new IIndicator[] { rsi, bb }, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi);
-			DrawIndicator(area, bb);
-			DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		if (values[0].IsEmpty || values[1].IsEmpty)
+			return;
 
-		var step = Security?.PriceStep ?? 1m;
+		var rsiValue = values[0].GetValue<decimal>();
+		var bbVal = (BollingerBandsValue)values[1];
+
+		if (bbVal.UpBand is not decimal upper ||
+			bbVal.LowBand is not decimal lower)
+			return;
 
 		if (Position == 0)
 		{
 			if (rsiValue < RsiLow && candle.ClosePrice < lower)
 			{
-				BuyMarket(VolumeParam);
+				BuyMarket();
 				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice - StopLossPips * step;
+				_stopPrice = _entryPrice - StopLoss;
 				_isLong = true;
 			}
 			else if (rsiValue > RsiHigh && candle.ClosePrice > upper)
 			{
-				SellMarket(VolumeParam);
+				SellMarket();
 				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice + StopLossPips * step;
+				_stopPrice = _entryPrice + StopLoss;
 				_isLong = false;
 			}
 		}
 		else if (_isLong && Position > 0)
 		{
 			var profit = candle.ClosePrice - _entryPrice;
-			var trigger = (TrailingStopPips + MinProfitPips) * step;
-			if (profit > trigger)
+			if (profit > MinProfit)
 			{
-				var newStop = candle.ClosePrice - TrailingStopPips * step;
+				var newStop = candle.ClosePrice - TrailingStop;
 				if (newStop > _stopPrice)
-				_stopPrice = newStop;
+					_stopPrice = newStop;
 			}
 
-			if (candle.LowPrice <= _stopPrice)
-			SellMarket(Position);
+			if (candle.ClosePrice <= _stopPrice)
+				SellMarket();
 		}
 		else if (!_isLong && Position < 0)
 		{
 			var profit = _entryPrice - candle.ClosePrice;
-			var trigger = (TrailingStopPips + MinProfitPips) * step;
-			if (profit > trigger)
+			if (profit > MinProfit)
 			{
-				var newStop = candle.ClosePrice + TrailingStopPips * step;
-				if (newStop < _stopPrice || _stopPrice == 0)
-				_stopPrice = newStop;
+				var newStop = candle.ClosePrice + TrailingStop;
+				if (newStop < _stopPrice)
+					_stopPrice = newStop;
 			}
 
-			if (candle.HighPrice >= _stopPrice)
-			BuyMarket(Math.Abs(Position));
+			if (candle.ClosePrice >= _stopPrice)
+				BuyMarket();
 		}
 	}
 }

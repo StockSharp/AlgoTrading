@@ -267,34 +267,36 @@ public class SuperTrendEnhancedPivotReversalStrategy : Strategy
 			CancelActiveOrders();
 		}
 
+		var st = (SuperTrendIndicatorValue)stVal;
+		var isUp = st.IsUpTrend;
+		var step = Security.PriceStep ?? 0.01m;
+
+		// Entry checks first (before invalidation resets)
+		if (_longSignal && (TradeDirection == Sides.Buy || TradeDirection == null) && !_buyOrderPlaced && Position <= 0 && _pivotHigh is decimal phVal && candle.HighPrice >= phVal + step && IsFormedAndOnlineAndAllowTrading())
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+			_buyOrderPlaced = true;
+			_longSignal = false;
+		}
+
+		if (_shortSignal && (TradeDirection == Sides.Sell || TradeDirection == null) && !_sellOrderPlaced && Position >= 0 && _pivotLow is decimal plVal && candle.LowPrice <= plVal - step && IsFormedAndOnlineAndAllowTrading())
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			_sellOrderPlaced = true;
+			_shortSignal = false;
+		}
+
+		// Invalidate signals after entry attempts
 		if (_longSignal && _pivotHigh is decimal hp && candle.HighPrice > hp)
 		{
 			_longSignal = false;
 			_buyOrderPlaced = false;
-			CancelActiveOrders();
 		}
 
 		if (_shortSignal && _pivotLow is decimal lp && candle.LowPrice < lp)
 		{
 			_shortSignal = false;
 			_sellOrderPlaced = false;
-			CancelActiveOrders();
-		}
-
-		var st = (SuperTrendIndicatorValue)stVal;
-		var isUp = st.IsUpTrend;
-		var step = Security.PriceStep ?? 1m;
-
-		if (_longSignal && !isUp && (TradeDirection == Sides.Buy || TradeDirection == null) && !_buyOrderPlaced && Position <= 0 && _pivotHigh is decimal phVal)
-		{
-			BuyStop(Volume + Math.Abs(Position), phVal + step);
-			_buyOrderPlaced = true;
-		}
-
-		if (_shortSignal && isUp && (TradeDirection == Sides.Sell || TradeDirection == null) && !_sellOrderPlaced && Position >= 0 && _pivotLow is decimal plVal)
-		{
-			SellStop(Volume + Math.Abs(Position), plVal - step);
-			_sellOrderPlaced = true;
 		}
 
 		if (Position > 0)

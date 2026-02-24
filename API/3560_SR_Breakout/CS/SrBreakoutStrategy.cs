@@ -1,10 +1,6 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,150 +10,109 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Support and resistance breakout detector based on Donchian channels.
-/// Generates informational logs when the candle close crosses above resistance or below support.
+/// Support and resistance breakout strategy using Donchian channels.
+/// Buys when price breaks above resistance (upper band), sells when breaks below support (lower band).
 /// </summary>
 public class SrBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _lookbackLength;
-	private readonly StrategyParam<DataType> _hour1CandleType;
-	private readonly StrategyParam<DataType> _hour4CandleType;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private DonchianChannels _hour1Donchian = null!;
-	private DonchianChannels _hour4Donchian = null!;
+	private DonchianChannels _donchian;
+	private decimal? _prevUpper;
+	private decimal? _prevLower;
 
-	private decimal? _previousHour1Close;
-	private decimal? _previousHour4Close;
-
-	/// <summary>
-	/// Number of candles used to calculate support and resistance bounds.
-	/// </summary>
 	public int LookbackLength
 	{
 		get => _lookbackLength.Value;
 		set => _lookbackLength.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type used for the one-hour analysis.
-	/// </summary>
-	public DataType Hour1CandleType
+	public DataType CandleType
 	{
-		get => _hour1CandleType.Value;
-		set => _hour1CandleType.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type used for the four-hour analysis.
-	/// </summary>
-	public DataType Hour4CandleType
-	{
-		get => _hour4CandleType.Value;
-		set => _hour4CandleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="SrBreakoutStrategy"/>.
-	/// </summary>
 	public SrBreakoutStrategy()
 	{
-		_lookbackLength = Param(nameof(LookbackLength), 26)
+		_lookbackLength = Param(nameof(LookbackLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Length", "Number of candles for support/resistance detection", "General")
-			
-			.SetOptimize(10, 60, 5);
+			.SetDisplay("Lookback", "Number of candles for Donchian channel", "Indicators");
 
-		_hour1CandleType = Param(nameof(Hour1CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("H1 Candle Type", "Candle type for 1-hour support/resistance", "Data");
-
-		_hour4CandleType = Param(nameof(Hour4CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("H4 Candle Type", "Candle type for 4-hour support/resistance", "Data");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, Hour1CandleType);
-		yield return (Security, Hour4CandleType);
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_previousHour1Close = null;
-		_previousHour4Close = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_hour1Donchian = new DonchianChannels { Length = LookbackLength };
-		_hour4Donchian = new DonchianChannels { Length = LookbackLength };
+		_prevUpper = null;
+		_prevLower = null;
 
-		var hour1Subscription = SubscribeCandles(Hour1CandleType);
-		var hour4Subscription = SubscribeCandles(Hour4CandleType);
+		_donchian = new DonchianChannels { Length = LookbackLength };
 
-		hour1Subscription
-			.BindEx(_hour1Donchian, ProcessHour1Candle)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.BindEx(_donchian, ProcessCandle)
 			.Start();
 
-		hour4Subscription
-			.BindEx(_hour4Donchian, ProcessHour4Candle)
-			.Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _donchian);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessHour1Candle(ICandleMessage candle, IIndicatorValue indicatorValue)
-	{
-		ProcessBreakout(candle, _hour1Donchian, indicatorValue, ref _previousHour1Close, "H1");
-	}
-
-	private void ProcessHour4Candle(ICandleMessage candle, IIndicatorValue indicatorValue)
-	{
-		ProcessBreakout(candle, _hour4Donchian, indicatorValue, ref _previousHour4Close, "H4");
-	}
-
-	private void ProcessBreakout(ICandleMessage candle, DonchianChannels indicator, IIndicatorValue indicatorValue, ref decimal? previousClose, string label)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!indicator.IsFormed)
+		if (!_donchian.IsFormed)
 			return;
 
-		if (!indicatorValue.IsFinal)
+		if (donchianValue is not IDonchianChannelsValue dcv)
 			return;
 
-		var channel = (DonchianChannelsValue)indicatorValue;
+		var upper = dcv.UpperBand;
+		var lower = dcv.LowerBand;
+		var close = candle.ClosePrice;
 
-		if (channel.UpBand is not decimal resistance || channel.LowBand is not decimal support)
-			return;
-
-		var currentClose = candle.ClosePrice;
-
-		if (previousClose is not decimal previous)
+		if (_prevUpper is null || _prevLower is null)
 		{
-			// Store the first close to enable crossover checks on subsequent candles.
-			previousClose = currentClose;
-			LogInfo($"{label} channel ready. Support: {support:F5}, Resistance: {resistance:F5}.");
+			_prevUpper = upper;
+			_prevLower = lower;
 			return;
 		}
 
-		var candleTime = candle.CloseTime ?? candle.OpenTime;
+		var volume = Volume;
+		if (volume <= 0)
+			volume = 1;
 
-		if (previous <= resistance && currentClose > resistance)
+		// Break above resistance
+		if (close > _prevUpper.Value)
 		{
-			LogInfo($"{label} close crossed above resistance {resistance:F5} at {currentClose:F5} ({candleTime:O}).");
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+
+			if (Position <= 0)
+				BuyMarket(volume);
 		}
-		else if (previous >= support && currentClose < support)
+		// Break below support
+		else if (close < _prevLower.Value)
 		{
-			LogInfo($"{label} close crossed below support {support:F5} at {currentClose:F5} ({candleTime:O}).");
+			if (Position > 0)
+				SellMarket(Position);
+
+			if (Position >= 0)
+				SellMarket(volume);
 		}
 
-		previousClose = currentClose;
+		_prevUpper = upper;
+		_prevLower = lower;
 	}
 }
-

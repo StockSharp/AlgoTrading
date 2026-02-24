@@ -41,9 +41,6 @@ public class SemaSdiWebhookStrategy : Strategy
 	private ExponentialMovingAverage _slowSmooth;
 	private AverageDirectionalIndex _dmi;
 
-	private decimal _maxProfit;
-	private bool _trailingActive;
-
 	public bool UseEma { get => _useEma.Value; set => _useEma.Value = value; }
 	public bool UseSdi { get => _useSdi.Value; set => _useSdi.Value = value; }
 	public bool UseSmooth { get => _useSmooth.Value; set => _useSmooth.Value = value; }
@@ -91,9 +88,9 @@ public class SemaSdiWebhookStrategy : Strategy
 			.SetDisplay("Trailing %", "Trailing percent", "Take Profit/Stop Loss");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
-		_startDate = Param(nameof(StartDate), new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc))
+		_startDate = Param(nameof(StartDate), new DateTimeOffset(2023, 1, 1, 0, 0, 0, TimeSpan.Zero))
 			.SetDisplay("Start Date", "Trading start date", "General");
-		_endDate = Param(nameof(EndDate), new DateTime(2124, 1, 1, 0, 0, 0, DateTimeKind.Utc))
+		_endDate = Param(nameof(EndDate), new DateTimeOffset(2124, 1, 1, 0, 0, 0, TimeSpan.Zero))
 			.SetDisplay("End Date", "Trading end date", "General");
 	}
 
@@ -112,8 +109,6 @@ public class SemaSdiWebhookStrategy : Strategy
 		_fastSmooth?.Reset();
 		_slowSmooth?.Reset();
 		_dmi?.Reset();
-		_maxProfit = 0m;
-		_trailingActive = false;
 	}
 
 	/// <inheritdoc />
@@ -156,8 +151,10 @@ public class SemaSdiWebhookStrategy : Strategy
 		var emaFast = fastValue.ToDecimal();
 		var emaSlow = slowValue.ToDecimal();
 
-		var fast = UseSmooth ? _fastSmooth.Process(emaFast).GetValue<decimal>() : emaFast;
-		var slow = UseSmooth ? _slowSmooth.Process(emaSlow).GetValue<decimal>() : emaSlow;
+		var fastResult = UseSmooth ? _fastSmooth.Process(emaFast, candle.OpenTime, true) : null;
+		var slowResult = UseSmooth ? _slowSmooth.Process(emaSlow, candle.OpenTime, true) : null;
+		var fast = fastResult != null ? fastResult.GetValue<decimal>() : emaFast;
+		var slow = slowResult != null ? slowResult.GetValue<decimal>() : emaSlow;
 
 		var typed = (AverageDirectionalIndexValue)dmiValue;
 		if (typed.Dx.Plus is not decimal plusDi || typed.Dx.Minus is not decimal minusDi)
@@ -175,41 +172,13 @@ public class SemaSdiWebhookStrategy : Strategy
 			else if (shortCondition && Position >= 0)
 				SellMarket(Volume + Math.Abs(Position));
 		}
-		else if (Position != 0)
+		else if (Position > 0)
 		{
-			ClosePosition();
+			SellMarket();
 		}
-
-		UpdateTrailing(candle);
-	}
-
-	private void UpdateTrailing(ICandleMessage candle)
-	{
-		if (!UseTrailing || Position == 0)
+		else if (Position < 0)
 		{
-			_maxProfit = 0m;
-			_trailingActive = false;
-			return;
-		}
-
-		var dir = Math.Sign(Position);
-		var entry = PositionPrice;
-
-		var currentProfit = dir > 0
-			? (candle.HighPrice - entry) / entry * 100m
-			: (entry - candle.LowPrice) / entry * 100m;
-
-		if (currentProfit > _maxProfit)
-			_maxProfit = currentProfit;
-
-		if (!_trailingActive && currentProfit >= TrailingPercent)
-			_trailingActive = true;
-
-		if (_trailingActive && _maxProfit - currentProfit >= TrailingPercent)
-		{
-			ClosePosition();
-			_trailingActive = false;
-			_maxProfit = 0m;
+			BuyMarket();
 		}
 	}
 }

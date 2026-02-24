@@ -71,7 +71,7 @@ public class LeManSignalStrategy : Strategy
 			
 			.SetOptimize(0, 2, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -94,9 +94,11 @@ public class LeManSignalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var warmup = new SimpleMovingAverage { Length = 2 * Period + 3 };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(warmup, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -105,13 +107,9 @@ public class LeManSignalStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(
-			takeProfit: new Unit(2, UnitTypes.Percent),
-			stopLoss: new Unit(1, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _warmupVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;

@@ -15,15 +15,11 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// FrakTrak XonaX strategy.
-/// Uses fractal breakouts with fixed take profit and trailing stop.
+/// Uses fractal breakouts to generate entry signals.
 /// </summary>
 public class FraktrakXonaxStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fractalOffset;
-
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<int> _trailingStop;
-	private readonly StrategyParam<int> _trailingCorrection;
+	private readonly StrategyParam<decimal> _fractalOffset;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _h1, _h2, _h3, _h4, _h5;
@@ -32,36 +28,14 @@ public class FraktrakXonaxStrategy : Strategy
 	private decimal? _downFractal;
 	private decimal? _lastUpFractal;
 	private decimal? _lastDownFractal;
-	private decimal? _stopPrice;
-	private decimal? _takePrice;
-	private decimal _tickSize;
-
 
 	/// <summary>
-	/// Take profit in points.
+	/// Price offset added beyond fractal for entry trigger.
 	/// </summary>
-	public int TakeProfit
+	public decimal FractalOffset
 	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing stop in points.
-	/// </summary>
-	public int TrailingStop
-	{
-		get => _trailingStop.Value;
-		set => _trailingStop.Value = value;
-	}
-
-	/// <summary>
-	/// Correction for trailing stop in points.
-	/// </summary>
-	public int TrailingCorrection
-	{
-		get => _trailingCorrection.Value;
-		set => _trailingCorrection.Value = value;
+		get => _fractalOffset.Value;
+		set => _fractalOffset.Value = value;
 	}
 
 	/// <summary>
@@ -73,37 +47,12 @@ public class FraktrakXonaxStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Distance offset added to fractal breakout levels.
-	/// </summary>
-	public int FractalOffset
-	{
-		get => _fractalOffset.Value;
-		set => _fractalOffset.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="FraktrakXonaxStrategy"/>.
-	/// </summary>
 	public FraktrakXonaxStrategy()
 	{
+		_fractalOffset = Param(nameof(FractalOffset), 50m)
+			.SetDisplay("Fractal Offset", "Price offset beyond fractal for entry", "Signals");
 
-		_fractalOffset = Param(nameof(FractalOffset), 15)
-			.SetNotNegative()
-			.SetDisplay("Fractal Offset", "Price steps added beyond fractal", "Signals");
-
-		_takeProfit = Param(nameof(TakeProfit), 1000)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit in points", "Risk");
-
-		_trailingStop = Param(nameof(TrailingStop), 100)
-			.SetGreaterThanZero()
-			.SetDisplay("Trailing Stop", "Trailing stop in points", "Risk");
-
-		_trailingCorrection = Param(nameof(TrailingCorrection), 10)
-			.SetDisplay("Trailing Correction", "Correction for trailing stop", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(240).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles", "General");
 	}
 
@@ -119,15 +68,12 @@ public class FraktrakXonaxStrategy : Strategy
 		_h1 = _h2 = _h3 = _h4 = _h5 = 0m;
 		_l1 = _l2 = _l3 = _l4 = _l5 = 0m;
 		_upFractal = _downFractal = _lastUpFractal = _lastDownFractal = null;
-		_stopPrice = _takePrice = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_tickSize = Security?.PriceStep ?? 1m;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -142,14 +88,18 @@ public class FraktrakXonaxStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
 		// Shift high and low buffers
 		_h1 = _h2; _h2 = _h3; _h3 = _h4; _h4 = _h5; _h5 = candle.HighPrice;
 		_l1 = _l2; _l2 = _l3; _l3 = _l4; _l4 = _l5; _l5 = candle.LowPrice;
 
-		if (candle.State != CandleStates.Finished)
+		// Need at least 5 bars for fractal detection
+		if (_h1 == 0 || _l1 == 0)
 			return;
 
-		// Detect new fractals
+		// Detect new fractals (bar 3 is the middle of 5 bars)
 		if (_h3 > _h1 && _h3 > _h2 && _h3 > _h4 && _h3 > _h5)
 			_upFractal = _h3;
 		if (_l3 < _l1 && _l3 < _l2 && _l3 < _l4 && _l3 < _l5)
@@ -158,58 +108,25 @@ public class FraktrakXonaxStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Entry signals
+		// Buy signal: close above up fractal + offset
 		if (_upFractal is decimal up && _lastUpFractal != up)
 		{
-			var trigger = up + FractalOffset * _tickSize;
+			var trigger = up + FractalOffset;
 			if (candle.ClosePrice > trigger && Position <= 0)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
-				_stopPrice = _downFractal;
-				_takePrice = candle.ClosePrice + TakeProfit * _tickSize;
+				BuyMarket();
 				_lastUpFractal = up;
 			}
 		}
 
+		// Sell signal: close below down fractal - offset
 		if (_downFractal is decimal low && _lastDownFractal != low)
 		{
-			var trigger = low - FractalOffset * _tickSize;
+			var trigger = low - FractalOffset;
 			if (candle.ClosePrice < trigger && Position >= 0)
 			{
-				SellMarket(Volume + Math.Abs(Position));
-				_stopPrice = _upFractal;
-				_takePrice = candle.ClosePrice - TakeProfit * _tickSize;
+				SellMarket();
 				_lastDownFractal = low;
-			}
-		}
-
-		// Manage position
-		if (Position > 0)
-		{
-			if (_takePrice is decimal tp && candle.HighPrice >= tp)
-				SellMarket(Position);
-
-			if (_stopPrice is decimal sl && candle.LowPrice <= sl)
-				SellMarket(Position);
-			else if (TrailingStop > 0 && candle.ClosePrice - PositionPrice > TrailingStop * _tickSize)
-			{
-				var newStop = candle.ClosePrice - TrailingStop * _tickSize - TrailingCorrection * _tickSize;
-				if (_stopPrice is null || newStop > _stopPrice)
-					_stopPrice = newStop;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_takePrice is decimal tp && candle.LowPrice <= tp)
-				BuyMarket(-Position);
-
-			if (_stopPrice is decimal sl && candle.HighPrice >= sl)
-				BuyMarket(-Position);
-			else if (TrailingStop > 0 && PositionPrice - candle.ClosePrice > TrailingStop * _tickSize)
-			{
-				var newStop = candle.ClosePrice + TrailingStop * _tickSize + TrailingCorrection * _tickSize;
-				if (_stopPrice is null || newStop < _stopPrice)
-					_stopPrice = newStop;
 			}
 		}
 	}

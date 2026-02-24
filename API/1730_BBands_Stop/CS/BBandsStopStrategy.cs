@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -79,13 +76,20 @@ public class BBandsStopStrategy : Strategy
 		Width = Deviation
 		};
 
-		SubscribeCandles(CandleType).Bind(bb, ProcessCandle).Start();
+		SubscribeCandles(CandleType).BindEx(bb, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
+
+		var bbVal = (BollingerBandsValue)value;
+
+		if (bbVal.UpBand is not decimal upper ||
+			bbVal.LowBand is not decimal lower ||
+			bbVal.MovingAverage is not decimal middle)
+			return;
 
 		var mRisk = 0.5m * (MoneyRisk - 1m);
 		var smax0 = upper;

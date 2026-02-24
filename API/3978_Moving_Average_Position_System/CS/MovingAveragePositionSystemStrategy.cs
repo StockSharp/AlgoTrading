@@ -12,7 +12,6 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -53,6 +52,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 	private decimal _cycleStartRealizedPnL;
 	private decimal _priceStep;
 	private decimal _stepPrice;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Moving average type used for signal calculation.
@@ -161,7 +161,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 		_maType = Param(nameof(MaType), MovingAverageModes.LinearWeighted)
 		.SetDisplay("MA Type", "Moving average method", "Indicators");
 
-		_maPeriod = Param(nameof(MaPeriod), 240)
+		_maPeriod = Param(nameof(MaPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Moving average length", "Indicators");
 
@@ -196,7 +196,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 		_useMoneyManagement = Param(nameof(UseMoneyManagement), true)
 		.SetDisplay("Use Money Management", "Enable martingale volume control", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candles used for calculations", "Market Data");
 	}
 
@@ -227,8 +227,8 @@ public class MovingAveragePositionSystemStrategy : Strategy
 		Volume = _currentVolume;
 		_cycleStartRealizedPnL = PnLManager?.RealizedPnL ?? 0m;
 
-		_priceStep = Security?.PriceStep ?? 0m;
-		_stepPrice = Security?.StepPrice ?? 0m;
+		_priceStep = Security?.PriceStep ?? 1m;
+		_stepPrice = _priceStep;
 
 		var movingAverage = CreateMovingAverage();
 
@@ -245,8 +245,8 @@ public class MovingAveragePositionSystemStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		var takeProfitUnit = TakeProfitPips > 0m ? new Unit(TakeProfitPips, UnitTypes.Step) : null;
-		StartProtection(takeProfit: takeProfitUnit);
+		var takeProfitUnit = TakeProfitPips > 0m ? new Unit(TakeProfitPips, UnitTypes.Absolute) : null;
+		StartProtection(takeProfitUnit, null);
 
 		base.OnStarted2(time);
 	}
@@ -305,14 +305,14 @@ public class MovingAveragePositionSystemStrategy : Strategy
 		// Close long positions when the latest closed candle falls back below the moving average.
 		if (Position > 0 && previousClose < shiftedMa)
 		{
-			ClosePosition();
+			if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 			return;
 		}
 
 		// Close short positions when the latest closed candle climbs back above the average.
 		if (Position < 0 && previousClose > shiftedMa)
 		{
-			ClosePosition();
+			if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 		}
 	}
 
@@ -329,12 +329,12 @@ public class MovingAveragePositionSystemStrategy : Strategy
 
 		var resultInSteps = stepPrice != 0m ? realizedDiff / stepPrice : 0m;
 
-		if (Position != 0 && priceStep > 0m && PositionPrice != null)
+		if (Position != 0 && priceStep > 0m && _entryPrice > 0m)
 		{
 			// Consider only floating losses as in the original script.
 			var diff = Position > 0
-			? previousClose - PositionPrice.Value
-			: PositionPrice.Value - previousClose;
+			? previousClose - _entryPrice
+			: _entryPrice - previousClose;
 
 			if (diff < 0m)
 			{
@@ -355,7 +355,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 
 			if (Position != 0)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 			}
 
 			_cycleStartRealizedPnL = realizedPnL;
@@ -369,7 +369,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 
 			if (Position != 0)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 			}
 
 			_cycleStartRealizedPnL = realizedPnL;
@@ -403,6 +403,18 @@ public class MovingAveragePositionSystemStrategy : Strategy
 		}
 	}
 
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+
+		if (Position != 0 && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+
+		if (Position == 0m)
+			_entryPrice = 0m;
+	}
+
 	private void NormalizeVolume()
 	{
 		// Reduce the working lot if it exceeds the maximum allowed size.
@@ -413,7 +425,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 
 		if (Portfolio is not null)
 		{
-			var portfolioValue = Portfolio.CurrentValue ?? Portfolio.CurrentBalance ?? Portfolio.BeginValue ?? 0m;
+			var portfolioValue = Portfolio.CurrentValue ?? Portfolio.BeginValue ?? 0m;
 			var marginThreshold = 1000m * _currentVolume;
 
 			while (_currentVolume > 0m && portfolioValue < marginThreshold)

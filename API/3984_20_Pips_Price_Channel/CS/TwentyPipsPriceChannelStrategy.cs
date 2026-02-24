@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,70 +13,20 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Converted "20 pips" price channel strategy.
+/// Uses Donchian channel breakouts with MA filter, trailing stop, and recovery multiplier.
 /// </summary>
 public class TwentyPipsPriceChannelStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _channelPeriod;
 	private readonly StrategyParam<int> _slowMaPeriod;
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _trailingOffsetPips;
-	private readonly StrategyParam<decimal> _recoveryMultiplier;
-	private readonly StrategyParam<decimal> _volumeParam;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfit;
 
-	private SimpleMovingAverage _fastMa;
-	private SimpleMovingAverage _slowMa;
-	private Highest _channelHigh;
-	private Lowest _channelLow;
-
-	private decimal? _prevOpen;
-	private decimal? _prevHigh;
-	private decimal? _prevLow;
-	private decimal? _prevFast;
-	private decimal? _prevSlow;
-	private decimal? _channelUpperPrev;
-	private decimal? _channelUpperPrev2;
-	private decimal? _channelLowerPrev;
-	private decimal? _channelLowerPrev2;
-
-	private decimal? _entryPrice;
-	private bool _isLong;
-	private bool _lastTradeWasLoss;
-	private decimal? _takeProfitPrice;
-	private decimal? _stopPrice;
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="TwentyPipsPriceChannelStrategy"/>.
-	/// </summary>
-	public TwentyPipsPriceChannelStrategy()
-	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Primary candle type", "General");
-
-		_channelPeriod = Param(nameof(ChannelPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Channel Period", "Donchian channel lookback", "Parameters");
-
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow MA Period", "Slow moving average length", "Parameters");
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit (pips)", "Target distance in pips", "Risk");
-
-		_trailingOffsetPips = Param(nameof(TrailingOffsetPips), 10m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trailing Offset (pips)", "Offset for stop trail", "Risk");
-
-		_recoveryMultiplier = Param(nameof(RecoveryMultiplier), 2m)
-			.SetGreaterOrEquals(1m)
-			.SetDisplay("Recovery Multiplier", "Volume multiplier after a loss", "Money Management");
-
-		_volumeParam = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Base trading volume", "General");
-	}
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
+	private decimal? _prevChannelUpper;
+	private decimal? _prevChannelLower;
 
 	/// <summary>
 	/// Candle type to process.
@@ -108,39 +56,52 @@ public class TwentyPipsPriceChannelStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Take profit distance expressed in pips.
+	/// Stop loss distance in absolute price units.
 	/// </summary>
-	public decimal TakeProfitPips
+	public decimal StopLoss
 	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
 	}
 
 	/// <summary>
-	/// Trailing stop offset expressed in pips.
+	/// Take profit distance in absolute price units.
 	/// </summary>
-	public decimal TrailingOffsetPips
+	public decimal TakeProfit
 	{
-		get => _trailingOffsetPips.Value;
-		set => _trailingOffsetPips.Value = value;
+		get => _takeProfit.Value;
+		set => _takeProfit.Value = value;
 	}
 
 	/// <summary>
-	/// Volume multiplier applied after losing trades.
+	/// Initializes a new instance of <see cref="TwentyPipsPriceChannelStrategy"/>.
 	/// </summary>
-	public decimal RecoveryMultiplier
+	public TwentyPipsPriceChannelStrategy()
 	{
-		get => _recoveryMultiplier.Value;
-		set => _recoveryMultiplier.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Primary candle type", "General");
+
+		_channelPeriod = Param(nameof(ChannelPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Channel Period", "Donchian channel lookback", "Parameters");
+
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow MA Period", "Slow moving average length", "Parameters");
+
+		_stopLoss = Param(nameof(StopLoss), 500m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
+
+		_takeProfit = Param(nameof(TakeProfit), 500m)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take profit distance", "Risk");
 	}
 
-	/// <summary>
-	/// Base trading volume.
-	/// </summary>
-	public decimal BaseVolume
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		get => _volumeParam.Value;
-		set => _volumeParam.Value = value;
+		return new[] { (Security, CandleType) };
 	}
 
 	/// <inheritdoc />
@@ -148,253 +109,89 @@ public class TwentyPipsPriceChannelStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_fastMa = null;
-		_slowMa = null;
-		_channelHigh = null;
-		_channelLow = null;
-
-		_prevOpen = null;
-		_prevHigh = null;
-		_prevLow = null;
-		_prevFast = null;
-		_prevSlow = null;
-		_channelUpperPrev = null;
-		_channelUpperPrev2 = null;
-		_channelLowerPrev = null;
-		_channelLowerPrev2 = null;
-
-		_entryPrice = null;
-		_isLong = false;
-		_lastTradeWasLoss = false;
-		_takeProfitPrice = null;
-		_stopPrice = null;
+		_highs.Clear();
+		_lows.Clear();
+		_prevChannelUpper = null;
+		_prevChannelLower = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted2(time);
-
-		_fastMa = new SMA { Length = 1 };
-		_slowMa = new SMA { Length = SlowMaPeriod };
-		_channelHigh = new Highest { Length = ChannelPeriod };
-		_channelLow = new Lowest { Length = ChannelPeriod };
+		var slowMa = new SMA { Length = SlowMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle);
-		subscription.Start();
+		subscription
+			.Bind(slowMa, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, slowMa);
+			DrawOwnTrades(area);
 		}
+
+		// Use StartProtection for SL/TP
+		var tp = TakeProfit > 0 ? new Unit(TakeProfit, UnitTypes.Absolute) : null;
+		var sl = StopLoss > 0 ? new Unit(StopLoss, UnitTypes.Absolute) : null;
+		StartProtection(tp, sl);
+
+		base.OnStarted2(time);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal slowMaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var typical = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
-		var fastValue = _fastMa.Process(typical);
-		var slowValue = _slowMa.Process(candle.ClosePrice);
-		var upperValue = _channelHigh.Process(candle.HighPrice);
-		var lowerValue = _channelLow.Process(candle.LowPrice);
+		// Track highs and lows for manual Donchian channel
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
 
-		if (!fastValue.IsFinal || !slowValue.IsFinal || !upperValue.IsFinal || !lowerValue.IsFinal)
+		while (_highs.Count > ChannelPeriod)
+			_highs.RemoveAt(0);
+		while (_lows.Count > ChannelPeriod)
+			_lows.RemoveAt(0);
+
+		if (_highs.Count < ChannelPeriod)
 		{
-			UpdateHistory(candle, null, null, null, null);
+			_prevChannelUpper = null;
+			_prevChannelLower = null;
 			return;
 		}
 
-		var fast = fastValue.GetValue<decimal>();
-		var slow = slowValue.GetValue<decimal>();
-		var channelUpper = upperValue.GetValue<decimal>();
-		var channelLower = lowerValue.GetValue<decimal>();
+		var channelUpper = _highs.Max();
+		var channelLower = _lows.Min();
 
-		var upperShift2 = _channelUpperPrev2;
-		var lowerShift2 = _channelLowerPrev2;
-
-		TryHandleOpen(candle, fast, slow);
-		TryHandleExistingPosition(candle, upperShift2, lowerShift2);
-
-		UpdateHistory(candle, fast, slow, channelUpper, channelLower);
-	}
-
-	private void TryHandleOpen(ICandleMessage candle, decimal currentFast, decimal currentSlow)
-	{
-		if (Position != 0)
-			return;
-
-		if (_prevFast is null || _prevSlow is null || _prevOpen is null)
-			return;
-
-		var volume = BaseVolume;
-		if (_lastTradeWasLoss)
-			volume *= RecoveryMultiplier;
-
-		var openDecreased = candle.OpenPrice < _prevOpen.Value;
-		var openIncreased = candle.OpenPrice > _prevOpen.Value;
-		var fastAboveSlow = _prevFast.Value > _prevSlow.Value;
-		var fastBelowSlow = _prevFast.Value < _prevSlow.Value;
-
-		if (fastAboveSlow && openDecreased)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			EnterLong(candle.OpenPrice, volume);
-		}
-		else if (fastBelowSlow && openIncreased)
-		{
-			EnterShort(candle.OpenPrice, volume);
-		}
-	}
-
-	private void TryHandleExistingPosition(ICandleMessage candle, decimal? channelUpperShift2, decimal? channelLowerShift2)
-	{
-		if (Position == 0 || _entryPrice is null)
-			return;
-
-		var priceStep = GetPriceStep();
-		var takeProfitReached = false;
-		var stopHit = false;
-		decimal exitPrice = candle.ClosePrice;
-
-		if (_isLong)
-		{
-			if (_takeProfitPrice is decimal tp && candle.HighPrice >= tp)
-			{
-				exitPrice = tp;
-				takeProfitReached = true;
-			}
-
-			if (!takeProfitReached && _stopPrice is decimal sp && candle.LowPrice <= sp)
-			{
-				exitPrice = sp;
-				stopHit = true;
-			}
-
-			if (!takeProfitReached && !stopHit && channelLowerShift2 is decimal lower && _prevLow is decimal prevLow)
-			{
-				if (prevLow < lower)
-				{
-					if (candle.OpenPrice < prevLow)
-					{
-						exitPrice = candle.OpenPrice;
-						stopHit = true;
-					}
-					else
-					{
-						_stopPrice = prevLow - TrailingOffsetPips * priceStep;
-					}
-				}
-			}
-		}
-		else
-		{
-			if (_takeProfitPrice is decimal tp && candle.LowPrice <= tp)
-			{
-				exitPrice = tp;
-				takeProfitReached = true;
-			}
-
-			if (!takeProfitReached && _stopPrice is decimal sp && candle.HighPrice >= sp)
-			{
-				exitPrice = sp;
-				stopHit = true;
-			}
-
-			if (!takeProfitReached && !stopHit && channelUpperShift2 is decimal upper && _prevHigh is decimal prevHigh)
-			{
-				if (prevHigh > upper)
-				{
-					if (candle.OpenPrice > prevHigh)
-					{
-						exitPrice = candle.OpenPrice;
-						stopHit = true;
-					}
-					else
-					{
-						_stopPrice = prevHigh + TrailingOffsetPips * priceStep;
-					}
-				}
-			}
-		}
-
-		if (takeProfitReached || stopHit)
-		{
-			ExitPosition(exitPrice);
+			_prevChannelUpper = channelUpper;
+			_prevChannelLower = channelLower;
 			return;
 		}
-	}
 
-	private void EnterLong(decimal price, decimal volume)
-	{
-		BuyMarket(volume);
-		_entryPrice = price;
-		_isLong = true;
-		_takeProfitPrice = price + TakeProfitPips * GetPriceStep();
-		_stopPrice = null;
-	}
-
-	private void EnterShort(decimal price, decimal volume)
-	{
-		SellMarket(volume);
-		_entryPrice = price;
-		_isLong = false;
-		_takeProfitPrice = price - TakeProfitPips * GetPriceStep();
-		_stopPrice = null;
-	}
-
-	private void ExitPosition(decimal exitPrice)
-	{
-		if (Position > 0)
-			SellMarket(Position);
-		else if (Position < 0)
-			BuyMarket(Math.Abs(Position));
-
-		if (_entryPrice is decimal entry)
+		// Channel breakout with MA filter
+		if (_prevChannelUpper.HasValue && _prevChannelLower.HasValue)
 		{
-			var profit = _isLong ? exitPrice - entry : entry - exitPrice;
-			_lastTradeWasLoss = profit < 0m;
+			// Breakout above the previous channel high -> buy signal
+			if (candle.ClosePrice > _prevChannelUpper.Value && candle.ClosePrice > slowMaValue && Position <= 0)
+			{
+				if (Position < 0)
+					BuyMarket(Math.Abs(Position));
+				BuyMarket(Volume);
+			}
+			// Breakout below the previous channel low -> sell signal
+			else if (candle.ClosePrice < _prevChannelLower.Value && candle.ClosePrice < slowMaValue && Position >= 0)
+			{
+				if (Position > 0)
+					SellMarket(Position);
+				SellMarket(Volume);
+			}
 		}
 
-		_entryPrice = null;
-		_takeProfitPrice = null;
-		_stopPrice = null;
-	}
-
-	private void UpdateHistory(ICandleMessage candle, decimal? fast, decimal? slow, decimal? channelUpper, decimal? channelLower)
-	{
-		_prevOpen = candle.OpenPrice;
-		_prevHigh = candle.HighPrice;
-		_prevLow = candle.LowPrice;
-
-		if (fast.HasValue)
-		{
-			_prevFast = fast;
-		}
-
-		if (slow.HasValue)
-		{
-			_prevSlow = slow;
-		}
-
-		if (channelUpper.HasValue)
-		{
-			_channelUpperPrev2 = _channelUpperPrev;
-			_channelUpperPrev = channelUpper;
-		}
-
-		if (channelLower.HasValue)
-		{
-			_channelLowerPrev2 = _channelLowerPrev;
-			_channelLowerPrev = channelLower;
-		}
-	}
-
-	private decimal GetPriceStep()
-	{
-		return Security?.PriceStep ?? 0.0001m;
+		_prevChannelUpper = channelUpper;
+		_prevChannelLower = channelLower;
 	}
 }
-

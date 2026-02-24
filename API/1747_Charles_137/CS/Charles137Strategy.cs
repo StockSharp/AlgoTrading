@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,70 +11,48 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Charles 1.3.7 breakout strategy using symmetric stop orders and trailing exits.
+/// Charles 1.3.7 breakout strategy using symmetric price levels and trailing exits.
+/// Places virtual buy/sell stop levels around the close and enters on breakout.
 /// </summary>
 public class Charles137Strategy : Strategy
 {
-	private readonly StrategyParam<int> _anchor;
-	private readonly StrategyParam<decimal> _xFactor;
-	private readonly StrategyParam<int> _trailingStop;
-	private readonly StrategyParam<int> _trailingProfit;
-	private readonly StrategyParam<int> _stopLoss;
-	private readonly StrategyParam<decimal> _tradeVolume;
+	private readonly StrategyParam<decimal> _anchor;
+	private readonly StrategyParam<decimal> _trailingProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
-	private decimal _buyStopPrice;
-	private decimal _sellStopPrice;
+	private decimal _buyLevel;
+	private decimal _sellLevel;
+	private bool _levelsSet;
 
-	public int Anchor { get => _anchor.Value; set => _anchor.Value = value; }
-	public decimal XFactor { get => _xFactor.Value; set => _xFactor.Value = value; }
-	public int TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
-	public int TrailingProfit { get => _trailingProfit.Value; set => _trailingProfit.Value = value; }
-	public int StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-	public decimal TradeVolume { get => _tradeVolume.Value; set => _tradeVolume.Value = value; }
+	public decimal Anchor { get => _anchor.Value; set => _anchor.Value = value; }
+	public decimal TrailingProfit { get => _trailingProfit.Value; set => _trailingProfit.Value = value; }
+	public decimal StopLossVal { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public Charles137Strategy()
 	{
-		_anchor = Param(nameof(Anchor), 25)
+		_anchor = Param(nameof(Anchor), 200m)
 			.SetGreaterThanZero()
-			.SetDisplay("Anchor", "Distance in price steps for stop orders", "General");
+			.SetDisplay("Anchor", "Distance for breakout levels", "General");
 
-		_xFactor = Param(nameof(XFactor), 1.5m)
+		_trailingProfit = Param(nameof(TrailingProfit), 500m)
 			.SetGreaterThanZero()
-			.SetDisplay("Lot Multiplier", "Hedging volume multiplier", "General");
+			.SetDisplay("Trailing Profit", "Profit target distance", "General");
 
-		_trailingStop = Param(nameof(TrailingStop), 80)
+		_stopLoss = Param(nameof(StopLossVal), 300m)
 			.SetGreaterThanZero()
-			.SetDisplay("Trailing Stop", "Trailing stop distance in price steps", "General");
+			.SetDisplay("Stop Loss", "Stop loss distance", "General");
 
-		_trailingProfit = Param(nameof(TrailingProfit), 150)
-			.SetGreaterThanZero()
-			.SetDisplay("Trailing Profit", "Profit target in price steps", "General");
-
-		_stopLoss = Param(nameof(StopLoss), 0)
-			.SetDisplay("Stop Loss", "Fixed stop loss in price steps", "General");
-
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Base order volume", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe", "General");
-	}
-
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -90,55 +65,54 @@ public class Charles137Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var step = Security.PriceStep ?? 1m;
+		var price = candle.ClosePrice;
 
 		if (Position == 0)
 		{
-			CancelActiveOrders();
+			if (!_levelsSet)
+			{
+				_buyLevel = price + Anchor;
+				_sellLevel = price - Anchor;
+				_levelsSet = true;
+				return;
+			}
 
-			var volume = TradeVolume * XFactor;
-			_buyStopPrice = candle.ClosePrice + Anchor * step;
-			_sellStopPrice = candle.ClosePrice - Anchor * step;
-
-			BuyStop(volume, _buyStopPrice);
-			SellStop(volume, _sellStopPrice);
+			if (price >= _buyLevel)
+			{
+				BuyMarket();
+				_entryPrice = price;
+				_levelsSet = false;
+			}
+			else if (price <= _sellLevel)
+			{
+				SellMarket();
+				_entryPrice = price;
+				_levelsSet = false;
+			}
+			else
+			{
+				// Update levels each bar
+				_buyLevel = price + Anchor;
+				_sellLevel = price - Anchor;
+			}
 		}
 		else if (Position > 0)
 		{
-			var profit = candle.ClosePrice - _entryPrice;
-			if (profit >= TrailingProfit * step)
-				SellMarket(Position);
-			else if (StopLoss > 0 && _entryPrice - candle.ClosePrice >= StopLoss * step)
-				SellMarket(Position);
+			var profit = price - _entryPrice;
+			if (profit >= TrailingProfit || profit <= -StopLossVal)
+			{
+				SellMarket();
+				_levelsSet = false;
+			}
 		}
 		else if (Position < 0)
 		{
-			var profit = _entryPrice - candle.ClosePrice;
-			if (profit >= TrailingProfit * step)
-				BuyMarket(-Position);
-			else if (StopLoss > 0 && candle.ClosePrice - _entryPrice >= StopLoss * step)
-				BuyMarket(-Position);
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position > 0)
-		{
-			CancelActiveOrders();
-			_entryPrice = _buyStopPrice;
-		}
-		else if (Position < 0)
-		{
-			CancelActiveOrders();
-			_entryPrice = _sellStopPrice;
-		}
-		else
-		{
-			_entryPrice = 0m;
+			var profit = _entryPrice - price;
+			if (profit >= TrailingProfit || profit <= -StopLossVal)
+			{
+				BuyMarket();
+				_levelsSet = false;
+			}
 		}
 	}
 }

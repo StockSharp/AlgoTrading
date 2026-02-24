@@ -95,7 +95,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 	/// <summary>
 	/// Base order volume used for the initial entry.
 	/// </summary>
-	public new decimal Volume
+	public decimal BaseVolume
 	{
 		get => _volume.Value;
 		set => _volume.Value = value;
@@ -346,11 +346,11 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Lips Shift", "Forward shift of the lips", "Alligator");
 
-		_entrySpread = Param(nameof(EntrySpread), 0.0005m)
+		_entrySpread = Param(nameof(EntrySpread), 50m)
 		.SetNotNegative()
 		.SetDisplay("Entry Spread", "Required jaw-lips spread to enable entries", "Alligator");
 
-		_exitSpread = Param(nameof(ExitSpread), 0.0001m)
+		_exitSpread = Param(nameof(ExitSpread), 10m)
 		.SetNotNegative()
 		.SetDisplay("Exit Spread", "Spread that closes the mouth", "Alligator");
 
@@ -375,27 +375,27 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		_manualMode = Param(nameof(ManualMode), false)
 		.SetDisplay("Manual Mode", "Disable automatic entries", "Trading");
 
-		_takeProfitDistance = Param(nameof(TakeProfitDistance), 0.008m)
+		_takeProfitDistance = Param(nameof(TakeProfitDistance), 800m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit Distance", "Fixed distance for profit taking", "Protection");
 
-		_stopLossDistance = Param(nameof(StopLossDistance), 0.008m)
+		_stopLossDistance = Param(nameof(StopLossDistance), 800m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss Distance", "Fixed distance for protective stop", "Protection");
 
-		_trailingStep = Param(nameof(TrailingStep), 0.001m)
+		_trailingStep = Param(nameof(TrailingStep), 100m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Minimum move before trailing", "Protection");
 
 		_fractalLookback = Param(nameof(FractalLookback), 10)
-		.SetGreaterThanOrEqual(1)
+		.SetGreaterThanZero()
 		.SetDisplay("Fractal Lookback", "Bars to keep fractal levels", "Fractals");
 
-		_fractalBuffer = Param(nameof(FractalBuffer), 0.003m)
+		_fractalBuffer = Param(nameof(FractalBuffer), 300m)
 		.SetNotNegative()
 		.SetDisplay("Fractal Buffer", "Extra distance to validate fractals", "Fractals");
 
-		_martingaleSteps = Param(nameof(MartingaleSteps), 10)
+		_martingaleSteps = Param(nameof(MartingaleSteps), 3)
 		.SetNotNegative()
 		.SetDisplay("Martingale Steps", "Number of averaging levels", "Martingale");
 
@@ -403,19 +403,19 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Martingale Multiplier", "Volume multiplier per level", "Martingale");
 
-		_martingaleStepDistance = Param(nameof(MartingaleStepDistance), 0.005m)
+		_martingaleStepDistance = Param(nameof(MartingaleStepDistance), 500m)
 		.SetNotNegative()
 		.SetDisplay("Martingale Step", "Distance between averaging levels", "Martingale");
 
-		_maxVolume = Param(nameof(MaxVolume), 0.5m)
+		_maxVolume = Param(nameof(MaxVolume), 10m)
 		.SetNotNegative()
 		.SetDisplay("Max Volume", "Absolute cap for any order", "Trading");
 
-		_volume = Param(nameof(Volume), 0.1m)
+		_volume = Param(nameof(BaseVolume), 1m)
 		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Base volume for entries", "Trading");
+		.SetDisplay("Base Volume", "Base volume for entries", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Source candles", "General");
 	}
 
@@ -481,20 +481,21 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
+		var isFinal = candle.State == CandleStates.Finished;
 
-		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.ServerTime));
-		if (jawValue.IsFinal)
+		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.ServerTime) { IsFinal = isFinal });
+		if (isFinal)
 		AddIndicatorValue(_jawHistory, jawValue.ToDecimal());
 
-		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.ServerTime));
-		if (teethValue.IsFinal)
+		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.ServerTime) { IsFinal = isFinal });
+		if (isFinal)
 		AddIndicatorValue(_teethHistory, teethValue.ToDecimal());
 
-		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.ServerTime));
-		if (lipsValue.IsFinal)
+		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.ServerTime) { IsFinal = isFinal });
+		if (isFinal)
 		AddIndicatorValue(_lipsHistory, lipsValue.ToDecimal());
 
-		if (candle.State != CandleStates.Finished)
+		if (!isFinal)
 		return;
 
 		_finishedBarIndex++;
@@ -512,7 +513,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 			_shortTake = null;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_jaw.IsFormed || !_teeth.IsFormed || !_lips.IsFormed)
 		return;
 
 		if (!ManualMode)
@@ -905,7 +906,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 
 	private decimal GetInitialVolume()
 	{
-		var volume = Volume;
+		var volume = BaseVolume;
 		if (MaxVolume > 0m && volume > MaxVolume)
 		volume = MaxVolume;
 

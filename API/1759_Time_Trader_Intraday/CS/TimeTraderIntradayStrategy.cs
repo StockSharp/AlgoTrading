@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,119 +11,47 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that opens positions at a specific time with fixed stops.
+/// Strategy that trades EMA crossover at scheduled intervals with fixed stops.
 /// </summary>
 public class TimeTraderIntradayStrategy : Strategy
 {
-	private readonly StrategyParam<int> _tradeHour;
-	private readonly StrategyParam<int> _tradeMinute;
-	private readonly StrategyParam<bool> _allowBuy;
-	private readonly StrategyParam<bool> _allowSell;
-	private readonly StrategyParam<int> _takeProfitTicks;
-	private readonly StrategyParam<int> _stopLossTicks;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _buyExecuted;
-	private bool _sellExecuted;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _isInitialized;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Hour for order placement (0-23).
-	/// </summary>
-	public int TradeHour
-	{
-		get => _tradeHour.Value;
-		set => _tradeHour.Value = value;
-	}
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Minute for order placement (0-59).
-	/// </summary>
-	public int TradeMinute
-	{
-		get => _tradeMinute.Value;
-		set => _tradeMinute.Value = value;
-	}
-
-	/// <summary>
-	/// Allow long entry.
-	/// </summary>
-	public bool AllowBuy
-	{
-		get => _allowBuy.Value;
-		set => _allowBuy.Value = value;
-	}
-
-	/// <summary>
-	/// Allow short entry.
-	/// </summary>
-	public bool AllowSell
-	{
-		get => _allowSell.Value;
-		set => _allowSell.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance in ticks.
-	/// </summary>
-	public int TakeProfitTicks
-	{
-		get => _takeProfitTicks.Value;
-		set => _takeProfitTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance in ticks.
-	/// </summary>
-	public int StopLossTicks
-	{
-		get => _stopLossTicks.Value;
-		set => _stopLossTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used to check time.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
 	public TimeTraderIntradayStrategy()
 	{
-		_tradeHour = Param(nameof(TradeHour), 0)
-			.SetDisplay("Trade Hour", "Hour of day to trade", "General")
-			.SetCanOptimize(true, 0, 23, 1);
-		_tradeMinute = Param(nameof(TradeMinute), 0)
-			.SetDisplay("Trade Minute", "Minute of hour to trade", "General")
-			.SetCanOptimize(true, 0, 59, 1);
-		_allowBuy = Param(nameof(AllowBuy), true)
-			.SetDisplay("Allow Buy", "Enable long order", "General");
-		_allowSell = Param(nameof(AllowSell), true)
-			.SetDisplay("Allow Sell", "Enable short order", "General");
-		_takeProfitTicks = Param(nameof(TakeProfitTicks), 20)
-			.SetDisplay("Take Profit Ticks", "Take profit distance in ticks", "Protection")
-			.SetCanOptimize(true, 1, 200, 1);
-		_stopLossTicks = Param(nameof(StopLossTicks), 20)
-			.SetDisplay("Stop Loss Ticks", "Stop loss distance in ticks", "Protection")
-			.SetCanOptimize(true, 1, 200, 1);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_takeProfit = Param(nameof(TakeProfit), 500m)
+			.SetGreaterThanZero()
+			.SetDisplay("Take Profit", "Take profit distance", "Protection");
+
+		_stopLoss = Param(nameof(StopLoss), 300m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss", "Stop loss distance", "Protection");
+
+		_fastPeriod = Param(nameof(FastPeriod), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
+
+		_slowPeriod = Param(nameof(SlowPeriod), 21)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_buyExecuted = false;
-		_sellExecuted = false;
 	}
 
 	/// <inheritdoc />
@@ -134,45 +59,56 @@ public class TimeTraderIntradayStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var fastEma = new EMA { Length = FastPeriod };
+		var slowEma = new EMA { Length = SlowPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		var step = Security.PriceStep ?? 1m;
-		StartProtection(
-			new Unit(TakeProfitTicks * step, UnitTypes.Point),
-			new Unit(StopLossTicks * step, UnitTypes.Point));
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (candle.OpenTime.Hour != TradeHour || candle.OpenTime.Minute != TradeMinute)
-			return;
-
-		if (AllowBuy && !_buyExecuted && Position <= 0)
+		if (!_isInitialized)
 		{
-			// Open long position at the scheduled time
-			BuyMarket(Volume + Math.Abs(Position));
-			_buyExecuted = true;
+			_prevFast = fast;
+			_prevSlow = slow;
+			_isInitialized = true;
+			return;
 		}
 
-		if (AllowSell && !_sellExecuted && Position >= 0)
+		var crossUp = _prevFast <= _prevSlow && fast > slow;
+		var crossDown = _prevFast >= _prevSlow && fast < slow;
+
+		_prevFast = fast;
+		_prevSlow = slow;
+
+		if (Position == 0)
 		{
-			// Open short position at the scheduled time
-			SellMarket(Volume + Math.Abs(Position));
-			_sellExecuted = true;
+			if (crossUp)
+			{
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+			}
+			else if (crossDown)
+			{
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+			}
+		}
+		else if (Position > 0)
+		{
+			var price = candle.ClosePrice;
+			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss || crossDown)
+				SellMarket();
+		}
+		else if (Position < 0)
+		{
+			var price = candle.ClosePrice;
+			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss || crossUp)
+				BuyMarket();
 		}
 	}
 }

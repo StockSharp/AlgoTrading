@@ -125,9 +125,9 @@ public class SupertrendAndMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var supertrend = new SuperTrend { Length = AtrPeriod, Multiplier = Factor };
 		var ema = new EMA { Length = EmaPeriod };
@@ -135,10 +135,10 @@ public class SupertrendAndMacdStrategy : Strategy
 		{
 			Macd =
 			{
-				ShortMa = new EMA { Length = MacdFast },
-				LongMa = new EMA { Length = MacdSlow }
+				ShortMa = { Length = MacdFast },
+				LongMa = { Length = MacdSlow }
 			},
-			SignalMa = new EMA { Length = MacdSignal }
+			SignalMa = { Length = MacdSignal }
 		};
 
 		_highest = new Highest { Length = StopLookback };
@@ -173,8 +173,8 @@ public class SupertrendAndMacdStrategy : Strategy
 
 		var diff = macd - signal;
 
-		var highest = _highest.Process(candle).ToDecimal();
-		var lowest = _lowest.Process(candle).ToDecimal();
+		var highest = _highest.Process(candle.HighPrice, candle.ServerTime, true).GetValue<decimal>();
+		var lowest = _lowest.Process(candle.LowPrice, candle.ServerTime, true).GetValue<decimal>();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 		{

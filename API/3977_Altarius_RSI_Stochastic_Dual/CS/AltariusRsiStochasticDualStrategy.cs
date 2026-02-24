@@ -285,7 +285,7 @@ public class AltariusRsiStochasticDualStrategy : Strategy
 		_exitStochLow = Param(nameof(ExitStochasticLow), 30m)
 		.SetDisplay("Exit Stochastic Low", "Slow stochastic signal level confirming short exit", "Exits");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candles used for calculations", "Market Data");
 	}
 
@@ -318,17 +318,13 @@ public class AltariusRsiStochasticDualStrategy : Strategy
 			Length = RsiPeriod,
 		};
 
-		var slowStochastic = new StochasticOscillator
-		{ K = { Length = SlowStochasticPeriod },
-			K = { Length = SlowStochasticK },
-			D = { Length = SlowStochasticD },
-		};
+		var slowStochastic = new StochasticOscillator();
+		slowStochastic.K.Length = SlowStochasticK;
+		slowStochastic.D.Length = SlowStochasticD;
 
-		var fastStochastic = new StochasticOscillator
-		{ K = { Length = FastStochasticPeriod },
-			K = { Length = FastStochasticK },
-			D = { Length = FastStochasticD },
-		};
+		var fastStochastic = new StochasticOscillator();
+		fastStochastic.K.Length = FastStochasticK;
+		fastStochastic.D.Length = FastStochasticD;
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -374,9 +370,15 @@ public class AltariusRsiStochasticDualStrategy : Strategy
 			}
 		}
 
+		if (rsiValue.IsEmpty || slowValue.IsEmpty || fastValue.IsEmpty)
+			return;
+
 		var rsi = rsiValue.ToDecimal();
-		var slow = (StochasticOscillatorValue)slowValue;
-		var fast = (StochasticOscillatorValue)fastValue;
+		var slow = slowValue as StochasticOscillatorValue;
+		var fast = fastValue as StochasticOscillatorValue;
+
+		if (slow == null || fast == null)
+			return;
 
 		if (slow.K is not decimal slowMainValue ||
 		slow.D is not decimal slowSignalValue ||
@@ -509,9 +511,9 @@ public class AltariusRsiStochasticDualStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnPositionReceived(position);
+		base.OnOwnTradeReceived(trade);
 
 		if (Position == 0m)
 		{
@@ -527,7 +529,6 @@ public class AltariusRsiStochasticDualStrategy : Strategy
 			{
 				_consecutiveLosses++;
 			}
-
 		}
 	}
 }

@@ -33,7 +33,7 @@ public class BullishBearishEngulfingStrategy : Strategy
 	/// </summary>
 	public BullishBearishEngulfingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for analysis", "General");
 
 		_shift = Param(nameof(Shift), 1)

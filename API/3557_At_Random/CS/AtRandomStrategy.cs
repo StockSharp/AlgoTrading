@@ -1,12 +1,7 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -14,119 +9,56 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that randomly opens long or short positions on every completed candle.
-/// The implementation mirrors the "At random" MetaTrader expert by generating a new
-/// signal on each bar and optionally closing the previous position before acting on it.
+/// Strategy that randomly opens long or short positions based on a random threshold.
+/// Mirrors the "At random" MetaTrader expert.
 /// </summary>
 public class AtRandomStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<bool> _closeBeforeReversal;
-	private readonly StrategyParam<bool> _logSignals;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _randomSeed;
 
-	private Random _random = null!;
-	private bool _waitForFlat;
+	private Random _random;
+	private int _barCount;
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="AtRandomStrategy"/>.
-	/// </summary>
-	public AtRandomStrategy()
-	{
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trade Volume", "Base order size for every random entry", "Trading")
-			;
-
-		_closeBeforeReversal = Param(nameof(CloseBeforeReversal), true)
-			.SetDisplay("Close Before Reversal", "Whether the existing position must be closed before taking the next random signal", "Trading");
-
-		_logSignals = Param(nameof(LogSignals), true)
-			.SetDisplay("Log Signals", "Write an informational log entry every time a random direction is chosen", "Diagnostics");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe that triggers new random decisions", "Data");
-
-		_randomSeed = Param(nameof(RandomSeed), 0)
-			.SetDisplay("Random Seed", "Seed for the pseudo random generator (0 = system clock)", "Diagnostics");
-	}
-
-	/// <summary>
-	/// Base order size used for each random market order.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Enables closing the current position before a new random entry is allowed.
-	/// </summary>
-	public bool CloseBeforeReversal
-	{
-		get => _closeBeforeReversal.Value;
-		set => _closeBeforeReversal.Value = value;
-	}
-
-	/// <summary>
-	/// Enables writing informational messages whenever a random direction is generated.
-	/// </summary>
-	public bool LogSignals
-	{
-		get => _logSignals.Value;
-		set => _logSignals.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used to schedule random decisions.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Optional deterministic seed for the pseudo random number generator.
-	/// </summary>
 	public int RandomSeed
 	{
 		get => _randomSeed.Value;
 		set => _randomSeed.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public AtRandomStrategy()
 	{
-		return [(Security, CandleType)];
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe that triggers random decisions", "Data");
+
+		_randomSeed = Param(nameof(RandomSeed), 42)
+			.SetDisplay("Random Seed", "Seed for the pseudo random generator (0 = system clock)", "Diagnostics");
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_waitForFlat = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (TradeVolume <= 0)
-			throw new InvalidOperationException("TradeVolume must be greater than zero.");
-
 		_random = RandomSeed == 0 ? new Random() : new Random(RandomSeed);
+		_barCount = 0;
 
-		// Subscribe to the configured candle series and process signals when a bar completes.
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -134,36 +66,34 @@ public class AtRandomStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait until the previous position is fully closed when requested by the user.
-		if (_waitForFlat)
-		{
-			if (Position == 0)
-			{
-				_waitForFlat = false;
-			}
-			else
-			{
-				return;
-			}
-		}
+		_barCount++;
 
-		// Close the existing exposure before acting on the next random signal.
-		if (CloseBeforeReversal && Position != 0)
-		{
-			ClosePosition();
-			_waitForFlat = true;
+		// Only trade every 10th bar on average (10% chance per bar)
+		if (_random.Next(0, 10) != 0)
 			return;
+
+		var volume = Volume;
+		if (volume <= 0)
+			volume = 1;
+
+		// Random direction
+		var goLong = _random.Next(0, 2) == 0;
+
+		if (goLong)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+
+			if (Position <= 0)
+				BuyMarket(volume);
 		}
-
-		var side = _random.Next(0, 2) == 0 ? Sides.Buy : Sides.Sell;
-
-		if (LogSignals)
-			this.LogInfo($"Random signal: {side} at {candle.ClosePrice}.");
-
-		if (side == Sides.Buy)
-			BuyMarket(TradeVolume);
 		else
-			SellMarket(TradeVolume);
+		{
+			if (Position > 0)
+				SellMarket(Position);
+
+			if (Position >= 0)
+				SellMarket(volume);
+		}
 	}
 }
-

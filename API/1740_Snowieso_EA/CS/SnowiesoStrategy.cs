@@ -1,17 +1,12 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -38,153 +33,97 @@ public class SnowiesoStrategy : Strategy
 	private decimal _prevKama;
 	private bool _isInitialized;
 
-	/// <summary>
-	/// Fast LWMA period.
-	/// </summary>
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
-	/// <summary>
-	/// Slow LWMA period.
-	/// </summary>
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-	/// <summary>
-	/// Fast EMA for MACD.
-	/// </summary>
 	public int MacdFast { get => _macdFast.Value; set => _macdFast.Value = value; }
-	/// <summary>
-	/// Slow EMA for MACD.
-	/// </summary>
 	public int MacdSlow { get => _macdSlow.Value; set => _macdSlow.Value = value; }
-	/// <summary>
-	/// Signal EMA for MACD.
-	/// </summary>
 	public int MacdSignal { get => _macdSignal.Value; set => _macdSignal.Value = value; }
-	/// <summary>
-	/// KAMA length.
-	/// </summary>
 	public int KamaLength { get => _kamaLength.Value; set => _kamaLength.Value = value; }
-	/// <summary>
-	/// Stop loss in price points.
-	/// </summary>
 	public decimal StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
-	/// <summary>
-	/// Take profit in price points.
-	/// </summary>
 	public decimal TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public SnowiesoStrategy()
 	{
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast LWMA", "Fast LWMA period", "LWMAs")
-			
-			.SetOptimize(5, 20, 5);
+			.SetDisplay("Fast LWMA", "Fast LWMA period", "LWMAs");
 
 		_slowLength = Param(nameof(SlowLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow LWMA", "Slow LWMA period", "LWMAs")
-			
-			.SetOptimize(20, 100, 10);
+			.SetDisplay("Slow LWMA", "Slow LWMA period", "LWMAs");
 
 		_macdFast = Param(nameof(MacdFast), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("MACD Fast", "Fast EMA for MACD", "MACD")
-			
-			.SetOptimize(6, 18, 2);
+			.SetDisplay("MACD Fast", "Fast EMA for MACD", "MACD");
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("MACD Slow", "Slow EMA for MACD", "MACD")
-			
-			.SetOptimize(20, 40, 4);
+			.SetDisplay("MACD Slow", "Slow EMA for MACD", "MACD");
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("MACD Signal", "Signal EMA for MACD", "MACD")
-			
-			.SetOptimize(5, 15, 2);
+			.SetDisplay("MACD Signal", "Signal EMA for MACD", "MACD");
 
 		_kamaLength = Param(nameof(KamaLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("KAMA Length", "Lookback period for KAMA", "KAMA")
-			
-			.SetOptimize(5, 20, 5);
+			.SetDisplay("KAMA Length", "Lookback period for KAMA", "KAMA");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			
-			.SetOptimize(20m, 100m, 20m);
+			.SetDisplay("Stop Loss", "Stop loss in points", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 1000m)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			
-			.SetOptimize(50m, 200m, 50m);
+			.SetDisplay("Take Profit", "Take profit in points", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	protected override void OnStarted2(DateTime time)
 	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevFast = 0m;
-		_prevSlow = 0m;
-		_prevKama = 0m;
-		_isInitialized = false;
-	}
-
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
-	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastLwma = new WeightedMovingAverage { Length = FastLength };
 		var slowLwma = new WeightedMovingAverage { Length = SlowLength };
-		var macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = MacdFast },
-			LongMa = { Length = MacdSlow },
-			SignalPeriod = MacdSignal
-		};
+		var macd = new MovingAverageConvergenceDivergenceSignal();
+		macd.Macd.ShortMa.Length = MacdFast;
+		macd.Macd.LongMa.Length = MacdSlow;
+		macd.SignalMa.Length = MacdSignal;
 		var kama = new KaufmanAdaptiveMovingAverage { Length = KamaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastLwma, slowLwma, macd, kama, ProcessCandle)
+			.BindEx(new IIndicator[] { fastLwma, slowLwma, macd, kama }, ProcessCandle)
 			.Start();
 
 		StartProtection(
 			takeProfit: new Unit(TakeProfitPoints, UnitTypes.Absolute),
 			stopLoss: new Unit(StopLossPoints, UnitTypes.Absolute));
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, fastLwma);
-			DrawIndicator(area, slowLwma);
-			DrawIndicator(area, kama);
-			DrawIndicator(area, macd);
-			DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue, decimal macdValue, decimal macdSignal, decimal macdHistogram, decimal kamaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (values[0].IsEmpty || values[1].IsEmpty || values[2].IsEmpty || values[3].IsEmpty)
+			return;
+
+		var fastValue = values[0].GetValue<decimal>();
+		var slowValue = values[1].GetValue<decimal>();
+
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)values[2];
+		var macdVal = macdTyped.Macd;
+		var signalVal = macdTyped.Signal;
+
+		if (macdVal is not decimal macdLine || signalVal is not decimal signalLine)
+			return;
+
+		var histogram = macdLine - signalLine;
+		var kamaValue = values[3].GetValue<decimal>();
 
 		if (!_isInitialized)
 		{
@@ -202,23 +141,15 @@ public class SnowiesoStrategy : Strategy
 		var kamaRising = kamaValue > _prevKama;
 		var kamaFalling = kamaValue < _prevKama;
 
-		if (crossUp && macdHistogram > 0 && kamaRising)
+		if (crossUp && histogram > 0 && kamaRising)
 		{
 			if (Position <= 0)
-			{
-				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
 				BuyMarket();
-			}
 		}
-		else if (crossDown && macdHistogram < 0 && kamaFalling)
+		else if (crossDown && histogram < 0 && kamaFalling)
 		{
 			if (Position >= 0)
-			{
-				if (Position > 0)
-					SellMarket(Position);
 				SellMarket();
-			}
 		}
 
 		_prevFast = fastValue;

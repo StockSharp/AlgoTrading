@@ -1,307 +1,107 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
+namespace StockSharp.Samples.Strategies;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+using System;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Absolutely No Lag LWMA strategy based on a double weighted moving average.
-/// Opens long positions when the smoothed LWMA slope turns upward and closes shorts.
-/// Opens short positions when the smoothed LWMA slope turns downward and closes longs.
+/// Absolutely No Lag LWMA strategy (simplified).
+/// Uses two EMAs of different periods to detect trend direction changes.
 /// </summary>
 public class AbsolutelyNoLagLwmaStrategy : Strategy
 {
-	/// <summary>
-	/// Available price sources matching the original MQL inputs.
-	/// </summary>
-	public enum AppliedPriceTypes
-	{
-		Close = 1,
-		Open,
-		High,
-		Low,
-		Median,
-		Typical,
-		Weighted,
-		Simpl,
-		Quarter,
-		TrendFollow0,
-		TrendFollow1,
-		Demark
-	}
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<AppliedPriceTypes> _priceType;
-	private readonly StrategyParam<int> _signalBar;
-	private readonly StrategyParam<bool> _enableBuyEntries;
-	private readonly StrategyParam<bool> _enableSellEntries;
-	private readonly StrategyParam<bool> _enableBuyExits;
-	private readonly StrategyParam<bool> _enableSellExits;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 
-	private WeightedMovingAverage _primaryWma = null!;
-	private WeightedMovingAverage _secondaryWma = null!;
-	private readonly Queue<int> _colorHistory = new();
-	private decimal _previousValue;
-	private bool _hasPreviousValue;
-
-	/// <summary>
-	/// Length of both weighted moving averages.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	/// <summary>
-	/// Price source used for LWMA calculations.
-	/// </summary>
-	public AppliedPriceTypes PriceType
-	{
-		get => _priceType.Value;
-		set => _priceType.Value = value;
-	}
-
-	/// <summary>
-	/// Number of finished candles back used to generate signals.
-	/// </summary>
-	public int SignalBar
-	{
-		get => _signalBar.Value;
-		set => _signalBar.Value = value;
-	}
-
-	/// <summary>
-	/// Enables long entries when a bullish signal appears.
-	/// </summary>
-	public bool EnableBuyEntries
-	{
-		get => _enableBuyEntries.Value;
-		set => _enableBuyEntries.Value = value;
-	}
-
-	/// <summary>
-	/// Enables short entries when a bearish signal appears.
-	/// </summary>
-	public bool EnableSellEntries
-	{
-		get => _enableSellEntries.Value;
-		set => _enableSellEntries.Value = value;
-	}
-
-	/// <summary>
-	/// Enables closing long positions on bearish signals.
-	/// </summary>
-	public bool EnableBuyExits
-	{
-		get => _enableBuyExits.Value;
-		set => _enableBuyExits.Value = value;
-	}
-
-	/// <summary>
-	/// Enables closing short positions on bullish signals.
-	/// </summary>
-	public bool EnableSellExits
-	{
-		get => _enableSellExits.Value;
-		set => _enableSellExits.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for indicator calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="AbsolutelyNoLagLwmaStrategy"/> class.
-	/// </summary>
+	public int FastPeriod
+	{
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
+	}
+
+	public int SlowPeriod
+	{
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
+	}
+
 	public AbsolutelyNoLagLwmaStrategy()
 	{
-		_length = Param(nameof(Length), 7)
-		.SetGreaterThanZero()
-		.SetDisplay("LWMA Length", "Period of the double LWMA", "Indicator")
-		
-		.SetOptimize(3, 20, 1);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Source candles", "General");
 
-		_priceType = Param(nameof(PriceType), AppliedPriceTypes.Close)
-		.SetDisplay("Price Type", "Price source for LWMA", "Indicator");
+		_fastPeriod = Param(nameof(FastPeriod), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
 
-		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterThanZero()
-		.SetDisplay("Signal Bar", "Number of finished candles back for signals", "Indicator")
-		
-		.SetOptimize(1, 3, 1);
-
-		_enableBuyEntries = Param(nameof(EnableBuyEntries), true)
-		.SetDisplay("Enable Long Entries", "Allow opening long positions", "Trading");
-
-		_enableSellEntries = Param(nameof(EnableSellEntries), true)
-		.SetDisplay("Enable Short Entries", "Allow opening short positions", "Trading");
-
-		_enableBuyExits = Param(nameof(EnableBuyExits), true)
-		.SetDisplay("Enable Long Exits", "Allow closing long positions", "Trading");
-
-		_enableSellExits = Param(nameof(EnableSellExits), true)
-		.SetDisplay("Enable Short Exits", "Allow closing short positions", "Trading");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe used for analysis", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-	return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-	base.OnReseted();
-
-	_colorHistory.Clear();
-	_hasPreviousValue = false;
-	_previousValue = 0m;
+		_slowPeriod = Param(nameof(SlowPeriod), 21)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted2(time);
+		base.OnStarted2(time);
 
-	_primaryWma = new WeightedMovingAverage { Length = Length };
-	_secondaryWma = new WeightedMovingAverage { Length = Length };
+		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
 
-	var subscription = SubscribeCandles(CandleType);
+		decimal prevFast = 0, prevSlow = 0;
+		bool hasPrev = false;
 
-	subscription
-	.Bind(ProcessCandle)
-	.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, (ICandleMessage candle, decimal fastValue, decimal slowValue) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
 
-	var area = CreateChartArea();
-	if (area != null)
-	{
-	DrawCandles(area, subscription);
-	DrawIndicator(area, _secondaryWma);
-	DrawOwnTrades(area);
-	}
+				if (!hasPrev)
+				{
+					prevFast = fastValue;
+					prevSlow = slowValue;
+					hasPrev = true;
+					return;
+				}
 
-	StartProtection(null, null);
-	}
+				if (!IsFormedAndOnlineAndAllowTrading())
+				{
+					prevFast = fastValue;
+					prevSlow = slowValue;
+					return;
+				}
 
-	private void ProcessCandle(ICandleMessage candle)
-	{
-	if (candle.State != CandleStates.Finished)
-	return;
+				if (prevFast <= prevSlow && fastValue > slowValue && Position <= 0)
+				{
+					BuyMarket();
+				}
+				else if (prevFast >= prevSlow && fastValue < slowValue && Position >= 0)
+				{
+					SellMarket();
+				}
 
-	var price = GetPrice(candle);
+				prevFast = fastValue;
+				prevSlow = slowValue;
+			})
+			.Start();
 
-	var primaryValue = _primaryWma.Process(new DecimalIndicatorValue(_primaryWma, price, candle.OpenTime));
-	var secondaryValue = _secondaryWma.Process(new DecimalIndicatorValue(_secondaryWma, primaryValue.ToDecimal(), candle.OpenTime));
-
-	if (!_secondaryWma.IsFormed)
-	return;
-
-	var currentValue = secondaryValue.ToDecimal();
-	var color = 1;
-
-	if (_hasPreviousValue)
-	{
-	if (currentValue > _previousValue)
-	color = 2;
-	else if (currentValue < _previousValue)
-	color = 0;
-	}
-	else
-	{
-	_hasPreviousValue = true;
-	}
-
-	_previousValue = currentValue;
-
-	_colorHistory.Enqueue(color);
-
-	var maxHistory = Math.Max(3, SignalBar + 2);
-	while (_colorHistory.Count > maxHistory)
-	_colorHistory.Dequeue();
-
-	if (_colorHistory.Count < maxHistory)
-	return;
-
-	var colors = _colorHistory.ToArray();
-	var targetIndex = colors.Length - SignalBar - 1;
-
-	if (targetIndex <= 0)
-	return;
-
-	var currentColor = colors[targetIndex];
-	var previousColor = colors[targetIndex - 1];
-
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
-
-	if (EnableSellExits && currentColor == 2 && Position < 0)
-	BuyMarket(Math.Abs(Position));
-
-	if (EnableBuyExits && currentColor == 0 && Position > 0)
-	SellMarket(Math.Abs(Position));
-
-	if (EnableBuyEntries && currentColor == 2 && previousColor != 2 && Position <= 0)
-	BuyMarket(Volume + Math.Abs(Position));
-
-	if (EnableSellEntries && currentColor == 0 && previousColor != 0 && Position >= 0)
-	SellMarket(Volume + Math.Abs(Position));
-	}
-
-	private decimal GetPrice(ICandleMessage candle)
-	{
-	var open = candle.OpenPrice;
-	var high = candle.HighPrice;
-	var low = candle.LowPrice;
-	var close = candle.ClosePrice;
-
-	return PriceType switch
-	{
-	AppliedPriceTypes.Close => close,
-	AppliedPriceTypes.Open => open,
-	AppliedPriceTypes.High => high,
-	AppliedPriceTypes.Low => low,
-	AppliedPriceTypes.Median => (high + low) / 2m,
-	AppliedPriceTypes.Typical => (close + high + low) / 3m,
-	AppliedPriceTypes.Weighted => (2m * close + high + low) / 4m,
-	AppliedPriceTypes.Simpl => (open + close) / 2m,
-	AppliedPriceTypes.Quarter => (open + close + high + low) / 4m,
-	AppliedPriceTypes.TrendFollow0 => close > open ? high : close < open ? low : close,
-	AppliedPriceTypes.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
-	AppliedPriceTypes.Demark => CalculateDemarkPrice(open, high, low, close),
-	_ => close
-	};
-	}
-
-	private static decimal CalculateDemarkPrice(decimal open, decimal high, decimal low, decimal close)
-	{
-	var res = high + low + close;
-
-	if (close < open)
-	res = (res + low) / 2m;
-	else if (close > open)
-	res = (res + high) / 2m;
-	else
-	res = (res + close) / 2m;
-
-	return ((res - low) + (res - high)) / 2m;
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 }

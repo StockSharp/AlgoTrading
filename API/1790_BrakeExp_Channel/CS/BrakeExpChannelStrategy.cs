@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -14,202 +10,180 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on BrakeExp indicator signals.
+/// Strategy based on exponential channel breakout signals.
+/// Tracks an exponential curve from swing points and trades direction changes.
 /// </summary>
 public class BrakeExpChannelStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _a;
 	private readonly StrategyParam<decimal> _b;
-	private readonly StrategyParam<bool> _buyOpen;
-	private readonly StrategyParam<bool> _sellOpen;
-	private readonly StrategyParam<bool> _buyClose;
-	private readonly StrategyParam<bool> _sellClose;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public decimal A { get => _a.Value; set => _a.Value = value; }
 	public decimal B { get => _b.Value; set => _b.Value = value; }
-	public bool BuyOpen { get => _buyOpen.Value; set => _buyOpen.Value = value; }
-	public bool SellOpen { get => _sellOpen.Value; set => _sellOpen.Value = value; }
-	public bool BuyClose { get => _buyClose.Value; set => _buyClose.Value = value; }
-	public bool SellClose { get => _sellClose.Value; set => _sellClose.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+
+	private bool _isLong = true;
+	private bool _init;
+	private decimal _max;
+	private decimal _min;
+	private decimal _begin;
+	private decimal _prevUp;
+	private decimal _prevDn;
+	private int _bar;
+	private decimal _entryPrice;
 
 	public BrakeExpChannelStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 		_a = Param(nameof(A), 3m)
-			.SetDisplay("A", "BrakeExp parameter A", "Indicator");
+			.SetDisplay("A", "Exponential parameter A", "Indicator");
 		_b = Param(nameof(B), 1m)
-			.SetDisplay("B", "BrakeExp parameter B", "Indicator");
-		_buyOpen = Param(nameof(BuyOpen), true)
-			.SetDisplay("Buy Open", "Allow opening long positions", "Trading");
-		_sellOpen = Param(nameof(SellOpen), true)
-			.SetDisplay("Sell Open", "Allow opening short positions", "Trading");
-		_buyClose = Param(nameof(BuyClose), true)
-			.SetDisplay("Buy Close", "Allow closing short positions", "Trading");
-		_sellClose = Param(nameof(SellClose), true)
-			.SetDisplay("Sell Close", "Allow closing long positions", "Trading");
+			.SetDisplay("B", "Exponential parameter B", "Indicator");
+		_takeProfit = Param(nameof(TakeProfit), 500m)
+			.SetDisplay("Take Profit", "Take profit distance", "Risk");
+		_stopLoss = Param(nameof(StopLoss), 300m)
+			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
 	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var indicator = new BrakeExp { A = A, B = B };
-		SubscribeCandles(CandleType)
-			.BindEx(indicator, Process)
-			.Start();
+		_isLong = true;
+		_init = false;
+		_max = decimal.MinValue;
+		_min = decimal.MaxValue;
+		_begin = 0;
+		_prevUp = 0;
+		_prevDn = 0;
+		_bar = 0;
+		_entryPrice = 0;
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 	}
 
-	private void Process(ICandleMessage candle, IIndicatorValue value)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var v = (BrakeExpValue)value;
-
-		if (v.BuySignal > 0m)
+		if (!_init)
 		{
-			if (SellClose && Position < 0)
-				BuyMarket(-Position);
-			if (BuyOpen)
-				BuyMarket(Volume);
-		}
-		else if (v.UpTrend > 0m && SellClose && Position < 0)
-		{
-			BuyMarket(-Position);
-		}
-
-		if (v.SellSignal > 0m)
-		{
-			if (BuyClose && Position > 0)
-				SellMarket(Position);
-			if (SellOpen)
-				SellMarket(Volume);
-		}
-		else if (v.DownTrend > 0m && BuyClose && Position > 0)
-		{
-			SellMarket(Position);
-		}
-	}
-
-	private class BrakeExp : BaseIndicator
-	{
-		public decimal A { get; set; } = 3m;
-		public decimal B { get; set; } = 1m;
-
-		private bool _isLong = true;
-		private bool _init;
-		private decimal _max = decimal.MinValue;
-		private decimal _min = decimal.MaxValue;
-		private decimal _begin;
-		private decimal _prevUp;
-		private decimal _prevDn;
-		private int _bar;
-
-		/// <inheritdoc />
-		protected override IIndicatorValue OnProcess(IIndicatorValue input)
-		{
-			if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-				return new BrakeExpValue(this, input, default, default, default, default);
-
-			if (!_init)
-			{
-				_begin = candle.LowPrice;
-				_max = decimal.MinValue;
-				_min = decimal.MaxValue;
-				_isLong = true;
-				_prevUp = 0m;
-				_prevDn = 0m;
-				_bar = 0;
-				_init = true;
-			}
-
-			_max = Math.Max(_max, candle.HighPrice);
-			_min = Math.Min(_min, candle.LowPrice);
-
-			var exp = (decimal)Math.Exp((double)(_bar * (A * 0.1m))) - 1m;
-			exp *= B;
-
-			var value = _isLong ? _begin + exp : _begin - exp;
-
-			if (_isLong && value > candle.LowPrice)
-			{
-				_isLong = false;
-				_begin = _max;
-				value = _begin;
-				_bar = 0;
-				_max = decimal.MinValue;
-				_min = decimal.MaxValue;
-			}
-			else if (!_isLong && value < candle.HighPrice)
-			{
-				_isLong = true;
-				_begin = _min;
-				value = _begin;
-				_bar = 0;
-				_max = decimal.MinValue;
-				_min = decimal.MaxValue;
-			}
-
-			decimal up = 0m, dn = 0m;
-
-			if (_isLong)
-				up = value;
-			else
-				dn = value;
-
-			decimal buy = 0m, sell = 0m;
-
-			if (_prevUp > 0m && dn > 0m)
-				buy = dn;
-
-			if (_prevDn > 0m && up > 0m)
-				sell = up;
-
-			_prevUp = up;
-			_prevDn = dn;
-			_bar++;
-
-			IsFormed = true;
-			return new BrakeExpValue(this, input, up, dn, buy, sell);
-		}
-
-		/// <inheritdoc />
-		public override void Reset()
-		{
-			base.Reset();
-			_isLong = true;
-			_init = false;
+			_begin = candle.LowPrice;
 			_max = decimal.MinValue;
 			_min = decimal.MaxValue;
-			_begin = 0m;
-			_prevUp = 0m;
-			_prevDn = 0m;
+			_isLong = true;
+			_prevUp = 0;
+			_prevDn = 0;
 			_bar = 0;
+			_init = true;
 		}
-	}
 
-	private class BrakeExpValue : ComplexIndicatorValue
-	{
-		public BrakeExpValue(IIndicator indicator, IIndicatorValue input, decimal upTrend, decimal downTrend, decimal buySignal, decimal sellSignal)
-			: base(indicator, input,
-				(nameof(UpTrend), upTrend),
-				(nameof(DownTrend), downTrend),
-				(nameof(BuySignal), buySignal),
-				(nameof(SellSignal), sellSignal))
+		_max = Math.Max(_max, candle.HighPrice);
+		_min = Math.Min(_min, candle.LowPrice);
+
+		var exp = (decimal)Math.Exp((double)(_bar * (A * 0.1m))) - 1m;
+		exp *= B;
+
+		var value = _isLong ? _begin + exp : _begin - exp;
+
+		if (_isLong && value > candle.LowPrice)
 		{
+			_isLong = false;
+			_begin = _max;
+			value = _begin;
+			_bar = 0;
+			_max = decimal.MinValue;
+			_min = decimal.MaxValue;
+		}
+		else if (!_isLong && value < candle.HighPrice)
+		{
+			_isLong = true;
+			_begin = _min;
+			value = _begin;
+			_bar = 0;
+			_max = decimal.MinValue;
+			_min = decimal.MaxValue;
 		}
 
-		public decimal UpTrend => (decimal)GetValue(nameof(UpTrend));
-		public decimal DownTrend => (decimal)GetValue(nameof(DownTrend));
-		public decimal BuySignal => (decimal)GetValue(nameof(BuySignal));
-		public decimal SellSignal => (decimal)GetValue(nameof(SellSignal));
+		decimal up = 0, dn = 0;
+		if (_isLong)
+			up = value;
+		else
+			dn = value;
+
+		decimal buySignal = 0, sellSignal = 0;
+
+		// Buy signal: was down, now up
+		if (_prevDn > 0 && up > 0)
+			buySignal = up;
+
+		// Sell signal: was up, now down
+		if (_prevUp > 0 && dn > 0)
+			sellSignal = dn;
+
+		_prevUp = up;
+		_prevDn = dn;
+		_bar++;
+
+		var price = candle.ClosePrice;
+
+		// Exit management
+		if (Position > 0)
+		{
+			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				return;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				return;
+			}
+		}
+
+		// Entry signals
+		if (buySignal > 0)
+		{
+			if (Position < 0)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
+
+			if (Position == 0)
+			{
+				BuyMarket();
+				_entryPrice = price;
+			}
+		}
+		else if (sellSignal > 0)
+		{
+			if (Position > 0)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
+
+			if (Position == 0)
+			{
+				SellMarket();
+				_entryPrice = price;
+			}
+		}
 	}
 }

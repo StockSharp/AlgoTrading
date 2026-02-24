@@ -89,11 +89,10 @@ public class DeMarkLinesStrategy : Strategy
 			;
 
 		_breakoutBuffer = Param(nameof(BreakoutBuffer), 2m)
-			.SetNotLessThanZero()
 			.SetDisplay("Breakout buffer (pips)", "Extra distance beyond the trendline before entering", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Primary timeframe for the analysis", "Data");
 	}
 

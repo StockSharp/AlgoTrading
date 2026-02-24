@@ -194,7 +194,7 @@ public class TurnGridStrategy : Strategy
 		_totalFee = 0m;
 
 		var portfolio = Portfolio;
-		_initialBalance = portfolio?.CurrentValue ?? portfolio?.CurrentBalance ?? _initialBalance;
+		_initialBalance = portfolio?.CurrentValue ?? portfolio?.CurrentValue ?? _initialBalance;
 		if (_initialBalance <= 0m)
 			_initialBalance = shares * price;
 
@@ -234,7 +234,7 @@ public class TurnGridStrategy : Strategy
 			return false;
 
 		var portfolio = Portfolio;
-		var equity = portfolio?.CurrentValue ?? portfolio?.CurrentBalance ?? 0m;
+		var equity = portfolio?.CurrentValue ?? portfolio?.CurrentValue ?? 0m;
 		if (equity <= 0m)
 			return false;
 
@@ -426,11 +426,11 @@ public class TurnGridStrategy : Strategy
 		if (step > 0m)
 			volume = step * Math.Round(volume / step, MidpointRounding.AwayFromZero);
 
-		var min = security.VolumeMin ?? 0m;
+		var min = 0m;
 		if (min > 0m && volume < min)
 			return 0m;
 
-		var max = security.VolumeMax ?? decimal.MaxValue;
+		var max = decimal.MaxValue;
 		if (volume > max)
 			volume = max;
 

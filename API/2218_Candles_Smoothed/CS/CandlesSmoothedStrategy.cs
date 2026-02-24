@@ -14,156 +14,91 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on smoothed candle color changes.
-/// The difference between close and open prices is smoothed with a moving average.
-/// A long position opens when the smoothed value turns from positive to negative (color 1 after 0).
-/// A short position opens on the opposite transition.
+/// Strategy based on smoothed candle body direction.
+/// Smooths (close-open) with WMA, trades on color changes.
 /// </summary>
 public class CandlesSmoothedStrategy : Strategy
 {
-	/// <summary>
-	/// Moving average types for smoothing.
-	/// </summary>
-	public enum MaMethods
-	{
-		/// <summary>
-		/// Simple Moving Average.
-		/// </summary>
-		Simple,
-
-		/// <summary>
-		/// Exponential Moving Average.
-		/// </summary>
-		Exponential,
-
-		/// <summary>
-		/// Smoothed Moving Average (RMA).
-		/// </summary>
-		Smma,
-
-		/// <summary>
-		/// Weighted Moving Average.
-		/// </summary>
-		Weighted
-	}
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MaMethods> _maMethod;
 
-	private IIndicator _ma;
+	private WeightedMovingAverage _ma;
 	private int? _prevColor;
 
-	/// <summary>
-	/// Candle time frame.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
 
-	/// <summary>
-	/// Moving average length.
-	/// </summary>
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average smoothing method.
-	/// </summary>
-	public MaMethods MaMethod
-	{
-		get => _maMethod.Value;
-		set => _maMethod.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public CandlesSmoothedStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame of processed candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Time frame", "General");
 
 		_maLength = Param(nameof(MaLength), 30)
-			.SetDisplay("MA Length", "Moving average smoothing length", "Indicator")
-			
-			.SetOptimize(10, 60, 5);
-
-		_maMethod = Param(nameof(MaMethod), MaMethods.Weighted)
-			.SetDisplay("MA Method", "Smoothing algorithm for candle difference", "Indicator");
+			.SetGreaterThanZero()
+			.SetDisplay("MA Length", "Moving average smoothing length", "Indicator");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_ma = null;
+		_prevColor = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ma = MaMethod switch
-		{
-			MaMethods.Simple => new SMA { Length = MaLength },
-			MaMethods.Exponential => new EMA { Length = MaLength },
-			MaMethods.Smma => new SMMA { Length = MaLength },
-			_ => new WeightedMovingAverage { Length = MaLength },
-		};
+		_ma = new WeightedMovingAverage { Length = MaLength };
 
-		_prevColor = null;
+		// Use a dummy SMA for warmup binding
+		var warmup = new SimpleMovingAverage { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(candle => ProcessCandle(candle)).Start();
+		subscription
+			.Bind(warmup, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		// Calculate close-open diff and smooth with WMA
 		var diff = candle.ClosePrice - candle.OpenPrice;
-		var maValue = _ma.Process(candle.OpenTime, diff);
+		var maResult = _ma.Process(new DecimalIndicatorValue(_ma, diff, candle.OpenTime) { IsFinal = true });
 
-		if (!maValue.IsFinal || !maValue.TryGetValue(out var smoothedDiff))
+		if (!maResult.IsFormed)
 			return;
 
-		var color = smoothedDiff > 0m ? 0 : 1;
+		var smoothed = maResult.GetValue<decimal>();
+		var color = smoothed > 0m ? 0 : 1;
 
-		if (_prevColor == null)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
 			_prevColor = color;
 			return;
 		}
 
-		var volume = Volume + Math.Abs(Position);
-
-		if (color == 1 && _prevColor == 0)
+		if (_prevColor is int prev)
 		{
-			if (Position < 0)
-				ClosePosition();
-			if (Position <= 0)
-				BuyMarket(volume);
-		}
-		else if (color == 0 && _prevColor == 1)
-		{
-			if (Position > 0)
-				ClosePosition();
-			if (Position >= 0)
-				SellMarket(volume);
+			// Color change from negative to positive -> buy
+			if (color == 1 && prev == 0 && Position <= 0)
+				BuyMarket();
+			// Color change from positive to negative -> sell
+			else if (color == 0 && prev == 1 && Position >= 0)
+				SellMarket();
 		}
 
 		_prevColor = color;

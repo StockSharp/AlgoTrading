@@ -218,7 +218,7 @@ public class ForexProfitStrategy : Strategy
 		;
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_sarAcceleration = Param(nameof(SarAcceleration), 0.02m)
@@ -290,9 +290,10 @@ public class ForexProfitStrategy : Strategy
 		var ema10PrevPrev = _ema10PrevPrev;
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-		var ema10Value = _emaFast.Process(new DecimalIndicatorValue(_emaFast, median, candle.OpenTime)).ToDecimal();
-		var ema25Value = _emaMedium.Process(new DecimalIndicatorValue(_emaMedium, median, candle.OpenTime)).ToDecimal();
-		var ema50Value = _emaSlow.Process(new DecimalIndicatorValue(_emaSlow, median, candle.OpenTime)).ToDecimal();
+		var isFinal = candle.State == CandleStates.Finished;
+		var ema10Value = _emaFast.Process(new DecimalIndicatorValue(_emaFast, median, candle.OpenTime) { IsFinal = isFinal }).ToDecimal();
+		var ema25Value = _emaMedium.Process(new DecimalIndicatorValue(_emaMedium, median, candle.OpenTime) { IsFinal = isFinal }).ToDecimal();
+		var ema50Value = _emaSlow.Process(new DecimalIndicatorValue(_emaSlow, median, candle.OpenTime) { IsFinal = isFinal }).ToDecimal();
 		var sarValue = _sar.Process(candle).ToDecimal();
 
 		if (!_emaSlow.IsFormed || !_sar.IsFormed)
@@ -302,11 +303,11 @@ public class ForexProfitStrategy : Strategy
 			return;
 		}
 
-		var step = Security?.Step ?? 1m;
+		var step = Security?.PriceStep ?? 1m;
 		if (step <= 0m)
 			step = 1m;
 
-		var stepPrice = Security?.StepPrice ?? step;
+		var stepPrice = step;
 
 		var longSignal = ema10Value > ema25Value &&
 			ema10Value > ema50Value &&
@@ -349,7 +350,6 @@ public class ForexProfitStrategy : Strategy
 		if (Volume <= 0m)
 			return;
 
-		CancelActiveOrders();
 		BuyMarket(Volume);
 
 		var entry = candle.ClosePrice;
@@ -363,7 +363,6 @@ public class ForexProfitStrategy : Strategy
 		if (Volume <= 0m)
 			return;
 
-		CancelActiveOrders();
 		SellMarket(Volume);
 
 		var entry = candle.ClosePrice;
@@ -381,24 +380,21 @@ public class ForexProfitStrategy : Strategy
 
 		if (ema10Prev.HasValue && ema10Value < ema10Prev.Value && profit > ProfitThreshold)
 		{
-			CancelActiveOrders();
-			SellMarket(Math.Abs(Position));
+				SellMarket(Math.Abs(Position));
 			ResetPositionTargets();
 			return;
 		}
 
 		if (_takeProfitPrice.HasValue && candle.HighPrice >= _takeProfitPrice.Value)
 		{
-			CancelActiveOrders();
-			SellMarket(Math.Abs(Position));
+				SellMarket(Math.Abs(Position));
 			ResetPositionTargets();
 			return;
 		}
 
 		if (_stopPrice.HasValue && candle.LowPrice <= _stopPrice.Value)
 		{
-			CancelActiveOrders();
-			SellMarket(Math.Abs(Position));
+				SellMarket(Math.Abs(Position));
 			ResetPositionTargets();
 			return;
 		}
@@ -415,24 +411,21 @@ public class ForexProfitStrategy : Strategy
 
 		if (ema10Prev.HasValue && ema10Value > ema10Prev.Value && profit > ProfitThreshold)
 		{
-			CancelActiveOrders();
-			BuyMarket(Math.Abs(Position));
+				BuyMarket(Math.Abs(Position));
 			ResetPositionTargets();
 			return;
 		}
 
 		if (_takeProfitPrice.HasValue && candle.LowPrice <= _takeProfitPrice.Value)
 		{
-			CancelActiveOrders();
-			BuyMarket(Math.Abs(Position));
+				BuyMarket(Math.Abs(Position));
 			ResetPositionTargets();
 			return;
 		}
 
 		if (_stopPrice.HasValue && candle.HighPrice >= _stopPrice.Value)
 		{
-			CancelActiveOrders();
-			BuyMarket(Math.Abs(Position));
+				BuyMarket(Math.Abs(Position));
 			ResetPositionTargets();
 			return;
 		}

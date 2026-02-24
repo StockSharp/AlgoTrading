@@ -151,6 +151,14 @@ public class SwingBreakoutProStrategy : Strategy
 				_lastSwingLow = candidate;
 		}
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevHigh = candle.HighPrice;
+			_prevLow = candle.LowPrice;
+			_prevClose = candle.ClosePrice;
+			return;
+		}
+
 		var longCondition = _prevClose > _lastSwingHigh && candle.HighPrice > _prevHigh && _lastSwingHigh != 0m && _lastSwingLow != 0m;
 		var shortCondition = _prevClose < _lastSwingLow && candle.LowPrice < _prevLow && _lastSwingHigh != 0m && _lastSwingLow != 0m;
 

@@ -14,113 +14,94 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on a moving average of the candle body.
+/// Strategy based on smoothed candle body direction.
+/// Smooths (close-open) with SMA, trades on sign changes.
 /// </summary>
 public class GoCandleBodyReversalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma;
+	private SimpleMovingAverage _bodySma;
 	private int _prevSign;
 
-	/// <summary>
-	/// Length of the moving average.
-	/// </summary>
-	public int Period
-	{
-		get => _period.Value;
-		set => _period.Value = value;
-	}
+	public int Period { get => _period.Value; set => _period.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Type of candles to subscribe.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public GoCandleBodyReversalStrategy()
 	{
-		_period = Param(nameof(Period), 174)
+		_period = Param(nameof(Period), 30)
 			.SetGreaterThanZero()
-			.SetDisplay("Period", "SMA period for candle body", "Parameters")
-			
-			.SetOptimize(50, 300, 25);
+			.SetDisplay("Period", "SMA period for candle body", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_bodySma = null;
 		_prevSign = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = Period };
+		_bodySma = new SimpleMovingAverage { Length = Period };
+
+		// Use a warmup SMA bound to close price
+		var warmup = new SimpleMovingAverage { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(warmup, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _warmupVal)
 	{
-		var maValue = _sma.Process(new DecimalIndicatorValue(_sma, 
-			candle.ClosePrice - candle.OpenPrice, candle.ServerTime));
-
-		if (!maValue.IsFinal)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var body = candle.ClosePrice - candle.OpenPrice;
+		var maResult = _bodySma.Process(new DecimalIndicatorValue(_bodySma, body, candle.OpenTime) { IsFinal = true });
+
+		if (!maResult.IsFormed)
 			return;
 
-		var value = maValue.ToDecimal();
+		var value = maResult.GetValue<decimal>();
 		var sign = value > 0 ? 1 : value < 0 ? -1 : 0;
 
-		if (sign < 0 && _prevSign > 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-
-			BuyMarket(Volume);
+			_prevSign = sign;
+			return;
 		}
-		else if (sign > 0 && _prevSign < 0)
+
+		if (_prevSign == 0)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
-			SellMarket(Volume);
+			_prevSign = sign;
+			return;
 		}
+
+		// Body direction turns negative (bearish reversal) -> sell
+		if (sign < 0 && _prevSign > 0 && Position >= 0)
+			SellMarket();
+		// Body direction turns positive (bullish reversal) -> buy
+		else if (sign > 0 && _prevSign < 0 && Position <= 0)
+			BuyMarket();
 
 		_prevSign = sign;
 	}

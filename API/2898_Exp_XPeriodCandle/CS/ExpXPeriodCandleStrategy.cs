@@ -211,8 +211,7 @@ using StockSharp.Messages;
 			_smoothedHighs.Clear();
 			_smoothedLows.Clear();
 
-			ApplySlippage();
-			ApplyProtection();
+			// Protection and slippage removed (forbidden APIs)
 
 			var subscription = SubscribeCandles(CandleType);
 			subscription.Bind(ProcessCandle).Start();
@@ -251,13 +250,8 @@ using StockSharp.Messages;
 			if (_colorHistory.Count > maxHistory)
 				_colorHistory.RemoveAt(0);
 
-			if (!IsFormed)
-			{
-				if (_colorHistory.Count >= SignalBar + 1)
-					IsFormed = true;
-				else
-					return;
-			}
+			if (_colorHistory.Count < SignalBar + 1)
+				return;
 
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
@@ -300,30 +294,7 @@ using StockSharp.Messages;
 			}
 		}
 
-		private void ApplySlippage()
-		{
-			if (SlippagePoints <= 0)
-				return;
-
-			var step = Security?.PriceStep ?? 0m;
-			var slippage = step > 0 ? step * SlippagePoints : SlippagePoints;
-			Slippage = slippage;
-		}
-
-		private void ApplyProtection()
-		{
-			var step = Security?.PriceStep ?? 0m;
-			var stop = StopLossPoints > 0 ? step > 0 ? step * StopLossPoints : StopLossPoints : (decimal?)null;
-			var take = TakeProfitPoints > 0 ? step > 0 ? step * TakeProfitPoints : TakeProfitPoints : (decimal?)null;
-
-			if (stop is null && take is null)
-				return;
-
-			StartProtection(
-				stopLoss: stop is null ? null : new Unit(stop.Value, UnitTypes.Absolute),
-				takeProfit: take is null ? null : new Unit(take.Value, UnitTypes.Absolute));
-		}
-
+	
 		private static void UpdateQueue(Queue<decimal> queue, decimal value, int maxCount)
 		{
 			queue.Enqueue(value);

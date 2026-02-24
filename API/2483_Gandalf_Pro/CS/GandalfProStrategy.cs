@@ -63,6 +63,15 @@ public class GandalfProStrategy : Strategy
 	private decimal _priceStep;
 
 	/// <summary>
+	/// Entry buffer distance in price steps.
+	/// </summary>
+	public decimal EntryBufferSteps
+	{
+		get => _entryBufferSteps.Value;
+		set => _entryBufferSteps.Value = value;
+	}
+
+	/// <summary>
 	/// Enable buy logic.
 	/// </summary>
 	public bool EnableBuy
@@ -192,7 +201,7 @@ public class GandalfProStrategy : Strategy
 			.SetDisplay("Enable Buy", "Allow long trades", "General");
 
 		_buyLength = Param(nameof(BuyLength), 24)
-			.SetGreaterThan(1)
+			.SetGreaterThanZero()
 			.SetDisplay("Buy Length", "LWMA/SMA length for longs", "General")
 			
 			.SetOptimize(5, 60, 1);
@@ -221,7 +230,7 @@ public class GandalfProStrategy : Strategy
 			.SetDisplay("Enable Sell", "Allow short trades", "General");
 
 		_sellLength = Param(nameof(SellLength), 24)
-			.SetGreaterThan(1)
+			.SetGreaterThanZero()
 			.SetDisplay("Sell Length", "LWMA/SMA length for shorts", "General")
 			
 			.SetOptimize(5, 60, 1);
@@ -246,7 +255,7 @@ public class GandalfProStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Sell Risk Multiplier", "Volume multiplier for shorts (0 = use base volume)", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Data type used for calculations", "General");
 	}
 
@@ -390,15 +399,10 @@ public class GandalfProStrategy : Strategy
 	{
 		if (Position > 0)
 		{
-			if (_longStopPrice.HasValue && candle.LowPrice <= _longStopPrice.Value)
+			if ((_longStopPrice.HasValue && candle.LowPrice <= _longStopPrice.Value) ||
+				(_longTargetPrice.HasValue && candle.HighPrice >= _longTargetPrice.Value))
 			{
-				ClosePosition();
-				_longStopPrice = null;
-				_longTargetPrice = null;
-			}
-			else if (_longTargetPrice.HasValue && candle.HighPrice >= _longTargetPrice.Value)
-			{
-				ClosePosition();
+				SellMarket(Math.Abs(Position));
 				_longStopPrice = null;
 				_longTargetPrice = null;
 			}
@@ -411,15 +415,10 @@ public class GandalfProStrategy : Strategy
 
 		if (Position < 0)
 		{
-			if (_shortStopPrice.HasValue && candle.HighPrice >= _shortStopPrice.Value)
+			if ((_shortStopPrice.HasValue && candle.HighPrice >= _shortStopPrice.Value) ||
+				(_shortTargetPrice.HasValue && candle.LowPrice <= _shortTargetPrice.Value))
 			{
-				ClosePosition();
-				_shortStopPrice = null;
-				_shortTargetPrice = null;
-			}
-			else if (_shortTargetPrice.HasValue && candle.LowPrice <= _shortTargetPrice.Value)
-			{
-				ClosePosition();
+				BuyMarket(Math.Abs(Position));
 				_shortStopPrice = null;
 				_shortTargetPrice = null;
 			}

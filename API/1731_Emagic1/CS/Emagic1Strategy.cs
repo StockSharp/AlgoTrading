@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -164,9 +161,9 @@ public class Emagic1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var fastEma = new EMA { Length = FastEmaLength };
 		// Original strategy used open price for slow EMA; close price is used here for simplicity.
@@ -183,7 +180,7 @@ public class Emagic1Strategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(macd, fastEma, slowEma, ProcessCandle)
+			.BindEx(new IIndicator[] { macd, fastEma, slowEma }, ProcessCandle)
 			.Start();
 
 		StartProtection(
@@ -205,19 +202,22 @@ public class Emagic1Strategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, decimal fastEma, decimal slowEma)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)values[0];
+		var signal = macdTyped.Signal;
+		var fastEma = values[1].IsEmpty ? (decimal?)null : values[1].GetValue<decimal>();
+		var slowEma = values[2].IsEmpty ? (decimal?)null : values[2].GetValue<decimal>();
+
+		if (fastEma is null || slowEma is null || signal is null)
 			return;
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var signal = macdTyped.Signal;
-
-		var longSignal = fastEma > slowEma && _prevSignal is decimal prev && prev < signal;
-		var shortSignal = fastEma < slowEma && _prevSignal is decimal prev2 && signal < prev2;
+		var signalVal = signal.Value;
+		var longSignal = fastEma.Value > slowEma.Value && _prevSignal is decimal prev && prev < signalVal;
+		var shortSignal = fastEma.Value < slowEma.Value && _prevSignal is decimal prev2 && signalVal < prev2;
 
 		if (longSignal && Position <= 0)
 		{

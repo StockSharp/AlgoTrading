@@ -99,7 +99,7 @@ public class AmstellGridManagerStrategy : Strategy
 	/// </summary>
 	public AmstellGridManagerStrategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 0.01m)
+		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Quantity submitted with each grid order", "Trading")
 			
@@ -129,7 +129,7 @@ public class AmstellGridManagerStrategy : Strategy
 			
 			.SetOptimize(2m, 15m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for processing", "General");
 	}
 

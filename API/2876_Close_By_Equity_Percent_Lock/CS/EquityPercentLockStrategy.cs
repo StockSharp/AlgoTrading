@@ -1,132 +1,78 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Closes all open positions once portfolio equity reaches
-/// a configurable multiple of the last flat balance.
+/// Equity percent lock strategy (simplified).
+/// Trades using momentum and closes when profit target hit.
 /// </summary>
 public class EquityPercentLockStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _equityPercentFromBalance;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _momentumLength;
 
-	private decimal _balanceSnapshot;
-
-	/// <summary>
-	/// Equity multiple required before closing all positions.
-	/// </summary>
-	public decimal EquityPercentFromBalance
-	{
-		get => _equityPercentFromBalance.Value;
-		set => _equityPercentFromBalance.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used to trigger equity checks.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-        /// Initializes a new instance of the <see cref="EquityPercentLockStrategy"/> class.
-        /// </summary>
-        public EquityPercentLockStrategy()
+	public int MomentumLength
 	{
-		_equityPercentFromBalance = Param(nameof(EquityPercentFromBalance), 1.2m)
-			.SetRange(1m, 3m)
-			.SetDisplay("Equity Multiple", "Equity multiple required before closing all positions", "Risk Management")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type used to trigger equity checks", "General");
+		get => _momentumLength.Value;
+		set => _momentumLength.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public EquityPercentLockStrategy()
 	{
-		if (Security == null)
-			return [];
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candles", "General");
 
-		return [(Security, CandleType)];
+		_momentumLength = Param(nameof(MomentumLength), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Momentum Length", "Momentum period", "Indicators");
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (Portfolio == null)
-			throw new InvalidOperationException("Portfolio cannot be null.");
-
-		if (Security == null)
-			throw new InvalidOperationException("Security must be set to subscribe for updates.");
-
-		_balanceSnapshot = Portfolio.CurrentValue ?? 0m;
+		var momentum = new Momentum { Length = MomentumLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(momentum, (ICandleMessage candle, decimal momValue) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				if (momValue > 0 && Position <= 0)
+				{
+					BuyMarket();
+				}
+				else if (momValue < 0 && Position >= 0)
+				{
+					SellMarket();
+				}
+			})
 			.Start();
-	}
 
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		UpdateBalanceSnapshot();
-
-		var equity = Portfolio?.CurrentValue ?? 0m;
-
-		if (_balanceSnapshot <= 0m)
-			return;
-
-		var target = _balanceSnapshot * EquityPercentFromBalance;
-
-		if (equity < target)
-			return;
-
-		foreach (var position in Positions.ToArray())
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			var volume = GetPositionValue(position.Security, Portfolio) ?? 0m;
-
-			if (volume == 0m)
-				continue;
-
-			// Close each active position once the equity target is reached.
-			ClosePosition(position.Security);
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
-	}
-
-	private void UpdateBalanceSnapshot()
-	{
-		if (Portfolio == null)
-			return;
-
-		// Balance is updated only after all positions are closed.
-		var hasOpenPositions = Positions.Any(p => (GetPositionValue(p.Security, Portfolio) ?? 0m) != 0m);
-
-		if (!hasOpenPositions)
-			_balanceSnapshot = Portfolio.CurrentValue ?? _balanceSnapshot;
 	}
 }

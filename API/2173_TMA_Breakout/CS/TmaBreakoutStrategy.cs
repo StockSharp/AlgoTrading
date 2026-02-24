@@ -82,7 +82,7 @@ public class TmaBreakoutStrategy : Strategy
 			
 			.SetOptimize(100m, 500m, 100m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -104,7 +104,7 @@ public class TmaBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var tma = new TriangularMovingAverage { Length = Length };
+		var tma = new SimpleMovingAverage { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -33,6 +30,7 @@ public class MacdPatternTraderV03Strategy : Strategy
 
 	private decimal? _previousMacd;
 	private decimal? _olderMacd;
+	private decimal _entryPrice;
 
 	private bool _isAboveUpperActivation;
 	private bool _firstUpperDropConfirmed;
@@ -65,7 +63,7 @@ public class MacdPatternTraderV03Strategy : Strategy
 	public MacdPatternTraderV03Strategy()
 	{
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for calculations", "General");
 
 		_fastEmaLength = Param(nameof(FastEmaLength), 5)
@@ -74,16 +72,16 @@ public class MacdPatternTraderV03Strategy : Strategy
 		_slowEmaLength = Param(nameof(SlowEmaLength), 13)
 		.SetDisplay("Slow EMA", "Slow period used inside MACD", "MACD");
 
-		_upperThreshold = Param(nameof(UpperThreshold), 0.0045m)
+		_upperThreshold = Param(nameof(UpperThreshold), 50m)
 		.SetDisplay("Upper Threshold", "Level that confirms bearish exhaustion", "MACD");
 
-		_upperActivation = Param(nameof(UpperActivation), 0.0030m)
+		_upperActivation = Param(nameof(UpperActivation), 30m)
 		.SetDisplay("Upper Activation", "Level that arms the bearish pattern", "MACD");
 
-		_lowerThreshold = Param(nameof(LowerThreshold), -0.0045m)
+		_lowerThreshold = Param(nameof(LowerThreshold), -50m)
 		.SetDisplay("Lower Threshold", "Level that confirms bullish exhaustion", "MACD");
 
-		_lowerActivation = Param(nameof(LowerActivation), -0.0030m)
+		_lowerActivation = Param(nameof(LowerActivation), -30m)
 		.SetDisplay("Lower Activation", "Level that arms the bullish pattern", "MACD");
 
 		_emaOneLength = Param(nameof(EmaOneLength), 7)
@@ -218,26 +216,22 @@ public class MacdPatternTraderV03Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var macd = new MovingAverageConvergenceDivergence
-		{
-			Fast = FastEmaLength,
-			Slow = SlowEmaLength,
-			Signal = 1
-		};
+		var macd = new MovingAverageConvergenceDivergence();
+		macd.ShortMa.Length = FastEmaLength;
+		macd.LongMa.Length = SlowEmaLength;
 
-		var emaOne = new EMA { Length = EmaOneLength };
-		var emaTwo = new EMA { Length = EmaTwoLength };
-		var sma = new SMA { Length = SmaLength };
-		var emaFour = new EMA { Length = EmaFourLength };
+		var emaOne = new ExponentialMovingAverage { Length = EmaOneLength };
+		var emaTwo = new ExponentialMovingAverage { Length = EmaTwoLength };
+		var sma = new SimpleMovingAverage { Length = SmaLength };
+		var emaFour = new ExponentialMovingAverage { Length = EmaFourLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(emaOne, emaTwo, sma, emaFour, UpdateCachedIndicators)
-		.BindEx(macd, ProcessCandle)
+		.Bind(macd, emaOne, emaTwo, sma, emaFour, ProcessCandle)
 		.Start();
 
 		var area = CreateChartArea();
@@ -253,30 +247,21 @@ public class MacdPatternTraderV03Strategy : Strategy
 		}
 	}
 
-	private void UpdateCachedIndicators(ICandleMessage candle, decimal emaOne, decimal emaTwo, decimal sma, decimal emaFour)
+	private void ProcessCandle(ICandleMessage candle, decimal macdMain, decimal emaOne, decimal emaTwo, decimal sma, decimal emaFour)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		_emaTwoValue = emaTwo;
 		_smaValue = sma;
 		_emaFourValue = emaFour;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			CacheMacd(((MovingAverageConvergenceDivergenceValue)macdValue).Macd);
+			CacheMacd(macdMain);
 			_previousCandle = candle;
 			return;
 		}
-
-		var macdData = (MovingAverageConvergenceDivergenceValue)macdValue;
-		var macdMain = macdData.Macd;
 
 		if (_previousMacd is null || _olderMacd is null)
 		{
@@ -365,7 +350,7 @@ public class MacdPatternTraderV03Strategy : Strategy
 		var currentPosition = Position;
 		var flattenVolume = currentPosition > 0m ? currentPosition : 0m;
 		if (flattenVolume > 0m)
-		SellMarket(flattenVolume);
+			SellMarket(flattenVolume);
 
 		var entryVolume = Volume + Math.Max(0m, Position);
 		if (entryVolume <= 0m)
@@ -376,6 +361,7 @@ public class MacdPatternTraderV03Strategy : Strategy
 		}
 
 		SellMarket(entryVolume);
+		_entryPrice = _previousCandle?.ClosePrice ?? 0m;
 		_initialShortPosition = Math.Abs(Position);
 		_shortScaleStage = 0;
 		_longScaleStage = 0;
@@ -389,7 +375,7 @@ public class MacdPatternTraderV03Strategy : Strategy
 		var currentPosition = Position;
 		var flattenVolume = currentPosition < 0m ? -currentPosition : 0m;
 		if (flattenVolume > 0m)
-		BuyMarket(flattenVolume);
+			BuyMarket(flattenVolume);
 
 		var entryVolume = Volume + Math.Max(0m, -Position);
 		if (entryVolume <= 0m)
@@ -400,6 +386,7 @@ public class MacdPatternTraderV03Strategy : Strategy
 		}
 
 		BuyMarket(entryVolume);
+		_entryPrice = _previousCandle?.ClosePrice ?? 0m;
 		_initialLongPosition = Math.Max(0m, Position);
 		_longScaleStage = 0;
 		_shortScaleStage = 0;
@@ -487,13 +474,12 @@ public class MacdPatternTraderV03Strategy : Strategy
 	private decimal GetUnrealizedPnL(ICandleMessage candle)
 	{
 		if (Position == 0m)
-		return 0m;
+			return 0m;
 
-		var entryPrice = PositionPrice;
-		if (entryPrice == 0m)
-		return 0m;
+		if (_entryPrice == 0m)
+			return 0m;
 
-		var diff = candle.ClosePrice - entryPrice;
+		var diff = candle.ClosePrice - _entryPrice;
 		return diff * Position;
 	}
 

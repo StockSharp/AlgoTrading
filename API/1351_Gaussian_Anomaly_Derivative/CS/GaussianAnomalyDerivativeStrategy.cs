@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,196 +8,80 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trades on price anomaly and its derivative.
+/// Trades on price anomaly and its derivative using Gaussian-like smoothing.
 /// </summary>
 public class GaussianAnomalyDerivativeStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _useSma;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<decimal> _thresholdCoeff;
 	private readonly StrategyParam<int> _derivativeMaPeriod;
 	private readonly StrategyParam<decimal> _derivativeThresholdCoeff;
-	private readonly StrategyParam<bool> _tradeOnDerivative;
-	private readonly StrategyParam<bool> _enableShort;
-	private readonly StrategyParam<bool> _enableLong;
-	private readonly StrategyParam<int> _startBarCount;
 	private readonly StrategyParam<int> _thresholdPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private IIndicator _trendMa;
-	private EMA _derivativeMa;
-	private SMA _thresholdMa;
-	private SMA _derivativeThresholdMa;
+	private SimpleMovingAverage _trendMa;
+	private ExponentialMovingAverage _derivativeMa;
+	private SimpleMovingAverage _thresholdMa;
+	private SimpleMovingAverage _derivativeThresholdMa;
 
 	private decimal? _prevCloseTrend;
 	private int _barsProcessed;
 
-	/// <summary>
-	/// Use SMA instead of EMA for base signal.
-	/// </summary>
-	public bool UseSma
-	{
-		get => _useSma.Value;
-		set => _useSma.Value = value;
-	}
-
-	/// <summary>
-	/// Base signal MA period.
-	/// </summary>
 	public int MaPeriod
 	{
 		get => _maPeriod.Value;
 		set => _maPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Coefficient for base threshold.
-	/// </summary>
 	public decimal ThresholdCoeff
 	{
 		get => _thresholdCoeff.Value;
 		set => _thresholdCoeff.Value = value;
 	}
 
-	/// <summary>
-	/// Derivative smoothing period.
-	/// </summary>
 	public int DerivativeMaPeriod
 	{
 		get => _derivativeMaPeriod.Value;
 		set => _derivativeMaPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Coefficient for derivative threshold.
-	/// </summary>
 	public decimal DerivativeThresholdCoeff
 	{
 		get => _derivativeThresholdCoeff.Value;
 		set => _derivativeThresholdCoeff.Value = value;
 	}
 
-	/// <summary>
-	/// Use derivative signal for trading.
-	/// </summary>
-	public bool TradeOnDerivative
-	{
-		get => _tradeOnDerivative.Value;
-		set => _tradeOnDerivative.Value = value;
-	}
-
-	/// <summary>
-	/// Allow short trades.
-	/// </summary>
-	public bool EnableShort
-	{
-		get => _enableShort.Value;
-		set => _enableShort.Value = value;
-	}
-
-	/// <summary>
-	/// Allow long trades.
-	/// </summary>
-	public bool EnableLong
-	{
-		get => _enableLong.Value;
-		set => _enableLong.Value = value;
-	}
-
-	/// <summary>
-	/// Bars to skip before trading starts.
-	/// </summary>
-	public int StartBarCount
-	{
-		get => _startBarCount.Value;
-		set => _startBarCount.Value = value;
-	}
-
-	/// <summary>
-	/// Period for threshold calculation.
-	/// </summary>
 	public int ThresholdPeriod
 	{
 		get => _thresholdPeriod.Value;
 		set => _thresholdPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// The type of candles to use for strategy calculation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public GaussianAnomalyDerivativeStrategy()
 	{
-		_useSma = Param(nameof(UseSma), true)
-		.SetDisplay("Use SMA", "Use SMA instead of EMA for base signal", "Signal");
-
 		_maPeriod = Param(nameof(MaPeriod), 3)
-		.SetGreaterThanZero()
-		.SetDisplay("MA Period", "Base signal MA period", "Signal")
-		
-		.SetOptimize(1, 10, 1);
+			.SetDisplay("MA Period", "Base signal MA period", "Signal");
 
 		_thresholdCoeff = Param(nameof(ThresholdCoeff), 1.0m)
-		.SetGreaterThanZero()
-		.SetDisplay("Threshold Coeff", "Coefficient for base signal threshold", "Signal")
-		
-		.SetOptimize(0.5m, 2.0m, 0.5m);
+			.SetDisplay("Threshold Coeff", "Coefficient for base signal threshold", "Signal");
 
 		_derivativeMaPeriod = Param(nameof(DerivativeMaPeriod), 2)
-		.SetGreaterThanZero()
-		.SetDisplay("Derivative MA Period", "Derivative smoothing period", "Derivative")
-		
-		.SetOptimize(1, 10, 1);
+			.SetDisplay("Derivative MA Period", "Derivative smoothing period", "Derivative");
 
 		_derivativeThresholdCoeff = Param(nameof(DerivativeThresholdCoeff), 1.0m)
-		.SetGreaterThanZero()
-		.SetDisplay("Derivative Threshold Coeff", "Coefficient for derivative threshold", "Derivative")
-		
-		.SetOptimize(0.5m, 2.0m, 0.5m);
-
-		_tradeOnDerivative = Param(nameof(TradeOnDerivative), true)
-		.SetDisplay("Trade on Derivative", "Use derivative signal for trading", "Trading");
-
-		_enableShort = Param(nameof(EnableShort), true)
-		.SetDisplay("Short", "Allow short trades", "Trading");
-
-		_enableLong = Param(nameof(EnableLong), true)
-		.SetDisplay("Long", "Allow long trades", "Trading");
-
-		_startBarCount = Param(nameof(StartBarCount), 600)
-		.SetGreaterThanZero()
-		.SetDisplay("Start Bar Count", "Bars to skip before trading starts", "Trading");
+			.SetDisplay("Derivative Threshold Coeff", "Coefficient for derivative threshold", "Derivative");
 
 		_thresholdPeriod = Param(nameof(ThresholdPeriod), 100)
-		.SetGreaterThanZero()
-		.SetDisplay("Threshold Period", "Period for threshold calculation", "Signal")
-		
-		.SetOptimize(50, 300, 50);
+			.SetDisplay("Threshold Period", "Period for threshold calculation", "Signal");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevCloseTrend = null;
-		_barsProcessed = 0;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -211,21 +89,21 @@ public class GaussianAnomalyDerivativeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_trendMa = UseSma ? new SMA { Length = MaPeriod } : new EMA { Length = MaPeriod } as IIndicator;
-		_derivativeMa = new EMA { Length = DerivativeMaPeriod };
-		_thresholdMa = new SMA { Length = ThresholdPeriod };
-		_derivativeThresholdMa = new SMA { Length = ThresholdPeriod };
+		_prevCloseTrend = null;
+		_barsProcessed = 0;
+
+		_trendMa = new SimpleMovingAverage { Length = MaPeriod };
+		_derivativeMa = new ExponentialMovingAverage { Length = DerivativeMaPeriod };
+		_thresholdMa = new SimpleMovingAverage { Length = ThresholdPeriod };
+		_derivativeThresholdMa = new SimpleMovingAverage { Length = ThresholdPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _trendMa);
-			DrawIndicator(area, _derivativeMa);
 			DrawOwnTrades(area);
 		}
 	}
@@ -233,55 +111,45 @@ public class GaussianAnomalyDerivativeStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		var value = 1m - (candle.HighPrice + candle.LowPrice) / (2m * candle.ClosePrice);
-		var trendValue = _trendMa.Process(value);
-		if (!trendValue.IsFinal)
-		return;
+		var trendResult = _trendMa.Process(value, candle.OpenTime, true);
+		if (!trendResult.IsFinal || !_trendMa.IsFormed)
+			return;
 
-		var closeTrend = trendValue.GetValue<decimal>();
+		var closeTrend = trendResult.GetValue<decimal>();
 
-		var thValue = _thresholdMa.Process(Math.Max(closeTrend, 0m));
-		var th = thValue.IsFinal ? thValue.GetValue<decimal>() * ThresholdCoeff : 0m;
+		var thResult = _thresholdMa.Process(Math.Max(closeTrend, 0m), candle.OpenTime, true);
+		var th = _thresholdMa.IsFormed ? thResult.GetValue<decimal>() * ThresholdCoeff : 0m;
 
 		decimal dv = 0m;
 		decimal th2 = 0m;
 
 		if (_prevCloseTrend.HasValue)
 		{
-			var dvValue = _derivativeMa.Process(closeTrend - _prevCloseTrend.Value);
-			if (dvValue.IsFinal)
+			var dvResult = _derivativeMa.Process(closeTrend - _prevCloseTrend.Value, candle.OpenTime, true);
+			if (_derivativeMa.IsFormed)
 			{
-				dv = dvValue.GetValue<decimal>();
-				var th2Value = _derivativeThresholdMa.Process(Math.Max(dv, 0m));
-				if (th2Value.IsFinal)
-				th2 = th2Value.GetValue<decimal>() * DerivativeThresholdCoeff;
+				dv = dvResult.GetValue<decimal>();
+				var th2Result = _derivativeThresholdMa.Process(Math.Max(dv, 0m), candle.OpenTime, true);
+				if (_derivativeThresholdMa.IsFormed)
+					th2 = th2Result.GetValue<decimal>() * DerivativeThresholdCoeff;
 			}
 		}
 
 		_prevCloseTrend = closeTrend;
-
 		_barsProcessed++;
-		if (_barsProcessed < StartBarCount)
-		return;
+
+		if (_barsProcessed < 200)
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
-		if (TradeOnDerivative)
-		{
-			if (dv > th2 && EnableLong && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-			else if (dv < -th2 && EnableShort && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-		}
-		else
-		{
-			if (closeTrend > th && EnableLong && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-			else if (closeTrend < -th && EnableShort && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-		}
+		if (dv > th2 && Position <= 0)
+			BuyMarket();
+		else if (dv < -th2 && Position >= 0)
+			SellMarket();
 	}
 }

@@ -51,7 +51,7 @@ public class ASCtrendStrategy : Strategy
 			.SetRange(1, 50)
 			.SetDisplay("Risk", "Risk parameter", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -66,9 +66,7 @@ public class ASCtrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		var wpr = new WilliamsPercentRange
+		var wpr = new WilliamsR
 		{
 			Length = 3 + Risk * 2
 		};
@@ -90,6 +88,9 @@ public class ASCtrendStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal wpr)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var value2 = 100m - Math.Abs(wpr);

@@ -127,7 +127,6 @@ public class BlauErgodicMdiTimeStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volume;
 
 	private decimal? _priceEma;
 	private decimal? _diffEma1;
@@ -389,9 +388,6 @@ public class BlauErgodicMdiTimeStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
 
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -434,8 +430,6 @@ public class BlauErgodicMdiTimeStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
-
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

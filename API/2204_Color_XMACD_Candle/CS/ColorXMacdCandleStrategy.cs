@@ -14,225 +14,116 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that reacts to color changes of the MACD histogram or signal line.
+/// Strategy that reacts to slope changes of the MACD histogram.
+/// Buys when histogram slope turns up, sells when it turns down.
 /// </summary>
 public class ColorXMacdCandleStrategy : Strategy
 {
-	/// <summary>
-	/// MACD based strategy that interprets histogram or signal line slope.
-	/// </summary>
-	public enum MacdSignalModes
-	{
-		Histogram,
-		SignalLine
-	}
-
-	private readonly StrategyParam<MacdSignalModes> _mode;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
-	private readonly StrategyParam<bool> _enableBuyOpen;
-	private readonly StrategyParam<bool> _enableSellOpen;
-	private readonly StrategyParam<bool> _enableBuyClose;
-	private readonly StrategyParam<bool> _enableSellClose;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergence _macd;
+	private SimpleMovingAverage _signalMa;
+	private decimal? _prevHist;
+	private decimal? _prevPrevHist;
 
-	private decimal _prevHist;
-	private decimal _prevSignal;
-	private bool _prevUp;
-	private bool _isFirst = true;
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int SignalPeriod { get => _signalPeriod.Value; set => _signalPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Source of signals.
-	/// </summary>
-	public MacdSignalModes Mode
-	{
-		get => _mode.Value;
-		set => _mode.Value = value;
-	}
-
-	/// <summary>
-	/// Fast EMA length for MACD.
-	/// </summary>
-	public int FastPeriod
-	{
-		get => _fastPeriod.Value;
-		set => _fastPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow EMA length for MACD.
-	/// </summary>
-	public int SlowPeriod
-	{
-		get => _slowPeriod.Value;
-		set => _slowPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Signal line smoothing length.
-	/// </summary>
-	public int SignalPeriod
-	{
-		get => _signalPeriod.Value;
-		set => _signalPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
-	public bool EnableBuyOpen
-	{
-		get => _enableBuyOpen.Value;
-		set => _enableBuyOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
-	public bool EnableSellOpen
-	{
-		get => _enableSellOpen.Value;
-		set => _enableSellOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing long positions.
-	/// </summary>
-	public bool EnableBuyClose
-	{
-		get => _enableBuyClose.Value;
-		set => _enableBuyClose.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing short positions.
-	/// </summary>
-	public bool EnableSellClose
-	{
-		get => _enableSellClose.Value;
-		set => _enableSellClose.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for subscriptions.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes the strategy parameters.
-	/// </summary>
 	public ColorXMacdCandleStrategy()
 	{
-		_mode = Param(nameof(Mode), MacdSignalModes.Histogram)
-				.SetDisplay("Mode", "Source of signals", "Parameters");
-
 		_fastPeriod = Param(nameof(FastPeriod), 12)
-				.SetGreaterThanZero()
-				.SetDisplay("Fast Period", "Fast EMA period", "MACD")
-				
-				.SetOptimize(6, 18, 2);
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast EMA period", "MACD");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
-				.SetGreaterThanZero()
-				.SetDisplay("Slow Period", "Slow EMA period", "MACD")
-				
-				.SetOptimize(20, 40, 2);
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "MACD");
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
-				.SetGreaterThanZero()
-				.SetDisplay("Signal Period", "Signal line period", "MACD")
-				
-				.SetOptimize(6, 18, 1);
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Period", "Signal line period", "MACD");
 
-		_enableBuyOpen = Param(nameof(EnableBuyOpen), true)
-				.SetDisplay("Enable Buy Open", "Allow opening longs", "Behaviour");
-
-		_enableSellOpen = Param(nameof(EnableSellOpen), true)
-				.SetDisplay("Enable Sell Open", "Allow opening shorts", "Behaviour");
-
-		_enableBuyClose = Param(nameof(EnableBuyClose), true)
-				.SetDisplay("Enable Buy Close", "Allow closing longs", "Behaviour");
-
-		_enableSellClose = Param(nameof(EnableSellClose), true)
-				.SetDisplay("Enable Sell Close", "Allow closing shorts", "Behaviour");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-				.SetDisplay("Candle Type", "Candle type for calculations", "Common");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type for calculations", "Common");
 	}
 
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
-	{
-		base.OnStarted(time);
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-		_macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = FastPeriod },
-			LongMa = { Length = SlowPeriod },
-			SignalPeriod = SignalPeriod
-		};
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_signalMa = null;
+		_prevHist = null;
+		_prevPrevHist = null;
+	}
+
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		var macd = new MovingAverageConvergenceDivergence();
+		macd.ShortMa.Length = FastPeriod;
+		macd.LongMa.Length = SlowPeriod;
+
+		_signalMa = new SimpleMovingAverage { Length = SignalPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-				.Bind(_macd, ProcessCandle)
-				.Start();
+			.BindEx(macd, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _macd);
+			DrawIndicator(area, macd);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdValue, decimal signalValue, decimal histValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_isFirst)
+		if (!macdValue.IsFormed)
+			return;
+
+		var macdLine = macdValue.GetValue<decimal>();
+		var signalResult = _signalMa.Process(macdValue);
+
+		if (!signalResult.IsFormed)
+			return;
+
+		var signalLine = signalResult.GetValue<decimal>();
+		var hist = macdLine - signalLine;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			_prevHist = histValue;
-			_prevSignal = signalValue;
-			_prevUp = false;
-			_isFirst = false;
+			_prevPrevHist = _prevHist;
+			_prevHist = hist;
 			return;
 		}
 
-		var isUp = Mode == MacdSignalModes.Histogram ? histValue > _prevHist : signalValue > _prevSignal;
-
-		if (Mode == MacdSignalModes.Histogram)
-			_prevHist = histValue;
-		else
-			_prevSignal = signalValue;
-
-		if (isUp && !_prevUp)
+		if (_prevHist is decimal ph && _prevPrevHist is decimal pph)
 		{
-			if (EnableSellClose && Position < 0)
-				BuyMarket(Math.Abs(Position));
+			var wasRising = ph > pph;
+			var nowRising = hist > ph;
 
-			if (EnableBuyOpen && Position <= 0)
-				BuyMarket(Volume);
-		}
-		else if (!isUp && _prevUp)
-		{
-			if (EnableBuyClose && Position > 0)
-				SellMarket(Position);
-
-			if (EnableSellOpen && Position >= 0)
-				SellMarket(Volume);
+			// Histogram slope turns up -> buy
+			if (!wasRising && nowRising && Position <= 0)
+				BuyMarket();
+			// Histogram slope turns down -> sell
+			else if (wasRising && !nowRising && Position >= 0)
+				SellMarket();
 		}
 
-		_prevUp = isUp;
+		_prevPrevHist = _prevHist;
+		_prevHist = hist;
 	}
 }

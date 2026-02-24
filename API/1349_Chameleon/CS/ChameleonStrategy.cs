@@ -234,8 +234,8 @@ public class ChameleonStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastMa, "Fast MA");
-			DrawIndicator(area, slowMa, "Slow MA");
+			DrawIndicator(area, fastMa);
+			DrawIndicator(area, slowMa);
 			DrawOwnTrades(area);
 		}
 	}

@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,93 +8,69 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Template strategy that reacts to external signals.
-/// Supports long and short entries and applies percent based stop-loss and take-profit.
+/// Connectable strategy that trades based on EMA crossover signals
+/// with percent-based stop-loss and take-profit management.
 /// </summary>
 public class ConnectableStrategy : Strategy
 {
-	private readonly StrategyParam<string> _signalMode;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
-	private decimal _lastPrice;
 	private bool _isLong;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _prevReady;
 
-	/// <summary>
-	/// Allowed trade direction.
-	/// </summary>
-	public string SignalMode
+	public int FastLength
 	{
-		get => _signalMode.Value;
-		set => _signalMode.Value = value;
+		get => _fastLength.Value;
+		set => _fastLength.Value = value;
 	}
 
-	/// <summary>
-	/// Stop loss percent from entry price.
-	/// </summary>
+	public int SlowLength
+	{
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
+	}
+
 	public decimal StopLossPercent
 	{
 		get => _stopLossPercent.Value;
 		set => _stopLossPercent.Value = value;
 	}
 
-	/// <summary>
-	/// Take profit percent from entry price.
-	/// </summary>
 	public decimal TakeProfitPercent
 	{
 		get => _takeProfitPercent.Value;
 		set => _takeProfitPercent.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type for processing.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
 	public ConnectableStrategy()
 	{
-		_signalMode = Param(nameof(SignalMode), "Long")
-			.SetDisplay("Signal Mode", "Allowed trade direction", "General");
+		_fastLength = Param(nameof(FastLength), 10)
+			.SetDisplay("Fast EMA", "Fast EMA length", "General");
+
+		_slowLength = Param(nameof(SlowLength), 30)
+			.SetDisplay("Slow EMA", "Slow EMA length", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Percent of entry price for stop loss", "Risk Management")
-			
-			.SetOptimize(1m, 5m, 1m);
+			.SetDisplay("Stop Loss %", "Percent of entry price for stop loss", "Risk");
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit %", "Percent of entry price for take profit", "Risk Management")
-			
-			.SetOptimize(2m, 10m, 2m);
+			.SetDisplay("Take Profit %", "Percent of entry price for take profit", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_entryPrice = 0m;
-		_lastPrice = 0m;
-		_isLong = false;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
@@ -108,79 +78,90 @@ public class ConnectableStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		_prevReady = false;
+		_entryPrice = 0;
+
+		var fast = new ExponentialMovingAverage { Length = FastLength };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-	}
+		subscription
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
 
-	/// <summary>
-	/// Process external trading signal.
-	/// </summary>
-	/// <param name="isLongEntry">Long entry signal.</param>
-	/// <param name="isShortEntry">Short entry signal.</param>
-	/// <param name="exit">Exit signal.</param>
-	public void ProcessSignal(bool isLongEntry, bool isShortEntry, bool exit)
-	{
-		if (exit && Position != 0)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			ClosePosition();
-			return;
-		}
-
-		if (_lastPrice == 0m)
-			return;
-
-		if (isLongEntry && Position <= 0 && (SignalMode == "Long" || SignalMode == "Both" || SignalMode == "Swing"))
-		{
-			_entryPrice = _lastPrice;
-			_isLong = true;
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (isShortEntry && Position >= 0 && (SignalMode == "Short" || SignalMode == "Both" || SignalMode == "Swing"))
-		{
-			_entryPrice = _lastPrice;
-			_isLong = false;
-			SellMarket(Volume + Math.Abs(Position));
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ClosePosition()
-	{
-		if (Position > 0)
-			SellMarket(Position);
-		else if (Position < 0)
-			BuyMarket(-Position);
-
-		_entryPrice = 0m;
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_lastPrice = candle.ClosePrice;
-
-		if (Position == 0 || _entryPrice == 0m)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var sl = _stopLossPercent.Value / 100m;
-		var tp = _takeProfitPercent.Value / 100m;
+		// Check SL/TP for existing position
+		if (Position != 0 && _entryPrice > 0)
+		{
+			var sl = StopLossPercent / 100m;
+			var tp = TakeProfitPercent / 100m;
 
-		if (_isLong)
-		{
-			var stop = _entryPrice * (1m - sl);
-			var take = _entryPrice * (1m + tp);
-			if (candle.LowPrice <= stop || candle.HighPrice >= take)
-				ClosePosition();
+			if (_isLong)
+			{
+				if (candle.LowPrice <= _entryPrice * (1m - sl) || candle.HighPrice >= _entryPrice * (1m + tp))
+				{
+					SellMarket();
+					_entryPrice = 0;
+					_prevFast = fastValue;
+					_prevSlow = slowValue;
+					_prevReady = true;
+					return;
+				}
+			}
+			else
+			{
+				if (candle.HighPrice >= _entryPrice * (1m + sl) || candle.LowPrice <= _entryPrice * (1m - tp))
+				{
+					BuyMarket();
+					_entryPrice = 0;
+					_prevFast = fastValue;
+					_prevSlow = slowValue;
+					_prevReady = true;
+					return;
+				}
+			}
 		}
-		else
+
+		if (!_prevReady)
 		{
-			var stop = _entryPrice * (1m + sl);
-			var take = _entryPrice * (1m - tp);
-			if (candle.HighPrice >= stop || candle.LowPrice <= take)
-				ClosePosition();
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			_prevReady = true;
+			return;
 		}
+
+		// EMA crossover signals
+		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+		{
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+			_isLong = true;
+		}
+		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+		{
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+			_isLong = false;
+		}
+
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
 	}
 }

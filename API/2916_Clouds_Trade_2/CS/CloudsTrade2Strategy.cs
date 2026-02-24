@@ -235,8 +235,8 @@ public class CloudsTrade2Strategy : Strategy
 		Volume = OrderVolume;
 
 		_stochastic = new StochasticOscillator
-		{ K = { Length = KPeriod },
-			K = { Length = SlowingPeriod },
+		{
+			K = { Length = KPeriod },
 			D = { Length = DPeriod }
 		};
 

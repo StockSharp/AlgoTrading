@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -30,15 +28,9 @@ public class SidusV1Strategy : Strategy
 	private readonly StrategyParam<decimal> _buyRsiThreshold;
 	private readonly StrategyParam<decimal> _sellDifferenceThreshold;
 	private readonly StrategyParam<decimal> _sellRsiThreshold;
-	private readonly StrategyParam<decimal> _buyTakeProfitPips;
-	private readonly StrategyParam<decimal> _buyStopLossPips;
-	private readonly StrategyParam<decimal> _sellTakeProfitPips;
-	private readonly StrategyParam<decimal> _sellStopLossPips;
-	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<decimal> _maxCandleVolume;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private decimal _priceStep;
 
 	/// <summary>
 	/// Length of the fast EMA for buy signal calculation.
@@ -95,7 +87,7 @@ public class SidusV1Strategy : Strategy
 	}
 
 	/// <summary>
-	/// Threshold for EMA difference to allow buy orders.
+	/// Threshold for EMA difference to allow buy orders (negative means fast below slow).
 	/// </summary>
 	public decimal BuyDifferenceThreshold
 	{
@@ -113,7 +105,7 @@ public class SidusV1Strategy : Strategy
 	}
 
 	/// <summary>
-	/// Threshold for EMA difference to allow sell orders.
+	/// Threshold for EMA difference to allow sell orders (positive means fast above slow).
 	/// </summary>
 	public decimal SellDifferenceThreshold
 	{
@@ -131,57 +123,21 @@ public class SidusV1Strategy : Strategy
 	}
 
 	/// <summary>
-	/// Take profit distance in pips for long positions.
+	/// Stop loss distance in absolute price units.
 	/// </summary>
-	public decimal BuyTakeProfitPips
+	public decimal StopLoss
 	{
-		get => _buyTakeProfitPips.Value;
-		set => _buyTakeProfitPips.Value = value;
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
 	}
 
 	/// <summary>
-	/// Stop loss distance in pips for long positions.
+	/// Take profit distance in absolute price units.
 	/// </summary>
-	public decimal BuyStopLossPips
+	public decimal TakeProfit
 	{
-		get => _buyStopLossPips.Value;
-		set => _buyStopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance in pips for short positions.
-	/// </summary>
-	public decimal SellTakeProfitPips
-	{
-		get => _sellTakeProfitPips.Value;
-		set => _sellTakeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance in pips for short positions.
-	/// </summary>
-	public decimal SellStopLossPips
-	{
-		get => _sellStopLossPips.Value;
-		set => _sellStopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Volume for new market orders.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum candle volume to allow trading.
-	/// </summary>
-	public decimal MaxCandleVolume
-	{
-		get => _maxCandleVolume.Value;
-		set => _maxCandleVolume.Value = value;
+		get => _takeProfit.Value;
+		set => _takeProfit.Value = value;
 	}
 
 	/// <summary>
@@ -200,111 +156,61 @@ public class SidusV1Strategy : Strategy
 	{
 		_fastEmaLength = Param(nameof(FastEmaLength), 23)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA Length", "Length of the fast EMA for buy signals", "Indicators")
-			
-			.SetOptimize(10, 40, 5);
+			.SetDisplay("Fast EMA Length", "Length of the fast EMA for buy signals", "Indicators");
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 62)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA Length", "Length of the slow EMA for buy signals", "Indicators")
-			
-			.SetOptimize(40, 90, 10);
+			.SetDisplay("Slow EMA Length", "Length of the slow EMA for buy signals", "Indicators");
 
 		_fastEma2Length = Param(nameof(FastEma2Length), 18)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA Length (Sell)", "Length of the fast EMA for sell signals", "Indicators")
-			
-			.SetOptimize(10, 35, 5);
+			.SetDisplay("Fast EMA Length (Sell)", "Length of the fast EMA for sell signals", "Indicators");
 
 		_slowEma2Length = Param(nameof(SlowEma2Length), 54)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA Length (Sell)", "Length of the slow EMA for sell signals", "Indicators")
-			
-			.SetOptimize(40, 80, 10);
+			.SetDisplay("Slow EMA Length (Sell)", "Length of the slow EMA for sell signals", "Indicators");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 67)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "RSI period used for buy signals", "Indicators")
-			
-			.SetOptimize(30, 90, 10);
+			.SetDisplay("RSI Period", "RSI period used for buy signals", "Indicators");
 
 		_rsiPeriod2 = Param(nameof(RsiPeriod2), 97)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period (Sell)", "RSI period used for sell signals", "Indicators")
-			
-			.SetOptimize(40, 110, 10);
+			.SetDisplay("RSI Period (Sell)", "RSI period used for sell signals", "Indicators");
 
-		_buyDifferenceThreshold = Param(nameof(BuyDifferenceThreshold), 63m)
-			.SetDisplay("Buy EMA Threshold", "Maximum fast-slow EMA difference to allow buy", "Trading Rules")
-			
-			.SetOptimize(40m, 80m, 5m);
+		_buyDifferenceThreshold = Param(nameof(BuyDifferenceThreshold), -100m)
+			.SetDisplay("Buy EMA Threshold", "Maximum fast-slow EMA difference to allow buy", "Trading Rules");
 
-		_buyRsiThreshold = Param(nameof(BuyRsiThreshold), 59m)
-			.SetDisplay("Buy RSI Threshold", "Maximum RSI level to allow buy", "Trading Rules")
-			
-			.SetOptimize(40m, 70m, 5m);
+		_buyRsiThreshold = Param(nameof(BuyRsiThreshold), 45m)
+			.SetDisplay("Buy RSI Threshold", "Maximum RSI level to allow buy", "Trading Rules");
 
-		_sellDifferenceThreshold = Param(nameof(SellDifferenceThreshold), -57m)
-			.SetDisplay("Sell EMA Threshold", "Minimum fast-slow EMA difference to allow sell", "Trading Rules")
-			
-			.SetOptimize(-80m, -40m, 5m);
+		_sellDifferenceThreshold = Param(nameof(SellDifferenceThreshold), 100m)
+			.SetDisplay("Sell EMA Threshold", "Minimum fast-slow EMA difference to allow sell", "Trading Rules");
 
-		_sellRsiThreshold = Param(nameof(SellRsiThreshold), 60m)
-			.SetDisplay("Sell RSI Threshold", "Minimum RSI level to allow sell", "Trading Rules")
-			
-			.SetOptimize(50m, 80m, 5m);
+		_sellRsiThreshold = Param(nameof(SellRsiThreshold), 55m)
+			.SetDisplay("Sell RSI Threshold", "Minimum RSI level to allow sell", "Trading Rules");
 
-		_buyTakeProfitPips = Param(nameof(BuyTakeProfitPips), 95m)
+		_stopLoss = Param(nameof(StopLoss), 500m)
 			.SetNotNegative()
-			.SetDisplay("Buy Take Profit", "Take profit distance in pips for long trades", "Risk Management")
-			
-			.SetOptimize(50m, 120m, 10m);
+			.SetDisplay("Stop Loss", "Stop loss distance in absolute price units", "Risk Management");
 
-		_buyStopLossPips = Param(nameof(BuyStopLossPips), 100m)
+		_takeProfit = Param(nameof(TakeProfit), 500m)
 			.SetNotNegative()
-			.SetDisplay("Buy Stop Loss", "Stop loss distance in pips for long trades", "Risk Management")
-			
-			.SetOptimize(60m, 140m, 10m);
+			.SetDisplay("Take Profit", "Take profit distance in absolute price units", "Risk Management");
 
-		_sellTakeProfitPips = Param(nameof(SellTakeProfitPips), 17m)
-			.SetNotNegative()
-			.SetDisplay("Sell Take Profit", "Take profit distance in pips for short trades", "Risk Management")
-			
-			.SetOptimize(10m, 40m, 5m);
-
-		_sellStopLossPips = Param(nameof(SellStopLossPips), 69m)
-			.SetNotNegative()
-			.SetDisplay("Sell Stop Loss", "Stop loss distance in pips for short trades", "Risk Management")
-			
-			.SetOptimize(40m, 100m, 10m);
-
-		_orderVolume = Param(nameof(OrderVolume), 0.5m)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Volume for opening new positions", "General");
-
-		_maxCandleVolume = Param(nameof(MaxCandleVolume), 10m)
-			.SetNotNegative()
-			.SetDisplay("Max Candle Volume", "Maximum candle volume allowed for trading", "Filters")
-			
-			.SetOptimize(0m, 20m, 5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		return new[] { (Security, CandleType) };
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted2(time);
-
-		_priceStep = Security.PriceStep ?? 1m;
-
 		var fastEma = new EMA { Length = FastEmaLength };
 		var slowEma = new EMA { Length = SlowEmaLength };
 		var fastEma2 = new EMA { Length = FastEma2Length };
@@ -316,6 +222,22 @@ public class SidusV1Strategy : Strategy
 		subscription
 			.Bind(fastEma, slowEma, fastEma2, slowEma2, rsi, rsi2, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
+
+		// Use StartProtection for SL/TP
+		var tp = TakeProfit > 0 ? new Unit(TakeProfit, UnitTypes.Absolute) : null;
+		var sl = StopLoss > 0 ? new Unit(StopLoss, UnitTypes.Absolute) : null;
+		StartProtection(tp, sl);
+
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle,
@@ -329,63 +251,25 @@ public class SidusV1Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (candle.TotalVolume > MaxCandleVolume)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var diffBuy = fastEmaValue - slowEmaValue;
 		var diffSell = fastEma2Value - slowEma2Value;
 
+		// Buy when fast EMA is sufficiently below slow EMA and RSI is oversold
 		if (diffBuy < BuyDifferenceThreshold && rsiValue < BuyRsiThreshold && Position <= 0)
 		{
-			CancelActiveOrders();
-
-			var volume = OrderVolume + Math.Max(0m, -Position);
-			BuyMarket(volume);
-
-			PlaceRiskOrders(candle.ClosePrice, true, volume);
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
 		}
-
-		if (diffSell > SellDifferenceThreshold && rsi2Value > SellRsiThreshold && Position >= 0)
+		// Sell when fast EMA is sufficiently above slow EMA and RSI is overbought
+		else if (diffSell > SellDifferenceThreshold && rsi2Value > SellRsiThreshold && Position >= 0)
 		{
-			CancelActiveOrders();
-
-			var volume = OrderVolume + Math.Max(0m, Position);
-			SellMarket(volume);
-
-			PlaceRiskOrders(candle.ClosePrice, false, volume);
-		}
-	}
-
-	private void PlaceRiskOrders(decimal entryPrice, bool isLong, decimal volume)
-	{
-		if (isLong)
-		{
-			if (BuyTakeProfitPips > 0)
-			{
-				var tpPrice = entryPrice + BuyTakeProfitPips * _priceStep;
-				SellLimit(tpPrice, volume);
-			}
-
-			if (BuyStopLossPips > 0)
-			{
-				var slPrice = entryPrice - BuyStopLossPips * _priceStep;
-				SellStop(slPrice, volume);
-			}
-		}
-		else
-		{
-			if (SellTakeProfitPips > 0)
-			{
-				var tpPrice = entryPrice - SellTakeProfitPips * _priceStep;
-				BuyLimit(tpPrice, volume);
-			}
-
-			if (SellStopLossPips > 0)
-			{
-				var slPrice = entryPrice + SellStopLossPips * _priceStep;
-				BuyStop(slPrice, volume);
-			}
+			if (Position > 0)
+				SellMarket(Position);
+			SellMarket(Volume);
 		}
 	}
 }
-

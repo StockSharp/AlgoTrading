@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,77 +10,44 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Grid strategy that opens trades when price crosses dynamic levels.
 /// </summary>
 public class CollectorV10Strategy : Strategy
 {
 	private readonly StrategyParam<decimal> _distance;
-	private readonly StrategyParam<decimal> _initialVolume;
-	private readonly StrategyParam<decimal> _volumeStep;
-	private readonly StrategyParam<int> _increaseTrade;
 	private readonly StrategyParam<int> _maxTrades;
-	private readonly StrategyParam<decimal> _profitClose;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _buyLevel;
 	private decimal _sellLevel;
+	private decimal _entryPrice;
 	private int _tradeCount;
-	private decimal _currentVolume;
 
-	public decimal Distance
-	{
-		get => _distance.Value;
-		set => _distance.Value = value;
-	}
-
-	public decimal InitialVolume
-	{
-		get => _initialVolume.Value;
-		set => _initialVolume.Value = value;
-	}
-
-	public decimal VolumeStep
-	{
-		get => _volumeStep.Value;
-		set => _volumeStep.Value = value;
-	}
-
-	public int IncreaseTrade
-	{
-		get => _increaseTrade.Value;
-		set => _increaseTrade.Value = value;
-	}
-
-	public int MaxTrades
-	{
-		get => _maxTrades.Value;
-		set => _maxTrades.Value = value;
-	}
-
-	public decimal ProfitClose
-	{
-		get => _profitClose.Value;
-		set => _profitClose.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public decimal Distance { get => _distance.Value; set => _distance.Value = value; }
+	public int MaxTrades { get => _maxTrades.Value; set => _maxTrades.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public CollectorV10Strategy()
 	{
-		_distance = Param<decimal>(nameof(Distance), 10m);
-		_initialVolume = Param<decimal>(nameof(InitialVolume), 0.01m);
-		_volumeStep = Param<decimal>(nameof(VolumeStep), 0.01m);
-		_increaseTrade = Param<int>(nameof(IncreaseTrade), 3);
-		_maxTrades = Param<int>(nameof(MaxTrades), 200);
-		_profitClose = Param<decimal>(nameof(ProfitClose), 500000m);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
+		_distance = Param(nameof(Distance), 200m)
+			.SetDisplay("Distance", "Grid distance", "Grid");
+
+		_maxTrades = Param(nameof(MaxTrades), 200)
+			.SetDisplay("Max Trades", "Maximum trades", "Grid");
+
+		_takeProfit = Param(nameof(TakeProfit), 500m)
+			.SetDisplay("TP", "Take profit", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 300m)
+			.SetDisplay("SL", "Stop loss", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
@@ -89,20 +55,13 @@ public class CollectorV10Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_currentVolume = InitialVolume;
-		StartProtection(null, null);
+		_buyLevel = 0;
+		_sellLevel = 0;
+		_entryPrice = 0;
+		_tradeCount = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		subscription.Bind(ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -112,36 +71,52 @@ public class CollectorV10Strategy : Strategy
 
 		var price = candle.ClosePrice;
 
-		if (_buyLevel == 0m && _sellLevel == 0m)
+		// Initialize levels on first candle
+		if (_buyLevel == 0 && _sellLevel == 0)
 		{
 			SetLevels(price);
 			return;
 		}
 
-		if (PnL >= ProfitClose)
+		// Manage exits
+		if (Position > 0)
 		{
-			ClosePosition();
-			Stop();
-			return;
+			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				SetLevels(price);
+				return;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				SetLevels(price);
+				return;
+			}
 		}
 
-		if (_tradeCount < MaxTrades && price >= _buyLevel)
+		// Grid entries when flat
+		if (Position == 0 && _tradeCount < MaxTrades)
 		{
-			BuyMarket(_currentVolume);
-			_tradeCount++;
-			if (_tradeCount % IncreaseTrade == 0)
-				_currentVolume += VolumeStep;
-			SetLevels(price);
-			return;
-		}
-
-		if (_tradeCount < MaxTrades && price <= _sellLevel)
-		{
-			SellMarket(_currentVolume);
-			_tradeCount++;
-			if (_tradeCount % IncreaseTrade == 0)
-				_currentVolume += VolumeStep;
-			SetLevels(price);
+			if (price >= _buyLevel)
+			{
+				BuyMarket();
+				_entryPrice = price;
+				_tradeCount++;
+				SetLevels(price);
+			}
+			else if (price <= _sellLevel)
+			{
+				SellMarket();
+				_entryPrice = price;
+				_tradeCount++;
+				SetLevels(price);
+			}
 		}
 	}
 

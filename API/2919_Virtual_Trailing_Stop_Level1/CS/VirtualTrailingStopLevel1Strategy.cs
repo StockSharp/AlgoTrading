@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,291 +11,113 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Virtual trailing stop manager that mirrors MetaTrader style trailing behavior.
-/// The strategy does not open new positions and instead manages existing ones by applying stop-loss,
-/// take-profit, and trailing-stop rules on top of incoming level1 data.
+/// Virtual Trailing Stop Level1 strategy (simplified). Uses EMA with
+/// percentage-based trailing stop for position management.
 /// </summary>
 public class VirtualTrailingStopLevel1Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _trailingStopPips;
-	private readonly StrategyParam<decimal> _trailingStartPips;
-	private readonly StrategyParam<decimal> _trailingStepPips;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<decimal> _trailingPercent;
 
-	private decimal? _currentBid;
-	private decimal? _currentAsk;
-	private decimal? _longTrailingPrice;
-	private decimal? _shortTrailingPrice;
-
-	/// <summary>
-	/// Stop-loss distance expressed in pips.
-	/// </summary>
-	public decimal StopLossPips
+	public DataType CandleType
 	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Take-profit distance expressed in pips.
-	/// </summary>
-	public decimal TakeProfitPips
+	public int EmaLength
 	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Trailing stop distance expressed in pips.
-	/// </summary>
-	public decimal TrailingStopPips
+	public decimal TrailingPercent
 	{
-		get => _trailingStopPips.Value;
-		set => _trailingStopPips.Value = value;
+		get => _trailingPercent.Value;
+		set => _trailingPercent.Value = value;
 	}
 
-	/// <summary>
-	/// Price advance that must happen before the trailing stop activates.
-	/// </summary>
-	public decimal TrailingStartPips
+	public VirtualTrailingStopLevel1Strategy()
 	{
-		get => _trailingStartPips.Value;
-		set => _trailingStartPips.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candles", "General");
+
+		_emaLength = Param(nameof(EmaLength), 15)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "EMA period", "Indicators");
+
+		_trailingPercent = Param(nameof(TrailingPercent), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Trailing %", "Trailing stop percent", "Risk");
 	}
 
-	/// <summary>
-	/// Minimum pip distance required before the trailing stop is shifted further.
-	/// </summary>
-	public decimal TrailingStepPips
-	{
-		get => _trailingStepPips.Value;
-		set => _trailingStepPips.Value = value;
-	}
-
-	/// <summary>
-/// Initializes a new instance of the <see cref="VirtualTrailingStopLevel1Strategy"/> class.
-/// </summary>
-public VirtualTrailingStopLevel1Strategy()
-	{
-		_stopLossPips = Param(nameof(StopLossPips), 0m)
-			.SetNotNegative()
-			.SetDisplay("Stop-loss (pips)", "Distance for stop-loss in pip units", "Risk Management");
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
-			.SetNotNegative()
-			.SetDisplay("Take-profit (pips)", "Distance for take-profit in pip units", "Risk Management");
-
-		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-			.SetNotNegative()
-			.SetDisplay("Trailing stop (pips)", "Trailing stop distance in pip units", "Trailing");
-
-		_trailingStartPips = Param(nameof(TrailingStartPips), 5m)
-			.SetNotNegative()
-			.SetDisplay("Trailing start (pips)", "Activation distance before trailing engages", "Trailing");
-
-		_trailingStepPips = Param(nameof(TrailingStepPips), 1m)
-			.SetNotNegative()
-			.SetDisplay("Trailing step (pips)", "Minimal movement required to move the trail", "Trailing");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, DataType.Level1)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_currentBid = null;
-		_currentAsk = null;
-		_longTrailingPrice = null;
-		_shortTrailingPrice = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Subscribe to level1 updates to monitor bid/ask changes in real time.
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		decimal highSinceEntry = 0;
+		decimal lowSinceEntry = decimal.MaxValue;
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ema, (ICandleMessage candle, decimal emaVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+					return;
+
+				var close = candle.ClosePrice;
+
+				// Trailing stop management
+				if (Position > 0)
+				{
+					if (candle.HighPrice > highSinceEntry) highSinceEntry = candle.HighPrice;
+					if (close < highSinceEntry * (1m - TrailingPercent / 100m))
+					{
+						SellMarket();
+						highSinceEntry = 0;
+						lowSinceEntry = decimal.MaxValue;
+						return;
+					}
+				}
+				else if (Position < 0)
+				{
+					if (candle.LowPrice < lowSinceEntry) lowSinceEntry = candle.LowPrice;
+					if (close > lowSinceEntry * (1m + TrailingPercent / 100m))
+					{
+						BuyMarket();
+						highSinceEntry = 0;
+						lowSinceEntry = decimal.MaxValue;
+						return;
+					}
+				}
+
+				// Entry based on EMA
+				if (close > emaVal && Position <= 0)
+				{
+					BuyMarket();
+					highSinceEntry = candle.HighPrice;
+					lowSinceEntry = decimal.MaxValue;
+				}
+				else if (close < emaVal && Position >= 0)
+				{
+					SellMarket();
+					lowSinceEntry = candle.LowPrice;
+					highSinceEntry = 0;
+				}
+			})
 			.Start();
-	}
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
-	{
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bid))
-			_currentBid = (decimal)bid;
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var ask))
-			_currentAsk = (decimal)ask;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var pipSize = GetPipSize();
-
-		UpdateLongProtection(pipSize);
-		UpdateShortProtection(pipSize);
-	}
-
-	private void UpdateLongProtection(decimal pipSize)
-	{
-		if (Position <= 0)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			_longTrailingPrice = null;
-			return;
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
 		}
-
-		if (_currentBid is not decimal bid || bid <= 0m)
-			return;
-
-		var entryPrice = Position.AveragePrice;
-		var stopLossOffset = StopLossPips * pipSize;
-		var takeProfitOffset = TakeProfitPips * pipSize;
-		var trailingStopOffset = TrailingStopPips * pipSize;
-		var trailingStartOffset = TrailingStartPips * pipSize;
-		var trailingStepOffset = TrailingStepPips * pipSize;
-
-		if (stopLossOffset > 0m)
-		{
-			var stopPrice = entryPrice - stopLossOffset;
-			if (bid <= stopPrice)
-			{
-				SellMarket(Math.Abs(Position));
-				_longTrailingPrice = null;
-				return;
-			}
-		}
-
-		if (takeProfitOffset > 0m)
-		{
-			var takePrice = entryPrice + takeProfitOffset;
-			if (bid >= takePrice)
-			{
-				SellMarket(Math.Abs(Position));
-				_longTrailingPrice = null;
-				return;
-			}
-		}
-
-		if (trailingStopOffset <= 0m)
-		{
-			_longTrailingPrice = null;
-			return;
-		}
-
-		var newTrail = bid - trailingStopOffset;
-		var activationPrice = entryPrice + trailingStartOffset;
-
-		if (newTrail >= activationPrice)
-		{
-			var shouldUpdate = !_longTrailingPrice.HasValue;
-
-			if (_longTrailingPrice.HasValue)
-			{
-				if (trailingStepOffset <= 0m)
-				shouldUpdate = newTrail > _longTrailingPrice.Value;
-				else
-				shouldUpdate = newTrail >= _longTrailingPrice.Value + trailingStepOffset;
-			}
-
-			if (shouldUpdate)
-			_longTrailingPrice = newTrail;
-		}
-
-		if (_longTrailingPrice.HasValue && bid <= _longTrailingPrice.Value && bid > entryPrice)
-		{
-			SellMarket(Math.Abs(Position));
-			_longTrailingPrice = null;
-		}
-	}
-
-	private void UpdateShortProtection(decimal pipSize)
-	{
-		if (Position >= 0)
-		{
-			_shortTrailingPrice = null;
-			return;
-		}
-
-		if (_currentAsk is not decimal ask || ask <= 0m)
-			return;
-
-		var entryPrice = Position.AveragePrice;
-		var stopLossOffset = StopLossPips * pipSize;
-		var takeProfitOffset = TakeProfitPips * pipSize;
-		var trailingStopOffset = TrailingStopPips * pipSize;
-		var trailingStartOffset = TrailingStartPips * pipSize;
-		var trailingStepOffset = TrailingStepPips * pipSize;
-
-		if (stopLossOffset > 0m)
-		{
-			var stopPrice = entryPrice + stopLossOffset;
-			if (ask >= stopPrice)
-			{
-				BuyMarket(Math.Abs(Position));
-				_shortTrailingPrice = null;
-				return;
-			}
-		}
-
-		if (takeProfitOffset > 0m)
-		{
-			var takePrice = entryPrice - takeProfitOffset;
-			if (ask <= takePrice)
-			{
-				BuyMarket(Math.Abs(Position));
-				_shortTrailingPrice = null;
-				return;
-			}
-		}
-
-		if (trailingStopOffset <= 0m)
-		{
-			_shortTrailingPrice = null;
-			return;
-		}
-
-		var newTrail = ask + trailingStopOffset;
-		var activationPrice = entryPrice - trailingStartOffset;
-
-		if (newTrail <= activationPrice)
-		{
-			var shouldUpdate = !_shortTrailingPrice.HasValue;
-
-			if (_shortTrailingPrice.HasValue)
-			{
-				if (trailingStepOffset <= 0m)
-				shouldUpdate = newTrail < _shortTrailingPrice.Value;
-				else
-				shouldUpdate = newTrail <= _shortTrailingPrice.Value - trailingStepOffset;
-			}
-
-			if (shouldUpdate)
-			_shortTrailingPrice = newTrail;
-		}
-
-		if (_shortTrailingPrice.HasValue && ask >= _shortTrailingPrice.Value && entryPrice > ask)
-		{
-			BuyMarket(Math.Abs(Position));
-			_shortTrailingPrice = null;
-		}
-	}
-
-	private decimal GetPipSize()
-	{
-		var priceStep = Security?.PriceStep ?? 0m;
-		if (priceStep <= 0m)
-		return 1m;
-
-		var decimals = Security?.Decimals ?? 0;
-		var multiplier = (decimals == 3 || decimals == 5) ? 10m : 1m;
-		return priceStep * multiplier;
 	}
 }

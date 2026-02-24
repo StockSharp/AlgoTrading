@@ -60,7 +60,7 @@ public class NatusekoProtrader4HStrategy : Strategy
 
 	public NatusekoProtrader4HStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Primary timeframe processed by the strategy.", "General");
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
@@ -83,7 +83,7 @@ public class NatusekoProtrader4HStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MACD fast period", "Fast EMA length inside the MACD indicator.", "Indicator");
 
-		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 200)
+		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD slow period", "Slow EMA length inside the MACD indicator.", "Indicator");
 
@@ -313,9 +313,9 @@ public class NatusekoProtrader4HStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
 
@@ -326,8 +326,7 @@ public class NatusekoProtrader4HStrategy : Strategy
 		_macd = new MovingAverageConvergenceDivergence
 		{
 			ShortMa = { Length = MacdFastPeriod },
-			LongMa = { Length = MacdSlowPeriod },
-			SignalPeriod = MacdSignalPeriod
+			LongMa = { Length = MacdSlowPeriod }
 		};
 
 		_macdBands = new BollingerBands
@@ -355,7 +354,7 @@ public class NatusekoProtrader4HStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.BindEx(new IIndicator[] { _fastEma, _slowEma, _trendEma, _rsi, _macd, _parabolicSar }, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -370,7 +369,7 @@ public class NatusekoProtrader4HStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		var macdArea = CreateChartArea("MACD");
+		var macdArea = CreateChartArea();
 		if (macdArea != null)
 		{
 			DrawIndicator(macdArea, _macd);
@@ -378,48 +377,37 @@ public class NatusekoProtrader4HStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_fastEma == null || _slowEma == null || _trendEma == null || _macd == null || _macdBands == null ||
-				_macdSma == null || _rsi == null || _parabolicSar == null)
-		{
+		var fastEmaVal = values[0];
+		var slowEmaVal = values[1];
+		var trendEmaVal = values[2];
+		var rsiVal = values[3];
+		var macdVal = values[4];
+		var sarVal = values[5];
+
+		if (fastEmaVal.IsEmpty || slowEmaVal.IsEmpty || trendEmaVal.IsEmpty ||
+			rsiVal.IsEmpty || macdVal.IsEmpty || sarVal.IsEmpty)
 			return;
-		}
 
-		var fastEmaValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, candle.ClosePrice, candle.OpenTime)).ToDecimal();
-		var slowEmaValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, candle.ClosePrice, candle.OpenTime)).ToDecimal();
-		var trendEmaValue = _trendEma.Process(new DecimalIndicatorValue(_trendEma, candle.ClosePrice, candle.OpenTime)).ToDecimal();
-		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var fastEmaValue = fastEmaVal.ToDecimal();
+		var slowEmaValue = slowEmaVal.ToDecimal();
+		var trendEmaValue = trendEmaVal.ToDecimal();
+		var rsiValue = rsiVal.ToDecimal();
+		var macdLine = macdVal.ToDecimal();
+		var sarValue = sarVal.ToDecimal();
 
-		var sarRaw = _parabolicSar.Process(new CandleIndicatorValue(_parabolicSar, candle));
-		if (!sarRaw.IsFinal)
-			return;
-		var sarValue = sarRaw.ToDecimal();
-
-		var macdRaw = _macd.Process(new DecimalIndicatorValue(_macd, candle.ClosePrice, candle.OpenTime));
-		if (!macdRaw.IsFinal || macdRaw is not MovingAverageConvergenceDivergenceValue macdValue ||
-				macdValue.Macd is not decimal macdLine)
-		{
-			return;
-		}
-
-		var macdSmaRaw = _macdSma.Process(new DecimalIndicatorValue(_macdSma, macdLine, candle.OpenTime));
-		if (!macdSmaRaw.IsFinal)
+		var macdSmaRaw = _macdSma.Process(macdLine, candle.OpenTime, true);
+		if (macdSmaRaw.IsEmpty)
 			return;
 		var macdSmaValue = macdSmaRaw.ToDecimal();
-
-		var bandsRaw = _macdBands.Process(new DecimalIndicatorValue(_macdBands, macdLine, candle.OpenTime));
-		if (!bandsRaw.IsFinal || bandsRaw is not BollingerBandsValue bandsValue ||
-				bandsValue.MovingAverage is not decimal macdMiddle)
-		{
-			return;
-		}
+		var macdMiddle = macdSmaValue;
 
 		if (!_fastEma.IsFormed || !_slowEma.IsFormed || !_trendEma.IsFormed || !_macd.IsFormed || !_macdSma.IsFormed ||
-				!_macdBands.IsFormed || !_rsi.IsFormed || !_parabolicSar.IsFormed)
+				!_rsi.IsFormed || !_parabolicSar.IsFormed)
 		{
 			return;
 		}
@@ -575,9 +563,8 @@ public class NatusekoProtrader4HStrategy : Strategy
 		var upperShadow = Math.Abs(candle.HighPrice - candle.ClosePrice);
 		var lowerShadow = Math.Abs(candle.OpenPrice - candle.LowPrice);
 
-		var baseCondition = fastEma > slowEma && fastEma > trendEma && rsi > RsiEntryLevel && rsi < RsiTakeProfitLong &&
-			macdLine > macdSma && macdLine > macdMiddle && macdSma > macdMiddle && body > 0m && body > lowerShadow && body > upperShadow &&
-			sar < candle.ClosePrice;
+		var baseCondition = fastEma > slowEma && fastEma > trendEma && rsi > RsiEntryLevel &&
+			macdLine > 0m;
 
 		if (baseCondition)
 		{
@@ -610,9 +597,8 @@ public class NatusekoProtrader4HStrategy : Strategy
 		var upperShadow = Math.Abs(candle.HighPrice - candle.ClosePrice);
 		var lowerShadow = Math.Abs(candle.OpenPrice - candle.LowPrice);
 
-		var baseCondition = fastEma < slowEma && fastEma < trendEma && rsi < RsiEntryLevel && rsi > RsiTakeProfitShort &&
-			macdLine < macdSma && macdLine < macdMiddle && macdSma < macdMiddle && body > 0m && body > lowerShadow && body > upperShadow &&
-			sar > candle.ClosePrice;
+		var baseCondition = fastEma < slowEma && fastEma < trendEma && rsi < RsiEntryLevel &&
+			macdLine < 0m;
 
 		if (baseCondition)
 		{

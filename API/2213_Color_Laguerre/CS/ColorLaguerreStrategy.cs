@@ -160,7 +160,7 @@ public class ColorLaguerreStrategy : Strategy
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -183,11 +183,6 @@ public class ColorLaguerreStrategy : Strategy
 			.BindEx(rsi, ProcessCandle)
 			.Start();
 
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			useMarketOrders: true);
-
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -202,12 +197,17 @@ public class ColorLaguerreStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!rsiValue.IsFormed)
 			return;
 
-		var value = rsiValue.ToDecimal();
-
+		var value = rsiValue.GetValue<decimal>();
 		int signal = value >= MiddleLevel ? 2 : 1;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevSignal = signal;
+			return;
+		}
 
 		if (_prevSignal is not int prev)
 		{
@@ -215,21 +215,13 @@ public class ColorLaguerreStrategy : Strategy
 			return;
 		}
 
-		if (prev == 1 && signal == 2)
+		if (prev == 1 && signal == 2 && Position <= 0)
 		{
-			if (SellClose && Position < 0)
-				BuyMarket(Math.Abs(Position));
-
-			if (BuyOpen && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
-		else if (prev == 2 && signal == 1)
+		else if (prev == 2 && signal == 1 && Position >= 0)
 		{
-			if (BuyClose && Position > 0)
-				SellMarket(Math.Abs(Position));
-
-			if (SellOpen && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 
 		_prevSignal = signal;

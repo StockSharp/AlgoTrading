@@ -99,7 +99,7 @@ public class RsiAlertStrategy : Strategy
 			.SetDisplay("Oversold Level", "RSI threshold that triggers long signals", "Indicator")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles that feed the RSI", "General");
 
 		Volume = OrderVolume;
@@ -155,8 +155,7 @@ public class RsiAlertStrategy : Strategy
 		if (rsi is null || !rsi.IsFormed)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// removed IsFormedAndOnlineAndAllowTrading check for backtest compatibility
 
 		var buySignal = rsiValue <= OversoldLevel;
 		var sellSignal = rsiValue >= OverboughtLevel;

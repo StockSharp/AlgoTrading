@@ -97,7 +97,7 @@ public class ExtremNStrategy : Strategy
 			
 			.SetOptimize(5, 30, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
@@ -165,7 +165,7 @@ public class ExtremNStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		var dc = (DonchianChannelsValue)value;
+		var dc = (IDonchianChannelsValue)value;
 
 		if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
 		return;

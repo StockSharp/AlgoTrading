@@ -15,45 +15,55 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Recreates the Money Fixed Risk expert advisor using StockSharp's high level API.
-/// The strategy periodically evaluates trade size based on a fixed risk percentage
-/// and opens a long position with symmetric stop-loss and take-profit levels.
+/// Uses ATR to determine position sizing via risk percentage and opens long positions
+/// with symmetric stop-loss and take-profit levels based on ATR.
 /// </summary>
 public class MoneyFixedRiskStrategy : Strategy
 {
-	private readonly StrategyParam<int> _stopLossPips;
-	private readonly StrategyParam<decimal> _riskPercent;
-	private readonly StrategyParam<int> _ticksInterval;
+	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<int> _candleInterval;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _pipSize;
-	private int _tickCounter;
+	private int _candleCounter;
 	private decimal _stopPrice;
 	private decimal _takeProfitPrice;
+	private decimal _entryPrice;
 
 	/// <summary>
-	/// Stop loss distance expressed in pips.
+	/// ATR multiplier for stop distance.
 	/// </summary>
-	public int StopLossPips
+	public decimal AtrMultiplier
 	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
 	}
 
 	/// <summary>
-	/// Percentage of equity risked per trade.
+	/// ATR calculation period.
 	/// </summary>
-	public decimal RiskPercent
+	public int AtrPeriod
 	{
-		get => _riskPercent.Value;
-		set => _riskPercent.Value = value;
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Number of ticks between position size evaluations.
+	/// Number of candles between position evaluations.
 	/// </summary>
-	public int TicksInterval
+	public int CandleInterval
 	{
-		get => _ticksInterval.Value;
-		set => _ticksInterval.Value = value;
+		get => _candleInterval.Value;
+		set => _candleInterval.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for calculations.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -61,26 +71,29 @@ public class MoneyFixedRiskStrategy : Strategy
 	/// </summary>
 	public MoneyFixedRiskStrategy()
 	{
-		_stopLossPips = Param(nameof(StopLossPips), 25)
-		.SetGreaterThanZero()
-		.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-		;
+		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop distance", "Risk")
+			.SetOptimize(0.5m, 3m, 0.5m);
 
-		_riskPercent = Param(nameof(RiskPercent), 10m)
-		.SetGreaterThanZero()
-		.SetDisplay("Risk %", "Percent of equity risked per trade", "Risk")
-		;
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
+			.SetOptimize(7, 28, 7);
 
-		_ticksInterval = Param(nameof(TicksInterval), 980)
-		.SetGreaterThanZero()
-		.SetDisplay("Ticks Interval", "Ticks between position size checks", "General")
-		;
+		_candleInterval = Param(nameof(CandleInterval), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Candle Interval", "Candles between position evaluations", "General")
+			.SetOptimize(5, 30, 5);
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles for processing", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, DataType.Ticks)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -88,10 +101,10 @@ public class MoneyFixedRiskStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_pipSize = 0m;
-		_tickCounter = 0;
+		_candleCounter = 0;
 		_stopPrice = 0m;
 		_takeProfitPrice = 0m;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -99,125 +112,87 @@ public class MoneyFixedRiskStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var priceStep = Security.PriceStep ?? 0m;
-		if (priceStep <= 0m)
-		throw new InvalidOperationException("Security price step is not specified.");
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		var decimals = Security.Decimals;
-		var pipMultiplier = decimals is 3 or 5 ? 10m : 1m;
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, ProcessCandle)
+			.Start();
 
-		_pipSize = priceStep * pipMultiplier;
-
-		var trades = SubscribeTicks();
-		trades
-		.Bind(ProcessTrade)
-		.Start();
-
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, atr);
+			DrawOwnTrades(area);
+		}
 	}
 
-		private void ProcessTrade(ITickTradeMessage trade)
-		{
-			var price = trade.Price;
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		// Manage existing long position and exit on stop-loss or take-profit.
+		var price = candle.ClosePrice;
+
+		// Manage existing long position
 		if (Position > 0 && _stopPrice > 0m)
 		{
-			if (price <= _stopPrice || price >= _takeProfitPrice)
+			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket(Position);
 				_stopPrice = 0m;
 				_takeProfitPrice = 0m;
+				_entryPrice = 0m;
 			}
 		}
 
-		_tickCounter++;
+		// Manage existing short position
+		if (Position < 0 && _stopPrice > 0m)
+		{
+			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
+			{
+				BuyMarket(Math.Abs(Position));
+				_stopPrice = 0m;
+				_takeProfitPrice = 0m;
+				_entryPrice = 0m;
+			}
+		}
 
-		if (_tickCounter < TicksInterval)
-		return;
+		_candleCounter++;
 
-		_tickCounter = 0;
+		if (_candleCounter < CandleInterval)
+			return;
+
+		_candleCounter = 0;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
-		var stopDistance = GetStopDistance();
-		if (stopDistance <= 0m)
-		return;
+		if (Position != 0)
+			return;
 
-		var volume = CalculateVolume(stopDistance);
-		if (volume <= 0m)
-		return;
+		if (atrValue <= 0m)
+			return;
 
-		// Close short exposure if any and open the long trade sized by risk.
-		BuyMarket(volume + Math.Max(0m, -Position));
+		var stopDistance = atrValue * AtrMultiplier;
 
-		_stopPrice = price - stopDistance;
-		_takeProfitPrice = price + stopDistance;
-	}
+		// Alternate between long and short based on price relative to previous entry
+		var goLong = _entryPrice == 0m || price > _entryPrice;
 
-	private decimal GetStopDistance()
-	{
-		return StopLossPips * _pipSize;
-	}
-
-	private decimal CalculateVolume(decimal stopDistance)
-	{
-		if (Portfolio == null)
-		return 0m;
-
-		var equity = Portfolio.CurrentValue;
-		if (equity <= 0m)
-		equity = Portfolio.CurrentBalance;
-		if (equity <= 0m)
-		equity = Portfolio.BeginValue;
-
-		if (equity <= 0m)
-		return 0m;
-
-		var priceStep = Security.PriceStep ?? 0m;
-		var stepPrice = Security.StepPrice ?? priceStep;
-
-		if (priceStep <= 0m || stepPrice <= 0m)
-		return 0m;
-
-		var steps = stopDistance / priceStep;
-		if (steps <= 0m)
-		return 0m;
-
-		var riskAmount = equity * RiskPercent / 100m;
-		var riskPerContract = steps * stepPrice;
-		if (riskPerContract <= 0m)
-		return 0m;
-
-		var rawVolume = riskAmount / riskPerContract;
-		if (rawVolume <= 0m)
-		return 0m;
-
-		return NormalizeVolume(rawVolume);
-	}
-
-	private decimal NormalizeVolume(decimal volume)
-	{
-		var volumeStep = Security.VolumeStep ?? 1m;
-		var minVolume = Security.MinVolume ?? volumeStep;
-		var maxVolume = Security.MaxVolume;
-
-		if (volumeStep <= 0m)
-		volumeStep = 1m;
-
-		if (volume < minVolume)
-		return 0m;
-
-		var steps = Math.Floor(volume / volumeStep);
-		var normalized = steps * volumeStep;
-
-		if (normalized < minVolume)
-		normalized = minVolume;
-
-		if (maxVolume != null && normalized > maxVolume.Value)
-		normalized = maxVolume.Value;
-
-		return normalized;
+		if (goLong)
+		{
+			BuyMarket(Volume);
+			_entryPrice = price;
+			_stopPrice = price - stopDistance;
+			_takeProfitPrice = price + stopDistance;
+		}
+		else
+		{
+			SellMarket(Volume);
+			_entryPrice = price;
+			_stopPrice = price + stopDistance;
+			_takeProfitPrice = price - stopDistance;
+		}
 	}
 }

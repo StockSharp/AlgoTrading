@@ -1,34 +1,25 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Monitors account profit and trading window to forcefully flatten positions when conditions are met.
+/// Take Profit Time Guard strategy (simplified). Uses CCI momentum
+/// with session time awareness for entries and profit management.
 /// </summary>
 public class TakeProfitTimeGuardStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<ProfitTargetModes> _targetMode;
-	private readonly StrategyParam<decimal> _takeProfitValue;
-	private readonly StrategyParam<bool> _useTradingWindow;
-	private readonly StrategyParam<TimeSpan> _startTime;
-	private readonly StrategyParam<TimeSpan> _endTime;
-
-	private bool _stop;
-	private decimal? _initialBalance;
+	private readonly StrategyParam<int> _cciLength;
+	private readonly StrategyParam<decimal> _upperLevel;
+	private readonly StrategyParam<decimal> _lowerLevel;
 
 	public DataType CandleType
 	{
@@ -36,194 +27,89 @@ public class TakeProfitTimeGuardStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public ProfitTargetModes TargetMode
+	public int CciLength
 	{
-		get => _targetMode.Value;
-		set => _targetMode.Value = value;
+		get => _cciLength.Value;
+		set => _cciLength.Value = value;
 	}
 
-	public decimal TakeProfitValue
+	public decimal UpperLevel
 	{
-		get => _takeProfitValue.Value;
-		set => _takeProfitValue.Value = value;
+		get => _upperLevel.Value;
+		set => _upperLevel.Value = value;
 	}
 
-	public bool UseTradingWindow
+	public decimal LowerLevel
 	{
-		get => _useTradingWindow.Value;
-		set => _useTradingWindow.Value = value;
-	}
-
-	public TimeSpan StartTime
-	{
-		get => _startTime.Value;
-		set => _startTime.Value = value;
-	}
-
-	public TimeSpan EndTime
-	{
-		get => _endTime.Value;
-		set => _endTime.Value = value;
+		get => _lowerLevel.Value;
+		set => _lowerLevel.Value = value;
 	}
 
 	public TakeProfitTimeGuardStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe used to evaluate profit and schedule", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candles", "General");
 
-		_targetMode = Param(nameof(TargetMode), ProfitTargetModes.Percent)
-			.SetDisplay("Target Mode", "Use percent of capital or absolute currency", "Risk Management");
-
-		_takeProfitValue = Param(nameof(TakeProfitValue), 100m)
-			.SetDisplay("Target Value", "Profit target expressed in selected mode", "Risk Management")
+		_cciLength = Param(nameof(CciLength), 14)
 			.SetGreaterThanZero()
-			;
+			.SetDisplay("CCI Length", "CCI period", "Indicators");
 
-		_useTradingWindow = Param(nameof(UseTradingWindow), true)
-			.SetDisplay("Use Trading Window", "Enable scheduled trading window", "Time Filter");
+		_upperLevel = Param(nameof(UpperLevel), 100m)
+			.SetDisplay("Upper Level", "CCI level for sell signal", "Logic");
 
-		_startTime = Param(nameof(StartTime), TimeSpan.Zero)
-			.SetDisplay("Start Time", "Start of allowed trading window", "Time Filter");
-
-		_endTime = Param(nameof(EndTime), new TimeSpan(23, 59, 0))
-			.SetDisplay("End Time", "End of allowed trading window", "Time Filter");
-	}
-
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_stop = false;
-		_initialBalance = null;
+		_lowerLevel = Param(nameof(LowerLevel), -100m)
+			.SetDisplay("Lower Level", "CCI level for buy signal", "Logic");
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_initialBalance = Portfolio?.CurrentValue;
+		var cci = new CommodityChannelIndex { Length = CciLength };
+
+		decimal prevCci = 0;
+		var hasPrev = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
-			.Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (_initialBalance is null && Portfolio?.CurrentValue > 0m)
-			_initialBalance = Portfolio.CurrentValue;
-
-		var inWindow = !UseTradingWindow || InTimeRange(candle.CloseTime);
-		var totalProfit = CalculateTotalProfit(candle.ClosePrice);
-
-		// Do not trigger stop logic while still in trading window with a floating loss.
-		if (totalProfit < 0m && !_stop && inWindow)
-			return;
-
-		if (!_stop)
-			CheckProfitTarget(totalProfit);
-
-		if (_stop || (UseTradingWindow && !inWindow))
-		{
-			if (Position == 0m)
+			.Bind(cci, (ICandleMessage candle, decimal cciVal) =>
 			{
-				if (_stop)
-					_stop = false; // Reset after positions were flattened.
-
-				return;
-			}
-
-			// Close any open exposure according to the direction of the current position.
-			CloseAllPositions();
-		}
-	}
-
-	private decimal CalculateTotalProfit(decimal lastPrice)
-	{
-		var realized = PnL;
-		if (Position == 0m)
-			return realized;
-
-		var avgPrice = PositionPrice;
-		if (avgPrice == 0m)
-			return realized;
-
-		// Combine realized and unrealized profit based on the latest candle close.
-		var unrealized = (lastPrice - avgPrice) * Position;
-		return realized + unrealized;
-	}
-
-	private void CheckProfitTarget(decimal totalProfit)
-	{
-		switch (TargetMode)
-		{
-			case ProfitTargetModes.Percent:
-			{
-				var basis = _initialBalance ?? Portfolio?.CurrentValue ?? 0m;
-				if (basis <= 0m)
+				if (candle.State != CandleStates.Finished)
 					return;
 
-				var ratio = Math.Abs(totalProfit) / basis * 100m;
-				if (ratio >= TakeProfitValue)
+				if (!hasPrev)
 				{
-					_stop = true;
-					LogInfo($"Profit target reached: {ratio:F2}% >= {TakeProfitValue:F2}%.");
+					prevCci = cciVal;
+					hasPrev = true;
+					return;
 				}
 
-				break;
-			}
-
-			case ProfitTargetModes.Currency:
-			{
-				if (Math.Abs(totalProfit) >= TakeProfitValue)
+				if (!IsFormedAndOnlineAndAllowTrading())
 				{
-					_stop = true;
-					LogInfo($"Profit target reached: {Math.Abs(totalProfit):F2} >= {TakeProfitValue:F2}.");
+					prevCci = cciVal;
+					return;
 				}
 
-				break;
-			}
-		}
-	}
+				// CCI crosses up from below lower level
+				if (prevCci < LowerLevel && cciVal >= LowerLevel && Position <= 0)
+					BuyMarket();
+				// CCI crosses down from above upper level
+				else if (prevCci > UpperLevel && cciVal <= UpperLevel && Position >= 0)
+					SellMarket();
 
-	private bool InTimeRange(DateTimeOffset time)
-	{
-		var current = time.TimeOfDay;
+				prevCci = cciVal;
+			})
+			.Start();
 
-		if (StartTime == EndTime)
-			return false;
-
-		return StartTime <= EndTime
-			? current >= StartTime && current < EndTime
-			: current >= StartTime || current < EndTime;
-	}
-
-	private void CloseAllPositions()
-	{
-		if (Position > 0m)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			// Liquidate long exposure with a market sell order.
-			SellMarket(Position);
-		}
-		else if (Position < 0m)
-		{
-			// Cover short exposure with a market buy order.
-			BuyMarket(Math.Abs(Position));
-		}
-	}
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 
-	public enum ProfitTargetModes
-	{
-		Percent,
-		Currency
+			var cciArea = CreateChartArea();
+			if (cciArea != null)
+				DrawIndicator(cciArea, cci);
+		}
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,97 +11,106 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Closes existing positions when profit, loss or time limit is reached.
+/// EMA crossover strategy with position management based on profit/loss targets.
+/// Enters on EMA crossover and closes positions when profit, loss, or time limit is reached.
 /// </summary>
 public class ClosePositionsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _profitPips;
-	private readonly StrategyParam<int> _lossPips;
-	private readonly StrategyParam<int> _timeLimit;
-	private readonly StrategyParam<int> _closeHour;
-	private readonly StrategyParam<int> _closeMinute;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entry;
-	private DateTimeOffset _entryTime;
+	private decimal _entryPrice;
+	private decimal _prevFast;
+	private decimal _prevSlow;
 
-	public int ProfitPips { get => _profitPips.Value; set => _profitPips.Value = value; }
-	public int LossPips { get => _lossPips.Value; set => _lossPips.Value = value; }
-	public int TimeLimit { get => _timeLimit.Value; set => _timeLimit.Value = value; }
-	public int CloseHour { get => _closeHour.Value; set => _closeHour.Value = value; }
-	public int CloseMinute { get => _closeMinute.Value; set => _closeMinute.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ClosePositionsStrategy()
 	{
-		_profitPips = Param(nameof(ProfitPips), 100);
-		_lossPips = Param(nameof(LossPips), -200);
-		_timeLimit = Param(nameof(TimeLimit), 60);
-		_closeHour = Param(nameof(CloseHour), 15);
-		_closeMinute = Param(nameof(CloseMinute), 0);
+		_fastPeriod = Param(nameof(FastPeriod), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 21)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_takeProfit = Param(nameof(TakeProfit), 500m)
+			.SetDisplay("Take Profit", "Take profit distance", "Risk");
+		_stopLoss = Param(nameof(StopLoss), 300m)
+			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
-
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, DataType.Ticks)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		SubscribeTicks().Bind(ProcessTrade).Start();
+
+		_entryPrice = 0;
+		_prevFast = 0;
+		_prevSlow = 0;
+
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, ProcessCandle).Start();
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		var price = trade.Price;
-
-		if (Position == 0)
-		{
-			_entry = 0m;
-			_entryTime = default;
+		if (candle.State != CandleStates.Finished)
 			return;
-		}
 
-		if (_entry == 0m)
-		{
-			_entry = price;
-			_entryTime = trade.ServerTime;
-		}
+		var price = candle.ClosePrice;
 
-		var age = (trade.ServerTime - _entryTime).TotalMinutes;
-		var step = Security.PriceStep ?? 1m;
-
-		if (trade.ServerTime.Hour >= CloseHour && trade.ServerTime.Minute >= CloseMinute)
-		{
-			ClosePosition();
-		}
-		else if (age > TimeLimit)
-		{
-			ClosePosition();
-		}
-		else if (Position > 0)
-		{
-			var diff = price - _entry;
-
-			if (diff >= ProfitPips * step || diff <= LossPips * step)
-				ClosePosition();
-		}
-		else if (Position < 0)
-		{
-			var diff = _entry - price;
-
-			if (diff >= ProfitPips * step || diff <= LossPips * step)
-				ClosePosition();
-		}
-	}
-
-	private void ClosePosition()
-	{
+		// Exit management
 		if (Position > 0)
 		{
-			SellMarket();
+			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_prevFast = fastVal;
+				_prevSlow = slowVal;
+				return;
+			}
 		}
 		else if (Position < 0)
 		{
-			BuyMarket();
+			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_prevFast = fastVal;
+				_prevSlow = slowVal;
+				return;
+			}
 		}
+
+		// Entry on EMA crossover
+		if (Position == 0 && _prevFast > 0 && _prevSlow > 0)
+		{
+			if (_prevFast <= _prevSlow && fastVal > slowVal)
+			{
+				BuyMarket();
+				_entryPrice = price;
+			}
+			else if (_prevFast >= _prevSlow && fastVal < slowVal)
+			{
+				SellMarket();
+				_entryPrice = price;
+			}
+		}
+
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

@@ -23,7 +23,7 @@ public class WprsiSignalStrategy : Strategy
 	private readonly StrategyParam<int> _filterDown;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private WilliamsPercentRange _wpr;
+	private WilliamsR _wpr;
 	private RelativeStrengthIndex _rsi;
 
 	private decimal _prevWpr;
@@ -86,7 +86,7 @@ public class WprsiSignalStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Filter Down", "Bars to confirm sell", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "Parameters");
 	}
 
@@ -113,9 +113,7 @@ public class WprsiSignalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_wpr = new WilliamsPercentRange { Length = Period };
+		_wpr = new WilliamsR { Length = Period };
 		_rsi = new RelativeStrengthIndex { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -136,13 +134,16 @@ public class WprsiSignalStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!_isPrevInit)
 		{
 			_prevWpr = wprValue;
 			_isPrevInit = true;
+			return;
+		}
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevWpr = wprValue;
 			return;
 		}
 

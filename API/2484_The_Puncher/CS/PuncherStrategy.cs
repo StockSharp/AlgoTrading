@@ -244,10 +244,10 @@ public class PuncherStrategy : Strategy
 		base.OnStarted2(time);
 
 		var stochastic = new StochasticOscillator
-		{ K = { Length = StochasticPeriod },
+		{
+			K = { Length = StochasticPeriod },
+			D = { Length = StochasticSmoothingPeriod },
 		};
-		stochastic.K.Length = StochasticSignalPeriod;
-		stochastic.D.Length = StochasticSmoothingPeriod;
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 

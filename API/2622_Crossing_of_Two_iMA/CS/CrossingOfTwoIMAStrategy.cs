@@ -175,7 +175,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional progress in pips required before the trailing stop is advanced", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series used for signals", "General");
 	}
 

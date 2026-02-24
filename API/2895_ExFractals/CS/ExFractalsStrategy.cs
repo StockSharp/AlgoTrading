@@ -242,6 +242,9 @@ public class ExFractalsStrategy : Strategy
 			_bodySum -= _bodyQueue.Dequeue();
 		}
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		decimal? exVol = _bodyQueue.Count >= ExPeriod ? _bodySum / ExPeriod : null;
 		var upperLevel = GetUpperLevel();
 		var lowerLevel = GetLowerLevel();

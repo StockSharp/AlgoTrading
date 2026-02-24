@@ -383,8 +383,9 @@ public class ThePredatorStrategy : Strategy
 		};
 
 		var subscription = SubscribeCandles(CandleType);
+
 		subscription
-			.BindEx(_fastMa, _slowMa, _directionalIndex, _adx, _momentum, _macd, _wideBands, _tightBands, _stochastic, ProcessCandle)
+			.BindEx(_fastMa, _slowMa, _directionalIndex, _adx, _momentum, _macd, _tightBands, _stochastic, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -398,12 +399,10 @@ public class ThePredatorStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		var step = Security?.Step ?? 0m;
 		StartProtection(
-			takeProfit: TakeProfitPips > 0m && step > 0m ? new Unit(TakeProfitPips * step, UnitTypes.Absolute) : null,
-			stopLoss: StopLossPips > 0m && step > 0m ? new Unit(StopLossPips * step, UnitTypes.Absolute) : null,
-			isStopTrailing: TrailingStopPips > 0m && step > 0m,
-			trailingStop: TrailingStopPips > 0m && step > 0m ? new Unit(TrailingStopPips * step, UnitTypes.Absolute) : null
+			new Unit(TakeProfitPips * 0.01m, UnitTypes.Absolute),
+			new Unit(StopLossPips * 0.01m, UnitTypes.Absolute),
+			isStopTrailing: TrailingStopPips > 0m
 		);
 	}
 
@@ -414,7 +413,6 @@ public class ThePredatorStrategy : Strategy
 		IIndicatorValue adxValue,
 		IIndicatorValue momentumValue,
 		IIndicatorValue macdValue,
-		IIndicatorValue wideValue,
 		IIndicatorValue tightValue,
 		IIndicatorValue stochasticValue)
 	{
@@ -443,10 +441,6 @@ public class ThePredatorStrategy : Strategy
 
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal macdSignal)
-			return;
-
-		var wideBands = (BollingerBandsValue)wideValue;
-		if (wideBands.UpBand is not decimal || wideBands.LowBand is not decimal || wideBands.MovingAverage is not decimal)
 			return;
 
 	var tightBands = (BollingerBandsValue)tightValue;
@@ -504,21 +498,11 @@ public class ThePredatorStrategy : Strategy
 
 	if (longSignal && Position <= 0m)
 	{
-		CancelActiveOrders();
-
-		if (Position < 0m)
-			BuyMarket(Math.Abs(Position) + TradeVolume);
-		else
-			BuyMarket(TradeVolume);
+		BuyMarket();
 	}
 	else if (shortSignal && Position >= 0m)
 	{
-		CancelActiveOrders();
-
-		if (Position > 0m)
-			SellMarket(Position + TradeVolume);
-		else
-			SellMarket(TradeVolume);
+		SellMarket();
 	}
 
 	_prevMomentumDeviation2 = _prevMomentumDeviation1;

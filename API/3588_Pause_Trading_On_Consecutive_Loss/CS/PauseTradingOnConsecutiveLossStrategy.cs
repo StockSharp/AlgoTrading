@@ -1,269 +1,171 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// Implements the "Pause Trading On Consecutive Loss" risk control module.
-/// The strategy enters simple momentum trades but halts new entries after a
-/// configurable number of losing positions occur within a limited time window.
+/// Simplified from "Pause Trading On Consecutive Loss" MetaTrader expert.
+/// Uses simple momentum entries (close vs previous close) with a pause mechanism
+/// that halts trading after consecutive losing trades within a time window.
 /// </summary>
 public class PauseTradingOnConsecutiveLossStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _consecutiveLosses;
-	private readonly StrategyParam<int> _withinMinutes;
-	private readonly StrategyParam<int> _pauseMinutes;
+	private readonly StrategyParam<int> _pauseBars;
 
-	private readonly Queue<DateTimeOffset> _lossTimes = new();
-
-	private DateTimeOffset? _pauseUntil;
-	private DateTimeOffset? _lastTradeTime;
-	private decimal _lastRealizedPnL;
 	private decimal? _previousClose;
+	private int _lossStreak;
+	private int _pauseCountdown;
+	private decimal _entryPrice;
+	private Sides? _entryDirection;
 
-	/// <summary>
-	/// Candle aggregation type used for the momentum entries.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume for both entries and exits.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Number of consecutive losses required to trigger the pause.
-	/// </summary>
 	public int ConsecutiveLosses
 	{
 		get => _consecutiveLosses.Value;
 		set => _consecutiveLosses.Value = value;
 	}
 
-	/// <summary>
-	/// Time window in minutes in which the losses must occur.
-	/// </summary>
-	public int WithinMinutes
+	public int PauseBars
 	{
-		get => _withinMinutes.Value;
-		set => _withinMinutes.Value = value;
-	}
-
-	/// <summary>
-	/// Duration of the trading pause in minutes.
-	/// </summary>
-	public int PauseMinutes
-	{
-		get => _pauseMinutes.Value;
-		set => _pauseMinutes.Value = value;
+		get => _pauseBars.Value;
+		set => _pauseBars.Value = value;
 	}
 
 	public PauseTradingOnConsecutiveLossStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame for the momentum filter", "Data");
-
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Volume for entries and exits", "Execution")
-			;
+			.SetDisplay("Candle Type", "Timeframe for momentum entries", "General");
 
 		_consecutiveLosses = Param(nameof(ConsecutiveLosses), 3)
-			.SetDisplay("Consecutive Losses", "Losses required before pausing", "Risk Management")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("Consecutive Losses", "Losses before pausing", "Risk");
 
-		_withinMinutes = Param(nameof(WithinMinutes), 20)
-			.SetDisplay("Within Minutes", "Window in minutes that contains the loss streak", "Risk Management")
-			;
-
-		_pauseMinutes = Param(nameof(PauseMinutes), 20)
-			.SetDisplay("Pause Minutes", "Duration of the cool-down after the streak", "Risk Management")
-			;
+		_pauseBars = Param(nameof(PauseBars), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("Pause Bars", "Number of bars to pause after loss streak", "Risk");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	=> [(Security, CandleType)];
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_lossTimes.Clear();
-		_pauseUntil = null;
-		_lastTradeTime = null;
-		_lastRealizedPnL = 0m;
-		_previousClose = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_lastRealizedPnL = PnLManager?.RealizedPnL ?? 0m;
+		_previousClose = null;
+		_lossStreak = 0;
+		_pauseCountdown = 0;
+		_entryPrice = 0;
+		_entryDirection = null;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
 
-		var mainArea = CreateChartArea();
-		if (mainArea != null)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			DrawCandles(mainArea, subscription);
-			DrawOwnTrades(mainArea);
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade myTrade)
-	{
-		base.OnOwnTradeReceived(myTrade);
-
-		_lastTradeTime = myTrade.Trade?.ServerTime ?? myTrade.Trade?.Time ?? CurrentTime ?? DateTimeOffset.UtcNow;
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position != 0m)
-		return;
-
-		var realized = PnLManager?.RealizedPnL ?? _lastRealizedPnL;
-		var result = realized - _lastRealizedPnL;
-		_lastRealizedPnL = realized;
-
-		if (result < 0m)
-		{
-			RegisterLoss(_lastTradeTime ?? CurrentTime ?? DateTimeOffset.UtcNow);
-		}
-		else
-		{
-			_lossTimes.Clear();
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		var close = candle.ClosePrice;
 
-		var closeTime = candle.CloseTime;
-		if (IsPauseActive(closeTime))
-		return;
-
-		if (_previousClose is decimal previousClose)
+		if (_previousClose is null)
 		{
-			if (Position == 0m && !HasActiveOrders())
+			_previousClose = close;
+			return;
+		}
+
+		var volume = Volume;
+		if (volume <= 0)
+			volume = 1;
+
+		// Check if we should pause
+		if (_pauseCountdown > 0)
+		{
+			_pauseCountdown--;
+			_previousClose = close;
+			return;
+		}
+
+		// Check for exit and track wins/losses
+		if (Position != 0)
+		{
+			var shouldExit = false;
+
+			if (Position > 0 && close < candle.OpenPrice)
+				shouldExit = true;
+			else if (Position < 0 && close > candle.OpenPrice)
+				shouldExit = true;
+
+			if (shouldExit)
 			{
-			if (candle.ClosePrice > previousClose && AllowLong())
-			{
-				BuyMarket(OrderVolume);
-			}
-			else if (candle.ClosePrice < previousClose && AllowShort())
-			{
-				SellMarket(OrderVolume);
-			}
-			}
-			else if (Position > 0m && candle.ClosePrice < candle.OpenPrice && !HasActiveOrders())
-			{
-			var volume = Math.Abs(Position);
-			if (volume > 0m)
-			SellMarket(volume);
-			}
-			else if (Position < 0m && candle.ClosePrice > candle.OpenPrice && !HasActiveOrders())
-			{
-			var volume = Math.Abs(Position);
-			if (volume > 0m)
-			BuyMarket(volume);
+				// Determine if this was a winning or losing trade
+				var isLoss = false;
+				if (_entryDirection == Sides.Buy && close < _entryPrice)
+					isLoss = true;
+				else if (_entryDirection == Sides.Sell && close > _entryPrice)
+					isLoss = true;
+
+				if (isLoss)
+				{
+					_lossStreak++;
+					if (_lossStreak >= ConsecutiveLosses)
+					{
+						_pauseCountdown = PauseBars;
+						_lossStreak = 0;
+					}
+				}
+				else
+				{
+					_lossStreak = 0;
+				}
+
+				// Close position
+				if (Position > 0)
+					SellMarket(Position);
+				else if (Position < 0)
+					BuyMarket(Math.Abs(Position));
+
+				_entryDirection = null;
 			}
 		}
 
-		_previousClose = candle.ClosePrice;
-	}
-
-	private bool IsPauseActive(DateTimeOffset time)
-	{
-		if (_pauseUntil is not DateTimeOffset until)
-		return false;
-
-		if (time >= until)
+		// New entry: momentum - close > prev close -> buy, close < prev close -> sell
+		if (Position == 0 && _entryDirection is null)
 		{
-		_pauseUntil = null;
-		return false;
+			if (close > _previousClose.Value)
+			{
+				BuyMarket(volume);
+				_entryPrice = close;
+				_entryDirection = Sides.Buy;
+			}
+			else if (close < _previousClose.Value)
+			{
+				SellMarket(volume);
+				_entryPrice = close;
+				_entryDirection = Sides.Sell;
+			}
 		}
 
-		return true;
-	}
-
-	private void RegisterLoss(DateTimeOffset time)
-	{
-		var requiredLosses = ConsecutiveLosses;
-		if (requiredLosses <= 0)
-		return;
-
-		_lossTimes.Enqueue(time);
-
-		while (_lossTimes.Count > requiredLosses)
-		_lossTimes.Dequeue();
-
-		if (_lossTimes.Count < requiredLosses)
-		return;
-
-		var firstLossTime = _lossTimes.Peek();
-		var window = time - firstLossTime;
-		var limit = WithinMinutes > 0 ? TimeSpan.FromMinutes(WithinMinutes) : TimeSpan.Zero;
-
-		if (limit != TimeSpan.Zero && window > limit)
-		return;
-
-		if (PauseMinutes <= 0)
-		return;
-
-		var until = time + TimeSpan.FromMinutes(PauseMinutes);
-		if (_pauseUntil is null || until > _pauseUntil)
-		{
-		_pauseUntil = until;
-		LogInfo($"Trading paused until {_pauseUntil:O} after {requiredLosses} consecutive losses within {WithinMinutes} minutes.");
-		}
-	}
-
-	private bool HasActiveOrders()
-	{
-		foreach (var order in Orders)
-		{
-		if (order.State.IsActive())
-		return true;
-		}
-
-		return false;
+		_previousClose = close;
 	}
 }
-

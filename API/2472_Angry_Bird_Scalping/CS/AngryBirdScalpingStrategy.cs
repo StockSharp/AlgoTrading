@@ -32,85 +32,37 @@ public class AngryBirdScalpingStrategy : Strategy
 
 	private decimal _lastOpenBuyPrice;
 	private decimal _lastOpenSellPrice;
+	private decimal _entryPrice;
 	private int _tradeCount;
 	private bool _longTrade;
 	private bool _shortTrade;
 	private decimal _rsiValue;
 	private decimal? _prevClose;
 
-	/// <summary>
-	/// Stop-loss in points.
-	/// </summary>
 	public int StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-
-	/// <summary>
-	/// Take-profit in points.
-	/// </summary>
 	public int TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-
-	/// <summary>
-	/// Minimal grid step in pips.
-	/// </summary>
 	public int DefaultPips { get => _defaultPips.Value; set => _defaultPips.Value = value; }
-
-	/// <summary>
-	/// Number of candles for high/low calculation.
-	/// </summary>
 	public int Depth { get => _depth.Value; set => _depth.Value = value; }
-
-	/// <summary>
-	/// Volume multiplier for subsequent orders.
-	/// </summary>
 	public decimal LotExponent { get => _lotExponent.Value; set => _lotExponent.Value = value; }
-
-	/// <summary>
-	/// Maximum number of averaging trades.
-	/// </summary>
 	public int MaxTrades { get => _maxTrades.Value; set => _maxTrades.Value = value; }
-
-	/// <summary>
-	/// RSI threshold to open short.
-	/// </summary>
 	public decimal RsiMin { get => _rsiMin.Value; set => _rsiMin.Value = value; }
-
-	/// <summary>
-	/// RSI threshold to open long.
-	/// </summary>
 	public decimal RsiMax { get => _rsiMax.Value; set => _rsiMax.Value = value; }
-
-	/// <summary>
-	/// CCI absolute value to force close.
-	/// </summary>
 	public decimal CciDrop { get => _cciDrop.Value; set => _cciDrop.Value = value; }
-
-
-	/// <summary>
-	/// Working candle timeframe.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public AngryBirdScalpingStrategy()
 	{
 		_stopLoss = Param(nameof(StopLoss), 500)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			
-			.SetOptimize(100, 1000, 100);
+			.SetDisplay("Stop Loss", "Stop loss in points", "Risk");
 
 		_takeProfit = Param(nameof(TakeProfit), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			
-			.SetOptimize(10, 100, 10);
+			.SetDisplay("Take Profit", "Take profit in points", "Risk");
 
 		_defaultPips = Param(nameof(DefaultPips), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Default Pips", "Minimal grid step in pips", "Grid")
-			
-			.SetOptimize(5, 20, 1);
+			.SetDisplay("Default Pips", "Minimal grid step in pips", "Grid");
 
 		_depth = Param(nameof(Depth), 24)
 			.SetGreaterThanZero()
@@ -120,7 +72,7 @@ public class AngryBirdScalpingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Exponent", "Volume multiplier for averaging", "Grid");
 
-		_maxTrades = Param(nameof(MaxTrades), 10)
+		_maxTrades = Param(nameof(MaxTrades), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum number of averaging orders", "Grid");
 
@@ -134,56 +86,62 @@ public class AngryBirdScalpingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Drop", "CCI value to close positions", "Signals");
 
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType), (Security, TimeSpan.FromHours(1).TimeFrame())];
+		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_tradeCount = 0;
+		_longTrade = false;
+		_shortTrade = false;
+		_entryPrice = 0;
 
 		var cci = new CommodityChannelIndex { Length = 55 };
 		var rsi = new RelativeStrengthIndex { Length = 14 };
 		var highest = new Highest { Length = Depth };
 		var lowest = new Lowest { Length = Depth };
 
-		var mainSub = SubscribeCandles(CandleType);
-		mainSub.Bind(cci, highest, lowest, ProcessMain).Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(cci, rsi, highest, lowest, ProcessCandle)
+			.Start();
 
-		var rsiSub = SubscribeCandles(TimeSpan.FromHours(1).TimeFrame());
-		rsiSub.Bind(rsi, ProcessRsi).Start();
-
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, cci);
+			DrawIndicator(area, rsi);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessRsi(ICandleMessage candle, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle, decimal cci, decimal rsi, decimal highest, decimal lowest)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var close = candle.ClosePrice;
+		var stepPrice = Security.PriceStep ?? 1m;
+		var pipDistance = Math.Max((highest - lowest) / Math.Max(stepPrice, 1m), DefaultPips) * stepPrice;
 
 		_rsiValue = rsi;
-	}
-
-	private void ProcessMain(ICandleMessage candle, decimal cci, decimal highest, decimal lowest)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var stepPrice = Security.PriceStep ?? 1m;
-		var pipDistance = Math.Max((highest - lowest) / stepPrice, DefaultPips) * stepPrice;
 
 		// Close all positions on strong CCI movement
 		if ((cci > CciDrop && _shortTrade) || (cci < -CciDrop && _longTrade))
 		{
-			ClosePosition();
+			CloseAll();
 			return;
 		}
 
@@ -198,10 +156,10 @@ public class AngryBirdScalpingStrategy : Strategy
 		}
 		else if (_tradeCount <= MaxTrades)
 		{
-			if (_longTrade && _lastOpenBuyPrice - candle.ClosePrice >= pipDistance)
+			if (_longTrade && _lastOpenBuyPrice - close >= pipDistance)
 				tradeNow = true;
 
-			if (_shortTrade && candle.ClosePrice - _lastOpenSellPrice >= pipDistance)
+			if (_shortTrade && close - _lastOpenSellPrice >= pipDistance)
 				tradeNow = true;
 		}
 
@@ -212,29 +170,31 @@ public class AngryBirdScalpingStrategy : Strategy
 			if (_longTrade)
 			{
 				BuyMarket(volume);
-				_lastOpenBuyPrice = candle.ClosePrice;
+				_lastOpenBuyPrice = close;
 				_tradeCount++;
 			}
 			else if (_shortTrade)
 			{
 				SellMarket(volume);
-				_lastOpenSellPrice = candle.ClosePrice;
+				_lastOpenSellPrice = close;
 				_tradeCount++;
 			}
-			else if (_prevClose is decimal prev && prev > candle.ClosePrice)
+			else if (_prevClose is decimal prev && prev > close)
 			{
 				if (_rsiValue > RsiMin)
 				{
 					SellMarket(volume);
 					_shortTrade = true;
-					_lastOpenSellPrice = candle.ClosePrice;
+					_lastOpenSellPrice = close;
+					_entryPrice = close;
 					_tradeCount = 1;
 				}
 				else if (_rsiValue < RsiMax)
 				{
 					BuyMarket(volume);
 					_longTrade = true;
-					_lastOpenBuyPrice = candle.ClosePrice;
+					_lastOpenBuyPrice = close;
+					_entryPrice = close;
 					_tradeCount = 1;
 				}
 			}
@@ -242,26 +202,37 @@ public class AngryBirdScalpingStrategy : Strategy
 
 		if (Position != 0m)
 		{
-			var avg = PositionPrice;
-
 			if (_longTrade)
 			{
-				var tp = avg + TakeProfit * stepPrice;
-				var sl = avg - StopLoss * stepPrice;
+				var tp = _entryPrice + TakeProfit * stepPrice;
+				var sl = _entryPrice - StopLoss * stepPrice;
 
-				if (candle.ClosePrice >= tp || candle.ClosePrice <= sl)
-					ClosePosition();
+				if (close >= tp || close <= sl)
+					CloseAll();
 			}
 			else if (_shortTrade)
 			{
-				var tp = avg - TakeProfit * stepPrice;
-				var sl = avg + StopLoss * stepPrice;
+				var tp = _entryPrice - TakeProfit * stepPrice;
+				var sl = _entryPrice + StopLoss * stepPrice;
 
-				if (candle.ClosePrice <= tp || candle.ClosePrice >= sl)
-					ClosePosition();
+				if (close <= tp || close >= sl)
+					CloseAll();
 			}
 		}
 
-		_prevClose = candle.ClosePrice;
+		_prevClose = close;
+	}
+
+	private void CloseAll()
+	{
+		if (Position > 0)
+			SellMarket(Math.Abs(Position));
+		else if (Position < 0)
+			BuyMarket(Math.Abs(Position));
+
+		_tradeCount = 0;
+		_longTrade = false;
+		_shortTrade = false;
+		_entryPrice = 0;
 	}
 }

@@ -1,281 +1,45 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
+namespace StockSharp.Samples.Strategies;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+using System;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Alli Heik strategy converted from the MQL5 "AlliHeik" expert advisor.
-/// Uses a smoothed Heikin Ashi oscillator with optional reverse mode and trailing stops.
+/// Alli Heik strategy.
+/// Uses Heikin Ashi candle patterns with EMA filter for trend following.
+/// Buys on bullish HA candles when above EMA, sells on bearish HA candles when below EMA.
 /// </summary>
 public class AlliHeikStrategy : Strategy
 {
-	/// <summary>
-	/// Available moving average types for smoothing.
-	/// </summary>
-	public enum MaTypes
-	{
-		/// <summary>
-		/// Simple moving average.
-		/// </summary>
-		Sma,
-
-		/// <summary>
-		/// Exponential moving average.
-		/// </summary>
-		Ema,
-
-		/// <summary>
-		/// Smoothed moving average (SMMA/RMA).
-		/// </summary>
-		Smma,
-
-		/// <summary>
-		/// Linear weighted moving average.
-		/// </summary>
-		Lwma,
-	}
-
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _trailingStopPips;
-	private readonly StrategyParam<decimal> _trailingStepPips;
-	private readonly StrategyParam<bool> _reverseSignals;
-	private readonly StrategyParam<bool> _closeOpposite;
-	private readonly StrategyParam<int> _preSmoothPeriod;
-	private readonly StrategyParam<MaTypes> _preSmoothMethod;
-	private readonly StrategyParam<int> _postSmoothPeriod;
-	private readonly StrategyParam<MaTypes> _postSmoothMethod;
-	private readonly StrategyParam<int> _signalPeriod;
-	private readonly StrategyParam<MaTypes> _signalMethod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _emaPeriod;
 
-	private DecimalLengthIndicator _preOpenMa = null!;
-	private DecimalLengthIndicator _preCloseMa = null!;
-	private DecimalLengthIndicator _preHighMa = null!;
-	private DecimalLengthIndicator _preLowMa = null!;
-	private DecimalLengthIndicator _postSmoothMa = null!;
-	private DecimalLengthIndicator _signalMa = null!;
-
-	private bool _hasHaState;
 	private decimal _prevHaOpen;
 	private decimal _prevHaClose;
-	private decimal? _prevSmoothed;
-	private decimal? _prevOscillator;
-	private decimal? _prevSignal;
+	private bool _initialized;
 
-	private decimal? _entryPrice;
-	private decimal? _stopPrice;
-	private decimal? _takePrice;
-
-
-	/// <summary>
-	/// Stop loss distance in pips. Set to zero to disable.
-	/// </summary>
-	public decimal StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance in pips. Set to zero to disable.
-	/// </summary>
-	public decimal TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing stop distance in pips. Set to zero to disable.
-	/// </summary>
-	public decimal TrailingStopPips
-	{
-		get => _trailingStopPips.Value;
-		set => _trailingStopPips.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum progress in pips before the trailing stop is moved.
-	/// </summary>
-	public decimal TrailingStepPips
-	{
-		get => _trailingStepPips.Value;
-		set => _trailingStepPips.Value = value;
-	}
-
-	/// <summary>
-	/// Reverse trading signals.
-	/// </summary>
-	public bool ReverseSignals
-	{
-		get => _reverseSignals.Value;
-		set => _reverseSignals.Value = value;
-	}
-
-	/// <summary>
-	/// Close opposite positions before opening a new one.
-	/// </summary>
-	public bool CloseOpposite
-	{
-		get => _closeOpposite.Value;
-		set => _closeOpposite.Value = value;
-	}
-
-	/// <summary>
-	/// Pre-smoothing period for Heikin Ashi inputs.
-	/// </summary>
-	public int PreSmoothPeriod
-	{
-		get => _preSmoothPeriod.Value;
-		set => _preSmoothPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average type used for pre-smoothing.
-	/// </summary>
-	public MaTypes PreSmoothMethod
-	{
-		get => _preSmoothMethod.Value;
-		set => _preSmoothMethod.Value = value;
-	}
-
-	/// <summary>
-	/// Post-smoothing period applied to the Heikin Ashi midpoint.
-	/// </summary>
-	public int PostSmoothPeriod
-	{
-		get => _postSmoothPeriod.Value;
-		set => _postSmoothPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average type used for post-smoothing.
-	/// </summary>
-	public MaTypes PostSmoothMethod
-	{
-		get => _postSmoothMethod.Value;
-		set => _postSmoothMethod.Value = value;
-	}
-
-	/// <summary>
-	/// Signal line period for the oscillator.
-	/// </summary>
-	public int SignalPeriod
-	{
-		get => _signalPeriod.Value;
-		set => _signalPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average type used for the signal line.
-	/// </summary>
-	public MaTypes SignalMethod
-	{
-		get => _signalMethod.Value;
-		set => _signalMethod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="AlliHeikStrategy"/> class.
-	/// </summary>
+	public int EmaPeriod
+	{
+		get => _emaPeriod.Value;
+		set => _emaPeriod.Value = value;
+	}
+
 	public AlliHeikStrategy()
 	{
-
-		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetRange(0m, 1000m)
-			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk Management");
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetRange(0m, 1000m)
-			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk Management");
-
-		_trailingStopPips = Param(nameof(TrailingStopPips), 0m)
-			.SetRange(0m, 1000m)
-			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk Management");
-
-		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetRange(0m, 1000m)
-			.SetDisplay("Trailing Step (pips)", "Price advance before moving the trailing stop", "Risk Management");
-
-		_reverseSignals = Param(nameof(ReverseSignals), false)
-			.SetDisplay("Reverse Signals", "Invert oscillator crossover directions", "Strategy");
-
-		_closeOpposite = Param(nameof(CloseOpposite), false)
-			.SetDisplay("Close Opposite", "Close opposite positions before entering", "Strategy");
-
-		_preSmoothPeriod = Param(nameof(PreSmoothPeriod), 7)
-			.SetGreaterThanZero()
-			.SetDisplay("Pre Smooth Period", "Period for pre-smoothing open/high/low/close", "Indicator");
-
-		_preSmoothMethod = Param(nameof(PreSmoothMethod), MaTypes.Lwma)
-			.SetDisplay("Pre Smooth Method", "Moving average type for pre-smoothing", "Indicator");
-
-		_postSmoothPeriod = Param(nameof(PostSmoothPeriod), 7)
-			.SetGreaterThanZero()
-			.SetDisplay("Post Smooth Period", "Period for smoothing Heikin Ashi midpoint", "Indicator");
-
-		_postSmoothMethod = Param(nameof(PostSmoothMethod), MaTypes.Lwma)
-			.SetDisplay("Post Smooth Method", "Moving average type for post-smoothing", "Indicator");
-
-		_signalPeriod = Param(nameof(SignalPeriod), 2)
-			.SetGreaterThanZero()
-			.SetDisplay("Signal Period", "Period of the oscillator signal line", "Indicator");
-
-		_signalMethod = Param(nameof(SignalMethod), MaTypes.Smma)
-			.SetDisplay("Signal Method", "Moving average type for the signal line", "Indicator");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles for the strategy", "General");
-	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_preOpenMa = null!;
-		_preCloseMa = null!;
-		_preHighMa = null!;
-		_preLowMa = null!;
-		_postSmoothMa = null!;
-		_signalMa = null!;
-
-		_hasHaState = false;
-		_prevHaOpen = 0m;
-		_prevHaClose = 0m;
-		_prevSmoothed = null;
-		_prevOscillator = null;
-		_prevSignal = null;
-
-		_entryPrice = null;
-		_stopPrice = null;
-		_takePrice = null;
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "Trend filter EMA period", "Indicators");
 	}
 
 	/// <inheritdoc />
@@ -283,236 +47,63 @@ public class AlliHeikStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
-			throw new InvalidOperationException("Trailing step must be greater than zero when trailing stop is enabled.");
+		_prevHaOpen = 0;
+		_prevHaClose = 0;
+		_initialized = false;
 
-		_preOpenMa = CreateMovingAverage(PreSmoothMethod, PreSmoothPeriod);
-		_preCloseMa = CreateMovingAverage(PreSmoothMethod, PreSmoothPeriod);
-		_preHighMa = CreateMovingAverage(PreSmoothMethod, PreSmoothPeriod);
-		_preLowMa = CreateMovingAverage(PreSmoothMethod, PreSmoothPeriod);
-		_postSmoothMa = CreateMovingAverage(PostSmoothMethod, PostSmoothPeriod);
-		_signalMa = CreateMovingAverage(SignalMethod, SignalPeriod);
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(ema, OnProcess)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void OnProcess(ICandleMessage candle, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		UpdateStops(candle);
-
-		var (oscillator, signal) = CalculateOscillator(candle);
-
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var previousOscillator = _prevOscillator;
-		var previousSignal = _prevSignal;
-
-		_prevOscillator = oscillator;
-		_prevSignal = signal;
-
-		if (previousOscillator is null || previousSignal is null)
-			return;
-
-		var crossUp = oscillator > signal && previousOscillator <= previousSignal;
-		var crossDown = oscillator < signal && previousOscillator >= previousSignal;
-
-		var longSignal = ReverseSignals ? crossUp : crossDown;
-		var shortSignal = ReverseSignals ? crossDown : crossUp;
-
-		if (longSignal)
-		{
-			EnterPosition(true, candle.ClosePrice);
-		}
-		else if (shortSignal)
-		{
-			EnterPosition(false, candle.ClosePrice);
-		}
-	}
-
-	private (decimal oscillator, decimal signal) CalculateOscillator(ICandleMessage candle)
-	{
-		var openValue = _preOpenMa.Process(new DecimalIndicatorValue(_preOpenMa, candle.OpenPrice, candle.OpenTime)).GetValue<decimal>();
-		var closeValue = _preCloseMa.Process(new DecimalIndicatorValue(_preCloseMa, candle.ClosePrice, candle.OpenTime)).GetValue<decimal>();
-		var highValue = _preHighMa.Process(new DecimalIndicatorValue(_preHighMa, candle.HighPrice, candle.OpenTime)).GetValue<decimal>();
-		var lowValue = _preLowMa.Process(new DecimalIndicatorValue(_preLowMa, candle.LowPrice, candle.OpenTime)).GetValue<decimal>();
-
+		// Calculate Heikin Ashi values
+		decimal haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
 		decimal haOpen;
-		if (_hasHaState)
+
+		if (!_initialized)
+		{
+			haOpen = (candle.OpenPrice + candle.ClosePrice) / 2m;
+			_initialized = true;
+		}
+		else
 		{
 			haOpen = (_prevHaOpen + _prevHaClose) / 2m;
 		}
-		else
+
+		var haBullish = haClose > haOpen;
+		var haBearish = haClose < haOpen;
+
+		// Buy on bullish HA candle above EMA
+		if (haBullish && candle.ClosePrice > emaValue && Position <= 0)
 		{
-			haOpen = (candle.OpenPrice + candle.ClosePrice) / 2m;
-			_hasHaState = true;
+			BuyMarket();
 		}
-
-		var haClose = (openValue + highValue + lowValue + closeValue) / 4m;
-		var midpoint = (haOpen + haClose) / 2m;
-
-		var previousSmoothed = _prevSmoothed;
-		var smoothed = _postSmoothMa.Process(new DecimalIndicatorValue(_postSmoothMa, midpoint, candle.OpenTime)).GetValue<decimal>();
+		// Sell on bearish HA candle below EMA
+		else if (haBearish && candle.ClosePrice < emaValue && Position >= 0)
+		{
+			SellMarket();
+		}
 
 		_prevHaOpen = haOpen;
 		_prevHaClose = haClose;
-		_prevSmoothed = smoothed;
-
-		var oscillator = previousSmoothed.HasValue ? smoothed - previousSmoothed.Value : 0m;
-		var signal = _signalMa.Process(new DecimalIndicatorValue(_signalMa, oscillator, candle.OpenTime)).GetValue<decimal>();
-
-		return (oscillator, signal);
-	}
-
-	private void EnterPosition(bool isLong, decimal price)
-	{
-		if (CloseOpposite)
-		{
-			if (isLong && Position < 0)
-			{
-				ClosePosition();
-				ResetPositionState();
-			}
-			else if (!isLong && Position > 0)
-			{
-				ClosePosition();
-				ResetPositionState();
-			}
-		}
-
-		if (isLong && Position > 0)
-			return;
-
-		if (!isLong && Position < 0)
-			return;
-
-		var volume = Volume + Math.Abs(Position);
-
-		if (isLong)
-		{
-			BuyMarket(volume);
-			_entryPrice = price;
-			_stopPrice = StopLossPips > 0m ? price - GetPriceOffset(StopLossPips) : null;
-			_takePrice = TakeProfitPips > 0m ? price + GetPriceOffset(TakeProfitPips) : null;
-		}
-		else
-		{
-			SellMarket(volume);
-			_entryPrice = price;
-			_stopPrice = StopLossPips > 0m ? price + GetPriceOffset(StopLossPips) : null;
-			_takePrice = TakeProfitPips > 0m ? price - GetPriceOffset(TakeProfitPips) : null;
-		}
-	}
-
-	private void UpdateStops(ICandleMessage candle)
-	{
-		if (Position == 0)
-			return;
-
-		if (_entryPrice is null)
-			_entryPrice = candle.ClosePrice;
-
-		var trailingStop = TrailingStopPips > 0m ? GetPriceOffset(TrailingStopPips) : 0m;
-		var trailingStep = TrailingStepPips > 0m ? GetPriceOffset(TrailingStepPips) : 0m;
-
-		if (Position > 0)
-		{
-			if (_stopPrice.HasValue && candle.LowPrice <= _stopPrice.Value)
-			{
-				SellMarket(Math.Abs(Position));
-				ResetPositionState();
-				return;
-			}
-
-			if (_takePrice.HasValue && candle.HighPrice >= _takePrice.Value)
-			{
-				SellMarket(Math.Abs(Position));
-				ResetPositionState();
-				return;
-			}
-
-			if (trailingStop > 0m && _entryPrice.HasValue)
-			{
-				var currentPrice = candle.ClosePrice;
-				if (currentPrice - _entryPrice.Value > trailingStop + trailingStep)
-				{
-					var newStop = currentPrice - trailingStop;
-					if (!_stopPrice.HasValue || newStop > _stopPrice.Value + trailingStep)
-						_stopPrice = newStop;
-				}
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_stopPrice.HasValue && candle.HighPrice >= _stopPrice.Value)
-			{
-				BuyMarket(Math.Abs(Position));
-				ResetPositionState();
-				return;
-			}
-
-			if (_takePrice.HasValue && candle.LowPrice <= _takePrice.Value)
-			{
-				BuyMarket(Math.Abs(Position));
-				ResetPositionState();
-				return;
-			}
-
-			if (trailingStop > 0m && _entryPrice.HasValue)
-			{
-				var currentPrice = candle.ClosePrice;
-				if (_entryPrice.Value - currentPrice > trailingStop + trailingStep)
-				{
-					var newStop = currentPrice + trailingStop;
-					if (!_stopPrice.HasValue || newStop < _stopPrice.Value - trailingStep || _stopPrice.Value == 0m)
-						_stopPrice = newStop;
-				}
-			}
-		}
-	}
-
-	private void ResetPositionState()
-	{
-		_entryPrice = null;
-		_stopPrice = null;
-		_takePrice = null;
-	}
-
-	private decimal GetPriceOffset(decimal pips)
-	{
-		if (pips <= 0m)
-			return 0m;
-
-		var security = Security;
-		if (security == null)
-			return pips * 0.0001m;
-
-		var priceStep = security.PriceStep ?? 0.0001m;
-		var decimals = security.Decimals ?? 4;
-		var multiplier = decimals >= 3 ? 10m : 1m;
-		return pips * priceStep * multiplier;
-	}
-
-	private DecimalLengthIndicator CreateMovingAverage(MaTypes type, int length)
-	{
-		return type switch
-		{
-			MaTypes.Sma => new SMA { Length = length },
-			MaTypes.Ema => new EMA { Length = length },
-			MaTypes.Smma => new SmoothedMovingAverage { Length = length },
-			MaTypes.Lwma => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length },
-		};
 	}
 }

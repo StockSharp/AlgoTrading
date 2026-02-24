@@ -119,7 +119,7 @@ public class MaOscillatorHistogramStrategy : Strategy
 		_enableSellClose = Param(nameof(EnableSellClose), true)
 			.SetDisplay("Enable Sell Close", "Allow closing short positions", "Signals");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -152,9 +152,6 @@ public class MaOscillatorHistogramStrategy : Strategy
 		subscription
 			.Bind(fastMa, slowMa, ProcessCandle)
 			.Start();
-
-		// Enable position protection using market orders
-		StartProtection(useMarketOrders: true);
 
 		// Chart visualization
 		var area = CreateChartArea();

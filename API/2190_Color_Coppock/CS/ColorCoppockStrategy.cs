@@ -11,10 +11,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Strategy based on the Color Coppock oscillator.
+/// Strategy based on the Coppock Curve oscillator.
+/// Uses ROC sum smoothed by SMA.
 /// </summary>
 public class ColorCoppockStrategy : Strategy
 {
@@ -22,84 +21,51 @@ public class ColorCoppockStrategy : Strategy
 	private readonly StrategyParam<int> _roc2Period;
 	private readonly StrategyParam<int> _smoothingPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private RateOfChange _roc1;
-	private RateOfChange _roc2;
-	private SimpleMovingAverage _sma;
-	
-	private decimal _prevValue;
-	private decimal _prevPrevValue;
-	private bool _isFormed;
-	
-	/// <summary>
-	/// First ROC period.
-	/// </summary>
+
+	private readonly List<decimal> _closes = new();
+	private readonly List<decimal> _coppockValues = new();
+	private decimal? _prevCoppock;
+	private decimal? _prevPrevCoppock;
+
 	public int Roc1Period { get => _roc1Period.Value; set => _roc1Period.Value = value; }
-	
-	/// <summary>
-	/// Second ROC period.
-	/// </summary>
 	public int Roc2Period { get => _roc2Period.Value; set => _roc2Period.Value = value; }
-	
-	/// <summary>
-	/// Smoothing period for the summed ROC values.
-	/// </summary>
 	public int SmoothingPeriod { get => _smoothingPeriod.Value; set => _smoothingPeriod.Value = value; }
-	
-	/// <summary>
-	/// Candle type used for analysis.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ColorCoppockStrategy"/>.
-	/// </summary>
+
 	public ColorCoppockStrategy()
 	{
 		_roc1Period = Param(nameof(Roc1Period), 14)
-		.SetDisplay("ROC1 Period", "First ROC calculation period", "Parameters")
-		;
-		
+			.SetDisplay("ROC1 Period", "First ROC calculation period", "Parameters");
 		_roc2Period = Param(nameof(Roc2Period), 10)
-		.SetDisplay("ROC2 Period", "Second ROC calculation period", "Parameters")
-		;
-		
-		_smoothingPeriod = Param(nameof(SmoothingPeriod), 12)
-		.SetDisplay("Smoothing Period", "SMA period for ROC sum", "Parameters")
-		;
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Time frame for processing", "General");
+			.SetDisplay("ROC2 Period", "Second ROC calculation period", "Parameters");
+		_smoothingPeriod = Param(nameof(SmoothingPeriod), 10)
+			.SetDisplay("Smoothing Period", "SMA period for ROC sum", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Time frame for processing", "General");
 	}
-	
-	/// <inheritdoc />
+
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	=> [(Security, CandleType)];
-	
-	/// <inheritdoc />
+		=> [(Security, CandleType)];
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		
-		_prevValue = 0m;
-		_prevPrevValue = 0m;
-		_isFormed = false;
+		_closes.Clear();
+		_coppockValues.Clear();
+		_prevCoppock = _prevPrevCoppock = null;
 	}
-	
-	/// <inheritdoc />
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		_roc1 = new RateOfChange { Length = Roc1Period };
-		_roc2 = new RateOfChange { Length = Roc2Period };
-		_sma = new SMA { Length = SmoothingPeriod };
-		
+
+		var sma = new SMA { Length = Roc1Period };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(ProcessCandle)
-		.Start();
-		
+			.Bind(sma, ProcessCandle)
+			.Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -107,50 +73,53 @@ public class ColorCoppockStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle)
+
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
-		var price = candle.ClosePrice;
-		var roc1Value = _roc1.Process(new DecimalIndicatorValue(_roc1, price, candle.OpenTime)).ToDecimal();
-		var roc2Value = _roc2.Process(new DecimalIndicatorValue(_roc2, price, candle.OpenTime)).ToDecimal();
-		var coppock = _sma.Process(new DecimalIndicatorValue(_sma, roc1Value + roc2Value, candle.OpenTime)).ToDecimal();
-		
-		if (!_isFormed)
-		{
-			_prevValue = coppock;
-			_prevPrevValue = coppock;
-			_isFormed = true;
 			return;
-		}
-		
-		if (_prevValue < _prevPrevValue)
+
+		_closes.Add(candle.ClosePrice);
+		var maxPeriod = Math.Max(Roc1Period, Roc2Period);
+		if (_closes.Count > maxPeriod + SmoothingPeriod + 5)
+			_closes.RemoveAt(0);
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_closes.Count <= maxPeriod)
+			return;
+
+		// Calculate ROC values
+		var idx = _closes.Count - 1;
+		decimal roc1 = 0, roc2 = 0;
+
+		if (idx >= Roc1Period && _closes[idx - Roc1Period] != 0)
+			roc1 = (_closes[idx] - _closes[idx - Roc1Period]) / _closes[idx - Roc1Period] * 100m;
+		if (idx >= Roc2Period && _closes[idx - Roc2Period] != 0)
+			roc2 = (_closes[idx] - _closes[idx - Roc2Period]) / _closes[idx - Roc2Period] * 100m;
+
+		_coppockValues.Add(roc1 + roc2);
+		if (_coppockValues.Count > SmoothingPeriod + 5)
+			_coppockValues.RemoveAt(0);
+
+		if (_coppockValues.Count < SmoothingPeriod)
+			return;
+
+		// SMA of ROC sum
+		var coppock = _coppockValues.Skip(_coppockValues.Count - SmoothingPeriod).Average();
+
+		if (_prevCoppock is decimal prev && _prevPrevCoppock is decimal prevPrev)
 		{
-			if (coppock > _prevValue)
-			{
-				if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-				if (Position == 0)
-				BuyMarket(Volume);
-			}
+			// Buy when Coppock turns up from a bottom
+			if (prev < prevPrev && coppock > prev && Position <= 0)
+				BuyMarket();
+			// Sell when Coppock turns down from a top
+			else if (prev > prevPrev && coppock < prev && Position >= 0)
+				SellMarket();
 		}
-		else if (_prevValue > _prevPrevValue)
-		{
-			if (coppock < _prevValue)
-			{
-				if (Position > 0)
-				SellMarket(Math.Abs(Position));
-				if (Position == 0)
-				SellMarket(Volume);
-			}
-		}
-		
-		_prevPrevValue = _prevValue;
-		_prevValue = coppock;
+
+		_prevPrevCoppock = _prevCoppock;
+		_prevCoppock = coppock;
 	}
 }

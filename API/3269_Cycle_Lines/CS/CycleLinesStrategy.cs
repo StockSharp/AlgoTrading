@@ -1,381 +1,100 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy inspired by the MQL "Cycle Lines" expert advisor.
-/// Trades MACD crossovers and manages open positions with stop loss,
-/// take profit, break-even and trailing protection logic.
+/// Cycle Lines strategy: MACD crossover with EMA trend filter.
+/// Buys on MACD histogram turning positive above EMA, sells on opposite.
 /// </summary>
 public class CycleLinesStrategy : Strategy
 {
-	private readonly StrategyParam<int> _macdFastPeriod;
-	private readonly StrategyParam<int> _macdSlowPeriod;
-	private readonly StrategyParam<int> _macdSignalPeriod;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _trailingOffset;
-	private readonly StrategyParam<decimal> _breakEvenTrigger;
-	private readonly StrategyParam<decimal> _breakEvenOffset;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _emaPeriod;
 
-	private MACD _macd;
+	private decimal? _prevHistogram;
 
-	private decimal _prevMacd;
-	private decimal _prevSignal;
-
-	private decimal? _entryPrice;
-	private decimal _maxPrice;
-	private decimal _minPrice;
-	private decimal? _breakEvenLevel;
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="CycleLinesStrategy"/> class.
-	/// </summary>
-	public CycleLinesStrategy()
-	{
-
-		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD fast EMA", "Fast EMA period for MACD", "Indicators")
-			.SetCanOptimize(true, 6, 18, 1);
-
-		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD slow EMA", "Slow EMA period for MACD", "Indicators")
-			.SetCanOptimize(true, 20, 40, 2);
-
-		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD signal", "Signal line period", "Indicators")
-			.SetCanOptimize(true, 6, 18, 1);
-
-		_stopLoss = Param(nameof(StopLoss), 0m)
-			.SetNotNegative()
-			.SetDisplay("Stop loss", "Absolute stop loss distance", "Risk");
-
-		_takeProfit = Param(nameof(TakeProfit), 0m)
-			.SetNotNegative()
-			.SetDisplay("Take profit", "Absolute take profit distance", "Risk");
-
-		_trailingOffset = Param(nameof(TrailingOffset), 0m)
-			.SetNotNegative()
-			.SetDisplay("Trailing offset", "Distance between peak and trailing stop", "Risk");
-
-		_breakEvenTrigger = Param(nameof(BreakEvenTrigger), 0m)
-			.SetNotNegative()
-			.SetDisplay("Break-even trigger", "Profit required to arm break-even", "Risk");
-
-		_breakEvenOffset = Param(nameof(BreakEvenOffset), 0m)
-			.SetNotNegative()
-			.SetDisplay("Break-even offset", "Offset applied when moving stop to break-even", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle type", "Working candle series", "General");
-	}
-
-
-	/// <summary>
-	/// Fast EMA period used inside MACD.
-	/// </summary>
-	public int MacdFastPeriod
-	{
-		get => _macdFastPeriod.Value;
-		set => _macdFastPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow EMA period used inside MACD.
-	/// </summary>
-	public int MacdSlowPeriod
-	{
-		get => _macdSlowPeriod.Value;
-		set => _macdSlowPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Signal line period for MACD.
-	/// </summary>
-	public int MacdSignalPeriod
-	{
-		get => _macdSignalPeriod.Value;
-		set => _macdSignalPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Absolute stop loss distance in price units.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Absolute take profit distance in price units.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing distance maintained from the best price in favor of the trade.
-	/// </summary>
-	public decimal TrailingOffset
-	{
-		get => _trailingOffset.Value;
-		set => _trailingOffset.Value = value;
-	}
-
-	/// <summary>
-	/// Profit threshold that activates break-even logic.
-	/// </summary>
-	public decimal BreakEvenTrigger
-	{
-		get => _breakEvenTrigger.Value;
-		set => _breakEvenTrigger.Value = value;
-	}
-
-	/// <summary>
-	/// Additional offset applied to the break-even stop level.
-	/// </summary>
-	public decimal BreakEvenOffset
-	{
-		get => _breakEvenOffset.Value;
-		set => _breakEvenOffset.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for indicator calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public int EmaPeriod
 	{
-		return [(Security, CandleType)];
+		get => _emaPeriod.Value;
+		set => _emaPeriod.Value = value;
 	}
 
-	/// <inheritdoc />
+	public CycleLinesStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+
+		_emaPeriod = Param(nameof(EmaPeriod), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "Trend EMA period", "Indicators");
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_macd = new MACD
-		{
-			ShortMa = { Length = MacdFastPeriod },
-			LongMa = { Length = MacdSlowPeriod },
-			SignalPeriod = MacdSignalPeriod
-		};
+		_prevHistogram = null;
+
+		var macd = new MovingAverageConvergenceDivergenceSignal();
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_macd, ProcessCandle).Start();
-	}
+		subscription
+			.BindEx(macd, ema, ProcessCandle)
+			.Start();
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		// Reset state after position is fully closed.
-		if (Position == 0m)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			_entryPrice = null;
-			_breakEvenLevel = null;
-			_maxPrice = 0m;
-			_minPrice = 0m;
-			return;
-		}
-
-		if (trade.Order is null)
-			return;
-
-		// Capture the fill price when a fresh position is opened.
-		if (Position > 0m && trade.Order.Side == Sides.Buy)
-		{
-			_entryPrice = trade.Trade.Price;
-			_maxPrice = trade.Trade.Price;
-			_minPrice = trade.Trade.Price;
-			_breakEvenLevel = null;
-		}
-		else if (Position < 0m && trade.Order.Side == Sides.Sell)
-		{
-			_entryPrice = trade.Trade.Price;
-			_maxPrice = trade.Trade.Price;
-			_minPrice = trade.Trade.Price;
-			_breakEvenLevel = null;
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal signalLine)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store previous values before the indicator becomes fully formed.
-		if (!_macd.IsFormed)
-		{
-			_prevMacd = macdLine;
-			_prevSignal = signalLine;
-			return;
-		}
-
-		// Manage existing positions using risk rules before looking for new entries.
-		if (ManagePosition(candle, macdLine, signalLine))
-		{
-			_prevMacd = macdLine;
-			_prevSignal = signalLine;
-			return;
-		}
-
 		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevMacd = macdLine;
-			_prevSignal = signalLine;
 			return;
-		}
 
-		var crossUp = _prevMacd <= _prevSignal && macdLine > signalLine;
-		var crossDown = _prevMacd >= _prevSignal && macdLine < signalLine;
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal signalLine)
+			return;
 
-		if (crossUp)
+		var histogram = macdLine - signalLine;
+		var emaVal = emaValue.ToDecimal();
+		var close = candle.ClosePrice;
+
+		if (_prevHistogram.HasValue)
 		{
-			// MACD crosses above its signal line: open a long position.
-			BuyMarket(Volume);
-		}
-		else if (crossDown)
-		{
-			// MACD crosses below its signal line: open a short position.
-			SellMarket(Volume);
-		}
-
-		_prevMacd = macdLine;
-		_prevSignal = signalLine;
-	}
-
-	private bool ManagePosition(ICandleMessage candle, decimal macdLine, decimal signalLine)
-	{
-		if (Position == 0m || _entryPrice is null)
-			return false;
-
-		var entryPrice = _entryPrice.Value;
-		var high = candle.HighPrice;
-		var low = candle.LowPrice;
-
-		if (Position > 0m)
-		{
-			_maxPrice = Math.Max(_maxPrice, high);
-
-			// Hard stop loss protection for long trades.
-			if (StopLoss > 0m && low <= entryPrice - StopLoss)
+			// Buy: histogram crosses above zero and price above EMA
+			if (_prevHistogram.Value <= 0 && histogram > 0 && close > emaVal && Position <= 0)
 			{
-				ClosePosition();
-				return true;
+				BuyMarket();
 			}
-
-			// Hard take profit protection for long trades.
-			if (TakeProfit > 0m && high >= entryPrice + TakeProfit)
+			// Sell: histogram crosses below zero and price below EMA
+			else if (_prevHistogram.Value >= 0 && histogram < 0 && close < emaVal && Position >= 0)
 			{
-				ClosePosition();
-				return true;
-			}
-
-			// Arm break-even once the candle moved far enough.
-			if (BreakEvenTrigger > 0m && _breakEvenLevel is null && high - entryPrice >= BreakEvenTrigger)
-				_breakEvenLevel = entryPrice + BreakEvenOffset;
-
-			if (_breakEvenLevel is decimal breakEven && low <= breakEven)
-			{
-				ClosePosition();
-				return true;
-			}
-
-			if (TrailingOffset > 0m)
-			{
-				var trailingLevel = _maxPrice - TrailingOffset;
-
-				if (trailingLevel > entryPrice && low <= trailingLevel)
-				{
-					ClosePosition();
-					return true;
-				}
-			}
-
-			// Exit long positions when MACD turns bearish.
-			if (macdLine < signalLine)
-			{
-				ClosePosition();
-				return true;
-			}
-		}
-		else
-		{
-			_minPrice = _minPrice == 0m ? low : Math.Min(_minPrice, low);
-
-			// Hard stop loss protection for short trades.
-			if (StopLoss > 0m && high >= entryPrice + StopLoss)
-			{
-				ClosePosition();
-				return true;
-			}
-
-			// Hard take profit protection for short trades.
-			if (TakeProfit > 0m && low <= entryPrice - TakeProfit)
-			{
-				ClosePosition();
-				return true;
-			}
-
-			// Arm break-even once the candle moved far enough in favor.
-			if (BreakEvenTrigger > 0m && _breakEvenLevel is null && entryPrice - low >= BreakEvenTrigger)
-				_breakEvenLevel = entryPrice - BreakEvenOffset;
-
-			if (_breakEvenLevel is decimal breakEven && high >= breakEven)
-			{
-				ClosePosition();
-				return true;
-			}
-
-			if (TrailingOffset > 0m)
-			{
-				var trailingLevel = _minPrice + TrailingOffset;
-
-				if (trailingLevel < entryPrice && high >= trailingLevel)
-				{
-					ClosePosition();
-					return true;
-				}
-			}
-
-			// Exit short positions when MACD turns bullish.
-			if (macdLine > signalLine)
-			{
-				ClosePosition();
-				return true;
+				SellMarket();
 			}
 		}
 
-		return false;
+		_prevHistogram = histogram;
 	}
 }
-

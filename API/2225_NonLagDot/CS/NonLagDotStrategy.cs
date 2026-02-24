@@ -26,7 +26,7 @@ public class NonLagDotStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private SMA _sma;
+	private SimpleMovingAverage _sma;
 	private decimal? _prevSma;
 	private int _prevTrend;
 
@@ -66,7 +66,7 @@ public class NonLagDotStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Moving average period", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
@@ -85,46 +85,46 @@ public class NonLagDotStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = Length };
+		_sma = new SimpleMovingAverage { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(_sma, ProcessCandle)
 			.Start();
 
-		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _sma);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal sma)
 	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check strategy readiness
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Store first value and exit
 		if (_prevSma is null)
 		{
 			_prevSma = sma;
 			return;
 		}
 
-		// Determine current trend based on slope
 		var trend = sma > _prevSma ? 1 : sma < _prevSma ? -1 : _prevTrend;
 
-		// Open long on upward change
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevTrend = trend;
+			_prevSma = sma;
+			return;
+		}
+
 		if (trend > 0 && _prevTrend < 0 && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		// Open short on downward change
+			BuyMarket();
 		else if (trend < 0 && _prevTrend > 0 && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-		}
+			SellMarket();
 
 		_prevTrend = trend;
 		_prevSma = sma;

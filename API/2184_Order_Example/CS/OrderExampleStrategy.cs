@@ -14,93 +14,93 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy based on recent highs and lows.
-/// Converted from the MQL5 sample OrderExample.
+/// Breakout strategy based on recent highs and lows with SMA trend filter.
 /// </summary>
 public class OrderExampleStrategy : Strategy
 {
 	private readonly StrategyParam<int> _lookback;
+	private readonly StrategyParam<int> _smaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
 
-	/// <summary>
-	/// Number of candles used to determine breakout levels.
-	/// </summary>
-	public int Lookback
-	{
-		get => _lookback.Value;
-		set => _lookback.Value = value;
-	}
+	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
+	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type used for analysis.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public OrderExampleStrategy()
 	{
-		_lookback = Param(nameof(Lookback), 26)
+		_lookback = Param(nameof(Lookback), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Candles to calculate highs and lows", "General");
+
+		_smaPeriod = Param(nameof(SmaPeriod), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("SMA Period", "Trend filter SMA period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_highs.Clear();
+		_lows.Clear();
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_highest = new Highest { Length = Lookback };
-		_lowest = new Lowest { Length = Lookback };
+		var sma = new SMA { Length = SmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _highest);
-			DrawIndicator(area, _lowest);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_highs.Add(candle.HighPrice);
+			_lows.Add(candle.LowPrice);
+			if (_highs.Count > Lookback) _highs.RemoveAt(0);
+			if (_lows.Count > Lookback) _lows.RemoveAt(0);
 			return;
+		}
 
-		var high = _highest.Process(candle).ToDecimal();
-		var low = _lowest.Process(candle).ToDecimal();
+		if (_highs.Count >= 3)
+		{
+			var highLevel = _highs.Max();
+			var lowLevel = _lows.Min();
 
-		if (candle.ClosePrice > high && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (candle.ClosePrice < low && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+			if (candle.ClosePrice > highLevel && Position <= 0)
+				BuyMarket();
+			else if (candle.ClosePrice < lowLevel && Position >= 0)
+				SellMarket();
+		}
+
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+		if (_highs.Count > Lookback) _highs.RemoveAt(0);
+		if (_lows.Count > Lookback) _lows.RemoveAt(0);
 	}
 }

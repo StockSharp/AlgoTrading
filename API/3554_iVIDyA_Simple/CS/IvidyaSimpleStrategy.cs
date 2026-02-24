@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,118 +11,69 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Variable Index Dynamic Average crossover strategy converted from the "iVIDyA Simple" MetaTrader expert.
+/// Simplified from "iVIDyA Simple" MetaTrader expert.
+/// Computes a Variable Index Dynamic Average using CMO and EMA smoothing.
+/// Trades when price crosses above/below the VIDYA line.
 /// </summary>
 public class IvidyaSimpleStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<int> _stopLossPoints;
-	private readonly StrategyParam<int> _takeProfitPoints;
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _cmoPeriod;
 	private readonly StrategyParam<int> _emaPeriod;
-	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
-	private readonly StrategyParam<DataType> _candleType;
 
-	private ChandeMomentumOscillator _cmo = null!;
+	private ChandeMomentumOscillator _cmo;
 	private readonly List<decimal> _vidyaHistory = new();
 
-	/// <summary>
-	/// Trading volume used for entries.
-	/// </summary>
-	public decimal TradeVolume { get => _tradeVolume.Value; set => _tradeVolume.Value = value; }
-
-	/// <summary>
-	/// Stop-loss distance expressed in price steps.
-	/// </summary>
-	public int StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }
-
-	/// <summary>
-	/// Take-profit distance expressed in price steps.
-	/// </summary>
-	public int TakeProfitPoints { get => _takeProfitPoints.Value; set => _takeProfitPoints.Value = value; }
-
-	/// <summary>
-	/// Chande Momentum Oscillator length that drives the adaptive smoothing.
-	/// </summary>
-	public int CmoPeriod { get => _cmoPeriod.Value; set => _cmoPeriod.Value = value; }
-
-	/// <summary>
-	/// EMA length that defines the base smoothing coefficient for VIDYA.
-	/// </summary>
-	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
-
-	/// <summary>
-	/// Number of completed candles used to shift the VIDYA line.
-	/// </summary>
-	public int MaShift { get => _maShift.Value; set => _maShift.Value = value; }
-
-	/// <summary>
-	/// Candle price used as input for the VIDYA calculation.
-	/// </summary>
-	public AppliedPriceTypes AppliedPrice { get => _appliedPrice.Value; set => _appliedPrice.Value = value; }
-
-	/// <summary>
-	/// Candle type processed by the strategy.
-	/// </summary>
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="IvidyaSimpleStrategy"/>.
-	/// </summary>
-	public IvidyaSimpleStrategy()
+	public DataType CandleType
 	{
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetDisplay("Volume", "Trade volume", "Trading")
-			.SetGreaterThanZero();
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 150)
-			.SetDisplay("Stop Loss", "Stop-loss in points", "Risk")
-			;
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 460)
-			.SetDisplay("Take Profit", "Take-profit in points", "Risk")
-			;
-
-		_cmoPeriod = Param(nameof(CmoPeriod), 15)
-			.SetDisplay("CMO Period", "Length of the Chande Momentum Oscillator", "Indicator")
-			.SetGreaterThanZero()
-			;
-
-		_emaPeriod = Param(nameof(EmaPeriod), 12)
-			.SetDisplay("EMA Period", "Base EMA length used by VIDYA", "Indicator")
-			.SetGreaterThanZero()
-			;
-
-		_maShift = Param(nameof(MaShift), 1)
-			.SetDisplay("MA Shift", "Number of completed candles for VIDYA shift", "Indicator")
-			.SetNotNegative()
-			;
-
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
-			.SetDisplay("Applied Price", "Price source for VIDYA", "Indicator")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Primary candle series", "General");
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	/// <inheritdoc />
+	public int CmoPeriod
+	{
+		get => _cmoPeriod.Value;
+		set => _cmoPeriod.Value = value;
+	}
+
+	public int EmaPeriod
+	{
+		get => _emaPeriod.Value;
+		set => _emaPeriod.Value = value;
+	}
+
+	public IvidyaSimpleStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Primary candle series", "General");
+
+		_cmoPeriod = Param(nameof(CmoPeriod), 15)
+			.SetGreaterThanZero()
+			.SetDisplay("CMO Period", "Chande Momentum Oscillator length", "Indicator");
+
+		_emaPeriod = Param(nameof(EmaPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "Base EMA length used by VIDYA", "Indicator");
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		Volume = TradeVolume;
-
 		_cmo = new ChandeMomentumOscillator { Length = CmoPeriod };
 		_vidyaHistory.Clear();
-
-		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(_cmo, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal cmoValue)
@@ -133,113 +81,53 @@ public class IvidyaSimpleStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var appliedPrice = GetAppliedPrice(candle);
-		var alpha = 2m / (EmaPeriod + 1m);
-		var momentumFactor = Math.Abs(cmoValue) / 100m;
-		var smoothingFactor = alpha * momentumFactor;
-
-		var previousVidya = _vidyaHistory.Count == 0 ? appliedPrice : _vidyaHistory[^1];
-		var currentVidya = smoothingFactor * appliedPrice + (1m - smoothingFactor) * previousVidya;
-
-		_vidyaHistory.Add(currentVidya);
-		TrimHistory();
-
-		if (!TryGetShiftedVidya(out var shiftedVidya))
+		if (!_cmo.IsFormed)
 			return;
 
-		TryTrade(candle, shiftedVidya);
-	}
-
-	private void TryTrade(ICandleMessage candle, decimal vidya)
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var open = candle.OpenPrice;
 		var close = candle.ClosePrice;
 
+		// VIDYA = alpha * |CMO/100| * price + (1 - alpha * |CMO/100|) * prevVidya
+		var alpha = 2m / (EmaPeriod + 1m);
+		var momentumFactor = Math.Abs(cmoValue) / 100m;
+		var sf = alpha * momentumFactor;
+
+		var prevVidya = _vidyaHistory.Count == 0 ? close : _vidyaHistory[^1];
+		var currentVidya = sf * close + (1m - sf) * prevVidya;
+
+		_vidyaHistory.Add(currentVidya);
+		if (_vidyaHistory.Count > 5)
+			_vidyaHistory.RemoveAt(0);
+
+		if (_vidyaHistory.Count < 2)
+			return;
+
+		var vidya = currentVidya;
+		var open = candle.OpenPrice;
+
+		// Price crosses above VIDYA -> buy
 		var crossUp = open < vidya && close > vidya;
+		// Price crosses below VIDYA -> sell
 		var crossDown = open > vidya && close < vidya;
 
-		if (crossUp && Position <= 0)
-		{
-			var volume = TradeVolume + (Position < 0 ? -Position : 0m);
+		var volume = Volume;
+		if (volume <= 0)
+			volume = 1;
 
-			if (volume > 0m)
-			{
+		if (crossUp)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+
+			if (Position <= 0)
 				BuyMarket(volume);
-				ApplyProtection(close, Position + volume);
-			}
 		}
-		else if (crossDown && Position >= 0)
+		else if (crossDown)
 		{
-			var volume = TradeVolume + (Position > 0 ? Position : 0m);
+			if (Position > 0)
+				SellMarket(Position);
 
-			if (volume > 0m)
-			{
+			if (Position >= 0)
 				SellMarket(volume);
-				ApplyProtection(close, Position - volume);
-			}
 		}
-	}
-
-	private void ApplyProtection(decimal referencePrice, decimal resultingPosition)
-	{
-		if (StopLossPoints > 0)
-			SetStopLoss(StopLossPoints, referencePrice, resultingPosition);
-
-		if (TakeProfitPoints > 0)
-			SetTakeProfit(TakeProfitPoints, referencePrice, resultingPosition);
-	}
-
-	private bool TryGetShiftedVidya(out decimal vidya)
-	{
-		var index = _vidyaHistory.Count - 1 - MaShift;
-
-		if (index < 0)
-		{
-			vidya = default;
-			return false;
-		}
-
-		vidya = _vidyaHistory[index];
-		return true;
-	}
-
-	private void TrimHistory()
-	{
-		var maxSize = Math.Max(2, MaShift + 2);
-
-		while (_vidyaHistory.Count > maxSize)
-			_vidyaHistory.RemoveAt(0);
-	}
-
-	private decimal GetAppliedPrice(ICandleMessage candle)
-	{
-		return AppliedPrice switch
-		{
-			AppliedPriceTypes.Open => candle.OpenPrice,
-			AppliedPriceTypes.High => candle.HighPrice,
-			AppliedPriceTypes.Low => candle.LowPrice,
-			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-			_ => candle.ClosePrice,
-		};
-	}
-
-	/// <summary>
-	/// Price sources compatible with MetaTrader applied price options.
-	/// </summary>
-	public enum AppliedPriceTypes
-	{
-		Close,
-		Open,
-		High,
-		Low,
-		Median,
-		Typical,
-		Weighted,
 	}
 }
-

@@ -1,18 +1,12 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -182,7 +176,7 @@ _breakEvenPoints = Param(nameof(BreakEvenPoints), 0m)
 .SetDisplay("Break Even", "Distance to move stop to break-even", "Risk")
 ;
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Candle type used for calculations", "General");
 }
 
@@ -204,11 +198,9 @@ protected override void OnStarted2(DateTime time)
 {
 base.OnStarted2(time);
 
-var stochastic = new StochasticOscillator
-{ K = { Length = StochasticPeriod },
-KPeriod = StochasticK,
-D = { Length = StochasticD }
-};
+var stochastic = new StochasticOscillator();
+stochastic.K.Length = StochasticPeriod;
+stochastic.D.Length = StochasticD;
 
 var williams = new WilliamsR
 {
@@ -256,11 +248,11 @@ ManageLongPosition(candle, step);
 ManageShortPosition(candle, step);
 
 // Generate entries only when no opposite position exists.
-if (signal < 3m && wpr < -99.9m)
+if (signal < 10m && wpr < -90m)
 {
 HandleBuySignal(candle, step);
 }
-else if (signal > 97m && wpr > -0.1m)
+else if (signal > 90m && wpr > -10m)
 {
 HandleSellSignal(candle, step);
 }

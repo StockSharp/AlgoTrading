@@ -13,8 +13,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 /// <summary>
 /// ZigAndZagScalpel translation that trades on breakouts from short-term pivots confirmed by a long-term ZigZag trend.
 /// </summary>
@@ -48,7 +46,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 	/// </summary>
 	public ZigAndZagScalpelStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe for all calculations", "General");
 
 		_keelOverLength = Param(nameof(KeelOverLength), 55)
@@ -154,18 +152,14 @@ public class ZigAndZagScalpelStrategy : Strategy
 		_deviation = Math.Max(_priceStep, Math.Abs(DeviationPoints) * _priceStep);
 		_breakoutDistance = Math.Max(0m, Math.Abs(BreakoutDistancePoints) * _priceStep);
 
-		var majorZigZag = new ZigZagIndicator
+		var majorZigZag = new ZigZag
 		{
-			Depth = Math.Max(2, KeelOverLength),
-			Deviation = _deviation,
-			BackStep = Math.Max(1, Backstep)
+			Deviation = 0.02m
 		};
 
-		var minorZigZag = new ZigZagIndicator
+		var minorZigZag = new ZigZag
 		{
-			Depth = Math.Max(2, SlalomLength),
-			Deviation = _deviation,
-			BackStep = Math.Max(1, Backstep)
+			Deviation = 0.005m
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -290,12 +284,12 @@ public class ZigAndZagScalpelStrategy : Strategy
 		if (Position > 0)
 		{
 			if (!_trendUp || (CloseOnOppositePivot && _lastMinorPivotType == PivotTypes.High))
-			ClosePosition();
+				SellMarket(Position);
 		}
 		else if (Position < 0)
 		{
 			if (_trendUp || (CloseOnOppositePivot && _lastMinorPivotType == PivotTypes.Low))
-			ClosePosition();
+				BuyMarket(Math.Abs(Position));
 		}
 	}
 

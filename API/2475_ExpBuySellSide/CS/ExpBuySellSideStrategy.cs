@@ -118,7 +118,7 @@ public class ExpBuySellSideStrategy : Strategy
 		_closeByOppositeSignal = Param(nameof(CloseByOppositeSignal), true)
 		.SetDisplay("Close Opposite", "Close opposite position on signal", "General");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 	

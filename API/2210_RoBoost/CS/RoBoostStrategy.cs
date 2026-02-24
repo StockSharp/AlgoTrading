@@ -122,17 +122,13 @@ public class RoBoostStrategy : Strategy
 	/// </summary>
 	public RoBoostStrategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 10m)
+		_takeProfit = Param(nameof(TakeProfit), 500m)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit distance in points", "Risk Management")
-			
-			.SetOptimize(5m, 50m, 5m);
+			.SetDisplay("Take Profit", "Take profit distance in points", "Risk Management");
 
-		_stopLoss = Param(nameof(StopLoss), 20m)
+		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk Management")
-			
-			.SetOptimize(10m, 100m, 10m);
+			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk Management");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 7)
 			.SetGreaterThanZero()
@@ -161,7 +157,7 @@ public class RoBoostStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trail Step", "Distance between price and trailing stop", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used", "General");
 	}
 
@@ -187,8 +183,6 @@ public class RoBoostStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
 
 		var rsi = new RSI { Length = RsiPeriod };
 

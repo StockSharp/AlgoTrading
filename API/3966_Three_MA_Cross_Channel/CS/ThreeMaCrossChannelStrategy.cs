@@ -183,7 +183,7 @@ _stopLoss = Param(nameof(StopLoss), 0m)
 _useChannelStop = Param(nameof(UseChannelStop), true)
 .SetDisplay("Channel Exit", "Use Donchian channel boundaries for exits", "Risk Management");
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles used by the strategy", "General");
 }
 
@@ -214,7 +214,7 @@ _channel = new DonchianChannels { Length = ChannelLength };
 
 var subscription = SubscribeCandles(CandleType);
 subscription
-.Bind(_fastMa, _mediumMa, _slowMa, _channel, ProcessCandle)
+.BindEx(_fastMa, _mediumMa, _slowMa, _channel, ProcessCandle)
 .Start();
 
 var area = CreateChartArea();
@@ -231,13 +231,24 @@ DrawOwnTrades(area);
 StartProtection(null, null);
 }
 
-private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal mediumValue, decimal slowValue, decimal middleBand, decimal upperBand, decimal lowerBand)
+private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastVal, IIndicatorValue mediumVal, IIndicatorValue slowVal, IIndicatorValue channelVal)
 {
 if (candle.State != CandleStates.Finished)
 return;
 
 if (!_fastMa.IsFormed || !_mediumMa.IsFormed || !_slowMa.IsFormed)
 return;
+
+var fastValue = fastVal.ToDecimal();
+var mediumValue = mediumVal.ToDecimal();
+var slowValue = slowVal.ToDecimal();
+
+decimal upperBand = 0m, lowerBand = 0m;
+if (channelVal is IDonchianChannelsValue dcVal)
+{
+upperBand = dcVal.UpperBand ?? 0m;
+lowerBand = dcVal.LowerBand ?? 0m;
+}
 
 var fastAbove = fastValue > slowValue;
 var mediumAbove = mediumValue > slowValue;
@@ -273,7 +284,7 @@ shouldExit = true;
 
 if (shouldExit)
 {
-ClosePosition();
+SellMarket(Position);
 _entryPrice = null;
 return;
 }
@@ -295,7 +306,7 @@ shouldExit = true;
 
 if (shouldExit)
 {
-ClosePosition();
+BuyMarket(Math.Abs(Position));
 _entryPrice = null;
 return;
 }

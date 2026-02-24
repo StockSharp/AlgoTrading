@@ -83,10 +83,6 @@ public class ZeroLagMacdCrossoverStrategy : Strategy
 	/// </summary>
 	public ZeroLagMacdCrossoverStrategy()
 	{
-		Param(nameof(Volume), 2m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading");
-
 		_fastLength = Param(nameof(FastLength), 2)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA", "Fast EMA period", "MACD")
@@ -145,6 +141,8 @@ public class ZeroLagMacdCrossoverStrategy : Strategy
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		base.OnStarted2(time);
+
 		_fastZlema = new ZeroLagExponentialMovingAverage { Length = FastLength };
 		_slowZlema = new ZeroLagExponentialMovingAverage { Length = SlowLength };
 
@@ -154,8 +152,6 @@ public class ZeroLagMacdCrossoverStrategy : Strategy
 		.Start();
 
 		StartProtection(null, null);
-
-		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)

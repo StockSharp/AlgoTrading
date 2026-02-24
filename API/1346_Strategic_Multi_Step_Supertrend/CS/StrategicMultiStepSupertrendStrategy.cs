@@ -164,11 +164,11 @@ _direction = Param(nameof(Direction), (Sides?)null)
 		
 var allowLong = Direction is null or Sides.Buy;
 var allowShort = Direction is null or Sides.Sell;
-var longCondition = direction1 < 0 && direction2 < 0 && allowLong;
-var shortCondition = direction1 > 0 && direction2 > 0 && allowShort;
+var longCondition = direction1 > 0 && direction2 > 0 && allowLong;
+var shortCondition = direction1 < 0 && direction2 < 0 && allowShort;
 
-var longExitCondition = direction1 > 0 && direction2 > 0 && allowLong;
-var shortExitCondition = direction1 < 0 && direction2 < 0 && allowShort;
+var longExitCondition = direction1 < 0 && direction2 < 0 && allowLong;
+var shortExitCondition = direction1 > 0 && direction2 > 0 && allowShort;
 		
 		if (longCondition && Position <= 0)
 		{
@@ -251,8 +251,8 @@ var shortExitCondition = direction1 < 0 && direction2 < 0 && allowShort;
 		var price = _entryPrice * (1m + (isLong ? percent : -percent) / 100m);
 		
 		if (isLong)
-		SellLimit(qty, price);
+			SellLimit(price, qty);
 		else
-		BuyLimit(qty, price);
+			BuyLimit(price, qty);
 	}
 }

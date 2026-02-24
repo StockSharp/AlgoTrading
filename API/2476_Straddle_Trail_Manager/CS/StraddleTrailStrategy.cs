@@ -11,596 +11,186 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using System.Globalization;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that places a straddle of stop orders ahead of a scheduled event and trails the triggered position.
+/// Strategy that simulates a straddle approach: defines upper/lower breakout levels
+/// from a consolidation range (ATR-based) and enters on breakouts with trailing stop.
 /// </summary>
 public class StraddleTrailStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _shutdownNow;
-	private readonly StrategyParam<ShutdownOptions> _shutdownMode;
-	private readonly StrategyParam<decimal> _distanceFromPrice;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _trailPips;
-	private readonly StrategyParam<bool> _trailAfterBreakeven;
-	private readonly StrategyParam<decimal> _breakevenLockPips;
-	private readonly StrategyParam<decimal> _breakevenTriggerPips;
-	private readonly StrategyParam<int> _eventHour;
-	private readonly StrategyParam<int> _eventMinute;
-	private readonly StrategyParam<int> _preEventEntryMinutes;
-	private readonly StrategyParam<int> _stopAdjustMinutes;
-	private readonly StrategyParam<bool> _removeOppositeOrder;
-	private readonly StrategyParam<bool> _adjustPendingOrders;
-	private readonly StrategyParam<bool> _placeStraddleImmediately;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<decimal> _stopLossMult;
+	private readonly StrategyParam<decimal> _takeProfitMult;
+	private readonly StrategyParam<decimal> _trailMult;
+	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
-
-	private decimal? _bestBid;
-	private decimal? _bestAsk;
-
-	private decimal _pipSize;
-	private DateTime? _lastAdjustmentMinute;
-	private DateTime? _lastPlacementDate;
-
+	private decimal _entryPrice;
 	private decimal? _stopLevel;
 	private decimal? _takeLevel;
-	private bool _breakevenActivated;
-	private bool? _isLongPosition;
+	private int _barsSinceEntry;
+	private int _cooldownCounter;
 
-	public bool ShutdownNow { get => _shutdownNow.Value; set => _shutdownNow.Value = value; }
-	public ShutdownOptions ShutdownMode { get => _shutdownMode.Value; set => _shutdownMode.Value = value; }
-	public decimal DistanceFromPrice { get => _distanceFromPrice.Value; set => _distanceFromPrice.Value = value; }
-	public decimal StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
-	public decimal TakeProfitPips { get => _takeProfitPips.Value; set => _takeProfitPips.Value = value; }
-	public decimal TrailPips { get => _trailPips.Value; set => _trailPips.Value = value; }
-	public bool TrailAfterBreakeven { get => _trailAfterBreakeven.Value; set => _trailAfterBreakeven.Value = value; }
-	public decimal BreakevenLockPips { get => _breakevenLockPips.Value; set => _breakevenLockPips.Value = value; }
-	public decimal BreakevenTriggerPips { get => _breakevenTriggerPips.Value; set => _breakevenTriggerPips.Value = value; }
-	public int EventHour { get => _eventHour.Value; set => _eventHour.Value = value; }
-	public int EventMinute { get => _eventMinute.Value; set => _eventMinute.Value = value; }
-	public int PreEventEntryMinutes { get => _preEventEntryMinutes.Value; set => _preEventEntryMinutes.Value = value; }
-	public int StopAdjustMinutes { get => _stopAdjustMinutes.Value; set => _stopAdjustMinutes.Value = value; }
-	public bool RemoveOppositeOrder { get => _removeOppositeOrder.Value; set => _removeOppositeOrder.Value = value; }
-	public bool AdjustPendingOrders { get => _adjustPendingOrders.Value; set => _adjustPendingOrders.Value = value; }
-	public bool PlaceStraddleImmediately { get => _placeStraddleImmediately.Value; set => _placeStraddleImmediately.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
+	public decimal StopLossMult { get => _stopLossMult.Value; set => _stopLossMult.Value = value; }
+	public decimal TakeProfitMult { get => _takeProfitMult.Value; set => _takeProfitMult.Value = value; }
+	public decimal TrailMult { get => _trailMult.Value; set => _trailMult.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public StraddleTrailStrategy()
 	{
-		Volume = 1m;
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "ATR calculation length", "ATR");
 
-		_shutdownNow = Param(nameof(ShutdownNow), false)
-		.SetDisplay("Shutdown", "Force close/cancel", "Risk");
+		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Multiplier", "Breakout distance multiplier", "ATR");
 
-		_shutdownMode = Param(nameof(ShutdownMode), ShutdownOptions.All)
-		.SetDisplay("Shutdown Mode", "What to cancel", "Risk");
+		_stopLossMult = Param(nameof(StopLossMult), 1.0m)
+			.SetGreaterThanZero()
+			.SetDisplay("SL Multiplier", "Stop loss as ATR multiple", "Risk");
 
-		_distanceFromPrice = Param(nameof(DistanceFromPrice), 30m)
-		.SetGreaterThanZero()
-		.SetDisplay("Distance (pips)", "Pending order offset", "Orders");
+		_takeProfitMult = Param(nameof(TakeProfitMult), 2.0m)
+			.SetGreaterThanZero()
+			.SetDisplay("TP Multiplier", "Take profit as ATR multiple", "Risk");
 
-		_stopLossPips = Param(nameof(StopLossPips), 30m)
-		.SetDisplay("Stop Loss (pips)", "Initial stop distance", "Risk");
+		_trailMult = Param(nameof(TrailMult), 0.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Trail Multiplier", "Trailing distance as ATR multiple", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 60m)
-		.SetDisplay("Take Profit (pips)", "Initial target distance", "Risk");
+		_cooldownBars = Param(nameof(CooldownBars), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown", "Bars to wait after exit", "General");
 
-		_trailPips = Param(nameof(TrailPips), 15m)
-		.SetDisplay("Trail (pips)", "Trailing stop distance", "Risk");
-
-		_trailAfterBreakeven = Param(nameof(TrailAfterBreakeven), true)
-		.SetDisplay("Trail After BE", "Start trailing only after breakeven", "Risk");
-
-		_breakevenLockPips = Param(nameof(BreakevenLockPips), 1m)
-		.SetDisplay("BE Lock (pips)", "Locked profit after breakeven", "Risk");
-
-		_breakevenTriggerPips = Param(nameof(BreakevenTriggerPips), 5m)
-		.SetDisplay("BE Trigger (pips)", "Move stop to BE after this profit", "Risk");
-
-		_eventHour = Param(nameof(EventHour), 12)
-		.SetDisplay("Event Hour", "Scheduled event hour", "Schedule");
-
-		_eventMinute = Param(nameof(EventMinute), 30)
-		.SetDisplay("Event Minute", "Scheduled event minute", "Schedule");
-
-		_preEventEntryMinutes = Param(nameof(PreEventEntryMinutes), 30)
-		.SetDisplay("Entry Minutes", "Minutes before event to place straddle", "Schedule");
-
-		_stopAdjustMinutes = Param(nameof(StopAdjustMinutes), 2)
-		.SetDisplay("Adjust Stop Minutes", "Minutes before event to stop adjusting", "Schedule");
-
-		_removeOppositeOrder = Param(nameof(RemoveOppositeOrder), true)
-		.SetDisplay("Remove Opposite", "Cancel opposite pending order after fill", "Orders");
-
-		_adjustPendingOrders = Param(nameof(AdjustPendingOrders), false)
-		.SetDisplay("Adjust Pending", "Recenter pending orders before event", "Orders");
-
-		_placeStraddleImmediately = Param(nameof(PlaceStraddleImmediately), false)
-		.SetDisplay("Immediate Straddle", "Place straddle without waiting for schedule", "Orders");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Candle subscription used for timing", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle subscription", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_buyStopOrder = null;
-		_sellStopOrder = null;
-		_bestBid = null;
-		_bestAsk = null;
-		_pipSize = 0m;
-		_lastAdjustmentMinute = null;
-		_lastPlacementDate = null;
+		_entryPrice = 0;
 		_stopLevel = null;
 		_takeLevel = null;
-		_breakevenActivated = false;
-		_isLongPosition = null;
+		_barsSinceEntry = 0;
+		_cooldownCounter = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_pipSize = CalculatePipSize();
-		Volume = Math.Max(Volume, 1m);
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var sma = new SimpleMovingAverage { Length = 20 };
 
-		var candleSub = SubscribeCandles(CandleType);
-		candleSub.Bind(ProcessCandle).Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, sma, ProcessCandle)
+			.Start();
 
-		SubscribeOrderBook()
-		.Bind(depth =>
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			_bestBid = depth.GetBestBid()?.Price ?? _bestBid;
-			_bestAsk = depth.GetBestAsk()?.Price ?? _bestAsk;
-		})
-		.Start();
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal atr, decimal sma)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (Volume <= 0)
-		return;
-
-		Volume = Math.Max(Volume, 1m);
-
-		_bestBid ??= candle.ClosePrice;
-		_bestAsk ??= candle.ClosePrice;
-
-		UpdateOrderReferences();
-
-		var now = candle.CloseTime;
-		var minuteStamp = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0, now.Offset);
-
-		if (ShutdownNow)
-		{
-			if (PerformShutdown())
-			{
-				ShutdownNow = false;
-				return;
-			}
-		}
-
-		if (PlaceStraddleImmediately)
-		{
-			TryPlaceStraddle(now);
-		}
-		else
-		{
-			HandleScheduledStraddle(now);
-		}
-
-		if (AdjustPendingOrders && !PlaceStraddleImmediately)
-		{
-			AdjustStraddleIfNeeded(now, minuteStamp);
-		}
-
-		HandleTrailing(now);
-	}
-
-	private void HandleScheduledStraddle(DateTimeOffset now)
-	{
-		if (!IsEventEnabled())
-		return;
-
-		var eventTime = new TimeSpan(EventHour, EventMinute, 0);
-		var startWindow = eventTime - TimeSpan.FromMinutes(Math.Max(0, PreEventEntryMinutes));
-
-		if (startWindow < TimeSpan.Zero)
-		startWindow = TimeSpan.Zero;
-
-		var current = now.TimeOfDay;
-
-		if (current < startWindow || current > eventTime)
-		{
-			if (current > eventTime)
-			{
-				_lastPlacementDate = null;
-			}
-
 			return;
-		}
 
-		TryPlaceStraddle(now);
-	}
+		var close = candle.ClosePrice;
 
-	private void TryPlaceStraddle(DateTimeOffset time)
-	{
+		// Manage existing position
 		if (Position != 0)
-		return;
-
-		if (HasActiveStraddle())
-		return;
-
-		if (_lastPlacementDate == time.Date)
-		return;
-
-		if (_bestBid is null || _bestAsk is null)
-		return;
-
-		var distance = DistanceFromPrice * _pipSize;
-		if (distance <= 0)
-		return;
-
-		var ask = _bestAsk.Value;
-		var bid = _bestBid.Value;
-
-		var buyPrice = AlignPrice(ask + distance, true);
-		var sellPrice = AlignPrice(bid - distance, false);
-
-		_buyStopOrder = BuyStop(Volume, buyPrice);
-		_sellStopOrder = SellStop(Volume, sellPrice);
-
-		_lastPlacementDate = time.Date;
-	}
-
-	private void AdjustStraddleIfNeeded(DateTimeOffset now, DateTime minuteStamp)
-	{
-		if (!HasActiveStraddle())
-		return;
-
-		if (ShouldStopAdjusting(now))
-		return;
-
-		if (_lastAdjustmentMinute == minuteStamp)
-		return;
-
-		_lastAdjustmentMinute = minuteStamp;
-
-		CancelActiveStraddle();
-		_lastPlacementDate = null;
-		TryPlaceStraddle(now);
-	}
-
-	private bool ShouldStopAdjusting(DateTimeOffset time)
-	{
-		if (!IsEventEnabled())
-		return true;
-
-		var eventTime = new TimeSpan(EventHour, EventMinute, 0);
-		var stopMinutes = Math.Max(1, StopAdjustMinutes);
-		var stopWindowStart = eventTime - TimeSpan.FromMinutes(stopMinutes);
-		if (stopWindowStart < TimeSpan.Zero)
-		stopWindowStart = TimeSpan.Zero;
-
-		var current = time.TimeOfDay;
-		return current >= stopWindowStart && current <= eventTime;
-	}
-
-	private void HandleTrailing(DateTimeOffset time)
-	{
-		if (Position == 0)
 		{
-			_stopLevel = null;
-			_takeLevel = null;
-			_breakevenActivated = false;
-			_isLongPosition = null;
+			_barsSinceEntry++;
+
+			if (Position > 0)
+			{
+				// Trail stop up
+				var newTrail = close - TrailMult * atr;
+				if (_stopLevel == null || newTrail > _stopLevel)
+					_stopLevel = newTrail;
+
+				// Check stop or take
+				if (close <= _stopLevel || (_takeLevel != null && close >= _takeLevel))
+				{
+					SellMarket(Math.Abs(Position));
+					ResetPosition();
+					return;
+				}
+			}
+			else
+			{
+				// Trail stop down
+				var newTrail = close + TrailMult * atr;
+				if (_stopLevel == null || newTrail < _stopLevel)
+					_stopLevel = newTrail;
+
+				// Check stop or take
+				if (close >= _stopLevel || (_takeLevel != null && close <= _takeLevel))
+				{
+					BuyMarket(Math.Abs(Position));
+					ResetPosition();
+					return;
+				}
+			}
+
 			return;
 		}
 
-		var price = Position > 0 ? _bestBid ?? Security.LastPrice : _bestAsk ?? Security.LastPrice;
-		if (price == null)
-		return;
-
-		var entry = PositionPrice;
-
-		if (_isLongPosition is null || (_isLongPosition == true && Position < 0) || (_isLongPosition == false && Position > 0))
+		// Cooldown after exit
+		if (_cooldownCounter > 0)
 		{
-			InitializeProtection();
+			_cooldownCounter--;
+			return;
 		}
 
-		var isLong = Position > 0;
-		_isLongPosition = isLong;
+		// Entry: breakout above/below SMA + ATR distance
+		var upperLevel = sma + AtrMultiplier * atr;
+		var lowerLevel = sma - AtrMultiplier * atr;
 
-		if (!entry.HasValue)
-		return;
-
-		if (_takeLevel.HasValue)
+		if (close > upperLevel)
 		{
-			if (isLong && price.Value >= _takeLevel)
-			{
-				ClosePosition();
-				return;
-			}
-
-			if (!isLong && price.Value <= _takeLevel)
-			{
-				ClosePosition();
-				return;
-			}
+			BuyMarket();
+			_entryPrice = close;
+			_stopLevel = close - StopLossMult * atr;
+			_takeLevel = close + TakeProfitMult * atr;
+			_barsSinceEntry = 0;
 		}
-
-		if (BreakevenTriggerPips > 0)
+		else if (close < lowerLevel)
 		{
-			var trigger = BreakevenTriggerPips * _pipSize;
-			var lockOffset = BreakevenLockPips * _pipSize;
-
-			if (isLong)
-			{
-				if (!_breakevenActivated && price.Value >= entry.Value + trigger)
-				{
-					_stopLevel = entry.Value + lockOffset;
-					_breakevenActivated = true;
-				}
-			}
-			else
-			{
-				if (!_breakevenActivated && price.Value <= entry.Value - trigger)
-				{
-					_stopLevel = entry.Value - lockOffset;
-					_breakevenActivated = true;
-				}
-			}
-		}
-
-		if (TrailPips > 0)
-		{
-			var trailOffset = TrailPips * _pipSize;
-
-			if (!TrailAfterBreakeven || _breakevenActivated || BreakevenTriggerPips <= 0)
-			{
-				if (isLong)
-				{
-					var newStop = price.Value - trailOffset;
-					if (!_stopLevel.HasValue || newStop > _stopLevel)
-					_stopLevel = newStop;
-				}
-				else
-				{
-					var newStop = price.Value + trailOffset;
-					if (!_stopLevel.HasValue || newStop < _stopLevel)
-					_stopLevel = newStop;
-				}
-			}
-			else
-			{
-				var trigger = BreakevenTriggerPips * _pipSize;
-
-				if (isLong && price.Value >= entry.Value + trigger)
-				{
-					var newStop = price.Value - trailOffset;
-					if (!_stopLevel.HasValue || newStop > _stopLevel)
-					_stopLevel = newStop;
-				}
-				else if (!isLong && price.Value <= entry.Value - trigger)
-				{
-					var newStop = price.Value + trailOffset;
-					if (!_stopLevel.HasValue || newStop < _stopLevel)
-					_stopLevel = newStop;
-				}
-			}
-		}
-
-		if (_stopLevel.HasValue)
-		{
-			if (isLong && price.Value <= _stopLevel)
-			{
-				ClosePosition();
-			}
-			else if (!isLong && price.Value >= _stopLevel)
-			{
-				ClosePosition();
-			}
+			SellMarket();
+			_entryPrice = close;
+			_stopLevel = close + StopLossMult * atr;
+			_takeLevel = close - TakeProfitMult * atr;
+			_barsSinceEntry = 0;
 		}
 	}
 
-	private void InitializeProtection()
+	private void ResetPosition()
 	{
-		if (Position == 0)
-		return;
-
+		_entryPrice = 0;
 		_stopLevel = null;
 		_takeLevel = null;
-		_breakevenActivated = false;
-
-		var entryPrice = PositionPrice;
-		if (!entryPrice.HasValue)
-		return;
-
-		if (StopLossPips > 0)
-		{
-			var slOffset = StopLossPips * _pipSize;
-			_stopLevel = Position > 0 ? entryPrice.Value - slOffset : entryPrice.Value + slOffset;
-		}
-
-		if (TakeProfitPips > 0)
-		{
-			var tpOffset = TakeProfitPips * _pipSize;
-			_takeLevel = Position > 0 ? entryPrice.Value + tpOffset : entryPrice.Value - tpOffset;
-		}
-	}
-
-	private void CancelActiveStraddle()
-	{
-		if (_buyStopOrder != null && _buyStopOrder.State == OrderStates.Active)
-		CancelOrder(_buyStopOrder);
-		if (_sellStopOrder != null && _sellStopOrder.State == OrderStates.Active)
-		CancelOrder(_sellStopOrder);
-
-		_buyStopOrder = null;
-		_sellStopOrder = null;
-	}
-
-	private bool HasActiveStraddle()
-	{
-		return (_buyStopOrder != null && _buyStopOrder.State == OrderStates.Active) ||
-		(_sellStopOrder != null && _sellStopOrder.State == OrderStates.Active);
-	}
-
-	private bool PerformShutdown()
-	{
-		var hasActivity = false;
-
-		if ((ShutdownMode == ShutdownOptions.All || ShutdownMode == ShutdownOptions.LongPositions) && Position > 0)
-		{
-			ClosePosition();
-			hasActivity = true;
-		}
-
-		if ((ShutdownMode == ShutdownOptions.All || ShutdownMode == ShutdownOptions.ShortPositions) && Position < 0)
-		{
-			ClosePosition();
-			hasActivity = true;
-		}
-
-		if (ShutdownMode == ShutdownOptions.All || ShutdownMode == ShutdownOptions.PendingLong)
-		{
-			if (_buyStopOrder != null && _buyStopOrder.State == OrderStates.Active)
-			{
-				CancelOrder(_buyStopOrder);
-				hasActivity = true;
-			}
-		}
-
-		if (ShutdownMode == ShutdownOptions.All || ShutdownMode == ShutdownOptions.PendingShort)
-		{
-			if (_sellStopOrder != null && _sellStopOrder.State == OrderStates.Active)
-			{
-				CancelOrder(_sellStopOrder);
-				hasActivity = true;
-			}
-		}
-
-		return hasActivity;
-	}
-
-	private bool IsEventEnabled()
-	{
-		return EventHour > 0 && EventMinute > 0;
-	}
-
-	private void UpdateOrderReferences()
-	{
-		if (_buyStopOrder != null && _buyStopOrder.State.IsFinal())
-		_buyStopOrder = null;
-
-		if (_sellStopOrder != null && _sellStopOrder.State.IsFinal())
-		_sellStopOrder = null;
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position == 0)
-		{
-			CancelOppositePending();
-			_lastPlacementDate = null;
-			_stopLevel = null;
-			_takeLevel = null;
-			_breakevenActivated = false;
-			_isLongPosition = null;
-			return;
-		}
-
-		InitializeProtection();
-
-		if (RemoveOppositeOrder)
-		{
-			CancelOppositePending();
-		}
-	}
-
-	private void CancelOppositePending()
-	{
-		if (_buyStopOrder != null && _buyStopOrder.State == OrderStates.Active && Position < 0)
-		{
-			CancelOrder(_buyStopOrder);
-			_buyStopOrder = null;
-		}
-
-		if (_sellStopOrder != null && _sellStopOrder.State == OrderStates.Active && Position > 0)
-		{
-			CancelOrder(_sellStopOrder);
-			_sellStopOrder = null;
-		}
-
-		if (Position == 0)
-		{
-			_buyStopOrder = null;
-			_sellStopOrder = null;
-		}
-	}
-
-	private decimal CalculatePipSize()
-	{
-		var step = Security?.PriceStep ?? 0.0001m;
-
-		var decimals = CountDecimals(step);
-		var multiplier = decimals is 3 or 5 ? 10m : 1m;
-
-		return step * multiplier;
-	}
-
-	private static int CountDecimals(decimal value)
-	{
-		value = Math.Abs(value);
-		var text = value.ToString(CultureInfo.InvariantCulture);
-		var index = text.IndexOf('.');
-		return index >= 0 ? text.Length - index - 1 : 0;
-	}
-
-	private decimal AlignPrice(decimal price, bool roundUp)
-	{
-		var step = Security?.PriceStep ?? 0.0001m;
-		if (step <= 0)
-		{
-			return price;
-		}
-
-		var ratio = price / step;
-		var rounded = roundUp ? Math.Ceiling(ratio) : Math.Floor(ratio);
-		return rounded * step;
-	}
-
-	public enum ShutdownOptions
-	{
-		All,
-		LongPositions,
-		ShortPositions,
-		PendingLong,
-		PendingShort
+		_barsSinceEntry = 0;
+		_cooldownCounter = CooldownBars;
 	}
 }

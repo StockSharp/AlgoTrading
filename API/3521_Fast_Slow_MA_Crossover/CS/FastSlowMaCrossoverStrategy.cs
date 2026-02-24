@@ -68,7 +68,7 @@ public class FastSlowMaCrossoverStrategy : Strategy
 		_stopTime = Param(nameof(StopTime), new TimeSpan(23, 59, 0))
 			.SetDisplay("Stop Time", "End of the allowed trading window", "Schedule");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -321,13 +321,13 @@ public class FastSlowMaCrossoverStrategy : Strategy
 
 		if (isLong)
 		{
-			_targetPrice = takeOffset > 0m ? NormalizePrice(_entryPrice + takeOffset) : 0m;
-			_stopPrice = stopOffset > 0m ? NormalizePrice(_entryPrice - stopOffset) : 0m;
+			_targetPrice = takeOffset > 0m ? (_entryPrice + takeOffset) : 0m;
+			_stopPrice = stopOffset > 0m ? (_entryPrice - stopOffset) : 0m;
 		}
 		else
 		{
-			_targetPrice = takeOffset > 0m ? NormalizePrice(_entryPrice - takeOffset) : 0m;
-			_stopPrice = stopOffset > 0m ? NormalizePrice(_entryPrice + stopOffset) : 0m;
+			_targetPrice = takeOffset > 0m ? (_entryPrice - takeOffset) : 0m;
+			_stopPrice = stopOffset > 0m ? (_entryPrice + stopOffset) : 0m;
 		}
 	}
 

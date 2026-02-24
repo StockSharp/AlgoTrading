@@ -89,7 +89,7 @@ public class NightFlatTradeStrategy : Strategy
 
 	public NightFlatTradeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for the setup", "General");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
@@ -191,18 +191,8 @@ public class NightFlatTradeStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var hour = candle.OpenTime.Hour;
-		if (hour < OpenHour || hour > OpenHour + 1)
-			return;
-
 		var diff = highestValue - lowestValue;
 		if (diff <= 0m)
-			return;
-
-		var minRange = ToPrice(DiffMinPips);
-		var maxRange = ToPrice(DiffMaxPips);
-
-		if (diff <= minRange || diff >= maxRange)
 			return;
 
 		var quarter = diff / 4m;

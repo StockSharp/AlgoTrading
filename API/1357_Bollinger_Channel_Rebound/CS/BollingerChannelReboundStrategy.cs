@@ -75,7 +75,7 @@ public class BollingerChannelReboundStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bands, ProcessCandle)
+			.BindEx(bands, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -87,9 +87,13 @@ public class BollingerChannelReboundStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		var bb = (BollingerBandsValue)bbValue;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal middle)
 			return;
 
 		var stdev = upper - middle;

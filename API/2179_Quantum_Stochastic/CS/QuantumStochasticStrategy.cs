@@ -16,128 +16,65 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Quantum Stochastic strategy based on Stochastic oscillator thresholds.
 /// Buys when %K leaves oversold zone and sells when %K leaves overbought zone.
-/// Positions are closed when %K reaches extreme closing levels.
 /// </summary>
 public class QuantumStochasticStrategy : Strategy
 {
 	private readonly StrategyParam<int> _kPeriod;
 	private readonly StrategyParam<int> _dPeriod;
-	private readonly StrategyParam<int> _slowing;
 	private readonly StrategyParam<decimal> _highLevel;
 	private readonly StrategyParam<decimal> _lowLevel;
-	private readonly StrategyParam<decimal> _highCloseLevel;
-	private readonly StrategyParam<decimal> _lowCloseLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _previousK;
+	private decimal? _previousK;
 
-	/// <summary>
-	/// Stochastic %K period.
-	/// </summary>
 	public int KPeriod
 	{
 		get => _kPeriod.Value;
 		set => _kPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Stochastic %D period.
-	/// </summary>
 	public int DPeriod
 	{
 		get => _dPeriod.Value;
 		set => _dPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Stochastic slowing factor.
-	/// </summary>
-	public int Slowing
-	{
-		get => _slowing.Value;
-		set => _slowing.Value = value;
-	}
-
-	/// <summary>
-	/// Lower boundary of overbought zone.
-	/// </summary>
 	public decimal HighLevel
 	{
 		get => _highLevel.Value;
 		set => _highLevel.Value = value;
 	}
 
-	/// <summary>
-	/// Upper boundary of oversold zone.
-	/// </summary>
 	public decimal LowLevel
 	{
 		get => _lowLevel.Value;
 		set => _lowLevel.Value = value;
 	}
 
-	/// <summary>
-	/// Level to close long positions.
-	/// </summary>
-	public decimal HighCloseLevel
-	{
-		get => _highCloseLevel.Value;
-		set => _highCloseLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Level to close short positions.
-	/// </summary>
-	public decimal LowCloseLevel
-	{
-		get => _lowCloseLevel.Value;
-		set => _lowCloseLevel.Value = value;
-	}
-
-	/// <summary>
-	/// The type of candles to use.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="QuantumStochasticStrategy"/>.
-	/// </summary>
 	public QuantumStochasticStrategy()
 	{
-		_kPeriod = Param(nameof(KPeriod), 100)
-		.SetGreaterThanZero()
-		.SetDisplay("%K Period", "Period of %K line", "Stochastic")
-		
-		.SetOptimize(50, 150, 10);
+		_kPeriod = Param(nameof(KPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("%K Period", "Period of %K line", "Stochastic");
 
-		_dPeriod = Param(nameof(DPeriod), 100)
-		.SetGreaterThanZero()
-		.SetDisplay("%D Period", "Period of %D line", "Stochastic")
-		
-		.SetOptimize(50, 150, 10);
-
-		_slowing = Param(nameof(Slowing), 3)
-		.SetGreaterThanZero()
-		.SetDisplay("Slowing", "Slowing factor", "Stochastic");
+		_dPeriod = Param(nameof(DPeriod), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("%D Period", "Period of %D line", "Stochastic");
 
 		_highLevel = Param(nameof(HighLevel), 80m)
-		.SetDisplay("High Level", "Bottom of overbought zone", "Levels");
+			.SetDisplay("High Level", "Bottom of overbought zone", "Levels");
 
 		_lowLevel = Param(nameof(LowLevel), 20m)
-		.SetDisplay("Low Level", "Top of oversold zone", "Levels");
+			.SetDisplay("Low Level", "Top of oversold zone", "Levels");
 
-		_highCloseLevel = Param(nameof(HighCloseLevel), 90m)
-		.SetDisplay("High Close Level", "Level to close long", "Levels");
-
-		_lowCloseLevel = Param(nameof(LowCloseLevel), 10m)
-		.SetDisplay("Low Close Level", "Level to close short", "Levels");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
@@ -150,7 +87,7 @@ public class QuantumStochasticStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousK = default;
+		_previousK = null;
 	}
 
 	/// <inheritdoc />
@@ -158,19 +95,14 @@ public class QuantumStochasticStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var stochastic = new StochasticOscillator
-		{
-			KPeriod = KPeriod,
-			D = {  K = { Length = DPeriod } },
-			Slowing = Slowing
-		};
+		var stochastic = new StochasticOscillator();
+		stochastic.K.Length = KPeriod;
+		stochastic.D.Length = DPeriod;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.BindEx(stochastic, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -184,12 +116,12 @@ public class QuantumStochasticStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		var stoch = (StochasticOscillatorValue)stochValue;
+		var stoch = (IStochasticOscillatorValue)stochValue;
 
 		if (stoch.K is not decimal kValue)
-		return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 		{
@@ -197,19 +129,19 @@ public class QuantumStochasticStrategy : Strategy
 			return;
 		}
 
-		// Entry conditions
-		if (_previousK < LowLevel && kValue >= LowLevel && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+		if (_previousK is not decimal prevK)
+		{
+			_previousK = kValue;
+			return;
+		}
 
-		if (_previousK > HighLevel && kValue <= HighLevel && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		// Buy when %K crosses above oversold level
+		if (prevK < LowLevel && kValue >= LowLevel && Position <= 0)
+			BuyMarket();
 
-		// Exit conditions
-		if (Position > 0 && kValue >= HighCloseLevel)
-			SellMarket(Position);
-
-		if (Position < 0 && kValue <= LowCloseLevel)
-			BuyMarket(-Position);
+		// Sell when %K crosses below overbought level
+		if (prevK > HighLevel && kValue <= HighLevel && Position >= 0)
+			SellMarket();
 
 		_previousK = kValue;
 	}

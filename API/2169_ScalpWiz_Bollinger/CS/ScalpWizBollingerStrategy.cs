@@ -63,19 +63,19 @@ public class ScalpWizBollingerStrategy : Strategy
 		
 		.SetOptimize(1m, 3m, 0.5m);
 		
-		_level1Pips = Param(nameof(Level1Pips), 100m)
+		_level1Pips = Param(nameof(Level1Pips), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Level1 Pips", "Deviation from band for weakest signal", "Levels");
-		
-		_level2Pips = Param(nameof(Level2Pips), 120m)
+
+		_level2Pips = Param(nameof(Level2Pips), 5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Level2 Pips", "Deviation from band for level 2", "Levels");
-		
-		_level3Pips = Param(nameof(Level3Pips), 150m)
+
+		_level3Pips = Param(nameof(Level3Pips), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Level3 Pips", "Deviation from band for level 3", "Levels");
-		
-		_level4Pips = Param(nameof(Level4Pips), 200m)
+
+		_level4Pips = Param(nameof(Level4Pips), 20m)
 		.SetGreaterThanZero()
 		.SetDisplay("Level4 Pips", "Deviation from band for strongest signal", "Levels");
 		
@@ -99,7 +99,7 @@ public class ScalpWizBollingerStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Risk %", "Risk percentage per trade", "General");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 	
@@ -130,8 +130,11 @@ public class ScalpWizBollingerStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		var bb = (BollingerBandsValue)value;
 		
 		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)

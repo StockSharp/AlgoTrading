@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,225 +8,160 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Starter Edge strategy based on ZLEMA MACD with EMA filter and RSI confirmation.
+/// Starter Edge strategy based on MACD crossover with EMA filter.
+/// Uses MACD line crossing signal line for entries, with EMA trend filter.
 /// </summary>
 public class StarterEdgeStrategy : Strategy
 {
-private readonly StrategyParam<int> _zlemaLength;
-private readonly StrategyParam<int> _shortLength;
-private readonly StrategyParam<int> _longLength;
-private readonly StrategyParam<int> _signalLength;
-private readonly StrategyParam<int> _emaLength;
-private readonly StrategyParam<decimal> _takeProfitPercent;
-private readonly StrategyParam<decimal> _stopLossPercent;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<int> _signalLength;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-private ZeroLagExponentialMovingAverage _zlema = null!;
-private ExponentialMovingAverage _fastMa = null!;
-private ExponentialMovingAverage _slowMa = null!;
-private SimpleMovingAverage _signalMa = null!;
-private RelativeStrengthIndex _rsi = null!;
-private ExponentialMovingAverage _ema = null!;
+	private decimal? _prevMacd;
+	private decimal? _prevSignal;
 
-private decimal _prevMacd;
-private decimal _prevSignal;
-private decimal _prevHist;
-private decimal _prevHist2;
-private decimal _prevRsi;
+	public int FastLength
+	{
+		get => _fastLength.Value;
+		set => _fastLength.Value = value;
+	}
 
-/// <summary>
-/// ZLEMA period length.
-/// </summary>
-public int ZlemaLength
-{
-get => _zlemaLength.Value;
-set => _zlemaLength.Value = value;
-}
+	public int SlowLength
+	{
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
+	}
 
-/// <summary>
-/// MACD fast EMA length.
-/// </summary>
-public int ShortLength
-{
-get => _shortLength.Value;
-set => _shortLength.Value = value;
-}
+	public int SignalLength
+	{
+		get => _signalLength.Value;
+		set => _signalLength.Value = value;
+	}
 
-/// <summary>
-/// MACD slow EMA length.
-/// </summary>
-public int LongLength
-{
-get => _longLength.Value;
-set => _longLength.Value = value;
-}
+	public int EmaLength
+	{
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
+	}
 
-/// <summary>
-/// MACD signal SMA length.
-/// </summary>
-public int SignalLength
-{
-get => _signalLength.Value;
-set => _signalLength.Value = value;
-}
+	public decimal TakeProfitPercent
+	{
+		get => _takeProfitPercent.Value;
+		set => _takeProfitPercent.Value = value;
+	}
 
-/// <summary>
-/// EMA filter length.
-/// </summary>
-public int EmaLength
-{
-get => _emaLength.Value;
-set => _emaLength.Value = value;
-}
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
 
-/// <summary>
-/// Take profit percentage.
-/// </summary>
-public decimal TakeProfitPercent
-{
-get => _takeProfitPercent.Value;
-set => _takeProfitPercent.Value = value;
-}
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
-/// <summary>
-/// Stop loss percentage.
-/// </summary>
-public decimal StopLossPercent
-{
-get => _stopLossPercent.Value;
-set => _stopLossPercent.Value = value;
-}
+	public StarterEdgeStrategy()
+	{
+		_fastLength = Param(nameof(FastLength), 12)
+			.SetDisplay("MACD Fast", "MACD Fast EMA Length", "General");
 
-/// <summary>
-/// Candle type to use.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+		_slowLength = Param(nameof(SlowLength), 26)
+			.SetDisplay("MACD Slow", "MACD Slow EMA Length", "General");
 
-/// <summary>
-/// Constructor.
-/// </summary>
-public StarterEdgeStrategy()
-{
-_zlemaLength = Param(nameof(ZlemaLength), 34)
-.SetDisplay("ZLEMA Length", "ZLEMA Length", "General")
-;
+		_signalLength = Param(nameof(SignalLength), 9)
+			.SetDisplay("Signal Length", "Signal SMA Length", "General");
 
-_shortLength = Param(nameof(ShortLength), 12)
-.SetDisplay("MACD Short Length", "MACD Short Length", "General")
-;
+		_emaLength = Param(nameof(EmaLength), 50)
+			.SetDisplay("EMA Length", "EMA trend filter length", "General");
 
-_longLength = Param(nameof(LongLength), 26)
-.SetDisplay("MACD Long Length", "MACD Long Length", "General")
-;
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
+			.SetDisplay("Take Profit %", "Take Profit %", "General");
 
-_signalLength = Param(nameof(SignalLength), 9)
-.SetDisplay("Signal Length", "Signal Length", "General")
-;
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
+			.SetDisplay("Stop Loss %", "Stop Loss %", "General");
 
-_emaLength = Param(nameof(EmaLength), 100)
-.SetDisplay("EMA 100 Length", "EMA 100 Length", "General")
-;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle Type", "General");
+	}
 
-_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
-.SetDisplay("Take Profit %", "Take Profit %", "General")
-;
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-.SetDisplay("Stop Loss %", "Stop Loss %", "General")
-;
+		_prevMacd = null;
+		_prevSignal = null;
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Candle Type", "General");
-}
+		var macdHist = new MovingAverageConvergenceDivergenceHistogram
+		{
+			Macd =
+			{
+				ShortMa = { Length = FastLength },
+				LongMa = { Length = SlowLength },
+			},
+			SignalMa = { Length = SignalLength }
+		};
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.BindEx(macdHist, ema, ProcessCandle)
+			.Start();
 
-_zlema = new ZeroLagExponentialMovingAverage { Length = ZlemaLength };
-_fastMa = new EMA { Length = ShortLength };
-_slowMa = new EMA { Length = LongLength };
-_signalMa = new SMA { Length = SignalLength };
-_ema = new EMA { Length = EmaLength };
-_rsi = new RelativeStrengthIndex { Length = 14 };
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
+			useMarketOrders: true);
 
-var subscription = SubscribeCandles(CandleType);
-subscription
-.Bind(_ema, _zlema, _rsi, ProcessCandle)
-.Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
+		}
+	}
 
-StartProtection(
-takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
-stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-useMarketOrders: true);
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue emaValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, _ema);
-DrawIndicator(area, _zlema);
-DrawIndicator(area, _fastMa);
-DrawIndicator(area, _slowMa);
-DrawOwnTrades(area);
-}
-}
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal zlemaValue, decimal rsiValue)
-{
-if (candle.State != CandleStates.Finished)
-return;
+		var macdTyped = (MovingAverageConvergenceDivergenceHistogramValue)macdValue;
+		var macd = macdTyped.Macd;
+		var signal = macdTyped.Signal;
+		var emaVal = emaValue.IsFormed ? emaValue.GetValue<decimal>() : (decimal?)null;
 
-if (!_ema.IsFormed || !_zlema.IsFormed || !_rsi.IsFormed)
-return;
+		if (macd == null || signal == null || emaVal == null)
+			return;
 
-var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, zlemaValue, candle.ServerTime)).ToDecimal();
-var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, zlemaValue, candle.ServerTime)).ToDecimal();
-var macdLine = fastValue - slowValue;
-var signalValue = _signalMa.Process(new DecimalIndicatorValue(_signalMa, macdLine, candle.ServerTime)).ToDecimal();
-var histValue = macdLine - signalValue;
+		var close = candle.ClosePrice;
 
-if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_signalMa.IsFormed)
-{
-_prevMacd = macdLine;
-_prevSignal = signalValue;
-_prevHist2 = _prevHist;
-_prevHist = histValue;
-_prevRsi = rsiValue;
-return;
-}
+		if (_prevMacd != null && _prevSignal != null)
+		{
+			// MACD cross up + price above EMA => buy
+			if (_prevMacd <= _prevSignal && macd > signal && close > emaVal && Position <= 0)
+			{
+				BuyMarket();
+			}
+			// MACD cross down + price below EMA => sell
+			else if (_prevMacd >= _prevSignal && macd < signal && close < emaVal && Position >= 0)
+			{
+				SellMarket();
+			}
+		}
 
-var macdCrossUp = _prevMacd <= _prevSignal && macdLine > signalValue;
-var macdCrossDown = _prevMacd >= _prevSignal && macdLine < signalValue;
-var linesParallel = Math.Abs(macdLine - signalValue) < 0.03m && Math.Abs(_prevMacd - _prevSignal) < 0.03m;
-var histFalling = histValue < _prevHist && _prevHist > _prevHist2;
-var wasAbove70 = _prevRsi > 70m && rsiValue <= 70m;
-var wasBelow30 = _prevRsi < 30m && rsiValue >= 30m;
-
-if (macdLine > signalValue && _prevMacd <= _prevSignal && Position <= 0)
-{
-BuyMarket(Volume + Math.Abs(Position));
-}
-else if (macdLine < signalValue && _prevMacd >= _prevSignal && Position >= 0)
-{
-SellMarket(Volume + Math.Abs(Position));
-}
-
-_prevHist2 = _prevHist;
-_prevHist = histValue;
-_prevMacd = macdLine;
-_prevSignal = signalValue;
-_prevRsi = rsiValue;
-}
+		_prevMacd = macd;
+		_prevSignal = signal;
+	}
 }

@@ -125,8 +125,8 @@ public class SuperTrendAiOscillatorStrategy : Strategy
 
 		_atr = new AverageTrueRange { Length = AtrLength };
 		_stochastic = new StochasticOscillator
-		{ K = { Length = 13 },
-			K = { Length = 5 },
+		{
+			K = { Length = 13 },
 			D = { Length = 3 }
 		};
 

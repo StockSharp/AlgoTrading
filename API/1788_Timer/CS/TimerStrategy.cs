@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,194 +12,38 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Timer-based breakout strategy.
-/// Recalculates buy and sell levels every specified number of seconds
-/// using ATR and places market orders when price crosses these levels.
+/// Recalculates buy/sell levels using ATR and trades breakouts.
 /// </summary>
 public class TimerStrategy : Strategy
 {
-	private readonly StrategyParam<int> _waitSeconds;
-	private readonly StrategyParam<decimal> _pipDistance;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _trailingStop;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<bool> _useTradingHours;
-	private readonly StrategyParam<TimeSpan> _startTime;
-	private readonly StrategyParam<TimeSpan> _stopTime;
 
 	private decimal _buyLevel;
 	private decimal _sellLevel;
-	private DateTimeOffset _lastMoveTime;
-	private ATR _atr;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Seconds between level recalculations.
-	/// </summary>
-	public int WaitSeconds
-	{
-		get => _waitSeconds.Value;
-		set => _waitSeconds.Value = value;
-	}
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Additional distance from price in points.
-	/// </summary>
-	public decimal PipDistance
-	{
-		get => _pipDistance.Value;
-		set => _pipDistance.Value = value;
-	}
-
-	/// <summary>
-	/// ATR indicator period.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing stop distance in points.
-	/// </summary>
-	public decimal TrailingStop
-	{
-		get => _trailingStop.Value;
-		set => _trailingStop.Value = value;
-	}
-
-	/// <summary>
-	/// Trade volume.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
-
-	/// <summary>
-	/// The type of candles to use for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Enable trading only during specified hours.
-	/// </summary>
-	public bool UseTradingHours
-	{
-		get => _useTradingHours.Value;
-		set => _useTradingHours.Value = value;
-	}
-
-	/// <summary>
-	/// Trading start time.
-	/// </summary>
-	public TimeSpan StartTime
-	{
-		get => _startTime.Value;
-		set => _startTime.Value = value;
-	}
-
-	/// <summary>
-	/// Trading stop time.
-	/// </summary>
-	public TimeSpan StopTime
-	{
-		get => _stopTime.Value;
-		set => _stopTime.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public TimerStrategy()
 	{
-		_waitSeconds = Param(nameof(WaitSeconds), 3)
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Wait Seconds", "Seconds before levels are recalculated", "General")
-			
-			.SetOptimize(1, 10, 1);
+			.SetDisplay("ATR Period", "ATR period", "Indicators");
 
-		_pipDistance = Param(nameof(PipDistance), 0m)
-			.SetDisplay("Pip Distance", "Additional distance in points", "General")
-			
-			.SetOptimize(0m, 50m, 5m);
+		_takeProfit = Param(nameof(TakeProfit), 500m)
+			.SetDisplay("Take Profit", "Take profit", "Risk");
 
-		_atrPeriod = Param(nameof(AtrPeriod), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR indicator", "Indicators")
-			
-			.SetOptimize(5, 50, 5);
+		_stopLoss = Param(nameof(StopLoss), 300m)
+			.SetDisplay("Stop Loss", "Stop loss", "Risk");
 
-		_takeProfit = Param(nameof(TakeProfit), 150m)
-			.SetDisplay("Take Profit", "Take profit in points", "Risk Management")
-			
-			.SetOptimize(50m, 300m, 50m);
-
-		_stopLoss = Param(nameof(StopLoss), 20m)
-			.SetDisplay("Stop Loss", "Stop loss in points", "Risk Management")
-			
-			.SetOptimize(10m, 100m, 10m);
-
-		_trailingStop = Param(nameof(TrailingStop), 10m)
-			.SetDisplay("Trailing Stop", "Trailing stop in points", "Risk Management")
-			
-			.SetOptimize(5m, 50m, 5m);
-
-		_volume = Param(nameof(TradeVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Trade volume", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_useTradingHours = Param(nameof(UseTradingHours), false)
-			.SetDisplay("Use Trading Hours", "Enable time filter", "Trading Hours");
-
-		_startTime = Param(nameof(StartTime), new TimeSpan(6, 0, 0))
-			.SetDisplay("Start Time", "Trading start time", "Trading Hours");
-
-		_stopTime = Param(nameof(StopTime), new TimeSpan(22, 0, 0))
-			.SetDisplay("Stop Time", "Trading stop time", "Trading Hours");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_buyLevel = 0m;
-		_sellLevel = 0m;
-		_lastMoveTime = DateTimeOffset.MinValue;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
@@ -210,20 +51,14 @@ public class TimerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		Volume = TradeVolume;
+		_buyLevel = 0;
+		_sellLevel = 0;
+		_entryPrice = 0;
 
-		_atr = new ATR { Length = AtrPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(_atr, ProcessCandle)
-			.Start();
-
-		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
-			trailingStop: new Unit(TrailingStop, UnitTypes.Absolute));
+		subscription.Bind(atr, ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
@@ -231,34 +66,45 @@ public class TimerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (UseTradingHours)
+		var price = candle.ClosePrice;
+
+		// Update levels every candle
+		_buyLevel = price + atrValue;
+		_sellLevel = price - atrValue;
+
+		// Exit management
+		if (Position > 0)
 		{
-			var t = candle.OpenTime.TimeOfDay;
-			if (t < StartTime || t >= StopTime)
+			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
+			{
+				SellMarket();
+				_entryPrice = 0;
 				return;
+			}
 		}
-
-		if ((candle.OpenTime - _lastMoveTime).TotalSeconds >= WaitSeconds)
-			MoveLevels(candle.ClosePrice, atrValue);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (Position <= 0 && candle.ClosePrice > _buyLevel)
+		else if (Position < 0)
 		{
-			BuyMarket(Volume);
+			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				return;
+			}
 		}
-		else if (Position >= 0 && candle.ClosePrice < _sellLevel)
-		{
-			SellMarket(Volume);
-		}
-	}
 
-	private void MoveLevels(decimal price, decimal atrValue)
-	{
-		var distance = PipDistance * Security.PriceStep;
-		_buyLevel = price + distance + atrValue;
-		_sellLevel = price - distance - atrValue;
-		_lastMoveTime = CurrentTime;
+		// Entry on breakout above/below ATR levels
+		if (Position == 0 && atrValue > 0)
+		{
+			if (candle.HighPrice > _buyLevel)
+			{
+				BuyMarket();
+				_entryPrice = price;
+			}
+			else if (candle.LowPrice < _sellLevel)
+			{
+				SellMarket();
+				_entryPrice = price;
+			}
+		}
 	}
 }

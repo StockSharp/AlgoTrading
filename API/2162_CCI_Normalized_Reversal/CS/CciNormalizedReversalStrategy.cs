@@ -98,7 +98,7 @@ public class CciNormalizedReversalStrategy : Strategy
 			.SetRange(-200, -50)
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -122,7 +122,8 @@ public class CciNormalizedReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(useMarketOrders: true);
+		_prevColor = 2;
+		_prevPrevColor = 2;
 
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 
@@ -136,6 +137,9 @@ public class CciNormalizedReversalStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal cciValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var color = GetColorIndex(cciValue);

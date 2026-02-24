@@ -1,10 +1,6 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,160 +10,67 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy using the recent high-low range.
-/// Trades only when the range width stays below the configured threshold.
+/// Range Breakout strategy: Highest/Lowest channel breakout.
+/// Buys when close >= highest. Sells when close <= lowest.
 /// </summary>
 public class RangeBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rangePeriod;
-	private readonly StrategyParam<decimal> _maxRangePoints;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
+	private readonly StrategyParam<int> _channelPeriod;
 
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-
-	/// <summary>
-	/// Number of candles to look back for the breakout range.
-	/// </summary>
-	public int RangePeriod
-	{
-		get => _rangePeriod.Value;
-		set => _rangePeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum allowed range in points to accept a breakout.
-	/// </summary>
-	public decimal MaxRangePoints
-	{
-		get => _maxRangePoints.Value;
-		set => _maxRangePoints.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to use for analysis.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-
-	/// <summary>
-	/// Stop loss distance expressed in points.
-	/// </summary>
-	public decimal StopLossPoints
+	public int ChannelPeriod
 	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
+		get => _channelPeriod.Value;
+		set => _channelPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Take profit distance expressed in points.
-	/// </summary>
-	public decimal TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="RangeBreakoutStrategy"/> class.
-	/// </summary>
 	public RangeBreakoutStrategy()
 	{
-		_rangePeriod = Param(nameof(RangePeriod), 10)
-			.SetDisplay("Range Period", "Number of candles forming the range", "General")
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+
+		_channelPeriod = Param(nameof(ChannelPeriod), 14)
 			.SetGreaterThanZero()
-			;
-
-		_maxRangePoints = Param(nameof(MaxRangePoints), 300m)
-			.SetDisplay("Max Range", "Upper bound for the range size in points", "General")
-			.SetGreaterThanZero()
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe used for breakout detection", "General");
-
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
-			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk")
-			.SetGreaterThanZero();
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 1000m)
-			.SetDisplay("Take Profit", "Take profit distance in points", "Risk")
-			.SetGreaterThanZero();
+			.SetDisplay("Channel Period", "Lookback period", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_highest = new Highest { Length = RangePeriod };
-		_lowest = new Lowest { Length = RangePeriod };
-
-		var takeProfitUnit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Step) : default(Unit);
-		var stopLossUnit = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Step) : default(Unit);
-
-		StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit);
+		var high = new Highest { Length = ChannelPeriod };
+		var low = new Lowest { Length = ChannelPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_highest, _lowest, ProcessCandle).Start();
+		subscription
+			.Bind(high, low, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _highest, "Highest");
-			DrawIndicator(area, _lowest, "Lowest");
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue)
+	private void ProcessCandle(ICandleMessage candle, decimal high, decimal low)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_highest.IsFormed || !_lowest.IsFormed)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var priceStep = Security?.PriceStep;
-		if (priceStep <= 0)
-			return;
-
-		var rangePoints = (highestValue - lowestValue) / priceStep.Value;
-		if (rangePoints > MaxRangePoints)
-			return;
-
-		if (Position != 0)
-			return;
-
-		var closePrice = candle.ClosePrice;
-
-		if (closePrice >= highestValue)
-		{
-			// Breakout above the range opens a long position.
-			BuyMarket(Volume);
-		}
-		else if (closePrice <= lowestValue)
-		{
-			// Breakdown below the range opens a short position.
-			SellMarket(Volume);
-		}
+		if (candle.ClosePrice >= high && Position <= 0)
+			BuyMarket();
+		else if (candle.ClosePrice <= low && Position >= 0)
+			SellMarket();
 	}
 }
-

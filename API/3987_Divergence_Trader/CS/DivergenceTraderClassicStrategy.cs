@@ -11,8 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -62,6 +60,7 @@ public class DivergenceTraderClassicStrategy : Strategy
 	private decimal? _trailingStopPrice;
 	private decimal _highestPrice;
 	private decimal _lowestPrice;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="DivergenceTraderClassicStrategy"/>.
@@ -86,11 +85,11 @@ public class DivergenceTraderClassicStrategy : Strategy
 		_appliedPrice = Param(nameof(AppliedPrice), CandlePrices.Open)
 		.SetDisplay("Applied Price", "Price component forwarded into the moving averages.", "Indicators");
 
-		_buyThreshold = Param(nameof(BuyThreshold), 0.0011m)
+		_buyThreshold = Param(nameof(BuyThreshold), 10m)
 		.SetDisplay("Buy Threshold", "Minimal divergence needed to allow long entries.", "Signals")
 		;
 
-		_stayOutThreshold = Param(nameof(StayOutThreshold), 0.0079m)
+		_stayOutThreshold = Param(nameof(StayOutThreshold), 1000m)
 		.SetDisplay("Stay Out Threshold", "Upper divergence bound disabling new entries.", "Signals")
 		;
 
@@ -121,7 +120,7 @@ public class DivergenceTraderClassicStrategy : Strategy
 		_stopHour = Param(nameof(StopHour), 24)
 		.SetDisplay("Stop Hour", "Hour when trading stops accepting new entries (1-24).", "Schedule");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used to calculate signals.", "General");
 	}
 
@@ -290,6 +289,19 @@ public class DivergenceTraderClassicStrategy : Strategy
 		_trailingStopPrice = null;
 		_highestPrice = 0m;
 		_lowestPrice = 0m;
+		_entryPrice = 0m;
+	}
+
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+
+		if (Position != 0 && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+
+		if (Position == 0m)
+			_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -299,17 +311,8 @@ public class DivergenceTraderClassicStrategy : Strategy
 
 		_pipSize = CalculatePipSize();
 
-		_fastSma = new SMA
-		{
-			Length = FastPeriod,
-			CandlePrice = AppliedPrice
-		};
-
-		_slowSma = new SMA
-		{
-			Length = SlowPeriod,
-			CandlePrice = AppliedPrice
-		};
+		_fastSma = new SMA { Length = FastPeriod };
+		_slowSma = new SMA { Length = SlowPeriod };
 
 		_previousSpread = null;
 		_breakEvenPrice = null;
@@ -407,7 +410,7 @@ public class DivergenceTraderClassicStrategy : Strategy
 			return;
 		}
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice == 0m)
 			return;
 
@@ -515,12 +518,12 @@ public class DivergenceTraderClassicStrategy : Strategy
 		if (Position == 0m)
 			return false;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice == 0m)
 			return false;
 
 		var step = EnsurePipSize();
-		var stepValue = Security?.StepPrice ?? step;
+		var stepValue = step;
 
 		var priceMove = Position > 0m ? lastPrice - entryPrice : entryPrice - lastPrice;
 		var pipMove = step > 0m ? priceMove / step : priceMove;

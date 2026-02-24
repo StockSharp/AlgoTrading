@@ -130,11 +130,11 @@ public class SuperAtr7StepProfitStrategy : Strategy
 		var adaptiveAtr = (shortAtr * momentumFactor + longAtr) / (1 + momentumFactor);
 		var atrMultiple = adaptiveAtr != 0m ? momentumValue / adaptiveAtr : 0m;
 
-		var tsValue = _trendStrength.Process(new DecimalIndicatorValue(_trendStrength, atrMultiple, candle.CloseTime));
-		var trendStrength = tsValue.ToDecimal();
+		var tsValue = _trendStrength.Process(atrMultiple, candle.CloseTime, true);
+		var trendStrength = tsValue.GetValue<decimal>();
 
-		var atrSmaValue = _adaptiveAtrSma.Process(new DecimalIndicatorValue(_adaptiveAtrSma, adaptiveAtr, candle.CloseTime));
-		var adaptiveAtrSma = atrSmaValue.ToDecimal();
+		var atrSmaValue = _adaptiveAtrSma.Process(adaptiveAtr, candle.CloseTime, true);
+		var adaptiveAtrSma = atrSmaValue.GetValue<decimal>();
 
 		var trendSignal = shortMa > longMa && trendStrength > TrendStrengthThreshold
 			? 1

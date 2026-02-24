@@ -11,8 +11,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// RSI combined with Bollinger Bands strategy.
 /// Buys when RSI is oversold and price is below the lower band.
@@ -27,15 +25,12 @@ public class RsiBollingerBandsStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiOversold;
 	private readonly StrategyParam<decimal> _rsiOverbought;
 
-	private RelativeStrengthIndex _rsi;
-	private BollingerBands _bollinger;
-
 	public RsiBollingerBandsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
-		_rsiPeriod = Param(nameof(RsiPeriod), 20)
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI calculation length", "Indicators");
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
@@ -44,10 +39,10 @@ public class RsiBollingerBandsStrategy : Strategy
 		_bollingerWidth = Param(nameof(BollingerWidth), 2m)
 			.SetDisplay("Bollinger Width", "Band width multiplier", "Indicators");
 
-		_rsiOversold = Param(nameof(RsiOversold), 30m)
+		_rsiOversold = Param(nameof(RsiOversold), 35m)
 			.SetDisplay("RSI Oversold", "Buy threshold", "Indicators");
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
+		_rsiOverbought = Param(nameof(RsiOverbought), 65m)
 			.SetDisplay("RSI Overbought", "Sell threshold", "Indicators");
 	}
 
@@ -66,34 +61,43 @@ public class RsiBollingerBandsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerWidth };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerWidth };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsi, _bollinger, ProcessCandle)
+			.BindEx(rsi, bollinger, ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, bollinger);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var rsi = rsiValue.IsFormed ? rsiValue.GetValue<decimal>() : (decimal?)null;
+		var bb = bbValue as BollingerBandsValue;
+
+		if (rsi is null || bb?.UpBand is not decimal upper || bb?.LowBand is not decimal lower)
 			return;
 
 		var buySignal = rsi < RsiOversold && candle.ClosePrice < lower;
 		var sellSignal = rsi > RsiOverbought && candle.ClosePrice > upper;
 
 		if (buySignal && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-		}
+			BuyMarket();
 		else if (sellSignal && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-		}
+			SellMarket();
 	}
 }

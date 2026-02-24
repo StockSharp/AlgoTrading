@@ -102,7 +102,7 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 	/// </summary>
 	public CyberiaTraderAdaptiveStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candle series used for calculations", "General");
 
 		_autoSelectPeriod = Param(nameof(AutoSelectPeriod), true)
@@ -422,9 +422,8 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
 
 		_currentValuePeriod = Math.Max(1, InitialPeriod);
 		_previousValuePeriod = _currentValuePeriod;
@@ -471,6 +470,8 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 		{
 			StartProtection(takeProfit, stopLoss);
 		}
+
+		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue macdValue, IIndicatorValue cciValue, IIndicatorValue adxValue)
@@ -540,6 +541,9 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 
 	private void ExecuteTradingLogic()
 	{
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		// Combine internal logic and user defined blocks.
 		var allowBuy = !_disableBuy && !_blockBuyFlag;
 		var allowSell = !_disableSell && !_blockSellFlag;

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Pivot breakout strategy with ATR and ADX filters.
-/// Places trades when price breaks previous support or resistance.
+/// Enters when price breaks previous support or resistance levels.
 /// </summary>
 public class EmVolStrategy : Strategy
 {
@@ -24,106 +21,39 @@ public class EmVolStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<decimal> _trailStart;
-	private readonly StrategyParam<decimal> _trailStep;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private AverageTrueRange _atr;
-	private ADX _adx;
 
 	private ICandleMessage _prevCandle;
 	private decimal _prevAtr;
-	private decimal _prevAdx;
-
-	private Order _stopOrder;
-	private Order _targetOrder;
 	private decimal _entryPrice;
-	private decimal _tickSize;
+	private decimal _stopPrice;
 
-	/// <summary>
-	/// Take profit distance in price steps.
-	/// </summary>
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-
-	/// <summary>
-	/// Stop loss distance in price steps.
-	/// </summary>
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-
-	/// <summary>
-	/// ATR calculation period.
-	/// </summary>
 	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
-
-	/// <summary>
-	/// ADX calculation period.
-	/// </summary>
 	public int AdxPeriod { get => _adxPeriod.Value; set => _adxPeriod.Value = value; }
-
-	/// <summary>
-	/// Maximum ADX level to allow trading.
-	/// </summary>
 	public decimal AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
-
-	/// <summary>
-	/// Profit required before trailing stop starts.
-	/// </summary>
-	public decimal TrailStart { get => _trailStart.Value; set => _trailStart.Value = value; }
-
-	/// <summary>
-	/// Trailing stop distance in price steps.
-	/// </summary>
-	public decimal TrailStep { get => _trailStep.Value; set => _trailStep.Value = value; }
-
-	/// <summary>
-	/// Working candle type.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="EmVolStrategy"/> class.
-	/// </summary>
 	public EmVolStrategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 100m)
-			.SetDisplay("Take Profit", "Take profit distance", "Risk")
-			
-			.SetOptimize(50m, 200m, 50m);
+		_takeProfit = Param(nameof(TakeProfit), 1000m)
+			.SetDisplay("Take Profit", "Take profit distance", "Risk");
 
 		_stopLoss = Param(nameof(StopLoss), 500m)
-			.SetDisplay("Stop Loss", "Stop loss distance", "Risk")
-			
-			.SetOptimize(100m, 1000m, 100m);
+			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetDisplay("ATR Period", "ATR period", "Indicators")
-			
-			.SetOptimize(10, 30, 2);
+			.SetDisplay("ATR Period", "ATR period", "Indicators");
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetDisplay("ADX Period", "ADX period", "Indicators")
-			
-			.SetOptimize(10, 30, 2);
+			.SetDisplay("ADX Period", "ADX period", "Indicators");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 30m)
-			.SetDisplay("ADX Threshold", "Trades allowed when ADX below", "Indicators")
-			
-			.SetOptimize(20m, 40m, 5m);
+		_adxThreshold = Param(nameof(AdxThreshold), 50m)
+			.SetDisplay("ADX Threshold", "Trades allowed when ADX below", "Indicators");
 
-		_trailStart = Param(nameof(TrailStart), 10m)
-			.SetDisplay("Trailing Start", "Profit before trailing", "Risk");
-
-		_trailStep = Param(nameof(TrailStep), 10m)
-			.SetDisplay("Trailing Step", "Trailing distance", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -131,90 +61,69 @@ public class EmVolStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_tickSize = Security.PriceStep ?? 1m;
-
-		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_adx = new ADX { Length = AdxPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var adx = new ADX { Length = AdxPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_atr, _adx, ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _atr, subscription);
-			DrawIndicator(area, _adx, subscription);
-			DrawOwnTrades(area);
-		}
+		subscription
+			.BindEx(new IIndicator[] { atr, adx }, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atr, decimal adx)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (values[0].IsEmpty || values[1].IsEmpty)
+			return;
+
+		var atr = values[0].GetValue<decimal>();
+		var adxTyped = (AverageDirectionalIndexValue)values[1];
+		if (adxTyped.MovingAverage is not decimal adxVal)
 			return;
 
 		if (_prevCandle == null)
 		{
 			_prevCandle = candle;
 			_prevAtr = atr;
-			_prevAdx = adx;
 			return;
 		}
 
 		var res1 = _prevCandle.HighPrice + _prevAtr;
 		var sup1 = _prevCandle.LowPrice - _prevAtr;
+		var price = candle.ClosePrice;
 
-		if (Position == 0 && _prevAdx < AdxThreshold)
+		if (Position == 0)
 		{
-			var volume = Volume;
-			if (volume <= 0)
-				volume = 1;
-
-			if (candle.ClosePrice > res1)
+			if (adxVal < AdxThreshold)
 			{
-				BuyMarket(volume);
-				_entryPrice = candle.ClosePrice;
-				_stopOrder = SellStop(_entryPrice - StopLoss * _tickSize, volume);
-				_targetOrder = SellLimit(_entryPrice + TakeProfit * _tickSize, volume);
-			}
-			else if (candle.ClosePrice < sup1)
-			{
-				SellMarket(volume);
-				_entryPrice = candle.ClosePrice;
-				_stopOrder = BuyStop(_entryPrice + StopLoss * _tickSize, volume);
-				_targetOrder = BuyLimit(_entryPrice - TakeProfit * _tickSize, volume);
-			}
-		}
-		else if (Position > 0 && TrailStart > 0)
-		{
-			var profit = candle.ClosePrice - _entryPrice;
-			if (profit >= TrailStart * _tickSize)
-			{
-				var newStop = candle.ClosePrice - TrailStep * _tickSize;
-				if (_stopOrder != null && newStop > _stopOrder.Price + _tickSize)
+				if (price > res1)
 				{
-					CancelOrder(_stopOrder);
-					_stopOrder = SellStop(newStop, Position);
+					BuyMarket();
+					_entryPrice = price;
+					_stopPrice = price - StopLoss;
+				}
+				else if (price < sup1)
+				{
+					SellMarket();
+					_entryPrice = price;
+					_stopPrice = price + StopLoss;
 				}
 			}
 		}
-		else if (Position < 0 && TrailStart > 0)
+		else if (Position > 0)
 		{
-			var profit = _entryPrice - candle.ClosePrice;
-			if (profit >= TrailStart * _tickSize)
-			{
-				var newStop = candle.ClosePrice + TrailStep * _tickSize;
-				if (_stopOrder != null && newStop < _stopOrder.Price - _tickSize)
-				{
-					CancelOrder(_stopOrder);
-					_stopOrder = BuyStop(newStop, -Position);
-				}
-			}
+			if (price - _entryPrice >= TakeProfit || price <= _stopPrice)
+				SellMarket();
+		}
+		else if (Position < 0)
+		{
+			if (_entryPrice - price >= TakeProfit || price >= _stopPrice)
+				BuyMarket();
 		}
 
 		_prevCandle = candle;
 		_prevAtr = atr;
-		_prevAdx = adx;
 	}
 }

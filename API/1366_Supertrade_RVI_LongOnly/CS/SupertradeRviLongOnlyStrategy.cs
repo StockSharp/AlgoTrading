@@ -121,7 +121,7 @@ public class SupertradeRviLongOnlyStrategy : Strategy
 			.SetDisplay("Reward Ratio", "Take profit = risk * ratio", "Protection");
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles", "General");
 	}
 
@@ -158,7 +158,7 @@ public class SupertradeRviLongOnlyStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var stdDevValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, candle.ClosePrice, candle.ServerTime)).ToDecimal();
+		var stdDevValue = _stdDev.Process(candle.ClosePrice, candle.ServerTime, true).GetValue<decimal>();
 
 		if (!_hasPrevClose)
 		{
@@ -170,8 +170,8 @@ public class SupertradeRviLongOnlyStrategy : Strategy
 		var change = candle.ClosePrice - _prevClose;
 		_prevClose = candle.ClosePrice;
 
-		var upper = _upperEma.Process(new DecimalIndicatorValue(_upperEma, change <= 0 ? 0m : stdDevValue, candle.ServerTime)).ToDecimal();
-		var lower = _lowerEma.Process(new DecimalIndicatorValue(_lowerEma, change > 0 ? 0m : stdDevValue, candle.ServerTime)).ToDecimal();
+		var upper = _upperEma.Process(change <= 0 ? 0m : stdDevValue, candle.ServerTime, true).GetValue<decimal>();
+		var lower = _lowerEma.Process(change > 0 ? 0m : stdDevValue, candle.ServerTime, true).GetValue<decimal>();
 
 		if (!_stdDev.IsFormed || !_upperEma.IsFormed || !_lowerEma.IsFormed)
 			return;

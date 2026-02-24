@@ -1,17 +1,12 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -205,7 +200,7 @@ public class MomoTradesV3Strategy : Strategy
 	/// </summary>
 	public MomoTradesV3Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe", "General");
 
 		_emaPeriod = Param(nameof(MaPeriod), 22)
@@ -284,9 +279,9 @@ public class MomoTradesV3Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_pointValue = Security?.PriceStep ?? 0m;
 		if (_pointValue <= 0m)
@@ -302,17 +297,11 @@ public class MomoTradesV3Strategy : Strategy
 
 		Volume = TradeVolume;
 
-		var macd = new MovingAverageConvergenceDivergence
-		{
-			ShortMa = { Length = FastPeriod },
-			LongMa = { Length = SlowPeriod },
-			SignalPeriod = SignalPeriod
-		};
+		var macd = new MovingAverageConvergenceDivergence();
+		macd.ShortMa.Length = FastPeriod;
+		macd.LongMa.Length = SlowPeriod;
 
-		var ema = new EMA
-		{
-			Length = MaPeriod
-		};
+		var ema = new ExponentialMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -338,7 +327,7 @@ public class MomoTradesV3Strategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal signalLine, decimal histogram, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -397,11 +386,11 @@ public class MomoTradesV3Strategy : Strategy
 
 		if (Position > 0)
 		{
-			SellMarket(Position.Abs());
+			SellMarket(Math.Abs(Position));
 		}
 		else if (Position < 0)
 		{
-			BuyMarket(Position.Abs());
+			BuyMarket(Math.Abs(Position));
 		}
 
 		_breakevenPrice = null;
@@ -417,7 +406,7 @@ public class MomoTradesV3Strategy : Strategy
 			return;
 		}
 
-		var entryPrice = PositionPrice ?? candle.ClosePrice;
+		var entryPrice = candle.ClosePrice;
 		var offset = BreakevenOffsetPoints * _pointValue;
 
 		if (Position > 0)
@@ -438,7 +427,7 @@ public class MomoTradesV3Strategy : Strategy
 			}
 			else if (candle.LowPrice <= _breakevenPrice.Value)
 			{
-				SellMarket(Position.Abs());
+				SellMarket(Math.Abs(Position));
 				_breakevenPrice = null;
 				_breakevenSide = null;
 			}
@@ -461,7 +450,7 @@ public class MomoTradesV3Strategy : Strategy
 			}
 			else if (candle.HighPrice >= _breakevenPrice.Value)
 			{
-				BuyMarket(Position.Abs());
+				BuyMarket(Math.Abs(Position));
 				_breakevenPrice = null;
 				_breakevenSide = null;
 			}
@@ -480,7 +469,7 @@ public class MomoTradesV3Strategy : Strategy
 			return false;
 		}
 
-		var macd5IsZero = macd5.Abs() <= MacdZeroTolerance;
+		var macd5IsZero = Math.Abs(macd5) <= MacdZeroTolerance;
 
 		var pattern1 = macd3 > macd4 &&
 		macd4 > macd5 &&
@@ -510,7 +499,7 @@ public class MomoTradesV3Strategy : Strategy
 			return false;
 		}
 
-		var macd5IsZero = macd5.Abs() <= MacdZeroTolerance;
+		var macd5IsZero = Math.Abs(macd5) <= MacdZeroTolerance;
 
 		var pattern1 = macd3 < macd4 &&
 		macd4 < macd5 &&
@@ -596,7 +585,7 @@ public class MomoTradesV3Strategy : Strategy
 		if (equity <= 0m)
 			return TradeVolume;
 
-		var lotSize = security.LotSize ?? 1m;
+		var lotSize = security.Multiplier ?? 1m;
 		if (lotSize <= 0m)
 			lotSize = 1m;
 
@@ -625,11 +614,11 @@ public class MomoTradesV3Strategy : Strategy
 		var steps = Math.Floor(volume / step);
 		var normalized = (decimal)steps * step;
 
-		var min = sec.VolumeMin ?? step;
+		var min = sec.MinVolume ?? step;
 		if (normalized < min)
 			normalized = min;
 
-		var max = sec.VolumeMax;
+		var max = sec.MaxVolume;
 		if (max != null && normalized > max.Value)
 			normalized = max.Value;
 

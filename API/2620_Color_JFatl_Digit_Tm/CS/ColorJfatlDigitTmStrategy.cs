@@ -392,7 +392,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 			fatl += FatlCoefficients[i] * value;
 		}
 
-		var jmaValue = _jma.Process(new DecimalIndicatorValue(_jma, fatl, candle.OpenTime));
+		var jmaValue = _jma.Process(new DecimalIndicatorValue(_jma, fatl, candle.OpenTime) { IsFinal = true });
 		if (!_jma.IsFormed)
 			return;
 

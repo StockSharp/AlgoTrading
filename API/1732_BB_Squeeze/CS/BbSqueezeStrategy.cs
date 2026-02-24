@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -62,16 +59,16 @@ public class BbSqueezeStrategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Period of Bollinger Bands", "Parameters")
-			
+
 			.SetOptimize(10, 50, 5);
 
 		_squeezeThreshold = Param(nameof(SqueezeThreshold), 0.05m)
 			.SetGreaterThanZero()
 			.SetDisplay("Squeeze Threshold", "Relative band width threshold", "Parameters")
-			
+
 			.SetOptimize(0.01m, 0.1m, 0.01m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used", "General");
 	}
 
@@ -96,8 +93,6 @@ public class BbSqueezeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		var bollinger = new BollingerBands
 		{
 			Length = BollingerPeriod,
@@ -107,7 +102,7 @@ public class BbSqueezeStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(bollinger, ProcessCandle)
+			.BindEx(bollinger, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -119,12 +114,19 @@ public class BbSqueezeStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var bbVal = (BollingerBandsValue)value;
+
+		if (bbVal.UpBand is not decimal upper ||
+			bbVal.LowBand is not decimal lower ||
+			bbVal.MovingAverage is not decimal middle)
+			return;
+
+		if (middle == 0)
 			return;
 
 		var bandWidth = (upper - lower) / middle;

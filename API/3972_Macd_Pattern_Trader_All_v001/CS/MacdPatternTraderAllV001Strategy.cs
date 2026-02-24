@@ -800,7 +800,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 	/// <summary>
 	/// Constructor.
 	/// </summary>
-	public MacdPatternTraderStrategy()
+	public MacdPatternTraderAllV001Strategy()
 	{
 		_pattern1Enabled = Param(nameof(Pattern1Enabled), true)
 			.SetDisplay("Pattern 1", "Enable first MACD pattern", "Patterns");
@@ -819,9 +819,9 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		_pattern1Fast = Param(nameof(Pattern1Fast), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("P1 Fast EMA", "Fast EMA length for MACD", "Pattern 1");
-		_pattern1MaxThreshold = Param(nameof(Pattern1MaxThreshold), 0.0095m)
+		_pattern1MaxThreshold = Param(nameof(Pattern1MaxThreshold), 95m)
 			.SetDisplay("P1 Max", "Upper MACD threshold", "Pattern 1");
-		_pattern1MinThreshold = Param(nameof(Pattern1MinThreshold), -0.0045m)
+		_pattern1MinThreshold = Param(nameof(Pattern1MinThreshold), -45m)
 			.SetDisplay("P1 Min", "Lower MACD threshold", "Pattern 1");
 
 		_pattern2Enabled = Param(nameof(Pattern2Enabled), true)
@@ -841,9 +841,9 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		_pattern2Fast = Param(nameof(Pattern2Fast), 17)
 			.SetGreaterThanZero()
 			.SetDisplay("P2 Fast EMA", "Fast EMA length for MACD", "Pattern 2");
-		_pattern2MaxThreshold = Param(nameof(Pattern2MaxThreshold), 0.0045m)
+		_pattern2MaxThreshold = Param(nameof(Pattern2MaxThreshold), 45m)
 			.SetDisplay("P2 Max", "Upper MACD threshold", "Pattern 2");
-		_pattern2MinThreshold = Param(nameof(Pattern2MinThreshold), -0.0035m)
+		_pattern2MinThreshold = Param(nameof(Pattern2MinThreshold), -35m)
 			.SetDisplay("P2 Min", "Lower MACD threshold", "Pattern 2");
 
 		_pattern3Enabled = Param(nameof(Pattern3Enabled), true)
@@ -863,13 +863,13 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		_pattern3Fast = Param(nameof(Pattern3Fast), 32)
 			.SetGreaterThanZero()
 			.SetDisplay("P3 Fast EMA", "Fast EMA length for MACD", "Pattern 3");
-		_pattern3MaxThreshold = Param(nameof(Pattern3MaxThreshold), 0.0015m)
+		_pattern3MaxThreshold = Param(nameof(Pattern3MaxThreshold), 15m)
 			.SetDisplay("P3 Max", "Primary upper MACD threshold", "Pattern 3");
-		_pattern3MaxLowThreshold = Param(nameof(Pattern3MaxLowThreshold), 0.0040m)
+		_pattern3MaxLowThreshold = Param(nameof(Pattern3MaxLowThreshold), 40m)
 			.SetDisplay("P3 Max Low", "Secondary upper MACD threshold", "Pattern 3");
-		_pattern3MinThreshold = Param(nameof(Pattern3MinThreshold), -0.0050m)
+		_pattern3MinThreshold = Param(nameof(Pattern3MinThreshold), -50m)
 			.SetDisplay("P3 Min", "Primary lower MACD threshold", "Pattern 3");
-		_pattern3MinHighThreshold = Param(nameof(Pattern3MinHighThreshold), -0.0005m)
+		_pattern3MinHighThreshold = Param(nameof(Pattern3MinHighThreshold), -5m)
 			.SetDisplay("P3 Min High", "Secondary lower MACD threshold", "Pattern 3");
 
 		_pattern4Enabled = Param(nameof(Pattern4Enabled), true)
@@ -892,13 +892,13 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		_pattern4AdditionalBars = Param(nameof(Pattern4AdditionalBars), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("P4 Extra Bars", "Compatibility counter, kept for completeness", "Pattern 4");
-		_pattern4MaxThreshold = Param(nameof(Pattern4MaxThreshold), 0.0165m)
+		_pattern4MaxThreshold = Param(nameof(Pattern4MaxThreshold), 165m)
 			.SetDisplay("P4 Max", "Primary upper MACD threshold", "Pattern 4");
-		_pattern4MaxLowThreshold = Param(nameof(Pattern4MaxLowThreshold), 0.0001m)
+		_pattern4MaxLowThreshold = Param(nameof(Pattern4MaxLowThreshold), 1m)
 			.SetDisplay("P4 Max Low", "Secondary upper MACD threshold", "Pattern 4");
-		_pattern4MinThreshold = Param(nameof(Pattern4MinThreshold), -0.0005m)
+		_pattern4MinThreshold = Param(nameof(Pattern4MinThreshold), -5m)
 			.SetDisplay("P4 Min", "Primary lower MACD threshold", "Pattern 4");
-		_pattern4MinHighThreshold = Param(nameof(Pattern4MinHighThreshold), -0.0006m)
+		_pattern4MinHighThreshold = Param(nameof(Pattern4MinHighThreshold), -6m)
 			.SetDisplay("P4 Min High", "Secondary lower MACD threshold", "Pattern 4");
 
 		_pattern5Enabled = Param(nameof(Pattern5Enabled), true)
@@ -918,13 +918,13 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		_pattern5Fast = Param(nameof(Pattern5Fast), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("P5 Fast EMA", "Fast EMA length for MACD", "Pattern 5");
-		_pattern5MaxNeutralThreshold = Param(nameof(Pattern5MaxNeutralThreshold), 0.0005m)
+		_pattern5MaxNeutralThreshold = Param(nameof(Pattern5MaxNeutralThreshold), 5m)
 			.SetDisplay("P5 Neutral Max", "Neutral upper MACD threshold", "Pattern 5");
-		_pattern5MaxThreshold = Param(nameof(Pattern5MaxThreshold), 0.0015m)
+		_pattern5MaxThreshold = Param(nameof(Pattern5MaxThreshold), 15m)
 			.SetDisplay("P5 Max", "Upper MACD threshold", "Pattern 5");
-		_pattern5MinNeutralThreshold = Param(nameof(Pattern5MinNeutralThreshold), -0.0005m)
+		_pattern5MinNeutralThreshold = Param(nameof(Pattern5MinNeutralThreshold), -5m)
 			.SetDisplay("P5 Neutral Min", "Neutral lower MACD threshold", "Pattern 5");
-		_pattern5MinThreshold = Param(nameof(Pattern5MinThreshold), -0.0030m)
+		_pattern5MinThreshold = Param(nameof(Pattern5MinThreshold), -30m)
 			.SetDisplay("P5 Min", "Lower MACD threshold", "Pattern 5");
 
 		_pattern6Enabled = Param(nameof(Pattern6Enabled), true)
@@ -944,9 +944,9 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		_pattern6Fast = Param(nameof(Pattern6Fast), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("P6 Fast EMA", "Fast EMA length for MACD", "Pattern 6");
-		_pattern6MaxThreshold = Param(nameof(Pattern6MaxThreshold), 0.0005m)
+		_pattern6MaxThreshold = Param(nameof(Pattern6MaxThreshold), 5m)
 			.SetDisplay("P6 Max", "Upper MACD threshold", "Pattern 6");
-		_pattern6MinThreshold = Param(nameof(Pattern6MinThreshold), -0.0010m)
+		_pattern6MinThreshold = Param(nameof(Pattern6MinThreshold), -10m)
 			.SetDisplay("P6 Min", "Lower MACD threshold", "Pattern 6");
 		_pattern6MaxBars = Param(nameof(Pattern6MaxBars), 5)
 			.SetGreaterThanZero()
@@ -982,7 +982,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 			.SetDisplay("Stop Time", "Trading window end", "General");
 		_useMartingale = Param(nameof(UseMartingale), true)
 			.SetDisplay("Martingale", "Enable martingale volume adjustment", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for analysis", "General");
 		_macdHistoryLength = Param(nameof(MacdHistoryLength), 3)
 			.SetGreaterThanZero()
@@ -1069,7 +1069,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_macd1, _macd2, _macd3, _macd4, _macd5, _macd6, _ema1, _ema2, _sma3, _ema4, ProcessCandle)
+			.BindEx(new IIndicator[] { _macd1, _macd2, _macd3, _macd4, _macd5, _macd6, _ema1, _ema2, _sma3, _ema4 }, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -1083,19 +1083,21 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 
 	private void ProcessCandle(
 		ICandleMessage candle,
-		IIndicatorValue macd1Value,
-		IIndicatorValue macd2Value,
-		IIndicatorValue macd3Value,
-		IIndicatorValue macd4Value,
-		IIndicatorValue macd5Value,
-		IIndicatorValue macd6Value,
-		IIndicatorValue ema1Value,
-		IIndicatorValue ema2Value,
-		IIndicatorValue sma3Value,
-		IIndicatorValue ema4Value)
+		IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var macd1Value = values[0];
+		var macd2Value = values[1];
+		var macd3Value = values[2];
+		var macd4Value = values[3];
+		var macd5Value = values[4];
+		var macd6Value = values[5];
+		var ema1Value = values[6];
+		var ema2Value = values[7];
+		var sma3Value = values[8];
+		var ema4Value = values[9];
 
 		_candles.Add(candle);
 		TrimCandles();
@@ -1193,7 +1195,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 
 		if (macdcurr < Pattern1MaxThreshold && macdcurr < macdlast && macdlast > macdlast3 && _pattern1WasAbove && macdcurr > 0m && macdlast3 < Pattern1MaxThreshold)
 		{
-			if (TryOpenShort(candle, Pattern1StopLossBars, Pattern1Offset, Pattern1TakeProfitBars, "Pattern1"))
+			if (TryOpenShort(candle, Pattern1StopLossBars, Pattern1Offset, Pattern1TakeProfitBars))
 			{
 				_pattern1WasAbove = false;
 				_longPartialCount = 0;
@@ -1208,7 +1210,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 
 		if (macdcurr > Pattern1MinThreshold && macdcurr < 0m && macdcurr > macdlast && macdlast < macdlast3 && _pattern1WasBelow && macdlast3 > Pattern1MinThreshold)
 		{
-			if (TryOpenLong(candle, Pattern1StopLossBars, Pattern1Offset, Pattern1TakeProfitBars, "Pattern1"))
+			if (TryOpenLong(candle, Pattern1StopLossBars, Pattern1Offset, Pattern1TakeProfitBars))
 			{
 				_pattern1WasBelow = false;
 				_shortPartialCount = 0;
@@ -1237,7 +1239,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 
 		if (_pattern2SellArmed && macdcurr < macdlast && macdlast > macdlast3 && macdcurr < 0m)
 		{
-			if (TryOpenShort(candle, Pattern2StopLossBars, Pattern2Offset, Pattern2TakeProfitBars, "Pattern2"))
+			if (TryOpenShort(candle, Pattern2StopLossBars, Pattern2Offset, Pattern2TakeProfitBars))
 			{
 				_pattern2WasPositive = false;
 				_pattern2SellArmed = false;
@@ -1262,7 +1264,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 
 		if (_pattern2BuyArmed && macdcurr > macdlast && macdlast < macdlast3 && macdcurr > 0m)
 		{
-			if (TryOpenLong(candle, Pattern2StopLossBars, Pattern2Offset, Pattern2TakeProfitBars, "Pattern2"))
+			if (TryOpenLong(candle, Pattern2StopLossBars, Pattern2Offset, Pattern2TakeProfitBars))
 			{
 				_pattern2WasNegative = false;
 				_pattern2BuyArmed = false;
@@ -1279,12 +1281,12 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		if (macdcurr > Pattern3MaxLowThreshold)
 			_pattern3BarsBup++;
 
-		double max13 = 0, max23 = 0;
+		decimal max13 = 0, max23 = 0;
 		var stops3 = 0;
 		var stops13 = 0;
 
 		if (S3 == 1 && macdcurr < macdlast && macdlast > macdlast3 && macdlast > max13 && stops3 == 0)
-			max13 = (double)macdlast;
+			max13 = macdlast;
 
 		if (max13 > 0 && macdcurr < Pattern3MaxThreshold)
 			stops3 = 1;
@@ -1297,7 +1299,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		}
 
 		if (stops3 == 1 && macdcurr > Pattern3MaxThreshold && macdcurr < macdlast && macdlast > macdlast3 && macdlast > max13 && macdlast > max23 && stops13 == 0)
-			max23 = (double)macdlast;
+			max23 = macdlast;
 
 		if (max23 > 0 && macdcurr < Pattern3MaxThreshold)
 			stops13 = 1;
@@ -1317,7 +1319,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 
 		if (aopSell)
 		{
-			if (TryOpenShort(candle, Pattern3StopLossBars, Pattern3Offset, Pattern3TakeProfitBars, "Pattern3"))
+			if (TryOpenShort(candle, Pattern3StopLossBars, Pattern3Offset, Pattern3TakeProfitBars))
 			{
 				_pattern3BarsBup = 0;
 				return;
@@ -1327,10 +1329,10 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		var bS3 = macdcurr < Pattern3MinThreshold ? 1 : 0;
 		var sstops3 = 0;
 		var sstops13 = 0;
-		double min13 = 0, min23 = 0;
+		decimal min13 = 0, min23 = 0;
 
 		if (bS3 == 1 && macdcurr > macdlast && macdlast < macdlast3 && macdlast < min13 && sstops3 == 0)
-			min13 = (double)macdlast;
+			min13 = macdlast;
 
 		if (min13 < 0 && macdcurr > Pattern3MinThreshold)
 		{
@@ -1346,7 +1348,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		}
 
 		if (sstops3 == 1 && macdcurr < Pattern3MaxThreshold && macdcurr > macdlast && macdlast < macdlast3 && macdlast < min13 && macdlast < min23 && sstops13 == 0)
-			min23 = (double)macdlast;
+			min23 = macdlast;
 
 		if (min23 < 0 && macdcurr > Pattern3MinThreshold)
 		{
@@ -1372,7 +1374,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 
 		if (aopBuy)
 		{
-			TryOpenLong(candle, Pattern3StopLossBars, Pattern3Offset, Pattern3TakeProfitBars, "Pattern3");
+			TryOpenLong(candle, Pattern3StopLossBars, Pattern3Offset, Pattern3TakeProfitBars);
 		}
 	}
 
@@ -1380,14 +1382,14 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 	{
 		var aopSell = false;
 		var aopBuy = false;
-		double max14 = 0;
-		double min14 = 0;
+		decimal max14 = 0;
+		decimal min14 = 0;
 		var stops4 = 0;
 		var sstop4 = 0;
 
 		if (macdcurr > Pattern4MaxThreshold && macdcurr < macdlast && macdlast > macdlast3 && stops4 == 0)
 		{
-			max14 = (double)macdlast;
+			max14 = macdlast;
 			stops4 = 1;
 		}
 
@@ -1405,13 +1407,13 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 
 		if (aopSell)
 		{
-			if (TryOpenShort(candle, Pattern4StopLossBars, Pattern4Offset, Pattern4TakeProfitBars, "Pattern4"))
+			if (TryOpenShort(candle, Pattern4StopLossBars, Pattern4Offset, Pattern4TakeProfitBars))
 				return;
 		}
 
 		if (macdcurr < Pattern4MinThreshold && macdcurr > macdlast && macdlast < macdlast3 && sstop4 == 0)
 		{
-			min14 = (double)macdlast;
+			min14 = macdlast;
 			sstop4 = 1;
 		}
 
@@ -1429,7 +1431,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 
 		if (aopBuy)
 		{
-			TryOpenLong(candle, Pattern4StopLossBars, Pattern4Offset, Pattern4TakeProfitBars, "Pattern4");
+			TryOpenLong(candle, Pattern4StopLossBars, Pattern4Offset, Pattern4TakeProfitBars);
 		}
 	}
 
@@ -1466,7 +1468,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 
 		if (aopSell)
 		{
-			if (TryOpenShort(candle, Pattern5StopLossBars, Pattern5Offset, Pattern5TakeProfitBars, "Pattern5"))
+			if (TryOpenShort(candle, Pattern5StopLossBars, Pattern5Offset, Pattern5TakeProfitBars))
 				return;
 		}
 
@@ -1494,7 +1496,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 
 		if (aopBuy)
 		{
-			TryOpenLong(candle, Pattern5StopLossBars, Pattern5Offset, Pattern5TakeProfitBars, "Pattern5");
+			TryOpenLong(candle, Pattern5StopLossBars, Pattern5Offset, Pattern5TakeProfitBars);
 		}
 	}
 
@@ -1520,7 +1522,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 
 		if (_pattern6SellReady)
 		{
-			if (TryOpenShort(candle, Pattern6StopLossBars, Pattern6Offset, Pattern6TakeProfitBars, "Pattern6"))
+			if (TryOpenShort(candle, Pattern6StopLossBars, Pattern6Offset, Pattern6TakeProfitBars))
 			{
 				_pattern6SellReady = false;
 				_pattern6BarsAbove = 0;
@@ -1549,7 +1551,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 
 		if (_pattern6BuyReady)
 		{
-			if (TryOpenLong(candle, Pattern6StopLossBars, Pattern6Offset, Pattern6TakeProfitBars, "Pattern6"))
+			if (TryOpenLong(candle, Pattern6StopLossBars, Pattern6Offset, Pattern6TakeProfitBars))
 			{
 				_pattern6BuyReady = false;
 				_pattern6BarsBelow = 0;
@@ -1558,7 +1560,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		}
 	}
 
-	private bool TryOpenLong(ICandleMessage candle, int stopBars, int offset, int takeBars, string tag)
+	private bool TryOpenLong(ICandleMessage candle, int stopBars, int offset, int takeBars)
 	{
 		var stop = CalculateStopPrice(Sides.Buy, stopBars, offset);
 		var take = CalculateTakeProfit(Sides.Buy, takeBars);
@@ -1570,7 +1572,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		if (volume <= 0m)
 			return false;
 
-		BuyMarket(volume, tag);
+		BuyMarket(volume);
 		_longStop = stop;
 		_longTake = take;
 		_shortStop = null;
@@ -1580,7 +1582,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		return true;
 	}
 
-	private bool TryOpenShort(ICandleMessage candle, int stopBars, int offset, int takeBars, string tag)
+	private bool TryOpenShort(ICandleMessage candle, int stopBars, int offset, int takeBars)
 	{
 		var stop = CalculateStopPrice(Sides.Sell, stopBars, offset);
 		var take = CalculateTakeProfit(Sides.Sell, takeBars);
@@ -1592,7 +1594,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		if (volume <= 0m)
 			return false;
 
-		SellMarket(volume, tag);
+		SellMarket(volume);
 		_shortStop = stop;
 		_shortTake = take;
 		_longStop = null;
@@ -1719,7 +1721,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 			{
 				var volume = Math.Max(Math.Round(_longVolume / 3m, 2, MidpointRounding.AwayFromZero), MinPartialVolume);
 				volume = Math.Min(volume, Position);
-				SellMarket(volume, "PartialLong");
+				SellMarket(volume);
 				_longPartialCount++;
 				return;
 			}
@@ -1728,7 +1730,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 			{
 				var volume = Math.Max(Math.Round(_longVolume / 2m, 2, MidpointRounding.AwayFromZero), MinPartialVolume);
 				volume = Math.Min(volume, Position);
-				SellMarket(volume, "PartialLong");
+				SellMarket(volume);
 				_longPartialCount++;
 			}
 		}
@@ -1739,7 +1741,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 			{
 				var volume = Math.Max(Math.Round(_shortVolume / 3m, 2, MidpointRounding.AwayFromZero), MinPartialVolume);
 				volume = Math.Min(volume, Math.Abs(Position));
-				BuyMarket(volume, "PartialShort");
+				BuyMarket(volume);
 				_shortPartialCount++;
 				return;
 			}
@@ -1748,7 +1750,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 			{
 				var volume = Math.Max(Math.Round(_shortVolume / 2m, 2, MidpointRounding.AwayFromZero), MinPartialVolume);
 				volume = Math.Min(volume, Math.Abs(Position));
-				BuyMarket(volume, "PartialShort");
+				BuyMarket(volume);
 				_shortPartialCount++;
 			}
 		}
@@ -1760,13 +1762,13 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		{
 			if (_longStop.HasValue && candle.LowPrice <= _longStop.Value)
 			{
-				SellMarket(Math.Abs(Position), "StopLong");
+				SellMarket(Math.Abs(Position));
 				_longStop = null;
 				_longTake = null;
 			}
 			else if (_longTake.HasValue && candle.HighPrice >= _longTake.Value)
 			{
-				SellMarket(Math.Abs(Position), "TakeLong");
+				SellMarket(Math.Abs(Position));
 				_longStop = null;
 				_longTake = null;
 			}
@@ -1775,13 +1777,13 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		{
 			if (_shortStop.HasValue && candle.HighPrice >= _shortStop.Value)
 			{
-				BuyMarket(Math.Abs(Position), "StopShort");
+				BuyMarket(Math.Abs(Position));
 				_shortStop = null;
 				_shortTake = null;
 			}
 			else if (_shortTake.HasValue && candle.LowPrice <= _shortTake.Value)
 			{
-				BuyMarket(Math.Abs(Position), "TakeShort");
+				BuyMarket(Math.Abs(Position));
 				_shortStop = null;
 				_shortTake = null;
 			}
@@ -1799,7 +1801,7 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		AppendMacdValue(_macd6History, macd6Value);
 	}
 
-	private static void AppendMacdValue(List<decimal> history, IIndicatorValue value)
+	private void AppendMacdValue(List<decimal> history, IIndicatorValue value)
 	{
 		if (value is not MovingAverageConvergenceDivergenceSignalValue macdValue)
 			return;

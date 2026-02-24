@@ -71,7 +71,7 @@ public class HpcsInter5Strategy : Strategy
 	/// </summary>
 	public HpcsInter5Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for the close comparison", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 10)
@@ -130,21 +130,22 @@ public class HpcsInter5Strategy : Strategy
 
 		ShiftCloses(candle.ClosePrice);
 
-		if (_tradePlaced)
-			return;
-
 		if (_recentCloses[1] is not decimal lastClose || _recentCloses[5] is not decimal olderClose)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (olderClose <= lastClose)
-			return;
-
-		// Enter long once when the five-bars-ago close beats the latest close.
-		BuyMarket();
-		_tradePlaced = true;
+		// Enter long when the five-bars-ago close beats the latest close (momentum pullback)
+		if (olderClose > lastClose && Position <= 0)
+		{
+			BuyMarket();
+		}
+		// Enter short when the latest close beats five-bars-ago close (momentum reversal)
+		else if (olderClose < lastClose && Position >= 0)
+		{
+			SellMarket();
+		}
 	}
 
 	private void ShiftCloses(decimal close)
@@ -157,15 +158,9 @@ public class HpcsInter5Strategy : Strategy
 
 	private void InitializePipSize()
 	{
-		var step = Security.PriceStep ?? 0m;
+		var step = Security.PriceStep ?? 0.01m;
 		if (step <= 0m)
-			step = Security.Step;
-
-		if (step <= 0m)
-		{
-			_pipSize = 0m;
-			return;
-		}
+			step = 0.01m;
 
 		var pipFactor = Security.Decimals is 3 or 5 ? 10m : 1m;
 		_pipSize = step * pipFactor;

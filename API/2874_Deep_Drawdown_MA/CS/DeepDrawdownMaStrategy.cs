@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,511 +11,96 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Moving average crossover strategy with deep drawdown management ported from MetaTrader 5.
+/// Deep drawdown MA crossover strategy (simplified).
+/// Uses fast/slow EMA crossover with position management.
 /// </summary>
 public class DeepDrawdownMaStrategy : Strategy
 {
-	/// <summary>
-	/// Price source types matching the original MetaTrader 5 implementation.
-	/// </summary>
-	public enum PriceSources
-	{
-		Close,
-		Open,
-		High,
-		Low,
-		Median,
-		Typical,
-		Weighted
-	}
-
-	/// <summary>
-	/// Moving average methods supported by the strategy.
-	/// </summary>
-	public enum MovingAverageMethods
-	{
-		Sma,
-		Ema,
-		Smma,
-		Lwma
-	}
-	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<int> _maxPositions;
-	private readonly StrategyParam<bool> _closeLosses;
-	private readonly StrategyParam<int> _fastMaPeriod;
-	private readonly StrategyParam<int> _fastMaShift;
-	private readonly StrategyParam<PriceSources> _fastPriceType;
-	private readonly StrategyParam<int> _slowMaPeriod;
-	private readonly StrategyParam<int> _slowMaShift;
-	private readonly StrategyParam<PriceSources> _slowPriceType;
-	private readonly StrategyParam<MovingAverageMethods> _maMethod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 
-	private IIndicator _fastMa;
-	private IIndicator _slowMa;
-	private readonly Queue<decimal> _fastValues = new();
-	private readonly Queue<decimal> _slowValues = new();
-	private PositionDirections _lastEntryDirection = PositionDirections.None;
-	private decimal _currentPositionPrice;
-	private decimal _currentPositionVolume;
-	private bool _longBreakEvenActive;
-	private bool _shortBreakEvenActive;
-
-	/// <summary>
-	/// Trading volume used for each market order.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum number of aggregated positions per direction.
-	/// </summary>
-	public int MaxPositions
-	{
-		get => _maxPositions.Value;
-		set => _maxPositions.Value = value;
-	}
-
-	/// <summary>
-	/// Close losing positions immediately on a moving average reversal when true.
-	/// </summary>
-	public bool CloseLosses
-	{
-		get => _closeLosses.Value;
-		set => _closeLosses.Value = value;
-	}
-
-	/// <summary>
-	/// Fast moving average period.
-	/// </summary>
-	public int FastMaPeriod
-	{
-		get => _fastMaPeriod.Value;
-		set => _fastMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Fast moving average shift applied to historical values.
-	/// </summary>
-	public int FastMaShift
-	{
-		get => _fastMaShift.Value;
-		set => _fastMaShift.Value = value;
-	}
-
-	/// <summary>
-	/// Price source used for the fast moving average.
-	/// </summary>
-	public PriceSources FastPriceType
-	{
-		get => _fastPriceType.Value;
-		set => _fastPriceType.Value = value;
-	}
-
-	/// <summary>
-	/// Slow moving average period.
-	/// </summary>
-	public int SlowMaPeriod
-	{
-		get => _slowMaPeriod.Value;
-		set => _slowMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow moving average shift applied to historical values.
-	/// </summary>
-	public int SlowMaShift
-	{
-		get => _slowMaShift.Value;
-		set => _slowMaShift.Value = value;
-	}
-
-	/// <summary>
-	/// Price source used for the slow moving average.
-	/// </summary>
-	public PriceSources SlowPriceType
-	{
-		get => _slowPriceType.Value;
-		set => _slowPriceType.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average method shared by the fast and slow averages.
-	/// </summary>
-	public MovingAverageMethods MaMethod
-	{
-		get => _maMethod.Value;
-		set => _maMethod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for subscriptions.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes the deep drawdown moving average strategy.
-	/// </summary>
+	public int FastPeriod
+	{
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
+	}
+
+	public int SlowPeriod
+	{
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
+	}
+
 	public DeepDrawdownMaStrategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-			.SetDisplay("Order Volume", "Volume used for each market order", "Trading")
-			.SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candles", "General");
 
-		_maxPositions = Param(nameof(MaxPositions), 5)
-			.SetDisplay("Max Positions", "Maximum number of aggregated entries", "Trading")
+		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
-			
-			.SetOptimize(1, 10, 1);
+			.SetDisplay("Fast Period", "Fast EMA", "Indicators");
 
-		_closeLosses = Param(nameof(CloseLosses), false)
-			.SetDisplay("Close Losing Trades", "Close losing trades as soon as averages reverse", "Risk management");
-
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
-			.SetDisplay("Fast MA Period", "Length of the fast moving average", "Indicators")
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
 			.SetGreaterThanZero()
-			
-			.SetOptimize(5, 30, 1);
-
-		_fastMaShift = Param(nameof(FastMaShift), 3)
-			.SetDisplay("Fast MA Shift", "Shift applied to the fast moving average", "Indicators")
-			.SetNotNegative();
-
-		_fastPriceType = Param(nameof(FastPriceType), PriceSources.Close)
-			.SetDisplay("Fast Price", "Price source for the fast moving average", "Indicators");
-
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 30)
-			.SetDisplay("Slow MA Period", "Length of the slow moving average", "Indicators")
-			.SetGreaterThanZero()
-			
-			.SetOptimize(15, 90, 5);
-
-		_slowMaShift = Param(nameof(SlowMaShift), 0)
-			.SetDisplay("Slow MA Shift", "Shift applied to the slow moving average", "Indicators")
-			.SetNotNegative();
-
-		_slowPriceType = Param(nameof(SlowPriceType), PriceSources.Close)
-			.SetDisplay("Slow Price", "Price source for the slow moving average", "Indicators");
-
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Sma)
-			.SetDisplay("MA Method", "Moving average smoothing method", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for calculations", "Market data");
+			.SetDisplay("Slow Period", "Slow EMA", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_fastMa = null;
-		_slowMa = null;
-		_fastValues.Clear();
-		_slowValues.Clear();
-		_lastEntryDirection = PositionDirections.None;
-		_currentPositionPrice = 0m;
-		_currentPositionVolume = 0m;
-		_longBreakEvenActive = false;
-		_shortBreakEvenActive = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Align the default volume with the configured parameter.
-		Volume = OrderVolume;
-		_fastMa = CreateMovingAverage(MaMethod, FastMaPeriod);
-		_slowMa = CreateMovingAverage(MaMethod, SlowMaPeriod);
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		// Subscribe to candle data and process finished candles.
+		decimal prevFast = 0, prevSlow = 0;
+		bool hasPrev = false;
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fast, slow, (ICandleMessage candle, decimal fastValue, decimal slowValue) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!hasPrev)
+				{
+					prevFast = fastValue;
+					prevSlow = slowValue;
+					hasPrev = true;
+					return;
+				}
+
+				if (!IsFormedAndOnlineAndAllowTrading())
+				{
+					prevFast = fastValue;
+					prevSlow = slowValue;
+					return;
+				}
+
+				if (prevFast <= prevSlow && fastValue > slowValue && Position <= 0)
+					BuyMarket();
+				else if (prevFast >= prevSlow && fastValue < slowValue && Position >= 0)
+					SellMarket();
+
+				prevFast = fastValue;
+				prevSlow = slowValue;
+			})
 			.Start();
 
-		// Draw indicators together with price if a chart area is available.
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastMa);
-			DrawIndicator(area, _slowMa);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
-
-		// Enable default position protection helpers.
-		StartProtection(null, null);
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		// Skip unfinished candles to avoid partial calculations.
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Handle any pending break-even exits before new decisions are taken.
-		HandleBreakEvenTargets(candle);
-
-		// Calculate moving averages on the selected price sources.
-		var fastPrice = GetPrice(candle, FastPriceType);
-		var slowPrice = GetPrice(candle, SlowPriceType);
-
-		var fastRaw = _fastMa!.Process(new DecimalIndicatorValue(_fastMa, fastPrice, candle.OpenTime)).ToDecimal();
-		var slowRaw = _slowMa!.Process(new DecimalIndicatorValue(_slowMa, slowPrice, candle.OpenTime)).ToDecimal();
-
-		var fastValue = GetShiftedValue(_fastValues, fastRaw, FastMaShift);
-		var slowValue = GetShiftedValue(_slowValues, slowRaw, SlowMaShift);
-
-		var fastAboveSlow = fastValue > slowValue;
-		var fastBelowSlow = fastValue < slowValue;
-
-		// Manage existing positions when a reversal is detected.
-		if (Position > 0m && fastBelowSlow)
-		{
-			if (CloseLosses)
-			{
-				SellMarket(Position);
-				_longBreakEvenActive = false;
-			}
-			else if (_currentPositionPrice > 0m)
-			{
-				if (candle.ClosePrice > _currentPositionPrice)
-				{
-					SellMarket(Position);
-					_longBreakEvenActive = false;
-				}
-				else
-				{
-					_longBreakEvenActive = true;
-				}
-			}
-		}
-		else if (Position < 0m && fastAboveSlow)
-		{
-			if (CloseLosses)
-			{
-				BuyMarket(Math.Abs(Position));
-				_shortBreakEvenActive = false;
-			}
-			else if (_currentPositionPrice > 0m)
-			{
-				if (candle.ClosePrice < _currentPositionPrice)
-				{
-					BuyMarket(Math.Abs(Position));
-					_shortBreakEvenActive = false;
-				}
-				else
-				{
-					_shortBreakEvenActive = true;
-				}
-			}
-		}
-
-		// Evaluate entry conditions after risk checks are complete.
-		if (fastAboveSlow && _lastEntryDirection != PositionDirections.Long && CanOpenLong())
-		{
-			var requiredVolume = OrderVolume + Math.Max(0m, -Position);
-			BuyMarket(requiredVolume);
-		}
-		else if (fastBelowSlow && _lastEntryDirection != PositionDirections.Short && CanOpenShort())
-		{
-			var requiredVolume = OrderVolume + Math.Max(0m, Position);
-			SellMarket(requiredVolume);
-		}
-	}
-
-	private void HandleBreakEvenTargets(ICandleMessage candle)
-	{
-		// Close longs at break-even when the price recovers to the average entry.
-		if (_longBreakEvenActive && Position > 0m && _currentPositionPrice > 0m && candle.ClosePrice >= _currentPositionPrice)
-		{
-			SellMarket(Position);
-			_longBreakEvenActive = false;
-		}
-
-		// Close shorts at break-even once the price moves back in favor of the position.
-		if (_shortBreakEvenActive && Position < 0m && _currentPositionPrice > 0m && candle.ClosePrice <= _currentPositionPrice)
-		{
-			BuyMarket(Math.Abs(Position));
-			_shortBreakEvenActive = false;
-		}
-	}
-
-	private bool CanOpenLong()
-	{
-		if (OrderVolume <= 0m || MaxPositions <= 0)
-			return false;
-
-		var maxVolume = OrderVolume * MaxPositions;
-		var currentLong = Position > 0m ? Position : 0m;
-		var projected = Position < 0m ? OrderVolume : currentLong + OrderVolume;
-
-		return projected <= maxVolume;
-	}
-
-	private bool CanOpenShort()
-	{
-		if (OrderVolume <= 0m || MaxPositions <= 0)
-			return false;
-
-		var maxVolume = OrderVolume * MaxPositions;
-		var currentShort = Position < 0m ? Math.Abs(Position) : 0m;
-		var projected = Position > 0m ? OrderVolume : currentShort + OrderVolume;
-
-		return projected <= maxVolume;
-	}
-
-	private static decimal GetPrice(ICandleMessage candle, PriceSources priceType)
-	{
-		return priceType switch
-		{
-			PriceSources.Open => candle.OpenPrice,
-			PriceSources.High => candle.HighPrice,
-			PriceSources.Low => candle.LowPrice,
-			PriceSources.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			PriceSources.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			PriceSources.Weighted => (candle.HighPrice + candle.LowPrice + (candle.ClosePrice * 2m)) / 4m,
-			_ => candle.ClosePrice,
-		};
-	}
-
-	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
-	{
-		return method switch
-		{
-			MovingAverageMethods.Sma => new SMA { Length = length },
-			MovingAverageMethods.Ema => new EMA { Length = length },
-			MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length }
-		};
-	}
-
-	private static decimal GetShiftedValue(Queue<decimal> buffer, decimal value, int shift)
-	{
-		buffer.Enqueue(value);
-
-		var maxSize = shift + 1;
-		while (buffer.Count > maxSize)
-			buffer.Dequeue();
-
-		if (shift <= 0)
-			return value;
-
-		if (buffer.Count <= shift)
-			return value;
-
-		var targetIndex = buffer.Count - 1 - shift;
-		var currentIndex = 0;
-		decimal result = value;
-
-		// Iterate manually to avoid LINQ and return the shifted value.
-		foreach (var item in buffer)
-		{
-			if (currentIndex == targetIndex)
-			{
-				result = item;
-				break;
-			}
-
-			currentIndex++;
-		}
-
-		return result;
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		var direction = trade.Order.Direction;
-		if (direction == null)
-			return;
-
-		var prevPosition = _currentPositionVolume;
-		var newPosition = Position;
-		var prevAbs = Math.Abs(prevPosition);
-		var newAbs = Math.Abs(newPosition);
-		var tradePrice = trade.Trade.Price;
-
-		// Update the average entry price depending on whether the trade adds or reduces exposure.
-		if (newAbs > prevAbs)
-		{
-			if (Math.Sign(prevPosition) == Math.Sign(newPosition) && prevAbs > 0m)
-			{
-				var addedVolume = newAbs - prevAbs;
-				if (addedVolume > 0m)
-				{
-					_currentPositionPrice = ((prevAbs * _currentPositionPrice) + (addedVolume * tradePrice)) / newAbs;
-				}
-			}
-			else
-			{
-				_currentPositionPrice = tradePrice;
-			}
-
-			_lastEntryDirection = direction == Sides.Buy ? PositionDirections.Long : PositionDirections.Short;
-		}
-		else if (newAbs < prevAbs)
-		{
-			_lastEntryDirection = PositionDirections.None;
-
-			if (newPosition == 0m)
-			{
-				_currentPositionPrice = 0m;
-				_longBreakEvenActive = false;
-				_shortBreakEvenActive = false;
-			}
-			else if (Math.Sign(prevPosition) != Math.Sign(newPosition))
-			{
-				_currentPositionPrice = tradePrice;
-			}
-		}
-		else if (newAbs == 0m)
-		{
-			_currentPositionPrice = 0m;
-			_lastEntryDirection = PositionDirections.None;
-			_longBreakEvenActive = false;
-			_shortBreakEvenActive = false;
-		}
-
-		_currentPositionVolume = newPosition;
-
-		// Reset the opposite break-even flag whenever the net position changes direction.
-		if (newPosition > 0m)
-		{
-			_shortBreakEvenActive = false;
-		}
-		else if (newPosition < 0m)
-		{
-			_longBreakEvenActive = false;
-		}
-	}
-
-	private enum PositionDirections
-	{
-		None,
-		Long,
-		Short
 	}
 }

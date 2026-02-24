@@ -63,7 +63,7 @@ public class StreakBasedTradingStrategy : Strategy
 
 public StreakBasedTradingStrategy()
 {
-		_tradeDirection = Param(nameof(TradeDirection), Sides.Buy)
+		_tradeDirection = Param(nameof(TradeDirection), (Sides?)Sides.Buy)
 			.SetDisplay("Trade Direction", "Choose Long or Short", "General");
 
 		_streakThreshold = Param(nameof(StreakThreshold), 8)

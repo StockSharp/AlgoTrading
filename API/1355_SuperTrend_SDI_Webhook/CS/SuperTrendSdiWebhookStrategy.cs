@@ -157,7 +157,7 @@ public class SuperTrendSdiWebhookStrategy : Strategy
 	{
 		base.OnStarted2(time);
 		var supertrend = new SuperTrend { Length = AtrPeriod, Multiplier = AtrMultiplier };
-		var adx = new AverageDirectionalIndex { Length = DiLength, Smooth = DiSmooth };
+		var adx = new AverageDirectionalIndex { Length = DiLength };
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 		.BindEx(supertrend, adx, ProcessCandle)

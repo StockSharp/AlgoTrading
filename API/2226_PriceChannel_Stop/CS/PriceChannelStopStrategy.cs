@@ -110,7 +110,7 @@ public class PriceChannelStopStrategy : Strategy
 			
 			.SetOptimize(0.05m, 0.3m, 0.05m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
@@ -168,11 +168,8 @@ public class PriceChannelStopStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var dc = (DonchianChannelsValue)value;
-		if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
+		var dc = value as IDonchianChannelsValue;
+		if (dc?.UpperBand is not decimal upper || dc?.LowerBand is not decimal lower)
 			return;
 
 		var range = upper - lower;
@@ -202,21 +199,12 @@ public class PriceChannelStopStrategy : Strategy
 		var isBuySignal = _trend <= 0 && trend > 0;
 		var isSellSignal = _trend >= 0 && trend < 0;
 
-		if (isBuySignal)
+		if (IsFormedAndOnlineAndAllowTrading())
 		{
-			if (SellPosClose && Position < 0)
-				BuyMarket(Math.Abs(Position));
-
-			if (BuyPosOpen && Position <= 0)
-				BuyMarket(Volume);
-		}
-		else if (isSellSignal)
-		{
-			if (BuyPosClose && Position > 0)
-				SellMarket(Position);
-
-			if (SellPosOpen && Position >= 0)
-				SellMarket(Volume);
+			if (isBuySignal && Position <= 0)
+				BuyMarket();
+			else if (isSellSignal && Position >= 0)
+				SellMarket();
 		}
 
 		_trend = trend;

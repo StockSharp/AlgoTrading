@@ -1,57 +1,33 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
+namespace StockSharp.Samples.Strategies;
 
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+using System;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Strategy that submits a sequence of market buy orders at one-second intervals.
+/// Strategy that submits a sequence of market buy orders on each candle close.
+/// After a configurable number of orders have been placed, it stops.
 /// </summary>
 public class TimedBuyOrderStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _ordersToPlace;
-	private readonly StrategyParam<TimeSpan> _interval;
+	private readonly StrategyParam<DataType> _candleType;
 
 	private int _ordersPlaced;
-	private int _expectedSecond;
-	private bool _isCompleted;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="TimedBuyOrderStrategy"/> class.
 	/// </summary>
 	public TimedBuyOrderStrategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 0.01m)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Volume for each market buy order", "Trading")
-			;
-
 		_ordersToPlace = Param(nameof(OrdersToPlace), 60)
 			.SetGreaterThanZero()
-			.SetDisplay("Orders To Place", "Number of sequential buy orders before stopping", "Trading")
-			;
+			.SetDisplay("Orders To Place", "Number of sequential buy orders before stopping", "Trading");
 
-		_interval = Param(nameof(Interval), TimeSpan.FromSeconds(1))
-			.SetDisplay("Timer Interval", "Delay between timer ticks that trigger order placement", "Timing");
-	}
-
-	/// <summary>
-	/// Volume for each submitted market order.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 	}
 
 	/// <summary>
@@ -64,22 +40,12 @@ public class TimedBuyOrderStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Interval between timer callbacks.
+	/// Candle type.
 	/// </summary>
-	public TimeSpan Interval
+	public DataType CandleType
 	{
-		get => _interval.Value;
-		set => _interval.Value = value;
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_ordersPlaced = 0;
-		_expectedSecond = 0;
-		_isCompleted = false;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -87,61 +53,29 @@ public class TimedBuyOrderStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		_ordersPlaced = 0;
-		_expectedSecond = 0;
-		_isCompleted = false;
 
-		Timer.Start(Interval, OnTimer);
+		var sma = new SMA { Length = 5 };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(sma, OnProcess)
+			.Start();
 	}
 
-	private void OnTimer()
+	private void OnProcess(ICandleMessage candle, decimal smaValue)
 	{
-		if (_isCompleted)
-			return;
-
-		if (_ordersPlaced >= OrdersToPlace)
-		{
-			CompleteStrategy();
-			return;
-		}
-
-		var currentTime = CurrentTime;
-
-		// Synchronize order submission to the expected second within the current minute.
-		if (currentTime.Second != _expectedSecond)
+		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var volume = OrderVolume;
-
-		if (volume <= 0)
-		{
-			LogWarning("Order volume must be positive to send trades.");
-			CompleteStrategy();
+		if (_ordersPlaced >= OrdersToPlace)
 			return;
-		}
 
-		BuyMarket(volume);
+		BuyMarket();
 
 		_ordersPlaced++;
-		_expectedSecond = (_expectedSecond + 1) % 60;
-
-		LogInfo($"Submitted buy order {_ordersPlaced} of {OrdersToPlace} at {currentTime:HH:mm:ss}.");
-
-		if (_ordersPlaced >= OrdersToPlace)
-			CompleteStrategy();
-	}
-
-	private void CompleteStrategy()
-	{
-		if (_isCompleted)
-			return;
-
-		_isCompleted = true;
-		Stop();
 	}
 }

@@ -253,11 +253,9 @@ public TheMasterMindReversalStrategy()
 
 		Volume = TradeVolume;
 
-		_stochastic = new StochasticOscillator
-		{ K = { Length = StochasticPeriod },
-			K = { Length = KPeriod },
-			D = { Length = DPeriod }
-		};
+		_stochastic = new StochasticOscillator();
+		_stochastic.K.Length = StochasticPeriod;
+		_stochastic.D.Length = DPeriod;
 
 		_williams = new WilliamsR
 		{
@@ -269,18 +267,17 @@ public TheMasterMindReversalStrategy()
 			.BindEx(_stochastic, _williams, ProcessSignals)
 			.Start();
 
+		// Note: BindEx passes all indicator values as IIndicatorValue
+
 		var takeProfit = TakeProfit > 0m ? new Unit(TakeProfit, UnitTypes.Absolute) : null;
 		var stopLoss = StopLoss > 0m ? new Unit(StopLoss, UnitTypes.Absolute) : null;
-		var trailingStop = UseTrailingStop && TrailingStop > 0m ? new Unit(TrailingStop, UnitTypes.Absolute) : null;
-		var trailingStep = UseTrailingStop && TrailingStep > 0m ? new Unit(TrailingStep, UnitTypes.Absolute) : null;
 
-		if (takeProfit != null || stopLoss != null || trailingStop != null)
+		if (takeProfit != null || stopLoss != null)
 		{
 			StartProtection(
 				takeProfit: takeProfit,
 				stopLoss: stopLoss,
-				trailingStop: trailingStop,
-				trailingStopStep: trailingStep);
+				isStopTrailing: UseTrailingStop);
 		}
 
 		var area = CreateChartArea();
@@ -293,7 +290,7 @@ public TheMasterMindReversalStrategy()
 		}
 	}
 
-	private void ProcessSignals(ICandleMessage candle, IIndicatorValue stochasticValue, decimal williamsValue)
+	private void ProcessSignals(ICandleMessage candle, IIndicatorValue stochasticValue, IIndicatorValue williamsRawValue)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
@@ -303,15 +300,19 @@ public TheMasterMindReversalStrategy()
 		if (stochasticTyped.D is not decimal signalValue)
 		return;
 
+		var williamsValue = williamsRawValue.IsEmpty ? (decimal?)null : williamsRawValue.ToDecimal();
+		if (williamsValue is null)
+		return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		var buySignal = signalValue <= StochasticBuyThreshold && williamsValue <= WilliamsBuyLevel;
-		var sellSignal = signalValue >= StochasticSellThreshold && williamsValue >= WilliamsSellLevel;
+		var buySignal = signalValue <= StochasticBuyThreshold && williamsValue.Value <= WilliamsBuyLevel;
+		var sellSignal = signalValue >= StochasticSellThreshold && williamsValue.Value >= WilliamsSellLevel;
 
 		if (buySignal)
 		{
-			LogInfo($"Buy setup detected. %D={signalValue:F2}, WilliamsR={williamsValue:F2}");
+			LogInfo($"Buy setup detected. %D={signalValue:F2}, WilliamsR={williamsValue.Value:F2}");
 
 			if (Position < 0)
 			{
@@ -328,7 +329,7 @@ public TheMasterMindReversalStrategy()
 
 		if (sellSignal)
 		{
-			LogInfo($"Sell setup detected. %D={signalValue:F2}, WilliamsR={williamsValue:F2}");
+			LogInfo($"Sell setup detected. %D={signalValue:F2}, WilliamsR={williamsValue.Value:F2}");
 
 			if (Position > 0)
 			{

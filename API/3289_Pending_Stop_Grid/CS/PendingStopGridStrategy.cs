@@ -1,10 +1,6 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,346 +10,86 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Pending stop grid strategy converted from the MetaTrader 4 expert advisor "new.mq4".
-/// Places symmetrical ladders of buy stop and sell stop orders with incremental volume scaling.
+/// Pending Stop Grid strategy: ATR channel breakout.
+/// Buys when close breaks above previous high + ATR.
+/// Sells when close breaks below previous low - ATR.
 /// </summary>
 public class PendingStopGridStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _baseVolume;
-	private readonly StrategyParam<int> _numberOfTrades;
-	private readonly StrategyParam<decimal> _distancePips;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<int> _channelPeriod;
 
-	private decimal _pipSize;
-	private decimal _bestBid;
-	private decimal _bestAsk;
-	private bool _volumeValidationFailed;
-	private Order[] _buyStopOrders = Array.Empty<Order>();
-	private Order[] _sellStopOrders = Array.Empty<Order>();
-
-	/// <summary>
-	/// Take profit distance in pips applied to every pending stop order.
-	/// </summary>
-	public decimal TakeProfitPips
+	public DataType CandleType
 	{
-		get => _takeProfitPips.Value;
-		set
-		{
-			_takeProfitPips.Value = value;
-			EnsurePendingOrders();
-		}
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Stop loss distance in pips applied to every pending stop order.
-	/// </summary>
-	public decimal StopLossPips
+	public int AtrPeriod
 	{
-		get => _stopLossPips.Value;
-		set
-		{
-			_stopLossPips.Value = value;
-			EnsurePendingOrders();
-		}
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Base volume for the first pending order. Subsequent orders scale by the order index.
-	/// </summary>
-	public decimal BaseVolume
+	public int ChannelPeriod
 	{
-		get => _baseVolume.Value;
-		set
-		{
-			_baseVolume.Value = value;
-			_volumeValidationFailed = false;
-			EnsurePendingOrders();
-		}
+		get => _channelPeriod.Value;
+		set => _channelPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Number of buy stop and sell stop orders to keep active simultaneously.
-	/// </summary>
-	public int NumberOfTrades
-	{
-		get => _numberOfTrades.Value;
-		set
-		{
-			if (_numberOfTrades.Value == value)
-				return;
-
-			_numberOfTrades.Value = value;
-			ResizeOrderBuffers();
-			EnsurePendingOrders();
-		}
-	}
-
-	/// <summary>
-	/// Distance in pips between the current market price and each stop entry level.
-	/// </summary>
-	public decimal DistancePips
-	{
-		get => _distancePips.Value;
-		set
-		{
-			_distancePips.Value = value;
-			EnsurePendingOrders();
-		}
-	}
-
-	/// <summary>
-	/// Initializes <see cref="PendingStopGridStrategy"/>.
-	/// </summary>
 	public PendingStopGridStrategy()
 	{
-		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (pips)", "Take profit distance for each order", "Risk")
-			;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_stopLossPips = Param(nameof(StopLossPips), 10m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (pips)", "Stop loss distance for each order", "Risk")
-			;
-
-		_baseVolume = Param(nameof(BaseVolume), 0.1m)
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Base Volume", "Volume of the first pending order", "Trading")
-			;
+			.SetDisplay("ATR Period", "ATR period", "Indicators");
 
-		_numberOfTrades = Param(nameof(NumberOfTrades), 10)
+		_channelPeriod = Param(nameof(ChannelPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Orders Per Side", "How many buy stop and sell stop orders to keep", "Trading")
-			;
-
-		_distancePips = Param(nameof(DistancePips), 10m)
-			.SetGreaterThanZero()
-			.SetDisplay("Distance (pips)", "Offset of each pending order from the market price", "Trading")
-			;
+			.SetDisplay("Channel Period", "Highest/Lowest lookback", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		if (Security is null)
-			yield break;
-
-		yield return (Security, DataType.Level1);
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_pipSize = 0m;
-		_bestBid = 0m;
-		_bestAsk = 0m;
-		_volumeValidationFailed = false;
-		_buyStopOrders = Array.Empty<Order>();
-		_sellStopOrders = Array.Empty<Order>();
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_pipSize = GetPipSize();
-		ResizeOrderBuffers();
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var highest = new Highest { Length = ChannelPeriod };
+		var lowest = new Lowest { Length = ChannelPeriod };
 
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, highest, lowest, ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
-	}
-
-	/// <inheritdoc />
-	protected override void OnOrderReceived(Order order)
-	{
-		base.OnOrderReceived(order);
-
-		if (order == null || order.Security != Security)
-			return;
-
-		if (order.State == OrderStates.Done || order.State == OrderStates.Failed || order.State == OrderStates.Cancelled)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			ClearOrderSlot(order, _buyStopOrders);
-			ClearOrderSlot(order, _sellStopOrders);
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
-
-		EnsurePendingOrders();
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
+	private void ProcessCandle(ICandleMessage candle, decimal atr, decimal high, decimal low)
 	{
-		if (level1 == null)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bid) && bid is decimal bidPrice)
-			_bestBid = bidPrice;
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var ask) && ask is decimal askPrice)
-			_bestAsk = askPrice;
-
-		EnsurePendingOrders();
-	}
-
-	private void EnsurePendingOrders()
-	{
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_volumeValidationFailed)
-			return;
+		var close = candle.ClosePrice;
 
-		if (NumberOfTrades <= 0)
-			return;
-
-		if (_bestBid <= 0m || _bestAsk <= 0m)
-			return;
-
-		if (_pipSize <= 0m)
-			_pipSize = GetPipSize();
-
-		if (_pipSize <= 0m)
-			return;
-
-		if (!ValidateBaseVolume())
+		if (close >= high && Position <= 0)
 		{
-			_volumeValidationFailed = true;
-			return;
+			BuyMarket();
 		}
-
-		for (var index = 1; index <= NumberOfTrades; index++)
+		else if (close <= low && Position >= 0)
 		{
-			var slot = index - 1;
-			var volume = RoundVolume(BaseVolume * index);
-
-			if (volume <= 0m)
-				continue;
-
-			if (!IsOrderActive(_buyStopOrders, slot))
-			{
-				var entryPrice = RoundPrice(_bestAsk + DistancePips * index * _pipSize);
-				if (entryPrice > 0m)
-				{
-					var stopLoss = StopLossPips > 0m ? RoundPrice(entryPrice - StopLossPips * _pipSize) : (decimal?)null;
-					var takeProfit = TakeProfitPips > 0m ? RoundPrice(entryPrice + TakeProfitPips * _pipSize) : (decimal?)null;
-					_buyStopOrders[slot] = BuyStop(volume, entryPrice, stopLoss, takeProfit);
-				}
-			}
-
-			if (!IsOrderActive(_sellStopOrders, slot))
-			{
-				var entryPrice = RoundPrice(_bestBid - DistancePips * index * _pipSize);
-				if (entryPrice > 0m)
-				{
-					var stopLoss = StopLossPips > 0m ? RoundPrice(entryPrice + StopLossPips * _pipSize) : (decimal?)null;
-					var takeProfit = TakeProfitPips > 0m ? RoundPrice(entryPrice - TakeProfitPips * _pipSize) : (decimal?)null;
-					_sellStopOrders[slot] = SellStop(volume, entryPrice, stopLoss, takeProfit);
-				}
-			}
+			SellMarket();
 		}
-	}
-
-	private bool ValidateBaseVolume()
-	{
-		var volumeStep = Security?.VolumeStep ?? 0.01m;
-		if (volumeStep <= 0m)
-			volumeStep = 0.01m;
-
-		var minVolume = Security?.MinVolume ?? volumeStep;
-		var maxVolume = Security?.MaxVolume;
-
-		var roundedBase = Math.Round(BaseVolume / volumeStep, MidpointRounding.AwayFromZero) * volumeStep;
-
-		if (roundedBase < minVolume)
-		{
-			LogWarning($"Base volume {BaseVolume} is below the minimum allowed {minVolume}.");
-			return false;
-		}
-
-		if (maxVolume.HasValue && roundedBase > maxVolume.Value)
-		{
-			LogWarning($"Base volume {BaseVolume} exceeds the maximum allowed {maxVolume.Value}.");
-			return false;
-		}
-
-		return true;
-	}
-
-	private void ResizeOrderBuffers()
-	{
-		var size = Math.Max(0, NumberOfTrades);
-		if (_buyStopOrders.Length != size)
-			Array.Resize(ref _buyStopOrders, size);
-
-		if (_sellStopOrders.Length != size)
-			Array.Resize(ref _sellStopOrders, size);
-	}
-
-	private static bool IsOrderActive(Order[] orders, int slot)
-	{
-		if (orders.Length <= slot)
-			return false;
-
-		var order = orders[slot];
-		if (order == null)
-			return false;
-
-		return order.State is OrderStates.None or OrderStates.Pending or OrderStates.Active;
-	}
-
-	private void ClearOrderSlot(Order order, Order[] orders)
-	{
-		for (var index = 0; index < orders.Length; index++)
-		{
-			if (orders[index] == order)
-			{
-				orders[index] = null;
-				break;
-			}
-		}
-	}
-
-	private decimal RoundVolume(decimal volume)
-	{
-		var step = Security?.VolumeStep ?? 0.01m;
-		if (step <= 0m)
-			step = 0.01m;
-
-		var rounded = Math.Round(volume / step, MidpointRounding.AwayFromZero) * step;
-
-		var minVolume = Security?.MinVolume ?? step;
-		if (rounded < minVolume)
-			rounded = minVolume;
-
-		var maxVolume = Security?.MaxVolume;
-		if (maxVolume.HasValue && rounded > maxVolume.Value)
-			rounded = maxVolume.Value;
-
-		return rounded;
-	}
-
-	private decimal RoundPrice(decimal price)
-	{
-		return Security?.ShrinkPrice(price) ?? price;
-	}
-
-	private decimal GetPipSize()
-	{
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-			step = 0.0001m;
-
-		var decimals = Security?.Decimals ?? 0;
-		if (decimals >= 3)
-			return step * 10m;
-
-		return step;
 	}
 }
-

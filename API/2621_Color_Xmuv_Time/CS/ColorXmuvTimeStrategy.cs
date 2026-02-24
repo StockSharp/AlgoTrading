@@ -214,7 +214,7 @@ public class ColorXmuvTimeStrategy : Strategy
 	/// </summary>
 	public ColorXmuvTimeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Source candles for the Color XMUV line", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
@@ -315,7 +315,7 @@ public class ColorXmuvTimeStrategy : Strategy
 		}
 
 		var price = CalculateSignalPrice(candle);
-		var indicatorValue = _xma.Process(new DecimalIndicatorValue(_xma, price, candle.OpenTime));
+		var indicatorValue = _xma.Process(new DecimalIndicatorValue(_xma, price, candle.OpenTime) { IsFinal = true });
 
 		if (!_xma.IsFormed)
 		{

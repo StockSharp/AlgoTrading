@@ -113,15 +113,15 @@ public class ForexFrausSloggerStrategy : Strategy
 	/// </summary>
 	public ForexFrausSloggerStrategy()
 	{
-		_envelopePercent = Param(nameof(EnvelopePercent), 0.1m)
+		_envelopePercent = Param(nameof(EnvelopePercent), 1.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Envelope %", "Envelope percent", "Parameters");
 
-		_trailingStop = Param(nameof(TrailingStop), 0.001m)
+		_trailingStop = Param(nameof(TrailingStop), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk");
 
-		_trailingStep = Param(nameof(TrailingStep), 0.0001m)
+		_trailingStep = Param(nameof(TrailingStep), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Step", "Minimum stop move", "Risk");
 
@@ -139,7 +139,7 @@ public class ForexFrausSloggerStrategy : Strategy
 			.SetRange(0, 23)
 			.SetDisplay("Stop Hour", "Trading stop hour", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "Parameters");
 	}
 
@@ -166,9 +166,8 @@ public class ForexFrausSloggerStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
 
-		_sma = new SMA { Length = 1 };
+		_sma = new SMA { Length = 14 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -208,7 +207,9 @@ public class ForexFrausSloggerStrategy : Strategy
 
 		if (_wasAboveUpper && close <= upper)
 		{
-			SellMarket(Position + Volume);
+			// Sell signal - go short
+			if (Position >= 0)
+				SellMarket();
 			_entryPrice = close;
 			_troughPrice = close;
 			_currentStop = close + TrailingStop;
@@ -218,7 +219,9 @@ public class ForexFrausSloggerStrategy : Strategy
 
 		if (_wasBelowLower && close >= lower)
 		{
-			BuyMarket(-Position + Volume);
+			// Buy signal - go long
+			if (Position <= 0)
+				BuyMarket();
 			_entryPrice = close;
 			_peakPrice = close;
 			_currentStop = close - TrailingStop;
@@ -237,7 +240,7 @@ public class ForexFrausSloggerStrategy : Strategy
 			}
 
 			if (close <= _currentStop)
-				SellMarket(Position);
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
@@ -250,7 +253,7 @@ public class ForexFrausSloggerStrategy : Strategy
 			}
 
 			if (_currentStop != 0m && close >= _currentStop)
-				BuyMarket(-Position);
+				BuyMarket();
 		}
 	}
 

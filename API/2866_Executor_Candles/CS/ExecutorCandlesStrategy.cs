@@ -175,10 +175,10 @@ public class ExecutorCandlesStrategy : Strategy
 		_useTrendFilter = Param(nameof(UseTrendFilter), false)
 		.SetDisplay("Use Trend Filter", "Enable higher timeframe confirmation", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Trading timeframe", "General");
 
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Trend Candle Type", "Higher timeframe", "General");
 	}
 
@@ -443,7 +443,7 @@ public class ExecutorCandlesStrategy : Strategy
 		if (AreEqual(current.ClosePrice, current.OpenPrice))
 		return false;
 
-		if (!trendDown && current.ClosePrice > current.OpenPrice && previous.OpenPrice > previous.ClosePrice)
+		if (current.ClosePrice > current.OpenPrice && previous.OpenPrice > previous.ClosePrice)
 		{
 			var body = current.ClosePrice - current.OpenPrice;
 			if (body <= 0m)
@@ -463,7 +463,7 @@ public class ExecutorCandlesStrategy : Strategy
 		if (AreEqual(previous.OpenPrice, previous.ClosePrice))
 		return false;
 
-		if (!trendDown && current.ClosePrice > current.OpenPrice && previous.OpenPrice > previous.ClosePrice)
+		if (current.ClosePrice > current.OpenPrice && previous.OpenPrice > previous.ClosePrice)
 		{
 			if (current.ClosePrice < previous.OpenPrice)
 			return false;
@@ -488,7 +488,7 @@ public class ExecutorCandlesStrategy : Strategy
 		if (AreEqual(previous.HighPrice, previous.LowPrice))
 		return false;
 
-		if (!trendDown && current.ClosePrice > current.OpenPrice && previous.OpenPrice > previous.ClosePrice)
+		if (current.ClosePrice > current.OpenPrice && previous.OpenPrice > previous.ClosePrice)
 		{
 			var body = previous.OpenPrice - previous.ClosePrice;
 			var range = previous.HighPrice - previous.LowPrice;
@@ -577,7 +577,7 @@ public class ExecutorCandlesStrategy : Strategy
 		if (AreEqual(current.OpenPrice, current.ClosePrice))
 		return false;
 
-		if (trendDown && current.OpenPrice > current.ClosePrice && previous.OpenPrice < previous.ClosePrice)
+		if (current.OpenPrice > current.ClosePrice && previous.OpenPrice < previous.ClosePrice)
 		{
 			var body = current.OpenPrice - current.ClosePrice;
 			if (body <= 0m)
@@ -597,7 +597,7 @@ public class ExecutorCandlesStrategy : Strategy
 		if (AreEqual(previous.ClosePrice, previous.OpenPrice))
 		return false;
 
-		if (trendDown && current.OpenPrice > current.ClosePrice && previous.ClosePrice > previous.OpenPrice)
+		if (current.OpenPrice > current.ClosePrice && previous.ClosePrice > previous.OpenPrice)
 		{
 			if (current.OpenPrice < previous.ClosePrice)
 			return false;
@@ -611,7 +611,7 @@ public class ExecutorCandlesStrategy : Strategy
 			if (prevBody == 0m)
 			return false;
 
-			return currBody / (-prevBody) > 1.5m;
+			return currBody / prevBody > 1.5m;
 		}
 
 		return false;
@@ -622,7 +622,7 @@ public class ExecutorCandlesStrategy : Strategy
 		if (AreEqual(previous.HighPrice, previous.LowPrice))
 		return false;
 
-		if (trendDown && current.OpenPrice > current.ClosePrice && previous.ClosePrice > previous.OpenPrice)
+		if (current.OpenPrice > current.ClosePrice && previous.ClosePrice > previous.OpenPrice)
 		{
 			var body = previous.ClosePrice - previous.OpenPrice;
 			var range = previous.HighPrice - previous.LowPrice;

@@ -27,63 +27,13 @@ public class MacdCciLotfyStrategy : Strategy
 	private readonly StrategyParam<decimal> _threshold;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Period for CCI indicator.
-	/// </summary>
-	public int CciPeriod
-	{
-		get => _cciPeriod.Value;
-		set => _cciPeriod.Value = value;
-	}
+	public int CciPeriod { get => _cciPeriod.Value; set => _cciPeriod.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public decimal MacdCoefficient { get => _macdCoefficient.Value; set => _macdCoefficient.Value = value; }
+	public decimal Threshold { get => _threshold.Value; set => _threshold.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Fast EMA period for MACD.
-	/// </summary>
-	public int FastPeriod
-	{
-		get => _fastPeriod.Value;
-		set => _fastPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow EMA period for MACD.
-	/// </summary>
-	public int SlowPeriod
-	{
-		get => _slowPeriod.Value;
-		set => _slowPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier applied to MACD value to match CCI scale.
-	/// </summary>
-	public decimal MacdCoefficient
-	{
-		get => _macdCoefficient.Value;
-		set => _macdCoefficient.Value = value;
-	}
-
-	/// <summary>
-	/// Absolute threshold level for signals.
-	/// </summary>
-	public decimal Threshold
-	{
-		get => _threshold.Value;
-		set => _threshold.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used in calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public MacdCciLotfyStrategy()
 	{
 		_cciPeriod = Param(nameof(CciPeriod), 8)
@@ -106,32 +56,29 @@ public class MacdCciLotfyStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Threshold", "Absolute level for signals", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 		var macd = new MovingAverageConvergenceDivergence
 		{
-			Fast = FastPeriod,
-			Slow = SlowPeriod,
-			Signal = 2
+			ShortMa = { Length = FastPeriod },
+			LongMa = { Length = SlowPeriod },
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(macd, cci, ProcessCandle)
+			.Bind(macd, cci, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -144,7 +91,7 @@ public class MacdCciLotfyStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue cciValue)
+	private void ProcessCandle(ICandleMessage candle, decimal macdValue, decimal cciValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -152,16 +99,14 @@ public class MacdCciLotfyStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var macdData = (MovingAverageConvergenceDivergenceValue)macdValue;
-		var macdMain = macdData.Macd * MacdCoefficient;
-		var cci = cciValue.ToDecimal();
+		var scaledMacd = macdValue * MacdCoefficient;
 
-		if (cci < -Threshold && macdMain < -Threshold)
+		if (cciValue < -Threshold && scaledMacd < -Threshold)
 		{
 			if (Position <= 0)
 				BuyMarket(Volume + Math.Abs(Position));
 		}
-		else if (cci > Threshold && macdMain > Threshold)
+		else if (cciValue > Threshold && scaledMacd > Threshold)
 		{
 			if (Position >= 0)
 				SellMarket(Volume + Math.Abs(Position));

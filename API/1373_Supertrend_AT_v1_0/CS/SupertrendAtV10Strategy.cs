@@ -166,8 +166,6 @@ public class SupertrendAtV10Strategy : Strategy
 				_stopPrice = stop;
 				_targetPrice = (riskAmount * RewardRatio / volume + _entryPrice * (1 + commission)) / (1 - commission);
 				BuyMarket(volume);
-				SellLimit(volume, _targetPrice);
-				SellStop(volume, _stopPrice);
 				}
 			}
 		}
@@ -184,9 +182,25 @@ public class SupertrendAtV10Strategy : Strategy
 				_stopPrice = stop;
 				_targetPrice = (_entryPrice * (1 - commission) - riskAmount * RewardRatio / volume) / (1 + commission);
 				SellMarket(volume);
-				BuyLimit(volume, _targetPrice);
-				BuyStop(volume, _stopPrice);
 				}
+			}
+		}
+
+		// Check stop loss / take profit
+		if (Position > 0)
+		{
+			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _targetPrice)
+			{
+				SellMarket(Position);
+				_entryPrice = _stopPrice = _targetPrice = 0m;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _targetPrice)
+			{
+				BuyMarket(Math.Abs(Position));
+				_entryPrice = _stopPrice = _targetPrice = 0m;
 			}
 		}
 

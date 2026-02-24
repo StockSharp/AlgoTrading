@@ -1,47 +1,24 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// Reimplementation of the MetaTrader "CrossoverMA" expert advisor.
-/// Buys when the candle crosses above the moving average while the average slopes upward.
-/// Sells when the candle crosses below the moving average while the average slopes downward.
+/// CrossoverMA strategy: Buys when candle crosses above SMA with rising slope.
+/// Sells when candle crosses below SMA with falling slope.
 /// </summary>
 public class CrossoverMaStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _movingAverageLength;
-	private readonly StrategyParam<decimal> _tradeVolume;
 
-	private SimpleMovingAverage _movingAverage;
 	private decimal? _previousAverageValue;
-
-	public CrossoverMaStrategy()
-	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame that feeds the moving average.", "General");
-
-		_movingAverageLength = Param(nameof(MovingAverageLength), 12)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Number of completed candles used by the moving average.", "Indicator")
-			
-			.SetOptimize(5, 40, 5);
-
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trade Volume", "Default order size for market entries.", "Trading");
-	}
 
 	public DataType CandleType
 	{
@@ -55,23 +32,14 @@ public class CrossoverMaStrategy : Strategy
 		set => _movingAverageLength.Value = value;
 	}
 
-	public decimal TradeVolume
+	public CrossoverMaStrategy()
 	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_movingAverage = null;
-		_previousAverageValue = null;
+		_movingAverageLength = Param(nameof(MovingAverageLength), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Length", "SMA period", "Indicators");
 	}
 
 	/// <inheritdoc />
@@ -79,22 +47,20 @@ public class CrossoverMaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		Volume = TradeVolume;
-
-		_movingAverage = new SMA { Length = MovingAverageLength };
 		_previousAverageValue = null;
 
+		var sma = new SimpleMovingAverage { Length = MovingAverageLength };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_movingAverage, ProcessCandle).Start();
+		subscription
+			.Bind(sma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			if (_movingAverage != null)
-			{
-				DrawIndicator(area, _movingAverage);
-			}
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
@@ -102,64 +68,29 @@ public class CrossoverMaStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal averageValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		{
 			return;
-		}
-
-		if (_movingAverage == null || !_movingAverage.IsFormed)
-		{
-			return;
-		}
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		{
 			return;
-		}
 
 		var previousAverageValue = _previousAverageValue;
 		_previousAverageValue = averageValue;
 
 		if (previousAverageValue is null)
-		{
-			return; // Need at least two completed averages to evaluate the slope.
-		}
+			return;
 
-		var openOffset = candle.OpenPrice - averageValue;
-		var closeOffset = candle.ClosePrice - averageValue;
 		var slope = averageValue - previousAverageValue.Value;
+		var close = candle.ClosePrice;
 
-		var bullishCross = openOffset < 0m && closeOffset > 0m && slope > 0m;
-		var bearishCross = openOffset > 0m && closeOffset < 0m && slope < 0m;
-
-		if (!bullishCross && !bearishCross)
+		// Buy: close above MA + MA rising
+		if (close > averageValue && slope > 0m && Position <= 0)
 		{
-			return;
+			BuyMarket();
 		}
-
-		var tradeVolume = TradeVolume;
-		if (tradeVolume <= 0m)
+		// Sell: close below MA + MA falling
+		else if (close < averageValue && slope < 0m && Position >= 0)
 		{
-			return;
-		}
-
-		if (bullishCross && Position <= 0m)
-		{
-			if (Position < 0m)
-			{
-				BuyMarket(Math.Abs(Position)); // Close existing short exposure before reversing.
-			}
-
-			BuyMarket(tradeVolume); // Enter or extend the long position.
-		}
-		else if (bearishCross && Position >= 0m)
-		{
-			if (Position > 0m)
-			{
-				SellMarket(Position); // Close existing long exposure before reversing.
-			}
-
-			SellMarket(tradeVolume); // Enter or extend the short position.
+			SellMarket();
 		}
 	}
 }
-

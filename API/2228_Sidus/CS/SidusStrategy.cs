@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// SIDUS strategy based on moving average crossovers.
 /// Buys when fast LWMA crosses above slow LWMA or when slow LWMA crosses above slow EMA.
-/// Sells on opposite crossovers. Includes optional stop-loss and take-profit.
+/// Sells on opposite crossovers.
 /// </summary>
 public class SidusStrategy : Strategy
 {
@@ -25,134 +25,52 @@ public class SidusStrategy : Strategy
 	private readonly StrategyParam<int> _fastLwma;
 	private readonly StrategyParam<int> _slowLwma;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	
+
 	private ExponentialMovingAverage _fastEmaIndicator;
 	private ExponentialMovingAverage _slowEmaIndicator;
 	private WeightedMovingAverage _fastLwmaIndicator;
 	private WeightedMovingAverage _slowLwmaIndicator;
-	
+
 	private decimal _prevFastLwma;
 	private decimal _prevSlowLwma;
 	private decimal _prevSlowEma;
 	private bool _isInitialized;
-	
-	/// <summary>
-	/// Fast EMA length.
-	/// </summary>
-	public int FastEma
-	{
-		get => _fastEma.Value;
-		set => _fastEma.Value = value;
-	}
-	
-	/// <summary>
-	/// Slow EMA length.
-	/// </summary>
-	public int SlowEma
-	{
-		get => _slowEma.Value;
-		set => _slowEma.Value = value;
-	}
-	
-	/// <summary>
-	/// Fast LWMA length.
-	/// </summary>
-	public int FastLwma
-	{
-		get => _fastLwma.Value;
-		set => _fastLwma.Value = value;
-	}
-	
-	/// <summary>
-	/// Slow LWMA length.
-	/// </summary>
-	public int SlowLwma
-	{
-		get => _slowLwma.Value;
-		set => _slowLwma.Value = value;
-	}
-	
-	/// <summary>
-	/// Candle type used for analysis.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// Take profit percentage.
-	/// </summary>
-	public decimal TakeProfitPercent
-	{
-		get => _takeProfitPercent.Value;
-		set => _takeProfitPercent.Value = value;
-	}
-	
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-	
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+
+	public int FastEma { get => _fastEma.Value; set => _fastEma.Value = value; }
+	public int SlowEma { get => _slowEma.Value; set => _slowEma.Value = value; }
+	public int FastLwma { get => _fastLwma.Value; set => _fastLwma.Value = value; }
+	public int SlowLwma { get => _slowLwma.Value; set => _slowLwma.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public SidusStrategy()
 	{
 		_fastEma = Param(nameof(FastEma), 18)
-		.SetGreaterThanZero()
-		.SetDisplay("Fast EMA", "Length of the fast EMA", "Sidus")
-		
-		.SetOptimize(10, 30, 2);
-		
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Length of the fast EMA", "Sidus")
+			.SetOptimize(10, 30, 2);
+
 		_slowEma = Param(nameof(SlowEma), 28)
-		.SetGreaterThanZero()
-		.SetDisplay("Slow EMA", "Length of the slow EMA", "Sidus")
-		
-		.SetOptimize(20, 50, 2);
-		
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Length of the slow EMA", "Sidus")
+			.SetOptimize(20, 50, 2);
+
 		_fastLwma = Param(nameof(FastLwma), 5)
-		.SetGreaterThanZero()
-		.SetDisplay("Fast LWMA", "Length of the fast LWMA", "Sidus")
-		
-		.SetOptimize(3, 10, 1);
-		
+			.SetGreaterThanZero()
+			.SetDisplay("Fast LWMA", "Length of the fast LWMA", "Sidus")
+			.SetOptimize(3, 10, 1);
+
 		_slowLwma = Param(nameof(SlowLwma), 8)
-		.SetGreaterThanZero()
-		.SetDisplay("Slow LWMA", "Length of the slow LWMA", "Sidus")
-		
-		.SetOptimize(5, 15, 1);
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
-		
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
-		.SetGreaterThanZero()
-		.SetDisplay("Take Profit %", "Take profit in percent", "Risk")
-		
-		.SetOptimize(1m, 5m, 1m);
-		
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Stop Loss %", "Stop loss in percent", "Risk")
-		
-		.SetOptimize(0.5m, 3m, 0.5m);
+			.SetGreaterThanZero()
+			.SetDisplay("Slow LWMA", "Length of the slow LWMA", "Sidus")
+			.SetOptimize(5, 15, 1);
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
-	
-	/// <inheritdoc />
+
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-	
-	/// <inheritdoc />
+		=> [(Security, CandleType)];
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
@@ -161,48 +79,37 @@ public class SidusStrategy : Strategy
 		_prevSlowEma = 0;
 		_isInitialized = false;
 	}
-	
-	/// <inheritdoc />
+
 	protected override void OnStarted2(DateTime time)
 	{
-		_fastEmaIndicator = new EMA { Length = FastEma };
-		_slowEmaIndicator = new EMA { Length = SlowEma };
+		base.OnStarted2(time);
+
+		_fastEmaIndicator = new ExponentialMovingAverage { Length = FastEma };
+		_slowEmaIndicator = new ExponentialMovingAverage { Length = SlowEma };
 		_fastLwmaIndicator = new WeightedMovingAverage { Length = FastLwma };
 		_slowLwmaIndicator = new WeightedMovingAverage { Length = SlowLwma };
-		
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(_fastEmaIndicator, _slowEmaIndicator, _fastLwmaIndicator, _slowLwmaIndicator, ProcessCandle)
-		.Start();
-		
+			.Bind(_fastEmaIndicator, _slowEmaIndicator, _fastLwmaIndicator, _slowLwmaIndicator, ProcessCandle)
+			.Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _fastEmaIndicator);
 			DrawIndicator(area, _slowEmaIndicator);
-			DrawIndicator(area, _fastLwmaIndicator);
-			DrawIndicator(area, _slowLwmaIndicator);
 			DrawOwnTrades(area);
 		}
-		
-		StartProtection(
-		new Unit(TakeProfitPercent, UnitTypes.Percent),
-		new Unit(StopLossPercent, UnitTypes.Percent)
-		);
-		
-		base.OnStarted2(time);
 	}
-	
+
 	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue, decimal fastLwmaValue, decimal slowLwmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
-		if (!_isInitialized && _fastEmaIndicator.IsFormed && _slowEmaIndicator.IsFormed && _fastLwmaIndicator.IsFormed && _slowLwmaIndicator.IsFormed)
+			return;
+
+		if (!_isInitialized)
 		{
 			_prevFastLwma = fastLwmaValue;
 			_prevSlowLwma = slowLwmaValue;
@@ -210,23 +117,23 @@ public class SidusStrategy : Strategy
 			_isInitialized = true;
 			return;
 		}
-		
-		if (!_isInitialized)
-		return;
-		
+
 		var buySignal =
-		(fastLwmaValue > slowLwmaValue && _prevFastLwma <= _prevSlowLwma) ||
-		(slowLwmaValue > slowEmaValue && _prevSlowLwma <= _prevSlowEma);
-		
+			(fastLwmaValue > slowLwmaValue && _prevFastLwma <= _prevSlowLwma) ||
+			(slowLwmaValue > slowEmaValue && _prevSlowLwma <= _prevSlowEma);
+
 		var sellSignal =
-		(fastLwmaValue < slowLwmaValue && _prevFastLwma >= _prevSlowLwma) ||
-		(slowLwmaValue < slowEmaValue && _prevSlowLwma >= _prevSlowEma);
-		
-		if (buySignal && Position <= 0)
-		BuyMarket(Volume + Math.Abs(Position));
-		else if (sellSignal && Position >= 0)
-		SellMarket(Volume + Math.Abs(Position));
-		
+			(fastLwmaValue < slowLwmaValue && _prevFastLwma >= _prevSlowLwma) ||
+			(slowLwmaValue < slowEmaValue && _prevSlowLwma >= _prevSlowEma);
+
+		if (IsFormedAndOnlineAndAllowTrading())
+		{
+			if (buySignal && Position <= 0)
+				BuyMarket();
+			else if (sellSignal && Position >= 0)
+				SellMarket();
+		}
+
 		_prevFastLwma = fastLwmaValue;
 		_prevSlowLwma = slowLwmaValue;
 		_prevSlowEma = slowEmaValue;

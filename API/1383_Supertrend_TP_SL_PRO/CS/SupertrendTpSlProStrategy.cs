@@ -113,6 +113,10 @@ public class SupertrendTpSlProStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
 	/// <summary>
 	/// Initialize strategy parameters.
 	/// </summary>
@@ -169,6 +173,9 @@ public class SupertrendTpSlProStrategy : Strategy
 	private void Process(ICandleMessage candle, IIndicatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var st = (SuperTrendIndicatorValue)value;

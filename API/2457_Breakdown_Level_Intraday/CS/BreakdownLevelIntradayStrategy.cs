@@ -11,99 +11,56 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Breakout strategy that trades previous day's high/low levels.
+/// Breakout strategy that trades previous high/low levels.
+/// Goes long when price breaks above a recent high, short when breaks below recent low.
 /// </summary>
 public class BreakdownLevelIntradayStrategy : Strategy
 {
-	private readonly StrategyParam<TimeSpan> _orderTime;
-	private readonly StrategyParam<int> _delta;
-	private readonly StrategyParam<int> _stopLoss;
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<int> _noLoss;
-	private readonly StrategyParam<int> _trailing;
+	private readonly StrategyParam<int> _lookback;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevHigh;
-	private decimal _prevLow;
-	private decimal _buyLevel;
-	private decimal _sellLevel;
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private decimal _takePrice;
-	private DateTime _tradeDay;
-	private bool _levelsPlaced;
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private bool _hasPrev;
 
-	public TimeSpan OrderTime
-	{
-		get => _orderTime.Value;
-		set => _orderTime.Value = value;
-	}
+	/// <summary>Lookback period for high/low.</summary>
+	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
 
-	public int Delta
-	{
-		get => _delta.Value;
-		set => _delta.Value = value;
-	}
+	/// <summary>Stop loss percent.</summary>
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
 
-	public int StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
+	/// <summary>Take profit percent.</summary>
+	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
 
-	public int TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	public int NoLoss
-	{
-		get => _noLoss.Value;
-		set => _noLoss.Value = value;
-	}
-
-	public int Trailing
-	{
-		get => _trailing.Value;
-		set => _trailing.Value = value;
-	}
+	/// <summary>Candle type.</summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public BreakdownLevelIntradayStrategy()
 	{
-		_orderTime = Param(nameof(OrderTime), TimeSpan.Zero)
-			.SetDisplay("Order Time", "Time to place breakout levels", "General");
+		_lookback = Param(nameof(Lookback), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback", "Number of bars for high/low", "Parameters");
 
-		_delta = Param(nameof(Delta), 6)
-			.SetDisplay("Delta (points)", "Shift from previous high/low in points", "Parameters");
+		_stopLossPct = Param(nameof(StopLossPct), 0.5m)
+			.SetDisplay("Stop Loss %", "Stop loss as percent of price", "Risk");
 
-		_stopLoss = Param(nameof(StopLoss), 120)
-			.SetDisplay("Stop Loss (points)", "Protective stop in points", "Risk");
+		_takeProfitPct = Param(nameof(TakeProfitPct), 1.0m)
+			.SetDisplay("Take Profit %", "Take profit as percent of price", "Risk");
 
-		_takeProfit = Param(nameof(TakeProfit), 90)
-			.SetDisplay("Take Profit (points)", "Take profit in points", "Risk");
-
-		_noLoss = Param(nameof(NoLoss), 0)
-			.SetDisplay("Break-even (points)", "Move stop after profit in points", "Risk");
-
-		_trailing = Param(nameof(Trailing), 0)
-			.SetDisplay("Trailing (points)", "Trailing stop distance in points", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> new[] { (Security, DataType.Ticks), (Security, TimeSpan.FromMinutes(5).TimeFrame()) };
-
 	/// <inheritdoc />
-	protected override void OnReseted()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		base.OnReseted();
-
-		_prevHigh = _prevLow = _buyLevel = _sellLevel = 0m;
-		_entryPrice = _stopPrice = _takePrice = 0m;
-		_tradeDay = default;
-		_levelsPlaced = false;
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -111,123 +68,75 @@ public class BreakdownLevelIntradayStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		SubscribeTicks().Bind(ProcessTrade).Start();
-		SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame()).Bind(ProcessDaily).Start();
+		_hasPrev = false;
+
+		var highest = new Highest { Length = Lookback };
+		var lowest = new Lowest { Length = Lookback };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(highest, lowest, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, highest);
+			DrawIndicator(area, lowest);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessDaily(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal high, decimal low)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_prevHigh = candle.HighPrice;
-		_prevLow = candle.LowPrice;
-		_tradeDay = candle.OpenTime.Date.AddDays(1);
-		_levelsPlaced = false;
-	}
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		var price = trade.Price;
-		var time = trade.ServerTime;
+		var close = candle.ClosePrice;
 
-		if (time.Date > _tradeDay)
-			_levelsPlaced = false;
-
-		if (!_levelsPlaced && time.Date == _tradeDay && time.TimeOfDay >= OrderTime)
+		if (_hasPrev)
 		{
-			var step = Security.PriceStep ?? 1m;
-			_buyLevel = _prevHigh + Delta * step;
-			_sellLevel = _prevLow - Delta * step;
-			_levelsPlaced = true;
+			if (Position == 0)
+			{
+				// Breakout above previous highest level
+				if (close > _prevHigh)
+				{
+					BuyMarket();
+					_entryPrice = close;
+					_stopPrice = close * (1 - StopLossPct / 100m);
+					_takePrice = close * (1 + TakeProfitPct / 100m);
+				}
+				// Breakout below previous lowest level
+				else if (close < _prevLow)
+				{
+					SellMarket();
+					_entryPrice = close;
+					_stopPrice = close * (1 + StopLossPct / 100m);
+					_takePrice = close * (1 - TakeProfitPct / 100m);
+				}
+			}
+			else if (Position > 0)
+			{
+				if (close >= _takePrice || close <= _stopPrice)
+				{
+					SellMarket(Math.Abs(Position));
+				}
+			}
+			else if (Position < 0)
+			{
+				if (close <= _takePrice || close >= _stopPrice)
+				{
+					BuyMarket(Math.Abs(Position));
+				}
+			}
 		}
 
-		if (Position == 0)
-		{
-			if (!_levelsPlaced)
-				return;
-
-			if (price >= _buyLevel)
-			{
-				BuyMarket(Volume);
-				_entryPrice = price;
-				SetInitialStops(true);
-				_levelsPlaced = false;
-			}
-			else if (price <= _sellLevel)
-			{
-				SellMarket(Volume);
-				_entryPrice = price;
-				SetInitialStops(false);
-				_levelsPlaced = false;
-			}
-		}
-		else
-		{
-			ManagePosition(price);
-		}
-	}
-
-	private void SetInitialStops(bool isLong)
-	{
-		var step = Security.PriceStep ?? 1m;
-
-		_stopPrice = StopLoss > 0
-			? (isLong ? _entryPrice - StopLoss * step : _entryPrice + StopLoss * step)
-			: 0m;
-
-		_takePrice = TakeProfit > 0
-			? (isLong ? _entryPrice + TakeProfit * step : _entryPrice - TakeProfit * step)
-			: 0m;
-	}
-
-	private void ManagePosition(decimal price)
-	{
-		var step = Security.PriceStep ?? 1m;
-
-		if (Position > 0)
-		{
-			if ((_takePrice != 0m && price >= _takePrice) || (_stopPrice != 0m && price <= _stopPrice))
-			{
-				ClosePosition();
-				return;
-			}
-
-			if (Trailing > 0)
-			{
-				var newStop = price - Trailing * step;
-				if (newStop > _stopPrice && newStop > _entryPrice)
-					_stopPrice = newStop;
-			}
-
-			if (NoLoss > 0 && _stopPrice < _entryPrice)
-			{
-				var breakEven = price - NoLoss * step;
-				if (breakEven > _entryPrice)
-					_stopPrice = breakEven;
-			}
-		}
-		else
-		{
-			if ((_takePrice != 0m && price <= _takePrice) || (_stopPrice != 0m && price >= _stopPrice))
-			{
-				ClosePosition();
-				return;
-			}
-
-			if (Trailing > 0)
-			{
-				var newStop = price + Trailing * step;
-				if (newStop < _stopPrice && newStop < _entryPrice)
-					_stopPrice = newStop;
-			}
-
-			if (NoLoss > 0 && _stopPrice > _entryPrice)
-			{
-				var breakEven = price + NoLoss * step;
-				if (breakEven < _entryPrice)
-					_stopPrice = breakEven;
-			}
-		}
+		_prevHigh = high;
+		_prevLow = low;
+		_hasPrev = true;
 	}
 }

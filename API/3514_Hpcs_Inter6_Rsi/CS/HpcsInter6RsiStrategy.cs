@@ -1,14 +1,7 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
@@ -92,23 +85,23 @@ public class HpcsInter6RsiStrategy : Strategy
 	/// </summary>
 	public HpcsInter6RsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for RSI evaluation", "General");
 
-		_rsiLength = Param(nameof(RsiLength), 14)
+		_rsiLength = Param(nameof(RsiLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Lookback period for RSI", "Parameters")
-			
+
 			.SetOptimize(5, 40, 1);
 
-		_upperLevel = Param(nameof(UpperLevel), 70m)
+		_upperLevel = Param(nameof(UpperLevel), 55m)
 			.SetDisplay("Upper RSI", "Upper RSI level for shorts", "Parameters")
-			
+
 			.SetOptimize(60m, 90m, 5m);
 
-		_lowerLevel = Param(nameof(LowerLevel), 30m)
+		_lowerLevel = Param(nameof(LowerLevel), 45m)
 			.SetDisplay("Lower RSI", "Lower RSI level for longs", "Parameters")
-			
+
 			.SetOptimize(10m, 40m, 5m);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -122,24 +115,6 @@ public class HpcsInter6RsiStrategy : Strategy
 			.SetDisplay("Offset (pips)", "Target and stop distance in pips", "Risk")
 			
 			.SetOptimize(5m, 30m, 5m);
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_previousRsi = null;
-		_lastSignalTime = null;
-		_targetPrice = null;
-		_stopPrice = null;
-		_isLongPosition = false;
 	}
 
 	/// <inheritdoc />
@@ -171,10 +146,8 @@ public class HpcsInter6RsiStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_rsi != null)
-		{
-			_rsi.Length = RsiLength;
-		}
+		if (!_rsi.IsFormed)
+			return;
 
 		UpdateActivePositionTargets(candle);
 
@@ -251,7 +224,7 @@ public class HpcsInter6RsiStrategy : Strategy
 
 	private bool TryEnterShort(ICandleMessage candle, decimal currentRsi, decimal previousRsi)
 	{
-		if (!(currentRsi > UpperLevel && previousRsi < UpperLevel))
+		if (!(currentRsi > UpperLevel && previousRsi <= UpperLevel))
 			return false;
 
 		var volume = TradeVolume;
@@ -285,7 +258,7 @@ public class HpcsInter6RsiStrategy : Strategy
 
 	private bool TryEnterLong(ICandleMessage candle, decimal currentRsi, decimal previousRsi)
 	{
-		if (!(currentRsi < LowerLevel && previousRsi > LowerLevel))
+		if (!(currentRsi < LowerLevel && previousRsi >= LowerLevel))
 			return false;
 
 		var volume = TradeVolume;
@@ -319,9 +292,9 @@ public class HpcsInter6RsiStrategy : Strategy
 
 	private decimal CalculateOffset()
 	{
-		var priceStep = Security?.PriceStep ?? 0m;
+		var priceStep = Security?.PriceStep ?? 0.01m;
 		if (priceStep <= 0m)
-			return 0m;
+			priceStep = 0.01m;
 
 		var decimals = Security?.Decimals ?? 0;
 		var factor = decimals is 3 or 5 ? 10m : 1m;

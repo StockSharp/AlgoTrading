@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -70,7 +67,7 @@ public class MultiIndicatorOptimizerStrategy : Strategy
 	/// </summary>
 	public MultiIndicatorOptimizerStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for indicator calculations", "General");
 
 		_macdFast = Param(nameof(MacdFast), 12)
@@ -159,10 +156,10 @@ public class MultiIndicatorOptimizerStrategy : Strategy
 			
 			.SetOptimize(3, 15, 1);
 
-		_stochD = { Length = Param }(nameof(StochasticDPeriod), 3)
+		_stochDPeriod = Param(nameof(StochasticDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic %D", "%D period for Stochastic Oscillator", "Stochastic")
-			
+
 			.SetOptimize(2, 9, 1);
 
 		_stochSlowing = Param(nameof(StochasticSlowing), 3)
@@ -438,9 +435,9 @@ public class MultiIndicatorOptimizerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -470,11 +467,9 @@ public class MultiIndicatorOptimizerStrategy : Strategy
 
 		var williams = new WilliamsR { Length = WilliamsPeriod };
 
-		var stochastic = new StochasticOscillator
-		{ K = { Length = StochasticKPeriod },
-			K = { Length = StochasticSlowing },
-			D = { Length = StochasticDPeriod }
-		};
+		var stochastic = new StochasticOscillator();
+		stochastic.K.Length = StochasticKPeriod;
+		stochastic.D.Length = StochasticDPeriod;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -617,10 +612,9 @@ public class MultiIndicatorOptimizerStrategy : Strategy
 		if (signal >= EntryThreshold)
 		{
 			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
-			if (Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket(Math.Abs(Position) + Volume);
+			else if (Position == 0)
+				BuyMarket(Volume);
 
 			return;
 		}
@@ -628,10 +622,9 @@ public class MultiIndicatorOptimizerStrategy : Strategy
 		if (signal <= -EntryThreshold)
 		{
 			if (Position > 0)
-				SellMarket(Position);
-
-			if (Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket(Position + Volume);
+			else if (Position == 0)
+				SellMarket(Volume);
 
 			return;
 		}

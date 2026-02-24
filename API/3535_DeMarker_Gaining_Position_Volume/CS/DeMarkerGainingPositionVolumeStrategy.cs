@@ -1,10 +1,6 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,27 +10,16 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Port of the MetaTrader expert "DeMarker gaining position volume".
 /// Uses the DeMarker oscillator to accumulate positions when extreme levels are reached.
-/// Supports optional reversal logic and skipping losing exits when flipping direction.
 /// </summary>
 public class DeMarkerGainingPositionVolumeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _deMarkerPeriod;
 	private readonly StrategyParam<decimal> _upperLevel;
 	private readonly StrategyParam<decimal> _lowerLevel;
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<bool> _onlyOnePosition;
-	private readonly StrategyParam<bool> _reverseSignals;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _longEntryPrice;
-	private decimal _longVolume;
-	private decimal _shortEntryPrice;
-	private decimal _shortVolume;
-
-	private DateTimeOffset? _lastBuyBarTime;
-	private DateTimeOffset? _lastSellBarTime;
+	private DeMarker _deMarker;
 
 	/// <summary>
 	/// Number of candles used by the DeMarker indicator.
@@ -46,7 +31,7 @@ public class DeMarkerGainingPositionVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// DeMarker level that triggers short entries (or long exits in reverse mode).
+	/// DeMarker level that triggers short entries.
 	/// </summary>
 	public decimal UpperLevel
 	{
@@ -55,39 +40,12 @@ public class DeMarkerGainingPositionVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// DeMarker level that triggers long entries (or short exits in reverse mode).
+	/// DeMarker level that triggers long entries.
 	/// </summary>
 	public decimal LowerLevel
 	{
 		get => _lowerLevel.Value;
 		set => _lowerLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Market order volume used on each entry.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Restricts the strategy to a single aggregated position when enabled.
-	/// </summary>
-	public bool OnlyOnePosition
-	{
-		get => _onlyOnePosition.Value;
-		set => _onlyOnePosition.Value = value;
-	}
-
-	/// <summary>
-	/// Inverts the signal mapping so that overbought levels buy and oversold levels sell.
-	/// </summary>
-	public bool ReverseSignals
-	{
-		get => _reverseSignals.Value;
-		set => _reverseSignals.Value = value;
 	}
 
 	/// <summary>
@@ -102,35 +60,16 @@ public class DeMarkerGainingPositionVolumeStrategy : Strategy
 	public DeMarkerGainingPositionVolumeStrategy()
 	{
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 14)
-			.SetDisplay("DeMarker Period", "Number of bars used by the oscillator.", "Indicator")
-			;
+			.SetDisplay("DeMarker Period", "Number of bars used by the oscillator.", "Indicator");
 
-		_upperLevel = Param(nameof(UpperLevel), 0.7m)
-			.SetDisplay("Upper Level", "Threshold that prepares short exposure.", "Indicator")
-			;
+		_upperLevel = Param(nameof(UpperLevel), 0.6m)
+			.SetDisplay("Upper Level", "Threshold that prepares short exposure.", "Indicator");
 
-		_lowerLevel = Param(nameof(LowerLevel), 0.3m)
-			.SetDisplay("Lower Level", "Threshold that prepares long exposure.", "Indicator")
-			;
+		_lowerLevel = Param(nameof(LowerLevel), 0.4m)
+			.SetDisplay("Lower Level", "Threshold that prepares long exposure.", "Indicator");
 
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
-			.SetDisplay("Trade Volume", "Order volume submitted on each signal.", "Trading")
-			;
-
-		_onlyOnePosition = Param(nameof(OnlyOnePosition), false)
-			.SetDisplay("Only One Position", "Prohibit holding both long and short exposure simultaneously.", "Trading");
-
-		_reverseSignals = Param(nameof(ReverseSignals), false)
-			.SetDisplay("Reverse Signals", "Swap the buy and sell conditions.", "Trading");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for DeMarker calculations.", "Data");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -138,15 +77,19 @@ public class DeMarkerGainingPositionVolumeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var deMarker = new DeMarker
-		{
-			Length = DeMarkerPeriod
-		};
+		_deMarker = new DeMarker { Length = DeMarkerPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(deMarker, ProcessCandle).Start();
+		subscription
+			.Bind(_deMarker, ProcessCandle)
+			.Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal deMarkerValue)
@@ -154,138 +97,30 @@ public class DeMarkerGainingPositionVolumeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var barTime = candle.OpenTime;
-
-		var wantLong = deMarkerValue <= LowerLevel;
-		var wantShort = deMarkerValue >= UpperLevel;
-
-		if (ReverseSignals)
-		{
-			(wantLong, wantShort) = (wantShort, wantLong);
-		}
-
-		if (wantLong && _lastBuyBarTime != barTime)
-		{
-			if (TryOpenLong(candle))
-			{
-				_lastBuyBarTime = barTime;
-			}
-		}
-
-		if (wantShort && _lastSellBarTime != barTime)
-		{
-			if (TryOpenShort(candle))
-			{
-				_lastSellBarTime = barTime;
-			}
-		}
-	}
-
-	private bool TryOpenLong(ICandleMessage candle)
-	{
-		if (TradeVolume <= 0m)
-			return false;
-
-		if (Position < 0m)
-		{
-			if (!CanCloseShort(candle.ClosePrice))
-				return false;
-
-			ClosePosition();
-			ResetShortState();
-		}
-
-		var canOpen = OnlyOnePosition ? Position == 0m : Position >= 0m;
-		if (!canOpen)
-			return false;
-
-		BuyMarket(TradeVolume);
-		RegisterLongEntry(candle.ClosePrice, TradeVolume);
-		return true;
-	}
-
-	private bool TryOpenShort(ICandleMessage candle)
-	{
-		if (TradeVolume <= 0m)
-			return false;
-
-		if (Position > 0m)
-		{
-			if (!CanCloseLong(candle.ClosePrice))
-				return false;
-
-			ClosePosition();
-			ResetLongState();
-		}
-
-		var canOpen = OnlyOnePosition ? Position == 0m : Position <= 0m;
-		if (!canOpen)
-			return false;
-
-		SellMarket(TradeVolume);
-		RegisterShortEntry(candle.ClosePrice, TradeVolume);
-		return true;
-	}
-
-	private bool CanCloseShort(decimal closePrice)
-	{
-		if (_shortVolume <= 0m)
-			return true;
-
-		var profit = (_shortEntryPrice - closePrice) * _shortVolume;
-		return profit > 0m;
-	}
-
-	private bool CanCloseLong(decimal closePrice)
-	{
-		if (_longVolume <= 0m)
-			return true;
-
-		var profit = (closePrice - _longEntryPrice) * _longVolume;
-		return profit > 0m;
-	}
-
-	private void RegisterLongEntry(decimal price, decimal volume)
-	{
-		if (volume <= 0m)
+		if (!_deMarker.IsFormed)
 			return;
 
-		var totalVolume = _longVolume + volume;
-		_longEntryPrice = totalVolume == 0m ? 0m : (_longEntryPrice * _longVolume + price * volume) / totalVolume;
-		_longVolume = totalVolume;
-	}
+		var volume = Volume;
+		if (volume <= 0)
+			volume = 1;
 
-	private void RegisterShortEntry(decimal price, decimal volume)
-	{
-		if (volume <= 0m)
-			return;
+		// DeMarker below lower level => oversold => buy
+		if (deMarkerValue <= LowerLevel)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
 
-		var totalVolume = _shortVolume + volume;
-		_shortEntryPrice = totalVolume == 0m ? 0m : (_shortEntryPrice * _shortVolume + price * volume) / totalVolume;
-		_shortVolume = totalVolume;
-	}
+			if (Position <= 0)
+				BuyMarket(volume);
+		}
+		// DeMarker above upper level => overbought => sell
+		else if (deMarkerValue >= UpperLevel)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
 
-	private void ResetLongState()
-	{
-		_longEntryPrice = 0m;
-		_longVolume = 0m;
-	}
-
-	private void ResetShortState()
-	{
-		_shortEntryPrice = 0m;
-		_shortVolume = 0m;
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		ResetLongState();
-		ResetShortState();
-		_lastBuyBarTime = null;
-		_lastSellBarTime = null;
+			if (Position >= 0)
+				SellMarket(volume);
+		}
 	}
 }
-

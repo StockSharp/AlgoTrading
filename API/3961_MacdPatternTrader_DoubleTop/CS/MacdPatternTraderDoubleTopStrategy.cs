@@ -1,17 +1,14 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Port of the MetaTrader 4 expert advisor MacdPatternTraderv04cb.
@@ -61,11 +58,9 @@ public class MacdPatternTraderDoubleTopStrategy : Strategy
 		
 		.SetOptimize(1, 9, 1);
 
-		_triggerLevel = Param(nameof(TriggerLevel), 0.0045m)
+		_triggerLevel = Param(nameof(TriggerLevel), 50m)
 		.SetNotNegative()
-		.SetDisplay("Trigger Level", "Absolute MACD level that arms the pattern logic", "MACD")
-		
-		.SetOptimize(0.001m, 0.01m, 0.0005m);
+		.SetDisplay("Trigger Level", "Absolute MACD level that arms the pattern logic", "MACD");
 
 		_stopLossPips = Param(nameof(StopLossPips), 100m)
 		.SetNotNegative()
@@ -85,7 +80,7 @@ public class MacdPatternTraderDoubleTopStrategy : Strategy
 		
 		.SetOptimize(0.05m, 1m, 0.05m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for MACD calculations", "General");
 	}
 
@@ -181,9 +176,9 @@ protected override void OnReseted()
 }
 
 /// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
+protected override void OnStarted2(DateTime time)
 {
-	base.OnStarted(time);
+	base.OnStarted2(time);
 
 	Volume = TradeVolume;
 
@@ -202,7 +197,13 @@ subscription
 .BindEx(_macd, ProcessCandle)
 .Start();
 
-StartProtection(CreateTakeProfitUnit(), CreateStopLossUnit(), useMarketOrders: true);
+var pipSize = Security?.PriceStep ?? 0.01m;
+if (pipSize <= 0m) pipSize = 0.01m;
+
+StartProtection(
+	takeProfit: TakeProfitPips > 0m ? new Unit(TakeProfitPips * pipSize, UnitTypes.Absolute) : null,
+	stopLoss: StopLossPips > 0m ? new Unit(StopLossPips * pipSize, UnitTypes.Absolute) : null,
+	useMarketOrders: true);
 }
 
 private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
@@ -309,39 +310,5 @@ private void ResetBuyPattern()
 	_firstTrough = null;
 }
 
-private Unit CreateStopLossUnit()
-{
-	return CreateUnitFromPips(StopLossPips);
-}
-
-private Unit CreateTakeProfitUnit()
-{
-	return CreateUnitFromPips(TakeProfitPips);
-}
-
-private Unit CreateUnitFromPips(decimal pips)
-{
-	if (pips <= 0m)
-	return null;
-
-	var security = Security;
-	if (security?.Step is not decimal priceStep || priceStep <= 0m)
-	return null;
-
-	var pipSize = GetPipSize(security);
-	if (pipSize <= 0m)
-	return null;
-
-	var steps = pips * pipSize / priceStep;
-	return new Unit(steps, UnitTypes.Step);
-}
-
-private static decimal GetPipSize(Security security)
-{
-	if (security.Step is not decimal step || step <= 0m)
-	return 0m;
-
-	return security.Decimals is 3 or 5 ? step * 10m : step;
-}
 }
 

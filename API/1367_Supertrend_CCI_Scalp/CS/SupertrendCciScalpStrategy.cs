@@ -28,6 +28,7 @@ public class SupertrendCciScalpStrategy : Strategy
 	private readonly StrategyParam<decimal> _cciLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private IIndicator _cciMa;
 	private bool _isLong;
 	private bool _isShort;
 
@@ -131,12 +132,11 @@ public class SupertrendCciScalpStrategy : Strategy
 	var st1 = new SuperTrend { Length = AtrLength1, Multiplier = Factor1 };
 	var st2 = new SuperTrend { Length = AtrLength2, Multiplier = Factor2 };
 	var cci = new CommodityChannelIndex { Length = CciLength };
-	var cciMa = CreateMa(MaType, SmoothingLength);
-	cci.Bind(cciMa);
+	_cciMa = CreateMa(MaType, SmoothingLength);
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription
-	    .BindEx(st1, st2, cci, cciMa, ProcessCandle)
+	    .BindEx(st1, st2, cci, ProcessCandle)
 	    .Start();
 
 	var area = CreateChartArea();
@@ -146,14 +146,13 @@ public class SupertrendCciScalpStrategy : Strategy
 	    DrawIndicator(area, st1);
 	    DrawIndicator(area, st2);
 	    DrawIndicator(area, cci);
-	    DrawIndicator(area, cciMa);
 	    DrawOwnTrades(area);
 	}
 
 	StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue st1Value, IIndicatorValue st2Value, IIndicatorValue cciValue, IIndicatorValue maValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue st1Value, IIndicatorValue st2Value, IIndicatorValue cciValue)
 	{
 	if (candle.State != CandleStates.Finished)
 	    return;
@@ -161,13 +160,17 @@ public class SupertrendCciScalpStrategy : Strategy
 	if (!IsFormedAndOnlineAndAllowTrading())
 	    return;
 
-	if (!st1Value.IsFinal || !st2Value.IsFinal || !cciValue.IsFinal || !maValue.IsFinal)
+	if (!st1Value.IsFinal || !st2Value.IsFinal || !cciValue.IsFinal)
 	    return;
 
 	var st1 = ((SuperTrendIndicatorValue)st1Value).Value;
 	var st2 = ((SuperTrendIndicatorValue)st2Value).Value;
 	var cci = cciValue.ToDecimal();
-	var smoothing = maValue.ToDecimal();
+
+	var maResult = _cciMa.Process(cci, candle.ServerTime, true);
+	if (!_cciMa.IsFormed)
+	    return;
+	var smoothing = maResult.GetValue<decimal>();
 
 	var longCondition = st1 > candle.ClosePrice && st2 < candle.ClosePrice && smoothing < -CciLevel;
 	var shortCondition = st1 < candle.ClosePrice && st2 > candle.ClosePrice && smoothing > CciLevel;

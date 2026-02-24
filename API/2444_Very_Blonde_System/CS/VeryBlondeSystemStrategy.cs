@@ -215,9 +215,9 @@ public class VeryBlondeSystemStrategy : Strategy
 			var gridVolume = volume * (decimal)Math.Pow(2, i);
 			
 			if (isBuy)
-			BuyLimit(gridVolume, gridPrice);
+			BuyLimit(gridPrice, gridVolume);
 			else
-			SellLimit(gridVolume, gridPrice);
+			SellLimit(gridPrice, gridVolume);
 		}
 	}
 	
@@ -262,11 +262,11 @@ public class VeryBlondeSystemStrategy : Strategy
 	
 	private void CloseAll()
 	{
-		if (Position != 0)
-		ClosePosition();
-		
-		CancelActiveOrders();
-		
+		if (Position > 0)
+			SellMarket(Math.Abs(Position));
+		else if (Position < 0)
+			BuyMarket(Math.Abs(Position));
+
 		_entryPrice = 0m;
 		_lockActivated = false;
 		_lockPrice = 0m;

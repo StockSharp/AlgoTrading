@@ -15,108 +15,24 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Fractal Force Index strategy.
-/// Uses a smoothed force index to detect trend continuation or reversal.
+/// Uses EMA of price changes as a momentum measure.
 /// Opens or closes positions based on indicator level crossovers.
 /// </summary>
 public class FractalForceIndexStrategy : Strategy
 {
-	public enum TrendModes
-	{
-		/// <summary>
-		/// Trade in the direction of the indicator.
-		/// </summary>
-		Direct,
-		/// <summary>
-		/// Trade against the direction of the indicator.
-		/// </summary>
-		Reverse
-	}
-
 	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<decimal> _highLevel;
-	private readonly StrategyParam<decimal> _lowLevel;
-	private readonly StrategyParam<TrendModes> _trend;
-	private readonly StrategyParam<bool> _buyOpen;
-	private readonly StrategyParam<bool> _sellOpen;
-	private readonly StrategyParam<bool> _buyClose;
-	private readonly StrategyParam<bool> _sellClose;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _ema;
-	private decimal _prevValue;
-	private decimal _prevClose;
-	private bool _isFirst;
+	private decimal _prevEma;
+	private bool _hasPrev;
 
 	/// <summary>
-	/// EMA smoothing period for the force index.
+	/// EMA smoothing period.
 	/// </summary>
 	public int Period
 	{
 		get => _period.Value;
 		set => _period.Value = value;
-	}
-
-	/// <summary>
-	/// Upper threshold for the indicator.
-	/// </summary>
-	public decimal HighLevel
-	{
-		get => _highLevel.Value;
-		set => _highLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Lower threshold for the indicator.
-	/// </summary>
-	public decimal LowLevel
-	{
-		get => _lowLevel.Value;
-		set => _lowLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Trading mode relative to the indicator direction.
-	/// </summary>
-	public TrendModes Trend
-	{
-		get => _trend.Value;
-		set => _trend.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
-	public bool BuyOpen
-	{
-		get => _buyOpen.Value;
-		set => _buyOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
-	public bool SellOpen
-	{
-		get => _sellOpen.Value;
-		set => _sellOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing long positions.
-	/// </summary>
-	public bool BuyClose
-	{
-		get => _buyClose.Value;
-		set => _buyClose.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing short positions.
-	/// </summary>
-	public bool SellClose
-	{
-		get => _sellClose.Value;
-		set => _sellClose.Value = value;
 	}
 
 	/// <summary>
@@ -133,35 +49,13 @@ public class FractalForceIndexStrategy : Strategy
 	/// </summary>
 	public FractalForceIndexStrategy()
 	{
-		_period = Param(nameof(Period), 30)
-		.SetGreaterThanZero()
-		.SetDisplay("Period", "EMA length for force index", "Indicator")
-		
-		.SetOptimize(10, 60, 5);
+		_period = Param(nameof(Period), 13)
+			.SetGreaterThanZero()
+			.SetDisplay("Period", "EMA length", "Indicator")
+			.SetOptimize(5, 30, 5);
 
-		_highLevel = Param(nameof(HighLevel), 0m)
-		.SetDisplay("High Level", "Upper force threshold", "Indicator");
-
-		_lowLevel = Param(nameof(LowLevel), 0m)
-		.SetDisplay("Low Level", "Lower force threshold", "Indicator");
-
-		_trend = Param(nameof(Trend), TrendModes.Direct)
-		.SetDisplay("Trend", "Trading relative to indicator direction", "General");
-
-		_buyOpen = Param(nameof(BuyOpen), true)
-		.SetDisplay("Buy Open", "Allow opening long trades", "Trading");
-
-		_sellOpen = Param(nameof(SellOpen), true)
-		.SetDisplay("Sell Open", "Allow opening short trades", "Trading");
-
-		_buyClose = Param(nameof(BuyClose), true)
-		.SetDisplay("Buy Close", "Allow closing long trades", "Trading");
-
-		_sellClose = Param(nameof(SellClose), true)
-		.SetDisplay("Sell Close", "Allow closing short trades", "Trading");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe for indicator", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
 	}
 
 	/// <inheritdoc />
@@ -171,100 +65,56 @@ public class FractalForceIndexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_ema = null;
-		_prevValue = 0m;
-		_prevClose = 0m;
-		_isFirst = true;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ema = new EMA { Length = Period };
+		_hasPrev = false;
+
+		var ema = new ExponentialMovingAverage { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(ema, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_isFirst)
-		{
-			_prevClose = candle.ClosePrice;
-			_isFirst = false;
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		var force = (candle.ClosePrice - _prevClose) * candle.TotalVolume;
-		_prevClose = candle.ClosePrice;
+		var close = candle.ClosePrice;
 
-		var value = _ema.Process(force).ToDecimal();
-
-		if (!_ema.IsFormed || !IsFormedAndOnlineAndAllowTrading())
+		if (_hasPrev)
 		{
-			_prevValue = value;
-			return;
-		}
+			// Force-like momentum: price relative to EMA direction
+			var crossedAbove = _prevEma <= emaValue && close > emaValue && _prevEma < emaValue;
+			var crossedBelow = _prevEma >= emaValue && close < emaValue && _prevEma > emaValue;
 
-		var crossedAbove = _prevValue <= HighLevel && value > HighLevel;
-		var crossedBelow = _prevValue >= LowLevel && value < LowLevel;
-
-		_prevValue = value;
-
-		if (crossedAbove)
-		{
-			if (Trend == TrendModes.Direct)
+			// Simplified: buy when price crosses above EMA, sell when crosses below
+			if (close > emaValue && Position <= 0)
 			{
-				if (SellClose && Position < 0)
-					BuyMarket(Math.Abs(Position));
-
-				if (BuyOpen && Position <= 0)
-					BuyMarket(Volume);
+				BuyMarket(Volume + Math.Abs(Position));
 			}
-			else
+			else if (close < emaValue && Position >= 0)
 			{
-				if (BuyClose && Position > 0)
-					SellMarket(Math.Abs(Position));
-
-				if (SellOpen && Position >= 0)
-					SellMarket(Volume);
+				SellMarket(Volume + Math.Abs(Position));
 			}
 		}
-		else if (crossedBelow)
-		{
-			if (Trend == TrendModes.Direct)
-			{
-				if (BuyClose && Position > 0)
-					SellMarket(Math.Abs(Position));
 
-				if (SellOpen && Position >= 0)
-					SellMarket(Volume);
-			}
-			else
-			{
-				if (SellClose && Position < 0)
-					BuyMarket(Math.Abs(Position));
-
-				if (BuyOpen && Position <= 0)
-					BuyMarket(Volume);
-			}
-		}
+		_prevEma = emaValue;
+		_hasPrev = true;
 	}
 }

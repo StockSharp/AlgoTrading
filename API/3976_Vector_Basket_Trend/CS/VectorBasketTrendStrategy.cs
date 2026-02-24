@@ -112,7 +112,7 @@ public class VectorBasketTrendStrategy : Strategy
 /// </summary>
 public VectorBasketTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for MA calculation", "General");
 
 		_rangeCandleType = Param(nameof(RangeCandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -188,7 +188,7 @@ public VectorBasketTrendStrategy()
 
 		var position = GetPositionVolume(security);
 		_lastPositions.TryGetValue(security, out var previousPosition);
-		var tradeVolume = trade.Trade.Volume ?? trade.Order.Volume ?? 0m;
+		var tradeVolume = trade.Trade.Volume;
 
 		if (previousPosition == 0m && position != 0m)
 		{
@@ -445,6 +445,11 @@ public VectorBasketTrendStrategy()
 			yield return ThirdSecurity;
 		if (FourthSecurity != null)
 			yield return FourthSecurity;
+	}
+
+	private decimal GetPositionVolume(Security security)
+	{
+		return GetPositionValue(security, Portfolio) ?? 0m;
 	}
 
 	private static decimal GetPipSize(Security security)

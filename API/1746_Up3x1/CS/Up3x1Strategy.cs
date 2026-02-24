@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -18,167 +15,137 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Up3x1Strategy : Strategy
 {
-private readonly StrategyParam<decimal> _takeProfit;
-private readonly StrategyParam<decimal> _stopLoss;
-private readonly StrategyParam<decimal> _trailingStop;
-private readonly StrategyParam<int> _fastPeriod;
-private readonly StrategyParam<int> _middlePeriod;
-private readonly StrategyParam<int> _slowPeriod;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _trailingStop;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _middlePeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-private readonly SimpleMovingAverage _fastMa;
-private readonly SimpleMovingAverage _middleMa;
-private readonly SimpleMovingAverage _slowMa;
+	private decimal _fastPrev;
+	private decimal _middlePrev;
+	private bool _isInitialized;
+	private decimal _entryPrice;
+	private decimal _currentStop;
 
-// Stored indicator values from the previous candle.
-private decimal _fastPrev;
-private decimal _middlePrev;
-private decimal _slowPrev;
-private bool _isInitialized;
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int MiddlePeriod { get => _middlePeriod.Value; set => _middlePeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-// Entry price and current stop level for the open position.
-private decimal _entryPrice;
-private decimal _currentStop;
+	public Up3x1Strategy()
+	{
+		_takeProfit = Param<decimal>(nameof(TakeProfit), 1500m)
+			.SetDisplay("Take Profit", "Take Profit in price points", "General");
+		_stopLoss = Param<decimal>(nameof(StopLoss), 1000m)
+			.SetDisplay("Stop Loss", "Stop Loss in price points", "General");
+		_trailingStop = Param<decimal>(nameof(TrailingStop), 800m)
+			.SetDisplay("Trailing Stop", "Trailing Stop distance", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 24)
+			.SetDisplay("Fast Period", "Fast SMA period", "General");
+		_middlePeriod = Param(nameof(MiddlePeriod), 60)
+			.SetDisplay("Middle Period", "Middle SMA period", "General");
+		_slowPeriod = Param(nameof(SlowPeriod), 120)
+			.SetDisplay("Slow Period", "Slow SMA period", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle Type", "General");
+	}
 
-public Up3x1Strategy()
-{
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-_takeProfit = Param<decimal>(nameof(TakeProfit), 150m)
-.SetDisplay("Take Profit", "Take Profit", "General")
-;
-_stopLoss = Param<decimal>(nameof(StopLoss), 100m)
-.SetDisplay("Stop Loss", "Stop Loss", "General")
-;
-_trailingStop = Param<decimal>(nameof(TrailingStop), 100m)
-.SetDisplay("Trailing Stop", "Trailing Stop", "General")
-;
-_fastPeriod = Param(nameof(FastPeriod), 24)
-.SetDisplay("Fast Period", "Fast Period", "General")
-;
-_middlePeriod = Param(nameof(MiddlePeriod), 60)
-.SetDisplay("Middle Period", "Middle Period", "General")
-;
-_slowPeriod = Param(nameof(SlowPeriod), 120)
-.SetDisplay("Slow Period", "Slow Period", "General")
-;
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-.SetDisplay("Candle Type", "Candle Type", "General");
+		var fastMa = new SMA { Length = FastPeriod };
+		var middleMa = new SMA { Length = MiddlePeriod };
+		var slowMa = new SMA { Length = SlowPeriod };
 
-_fastMa = new SMA { Length = FastPeriod };
-_middleMa = new SMA { Length = MiddlePeriod };
-_slowMa = new SMA { Length = SlowPeriod };
-}
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastMa, middleMa, slowMa, ProcessCandle)
+			.Start();
+	}
 
-public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
-public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
-public int MiddlePeriod { get => _middlePeriod.Value; set => _middlePeriod.Value = value; }
-public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal middle, decimal slow)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+		var price = candle.ClosePrice;
 
-_fastMa.Length = FastPeriod;
-_middleMa.Length = MiddlePeriod;
-_slowMa.Length = SlowPeriod;
+		if (!_isInitialized)
+		{
+			_fastPrev = fast;
+			_middlePrev = middle;
+			_isInitialized = true;
+			return;
+		}
 
-StartProtection(null, null);
+		// Buy when fast crosses above middle (relaxed: no requirement relative to slow)
+		var buySignal = _fastPrev <= _middlePrev && fast > middle;
+		var sellSignal = _fastPrev >= _middlePrev && fast < middle;
 
-var subscription = SubscribeCandles(CandleType);
-subscription
-.Bind(_fastMa, _middleMa, _slowMa, ProcessCandle)
-.Start();
-}
+		_fastPrev = fast;
+		_middlePrev = middle;
 
-private void ProcessCandle(ICandleMessage candle, decimal fast, decimal middle, decimal slow)
-{
-if (candle.State != CandleStates.Finished)
-return;
+		if (Position == 0)
+		{
+			if (buySignal)
+			{
+				BuyMarket();
+				_entryPrice = price;
+				_currentStop = price - StopLoss;
+			}
+			else if (sellSignal)
+			{
+				SellMarket();
+				_entryPrice = price;
+				_currentStop = price + StopLoss;
+			}
+			return;
+		}
 
-// Use candle close price for calculations.
-var price = candle.ClosePrice;
+		if (Position > 0)
+		{
+			if (price - _entryPrice >= TakeProfit)
+			{
+				SellMarket();
+				return;
+			}
 
-if (!_isInitialized)
-{
-_fastPrev = fast;
-_middlePrev = middle;
-_slowPrev = slow;
-_isInitialized = true;
-return;
-}
+			if (TrailingStop > 0m)
+			{
+				_currentStop = Math.Max(_currentStop, price - TrailingStop);
+				if (price <= _currentStop)
+					SellMarket();
+			}
+			else if (price <= _currentStop)
+			{
+				SellMarket();
+			}
+		}
+		else if (Position < 0)
+		{
+			if (_entryPrice - price >= TakeProfit)
+			{
+				BuyMarket();
+				return;
+			}
 
-// Generate signals when the fast and middle SMAs cross
-// and are located relative to the slow SMA.
-var buySignal = _fastPrev < _middlePrev && fast > middle && fast < slow && middle < slow;
-var sellSignal = _fastPrev > _middlePrev && fast < middle && fast > slow && middle > slow;
-
-_fastPrev = fast;
-_middlePrev = middle;
-_slowPrev = slow;
-
-// No active position - check entry conditions.
-if (Position == 0)
-{
-if (buySignal)
-{
-BuyMarket(Volume);
-_entryPrice = price;
-_currentStop = price - StopLoss;
-}
-else if (sellSignal)
-{
-SellMarket(Volume);
-_entryPrice = price;
-_currentStop = price + StopLoss;
-}
-return;
-}
-
-if (Position > 0)
-{
-// Close long position on take profit.
-if (price - _entryPrice >= TakeProfit)
-{
-SellMarket(Position);
-return;
-}
-
-if (TrailingStop > 0m)
-{
-// Adjust trailing stop to lock in profits.
-_currentStop = Math.Max(_currentStop, price - TrailingStop);
-if (price <= _currentStop)
-SellMarket(Position);
-}
-else if (price <= _currentStop)
-{
-SellMarket(Position);
-}
-}
-else if (Position < 0)
-{
-// Close short position on take profit.
-if (_entryPrice - price >= TakeProfit)
-{
-BuyMarket(-Position);
-return;
-}
-
-if (TrailingStop > 0m)
-{
-// Adjust trailing stop for short position.
-_currentStop = Math.Min(_currentStop, price + TrailingStop);
-if (price >= _currentStop)
-BuyMarket(-Position);
-}
-else if (price >= _currentStop)
-{
-BuyMarket(-Position);
-}
-}
-}
+			if (TrailingStop > 0m)
+			{
+				_currentStop = Math.Min(_currentStop, price + TrailingStop);
+				if (price >= _currentStop)
+					BuyMarket();
+			}
+			else if (price >= _currentStop)
+			{
+				BuyMarket();
+			}
+		}
+	}
 }

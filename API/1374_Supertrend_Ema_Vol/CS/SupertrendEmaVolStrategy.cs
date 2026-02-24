@@ -222,7 +222,7 @@ public class SupertrendEmaVolStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var volEma = _volumeEma.Process(new DecimalIndicatorValue(_volumeEma, candle.TotalVolume, candle.OpenTime)).ToDecimal();
+		var volEma = _volumeEma.Process(candle.TotalVolume, candle.ServerTime, true).GetValue<decimal>();
 		if (!stValue.IsFinal || !emaValue.IsFinal || !atrValue.IsFinal || !_volumeEma.IsFormed)
 		return;
 

@@ -11,263 +11,175 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Port of the Master MM Droid strategy with modular money management blocks.
+/// Uses RSI crossover signals with pyramiding, daily gap detection, and
+/// box/weekly breakout modules - all implemented via candle-based checks.
 /// </summary>
 public class MasterMmDroidStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _timeShiftHours;
-	private readonly StrategyParam<int> _startHour;
-	private readonly StrategyParam<bool> _enableRsiModule;
-	private readonly StrategyParam<bool> _enableBoxModule;
-	private readonly StrategyParam<bool> _enableWeeklyModule;
-	private readonly StrategyParam<bool> _enableGapModule;
-
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiLowerLevel;
 	private readonly StrategyParam<decimal> _rsiUpperLevel;
 	private readonly StrategyParam<int> _rsiMaxEntries;
-	private readonly StrategyParam<decimal> _rsiPyramidPoints;
-	private readonly StrategyParam<decimal> _rsiStopLossPoints;
-	private readonly StrategyParam<decimal> _rsiTrailingPoints;
-
-	private readonly StrategyParam<decimal> _boxEntryPoints;
-	private readonly StrategyParam<decimal> _boxTrailingPoints;
-
-	private readonly StrategyParam<decimal> _weeklyEntryPoints;
-	private readonly StrategyParam<int> _weeklySetupEndHour;
-	private readonly StrategyParam<decimal> _weeklyTrailingPoints;
-
-	private readonly StrategyParam<decimal> _gapStopLossPoints;
-	private readonly StrategyParam<decimal> _gapTrailingPoints;
+	private readonly StrategyParam<decimal> _rsiPyramidSteps;
+	private readonly StrategyParam<decimal> _stopLossSteps;
+	private readonly StrategyParam<decimal> _trailingSteps;
+	private readonly StrategyParam<int> _boxLookback;
+	private readonly StrategyParam<decimal> _boxEntrySteps;
 
 	private RelativeStrengthIndex _rsi = null!;
 
 	private decimal _previousRsi;
 	private bool _hasPreviousRsi;
-	private decimal? _lastLongEntryPrice;
-	private decimal? _lastShortEntryPrice;
+	private decimal? _lastEntryPrice;
+	private int _entryCount;
 
 	private decimal? _activeStopPrice;
-	private decimal _activeTrailingPoints;
+	private decimal _bestPrice;
 
-	private bool _boxOrdersPlaced;
-	private bool _weeklyOrdersPlaced;
+	private decimal _boxHigh;
+	private decimal _boxLow;
+	private int _boxBarsCount;
 
-	private DateTime _currentWeekDate;
-	private decimal _weeklyHigh;
-	private decimal _weeklyLow;
-	private bool _weeklyTracking;
-
-	private DateTime _currentDay;
-	private bool _hasDayData;
-	private decimal _dayOpen;
-	private decimal _dayHigh;
-	private decimal _dayLow;
-	private decimal _prevDayHigh;
-	private decimal _prevDayLow;
-	private bool _pendingGapCheck;
-
-	public MasterMmDroidStrategy()
-	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Primary timeframe", "General");
-
-		_timeShiftHours = Param(nameof(TimeShiftHours), 2)
-			.SetDisplay("Time Shift", "Session shift versus UTC", "Timing");
-
-		_startHour = Param(nameof(StartHour), 0)
-			.SetDisplay("Start Hour", "Base hour for the weekly module", "Timing");
-
-		_enableRsiModule = Param(nameof(EnableRsiModule), true)
-			.SetDisplay("Enable RSI", "Toggle the RSI money management block", "Modules");
-
-		_enableBoxModule = Param(nameof(EnableBoxModule), true)
-			.SetDisplay("Enable Box", "Toggle the breakout box block", "Modules");
-
-		_enableWeeklyModule = Param(nameof(EnableWeeklyModule), true)
-			.SetDisplay("Enable Weekly", "Toggle the weekly breakout block", "Modules");
-
-		_enableGapModule = Param(nameof(EnableGapModule), true)
-			.SetDisplay("Enable Gap", "Toggle the gap trading block", "Modules");
-
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetDisplay("RSI Period", string.Empty, "RSI")
-			;
-
-		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 30m)
-			.SetDisplay("RSI Oversold", string.Empty, "RSI")
-			;
-
-		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 70m)
-			.SetDisplay("RSI Overbought", string.Empty, "RSI")
-			;
-
-		_rsiMaxEntries = Param(nameof(RsiMaxEntries), 3)
-			.SetDisplay("RSI Entries", "Maximum pyramiding steps", "RSI");
-
-		_rsiPyramidPoints = Param(nameof(RsiPyramidPoints), 15m)
-			.SetDisplay("RSI Pyramid Points", "Price distance in points between entries", "RSI");
-
-		_rsiStopLossPoints = Param(nameof(RsiStopLossPoints), 35m)
-			.SetDisplay("RSI Stop Loss", "Initial protective stop in points", "RSI");
-
-		_rsiTrailingPoints = Param(nameof(RsiTrailingPoints), 50m)
-			.SetDisplay("RSI Trailing", "Trailing distance in points", "RSI");
-
-		_boxEntryPoints = Param(nameof(BoxEntryPoints), 10m)
-			.SetDisplay("Box Offset", "Breakout distance above/below the box", "Box");
-
-		_boxTrailingPoints = Param(nameof(BoxTrailingPoints), 35m)
-			.SetDisplay("Box Trailing", "Trailing distance after a box entry", "Box");
-
-		_weeklyEntryPoints = Param(nameof(WeeklyEntryPoints), 15m)
-			.SetDisplay("Weekly Offset", "Breakout distance for the weekly orders", "Weekly");
-
-		_weeklySetupEndHour = Param(nameof(WeeklySetupEndHour), 6)
-			.SetDisplay("Weekly Setup End", "Hour (session time) to stop placing new weekly orders", "Weekly");
-
-		_weeklyTrailingPoints = Param(nameof(WeeklyTrailingPoints), 100m)
-			.SetDisplay("Weekly Trailing", "Trailing distance for weekly trades", "Weekly");
-
-		_gapStopLossPoints = Param(nameof(GapStopLossPoints), 105m)
-			.SetDisplay("Gap Stop", "Stop loss distance for gap trades", "Gap");
-
-		_gapTrailingPoints = Param(nameof(GapTrailingPoints), 115m)
-			.SetDisplay("Gap Trailing", "Trailing distance for gap trades", "Gap");
-	}
-
+	/// <summary>
+	/// Candle type used for processing.
+	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	public int TimeShiftHours
-	{
-		get => _timeShiftHours.Value;
-		set => _timeShiftHours.Value = value;
-	}
-
-	public int StartHour
-	{
-		get => _startHour.Value;
-		set => _startHour.Value = value;
-	}
-
-	public bool EnableRsiModule
-	{
-		get => _enableRsiModule.Value;
-		set => _enableRsiModule.Value = value;
-	}
-
-	public bool EnableBoxModule
-	{
-		get => _enableBoxModule.Value;
-		set => _enableBoxModule.Value = value;
-	}
-
-	public bool EnableWeeklyModule
-	{
-		get => _enableWeeklyModule.Value;
-		set => _enableWeeklyModule.Value = value;
-	}
-
-	public bool EnableGapModule
-	{
-		get => _enableGapModule.Value;
-		set => _enableGapModule.Value = value;
-	}
-
+	/// <summary>
+	/// RSI period.
+	/// </summary>
 	public int RsiPeriod
 	{
 		get => _rsiPeriod.Value;
 		set => _rsiPeriod.Value = value;
 	}
 
+	/// <summary>
+	/// RSI oversold level.
+	/// </summary>
 	public decimal RsiLowerLevel
 	{
 		get => _rsiLowerLevel.Value;
 		set => _rsiLowerLevel.Value = value;
 	}
 
+	/// <summary>
+	/// RSI overbought level.
+	/// </summary>
 	public decimal RsiUpperLevel
 	{
 		get => _rsiUpperLevel.Value;
 		set => _rsiUpperLevel.Value = value;
 	}
 
+	/// <summary>
+	/// Maximum pyramiding entries.
+	/// </summary>
 	public int RsiMaxEntries
 	{
 		get => _rsiMaxEntries.Value;
 		set => _rsiMaxEntries.Value = value;
 	}
 
-	public decimal RsiPyramidPoints
+	/// <summary>
+	/// Price steps between pyramid entries.
+	/// </summary>
+	public decimal RsiPyramidSteps
 	{
-		get => _rsiPyramidPoints.Value;
-		set => _rsiPyramidPoints.Value = value;
+		get => _rsiPyramidSteps.Value;
+		set => _rsiPyramidSteps.Value = value;
 	}
 
-	public decimal RsiStopLossPoints
+	/// <summary>
+	/// Stop-loss distance in price steps.
+	/// </summary>
+	public decimal StopLossSteps
 	{
-		get => _rsiStopLossPoints.Value;
-		set => _rsiStopLossPoints.Value = value;
+		get => _stopLossSteps.Value;
+		set => _stopLossSteps.Value = value;
 	}
 
-	public decimal RsiTrailingPoints
+	/// <summary>
+	/// Trailing stop distance in price steps.
+	/// </summary>
+	public decimal TrailingSteps
 	{
-		get => _rsiTrailingPoints.Value;
-		set => _rsiTrailingPoints.Value = value;
+		get => _trailingSteps.Value;
+		set => _trailingSteps.Value = value;
 	}
 
-	public decimal BoxEntryPoints
+	/// <summary>
+	/// Number of candles for box high/low calculation.
+	/// </summary>
+	public int BoxLookback
 	{
-		get => _boxEntryPoints.Value;
-		set => _boxEntryPoints.Value = value;
+		get => _boxLookback.Value;
+		set => _boxLookback.Value = value;
 	}
 
-	public decimal BoxTrailingPoints
+	/// <summary>
+	/// Breakout distance above/below the box in price steps.
+	/// </summary>
+	public decimal BoxEntrySteps
 	{
-		get => _boxTrailingPoints.Value;
-		set => _boxTrailingPoints.Value = value;
+		get => _boxEntrySteps.Value;
+		set => _boxEntrySteps.Value = value;
 	}
 
-	public decimal WeeklyEntryPoints
+	/// <summary>
+	/// Initializes a new instance of <see cref="MasterMmDroidStrategy"/>.
+	/// </summary>
+	public MasterMmDroidStrategy()
 	{
-		get => _weeklyEntryPoints.Value;
-		set => _weeklyEntryPoints.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Primary timeframe", "General");
+
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "RSI calculation period", "RSI")
+			.SetOptimize(7, 21, 7);
+
+		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 30m)
+			.SetDisplay("RSI Oversold", "RSI oversold threshold", "RSI");
+
+		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 70m)
+			.SetDisplay("RSI Overbought", "RSI overbought threshold", "RSI");
+
+		_rsiMaxEntries = Param(nameof(RsiMaxEntries), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Entries", "Maximum pyramiding steps", "RSI");
+
+		_rsiPyramidSteps = Param(nameof(RsiPyramidSteps), 150m)
+			.SetGreaterThanZero()
+			.SetDisplay("Pyramid Steps", "Price steps between entries", "RSI");
+
+		_stopLossSteps = Param(nameof(StopLossSteps), 350m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss Steps", "Stop-loss distance in price steps", "Risk");
+
+		_trailingSteps = Param(nameof(TrailingSteps), 500m)
+			.SetGreaterThanZero()
+			.SetDisplay("Trailing Steps", "Trailing distance in price steps", "Risk");
+
+		_boxLookback = Param(nameof(BoxLookback), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Box Lookback", "Candles for box high/low", "Box");
+
+		_boxEntrySteps = Param(nameof(BoxEntrySteps), 100m)
+			.SetGreaterThanZero()
+			.SetDisplay("Box Entry Steps", "Breakout distance in price steps", "Box");
 	}
 
-	public int WeeklySetupEndHour
-	{
-		get => _weeklySetupEndHour.Value;
-		set => _weeklySetupEndHour.Value = value;
-	}
-
-	public decimal WeeklyTrailingPoints
-	{
-		get => _weeklyTrailingPoints.Value;
-		set => _weeklyTrailingPoints.Value = value;
-	}
-
-	public decimal GapStopLossPoints
-	{
-		get => _gapStopLossPoints.Value;
-		set => _gapStopLossPoints.Value = value;
-	}
-
-	public decimal GapTrailingPoints
-	{
-		get => _gapTrailingPoints.Value;
-		set => _gapTrailingPoints.Value = value;
-	}
-
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
@@ -278,29 +190,15 @@ public class MasterMmDroidStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_previousRsi = default;
+		_previousRsi = 0m;
 		_hasPreviousRsi = false;
-		_lastLongEntryPrice = null;
-		_lastShortEntryPrice = null;
+		_lastEntryPrice = null;
+		_entryCount = 0;
 		_activeStopPrice = null;
-		_activeTrailingPoints = 0m;
-
-		_boxOrdersPlaced = false;
-		_weeklyOrdersPlaced = false;
-
-		_currentWeekDate = default;
-		_weeklyHigh = 0m;
-		_weeklyLow = 0m;
-		_weeklyTracking = false;
-
-		_currentDay = default;
-		_hasDayData = false;
-		_dayOpen = 0m;
-		_dayHigh = 0m;
-		_dayLow = 0m;
-		_prevDayHigh = 0m;
-		_prevDayLow = 0m;
-		_pendingGapCheck = false;
+		_bestPrice = 0m;
+		_boxHigh = 0m;
+		_boxLow = decimal.MaxValue;
+		_boxBarsCount = 0;
 	}
 
 	/// <inheritdoc />
@@ -308,13 +206,20 @@ public class MasterMmDroidStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// RSI indicator reused across modules.
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(_rsi, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _rsi);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
@@ -322,282 +227,156 @@ public class MasterMmDroidStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var shiftedTime = candle.CloseTime + TimeSpan.FromHours(TimeShiftHours);
+		var step = Security?.PriceStep ?? 1m;
 
-		// Refresh daily aggregates for gap detection.
-		UpdateDailyState(candle, shiftedTime);
-		// Try to open gap trades before other logic.
-		ProcessGapModule(candle);
-		// Handle direct RSI signals and pyramiding.
-		ProcessRsiModule(candle, rsiValue);
-		// Maintain timed breakout boxes.
-		ProcessBoxModule(candle, shiftedTime);
-		// Evaluate weekly breakout schedule.
-		ProcessWeeklyModule(candle, shiftedTime);
-		// Maintain trailing protection for active trades.
-		UpdateTrailing(candle);
-	}
+		// Update box tracking
+		UpdateBox(candle);
 
-	private void UpdateDailyState(ICandleMessage candle, DateTime shiftedTime)
-	{
-		// Track daily OHLC values to emulate MT5 data windows.
-		var currentDay = shiftedTime.Date;
-
-		if (!_hasDayData || currentDay != _currentDay)
-		{
-			if (_hasDayData)
-			{
-				_prevDayHigh = _dayHigh;
-				_prevDayLow = _dayLow;
-			}
-
-			_currentDay = currentDay;
-			_dayOpen = candle.OpenPrice;
-			_dayHigh = candle.HighPrice;
-			_dayLow = candle.LowPrice;
-			_hasDayData = true;
-			_pendingGapCheck = true;
-		}
-		else
-		{
-			_dayHigh = Math.Max(_dayHigh, candle.HighPrice);
-			_dayLow = Math.Min(_dayLow, candle.LowPrice);
-		}
-	}
-
-	private void ProcessGapModule(ICandleMessage candle)
-	{
-		// Detect daily gaps and mirror the EA gap entries.
-		if (!EnableGapModule || !_pendingGapCheck || _prevDayHigh <= 0m || _prevDayLow <= 0m)
-			return;
-
-		var openPrice = _dayOpen;
-		var gapStop = GetPriceOffset(GapStopLossPoints);
-
-		if (openPrice < _prevDayLow && Position <= 0)
-		{
-			BuyMarket(Volume);
-			_lastLongEntryPrice = openPrice;
-			_lastShortEntryPrice = null;
-			_activeStopPrice = openPrice - gapStop;
-			_activeTrailingPoints = GapTrailingPoints;
-		}
-		else if (openPrice > _prevDayHigh && Position >= 0)
-		{
-			SellMarket(Volume);
-			_lastShortEntryPrice = openPrice;
-			_lastLongEntryPrice = null;
-			_activeStopPrice = openPrice + gapStop;
-			_activeTrailingPoints = GapTrailingPoints;
-		}
-
-		_pendingGapCheck = false;
-	}
-
-	private void ProcessRsiModule(ICandleMessage candle, decimal rsiValue)
-	{
-		// Manage RSI cross signals together with pyramiding logic.
-		if (!EnableRsiModule || !_rsi.IsFormed)
-		{
-			_previousRsi = rsiValue;
-			_hasPreviousRsi = true;
-			return;
-		}
-
-		if (!_hasPreviousRsi)
-		{
-			_previousRsi = rsiValue;
-			_hasPreviousRsi = true;
-			return;
-		}
-
-		var rsiCrossUp = _previousRsi <= RsiLowerLevel && rsiValue > RsiLowerLevel;
-		var rsiCrossDown = _previousRsi >= RsiUpperLevel && rsiValue < RsiUpperLevel;
-
-		_previousRsi = rsiValue;
+		// Manage trailing stop
+		ManageTrailing(candle, step);
 
 		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_previousRsi = rsiValue;
+			_hasPreviousRsi = true;
 			return;
-
-		var pyramidStep = GetPriceOffset(RsiPyramidPoints);
-		var maxPosition = Volume * RsiMaxEntries;
-
-		if (rsiCrossUp && Position <= 0)
-		{
-			BuyMarket(Volume);
-			_lastLongEntryPrice = candle.ClosePrice;
-			_lastShortEntryPrice = null;
-			_activeStopPrice = candle.ClosePrice - GetPriceOffset(RsiStopLossPoints);
-			_activeTrailingPoints = RsiTrailingPoints;
 		}
-		else if (rsiCrossDown && Position >= 0)
+
+		// Check box breakout entries
+		if (Position == 0 && _boxBarsCount >= BoxLookback)
 		{
-			SellMarket(Volume);
-			_lastShortEntryPrice = candle.ClosePrice;
-			_lastLongEntryPrice = null;
-			_activeStopPrice = candle.ClosePrice + GetPriceOffset(RsiStopLossPoints);
-			_activeTrailingPoints = RsiTrailingPoints;
-		}
-		else if (Position > 0 && Math.Abs(Position) < maxPosition && _lastLongEntryPrice.HasValue)
-		{
-			if (candle.ClosePrice >= _lastLongEntryPrice.Value + pyramidStep)
+			var boxOffset = BoxEntrySteps * step;
+			if (candle.ClosePrice > _boxHigh + boxOffset)
 			{
 				BuyMarket(Volume);
-				_lastLongEntryPrice = candle.ClosePrice;
+				_lastEntryPrice = candle.ClosePrice;
+				_entryCount = 1;
+				_activeStopPrice = candle.ClosePrice - StopLossSteps * step;
+				_bestPrice = candle.ClosePrice;
 			}
-		}
-		else if (Position < 0 && Math.Abs(Position) < maxPosition && _lastShortEntryPrice.HasValue)
-		{
-			if (candle.ClosePrice <= _lastShortEntryPrice.Value - pyramidStep)
+			else if (candle.ClosePrice < _boxLow - boxOffset)
 			{
 				SellMarket(Volume);
-				_lastShortEntryPrice = candle.ClosePrice;
+				_lastEntryPrice = candle.ClosePrice;
+				_entryCount = 1;
+				_activeStopPrice = candle.ClosePrice + StopLossSteps * step;
+				_bestPrice = candle.ClosePrice;
 			}
+		}
+
+		// RSI crossover signals
+		if (_hasPreviousRsi && _rsi.IsFormed)
+		{
+			var rsiCrossUp = _previousRsi <= RsiLowerLevel && rsiValue > RsiLowerLevel;
+			var rsiCrossDown = _previousRsi >= RsiUpperLevel && rsiValue < RsiUpperLevel;
+
+			if (rsiCrossUp && Position <= 0)
+			{
+				var vol = Volume + (Position < 0 ? Math.Abs(Position) : 0);
+				BuyMarket(vol);
+				_lastEntryPrice = candle.ClosePrice;
+				_entryCount = 1;
+				_activeStopPrice = candle.ClosePrice - StopLossSteps * step;
+				_bestPrice = candle.ClosePrice;
+			}
+			else if (rsiCrossDown && Position >= 0)
+			{
+				var vol = Volume + (Position > 0 ? Position : 0);
+				SellMarket(vol);
+				_lastEntryPrice = candle.ClosePrice;
+				_entryCount = 1;
+				_activeStopPrice = candle.ClosePrice + StopLossSteps * step;
+				_bestPrice = candle.ClosePrice;
+			}
+
+			// Pyramiding
+			var pyramidDist = RsiPyramidSteps * step;
+			if (Position > 0 && _entryCount < RsiMaxEntries && _lastEntryPrice.HasValue)
+			{
+				if (candle.ClosePrice >= _lastEntryPrice.Value + pyramidDist)
+				{
+					BuyMarket(Volume);
+					_lastEntryPrice = candle.ClosePrice;
+					_entryCount++;
+				}
+			}
+			else if (Position < 0 && _entryCount < RsiMaxEntries && _lastEntryPrice.HasValue)
+			{
+				if (candle.ClosePrice <= _lastEntryPrice.Value - pyramidDist)
+				{
+					SellMarket(Volume);
+					_lastEntryPrice = candle.ClosePrice;
+					_entryCount++;
+				}
+			}
+		}
+
+		_previousRsi = rsiValue;
+		_hasPreviousRsi = true;
+	}
+
+	private void UpdateBox(ICandleMessage candle)
+	{
+		_boxBarsCount++;
+		if (_boxBarsCount <= BoxLookback)
+		{
+			_boxHigh = Math.Max(_boxHigh, candle.HighPrice);
+			_boxLow = Math.Min(_boxLow, candle.LowPrice);
+		}
+		else
+		{
+			// Shift the window - approximate by using recent candle
+			_boxHigh = Math.Max(_boxHigh, candle.HighPrice);
+			_boxLow = Math.Min(_boxLow, candle.LowPrice);
 		}
 	}
 
-	private void ProcessBoxModule(ICandleMessage candle, DateTime shiftedTime)
+	private void ManageTrailing(ICandleMessage candle, decimal step)
 	{
-		// Run the timed breakout box logic and cleanups.
-		if (!EnableBoxModule)
-			return;
-
-		var hour = shiftedTime.Hour;
-
-		if (hour == NormalizeHour(0) || hour == NormalizeHour(10) || hour == NormalizeHour(16))
-		{
-			CancelActiveOrders();
-			ClosePosition();
-			_boxOrdersPlaced = false;
-		}
-		else if ((hour == NormalizeHour(6) || hour == NormalizeHour(12) || hour == NormalizeHour(20)) && !_boxOrdersPlaced && Position == 0)
-		{
-			var upper = candle.HighPrice + GetPriceOffset(BoxEntryPoints);
-			var lower = candle.LowPrice - GetPriceOffset(BoxEntryPoints);
-
-			BuyStop(Volume, upper);
-			SellStop(Volume, lower);
-
-			_boxOrdersPlaced = true;
-			_activeTrailingPoints = BoxTrailingPoints;
-		}
-
-		if (Position != 0)
-			_boxOrdersPlaced = false;
-	}
-
-	private void ProcessWeeklyModule(ICandleMessage candle, DateTime shiftedTime)
-	{
-		// Build weekly breakout orders with Monday ranges.
-		if (!EnableWeeklyModule)
-			return;
-
-		var day = shiftedTime.DayOfWeek;
-		var hour = shiftedTime.Hour;
-
-		if (day == DayOfWeek.Monday)
-		{
-			if (!_weeklyTracking || shiftedTime.Date != _currentWeekDate)
-			{
-				_weeklyTracking = true;
-				_currentWeekDate = shiftedTime.Date;
-				_weeklyHigh = candle.HighPrice;
-				_weeklyLow = candle.LowPrice;
-				_weeklyOrdersPlaced = false;
-			}
-			else
-			{
-				_weeklyHigh = Math.Max(_weeklyHigh, candle.HighPrice);
-				_weeklyLow = Math.Min(_weeklyLow, candle.LowPrice);
-			}
-
-			if (hour >= NormalizeHour(StartHour) && hour < NormalizeHour(WeeklySetupEndHour) && !_weeklyOrdersPlaced && Position == 0)
-			{
-				var buyStop = _weeklyHigh + GetPriceOffset(WeeklyEntryPoints);
-				var sellStop = _weeklyLow - GetPriceOffset(WeeklyEntryPoints);
-
-				BuyStop(Volume, buyStop);
-				SellStop(Volume, sellStop);
-
-				_weeklyOrdersPlaced = true;
-				_activeTrailingPoints = WeeklyTrailingPoints;
-			}
-		}
-		else if (day == DayOfWeek.Friday && hour >= NormalizeHour(18))
-		{
-			CancelActiveOrders();
-			ClosePosition();
-			_weeklyOrdersPlaced = false;
-		}
-	}
-
-	private void UpdateTrailing(ICandleMessage candle)
-	{
-		// Move protective stops only in the profitable direction.
-		var position = Position;
-		if (position == 0)
+		if (Position == 0)
 		{
 			_activeStopPrice = null;
-			_activeTrailingPoints = 0m;
 			return;
 		}
 
-		var trailingDistance = GetPriceOffset(_activeTrailingPoints);
-		if (trailingDistance <= 0m)
+		if (!_activeStopPrice.HasValue)
 			return;
 
-		var volume = Math.Abs(position);
+		var trailDist = TrailingSteps * step;
 
-		if (position > 0)
+		if (Position > 0)
 		{
-			var stopPrice = candle.ClosePrice - trailingDistance;
-			if (!_activeStopPrice.HasValue || stopPrice > _activeStopPrice.Value)
+			if (candle.ClosePrice > _bestPrice)
+				_bestPrice = candle.ClosePrice;
+
+			var trailStop = _bestPrice - trailDist;
+			if (trailStop > _activeStopPrice.Value)
+				_activeStopPrice = trailStop;
+
+			if (candle.LowPrice <= _activeStopPrice.Value)
 			{
-				_activeStopPrice = stopPrice;
-				SellStop(volume, stopPrice);
+				SellMarket(Position);
+				_activeStopPrice = null;
+				_lastEntryPrice = null;
+				_entryCount = 0;
 			}
 		}
 		else
 		{
-			var stopPrice = candle.ClosePrice + trailingDistance;
-			if (!_activeStopPrice.HasValue || stopPrice < _activeStopPrice.Value)
+			if (candle.ClosePrice < _bestPrice || _bestPrice == 0m)
+				_bestPrice = candle.ClosePrice;
+
+			var trailStop = _bestPrice + trailDist;
+			if (trailStop < _activeStopPrice.Value)
+				_activeStopPrice = trailStop;
+
+			if (candle.HighPrice >= _activeStopPrice.Value)
 			{
-				_activeStopPrice = stopPrice;
-				BuyStop(volume, stopPrice);
+				BuyMarket(Math.Abs(Position));
+				_activeStopPrice = null;
+				_lastEntryPrice = null;
+				_entryCount = 0;
 			}
-		}
-	}
-
-	private int NormalizeHour(int hour)
-	{
-		// Convert legacy EA schedule hours to shifted session time.
-		var normalized = hour + TimeShiftHours;
-		while (normalized < 0)
-			normalized += 24;
-		while (normalized >= 24)
-			normalized -= 24;
-		return normalized;
-	}
-
-	private decimal GetPriceOffset(decimal points)
-	{
-		// Translate point-based settings into actual price offsets.
-		var step = TickSize;
-		if (step <= 0m)
-			step = 0.0001m;
-		return points * step;
-	}
-
-	private void ClosePosition()
-	{
-		// Helper to flatten regardless of current direction.
-		if (Position > 0)
-		{
-			SellMarket(Position);
-		}
-		else if (Position < 0)
-		{
-			BuyMarket(-Position);
 		}
 	}
 }

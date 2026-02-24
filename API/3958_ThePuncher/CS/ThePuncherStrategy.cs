@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -230,7 +227,7 @@ public class ThePuncherStrategy : Strategy
 		
 		.SetOptimize(0, 1000, 50);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe for signals", "General");
 	}
 
@@ -257,11 +254,9 @@ public class ThePuncherStrategy : Strategy
 		Volume = OrderVolume;
 		_pipSize = CalculatePipSize();
 
-		var stochastic = new StochasticOscillator
-		{ K = { Length = StochasticLength },
-			K = { Length = StochasticSignalPeriod },
-			D = { Length = StochasticSmoothingPeriod },
-		};
+		var stochastic = new StochasticOscillator();
+		stochastic.K.Length = StochasticLength;
+		stochastic.D.Length = StochasticSmoothingPeriod;
 
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
@@ -517,11 +512,7 @@ public class ThePuncherStrategy : Strategy
 
 	private void UpdateEntryPriceFromPosition()
 	{
-		if (Position == 0)
-		return;
-
-		if (PositionPrice != 0m)
-			_entryPrice = PositionPrice;
+		// Entry price is tracked manually via _entryPrice field
 	}
 
 	private void ResetTradeState()

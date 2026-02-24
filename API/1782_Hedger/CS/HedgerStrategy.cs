@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,195 +11,99 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Pending-order hedging strategy with optional risk management.
-/// Supports both long and short modes.
+/// Hedging-inspired strategy that enters on EMA crossover
+/// and manages risk with virtual stop/take profit levels.
 /// </summary>
 public class HedgerStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _entryPrice;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _spread;
-	private readonly StrategyParam<bool> _isLong;
-	private readonly StrategyParam<bool> _useRiskHedge;
-	private readonly StrategyParam<bool> _useRiskSl;
-	private readonly StrategyParam<int> _riskSlTicks;
-	private readonly StrategyParam<bool> _useRule7550;
-	
-	private Order _entryOrder = null!;
-	private Order _hedgeOrder = null!;
-	private Order _stopOrder = null!;
-	private Order _takeProfitOrder = null!;
-	private bool _protectivePlaced;
-	private bool _riskHedgeOpened;
-	private bool _riskSlApplied;
-	private bool _ruleApplied;
-	
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal _entryPrice;
+
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public HedgerStrategy()
 	{
-		_entryPrice = Param(nameof(EntryPrice), 0m)
-		.SetDisplay("Entry Price", "Price for limit order", "Trading")
-		;
-		
-		_stopLoss = Param(nameof(StopLoss), 0m)
-		.SetDisplay("Stop Loss", "Protective stop price", "Trading")
-		;
-		
-		_takeProfit = Param(nameof(TakeProfit), 0m)
-		.SetDisplay("Take Profit", "Target profit price", "Trading")
-		;
-		
-		
-		_spread = Param(nameof(Spread), 0m)
-		.SetDisplay("Spread", "Price offset for hedge", "Trading")
-		;
-		
-		_isLong = Param(nameof(IsLong), true)
-		.SetDisplay("Is Long", "Trade long when true, short otherwise", "General")
-		;
-		
-		_useRiskHedge = Param(nameof(UseRiskHedge), false)
-		.SetDisplay("Use Risk Hedge", "Hedge after adverse move", "Risk")
-		;
-		
-		_useRiskSl = Param(nameof(UseRiskSl), true)
-		.SetDisplay("Use Risk SL", "Tighten stop after adverse move", "Risk")
-		;
-		
-		_riskSlTicks = Param(nameof(RiskSlTicks), 100)
-		.SetDisplay("Risk SL Ticks", "Ticks to tighten stop", "Risk")
-		;
-		
-		_useRule7550 = Param(nameof(UseRule7550), false)
-		.SetDisplay("Use 75-50 Rule", "Move stop to 50% after 75% gain", "Rules")
-		;
+		_fastPeriod = Param(nameof(FastPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
+
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
+
+		_takeProfit = Param(nameof(TakeProfit), 500m)
+			.SetDisplay("Take Profit", "Take profit distance", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 300m)
+			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
-	
-	public decimal EntryPrice { get => _entryPrice.Value; set => _entryPrice.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public decimal Spread { get => _spread.Value; set => _spread.Value = value; }
-	public bool IsLong { get => _isLong.Value; set => _isLong.Value = value; }
-	public bool UseRiskHedge { get => _useRiskHedge.Value; set => _useRiskHedge.Value = value; }
-	public bool UseRiskSl { get => _useRiskSl.Value; set => _useRiskSl.Value = value; }
-	public int RiskSlTicks { get => _riskSlTicks.Value; set => _riskSlTicks.Value = value; }
-	public bool UseRule7550 { get => _useRule7550.Value; set => _useRule7550.Value = value; }
-	
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	=> [(Security, DataType.Ticks)];
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		StartProtection(null, null);
-		
-		RegisterEntryOrders();
-		
-		SubscribeTicks().Bind(ProcessTrade).Start();
+
+		_entryPrice = 0;
+
+		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
 	}
-	
-	private void RegisterEntryOrders()
+
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
-		if (IsLong)
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var price = candle.ClosePrice;
+
+		// Exit management
+		if (Position > 0)
 		{
-		_entryOrder = BuyLimit(Volume, EntryPrice);
-		_hedgeOrder = SellStop(Volume, EntryPrice - Spread);
+			if (price - _entryPrice >= TakeProfit || _entryPrice - price >= StopLoss)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				return;
+			}
 		}
-		else
+		else if (Position < 0)
 		{
-		_entryOrder = SellLimit(Volume, EntryPrice);
-		_hedgeOrder = BuyStop(Volume, EntryPrice + Spread);
+			if (_entryPrice - price >= TakeProfit || price - _entryPrice >= StopLoss)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				return;
+			}
 		}
-	}
-	
-	private void PlaceProtectiveOrders()
-	{
-		if (_protectivePlaced || Position == 0)
-		return;
-		
-		if (IsLong)
+
+		// Entry on EMA crossover
+		if (Position == 0)
 		{
-		_stopOrder = SellStop(Position, StopLoss);
-		_takeProfitOrder = SellLimit(Position, TakeProfit);
-		}
-		else
-		{
-		_stopOrder = BuyStop(-Position, StopLoss);
-		_takeProfitOrder = BuyLimit(-Position, TakeProfit);
-		}
-		
-		_protectivePlaced = true;
-		}
-		
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		var price = trade.Price;
-		
-		PlaceProtectiveOrders();
-		
-		if (UseRule7550 && !_ruleApplied && Position != 0)
-		{
-		if (IsLong)
-		{
-		var target = EntryPrice + 0.75m * (TakeProfit - EntryPrice);
-		if (price >= target)
-		{
-		if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
-		CancelOrder(_stopOrder);
-		var newStop = EntryPrice + 0.5m * (TakeProfit - EntryPrice);
-		_stopOrder = SellStop(Position, newStop);
-		_ruleApplied = true;
-		}
-		}
-		else
-		{
-		var target = EntryPrice - 0.75m * (EntryPrice - TakeProfit);
-		if (price <= target)
-		{
-		if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
-		CancelOrder(_stopOrder);
-		var newStop = EntryPrice - 0.5m * (EntryPrice - TakeProfit);
-		_stopOrder = BuyStop(-Position, newStop);
-		_ruleApplied = true;
-		}
-		}
-		}
-		
-		if (UseRiskHedge && !_riskHedgeOpened && Position != 0)
-		{
-		if (IsLong && price < EntryPrice - 3m * Spread)
-		{
-		SellMarket(Volume);
-		_riskHedgeOpened = true;
-		}
-		else if (!IsLong && price > EntryPrice + 3m * Spread)
-		{
-		BuyMarket(Volume);
-		_riskHedgeOpened = true;
-		}
-		}
-		
-		if (UseRiskSl && !_riskSlApplied && Position != 0)
-		{
-		if (IsLong && price < EntryPrice - RiskSlTicks * Spread)
-		{
-		if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
-		CancelOrder(_stopOrder);
-		var newStop = EntryPrice - RiskSlTicks * Spread;
-		_stopOrder = SellStop(Position, newStop);
-		_riskSlApplied = true;
-		}
-		else if (!IsLong && price > EntryPrice + RiskSlTicks * Spread)
-		{
-		if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
-		CancelOrder(_stopOrder);
-		var newStop = EntryPrice + RiskSlTicks * Spread;
-		_stopOrder = BuyStop(-Position, newStop);
-		_riskSlApplied = true;
-		}
+			if (fast > slow)
+			{
+				BuyMarket();
+				_entryPrice = price;
+			}
+			else if (fast < slow)
+			{
+				SellMarket();
+				_entryPrice = price;
+			}
 		}
 	}
 }

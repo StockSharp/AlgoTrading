@@ -53,7 +53,7 @@ public class MaGridStrategy : Strategy
 	public MaGridStrategy()
 	{
 		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
-			.SetGreaterOrEqualThanZero()
+			.SetNotNegative()
 			.SetDisplay("Volume Tolerance", "Small tolerance applied when balancing grid exposure.", "Risk");
 
 		_maPeriod = Param(nameof(MaPeriod), 48)
@@ -200,7 +200,7 @@ public class MaGridStrategy : Strategy
 		break;
 		}
 
-		if (order.Balance <= VolumeTolerance || IsOrderCompleted(order))
+		if (order.Balance <= VolumeTolerance || (order.State == OrderStates.Done || order.State == OrderStates.Failed))
 		_orderIntents.Remove(order);
 	}
 
@@ -373,7 +373,7 @@ public class MaGridStrategy : Strategy
 
 		foreach (var pair in _orderIntents)
 		{
-		if (!IsOrderCompleted(pair.Key))
+		if (!(pair.Key.State == OrderStates.Done || pair.Key.State == OrderStates.Failed))
 		continue;
 
 		completed ??= new List<Order>();

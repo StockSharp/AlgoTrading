@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,356 +11,167 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Detects MACD histogram divergence confirmed by a stochastic oscillator and trades breakouts of new extremes.
+/// Simplified from "Divergence MACD Stochastic" MetaTrader expert.
+/// Uses MACD histogram divergence (price vs histogram) with RSI confirmation.
+/// MACD is computed manually from two EMAs.
 /// </summary>
 public class DivergenceMacdStochasticStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _macdFastLength;
-	private readonly StrategyParam<int> _macdSlowLength;
-	private readonly StrategyParam<int> _macdSignalLength;
-	private readonly StrategyParam<decimal> _macdDivergenceThreshold;
-	private readonly StrategyParam<int> _stochasticLength;
-	private readonly StrategyParam<int> _stochasticSlowK;
-	private readonly StrategyParam<int> _stochasticSlowD;
-	private readonly StrategyParam<decimal> _stochasticUpperLevel;
-	private readonly StrategyParam<decimal> _stochasticLowerLevel;
-	private readonly StrategyParam<decimal> _takeProfitSteps;
-	private readonly StrategyParam<decimal> _stopLossSteps;
+	private readonly StrategyParam<int> _macdFast;
+	private readonly StrategyParam<int> _macdSlow;
+	private readonly StrategyParam<int> _rsiPeriod;
 
-	private MovingAverageConvergenceDivergenceSignal _macd;
-	private StochasticOscillator _stochastic;
+	private RelativeStrengthIndex _rsi;
 
-	private decimal? _previousHighPrice;
-	private decimal? _previousHighHistogram;
-	private decimal? _lastHighPrice;
-	private decimal? _lastHighHistogram;
+	// Manual EMA for MACD
+	private decimal _fastEma;
+	private decimal _slowEma;
+	private bool _emaInitialized;
+	private int _barCount;
+	private decimal _fastMultiplier;
+	private decimal _slowMultiplier;
 
-	private decimal? _previousLowPrice;
-	private decimal? _previousLowHistogram;
-	private decimal? _lastLowPrice;
-	private decimal? _lastLowHistogram;
+	private readonly Queue<decimal> _macdHistory = new();
+	private readonly Queue<decimal> _priceHistory = new();
+	private const int DivergenceLookback = 10;
 
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Fast EMA length of the MACD indicator.
-	/// </summary>
-	public int MacdFastLength
+	public int MacdFast
 	{
-		get => _macdFastLength.Value;
-		set => _macdFastLength.Value = value;
+		get => _macdFast.Value;
+		set => _macdFast.Value = value;
 	}
 
-	/// <summary>
-	/// Slow EMA length of the MACD indicator.
-	/// </summary>
-	public int MacdSlowLength
+	public int MacdSlow
 	{
-		get => _macdSlowLength.Value;
-		set => _macdSlowLength.Value = value;
+		get => _macdSlow.Value;
+		set => _macdSlow.Value = value;
 	}
 
-	/// <summary>
-	/// Signal smoothing length of the MACD indicator.
-	/// </summary>
-	public int MacdSignalLength
+	public int RsiPeriod
 	{
-		get => _macdSignalLength.Value;
-		set => _macdSignalLength.Value = value;
+		get => _rsiPeriod.Value;
+		set => _rsiPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Minimum histogram difference required to confirm divergence.
-	/// </summary>
-	public decimal MacdDivergenceThreshold
-	{
-		get => _macdDivergenceThreshold.Value;
-		set => _macdDivergenceThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Base length for the stochastic oscillator.
-	/// </summary>
-	public int StochasticLength
-	{
-		get => _stochasticLength.Value;
-		set => _stochasticLength.Value = value;
-	}
-
-	/// <summary>
-	/// Slow %K smoothing length.
-	/// </summary>
-	public int StochasticSlowK
-	{
-		get => _stochasticSlowK.Value;
-		set => _stochasticSlowK.Value = value;
-	}
-
-	/// <summary>
-	/// Slow %D smoothing length.
-	/// </summary>
-	public int StochasticSlowD
-	{
-		get => _stochasticSlowD.Value;
-		set => _stochasticSlowD.Value = value;
-	}
-
-	/// <summary>
-	/// Overbought threshold for the stochastic oscillator.
-	/// </summary>
-	public decimal StochasticUpperLevel
-	{
-		get => _stochasticUpperLevel.Value;
-		set => _stochasticUpperLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Oversold threshold for the stochastic oscillator.
-	/// </summary>
-	public decimal StochasticLowerLevel
-	{
-		get => _stochasticLowerLevel.Value;
-		set => _stochasticLowerLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance expressed in price steps.
-	/// </summary>
-	public decimal TakeProfitSteps
-	{
-		get => _takeProfitSteps.Value;
-		set => _takeProfitSteps.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance expressed in price steps.
-	/// </summary>
-	public decimal StopLossSteps
-	{
-		get => _stopLossSteps.Value;
-		set => _stopLossSteps.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public DivergenceMacdStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-		.SetDisplay("Candle Type", "Primary timeframe for divergence detection.", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for divergence detection", "General");
 
-		_macdFastLength = Param(nameof(MacdFastLength), 12)
-		.SetGreaterThanZero()
-		.SetDisplay("MACD Fast", "Fast EMA length for MACD histogram.", "Indicators")
-		;
+		_macdFast = Param(nameof(MacdFast), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast", "Fast EMA length", "Indicators");
 
-		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
-		.SetGreaterThanZero()
-		.SetDisplay("MACD Slow", "Slow EMA length for MACD histogram.", "Indicators")
-		;
+		_macdSlow = Param(nameof(MacdSlow), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow", "Slow EMA length", "Indicators");
 
-		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
-		.SetGreaterThanZero()
-		.SetDisplay("MACD Signal", "Signal EMA length for MACD histogram.", "Indicators")
-		;
-
-		_macdDivergenceThreshold = Param(nameof(MacdDivergenceThreshold), 0.0005m)
-		.SetGreaterThanZero()
-		.SetDisplay("Histogram Threshold", "Minimum histogram difference required for divergence.", "Filters")
-		;
-
-		_stochasticLength = Param(nameof(StochasticLength), 50)
-		.SetGreaterThanZero()
-		.SetDisplay("Stochastic Length", "Primary stochastic length used for %K.", "Indicators")
-		;
-
-		_stochasticSlowK = Param(nameof(StochasticSlowK), 9)
-		.SetGreaterThanZero()
-		.SetDisplay("Stochastic SlowK", "Smoothing length applied to %K.", "Indicators")
-		;
-
-		_stochasticSlowD = Param(nameof(StochasticSlowD), 9)
-		.SetGreaterThanZero()
-		.SetDisplay("Stochastic SlowD", "Smoothing length applied to %D.", "Indicators")
-		;
-
-		_stochasticUpperLevel = Param(nameof(StochasticUpperLevel), 80m)
-		.SetDisplay("Overbought", "Level considered overbought for divergence confirmation.", "Filters");
-
-		_stochasticLowerLevel = Param(nameof(StochasticLowerLevel), 20m)
-		.SetDisplay("Oversold", "Level considered oversold for divergence confirmation.", "Filters");
-
-		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50m)
-		.SetDisplay("Take Profit (steps)", "Optional take profit distance in price steps.", "Risk")
-		;
-
-		_stopLossSteps = Param(nameof(StopLossSteps), 50m)
-		.SetDisplay("Stop Loss (steps)", "Optional stop loss distance in price steps.", "Risk")
-		;
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "RSI period for confirmation", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	protected override void OnStarted2(DateTime time)
 	{
-		if (Security == null)
-		yield break;
+		base.OnStarted2(time);
 
-		if (CandleType != null)
-		yield return (Security, CandleType);
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_previousHighPrice = null;
-		_previousHighHistogram = null;
-		_lastHighPrice = null;
-		_lastHighHistogram = null;
-
-		_previousLowPrice = null;
-		_previousLowHistogram = null;
-		_lastLowPrice = null;
-		_lastLowHistogram = null;
-	}
-
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
-	{
-		base.OnStarted(time);
-
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			ShortLength = MacdFastLength,
-			LongLength = MacdSlowLength,
-			SignalLength = MacdSignalLength
-		};
-
-		_stochastic = new StochasticOscillator
-		{ K = { Length = StochasticLength },
-			K = { Length = StochasticSlowK },
-			D = { Length = StochasticSlowD },
-		};
+		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		_macdHistory.Clear();
+		_priceHistory.Clear();
+		_emaInitialized = false;
+		_barCount = 0;
+		_fastMultiplier = 2m / (MacdFast + 1);
+		_slowMultiplier = 2m / (MacdSlow + 1);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(_macd, _stochastic, ProcessCandle)
-		.Start();
+			.Bind(_rsi, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _macd);
-			DrawIndicator(area, _stochastic);
+			DrawIndicator(area, _rsi);
 			DrawOwnTrades(area);
 		}
-
-		Unit takeProfitUnit = TakeProfitSteps > 0 ? new Unit(TakeProfitSteps, UnitTypes.Step) : null;
-		Unit stopLossUnit = StopLossSteps > 0 ? new Unit(StopLossSteps, UnitTypes.Step) : null;
-
-		StartProtection(takeProfitUnit, stopLossUnit);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue stochasticValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!macdValue.IsFinal || !stochasticValue.IsFinal)
-		return;
-
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal signalLine)
-		return;
-
-		var histogram = macdLine - signalLine;
-
-		var stochasticTyped = (StochasticOscillatorValue)stochasticValue;
-		if (stochasticTyped.K is not decimal stochK)
-		return;
-
-		UpdateSwingExtremes(candle, histogram);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (HasBearishDivergence(stochK) && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
 			return;
-		}
 
-		if (HasBullishDivergence(stochK) && Position <= 0)
+		var close = candle.ClosePrice;
+		_barCount++;
+
+		// Manual EMA computation
+		if (!_emaInitialized)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			_fastEma = close;
+			_slowEma = close;
+			_emaInitialized = true;
 		}
-	}
-
-	private void UpdateSwingExtremes(ICandleMessage candle, decimal histogram)
-	{
-		if (_lastHighPrice == null || candle.HighPrice >= _lastHighPrice)
+		else
 		{
-			_previousHighPrice = _lastHighPrice;
-			_previousHighHistogram = _lastHighHistogram;
-			_lastHighPrice = candle.HighPrice;
-			_lastHighHistogram = histogram;
+			_fastEma = close * _fastMultiplier + _fastEma * (1 - _fastMultiplier);
+			_slowEma = close * _slowMultiplier + _slowEma * (1 - _slowMultiplier);
 		}
 
-		if (_lastLowPrice == null || candle.LowPrice <= _lastLowPrice)
+		if (_barCount < MacdSlow || !_rsi.IsFormed)
+			return;
+
+		var macdLine = _fastEma - _slowEma;
+
+		_macdHistory.Enqueue(macdLine);
+		_priceHistory.Enqueue(close);
+		while (_macdHistory.Count > DivergenceLookback)
 		{
-			_previousLowPrice = _lastLowPrice;
-			_previousLowHistogram = _lastLowHistogram;
-			_lastLowPrice = candle.LowPrice;
-			_lastLowHistogram = histogram;
+			_macdHistory.Dequeue();
+			_priceHistory.Dequeue();
 		}
-	}
 
-	private bool HasBearishDivergence(decimal stochK)
-	{
-		if (_previousHighPrice is not decimal previousHighPrice ||
-		_previousHighHistogram is not decimal previousHighHistogram ||
-		_lastHighPrice is not decimal lastHighPrice ||
-		_lastHighHistogram is not decimal lastHighHistogram)
-		return false;
+		if (_macdHistory.Count < DivergenceLookback)
+			return;
 
-		if (lastHighPrice <= previousHighPrice)
-		return false;
+		var volume = Volume;
+		if (volume <= 0)
+			volume = 1;
 
-		var histogramDelta = previousHighHistogram - lastHighHistogram;
-		if (histogramDelta < MacdDivergenceThreshold)
-		return false;
+		var macdArr = _macdHistory.ToArray();
+		var priceArr = _priceHistory.ToArray();
+		var oldMacd = macdArr[0];
+		var newMacd = macdArr[macdArr.Length - 1];
+		var oldPrice = priceArr[0];
+		var newPrice = priceArr[priceArr.Length - 1];
 
-		return stochK >= StochasticUpperLevel;
-	}
+		// Bullish divergence: price makes lower low but MACD makes higher low + RSI oversold
+		var bullishDiv = newPrice < oldPrice && newMacd > oldMacd && rsiValue < 40;
+		// Bearish divergence: price makes higher high but MACD makes lower high + RSI overbought
+		var bearishDiv = newPrice > oldPrice && newMacd < oldMacd && rsiValue > 60;
 
-	private bool HasBullishDivergence(decimal stochK)
-	{
-		if (_previousLowPrice is not decimal previousLowPrice ||
-		_previousLowHistogram is not decimal previousLowHistogram ||
-		_lastLowPrice is not decimal lastLowPrice ||
-		_lastLowHistogram is not decimal lastLowHistogram)
-		return false;
+		if (bullishDiv)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
 
-		if (lastLowPrice >= previousLowPrice)
-		return false;
+			if (Position <= 0)
+				BuyMarket(volume);
+		}
+		else if (bearishDiv)
+		{
+			if (Position > 0)
+				SellMarket(Position);
 
-		var histogramDelta = lastLowHistogram - previousLowHistogram;
-		if (histogramDelta < MacdDivergenceThreshold)
-		return false;
-
-		return stochK <= StochasticLowerLevel;
+			if (Position >= 0)
+				SellMarket(volume);
+		}
 	}
 }
-

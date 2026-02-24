@@ -129,7 +129,7 @@ public class ZigZagEvgeTrofi1Strategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 
-		_volume = Param(nameof(VolumePerTrade), 0.1m)
+		_volume = Param(nameof(VolumePerTrade), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume per trade", "Trading");
 	}
@@ -304,9 +304,6 @@ public class ZigZagEvgeTrofi1Strategy : Strategy
 		{
 			if (Security.PriceStep.HasValue && Security.PriceStep.Value > 0m)
 				return Security.PriceStep.Value;
-
-			if (Security.MinPriceStep > 0m)
-				return Security.MinPriceStep;
 		}
 
 		return 1m;

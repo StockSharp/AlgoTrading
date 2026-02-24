@@ -11,109 +11,92 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Simple multiple time frame moving average strategy.
-/// Buys when both H1 and H4 SMAs are rising, sells when both are falling.
+/// Strategy using fast and slow SMA slopes for trade direction.
+/// Buys when both SMAs are rising, sells when both are falling.
 /// </summary>
 public class SimpleMultipleTimeFrameMovingAverageStrategy : Strategy
 {
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<DataType> _shortCandleType;
-	private readonly StrategyParam<DataType> _longCandleType;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevHourSma;
-	private decimal _prevPrevHourSma;
-	private decimal _prevLongSma;
-	private decimal _prevPrevLongSma;
-	private bool _hasHour;
-	private bool _hasLong;
+	private decimal? _prevFast;
+	private decimal? _prevSlow;
 
-	public int Length { get => _length.Value; set => _length.Value = value; }
-	public DataType ShortCandleType { get => _shortCandleType.Value; set => _shortCandleType.Value = value; }
-	public DataType LongCandleType { get => _longCandleType.Value; set => _longCandleType.Value = value; }
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public SimpleMultipleTimeFrameMovingAverageStrategy()
 	{
-		_length = Param(nameof(Length), 5)
-			.SetDisplay("MA Length", "Moving average period", "General")
-			;
+		_fastLength = Param(nameof(FastLength), 5)
+			.SetDisplay("Fast MA", "Fast moving average period", "General");
 
-		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Short Time Frame", "First time frame", "General");
+		_slowLength = Param(nameof(SlowLength), 20)
+			.SetDisplay("Slow MA", "Slow moving average period", "General");
 
-		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Long Time Frame", "Second time frame", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = _prevSlow = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var shortSma = new SMA { Length = Length };
-		var longSma = new SMA { Length = Length };
+		var fastSma = new SMA { Length = FastLength };
+		var slowSma = new SMA { Length = SlowLength };
 
-		SubscribeCandles(ShortCandleType)
-			.Bind(shortSma, ProcessShort)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastSma, slowSma, ProcessCandle)
 			.Start();
 
-		SubscribeCandles(LongCandleType)
-			.Bind(longSma, ProcessLong)
-			.Start();
-	}
-
-	private void ProcessShort(ICandleMessage candle, decimal sma)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_prevPrevHourSma = _prevHourSma;
-		_prevHourSma = sma;
-		_hasHour = _prevPrevHourSma != default;
-
-		TryTrade();
-	}
-
-	private void ProcessLong(ICandleMessage candle, decimal sma)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_prevPrevLongSma = _prevLongSma;
-		_prevLongSma = sma;
-		_hasLong = _prevPrevLongSma != default;
-
-		TryTrade();
-	}
-
-	private void TryTrade()
-	{
-		if (!_hasHour || !_hasLong)
-			return;
-
-		var hourUp = _prevHourSma > _prevPrevHourSma;
-		var hourDown = _prevHourSma < _prevPrevHourSma;
-		var longUp = _prevLongSma > _prevPrevLongSma;
-		var longDown = _prevLongSma < _prevPrevLongSma;
-
-		if (Position == 0)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			if (hourUp && longUp)
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastSma);
+			DrawIndicator(area, slowSma);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
+
+		if (_prevFast is decimal pf && _prevSlow is decimal ps)
+		{
+			var fastUp = fast > pf;
+			var fastDown = fast < pf;
+			var slowUp = slow > ps;
+			var slowDown = slow < ps;
+
+			if (fastUp && slowUp && Position <= 0)
 				BuyMarket();
-			else if (hourDown && longDown)
+			else if (fastDown && slowDown && Position >= 0)
 				SellMarket();
 		}
-		else if (Position > 0)
-		{
-			if (hourDown || longDown)
-				ClosePosition();
-		}
-		else // Position < 0
-		{
-			if (hourUp || longUp)
-				ClosePosition();
-		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

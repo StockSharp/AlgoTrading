@@ -140,7 +140,7 @@ public class CciHistogramStrategy : Strategy
 		_useTakeProfit = Param(nameof(UseTakeProfit), false)
 							 .SetDisplay("Enable Take Profit", "Use take profit protection", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 						  .SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -162,10 +162,6 @@ public class CciHistogramStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(takeProfit: UseTakeProfit ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null,
-						stopLoss: UseStopLoss ? new Unit(StopLossPoints, UnitTypes.Absolute) : null,
-						isStopTrailing: false, useMarketOrders: true);
-
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 		var subscription = SubscribeCandles(CandleType);
 
@@ -179,7 +175,11 @@ public class CciHistogramStrategy : Strategy
 						  return;
 
 					  if (!IsFormedAndOnlineAndAllowTrading())
+					  {
+						  _prevCci = cciValue;
+						  isInitialized = true;
 						  return;
+					  }
 
 					  if (!isInitialized)
 					  {
@@ -190,11 +190,11 @@ public class CciHistogramStrategy : Strategy
 
 					  if (_prevCci > UpperLevel && cciValue <= UpperLevel && Position <= 0)
 					  {
-						  BuyMarket(Volume + Math.Abs(Position));
+						  BuyMarket();
 					  }
 					  else if (_prevCci < LowerLevel && cciValue >= LowerLevel && Position >= 0)
 					  {
-						  SellMarket(Volume + Math.Abs(Position));
+						  SellMarket();
 					  }
 
 					  _prevCci = cciValue;

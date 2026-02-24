@@ -14,35 +14,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Support and resistance breakout strategy with EMA trend filter and staged trailing stop.
-/// Reproduces the behaviour of the original MQL advisor that buys above resistance during bullish trends
-/// and sells below support during bearish trends.
+/// Support and resistance breakout strategy with EMA trend filter.
+/// Buys above resistance during bullish trends and sells below support during bearish trends.
+/// Manually tracks highest high and lowest low over N candles for support/resistance.
 /// </summary>
 public class SupportResistanceBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rangeLength;
 	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<decimal> _stopLossPoints;
+	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DonchianChannels _donchian = null!;
-	private ExponentialMovingAverage _ema = null!;
+	private ExponentialMovingAverage _ema;
 
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
 	private decimal _support;
 	private decimal _resistance;
-	private TrendDirections _trend;
-
-	private decimal _point;
-	private Order _stopOrder;
-	private decimal? _stopPrice;
 	private decimal? _entryPrice;
-	private int _trailingStage;
-
-	private enum TrendDirections
-	{
-		None,
-		Bullish,
-		Bearish
-	}
 
 	/// <summary>
 	/// Number of candles used to compute support and resistance.
@@ -63,6 +53,24 @@ public class SupportResistanceBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Stop loss in absolute points.
+	/// </summary>
+	public decimal StopLossPoints
+	{
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Take profit in absolute points.
+	/// </summary>
+	public decimal TakeProfitPoints
+	{
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
@@ -71,25 +79,30 @@ public class SupportResistanceBreakoutStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="SupportResistanceBreakoutStrategy"/> class.
-	/// </summary>
 	public SupportResistanceBreakoutStrategy()
 	{
 		_rangeLength = Param(nameof(RangeLength), 55)
-		.SetGreaterThanZero()
-		.SetDisplay("Range Length", "Candles used to form support/resistance", "General")
-		
-		.SetOptimize(20, 100, 5);
+			.SetGreaterThanZero()
+			.SetDisplay("Range Length", "Candles used to form support/resistance", "General")
+			.SetOptimize(20, 100, 5);
 
-		_emaPeriod = Param(nameof(EmaPeriod), 500)
-		.SetGreaterThanZero()
-		.SetDisplay("EMA Period", "Length of the EMA trend filter", "General")
-		
-		.SetOptimize(100, 800, 50);
+		_emaPeriod = Param(nameof(EmaPeriod), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "Length of the EMA trend filter", "General")
+			.SetOptimize(20, 200, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Primary candle series", "General");
+		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop loss in absolute points", "Risk");
+
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take profit in absolute points", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Primary candle series", "General");
+
+		Volume = 1;
 	}
 
 	/// <inheritdoc />
@@ -102,256 +115,38 @@ public class SupportResistanceBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
+		_ema = null;
+		_highs.Clear();
+		_lows.Clear();
 		_support = 0m;
 		_resistance = 0m;
-		_trend = TrendDirections.None;
-		_point = 0m;
-		_stopOrder = null;
-		_stopPrice = null;
 		_entryPrice = null;
-		_trailingStage = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted2(time);
-
-		_point = Security?.PriceStep ?? 1m;
-
-		_donchian = new DonchianChannels { Length = RangeLength };
-		_ema = new EMA { Length = EmaPeriod };
+		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(candle => ProcessCandle(candle, _donchian, _ema))
-		.Start();
+			.Bind(_ema, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
 			DrawIndicator(area, _ema);
+			DrawOwnTrades(area);
 		}
-	}
 
-	private void ProcessCandle(ICandleMessage candle, DonchianChannels donchian, ExponentialMovingAverage ema)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
+		var tp = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null;
+		var sl = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Absolute) : null;
+		if (tp != null || sl != null)
+			StartProtection(tp, sl);
 
-		// Update support/resistance range and the EMA trend filter.
-		var channelValue = donchian.Process(candle);
-		var emaValue = ema.Process(new DecimalIndicatorValue(ema, candle.OpenPrice, candle.OpenTime));
-
-		if (!donchian.IsFormed || !ema.IsFormed)
-		return;
-
-		var channels = (DonchianChannelsValue)channelValue;
-
-		if (channels.UpperBand is not decimal upper || channels.LowerBand is not decimal lower)
-		return;
-
-		_support = lower;
-		_resistance = upper;
-
-		var emaDecimal = emaValue.ToDecimal();
-
-		_trend = TrendDirections.None;
-		if (candle.OpenPrice > emaDecimal)
-		_trend = TrendDirections.Bullish;
-		else if (candle.OpenPrice < emaDecimal)
-		_trend = TrendDirections.Bearish;
-
-		var canTrade = IsFormedAndOnlineAndAllowTrading();
-
-		HandleEntries(candle, canTrade);
-		HandleExits(candle, canTrade);
-		UpdateTrailing(candle, canTrade);
-
-		if (Position == 0)
-		ResetPositionState();
-	}
-
-	private void HandleEntries(ICandleMessage candle, bool canTrade)
-	{
-		if (!canTrade)
-		return;
-
-		// Buy the breakout when the market is trending higher.
-		if (_trend == TrendDirections.Bullish && Position <= 0 && candle.ClosePrice > _resistance)
-		{
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0m)
-			{
-				CancelStop();
-				BuyMarket(volume);
-			}
-		}
-		// Sell the breakdown when the market is trending lower.
-		else if (_trend == TrendDirections.Bearish && Position >= 0 && candle.ClosePrice < _support)
-		{
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0m)
-			{
-				CancelStop();
-				SellMarket(volume);
-			}
-		}
-	}
-
-	private void HandleExits(ICandleMessage candle, bool canTrade)
-	{
-		if (!canTrade)
-		return;
-
-		// Close longs if price falls back below the refreshed support while in profit.
-		if (Position > 0 && _entryPrice is decimal entryLong)
-		{
-			var profit = candle.ClosePrice - entryLong;
-			if (profit > 0m && candle.ClosePrice < _support)
-			{
-				CancelStop();
-				SellMarket(Position);
-			}
-		}
-		// Close shorts if price rises back above the refreshed resistance while in profit.
-		else if (Position < 0 && _entryPrice is decimal entryShort)
-		{
-			var profit = entryShort - candle.ClosePrice;
-			if (profit > 0m && candle.ClosePrice > _resistance)
-			{
-				CancelStop();
-				BuyMarket(Math.Abs(Position));
-			}
-		}
-	}
-
-	private void UpdateTrailing(ICandleMessage candle, bool canTrade)
-	{
-		if (!canTrade)
-		return;
-
-		if (_entryPrice is null || _point <= 0m)
-		return;
-
-		// Apply the three-step trailing stop that locks in 10/20/30 points of profit.
-		if (Position > 0)
-		{
-			ApplyLongTrailing(candle.ClosePrice);
-		}
-		else if (Position < 0)
-		{
-			ApplyShortTrailing(candle.ClosePrice);
-		}
-	}
-
-	private void ApplyLongTrailing(decimal price)
-	{
-		if (_entryPrice is not decimal entry)
-		return;
-
-		var thresholds = new[] { 20m, 40m, 60m };
-		var offsets = new[] { 10m, 20m, 30m };
-
-		for (var i = 0; i < thresholds.Length; i++)
-		{
-			if (_trailingStage >= i + 1)
-			continue;
-
-			var target = entry + thresholds[i] * _point;
-			if (price > target)
-			{
-				var newStop = entry + offsets[i] * _point;
-				if (_stopPrice is null || newStop > _stopPrice.Value)
-				{
-					MoveStop(Sides.Sell, newStop);
-					_trailingStage = i + 1;
-				}
-			}
-		}
-	}
-
-	private void ApplyShortTrailing(decimal price)
-	{
-		if (_entryPrice is not decimal entry)
-		return;
-
-		var thresholds = new[] { 20m, 40m, 60m };
-		var offsets = new[] { 10m, 20m, 30m };
-
-		for (var i = 0; i < thresholds.Length; i++)
-		{
-			if (_trailingStage >= i + 1)
-			continue;
-
-			var target = entry - thresholds[i] * _point;
-			if (price < target)
-			{
-				var newStop = entry - offsets[i] * _point;
-				if (_stopPrice is null || newStop < _stopPrice.Value)
-				{
-					MoveStop(Sides.Buy, newStop);
-					_trailingStage = i + 1;
-				}
-			}
-		}
-	}
-
-	private void MoveStop(Sides side, decimal price)
-	{
-		CancelStop();
-
-		var volume = Math.Abs(Position);
-		if (volume <= 0m)
-		return;
-
-		_stopOrder = side == Sides.Sell
-		? SellStop(volume, price)
-		: BuyStop(volume, price);
-
-		_stopPrice = price;
-	}
-
-	private void CancelStop()
-	{
-		if (_stopOrder != null)
-		{
-			CancelOrder(_stopOrder);
-			_stopOrder = null;
-		}
-	}
-
-	private void PlaceInitialStopForLong()
-	{
-		if (_entryPrice is not decimal entry || Position <= 0)
-		return;
-
-		if (_support <= 0m || _support >= entry)
-		return;
-
-		MoveStop(Sides.Sell, _support);
-	}
-
-	private void PlaceInitialStopForShort()
-	{
-		if (_entryPrice is not decimal entry || Position >= 0)
-		return;
-
-		if (_resistance <= 0m || _resistance <= entry)
-		return;
-
-		MoveStop(Sides.Buy, _resistance);
-	}
-
-	private void ResetPositionState()
-	{
-		_entryPrice = null;
-		_stopPrice = null;
-		_trailingStage = 0;
-		CancelStop();
+		base.OnStarted2(time);
 	}
 
 	/// <inheritdoc />
@@ -359,75 +154,82 @@ public class SupportResistanceBreakoutStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (trade.Order.Security != Security)
-		return;
-
-		var tradeVolume = trade.Trade.Volume;
-		if (tradeVolume <= 0m)
-		return;
-
-		var delta = trade.Order.Side == Sides.Buy ? tradeVolume : -tradeVolume;
-		var previousPosition = Position - delta;
-
-		if (Position > 0)
-		{
-			if (trade.Order.Side == Sides.Buy)
-			{
-				if (previousPosition <= 0m)
-				{
-					_entryPrice = trade.Trade.Price;
-				}
-				else if (_entryPrice is decimal existing && Math.Abs(previousPosition) > 0m)
-				{
-					var currentVolume = Math.Abs(Position);
-					_entryPrice = (existing * Math.Abs(previousPosition) + trade.Trade.Price * tradeVolume) / currentVolume;
-				}
-				else
-				{
-					_entryPrice = trade.Trade.Price;
-				}
-
-				_trailingStage = 0;
-				_stopPrice = null;
-				PlaceInitialStopForLong();
-			}
-		}
-		else if (Position < 0)
-		{
-			if (trade.Order.Side == Sides.Sell)
-			{
-				if (previousPosition >= 0m)
-				{
-					_entryPrice = trade.Trade.Price;
-				}
-				else if (_entryPrice is decimal existing && Math.Abs(previousPosition) > 0m)
-				{
-					var currentVolume = Math.Abs(Position);
-					_entryPrice = (existing * Math.Abs(previousPosition) + trade.Trade.Price * tradeVolume) / currentVolume;
-				}
-				else
-				{
-					_entryPrice = trade.Trade.Price;
-				}
-
-				_trailingStage = 0;
-				_stopPrice = null;
-				PlaceInitialStopForShort();
-			}
-		}
-		else
-		{
-			ResetPositionState();
-		}
+		if (Position != 0 && _entryPrice == null)
+			_entryPrice = trade.Trade.Price;
+		if (Position == 0)
+			_entryPrice = null;
 	}
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
-		base.OnPositionReceived(position);
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		if (Position == 0)
-		ResetPositionState();
+		// Track highs and lows manually
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+		if (_highs.Count > RangeLength)
+			_highs.RemoveAt(0);
+		if (_lows.Count > RangeLength)
+			_lows.RemoveAt(0);
+
+		if (_highs.Count < RangeLength)
+			return;
+
+		// Compute support/resistance from previous bars (exclude current)
+		var prevResistance = _resistance;
+		var prevSupport = _support;
+
+		decimal maxHigh = decimal.MinValue;
+		decimal minLow = decimal.MaxValue;
+		// Use bars 0..N-2 (exclude last which is current)
+		for (int i = 0; i < _highs.Count - 1; i++)
+		{
+			if (_highs[i] > maxHigh) maxHigh = _highs[i];
+			if (_lows[i] < minLow) minLow = _lows[i];
+		}
+
+		_resistance = maxHigh;
+		_support = minLow;
+
+		// Determine trend from EMA
+		var isBullish = candle.ClosePrice > emaValue;
+		var isBearish = candle.ClosePrice < emaValue;
+
+		// Exit: close longs if price falls back below support while in profit
+		if (Position > 0 && _entryPrice is decimal entryLong)
+		{
+			if (candle.ClosePrice - entryLong > 0 && candle.ClosePrice < _support)
+			{
+				SellMarket(Position);
+				return;
+			}
+		}
+		else if (Position < 0 && _entryPrice is decimal entryShort)
+		{
+			if (entryShort - candle.ClosePrice > 0 && candle.ClosePrice > _resistance)
+			{
+				BuyMarket(Math.Abs(Position));
+				return;
+			}
+		}
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		// Entry: breakout above resistance in bullish trend
+		if (isBullish && Position <= 0 && candle.ClosePrice > _resistance && _resistance > 0)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(Volume);
+		}
+		// Entry: breakdown below support in bearish trend
+		else if (isBearish && Position >= 0 && candle.ClosePrice < _support && _support > 0)
+		{
+			if (Position > 0)
+				SellMarket(Position);
+			SellMarket(Volume);
+		}
 	}
 }
-

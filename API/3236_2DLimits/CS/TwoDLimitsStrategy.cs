@@ -1,10 +1,6 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,389 +10,133 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Port of the MetaTrader expert advisor 2DLimits_EA_v2.
-/// Places directional stop orders above/below the previous daily range when the last two days align in trend.
-/// Applies midpoint-based stop-loss and full range take-profit targets once the breakout is triggered.
+/// 2DLimits strategy: trades daily range breakouts when last two candles align in trend.
+/// Buys when price breaks above prior high with upward bias, sells when below prior low with downward bias.
 /// </summary>
 public class TwoDLimitsStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _lookbackBars;
 
-	private readonly Queue<ICandleMessage> _recentDailyCandles = new(2);
-
-	private Order _buyEntryOrder;
-	private Order _sellEntryOrder;
-	private Order _longStopOrder;
-	private Order _longTakeOrder;
-	private Order _shortStopOrder;
-	private Order _shortTakeOrder;
-
-	private decimal? _nextLongStopPrice;
-	private decimal? _nextLongTakePrice;
-	private decimal? _nextShortStopPrice;
-	private decimal? _nextShortTakePrice;
-
-	private DateTime? _activeEntryDay;
-	private DateTime? _lastTradeDay;
-	private DateTime? _lastCompletedTradeDay;
-
-	private decimal _lastBid;
-	private decimal _lastAsk;
-
-	private decimal _previousPosition;
-
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private decimal _olderHigh;
+	private decimal _olderLow;
+	private bool _hasPrev;
+	private bool _hasOlder;
 
 	/// <summary>
-	/// Candle type that provides the daily reference range.
+	/// Constructor.
 	/// </summary>
+	public TwoDLimitsStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+
+		_lookbackBars = Param(nameof(LookbackBars), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback Bars", "Number of bars per range period", "Signals");
+	}
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
-	public TwoDLimitsStrategy()
+	public int LookbackBars
 	{
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe used to read the previous day range.", "General");
+		get => _lookbackBars.Value;
+		set => _lookbackBars.Value = value;
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, CandleType);
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_recentDailyCandles.Clear();
-		_buyEntryOrder = null;
-		_sellEntryOrder = null;
-		_longStopOrder = null;
-		_longTakeOrder = null;
-		_shortStopOrder = null;
-		_shortTakeOrder = null;
-		_nextLongStopPrice = null;
-		_nextLongTakePrice = null;
-		_nextShortStopPrice = null;
-		_nextShortTakePrice = null;
-		_activeEntryDay = null;
-		_lastTradeDay = null;
-		_lastCompletedTradeDay = null;
-		_lastBid = 0m;
-		_lastAsk = 0m;
-		_previousPosition = 0m;
-	}
+	private decimal _periodHigh;
+	private decimal _periodLow;
+	private int _barCount;
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		_hasPrev = false;
+		_hasOlder = false;
+		_barCount = 0;
+		_periodHigh = decimal.MinValue;
+		_periodLow = decimal.MaxValue;
+
+		var sma = new SMA { Length = 20 };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(sma, ProcessCandle)
 			.Start();
 
-		SubscribeCandles(CandleType)
-			.Bind(ProcessDailyCandle)
-			.Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage message)
-	{
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bid))
-			_lastBid = (decimal)bid;
-
-		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var ask))
-			_lastAsk = (decimal)ask;
-	}
-
-	private void ProcessDailyCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		CancelEntryOrders();
+		// Track period high/low
+		if (candle.HighPrice > _periodHigh) _periodHigh = candle.HighPrice;
+		if (candle.LowPrice < _periodLow) _periodLow = candle.LowPrice;
+		_barCount++;
 
-		_recentDailyCandles.Enqueue(candle);
+		if (_barCount >= LookbackBars)
+		{
+			// Period complete, shift
+			_hasOlder = _hasPrev;
+			_olderHigh = _prevHigh;
+			_olderLow = _prevLow;
+			_prevHigh = _periodHigh;
+			_prevLow = _periodLow;
+			_hasPrev = true;
 
-		while (_recentDailyCandles.Count > 2)
-			_recentDailyCandles.Dequeue();
-
-		if (_recentDailyCandles.Count < 2)
-			return;
+			_periodHigh = decimal.MinValue;
+			_periodLow = decimal.MaxValue;
+			_barCount = 0;
+		}
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (Position != 0)
+		if (!_hasPrev || !_hasOlder)
 			return;
 
-		var candles = _recentDailyCandles.ToArray();
-		var older = candles[0];
-		var previous = candles[1];
+		// Two-period bias: upward = higher highs and higher lows
+		var hasLongBias = _prevHigh > _olderHigh && _prevLow > _olderLow;
+		var hasShortBias = _prevHigh < _olderHigh && _prevLow < _olderLow;
 
-		var range = previous.HighPrice - previous.LowPrice;
-		if (range <= 0m)
-			return;
-
-		var middle = (previous.HighPrice + previous.LowPrice) / 2m;
-		var upcomingDay = previous.OpenTime.Date.AddDays(1);
-
-		var hasLongBias = previous.HighPrice > older.HighPrice && previous.LowPrice > older.LowPrice;
-		var hasShortBias = previous.HighPrice < older.HighPrice && previous.LowPrice < older.LowPrice;
-
-		var volume = Volume;
-		if (volume <= 0m)
-			return;
-
-		var ask = _lastAsk > 0m ? _lastAsk : (Security?.BestAsk?.Price ?? 0m);
-		var bid = _lastBid > 0m ? _lastBid : (Security?.BestBid?.Price ?? 0m);
-		var lastTradePrice = Security?.LastTick?.Price ?? 0m;
-
-		if (ask <= 0m && lastTradePrice > 0m)
-			ask = lastTradePrice;
-
-		if (bid <= 0m && lastTradePrice > 0m)
-			bid = lastTradePrice;
-
-		var anyOrderPlaced = false;
-
-		if (hasLongBias && ask > 0m && ask < middle)
+		// Breakout entry
+		if (hasLongBias && candle.ClosePrice > _prevHigh && Position <= 0)
 		{
-			var entryPrice = RoundPrice(previous.HighPrice);
-			var stopPrice = RoundPrice(middle);
-			var takeProfitPrice = RoundPrice(previous.HighPrice + range);
-
-			if (entryPrice > 0m && stopPrice > 0m && takeProfitPrice > 0m)
-			{
-				_buyEntryOrder = BuyStop(volume, entryPrice);
-				_nextLongStopPrice = stopPrice;
-				_nextLongTakePrice = takeProfitPrice;
-				_activeEntryDay = upcomingDay;
-				anyOrderPlaced = true;
-			}
+			BuyMarket();
 		}
-		else
+		else if (hasShortBias && candle.ClosePrice < _prevLow && Position >= 0)
 		{
-			_nextLongStopPrice = null;
-			_nextLongTakePrice = null;
+			SellMarket();
 		}
-
-		if (hasShortBias && bid > 0m && bid > middle)
+		// Mean reversion exit: price returns to middle
+		else if (Position > 0)
 		{
-			var entryPrice = RoundPrice(previous.LowPrice);
-			var stopPrice = RoundPrice(middle);
-			var takeProfitPrice = RoundPrice(previous.LowPrice - range);
-
-			if (entryPrice > 0m && stopPrice > 0m && takeProfitPrice > 0m)
-			{
-				_sellEntryOrder = SellStop(volume, entryPrice);
-				_nextShortStopPrice = stopPrice;
-				_nextShortTakePrice = takeProfitPrice;
-				_activeEntryDay = upcomingDay;
-				anyOrderPlaced = true;
-			}
+			var mid = (_prevHigh + _prevLow) / 2m;
+			if (candle.ClosePrice < mid)
+				SellMarket();
 		}
-		else
+		else if (Position < 0)
 		{
-			_nextShortStopPrice = null;
-			_nextShortTakePrice = null;
+			var mid = (_prevHigh + _prevLow) / 2m;
+			if (candle.ClosePrice > mid)
+				BuyMarket();
 		}
-
-		if (!anyOrderPlaced)
-			_activeEntryDay = null;
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (trade?.Order == null)
-			return;
-
-		if (_buyEntryOrder != null && trade.Order == _buyEntryOrder)
-		{
-			_lastTradeDay = _activeEntryDay ?? trade.Trade.ServerTime.Date;
-			CancelOrder(ref _sellEntryOrder);
-		}
-		else if (_sellEntryOrder != null && trade.Order == _sellEntryOrder)
-		{
-			_lastTradeDay = _activeEntryDay ?? trade.Trade.ServerTime.Date;
-			CancelOrder(ref _buyEntryOrder);
-		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		var position = Position;
-
-		if (position > 0m)
-		{
-			UpdateLongProtection(position);
-		}
-		else if (position < 0m)
-		{
-			UpdateShortProtection(-position);
-		}
-		else if (_previousPosition != 0m)
-		{
-			_lastCompletedTradeDay = _lastTradeDay;
-			CancelOrder(ref _longStopOrder);
-			CancelOrder(ref _longTakeOrder);
-			CancelOrder(ref _shortStopOrder);
-			CancelOrder(ref _shortTakeOrder);
-			_nextLongStopPrice = null;
-			_nextLongTakePrice = null;
-			_nextShortStopPrice = null;
-			_nextShortTakePrice = null;
-			_activeEntryDay = null;
-		}
-
-		_previousPosition = position;
-	}
-
-	/// <inheritdoc />
-	protected override void OnOrderReceived(Order order)
-	{
-		base.OnOrderReceived(order);
-
-		if (order == null)
-			return;
-
-		if (order.State is OrderStates.Done or OrderStates.Failed or OrderStates.Canceled)
-		{
-			if (order == _buyEntryOrder)
-				_buyEntryOrder = null;
-			else if (order == _sellEntryOrder)
-				_sellEntryOrder = null;
-			else if (order == _longStopOrder)
-				_longStopOrder = null;
-			else if (order == _longTakeOrder)
-				_longTakeOrder = null;
-			else if (order == _shortStopOrder)
-				_shortStopOrder = null;
-			else if (order == _shortTakeOrder)
-				_shortTakeOrder = null;
-		}
-	}
-
-	private void UpdateLongProtection(decimal volume)
-	{
-		CancelOrder(ref _sellEntryOrder);
-		_nextShortStopPrice = null;
-		_nextShortTakePrice = null;
-
-		if (_nextLongStopPrice is decimal stopPrice && stopPrice > 0m)
-		{
-			ReplaceOrder(ref _longStopOrder, SellStop(volume, stopPrice));
-		}
-		else
-		{
-			CancelOrder(ref _longStopOrder);
-		}
-
-		if (_nextLongTakePrice is decimal takeProfit && takeProfit > 0m)
-		{
-			ReplaceOrder(ref _longTakeOrder, SellLimit(volume, takeProfit));
-		}
-		else
-		{
-			CancelOrder(ref _longTakeOrder);
-		}
-	}
-
-	private void UpdateShortProtection(decimal volume)
-	{
-		CancelOrder(ref _buyEntryOrder);
-		_nextLongStopPrice = null;
-		_nextLongTakePrice = null;
-
-		if (_nextShortStopPrice is decimal stopPrice && stopPrice > 0m)
-		{
-			ReplaceOrder(ref _shortStopOrder, BuyStop(volume, stopPrice));
-		}
-		else
-		{
-			CancelOrder(ref _shortStopOrder);
-		}
-
-		if (_nextShortTakePrice is decimal takeProfit && takeProfit > 0m)
-		{
-			ReplaceOrder(ref _shortTakeOrder, BuyLimit(volume, takeProfit));
-		}
-		else
-		{
-			CancelOrder(ref _shortTakeOrder);
-		}
-	}
-
-	private void CancelEntryOrders()
-	{
-		if (_buyEntryOrder != null)
-		{
-			if (_buyEntryOrder.State is OrderStates.Active or OrderStates.Pending)
-				CancelOrder(_buyEntryOrder);
-
-			_buyEntryOrder = null;
-		}
-
-		if (_sellEntryOrder != null)
-		{
-			if (_sellEntryOrder.State is OrderStates.Active or OrderStates.Pending)
-				CancelOrder(_sellEntryOrder);
-
-			_sellEntryOrder = null;
-		}
-
-		_nextLongStopPrice = null;
-		_nextLongTakePrice = null;
-		_nextShortStopPrice = null;
-		_nextShortTakePrice = null;
-		_activeEntryDay = null;
-	}
-
-	private void CancelOrder(ref Order order)
-	{
-		if (order == null)
-			return;
-
-		if (order.State is OrderStates.Active or OrderStates.Pending)
-			CancelOrder(order);
-
-		order = null;
-	}
-
-	private void ReplaceOrder(ref Order target, Order newOrder)
-	{
-		if (target != null && target != newOrder)
-		{
-			if (target.State is OrderStates.Active or OrderStates.Pending)
-				CancelOrder(target);
-		}
-
-		target = newOrder;
-	}
-
-	private decimal RoundPrice(decimal price)
-	{
-		var step = Security?.PriceStep;
-
-		if (step == null || step.Value <= 0m)
-			return price;
-
-		return Math.Round(price / step.Value) * step.Value;
 	}
 }
-

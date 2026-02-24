@@ -94,10 +94,10 @@ public class SunilBbBlastHeikinAshiStrategy : Strategy
 		_direction = Param(nameof(Direction), (Sides?)null)
 			.SetDisplay("Trade Direction", "Allowed trade direction", "General");
 
-		_sessionBegin = Param(nameof(SessionBegin), new TimeSpan(9, 20, 0))
+		_sessionBegin = Param(nameof(SessionBegin), new TimeSpan(0, 0, 0))
 			.SetDisplay("Session Begin", "Trading window start", "General");
 
-		_sessionEnd = Param(nameof(SessionEnd), new TimeSpan(15, 0, 0))
+		_sessionEnd = Param(nameof(SessionEnd), new TimeSpan(23, 59, 59))
 			.SetDisplay("Session End", "Trading window end", "General");
 	}
 

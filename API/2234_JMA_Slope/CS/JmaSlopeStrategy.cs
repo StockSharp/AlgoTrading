@@ -79,7 +79,7 @@ public class JmaSlopeStrategy : Strategy
 		_mode = Param(nameof(Mode), JmaSlopeModes.Breakdown)
 			.SetDisplay("Mode", "Entry algorithm", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 
@@ -106,9 +106,18 @@ public class JmaSlopeStrategy : Strategy
 
 		var jma = new JurikMovingAverage { Length = JmaLength, Phase = JmaPhase };
 
-		SubscribeCandles(CandleType)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
 			.Bind(jma, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, jma);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal jmaValue)
@@ -116,10 +125,10 @@ public class JmaSlopeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var step = Security.StepPrice ?? 1m;
-		var slope = _prevJma is decimal prev ? (jmaValue - prev) / step : null;
+		var slope = _prevJma is decimal prev ? jmaValue - prev : (decimal?)null;
 
-		if (_prevSlope2 is decimal s2 && _prevSlope1 is decimal s1 && _prevSlope3 is decimal s3)
+		if (IsFormedAndOnlineAndAllowTrading()
+			&& _prevSlope2 is decimal s2 && _prevSlope1 is decimal s1 && _prevSlope3 is decimal s3)
 		{
 			var buy = false;
 			var sell = false;
@@ -138,9 +147,9 @@ public class JmaSlopeStrategy : Strategy
 			}
 
 			if (buy && Position <= 0)
-				BuyMarket(Position < 0 ? -Position + Volume : Volume);
+				BuyMarket();
 			else if (sell && Position >= 0)
-				SellMarket(Position > 0 ? Position + Volume : Volume);
+				SellMarket();
 		}
 
 		_prevSlope3 = _prevSlope2;
