@@ -44,7 +44,7 @@ public class KaufWmaCrossStrategy : Strategy
 
 	public KaufWmaCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Type of candles", "General");
 
 		_amaPeriod = Param(nameof(AmaPeriod), 9)
@@ -142,18 +142,18 @@ public class KaufWmaCrossStrategy : Strategy
 		if (crossUp)
 		{
 			if (SellClose && Position < 0)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 
 			if (BuyOpen && Position <= 0)
-				BuyMarket(Volume);
+				BuyMarket();
 		}
 		else if (crossDown)
 		{
 			if (BuyClose && Position > 0)
-				SellMarket(Position);
+				SellMarket();
 
 			if (SellOpen && Position >= 0)
-				SellMarket(Volume);
+				SellMarket();
 		}
 
 		_prevKama = kamaValue;

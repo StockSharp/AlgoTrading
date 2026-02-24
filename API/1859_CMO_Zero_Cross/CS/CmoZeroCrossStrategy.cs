@@ -135,7 +135,7 @@ public class CmoZeroCrossStrategy : Strategy
 		_allowShortExit = Param(nameof(AllowShortExit), true)
 			.SetDisplay("Allow Short Exit", "Permission to close short positions", "Strategy");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
@@ -164,8 +164,8 @@ public class CmoZeroCrossStrategy : Strategy
 		sub.Bind(_cmo, ProcessCandle).Start();
 
 		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Point),
-			stopLoss: new Unit(StopLoss, UnitTypes.Point));
+			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -184,9 +184,6 @@ public class CmoZeroCrossStrategy : Strategy
 		if (_cmo == null || !_cmo.IsFormed)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var prev = _prevCmo;
 		_prevCmo = cmoValue;
 		if (prev == null)
@@ -198,16 +195,24 @@ public class CmoZeroCrossStrategy : Strategy
 		if (crossDown)
 		{
 			if (AllowLongEntry && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+			{
+				if (Position < 0)
+					BuyMarket();
+				BuyMarket();
+			}
 			else if (AllowShortExit && Position < 0)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 		}
 		else if (crossUp)
 		{
 			if (AllowShortEntry && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+			{
+				if (Position > 0)
+					SellMarket();
+				SellMarket();
+			}
 			else if (AllowLongExit && Position > 0)
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 		}
 	}
 }

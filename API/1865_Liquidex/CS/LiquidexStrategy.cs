@@ -126,6 +126,12 @@ public class LiquidexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -175,11 +181,11 @@ public class LiquidexStrategy : Strategy
 		{
 			if (TakeProfit > 0m && price >= _entryPrice + TakeProfit)
 			{
-				SellMarket(Position);
+				SellMarket();
 			}
 			else if (price <= _stopPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 			}
 			else
 			{
@@ -193,11 +199,11 @@ public class LiquidexStrategy : Strategy
 		{
 			if (TakeProfit > 0m && price <= _entryPrice - TakeProfit)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 			}
 			else if (price >= _stopPrice)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 			}
 			else
 			{

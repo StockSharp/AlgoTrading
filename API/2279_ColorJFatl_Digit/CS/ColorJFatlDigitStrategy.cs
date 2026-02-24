@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,95 +12,33 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on the slope changes of Jurik Moving Average (JMA).
-/// Opens long when JMA turns up and closes short positions.
-/// Opens short when JMA turns down and closes long positions.
+/// Opens long when JMA turns up, opens short when JMA turns down.
 /// </summary>
 public class ColorJFatlDigitStrategy : Strategy
 {
 	private readonly StrategyParam<int> _jmaLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<bool> _enableLong;
-	private readonly StrategyParam<bool> _enableShort;
-	private readonly StrategyParam<bool> _closeLong;
-	private readonly StrategyParam<bool> _closeShort;
 
 	private decimal? _prevJma;
 	private decimal? _prevSlope;
 
-	/// <summary>
-	/// JMA period length.
-	/// </summary>
-	public int JmaLength
-	{
-		get => _jmaLength.Value;
-		set => _jmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for analysis.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
-	public bool EnableLong
-	{
-		get => _enableLong.Value;
-		set => _enableLong.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
-	public bool EnableShort
-	{
-		get => _enableShort.Value;
-		set => _enableShort.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing long positions.
-	/// </summary>
-	public bool CloseLong
-	{
-		get => _closeLong.Value;
-		set => _closeLong.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing short positions.
-	/// </summary>
-	public bool CloseShort
-	{
-		get => _closeShort.Value;
-		set => _closeShort.Value = value;
-	}
+	public int JmaLength { get => _jmaLength.Value; set => _jmaLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ColorJFatlDigitStrategy()
 	{
 		_jmaLength = Param(nameof(JmaLength), 5)
-		.SetGreaterThanZero()
-		.SetDisplay("JMA Length", "Period for Jurik Moving Average", "Parameters");
+			.SetGreaterThanZero()
+			.SetDisplay("JMA Length", "Period for Jurik Moving Average", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe of indicator", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe of indicator", "Parameters");
+	}
 
-		_enableLong = Param(nameof(EnableLong), true)
-		.SetDisplay("Enable Long", "Allow opening long positions", "Trading");
-
-		_enableShort = Param(nameof(EnableShort), true)
-		.SetDisplay("Enable Short", "Allow opening short positions", "Trading");
-
-		_closeLong = Param(nameof(CloseLong), true)
-		.SetDisplay("Close Long", "Allow closing long positions", "Trading");
-
-		_closeShort = Param(nameof(CloseShort), true)
-		.SetDisplay("Close Short", "Allow closing short positions", "Trading");
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -111,39 +46,43 @@ public class ColorJFatlDigitStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_prevJma = null;
+		_prevSlope = null;
+
 		var jma = new JurikMovingAverage { Length = JmaLength };
 
-		SubscribeCandles(CandleType)
-		.Bind(jma, Process)
-		.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(jma, Process)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, jma);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void Process(ICandleMessage candle, decimal jmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
 		var slope = _prevJma is decimal prev ? jmaValue - prev : (decimal?)null;
 
 		if (slope is decimal s && _prevSlope is decimal ps)
 		{
-			var turnedUp = ps <= 0m && s > 0m;
-			var turnedDown = ps >= 0m && s < 0m;
-
-			if (turnedUp)
-			{
-				if (CloseShort && Position < 0)
+			// JMA slope turns positive -> buy
+			if (ps <= 0m && s > 0m && Position <= 0)
 				BuyMarket();
-				if (EnableLong && Position <= 0)
-				BuyMarket();
-			}
-			else if (turnedDown)
-			{
-				if (CloseLong && Position > 0)
+			// JMA slope turns negative -> sell
+			else if (ps >= 0m && s < 0m && Position >= 0)
 				SellMarket();
-				if (EnableShort && Position >= 0)
-				SellMarket();
-			}
 		}
 
 		_prevSlope = slope;

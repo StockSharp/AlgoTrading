@@ -175,7 +175,7 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 		_closeShort = Param(nameof(CloseShort), true)
 			.SetDisplay("Close Short", "Allow closing short positions", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe to process", "General");
 	}
 
@@ -231,34 +231,25 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 		var crossDown = _prevBull > _prevBear && bull <= bear;
 		var crossUp = _prevBull < _prevBear && bull >= bear;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevBull = bull;
-			_prevBear = bear;
-			return;
-		}
-
 		if (crossDown)
 		{
 			if (CloseShort && Position < 0)
-				BuyMarket(-Position);
+				BuyMarket();
 
 			if (OpenLong && Position <= 0)
 			{
-				var volume = Volume + (Position < 0 ? -Position : 0m);
-				BuyMarket(volume);
+				BuyMarket();
 				_entryPrice = candle.ClosePrice;
 			}
 		}
 		else if (crossUp)
 		{
 			if (CloseLong && Position > 0)
-				SellMarket(Position);
+				SellMarket();
 
 			if (OpenShort && Position >= 0)
 			{
-				var volume = Volume + (Position > 0 ? Position : 0m);
-				SellMarket(volume);
+				SellMarket();
 				_entryPrice = candle.ClosePrice;
 			}
 		}
@@ -267,14 +258,14 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 			var tp = _entryPrice + TakeProfit * step;
 			var sl = _entryPrice - StopLoss * step;
 			if (candle.ClosePrice >= tp || candle.ClosePrice <= sl)
-				SellMarket(Position);
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
 			var tp = _entryPrice - TakeProfit * step;
 			var sl = _entryPrice + StopLoss * step;
 			if (candle.ClosePrice <= tp || candle.ClosePrice >= sl)
-				BuyMarket(-Position);
+				BuyMarket();
 		}
 
 		_prevBull = bull;
@@ -285,11 +276,11 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypes.SMA => new SMA { Length = length },
-			MovingAverageTypes.EMA => new EMA { Length = length },
+			MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
 			MovingAverageTypes.SMMA => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length },
+			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
 }

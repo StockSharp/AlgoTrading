@@ -14,7 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining SuperTrend, MACD and VWAP for trend confirmation.
+/// Strategy combining SuperTrend with EMA crossover for trend confirmation.
 /// </summary>
 public class TrendConfirmationStrategy : Strategy
 {
@@ -22,72 +22,33 @@ public class TrendConfirmationStrategy : Strategy
 	private readonly StrategyParam<decimal> _factor;
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SuperTrend _supertrend;
-	private MovingAverageConvergenceDivergence _macd;
-	private VolumeWeightedMovingAverage _vwap;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 
-	private decimal _prevMacd;
-	private decimal _prevSignal;
-	private bool _isFirst = true;
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal Factor { get => _factor.Value; set => _factor.Value = value; }
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public TrendConfirmationStrategy()
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
-			.SetDisplay("ATR Length", "ATR period for Supertrend.", "Supertrend");
+			.SetDisplay("ATR Length", "ATR period for Supertrend", "Supertrend");
 
 		_factor = Param(nameof(Factor), 3m)
-			.SetDisplay("Factor", "Supertrend multiplier.", "Supertrend");
+			.SetDisplay("Factor", "Supertrend multiplier", "Supertrend");
 
 		_fastLength = Param(nameof(FastLength), 12)
-			.SetDisplay("Fast Length", "MACD fast MA length.", "MACD");
+			.SetDisplay("Fast Length", "Fast EMA length", "EMA");
 
 		_slowLength = Param(nameof(SlowLength), 26)
-			.SetDisplay("Slow Length", "MACD slow MA length.", "MACD");
+			.SetDisplay("Slow Length", "Slow EMA length", "EMA");
 
-		_signalLength = Param(nameof(SignalLength), 9)
-			.SetDisplay("Signal Length", "MACD signal length.", "MACD");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy calculation.", "General");
-	}
-
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	public decimal Factor
-	{
-		get => _factor.Value;
-		set => _factor.Value = value;
-	}
-
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
-
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
-
-	public int SignalLength
-	{
-		get => _signalLength.Value;
-		set => _signalLength.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -96,69 +57,71 @@ public class TrendConfirmationStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_supertrend = null;
-		_macd = null;
-		_vwap = null;
-		_prevMacd = 0m;
-		_prevSignal = 0m;
-		_isFirst = true;
+		_prevFastEma = 0;
+		_prevSlowEma = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_supertrend = new() { Length = AtrPeriod, Multiplier = Factor };
-		_macd = new() { ShortMa = { Length = FastLength }, LongMa = { Length = SlowLength }, SignalPeriod = SignalLength };
-		_vwap = new VolumeWeightedMovingAverage();
+		var supertrend = new SuperTrend { Length = AtrPeriod, Multiplier = Factor };
+		var fastEma = new ExponentialMovingAverage { Length = FastLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_supertrend, _macd, _vwap, ProcessCandle)
+			.BindEx(supertrend, fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _supertrend);
+			DrawIndicator(area, supertrend);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue supertrendValue, decimal macd, decimal signal, decimal histogram, decimal vwap)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stVal, IIndicatorValue fastVal, IIndicatorValue slowVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var st = (SuperTrendIndicatorValue)supertrendValue;
-		bool upTrend = st.IsUpTrend;
-		bool downTrend = !upTrend;
+		if (stVal is not SuperTrendIndicatorValue st)
+			return;
 
-		bool confirmUpTrend = upTrend && macd > signal;
-		bool confirmDownTrend = downTrend && macd < signal;
+		var fastEma = fastVal.GetValue<decimal>();
+		var slowEma = slowVal.GetValue<decimal>();
 
-		bool priceAboveVwap = candle.ClosePrice > vwap;
-		bool priceBelowVwap = candle.ClosePrice < vwap;
+		var upTrend = st.IsUpTrend;
+		var downTrend = !upTrend;
 
-		if (_isFirst)
+		var macdBullish = fastEma > slowEma;
+		var macdBearish = fastEma < slowEma;
+
+		if (_prevFastEma == 0)
 		{
-			_prevMacd = macd;
-			_prevSignal = signal;
-			_isFirst = false;
+			_prevFastEma = fastEma;
+			_prevSlowEma = slowEma;
+			return;
 		}
 
-		if (confirmUpTrend && priceAboveVwap && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (confirmDownTrend && priceBelowVwap && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-		else if (_prevMacd >= _prevSignal && macd < signal && Position > 0)
-			SellMarket(Position);
-		else if (_prevMacd <= _prevSignal && macd > signal && Position < 0)
-			BuyMarket(Math.Abs(Position));
+		var prevCross = _prevFastEma - _prevSlowEma;
+		var currCross = fastEma - slowEma;
 
-		_prevMacd = macd;
-		_prevSignal = signal;
+		// Entry: SuperTrend + EMA confirmation
+		if (upTrend && macdBullish && Position <= 0)
+			BuyMarket();
+		else if (downTrend && macdBearish && Position >= 0)
+			SellMarket();
+		// Exit on EMA crossover against position
+		else if (prevCross >= 0 && currCross < 0 && Position > 0)
+			SellMarket();
+		else if (prevCross <= 0 && currCross > 0 && Position < 0)
+			BuyMarket();
+
+		_prevFastEma = fastEma;
+		_prevSlowEma = slowEma;
 	}
 }

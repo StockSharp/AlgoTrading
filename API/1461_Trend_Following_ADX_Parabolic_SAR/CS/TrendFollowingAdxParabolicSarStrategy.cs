@@ -14,145 +14,106 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trend following strategy using ADX and Parabolic SAR.
-/// Opens long positions when ADX confirms uptrend above SAR and shorts on opposite conditions.
+/// Trend following strategy using ADX (via StdDev proxy) and EMA.
+/// Opens long when trend is strong upward, short when strong downward.
 /// </summary>
 public class TrendFollowingAdxParabolicSarStrategy : Strategy
 {
-	private readonly StrategyParam<int> _adxPeriod;
-	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<decimal> _sarStep;
-	private readonly StrategyParam<decimal> _sarMax;
+	private readonly StrategyParam<int> _trendPeriod;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// ADX period.
-	/// </summary>
-	public int AdxPeriod
-	{
-		get => _adxPeriod.Value;
-		set => _adxPeriod.Value = value;
-	}
+	private decimal _prevFast;
+	private decimal _prevSlow;
 
-	/// <summary>
-	/// ADX threshold.
-	/// </summary>
-	public decimal AdxThreshold
-	{
-		get => _adxThreshold.Value;
-		set => _adxThreshold.Value = value;
-	}
+	public int TrendPeriod { get => _trendPeriod.Value; set => _trendPeriod.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Parabolic SAR step.
-	/// </summary>
-	public decimal SarStep
-	{
-		get => _sarStep.Value;
-		set => _sarStep.Value = value;
-	}
-
-	/// <summary>
-	/// Parabolic SAR max step.
-	/// </summary>
-	public decimal SarMax
-	{
-		get => _sarMax.Value;
-		set => _sarMax.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	private AverageDirectionalIndex _adx = null!;
-	private ParabolicSar _sar = null!;
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="TrendFollowingAdxParabolicSarStrategy"/>.
-	/// </summary>
 	public TrendFollowingAdxParabolicSarStrategy()
 	{
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetDisplay("ADX Period", "Period for ADX", "Parameters")
-			
-			.SetOptimize(5, 30, 1);
+		_trendPeriod = Param(nameof(TrendPeriod), 14)
+			.SetDisplay("Trend Period", "Period for trend strength", "Parameters");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 25m)
-			.SetDisplay("ADX Threshold", "Minimum ADX level", "Parameters")
-			
-			.SetOptimize(10m, 40m, 5m);
+		_fastPeriod = Param(nameof(FastPeriod), 10)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Parameters");
 
-		_sarStep = Param(nameof(SarStep), 0.02m)
-			.SetDisplay("SAR Step", "Acceleration factor", "Parameters");
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
+			.SetDisplay("Slow EMA", "Slow EMA period", "Parameters");
 
-		_sarMax = Param(nameof(SarMax), 0.2m)
-			.SetDisplay("SAR Max", "Maximum acceleration", "Parameters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
-		_sar = new ParabolicSar { AccelerationStep = SarStep, AccelerationMax = SarMax };
+		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
+		var stdDev = new StandardDeviation { Length = TrendPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(_adx, _sar, ProcessCandle).Start();
+		subscription.Bind(fastEma, slowEma, stdDev, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _adx);
-			DrawIndicator(area, _sar);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue sarValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal, decimal stdVal)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		var adxTyped = (AverageDirectionalIndexValue)adxValue;
-		if (adxTyped.MovingAverage is not decimal adx ||
-		adxTyped.Dx.Plus is not decimal diPlus ||
-		adxTyped.Dx.Minus is not decimal diMinus)
-		return;
-
-		var sar = sarValue.ToDecimal();
-
-		var longCondition = adx > AdxThreshold && diPlus > diMinus && candle.ClosePrice > sar;
-		var shortCondition = adx > AdxThreshold && diMinus > diPlus && candle.ClosePrice < sar;
-
-		if (longCondition && Position <= 0)
+		if (_prevFast == 0 || stdVal <= 0)
 		{
-		BuyMarket(Volume + Math.Abs(Position));
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
+			return;
 		}
-		else if (shortCondition && Position >= 0)
-		{
-		SellMarket(Volume + Math.Abs(Position));
-		}
+
+		var close = candle.ClosePrice;
+		// Trend strength: how far apart the EMAs are relative to volatility
+		var trendStrength = Math.Abs(fastVal - slowVal) / stdVal;
+
+		var longCond = trendStrength > 0.2m && fastVal > slowVal && close > fastVal;
+		var shortCond = trendStrength > 0.2m && fastVal < slowVal && close < fastVal;
+
+		// EMA crossover for exits
+		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
+		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
+
+		if (Position > 0 && crossDown)
+			SellMarket();
+		else if (Position < 0 && crossUp)
+			BuyMarket();
+
+		if (longCond && Position <= 0)
+			BuyMarket();
+		else if (shortCond && Position >= 0)
+			SellMarket();
+
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 	}
 }

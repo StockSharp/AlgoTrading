@@ -63,7 +63,7 @@ public class SimpleBarsStrategy : Strategy
 		_useClose = Param(nameof(UseClose), true)
 			.SetDisplay("Use Close", "Use close price instead of extremes", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -100,26 +100,19 @@ public class SimpleBarsStrategy : Strategy
 					// Execute signal from previous bar
 					if (pendingSignal.Value == 1 && Position <= 0)
 					{
-						var volume = Volume + Math.Abs(Position);
-						BuyMarket(volume);
+						if (Position < 0) BuyMarket();
+						BuyMarket();
 					}
 					else if (pendingSignal.Value == -1 && Position >= 0)
 					{
-						var volume = Volume + Math.Abs(Position);
-						SellMarket(volume);
+						if (Position > 0) SellMarket();
+						SellMarket();
 					}
 
 					pendingSignal = null;
 				}
 
 				if (!lowest.IsFormed || !highest.IsFormed)
-				{
-					prevMinLow = minLow;
-					prevMaxHigh = maxHigh;
-					return;
-				}
-
-				if (!IsFormedAndOnlineAndAllowTrading())
 				{
 					prevMinLow = minLow;
 					prevMaxHigh = maxHigh;

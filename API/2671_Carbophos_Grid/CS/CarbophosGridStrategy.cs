@@ -92,22 +92,22 @@ public class CarbophosGridStrategy : Strategy
 	/// </summary>
 	public CarbophosGridStrategy()
 	{
-		_profitTarget = Param(nameof(ProfitTarget), 500m)
+		_profitTarget = Param(nameof(ProfitTarget), 50000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Target", "Floating profit target in money", "Risk")
 			.SetOptimize(100m, 1000m, 50m);
 
-		_maxLoss = Param(nameof(MaxLoss), 150m)
+		_maxLoss = Param(nameof(MaxLoss), 100000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Loss", "Maximum floating loss before closing", "Risk")
 			.SetOptimize(50m, 500m, 25m);
 
-		_stepPips = Param(nameof(StepPips), 50)
+		_stepPips = Param(nameof(StepPips), 50000)
 			.SetGreaterThanZero()
 			.SetDisplay("Step (pips)", "Distance between grid levels in pips", "Grid")
 			.SetOptimize(10, 150, 10);
 
-		_ordersPerSide = Param(nameof(OrdersPerSide), 5)
+		_ordersPerSide = Param(nameof(OrdersPerSide), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Orders Per Side", "Number of pending orders on each side", "Grid")
 			.SetOptimize(1, 10, 1);
@@ -291,14 +291,13 @@ public class CarbophosGridStrategy : Strategy
 	private decimal GetGridStep()
 	{
 		var security = Security;
-		if (security == null)
-			return 0m;
 
-		var priceStep = security.PriceStep ?? 0m;
+		var priceStep = security?.PriceStep ?? 0m;
 		if (priceStep <= 0m)
-			return 0m;
+			priceStep = 0.01m;
 
-		var multiplier = (security.Decimals == 3 || security.Decimals == 5) ? 10m : 1m;
+		var decimals = security?.Decimals ?? 2;
+		var multiplier = (decimals == 3 || decimals == 5) ? 10m : 1m;
 		return StepPips * priceStep * multiplier;
 	}
 }

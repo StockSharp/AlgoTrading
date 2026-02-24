@@ -14,65 +14,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// TRAX Detrended Price strategy using TRAX and DPO indicators.
+/// TRAX Detrended Price strategy.
+/// Uses triple-smoothed moving average rate of change (TRAX) and Detrended Price Oscillator (DPO).
 /// </summary>
 public class TraxDetrendedPriceStrategy : Strategy
 {
 	private readonly StrategyParam<int> _traxLength;
 	private readonly StrategyParam<int> _dpoLength;
-	private readonly StrategyParam<int> _confirmLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly SimpleMovingAverage _sma1 = new();
-	private readonly SimpleMovingAverage _sma2 = new();
-	private readonly SimpleMovingAverage _sma3 = new();
-	private readonly SimpleMovingAverage _ma = new();
-	private readonly SimpleMovingAverage _confirm = new();
-
-	private readonly Queue<decimal> _closeQueue = new();
-
-	private decimal _prevSm3;
-	private decimal _prevDpo;
+	private readonly List<decimal> _closes = new();
 	private decimal _prevTrax;
+	private decimal _prevDpo;
 	private bool _isInitialized;
+
+	public int TraxLength { get => _traxLength.Value; set => _traxLength.Value = value; }
+	public int DpoLength { get => _dpoLength.Value; set => _dpoLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public TraxDetrendedPriceStrategy()
 	{
 		_traxLength = Param(nameof(TraxLength), 12)
-			.SetDisplay("TRAX Length", "Length for TRAX calculation.", "Indicators");
+			.SetDisplay("TRAX Length", "Length for TRAX calculation", "Indicators");
 
 		_dpoLength = Param(nameof(DpoLength), 19)
-			.SetDisplay("DPO Length", "Length for DPO calculation.", "Indicators");
+			.SetDisplay("DPO Length", "Length for DPO calculation", "Indicators");
 
-		_confirmLength = Param(nameof(ConfirmLength), 3)
-			.SetDisplay("SMA Confirmation Length", "SMA length for trend confirmation.", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy calculation.", "General");
-	}
-
-	public int TraxLength
-	{
-		get => _traxLength.Value;
-		set => _traxLength.Value = value;
-	}
-
-	public int DpoLength
-	{
-		get => _dpoLength.Value;
-		set => _dpoLength.Value = value;
-	}
-
-	public int ConfirmLength
-	{
-		get => _confirmLength.Value;
-		set => _confirmLength.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -81,16 +50,9 @@ public class TraxDetrendedPriceStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_sma1.Reset();
-		_sma2.Reset();
-		_sma3.Reset();
-		_ma.Reset();
-		_confirm.Reset();
-		_closeQueue.Clear();
-		_prevSm3 = 0m;
-		_prevDpo = 0m;
-		_prevTrax = 0m;
+		_closes.Clear();
+		_prevTrax = 0;
+		_prevDpo = 0;
 		_isInitialized = false;
 	}
 
@@ -98,74 +60,92 @@ public class TraxDetrendedPriceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma1.Length = TraxLength;
-		_sma2.Length = TraxLength;
-		_sma3.Length = TraxLength;
-		_ma.Length = DpoLength;
-		_confirm.Length = ConfirmLength;
+		var sma = new SimpleMovingAverage { Length = DpoLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
+		subscription.Bind(sma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var logClose = (decimal)Math.Log((double)candle.ClosePrice);
+		_closes.Add(candle.ClosePrice);
 
-		var v1 = _sma1.Process(logClose).ToDecimal();
-		var v2 = _sma2.Process(v1).ToDecimal();
-		var v3 = _sma3.Process(v2).ToDecimal();
-
-		var trax = 10000m * (v3 - _prevSm3);
-		_prevSm3 = v3;
-
-		var maValue = _ma.Process(candle.ClosePrice).ToDecimal();
-
+		// Need enough bars for DPO lookback
 		var barsBack = DpoLength / 2 + 1;
-		_closeQueue.Enqueue(candle.ClosePrice);
-		if (_closeQueue.Count > barsBack + 1)
-			_closeQueue.Dequeue();
+		var minBars = Math.Max(TraxLength * 3, barsBack + 1);
 
-		if (_closeQueue.Count <= barsBack)
+		if (_closes.Count < minBars)
 			return;
 
-		var lagClose = _closeQueue.Peek();
-		var dpo = lagClose - maValue;
+		// Calculate TRAX: triple smoothed MA rate of change
+		var trax = CalculateTrax();
 
-		var confirm = _confirm.Process(candle.ClosePrice).ToDecimal();
+		// Calculate DPO: price - SMA shifted back
+		var lagIdx = _closes.Count - 1 - barsBack;
+		var dpo = lagIdx >= 0 ? _closes[lagIdx] - smaVal : 0m;
 
 		if (!_isInitialized)
 		{
-			_prevDpo = dpo;
 			_prevTrax = trax;
+			_prevDpo = dpo;
 			_isInitialized = true;
 			return;
 		}
 
+		// Crossover signals
 		var crossOver = _prevDpo <= _prevTrax && dpo > trax;
 		var crossUnder = _prevDpo >= _prevTrax && dpo < trax;
 
-		var longCondition = crossOver && trax < 0m && candle.ClosePrice > confirm;
-		var shortCondition = crossUnder && trax > 0m && candle.ClosePrice < confirm;
+		var confirmUp = candle.ClosePrice > smaVal;
+		var confirmDown = candle.ClosePrice < smaVal;
 
-		if (longCondition && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (shortCondition && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		if (crossOver && confirmUp && Position <= 0)
+			BuyMarket();
+		else if (crossUnder && confirmDown && Position >= 0)
+			SellMarket();
 
-		_prevDpo = dpo;
 		_prevTrax = trax;
+		_prevDpo = dpo;
+
+		// Keep buffer manageable
+		if (_closes.Count > 500)
+			_closes.RemoveRange(0, 200);
+	}
+
+	private decimal CalculateTrax()
+	{
+		var n = _closes.Count;
+		var len = TraxLength;
+
+		// Simple triple smoothing of log prices
+		decimal sum1 = 0;
+		var start1 = Math.Max(0, n - len);
+		for (var i = start1; i < n; i++)
+			sum1 += (decimal)Math.Log((double)_closes[i]);
+		var avg1 = sum1 / Math.Min(len, n);
+
+		// Rate of change of smoothed value
+		if (n > len + 1)
+		{
+			decimal prevSum = 0;
+			var pstart = Math.Max(0, n - 1 - len);
+			for (var i = pstart; i < n - 1; i++)
+				prevSum += (decimal)Math.Log((double)_closes[i]);
+			var prevAvg = prevSum / Math.Min(len, n - 1);
+			return 10000m * (avg1 - prevAvg);
+		}
+
+		return 0m;
 	}
 }

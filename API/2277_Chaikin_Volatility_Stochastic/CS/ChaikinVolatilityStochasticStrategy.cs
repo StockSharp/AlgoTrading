@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,6 +12,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy using Chaikin Volatility Stochastic turning points.
+/// Computes EMA of high-low range, then stochastic of that, then WMA smoothing.
+/// Trades on turning points (peak/trough) of the smoothed value.
 /// </summary>
 public class ChaikinVolatilityStochasticStrategy : Strategy
 {
@@ -22,54 +21,50 @@ public class ChaikinVolatilityStochasticStrategy : Strategy
 	private readonly StrategyParam<int> _emaLength;
 	private readonly StrategyParam<int> _stochLength;
 	private readonly StrategyParam<int> _wmaLength;
-	private readonly StrategyParam<bool> _enableLongs;
-	private readonly StrategyParam<bool> _enableShorts;
 
-	private ExponentialMovingAverage _rangeEma = null!;
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private WeightedMovingAverage _wma = null!;
+	private ExponentialMovingAverage _rangeEma;
+	private Highest _highest;
+	private Lowest _lowest;
+	private WeightedMovingAverage _wma;
 
 	private decimal? _prev;
 	private decimal? _prevPrev;
-
-	public ChaikinVolatilityStochasticStrategy()
-	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type", "Candles for calculation.", "General");
-
-		_emaLength = Param(nameof(EmaLength), 10)
-			.SetDisplay("EMA Length", "Length for smoothing high-low range.", "Indicator")
-			;
-
-		_stochLength = Param(nameof(StochLength), 5)
-			.SetDisplay("Stochastic Length", "Lookback for stochastic calculation.", "Indicator")
-			;
-
-		_wmaLength = Param(nameof(WmaLength), 5)
-			.SetDisplay("WMA Length", "Weighted moving average period.", "Indicator")
-			;
-
-		_enableLongs = Param(nameof(EnableLongs), true)
-			.SetDisplay("Enable Longs", "Allow long entries.", "Trading");
-
-		_enableShorts = Param(nameof(EnableShorts), true)
-			.SetDisplay("Enable Shorts", "Allow short entries.", "Trading");
-	}
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
 	public int StochLength { get => _stochLength.Value; set => _stochLength.Value = value; }
 	public int WmaLength { get => _wmaLength.Value; set => _wmaLength.Value = value; }
-	public bool EnableLongs { get => _enableLongs.Value; set => _enableLongs.Value = value; }
-	public bool EnableShorts { get => _enableShorts.Value; set => _enableShorts.Value = value; }
+
+	public ChaikinVolatilityStochasticStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candles for calculation", "General");
+
+		_emaLength = Param(nameof(EmaLength), 10)
+			.SetDisplay("EMA Length", "Length for smoothing high-low range", "Indicator");
+
+		_stochLength = Param(nameof(StochLength), 5)
+			.SetDisplay("Stochastic Length", "Lookback for stochastic calculation", "Indicator");
+
+		_wmaLength = Param(nameof(WmaLength), 5)
+			.SetDisplay("WMA Length", "Weighted moving average period", "Indicator");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_rangeEma = new EMA { Length = EmaLength };
+		_prev = null;
+		_prevPrev = null;
+
+		_rangeEma = new ExponentialMovingAverage { Length = EmaLength };
 		_highest = new Highest { Length = StochLength };
 		_lowest = new Lowest { Length = StochLength };
 		_wma = new WeightedMovingAverage { Length = WmaLength };
@@ -78,6 +73,13 @@ public class ChaikinVolatilityStochasticStrategy : Strategy
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -85,25 +87,38 @@ public class ChaikinVolatilityStochasticStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var t = candle.ServerTime;
 		var range = candle.HighPrice - candle.LowPrice;
-		var emaValue = _rangeEma.Process(new DecimalIndicatorValue(_rangeEma, range, candle.OpenTime));
 
-		if (!emaValue.IsFinal)
+		// Step 1: EMA of high-low range
+		var emaResult = _rangeEma.Process(range, t, true);
+		if (!_rangeEma.IsFormed)
 			return;
 
-		var high = _highest.Process(emaValue);
-		var low = _lowest.Process(emaValue);
+		var emaVal = emaResult.GetValue<decimal>();
 
-		if (high is not decimal hh || low is not decimal ll || hh == ll)
+		// Step 2: Highest and Lowest of the EMA values
+		var highResult = _highest.Process(emaVal, t, true);
+		var lowResult = _lowest.Process(emaVal, t, true);
+
+		if (!_highest.IsFormed || !_lowest.IsFormed)
 			return;
 
-		var percent = (emaValue.ToDecimal() - ll) / (hh - ll) * 100m;
-		var smooth = _wma.Process(new DecimalIndicatorValue(_wma, percent, candle.OpenTime));
+		var hh = highResult.GetValue<decimal>();
+		var ll = lowResult.GetValue<decimal>();
 
-		if (!smooth.IsFinal)
+		if (hh == ll)
 			return;
 
-		var current = smooth.ToDecimal();
+		// Step 3: Stochastic percent
+		var percent = (emaVal - ll) / (hh - ll) * 100m;
+
+		// Step 4: WMA smoothing
+		var smoothResult = _wma.Process(percent, t, true);
+		if (!_wma.IsFormed)
+			return;
+
+		var current = smoothResult.GetValue<decimal>();
 
 		if (_prev.HasValue && _prevPrev.HasValue)
 		{
@@ -112,22 +127,12 @@ public class ChaikinVolatilityStochasticStrategy : Strategy
 			var wasFalling = _prev.Value < _prevPrev.Value;
 			var isRising = current > _prev.Value;
 
-			if (wasRising && isFalling)
-			{
-				if (EnableShorts && Position < 0)
-					BuyMarket(Math.Abs(Position));
-
-				if (EnableLongs && Position <= 0)
-					BuyMarket(Volume);
-			}
-			else if (wasFalling && isRising)
-			{
-				if (EnableLongs && Position > 0)
-					SellMarket(Position);
-
-				if (EnableShorts && Position >= 0)
-					SellMarket(Volume);
-			}
+			// Peak detected (was rising, now falling) -> sell
+			if (wasRising && isFalling && Position >= 0)
+				SellMarket();
+			// Trough detected (was falling, now rising) -> buy
+			else if (wasFalling && isRising && Position <= 0)
+				BuyMarket();
 		}
 
 		_prevPrev = _prev;
