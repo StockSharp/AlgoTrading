@@ -86,7 +86,6 @@ public class MovingAveragesStrategy : Strategy
 		// Configure risk management parameters.
 		_maximumRisk = Param(nameof(MaximumRisk), 0.02m)
 			.SetGreaterThanZero()
-			.SetLessOrEqual(1m)
 			.SetDisplay("Maximum Risk", "Fraction of equity risked per trade", "Risk");
 
 		_decreaseFactor = Param(nameof(DecreaseFactor), 3m)
@@ -146,10 +145,6 @@ public class MovingAveragesStrategy : Strategy
 	{
 		// Process only finished candles to match bar-based logic.
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Ensure the strategy is ready to trade.
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		// Wait until the moving average has enough data.

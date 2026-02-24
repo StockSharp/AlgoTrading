@@ -246,7 +246,7 @@ public class HarVesteRStrategy : Strategy
 			;
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 	}
 
@@ -269,9 +269,9 @@ public class HarVesteRStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		// Configure indicators used by the strategy.
 		_macd = new MovingAverageConvergenceDivergenceSignal
@@ -312,11 +312,11 @@ public class HarVesteRStrategy : Strategy
 			return;
 
 		// Update trailing stop helpers from recent highs and lows.
-		var lowValue = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.ServerTime));
+		var lowValue = _lowest.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, candle.ServerTime) { IsFinal = true });
 		if (lowValue.IsFormed)
 			_lastLowest = lowValue.ToDecimal();
 
-		var highValue = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.ServerTime));
+		var highValue = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.ServerTime) { IsFinal = true });
 		if (highValue.IsFormed)
 			_lastHighest = highValue.ToDecimal();
 
@@ -355,7 +355,7 @@ public class HarVesteRStrategy : Strategy
 		// Manage partial exits and break-even logic for open positions.
 		ManageOpenPositions(close, smaFast, indentation);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_macd.IsFormed || !_smaFast.IsFormed || !_smaSlow.IsFormed)
 			return;
 
 		if (_macdHistory.Count < MacdLookback)

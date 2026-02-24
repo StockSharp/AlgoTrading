@@ -68,7 +68,7 @@ public class LockerStrategy : Strategy
 			.SetDisplay("Step Volume", "Volume for subsequent trades", "General")
 			;
 
-		_stepPoints = Param(nameof(StepPoints), 5m)
+		_stepPoints = Param(nameof(StepPoints), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Step Points", "Number of price steps between new trades", "General")
 			;
@@ -76,7 +76,7 @@ public class LockerStrategy : Strategy
 		_enableAutomation = Param(nameof(EnableAutomation), true)
 			.SetDisplay("Enable Automation", "Allow the strategy to place trades", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for processing", "Data");
 
 		_maxOpenPositions = Param(nameof(MaxOpenPositions), 8)

@@ -43,6 +43,8 @@ public class AlligatorTrendStrategy : Strategy
 	private readonly Queue<decimal> _teethBuffer = new();
 	private readonly Queue<decimal> _lipsBuffer = new();
 
+	private decimal _entryPrice;
+
 	private decimal? _longStop;
 	private decimal? _longTake;
 	private bool _longBreakevenActivated;
@@ -184,7 +186,7 @@ public class AlligatorTrendStrategy : Strategy
 	/// </summary>
 	public AlligatorTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 
 		_jawLength = Param(nameof(JawLength), 13)
@@ -279,9 +281,10 @@ public class AlligatorTrendStrategy : Strategy
 
 			var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
 
-			var jawValue = jaw.Process(medianPrice);
-			var teethValue = teeth.Process(medianPrice);
-			var lipsValue = lips.Process(medianPrice);
+			var inputValue = new DecimalIndicatorValue(jaw, medianPrice, candle.CloseTime) { IsFinal = true };
+			var jawValue = jaw.Process(inputValue);
+			var teethValue = teeth.Process(new DecimalIndicatorValue(teeth, medianPrice, candle.CloseTime) { IsFinal = true });
+			var lipsValue = lips.Process(new DecimalIndicatorValue(lips, medianPrice, candle.CloseTime) { IsFinal = true });
 
 			if (!jawValue.IsFormed || !teethValue.IsFormed || !lipsValue.IsFormed)
 				return;
@@ -293,7 +296,7 @@ public class AlligatorTrendStrategy : Strategy
 			if (!jawShifted.HasValue || !teethShifted.HasValue || !lipsShifted.HasValue)
 				return;
 
-			if (!IsFormedAndOnlineAndAllowTrading())
+			if (!jaw.IsFormed)
 				return;
 
 			if (ManagePosition(candle))
@@ -321,11 +324,11 @@ public class AlligatorTrendStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		var price = trade.Trade?.Price;
-		var direction = trade.Order.Direction;
-
-		if (price is null || direction is null)
+		var tradeMsg = trade.Trade;
+		if (tradeMsg is null)
 			return;
+		var price = tradeMsg.Price;
+		var direction = trade.Order.Side;
 
 		var distanceToStop = StopLossPips > 0m ? GetPriceByPips(StopLossPips) : (decimal?)null;
 		var distanceToTake = TakeProfitPips > 0m ? GetPriceByPips(TakeProfitPips) : (decimal?)null;
@@ -334,10 +337,11 @@ public class AlligatorTrendStrategy : Strategy
 		{
 			if (Position > 0)
 			{
-				_longStop = distanceToStop.HasValue ? price.Value - distanceToStop.Value : null;
-				_longTake = distanceToTake.HasValue ? price.Value + distanceToTake.Value : null;
+				_entryPrice = price;
+				_longStop = distanceToStop.HasValue ? price - distanceToStop.Value : null;
+				_longTake = distanceToTake.HasValue ? price + distanceToTake.Value : null;
 				_longBreakevenActivated = false;
-				_longBestPrice = price.Value;
+				_longBestPrice = price;
 			}
 			else if (Position == 0)
 			{
@@ -348,10 +352,11 @@ public class AlligatorTrendStrategy : Strategy
 		{
 			if (Position < 0)
 			{
-				_shortStop = distanceToStop.HasValue ? price.Value + distanceToStop.Value : null;
-				_shortTake = distanceToTake.HasValue ? price.Value - distanceToTake.Value : null;
+				_entryPrice = price;
+				_shortStop = distanceToStop.HasValue ? price + distanceToStop.Value : null;
+				_shortTake = distanceToTake.HasValue ? price - distanceToTake.Value : null;
 				_shortBreakevenActivated = false;
-				_shortBestPrice = price.Value;
+				_shortBestPrice = price;
 			}
 			else if (Position == 0)
 			{
@@ -370,7 +375,7 @@ public class AlligatorTrendStrategy : Strategy
 	{
 		if (Position > 0)
 		{
-			var entryPrice = Position.AveragePrice;
+			var entryPrice = _entryPrice;
 			if (entryPrice == 0m)
 				return false;
 
@@ -412,7 +417,7 @@ public class AlligatorTrendStrategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			var entryPrice = Position.AveragePrice;
+			var entryPrice = _entryPrice;
 			if (entryPrice == 0m)
 				return false;
 

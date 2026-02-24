@@ -135,7 +135,7 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 		_oversoldLevel = Param(nameof(OversoldLevel), 37m)
 			.SetDisplay("Oversold Level", "RSI threshold for bearish reversals", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series to process", "General");
 	}
 
@@ -184,7 +184,7 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 			return;
 
 		var price = GetPrice(candle, RsiPrice);
-		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, price, candle.OpenTime)).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, price, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (!_rsi.IsFormed)
 		{
@@ -192,12 +192,10 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 			return;
 		}
 
-		var hasPattern = _prevOpen is decimal prevOpen &&
+		if (_prevOpen is decimal prevOpen &&
 			_prevClose is decimal prevClose &&
 			_prevPrevOpen is decimal prevPrevOpen &&
-			_prevPrevClose is decimal prevPrevClose;
-
-		if (hasPattern && IsFormedAndOnlineAndAllowTrading())
+			_prevPrevClose is decimal prevPrevClose)
 		{
 			// Detect the two-candle engulfing pattern from the previous bars.
 			var bullishEngulfing = prevPrevOpen > prevPrevClose &&

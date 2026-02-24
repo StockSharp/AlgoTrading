@@ -124,22 +124,20 @@ public class NovaStrategy : Strategy
 		
 		.SetOptimize(0, 5, 1);
 
-		_baseVolume = Param(nameof(BaseVolume), 0.1m)
+		_baseVolume = Param(nameof(BaseVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Base volume", "Initial order volume", "Risk")
 		
 		.SetOptimize(0.05m, 0.5m, 0.05m);
 
-		_stopLossPips = Param(nameof(StopLossPips), 1)
+		_stopLossPips = Param(nameof(StopLossPips), 500)
 		.SetNotNegative()
 		.SetDisplay("Stop-loss (pips)", "Stop-loss distance in pips", "Risk")
-		
 		.SetOptimize(0, 5, 1);
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 1)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 500)
 		.SetNotNegative()
 		.SetDisplay("Take-profit (pips)", "Take-profit distance in pips", "Risk")
-		
 		.SetOptimize(0, 5, 1);
 
 		_lossCoefficient = Param(nameof(LossCoefficient), 1.6m)
@@ -192,10 +190,6 @@ public class NovaStrategy : Strategy
 		_currentVolume = NormalizeVolume(BaseVolume);
 		Volume = _currentVolume;
 
-		SubscribeLevel1()
-		.Bind(ProcessLevel1)
-		.Start();
-
 		var candleSubscription = SubscribeCandles(CandleType);
 		candleSubscription
 		.Bind(ProcessCandle)
@@ -232,8 +226,6 @@ public class NovaStrategy : Strategy
 
 		UpdateVolumeFromPnL();
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
 
 		var previous = _previousCandle;
 		_previousCandle = candle;
@@ -250,8 +242,8 @@ public class NovaStrategy : Strategy
 		if (_lastCheckTime != null && now - _lastCheckTime < interval)
 		return;
 
-		var currentAsk = _currentAsk ?? Security?.BestAsk?.Price ?? candle.ClosePrice;
-		var currentBid = _currentBid ?? Security?.BestBid?.Price ?? candle.ClosePrice;
+		var currentAsk = candle.ClosePrice;
+		var currentBid = candle.ClosePrice;
 
 		if (currentAsk == 0m || currentBid == 0m)
 		{
