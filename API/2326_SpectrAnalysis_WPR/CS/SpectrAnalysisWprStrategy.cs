@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -87,7 +84,7 @@ public class SpectrAnalysisWprStrategy : Strategy
 	/// </summary>
 	public SpectrAnalysisWprStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
 		_wprPeriod = Param(nameof(WprPeriod), 13)
 			.SetGreaterThanZero()
@@ -112,7 +109,9 @@ public class SpectrAnalysisWprStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
+
+		_prev = null;
+		_prev2 = null;
 
 		var wpr = new WilliamsR { Length = WprPeriod };
 		var subscription = SubscribeCandles(CandleType);
@@ -139,30 +138,12 @@ public class SpectrAnalysisWprStrategy : Strategy
 			return;
 		}
 
-		// Upward direction detected
-		if (_prev < _prev2)
-		{
-			if (BuyPosOpen && wprValue >= _prev && Position <= 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-			else if (SellPosClose && Position < 0)
-			{
-				BuyMarket(Math.Abs(Position));
-			}
-		}
-		// Downward direction detected
-		else if (_prev > _prev2)
-		{
-			if (SellPosOpen && wprValue <= _prev && Position >= 0)
-			{
-				SellMarket(Volume + Math.Abs(Position));
-			}
-			else if (BuyPosClose && Position > 0)
-			{
-				SellMarket(Math.Abs(Position));
-			}
-		}
+		// Upward direction detected (WPR was falling, now turning up)
+		if (_prev < _prev2 && wprValue >= _prev && Position <= 0)
+			BuyMarket();
+		// Downward direction detected (WPR was rising, now turning down)
+		else if (_prev > _prev2 && wprValue <= _prev && Position >= 0)
+			SellMarket();
 
 		_prev2 = _prev;
 		_prev = wprValue;

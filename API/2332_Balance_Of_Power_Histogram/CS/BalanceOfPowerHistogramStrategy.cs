@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -38,7 +35,7 @@ public class BalanceOfPowerHistogramStrategy : Strategy
 	/// </summary>
 	public BalanceOfPowerHistogramStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -61,9 +58,14 @@ public class BalanceOfPowerHistogramStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_prev = null;
+		_prevPrev = null;
+
+		var sma = new SimpleMovingAverage { Length = 1 };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -74,7 +76,7 @@ public class BalanceOfPowerHistogramStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _unused)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -83,6 +85,13 @@ public class BalanceOfPowerHistogramStrategy : Strategy
 			return;
 
 		var bop = (candle.ClosePrice - candle.OpenPrice) / (candle.HighPrice - candle.LowPrice);
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevPrev = _prev;
+			_prev = bop;
+			return;
+		}
 
 		if (_prev is decimal prev && _prevPrev is decimal prevPrev)
 		{

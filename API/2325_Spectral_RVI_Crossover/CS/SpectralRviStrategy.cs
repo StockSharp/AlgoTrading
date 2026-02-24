@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,161 +12,104 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Spectral RVI crossover strategy.
-/// Applies smoothing to RVI and its signal line and trades on their crossovers.
+/// Applies smoothing to RVI average and signal and trades on their crossovers.
 /// </summary>
 public class SpectralRviStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rviLength;
-	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<int> _smoothLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeVigorIndex _rvi;
-	private SimpleMovingAverage _signal;
 	private SimpleMovingAverage _smoothRvi;
-	private SimpleMovingAverage _smoothSignal;
+	private SimpleMovingAverage _smoothSig;
 
-	private decimal? _prevRvi;
-	private decimal? _prevSignal;
+	private decimal? _prevSmRvi;
+	private decimal? _prevSmSig;
 
-	/// <summary>
-	/// Length for RVI calculation.
-	/// </summary>
-	public int RviLength
-	{
-		get => _rviLength.Value;
-		set => _rviLength.Value = value;
-	}
+	public int RviLength { get => _rviLength.Value; set => _rviLength.Value = value; }
+	public int SmoothLength { get => _smoothLength.Value; set => _smoothLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Length for the RVI signal line.
-	/// </summary>
-	public int SignalLength
-	{
-		get => _signalLength.Value;
-		set => _signalLength.Value = value;
-	}
-
-	/// <summary>
-	/// Length of smoothing applied to RVI and its signal.
-	/// </summary>
-	public int SmoothLength
-	{
-		get => _smoothLength.Value;
-		set => _smoothLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="SpectralRviStrategy"/>.
-	/// </summary>
 	public SpectralRviStrategy()
 	{
 		_rviLength = Param(nameof(RviLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RVI Length", "Length for RVI", "General")
-			;
+			.SetDisplay("RVI Length", "Length for RVI", "General");
 
-		_signalLength = Param(nameof(SignalLength), 4)
+		_smoothLength = Param(nameof(SmoothLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Signal Length", "Length for signal", "General")
-			;
+			.SetDisplay("Smooth Length", "Smoothing length", "General");
 
-		_smoothLength = Param(nameof(SmoothLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Smooth Length", "Smoothing length", "General")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_rvi = default;
-		_signal = default;
-		_smoothRvi = default;
-		_smoothSignal = default;
-		_prevRvi = default;
-		_prevSignal = default;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_rvi = new RelativeVigorIndex { Length = RviLength };
-		_signal = new SMA { Length = SignalLength };
-		_smoothRvi = new SMA { Length = SmoothLength };
-		_smoothSignal = new SMA { Length = SmoothLength };
+		_prevSmRvi = null;
+		_prevSmSig = null;
+		_smoothRvi = new SimpleMovingAverage { Length = SmoothLength };
+		_smoothSig = new SimpleMovingAverage { Length = SmoothLength };
+
+		var rvi = new RelativeVigorIndex();
+		rvi.Average.Length = RviLength;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		StartProtection(null, null);
+		subscription.BindEx(rvi, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _smoothRvi);
-			DrawIndicator(area, _smoothSignal);
+			DrawIndicator(area, rvi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rviVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var rviValue = _rvi.Process(candle);
-		var signalValue = _signal.Process(rviValue);
-		var smoothRviValue = _smoothRvi.Process(rviValue);
-		var smoothSignalValue = _smoothSignal.Process(signalValue);
-
-		if (!smoothRviValue.IsFinal || !smoothSignalValue.IsFinal)
+		if (rviVal is not IRelativeVigorIndexValue rviTyped)
 			return;
+
+		if (rviTyped.Average is not decimal avg || rviTyped.Signal is not decimal sig)
+			return;
+
+		var t = candle.CloseTime;
+		var smRviResult = _smoothRvi.Process(avg, t, true);
+		var smSigResult = _smoothSig.Process(sig, t, true);
+
+		if (!_smoothRvi.IsFormed || !_smoothSig.IsFormed)
+			return;
+
+		var smRvi = smRviResult.GetValue<decimal>();
+		var smSig = smSigResult.GetValue<decimal>();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevSmRvi = smRvi;
+			_prevSmSig = smSig;
 			return;
-
-		var rvi = smoothRviValue.ToDecimal();
-		var signal = smoothSignalValue.ToDecimal();
-
-		var longCondition = _prevRvi <= _prevSignal && rvi > signal;
-		var shortCondition = _prevRvi >= _prevSignal && rvi < signal;
-
-		if (longCondition && Position <= 0)
-		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			BuyMarket(volume);
-		}
-		else if (shortCondition && Position >= 0)
-		{
-			var volume = Volume + (Position > 0 ? Position : 0m);
-			SellMarket(volume);
 		}
 
-		_prevRvi = rvi;
-		_prevSignal = signal;
+		if (_prevSmRvi is decimal prevR && _prevSmSig is decimal prevS)
+		{
+			if (prevR <= prevS && smRvi > smSig && Position <= 0)
+				BuyMarket();
+			else if (prevR >= prevS && smRvi < smSig && Position >= 0)
+				SellMarket();
+		}
+
+		_prevSmRvi = smRvi;
+		_prevSmSig = smSig;
 	}
 }

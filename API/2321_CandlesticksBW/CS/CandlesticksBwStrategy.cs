@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -20,13 +17,6 @@ namespace StockSharp.Samples.Strategies;
 public class CandlesticksBwStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _signalBar;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<bool> _buyPosOpen;
-	private readonly StrategyParam<bool> _sellPosOpen;
-	private readonly StrategyParam<bool> _buyPosClose;
-	private readonly StrategyParam<bool> _sellPosClose;
 
 	private readonly SimpleMovingAverage _aoFast = new() { Length = 5 };
 	private readonly SimpleMovingAverage _aoSlow = new() { Length = 34 };
@@ -35,150 +25,103 @@ public class CandlesticksBwStrategy : Strategy
 	private decimal _prevAo;
 	private decimal _prevAc;
 	private bool _hasPrev;
+	private int _prevColor = -1;
 
-	private readonly List<int> _colorHistory = new();
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Number of bars back used for signal generation.
-	/// </summary>
-	public int SignalBar { get => _signalBar.Value; set => _signalBar.Value = value; }
-
-	/// <summary>
-	/// Stop loss distance in points.
-	/// </summary>
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-
-	/// <summary>
-	/// Take profit distance in points.
-	/// </summary>
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-
-	/// <summary>
-	/// Enable opening of long positions.
-	/// </summary>
-	public bool BuyPosOpen { get => _buyPosOpen.Value; set => _buyPosOpen.Value = value; }
-
-	/// <summary>
-	/// Enable opening of short positions.
-	/// </summary>
-	public bool SellPosOpen { get => _sellPosOpen.Value; set => _sellPosOpen.Value = value; }
-
-	/// <summary>
-	/// Enable closing of long positions.
-	/// </summary>
-	public bool BuyPosClose { get => _buyPosClose.Value; set => _buyPosClose.Value = value; }
-
-	/// <summary>
-	/// Enable closing of short positions.
-	/// </summary>
-	public bool SellPosClose { get => _sellPosClose.Value; set => _sellPosClose.Value = value; }
-
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public CandlesticksBwStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for analysis", "General");
-
-		_signalBar = Param(nameof(SignalBar), 1)
-			.SetDisplay("Signal Bar", "Offset for signal evaluation", "General");
-
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk");
-
-		_takeProfit = Param(nameof(TakeProfit), 2000m)
-			.SetDisplay("Take Profit", "Take profit distance in points", "Risk");
-
-		_buyPosOpen = Param(nameof(BuyPosOpen), true)
-			.SetDisplay("Allow Long Entry", "Enable opening long positions", "Trading");
-
-		_sellPosOpen = Param(nameof(SellPosOpen), true)
-			.SetDisplay("Allow Short Entry", "Enable opening short positions", "Trading");
-
-		_buyPosClose = Param(nameof(BuyPosClose), true)
-			.SetDisplay("Allow Long Exit", "Enable closing long positions", "Trading");
-
-		_sellPosClose = Param(nameof(SellPosClose), true)
-			.SetDisplay("Allow Short Exit", "Enable closing short positions", "Trading");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));
+		_prevAo = 0;
+		_prevAc = 0;
+		_hasPrev = false;
+		_prevColor = -1;
+
+		var sma = new SimpleMovingAverage { Length = 1 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(sma, ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _unused)
 	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Calculate median price (HL2)
 		var hl2 = (candle.HighPrice + candle.LowPrice) / 2m;
+		var t = candle.CloseTime;
 
-		var aoFastValue = _aoFast.Process(hl2);
-		var aoSlowValue = _aoSlow.Process(hl2);
-		if (!aoFastValue.IsFinal || !aoSlowValue.IsFinal)
+		var aoFastResult = _aoFast.Process(hl2, t, true);
+		var aoSlowResult = _aoSlow.Process(hl2, t, true);
+
+		if (!_aoFast.IsFormed || !_aoSlow.IsFormed)
 			return;
 
-		var ao = aoFastValue.GetValue<decimal>() - aoSlowValue.GetValue<decimal>();
-		var acMaValue = _acMa.Process(ao);
-		if (!acMaValue.IsFinal)
+		var ao = aoFastResult.GetValue<decimal>() - aoSlowResult.GetValue<decimal>();
+		var acMaResult = _acMa.Process(ao, t, true);
+
+		if (!_acMa.IsFormed)
 			return;
 
-		var ac = ao - acMaValue.GetValue<decimal>();
+		var ac = ao - acMaResult.GetValue<decimal>();
 
+		// Bill Williams candle color classification:
+		// 0 = green (bullish candle + AO up + AC up)
+		// 1 = fade (bearish candle + AO up + AC up)
+		// 2 = squat green (bullish, mixed)
+		// 3 = squat red (bearish, mixed)
+		// 4 = fake (bullish candle + AO down + AC down)
+		// 5 = red (bearish candle + AO down + AC down)
 		int color;
 		if (_hasPrev && ao >= _prevAo && ac >= _prevAc)
-			color = candle.OpenPrice <= candle.ClosePrice ? 0 : 1; // Up momentum
+			color = candle.OpenPrice <= candle.ClosePrice ? 0 : 1;
 		else if (_hasPrev && ao <= _prevAo && ac <= _prevAc)
-			color = candle.OpenPrice >= candle.ClosePrice ? 5 : 4; // Down momentum
+			color = candle.OpenPrice >= candle.ClosePrice ? 5 : 4;
 		else
-			color = candle.OpenPrice <= candle.ClosePrice ? 2 : 3; // Transition phase
+			color = candle.OpenPrice <= candle.ClosePrice ? 2 : 3;
 
 		_prevAo = ao;
 		_prevAc = ac;
 		_hasPrev = true;
 
-		_colorHistory.Add(color);
-
-		if (_colorHistory.Count <= SignalBar + 1)
+		if (!IsFormedAndOnline())
+		{
+			_prevColor = color;
 			return;
-
-		var value0 = _colorHistory[^ (SignalBar + 1)];
-		var value1 = _colorHistory[^ (SignalBar + 2)];
-
-		if (value1 < 2)
-		{
-			if (SellPosClose && Position < 0)
-				ClosePosition(); // Close short positions
-			if (BuyPosOpen && value0 > 1 && Position <= 0)
-				BuyMarket(Volume); // Open long position
 		}
-		else if (value1 > 3)
+
+		if (_prevColor < 0)
 		{
-			if (BuyPosClose && Position > 0)
-				ClosePosition(); // Close long positions
-			if (SellPosOpen && value0 < 4 && Position >= 0)
-				SellMarket(Volume); // Open short position
+			_prevColor = color;
+			return;
 		}
+
+		// Bullish signal: prev was up momentum (0 or 1), current transitions
+		if (_prevColor < 2 && color > 1 && Position <= 0)
+			BuyMarket();
+		// Bearish signal: prev was down momentum (4 or 5), current transitions
+		else if (_prevColor > 3 && color < 4 && Position >= 0)
+			SellMarket();
+
+		_prevColor = color;
 	}
 }

@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,60 +10,36 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
+/// <summary>
+/// Simple martingale strategy with RSI-based entries.
+/// Buys when RSI is oversold, sells when overbought.
+/// </summary>
 public class LimitsMartinStrategy : Strategy
 {
-	// Strategy parameters
-	private readonly StrategyParam<int> _step;
-	private readonly StrategyParam<int> _stopLoss;
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<bool> _useMartingale;
-	private readonly StrategyParam<int> _lossLimit;
-	private readonly StrategyParam<bool> _useMegaLot;
+	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<decimal> _oversold;
+	private readonly StrategyParam<decimal> _overbought;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Internal fields
-	private decimal _currentVolume;
-	private int _lossCount;
-	private decimal _entryPrice;
-
-	public int Step { get => _step.Value; set => _step.Value = value; }
-	public int StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-	public int TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public bool UseMartingale { get => _useMartingale.Value; set => _useMartingale.Value = value; }
-	public int LossLimit { get => _lossLimit.Value; set => _lossLimit.Value = value; }
-	public bool UseMegaLot { get => _useMegaLot.Value; set => _useMegaLot.Value = value; }
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public decimal Oversold { get => _oversold.Value; set => _oversold.Value = value; }
+	public decimal Overbought { get => _overbought.Value; set => _overbought.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public LimitsMartinStrategy()
 	{
-		// Parameter initialization
-		_step = Param(nameof(Step), 200)
-			.SetDisplay("Step", "Distance to place limit orders in pips", "Parameters")
-			;
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "Period for RSI", "Indicators");
 
-		_stopLoss = Param(nameof(StopLoss), 30)
-			.SetDisplay("Stop Loss", "Stop loss size in pips", "Risk")
-			;
+		_oversold = Param(nameof(Oversold), 30m)
+			.SetDisplay("Oversold", "RSI oversold level", "Indicators");
 
-		_takeProfit = Param(nameof(TakeProfit), 60)
-			.SetDisplay("Take Profit", "Take profit size in pips", "Risk")
-			;
+		_overbought = Param(nameof(Overbought), 70m)
+			.SetDisplay("Overbought", "RSI overbought level", "Indicators");
 
-		_useMartingale = Param(nameof(UseMartingale), true)
-			.SetDisplay("Use Martingale", "Increase volume after loss", "Parameters");
-
-		_lossLimit = Param(nameof(LossLimit), 10)
-			.SetDisplay("Loss Limit", "Maximum consecutive losses for martingale", "Parameters")
-			;
-
-
-		_useMegaLot = Param(nameof(UseMegaLot), true)
-			.SetDisplay("Use MegaLot", "Double volume to recover loss", "Parameters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles used for processing", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -72,100 +47,37 @@ public class LimitsMartinStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_currentVolume = default;
-		_lossCount = default;
-		_entryPrice = default;
-	}
-
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null); // enable position protection
-		_currentVolume = Volume;
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Do(ProcessCandle)
+			.Bind(rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
-		// process only finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// avoid overlapping orders
-		if (Orders.Any(o => o.State == OrderStates.Active))
-			return;
-
-		var stepPrice = Step * Security.PriceStep;
-		var price = candle.ClosePrice;
-
-		if (Position == 0)
-		{
-			var buyPrice = price - stepPrice;
-			var sellPrice = price + stepPrice;
-			BuyLimit(buyPrice, _currentVolume); // place buy limit below price
-			SellLimit(sellPrice, _currentVolume); // place sell limit above price
-		}
-		else if (Position > 0)
-		{
-			var stop = _entryPrice - StopLoss * Security.PriceStep;
-			var take = _entryPrice + TakeProfit * Security.PriceStep;
-			if (candle.LowPrice <= stop || candle.HighPrice >= take)
-				ClosePosition(); // exit on stop or target
-		}
-		else if (Position < 0)
-		{
-			var stop = _entryPrice + StopLoss * Security.PriceStep;
-			var take = _entryPrice - TakeProfit * Security.PriceStep;
-			if (candle.HighPrice >= stop || candle.LowPrice <= take)
-				ClosePosition();
-		}
-	}
-
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (Position != 0)
-		{
-			_entryPrice = trade.Order.Price; // remember entry price
-			return;
-		}
-
-		var pnl = trade.Order.Side == Sides.Buy ? trade.Order.Price - _entryPrice : _entryPrice - trade.Order.Price;
-		AdjustVolume(pnl); // adapt volume after trade
-		_entryPrice = 0;
-	}
-
-	private void AdjustVolume(decimal pnl)
-	{
-		// martingale adjustment
-		if (pnl < 0 && UseMartingale && _lossCount < LossLimit)
-		{
-			_lossCount++;
-			_currentVolume = UseMegaLot ? _currentVolume * 2m : _currentVolume + Volume;
-		}
-		else
-		{
-			_lossCount = 0;
-			_currentVolume = Volume;
-		}
+		if (rsiValue < Oversold && Position <= 0)
+			BuyMarket();
+		else if (rsiValue > Overbought && Position >= 0)
+			SellMarket();
 	}
 }

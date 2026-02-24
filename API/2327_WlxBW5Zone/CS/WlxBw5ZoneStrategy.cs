@@ -51,7 +51,7 @@ public class WlxBw5ZoneStrategy : Strategy
 	/// </summary>
 	public WlxBw5ZoneStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_direct = Param(nameof(Direct), true)
@@ -84,11 +84,24 @@ public class WlxBw5ZoneStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_ao0 = _ao1 = _ao2 = _ao3 = _ao4 = null;
+		_ac0 = _ac1 = _ac2 = _ac3 = _ac4 = null;
+		_flagUp = false;
+		_flagDown = false;
+
 		_ao = new AwesomeOscillator();
 		_ac = new Acceleration();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_ao, _ac, ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _ao);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal ao, decimal ac)
@@ -101,7 +114,10 @@ public class WlxBw5ZoneStrategy : Strategy
 		_ac4 = _ac3; _ac3 = _ac2; _ac2 = _ac1; _ac1 = _ac0; _ac0 = ac;
 
 		if (_ao4 is null || _ac4 is null)
-			return; // not enough data
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
 		var isUpSeq = _ao0 > _ao1 && _ao1 > _ao2 && _ao2 > _ao3 && _ao3 > _ao4 &&
 			_ac0 > _ac1 && _ac1 > _ac2 && _ac2 > _ac3 && _ac3 > _ac4;

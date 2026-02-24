@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -127,7 +124,7 @@ public class FibonacciRetracementStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 15)
 			.SetDisplay("Stop Loss Points", "Distance to stop from entry", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles timeframe", "General");
 	}
 
@@ -156,6 +153,16 @@ public class FibonacciRetracementStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		Array.Clear(_hl);
+		_direction = 0;
+		_trendDirection = 0;
+		_fibo00 = _fibo23 = _fibo38 = _fibo61 = _fibo76 = _fibo100 = _fiboBase = 0m;
+		_prevClose = 0m;
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_takePrice = 0m;
+		_barsSinceExit = CloseBarPause;
 
 		var highest = new Highest { Length = ZigzagDepth };
 		var lowest = new Lowest { Length = ZigzagDepth };
@@ -215,12 +222,18 @@ public class FibonacciRetracementStrategy : Strategy
 		}
 		}
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+		_prevClose = candle.ClosePrice;
+		return;
+		}
+
 		// manage open positions
 		if (Position > 0)
 		{
 		if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
 		{
-		SellMarket(Math.Abs(Position));
+		SellMarket();
 		_entryPrice = 0m;
 		_barsSinceExit = 0;
 		}
@@ -229,7 +242,7 @@ public class FibonacciRetracementStrategy : Strategy
 		{
 		if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
 		{
-		BuyMarket(Math.Abs(Position));
+		BuyMarket();
 		_entryPrice = 0m;
 		_barsSinceExit = 0;
 		}
@@ -238,7 +251,7 @@ public class FibonacciRetracementStrategy : Strategy
 		{
 		if (_barsSinceExit >= CloseBarPause)
 		{
-		var buffer = Security.MinStep * SafetyBuffer;
+		var buffer = 0.01m * SafetyBuffer;
 
 		if (_trendDirection == 1 &&
 		(CrossAbove(_prevClose, candle.ClosePrice, _fibo76, buffer) ||
@@ -248,7 +261,7 @@ public class FibonacciRetracementStrategy : Strategy
 		{
 		BuyMarket();
 		_entryPrice = candle.ClosePrice;
-		_stopPrice = _entryPrice - Security.MinStep * StopLossPoints;
+		_stopPrice = _entryPrice - 0.01m * StopLossPoints;
 		_takePrice = _fibo00 + TakeProfitFactor * _fiboBase;
 		}
 		else if (_trendDirection == -1 &&
@@ -259,7 +272,7 @@ public class FibonacciRetracementStrategy : Strategy
 		{
 		SellMarket();
 		_entryPrice = candle.ClosePrice;
-		_stopPrice = _entryPrice + Security.MinStep * StopLossPoints;
+		_stopPrice = _entryPrice + 0.01m * StopLossPoints;
 		_takePrice = _fibo00 - TakeProfitFactor * _fiboBase;
 		}
 		}
@@ -279,7 +292,7 @@ public class FibonacciRetracementStrategy : Strategy
 
 	private int CheckTrend(decimal hl0, decimal hl1, decimal hl2, decimal hl3)
 	{
-	var precision = Security.MinStep * TrendPrecision;
+	var precision = 0.01m * TrendPrecision;
 
 	if ((hl2 - hl0) > precision && (hl3 - hl1) > precision)
 	return -1;

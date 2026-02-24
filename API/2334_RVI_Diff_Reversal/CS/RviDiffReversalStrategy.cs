@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,9 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on the smoothed difference between RVI and its signal line.
-/// Opens a long position when the indicator stops falling and starts rising.
-/// Opens a short position when the indicator stops rising and starts falling.
+/// Strategy based on the smoothed difference between RVI average and signal.
+/// Buy when smoothed diff turns up, sell when it turns down.
 /// </summary>
 public class RviDiffReversalStrategy : Strategy
 {
@@ -24,128 +20,91 @@ public class RviDiffReversalStrategy : Strategy
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeVigorIndex _rvi;
-	private SimpleMovingAverage _signal;
 	private ExponentialMovingAverage _smoother;
-
 	private decimal? _prevDiff;
 	private decimal? _prevPrevDiff;
 
-	/// <summary>
-	/// RVI calculation length.
-	/// </summary>
 	public int RviLength { get => _rviLength.Value; set => _rviLength.Value = value; }
-
-	/// <summary>
-	/// Smoothing length for the difference series.
-	/// </summary>
 	public int SmoothingLength { get => _smoothingLength.Value; set => _smoothingLength.Value = value; }
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="RviDiffReversalStrategy"/>.
-	/// </summary>
 	public RviDiffReversalStrategy()
 	{
 		_rviLength = Param(nameof(RviLength), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("RVI Length", "Length of RVI", "General")
-			;
+			.SetDisplay("RVI Length", "Length of RVI", "General");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 13)
 			.SetGreaterThanZero()
-			.SetDisplay("Smoothing Length", "Length of EMA smoothing", "General")
-			;
+			.SetDisplay("Smoothing Length", "Length of EMA smoothing", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_rvi = default;
-		_signal = default;
-		_smoother = default;
-		_prevDiff = default;
-		_prevPrevDiff = default;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_rvi = new RelativeVigorIndex { Length = RviLength };
-		_signal = new SMA { Length = RviLength };
-		_smoother = new EMA { Length = SmoothingLength };
+		_prevDiff = null;
+		_prevPrevDiff = null;
+		_smoother = new ExponentialMovingAverage { Length = SmoothingLength };
+
+		var rvi = new RelativeVigorIndex();
+		rvi.Average.Length = RviLength;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		StartProtection(null, null);
+		subscription.BindEx(rvi, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _smoother);
+			DrawIndicator(area, rvi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rviVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var rviValue = _rvi.Process(candle);
-		var signalValue = _signal.Process(rviValue);
-
-		if (!signalValue.IsFinal)
+		if (rviVal is not IRelativeVigorIndexValue rviTyped)
 			return;
 
-		var diff = rviValue.ToDecimal() - signalValue.ToDecimal();
-
-		var smoothValue = _smoother.Process(diff);
-
-		if (!smoothValue.IsFinal)
+		if (rviTyped.Average is not decimal avg || rviTyped.Signal is not decimal sig)
 			return;
+
+		var diff = avg - sig;
+		var smoothResult = _smoother.Process(diff, candle.CloseTime, true);
+
+		if (!_smoother.IsFormed)
+			return;
+
+		var current = smoothResult.GetValue<decimal>();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevPrevDiff = _prevDiff;
+			_prevDiff = current;
 			return;
-
-		var current = smoothValue.ToDecimal();
+		}
 
 		if (_prevDiff.HasValue && _prevPrevDiff.HasValue)
 		{
 			var wasFalling = _prevPrevDiff > _prevDiff;
 			var wasRising = _prevPrevDiff < _prevDiff;
-			var nowRising = _prevDiff <= current;
-			var nowFalling = _prevDiff >= current;
 
-			if (wasFalling && nowRising && Position <= 0)
-			{
-				var volume = Volume + (Position < 0 ? -Position : 0m);
-				BuyMarket(volume);
-			}
-			else if (wasRising && nowFalling && Position >= 0)
-			{
-				var volume = Volume + (Position > 0 ? Position : 0m);
-				SellMarket(volume);
-			}
+			if (wasFalling && current > _prevDiff && Position <= 0)
+				BuyMarket();
+			else if (wasRising && current < _prevDiff && Position >= 0)
+				SellMarket();
 		}
 
 		_prevPrevDiff = _prevDiff;

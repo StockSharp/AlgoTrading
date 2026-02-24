@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -69,7 +66,7 @@ public class RaviHistogramStrategy : Strategy
 		_sellClose = Param(nameof(SellClose), true)
 			.SetDisplay("Close Short", "Allow closing short positions", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -82,12 +79,24 @@ public class RaviHistogramStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fast = new EMA { Length = FastLength };
-		var slow = new EMA { Length = SlowLength };
+		_isFirst = true;
+		_prevRavi = 0;
+
+		var fast = new ExponentialMovingAverage { Length = FastLength };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
 
 		// Subscribe to candle data and bind indicators.
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(fast, slow, ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)

@@ -1,9 +1,6 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -92,7 +89,7 @@ public class SpectrAnalysisChaikinStrategy : Strategy
 		_sellPosClose = Param(nameof(SellPosClose), true)
 		.SetDisplay("Sell Position Close", "Allow closing short positions", "Trading");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for candles", "Data");
 	}
 	
@@ -115,7 +112,11 @@ public class SpectrAnalysisChaikinStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
+
+		_prev1 = 0m;
+		_prev2 = 0m;
+		_isFormed = false;
+
 		var ad = new AccumulationDistributionLine();
 		_fastWma = new WeightedMovingAverage { Length = FastMaPeriod };
 		_slowWma = new WeightedMovingAverage { Length = SlowMaPeriod };
@@ -137,34 +138,33 @@ public class SpectrAnalysisChaikinStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal adValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		var fast = _fastWma.Process(new DecimalIndicatorValue(_fastWma, adValue, candle.ServerTime));
-		var slow = _slowWma.Process(new DecimalIndicatorValue(_slowWma, adValue, candle.ServerTime));
-		
-		if (!fast.IsFinal || !slow.IsFinal)
-		return;
-		
-		var curr = fast.ToDecimal() - slow.ToDecimal();
-		
+			return;
+
+		var t = candle.CloseTime;
+		var fast = _fastWma.Process(adValue, t, true);
+		var slow = _slowWma.Process(adValue, t, true);
+
+		if (!_fastWma.IsFormed || !_slowWma.IsFormed)
+			return;
+
+		var curr = fast.GetValue<decimal>() - slow.GetValue<decimal>();
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prev2 = _prev1;
+			_prev1 = curr;
+			_isFormed = true;
+			return;
+		}
+
 		if (_isFormed)
 		{
-			if (_prev1 < _prev2)
-			{
-				if (SellPosClose && Position < 0)
-				BuyMarket(Math.Abs(Position));
-				
-				if (BuyPosOpen && curr >= _prev1 && Position <= 0)
+			// Upward turn: prev was falling, now rising
+			if (_prev1 < _prev2 && curr >= _prev1 && Position <= 0)
 				BuyMarket();
-			}
-			else if (_prev1 > _prev2)
-			{
-				if (BuyPosClose && Position > 0)
-				SellMarket(Position);
-				
-				if (SellPosOpen && curr <= _prev1 && Position >= 0)
+			// Downward turn: prev was rising, now falling
+			else if (_prev1 > _prev2 && curr <= _prev1 && Position >= 0)
 				SellMarket();
-			}
 		}
 		
 		_prev2 = _prev1;

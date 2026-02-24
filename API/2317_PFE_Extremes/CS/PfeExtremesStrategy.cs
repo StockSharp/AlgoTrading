@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,8 +12,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Polarized Fractal Efficiency breakout strategy.
-/// Opens long positions when PFE crosses above the upper level and
-/// opens short positions when it crosses below the lower level.
+/// Computes PFE manually. Buys when PFE crosses above upper level,
+/// sells when PFE crosses below lower level.
 /// </summary>
 public class PfeExtremesStrategy : Strategy
 {
@@ -25,129 +22,105 @@ public class PfeExtremesStrategy : Strategy
 	private readonly StrategyParam<decimal> _downLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private readonly List<decimal> _closes = new();
 	private decimal? _prevPfe;
 
-	/// <summary>
-	/// PFE calculation period.
-	/// </summary>
-	public int PfePeriod
-	{
-		get => _pfePeriod.Value;
-		set => _pfePeriod.Value = value;
-	}
+	public int PfePeriod { get => _pfePeriod.Value; set => _pfePeriod.Value = value; }
+	public decimal UpLevel { get => _upLevel.Value; set => _upLevel.Value = value; }
+	public decimal DownLevel { get => _downLevel.Value; set => _downLevel.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Upper threshold for long signals.
-	/// </summary>
-	public decimal UpLevel
-	{
-		get => _upLevel.Value;
-		set => _upLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Lower threshold for short signals.
-	/// </summary>
-	public decimal DownLevel
-	{
-		get => _downLevel.Value;
-		set => _downLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for analysis.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="PfeExtremesStrategy"/>.
-	/// </summary>
 	public PfeExtremesStrategy()
 	{
-		_pfePeriod = Param(nameof(PfePeriod), 5)
+		_pfePeriod = Param(nameof(PfePeriod), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("PFE Period", "Number of bars for PFE calculation", "Indicator")
-			
-			.SetOptimize(5, 20, 1);
+			.SetDisplay("PFE Period", "Number of bars for PFE calculation", "Indicator");
 
-		_upLevel = Param(nameof(UpLevel), 0.5m)
+		_upLevel = Param(nameof(UpLevel), 20m)
 			.SetDisplay("Upper Level", "PFE value to trigger long entries", "Signal");
 
-		_downLevel = Param(nameof(DownLevel), -0.5m)
+		_downLevel = Param(nameof(DownLevel), -20m)
 			.SetDisplay("Lower Level", "PFE value to trigger short entries", "Signal");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator calculation", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevPfe = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var pfe = new PolarizedFractalEfficiency { Length = PfePeriod };
+		_closes.Clear();
+		_prevPfe = null;
+
+		var sma = new SimpleMovingAverage { Length = 1 };
 
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(pfe, ProcessCandle)
-			.Start();
+		subscription.Bind(sma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, pfe);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal pfeValue)
+	private void ProcessCandle(ICandleMessage candle, decimal _smaVal)
 	{
-		// Only work with finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		_closes.Add(candle.ClosePrice);
+
+		var period = PfePeriod;
+		if (_closes.Count < period + 1)
 			return;
 
-		// Close short positions when PFE moves above the upper level
-		if (pfeValue > UpLevel && Position < 0)
-			BuyMarket(Math.Abs(Position));
+		while (_closes.Count > period + 2)
+			_closes.RemoveAt(0);
 
-		// Close long positions when PFE moves below the lower level
-		if (pfeValue < DownLevel && Position > 0)
-			SellMarket(Position);
+		var n = _closes.Count;
+		var closeNow = _closes[n - 1];
+		var closePast = _closes[n - 1 - period];
+
+		var diff = (double)(closeNow - closePast);
+		var directDist = Math.Sqrt(diff * diff + (double)(period * period));
+
+		var sumDist = 0.0;
+		for (var i = n - period; i < n; i++)
+		{
+			var d = (double)(_closes[i] - _closes[i - 1]);
+			sumDist += Math.Sqrt(d * d + 1.0);
+		}
+
+		if (sumDist == 0)
+			return;
+
+		var sign = closeNow >= closePast ? 1.0 : -1.0;
+		var pfe = (decimal)(100.0 * sign * directDist / sumDist);
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevPfe = pfe;
+			return;
+		}
 
 		if (_prevPfe is decimal prev)
 		{
-			// Upward crossover triggers a long entry
-			if (prev <= UpLevel && pfeValue > UpLevel && Position <= 0)
-				BuyMarket(Volume);
-
-			// Downward crossover triggers a short entry
-			if (prev >= DownLevel && pfeValue < DownLevel && Position >= 0)
-				SellMarket(Volume);
+			// Upward crossover triggers long
+			if (prev <= UpLevel && pfe > UpLevel && Position <= 0)
+				BuyMarket();
+			// Downward crossover triggers short
+			else if (prev >= DownLevel && pfe < DownLevel && Position >= 0)
+				SellMarket();
 		}
 
-		// Save current value for next comparison
-		_prevPfe = pfeValue;
+		_prevPfe = pfe;
 	}
 }

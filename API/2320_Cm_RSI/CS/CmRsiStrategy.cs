@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -116,22 +113,15 @@ public class CmRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Set trade volume from parameter
-		Volume = OrderVolume;
+		_isFirst = true;
+		_prevRsi = 0;
 
-		var rsi = new RelativeStrengthIndex
-		{
-			Length = RsiPeriod
-		};
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(rsi, ProcessCandle)
 			.Start();
-
-		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -154,16 +144,13 @@ public class CmRsiStrategy : Strategy
 			return;
 		}
 
-		if (Position == 0)
-		{
-			// Open long when RSI crosses above buy level
-			if (_prevRsi < BuyLevel && rsiValue > BuyLevel)
-				BuyMarket();
+		// Open long when RSI crosses above buy level
+		if (_prevRsi < BuyLevel && rsiValue > BuyLevel && Position <= 0)
+			BuyMarket();
 
-			// Open short when RSI crosses below sell level
-			if (_prevRsi > SellLevel && rsiValue < SellLevel)
-				SellMarket();
-		}
+		// Open short when RSI crosses below sell level
+		if (_prevRsi > SellLevel && rsiValue < SellLevel && Position >= 0)
+			SellMarket();
 
 		_prevRsi = rsiValue;
 	}

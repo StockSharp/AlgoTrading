@@ -1,17 +1,13 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -82,14 +78,19 @@ public class AscTrendNdStrategy : Strategy
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop trailing", "Risk");
 	}
 
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		_stopPrice = null;
 
-		_sma = new SMA { Length = SmaPeriod };
+		_sma = new SimpleMovingAverage { Length = SmaPeriod };
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
