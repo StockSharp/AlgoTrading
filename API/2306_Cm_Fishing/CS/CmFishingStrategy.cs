@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -15,128 +11,54 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Grid trading strategy based on fixed price steps.
+/// Buys when price drops by step amount, sells when price rises by step amount.
+/// Closes on profit threshold.
 /// </summary>
 public class CmFishingStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _buy;
-	private readonly StrategyParam<bool> _sell;
-	private readonly StrategyParam<decimal> _stepBuy;
-	private readonly StrategyParam<decimal> _stepSell;
-	private readonly StrategyParam<decimal> _closeProfitBuy;
-	private readonly StrategyParam<decimal> _closeProfitSell;
-	private readonly StrategyParam<decimal> _closeProfitAll;
-	private readonly StrategyParam<decimal> _buyVolume;
-	private readonly StrategyParam<decimal> _sellVolume;
+	private readonly StrategyParam<decimal> _stepSize;
+	private readonly StrategyParam<decimal> _profitTarget;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _level;
+	private decimal _referencePrice;
 	private decimal _entryPrice;
 
-	/// <summary>
-	/// Allow long trades.
-	/// </summary>
-	public bool Buy
+	public decimal StepSize
 	{
-		get => _buy.Value;
-		set => _buy.Value = value;
+		get => _stepSize.Value;
+		set => _stepSize.Value = value;
 	}
 
-	/// <summary>
-	/// Allow short trades.
-	/// </summary>
-	public bool Sell
+	public decimal ProfitTarget
 	{
-		get => _sell.Value;
-		set => _sell.Value = value;
+		get => _profitTarget.Value;
+		set => _profitTarget.Value = value;
 	}
 
-	/// <summary>
-	/// Price step for additional long trades.
-	/// </summary>
-	public decimal StepBuy
+	public DataType CandleType
 	{
-		get => _stepBuy.Value;
-		set => _stepBuy.Value = value;
-	}
-
-	/// <summary>
-	/// Price step for additional short trades.
-	/// </summary>
-	public decimal StepSell
-	{
-		get => _stepSell.Value;
-		set => _stepSell.Value = value;
-	}
-
-	/// <summary>
-	/// Profit target to close long positions.
-	/// </summary>
-	public decimal CloseProfitBuy
-	{
-		get => _closeProfitBuy.Value;
-		set => _closeProfitBuy.Value = value;
-	}
-
-	/// <summary>
-	/// Profit target to close short positions.
-	/// </summary>
-	public decimal CloseProfitSell
-	{
-		get => _closeProfitSell.Value;
-		set => _closeProfitSell.Value = value;
-	}
-
-	/// <summary>
-	/// Profit target to close any position.
-	/// </summary>
-	public decimal CloseProfit
-	{
-		get => _closeProfitAll.Value;
-		set => _closeProfitAll.Value = value;
-	}
-
-	/// <summary>
-	/// Volume for buy orders.
-	/// </summary>
-	public decimal BuyVolume
-	{
-		get => _buyVolume.Value;
-		set => _buyVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Volume for sell orders.
-	/// </summary>
-	public decimal SellVolume
-	{
-		get => _sellVolume.Value;
-		set => _sellVolume.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	public CmFishingStrategy()
 	{
-		_buy = Param(nameof(Buy), true).SetDisplay("Buy", "Enable long trades", "Parameters");
-		_sell = Param(nameof(Sell), true).SetDisplay("Sell", "Enable short trades", "Parameters");
-		_stepBuy = Param(nameof(StepBuy), 10m).SetDisplay("Step Buy", "Price step for long trades", "Parameters");
-		_stepSell = Param(nameof(StepSell), 10m).SetDisplay("Step Sell", "Price step for short trades", "Parameters");
-		_closeProfitBuy = Param(nameof(CloseProfitBuy), 100m).SetDisplay("Close Profit Buy", "Profit to close long positions", "Parameters");
-		_closeProfitSell = Param(nameof(CloseProfitSell), 100m).SetDisplay("Close Profit Sell", "Profit to close short positions", "Parameters");
-		_closeProfitAll = Param(nameof(CloseProfit), 10m).SetDisplay("Close Profit", "Profit to close any position", "Parameters");
-		_buyVolume = Param(nameof(BuyVolume), 0.1m).SetDisplay("Buy Volume", "Volume for buy orders", "Parameters");
-		_sellVolume = Param(nameof(SellVolume), 0.1m).SetDisplay("Sell Volume", "Volume for sell orders", "Parameters");
+		_stepSize = Param(nameof(StepSize), 500m)
+			.SetGreaterThanZero()
+			.SetDisplay("Step Size", "Price step for grid entries", "Parameters");
+
+		_profitTarget = Param(nameof(ProfitTarget), 300m)
+			.SetGreaterThanZero()
+			.SetDisplay("Profit Target", "Price profit to close position", "Parameters");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, DataType.Ticks)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_level = 0m;
-		_entryPrice = 0m;
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -144,63 +66,63 @@ public class CmFishingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		_referencePrice = 0;
+		_entryPrice = 0;
 
-		var lastTrade = Security.LastTick;
-		_level = lastTrade?.Price ?? 0m;
-		_entryPrice = 0m;
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
 
-		SubscribeTicks().Bind(ProcessTrade).Start();
-	}
-
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var price = trade.Price;
-		var absPos = Math.Abs(Position);
-
-		if (Buy && Position >= 0m && price <= _level - StepBuy)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			BuyMarket(BuyVolume);
-			UpdateEntryPrice(price, BuyVolume, absPos);
-			_level = price;
-		}
-
-		if (Sell && Position <= 0m && price >= _level + StepSell)
-		{
-			SellMarket(SellVolume);
-			UpdateEntryPrice(price, SellVolume, absPos);
-			_level = price;
-		}
-
-		var profit = Position > 0m
-			? (price - _entryPrice) * Position
-			: (_entryPrice - price) * -Position;
-
-		if (Position > 0m && (profit >= CloseProfitBuy || profit >= CloseProfit))
-		{
-			SellMarket(Position);
-			_entryPrice = 0m;
-			_level = price;
-			return;
-		}
-
-		if (Position < 0m && (profit >= CloseProfitSell || profit >= CloseProfit))
-		{
-			BuyMarket(-Position);
-			_entryPrice = 0m;
-			_level = price;
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void UpdateEntryPrice(decimal price, decimal volume, decimal currentPos)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		var newPos = currentPos + volume;
-		if (newPos <= 0m)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		_entryPrice = (_entryPrice * currentPos + price * volume) / newPos;
+		var price = candle.ClosePrice;
+
+		if (_referencePrice == 0)
+		{
+			_referencePrice = price;
+			return;
+		}
+
+		// Check profit target first
+		if (Position > 0 && price >= _entryPrice + ProfitTarget)
+		{
+			SellMarket();
+			_referencePrice = price;
+			_entryPrice = 0;
+			return;
+		}
+		else if (Position < 0 && price <= _entryPrice - ProfitTarget)
+		{
+			BuyMarket();
+			_referencePrice = price;
+			_entryPrice = 0;
+			return;
+		}
+
+		// Grid entries: buy on dip, sell on rise
+		if (price <= _referencePrice - StepSize && Position <= 0)
+		{
+			BuyMarket();
+			_entryPrice = price;
+			_referencePrice = price;
+		}
+		else if (price >= _referencePrice + StepSize && Position >= 0)
+		{
+			SellMarket();
+			_entryPrice = price;
+			_referencePrice = price;
+		}
 	}
 }

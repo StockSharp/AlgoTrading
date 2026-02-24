@@ -11,68 +11,43 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-
 /// <summary>
-/// Places breakout stop orders after detecting low volatility periods.
+/// Volatility breakout strategy. Enters on a breakout of a low-volatility bar.
+/// Uses market orders when price exceeds the high/low of the signal bar.
 /// </summary>
 public class VltTraderStrategy : Strategy
 {
 	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<int> _pendingLevel;
-	private readonly StrategyParam<int> _stopLoss;
-	private readonly StrategyParam<int> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Lowest _lowest = null!;
 	private decimal _prevRange;
 	private decimal _prevMinRange;
+	private decimal _signalHigh;
+	private decimal _signalLow;
+	private bool _pendingBreakout;
 
 	/// <summary>
-	/// Indicator period.
+	/// Indicator period for lowest range.
 	/// </summary>
-	public int Period
-	{
-		get => _period.Value;
-		set => _period.Value = value;
-	}
+	public int Period { get => _period.Value; set => _period.Value = value; }
 
 	/// <summary>
-	/// Offset for stop orders in ticks.
+	/// Stop loss in price steps.
 	/// </summary>
-	public int PendingLevel
-	{
-		get => _pendingLevel.Value;
-		set => _pendingLevel.Value = value;
-	}
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 
 	/// <summary>
-	/// Stop loss in ticks.
+	/// Take profit in price steps.
 	/// </summary>
-	public int StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in ticks.
-	/// </summary>
-	public int TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 
 	/// <summary>
 	/// Candle type for processing.
 	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="VltTraderStrategy"/> class.
@@ -81,25 +56,17 @@ public class VltTraderStrategy : Strategy
 	{
 		_period = Param(nameof(Period), 9)
 			.SetDisplay("Period", "Indicator period", "General")
-			
-			.SetOptimize(1, 50, 1);
+			.SetOptimize(5, 30, 5);
 
-		_pendingLevel = Param(nameof(PendingLevel), 100)
-			.SetDisplay("Pending level", "Offset for stop orders in ticks", "General")
-			
-			.SetOptimize(10, 200, 10);
+		_stopLoss = Param(nameof(StopLoss), 550m)
+			.SetDisplay("Stop loss", "Stop loss in price steps", "Risk")
+			.SetOptimize(100m, 2000m, 100m);
 
-		_stopLoss = Param(nameof(StopLoss), 550)
-			.SetDisplay("Stop loss", "Stop loss in ticks", "General")
-			
-			.SetOptimize(0, 2000, 50);
+		_takeProfit = Param(nameof(TakeProfit), 550m)
+			.SetDisplay("Take profit", "Take profit in price steps", "Risk")
+			.SetOptimize(100m, 2000m, 100m);
 
-		_takeProfit = Param(nameof(TakeProfit), 550)
-			.SetDisplay("Take profit", "Take profit in ticks", "General")
-			
-			.SetOptimize(0, 2000, 50);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Candles for calculation", "General");
 	}
 
@@ -110,6 +77,15 @@ public class VltTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevRange = 0m;
+		_prevMinRange = decimal.MaxValue;
+		_pendingBreakout = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -117,13 +93,22 @@ public class VltTraderStrategy : Strategy
 		_lowest = new Lowest { Length = Period };
 		_prevRange = 0m;
 		_prevMinRange = decimal.MaxValue;
+		_pendingBreakout = false;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Do(ProcessCandle)
-			.Start();
+		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(new Unit(TakeProfit, UnitTypes.Points), new Unit(StopLoss, UnitTypes.Points));
+		var step = Security?.PriceStep ?? 1m;
+		StartProtection(
+			takeProfit: new Unit(TakeProfit * step, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLoss * step, UnitTypes.Absolute));
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -132,26 +117,39 @@ public class VltTraderStrategy : Strategy
 			return;
 
 		var range = candle.HighPrice - candle.LowPrice;
+		var lowestResult = _lowest.Process(range, candle.OpenTime, true);
 
-		var lowestValue = _lowest.Process(range);
-		if (!lowestValue.IsFinal || !lowestValue.TryGetValue(out var minRange))
+		if (!_lowest.IsFormed)
 			return;
 
-		var isSignal = range < minRange && _prevRange >= _prevMinRange;
+		var minRange = lowestResult.ToDecimal();
+
+		// Check for pending breakout entry
+		if (_pendingBreakout && Position == 0)
+		{
+			if (candle.ClosePrice > _signalHigh)
+			{
+				BuyMarket();
+				_pendingBreakout = false;
+			}
+			else if (candle.ClosePrice < _signalLow)
+			{
+				SellMarket();
+				_pendingBreakout = false;
+			}
+		}
+
+		// Detect low-volatility signal: range drops below minimum
+		var isSignal = range <= minRange && _prevRange > _prevMinRange;
 
 		_prevRange = range;
 		_prevMinRange = minRange;
 
-		if (!isSignal || Position != 0)
-			return;
-
-		CancelActiveOrders();
-
-		var step = Security.PriceStep ?? 1m;
-		var buyPrice = candle.HighPrice + PendingLevel * step;
-		var sellPrice = candle.LowPrice - PendingLevel * step;
-
-		BuyStop(Volume, buyPrice);
-		SellStop(Volume, sellPrice);
+		if (isSignal && Position == 0)
+		{
+			_signalHigh = candle.HighPrice;
+			_signalLow = candle.LowPrice;
+			_pendingBreakout = true;
+		}
 	}
 }

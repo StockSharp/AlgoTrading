@@ -97,15 +97,16 @@ public class RobotiAdxProfitStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(stopLoss: new Unit(TrailingStopPercent, UnitTypes.Percent), isStopTrailing: true);
+		StartProtection(
+			stopLoss: new Unit(TrailingStopPercent, UnitTypes.Percent),
+			takeProfit: null,
+			isStopTrailing: true
+		);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue dmiValue)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var dmi = (DirectionalIndexValue)dmiValue;
@@ -115,11 +116,13 @@ public class RobotiAdxProfitStrategy : Strategy
 
 		if (plus > minus && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
 		else if (minus > plus && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 	}
 }

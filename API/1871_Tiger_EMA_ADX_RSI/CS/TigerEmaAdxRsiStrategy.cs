@@ -32,108 +32,63 @@ public class TigerEmaAdxRsiStrategy : Strategy
 	private decimal _takePrice;
 	private decimal _stopPrice;
 
-	/// <summary>
-	/// Fast EMA period (default: 21).
-	/// </summary>
 	public int FastMaPeriod { get => _fastMaPeriod.Value; set => _fastMaPeriod.Value = value; }
-
-	/// <summary>
-	/// Slow EMA period (default: 89).
-	/// </summary>
 	public int SlowMaPeriod { get => _slowMaPeriod.Value; set => _slowMaPeriod.Value = value; }
-
-	/// <summary>
-	/// ADX calculation period (default: 14).
-	/// </summary>
 	public int AdxPeriod { get => _adxPeriod.Value; set => _adxPeriod.Value = value; }
-
-	/// <summary>
-	/// Minimum ADX value to allow trading (default: 27).
-	/// </summary>
 	public decimal AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
-
-	/// <summary>
-	/// RSI calculation period (default: 14).
-	/// </summary>
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
-
-	/// <summary>
-	/// Upper RSI bound for long entries (default: 65).
-	/// </summary>
 	public decimal RsiUpper { get => _rsiUpper.Value; set => _rsiUpper.Value = value; }
-
-	/// <summary>
-	/// Lower RSI bound for short entries (default: 35).
-	/// </summary>
 	public decimal RsiLower { get => _rsiLower.Value; set => _rsiLower.Value = value; }
-
-	/// <summary>
-	/// Take profit distance in price points (default: 0.0007).
-	/// </summary>
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-
-	/// <summary>
-	/// Stop loss distance in price points (default: 0.05).
-	/// </summary>
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public TigerEmaAdxRsiStrategy()
 	{
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 21)
 			.SetDisplay("Fast EMA", "Fast EMA period", "Parameters")
-			
 			.SetOptimize(5, 50, 5);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 89)
 			.SetDisplay("Slow EMA", "Slow EMA period", "Parameters")
-			
 			.SetOptimize(50, 200, 10);
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "ADX calculation period", "Parameters")
-			
 			.SetOptimize(7, 28, 7);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 27m)
 			.SetDisplay("ADX Threshold", "Minimum ADX value", "Parameters")
-			
 			.SetOptimize(20m, 40m, 5m);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI calculation period", "Parameters")
-			
 			.SetOptimize(7, 28, 7);
 
 		_rsiUpper = Param(nameof(RsiUpper), 65m)
 			.SetDisplay("RSI Upper", "Upper RSI bound", "Parameters")
-			
 			.SetOptimize(60m, 80m, 5m);
 
 		_rsiLower = Param(nameof(RsiLower), 35m)
 			.SetDisplay("RSI Lower", "Lower RSI bound", "Parameters")
-			
 			.SetOptimize(20m, 40m, 5m);
 
-		_takeProfit = Param(nameof(TakeProfit), 0.0007m)
+		_takeProfit = Param(nameof(TakeProfit), 500m)
 			.SetDisplay("Take Profit", "Take profit distance", "Risk")
-			
-			.SetOptimize(0.0005m, 0.0015m, 0.0002m);
+			.SetOptimize(100m, 1000m, 100m);
 
-		_stopLoss = Param(nameof(StopLoss), 0.05m)
+		_stopLoss = Param(nameof(StopLoss), 200m)
 			.SetDisplay("Stop Loss", "Stop loss distance", "Risk")
-			
-			.SetOptimize(0.02m, 0.1m, 0.01m);
+			.SetOptimize(50m, 500m, 50m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -143,53 +98,73 @@ public class TigerEmaAdxRsiStrategy : Strategy
 
 		StartProtection(null, null);
 
-		var fastEma = new EMA { Length = FastMaPeriod };
-		var slowEma = new EMA { Length = SlowMaPeriod };
+		var fastEma = new ExponentialMovingAverage { Length = FastMaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowMaPeriod };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, adx, rsi, ProcessCandle)
+			.BindEx(fastEma, slowEma, adx, rsi, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal adx, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastValue, IIndicatorValue slowValue, IIndicatorValue adxValue, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
+
+		if (!fastValue.IsFinal || !slowValue.IsFinal || !adxValue.IsFinal || !rsiValue.IsFinal)
+			return;
+
+		var fast = fastValue.ToDecimal();
+		var slow = slowValue.ToDecimal();
+		var rsi = rsiValue.ToDecimal();
+
+		var adxTyped = (AverageDirectionalIndexValue)adxValue;
+		if (adxTyped.MovingAverage is not decimal adxVal)
+			return;
 
 		var trendUp = fast > slow;
 		var trendDown = fast < slow;
-		var canTrade = adx > AdxThreshold && rsi > RsiLower && rsi < RsiUpper;
+		var canTrade = adxVal > AdxThreshold && rsi > RsiLower && rsi < RsiUpper;
 
 		if (Position == 0)
 		{
-		if (canTrade)
-		{
-		if (trendUp)
-		{
-		BuyMarket();
-		_takePrice = candle.ClosePrice + TakeProfit;
-		_stopPrice = candle.ClosePrice - StopLoss;
-		}
-		else if (trendDown)
-		{
-		SellMarket();
-		_takePrice = candle.ClosePrice - TakeProfit;
-		_stopPrice = candle.ClosePrice + StopLoss;
-		}
-		}
+			if (canTrade)
+			{
+				if (trendUp)
+				{
+					BuyMarket();
+					_takePrice = candle.ClosePrice + TakeProfit;
+					_stopPrice = candle.ClosePrice - StopLoss;
+				}
+				else if (trendDown)
+				{
+					SellMarket();
+					_takePrice = candle.ClosePrice - TakeProfit;
+					_stopPrice = candle.ClosePrice + StopLoss;
+				}
+			}
 		}
 		else if (Position > 0)
 		{
-		if (candle.ClosePrice >= _takePrice || candle.ClosePrice <= _stopPrice)
-		SellMarket();
+			if (candle.ClosePrice >= _takePrice || candle.ClosePrice <= _stopPrice)
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
-		if (candle.ClosePrice <= _takePrice || candle.ClosePrice >= _stopPrice)
-		BuyMarket();
+			if (candle.ClosePrice <= _takePrice || candle.ClosePrice >= _stopPrice)
+				BuyMarket();
 		}
 	}
 }

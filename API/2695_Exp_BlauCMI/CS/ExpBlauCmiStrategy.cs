@@ -86,7 +86,7 @@ public class ExpBlauCmiStrategy : Strategy
 	/// </summary>
 	public ExpBlauCmiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for BlauCMI calculations", "General");
 
 		_smoothingMethod = Param(nameof(MomentumSmoothing), SmoothingMethods.Exponential)
@@ -370,16 +370,16 @@ public class ExpBlauCmiStrategy : Strategy
 		var absMomentum = Math.Abs(momentum);
 		var time = candle.ServerTime;
 
-		var stage1 = _momentumStage1.Process(new DecimalIndicatorValue(_momentumStage1, momentum, time)).ToDecimal();
-		var absStage1 = _absStage1.Process(new DecimalIndicatorValue(_absStage1, absMomentum, time)).ToDecimal();
+		var stage1 = _momentumStage1.Process(new DecimalIndicatorValue(_momentumStage1, momentum, time) { IsFinal = true }).ToDecimal();
+		var absStage1 = _absStage1.Process(new DecimalIndicatorValue(_absStage1, absMomentum, time) { IsFinal = true }).ToDecimal();
 
-		var stage2 = _momentumStage2.Process(new DecimalIndicatorValue(_momentumStage2, stage1, time)).ToDecimal();
-		var absStage2 = _absStage2.Process(new DecimalIndicatorValue(_absStage2, absStage1, time)).ToDecimal();
+		var stage2 = _momentumStage2.Process(new DecimalIndicatorValue(_momentumStage2, stage1, time) { IsFinal = true }).ToDecimal();
+		var absStage2 = _absStage2.Process(new DecimalIndicatorValue(_absStage2, absStage1, time) { IsFinal = true }).ToDecimal();
 
-		var stage3Value = _momentumStage3.Process(new DecimalIndicatorValue(_momentumStage3, stage2, time));
-		var absStage3Value = _absStage3.Process(new DecimalIndicatorValue(_absStage3, absStage2, time));
+		var stage3Value = _momentumStage3.Process(new DecimalIndicatorValue(_momentumStage3, stage2, time) { IsFinal = true });
+		var absStage3Value = _absStage3.Process(new DecimalIndicatorValue(_absStage3, absStage2, time) { IsFinal = true });
 
-		if (!stage3Value.IsFinal || !absStage3Value.IsFinal)
+		if (!stage3Value.IsFormed || !absStage3Value.IsFormed)
 			return;
 
 		var denominator = absStage3Value.ToDecimal();
@@ -404,8 +404,6 @@ public class ExpBlauCmiStrategy : Strategy
 		var buySignal = value1 < value2 && value0 > value1;
 		var sellSignal = value1 > value2 && value0 < value1;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (Position > 0 && AllowLongExit && sellSignal)
 		{

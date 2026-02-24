@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -16,70 +12,35 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Strategy that tosses a virtual coin to decide trade direction.
 /// A long position is opened on heads, a short position on tails.
-/// Each trade is protected by take-profit and stop-loss distances.
+/// Closes after N candles and re-enters.
 /// </summary>
 public class RandomCoinTossBaselineStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<bool> _useTimeSeed;
+	private readonly StrategyParam<int> _holdBars;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Random _random;
+	private int _barsInPosition;
 
-	/// <summary>
-	/// Take-profit distance in absolute price units.
-	/// </summary>
-	public decimal TakeProfit
+	public int HoldBars
 	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
+		get => _holdBars.Value;
+		set => _holdBars.Value = value;
 	}
 
-	/// <summary>
-	/// Stop-loss distance in absolute price units.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Use current time as random seed.
-	/// </summary>
-	public bool UseTimeSeed
-	{
-		get => _useTimeSeed.Value;
-		set => _useTimeSeed.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles used for the coin toss evaluation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="RandomCoinTossBaselineStrategy"/> class.
-	/// </summary>
 	public RandomCoinTossBaselineStrategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 100m)
+		_holdBars = Param(nameof(HoldBars), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take-profit distance in price units", "Risk Management");
+			.SetDisplay("Hold Bars", "Number of bars to hold position", "General");
 
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop-loss distance in price units", "Risk Management");
-
-		_useTimeSeed = Param(nameof(UseTimeSeed), true)
-			.SetDisplay("Use Time Seed", "Seed random generator from current time", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -90,24 +51,22 @@ public class RandomCoinTossBaselineStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_random = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var seed = UseTimeSeed ? Environment.TickCount : 1;
-		_random = new Random(seed);
+		_random = new Random(42);
+		_barsInPosition = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -115,17 +74,32 @@ public class RandomCoinTossBaselineStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
+		// Close position after holding for N bars
 		if (Position != 0)
-			return;
+		{
+			_barsInPosition++;
 
+			if (_barsInPosition >= HoldBars)
+			{
+				if (Position > 0)
+					SellMarket();
+				else
+					BuyMarket();
+
+				_barsInPosition = 0;
+			}
+
+			return;
+		}
+
+		// Flip coin and enter
 		var coin = _random.Next(2);
 
 		if (coin == 0)
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		else
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
+
+		_barsInPosition = 0;
 	}
 }

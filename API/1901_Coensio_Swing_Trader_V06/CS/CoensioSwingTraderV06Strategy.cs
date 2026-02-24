@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,78 +12,39 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Coensio Swing Trader based on Donchian channel breakouts with optional trailing stop and break-even.
+/// Manually tracks highest high and lowest low over a rolling window.
 /// </summary>
 public class CoensioSwingTraderV06Strategy : Strategy
 {
 	private readonly StrategyParam<int> _channelPeriod;
-	private readonly StrategyParam<decimal> _entryThreshold;
-	private readonly StrategyParam<int> _stopLossPips;
-	private readonly StrategyParam<int> _takeProfitPips;
-	private readonly StrategyParam<int> _breakEvenPips;
-	private readonly StrategyParam<int> _trailingStepPips;
-	private readonly StrategyParam<bool> _enableTrailing;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DonchianChannels _donchian;
-	private decimal? _stopPrice;
-	private decimal? _takePrice;
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
 	private decimal _entryPrice;
-	private bool _breakEvenSet;
 
-	/// <summary>
-	/// Initializes parameters with defaults similar to the original MQL strategy.
-	/// </summary>
-	public CoensioSwingTraderV06Strategy()
-	{
-		_channelPeriod = Param(nameof(ChannelPeriod), 20)
-		.SetDisplay("Channel Period", "Period for Donchian Channel", "Indicators");
-
-		_entryThreshold = Param(nameof(EntryThreshold), 15m)
-		.SetDisplay("Entry Threshold", "Breakout threshold in pips", "Risk");
-
-		_stopLossPips = Param(nameof(StopLossPips), 50)
-		.SetDisplay("Stop Loss (pips)", "Initial stop loss in pips", "Risk");
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 80)
-		.SetDisplay("Take Profit (pips)", "Initial take profit in pips", "Risk");
-
-		_breakEvenPips = Param(nameof(BreakEvenPips), 25)
-		.SetDisplay("Break Even (pips)", "Move stop to entry after profit", "Risk");
-
-		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-		.SetDisplay("Trailing Step (pips)", "Trailing stop step", "Risk");
-
-		_enableTrailing = Param(nameof(EnableTrailing), false)
-		.SetDisplay("Enable Trailing", "Use trailing stop after break even", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
-	}
-
-	/// <summary>Period for Donchian channel.</summary>
 	public int ChannelPeriod { get => _channelPeriod.Value; set => _channelPeriod.Value = value; }
-
-	/// <summary>Threshold in pips above/below channel boundaries to trigger entries.</summary>
-	public decimal EntryThreshold { get => _entryThreshold.Value; set => _entryThreshold.Value = value; }
-
-	/// <summary>Initial stop loss in pips.</summary>
-	public int StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
-
-	/// <summary>Initial take profit in pips.</summary>
-	public int TakeProfitPips { get => _takeProfitPips.Value; set => _takeProfitPips.Value = value; }
-
-	/// <summary>Profit in pips required to move stop to entry.</summary>
-	public int BreakEvenPips { get => _breakEvenPips.Value; set => _breakEvenPips.Value = value; }
-
-	/// <summary>Step in pips for trailing stop after break-even.</summary>
-	public int TrailingStepPips { get => _trailingStepPips.Value; set => _trailingStepPips.Value = value; }
-
-	/// <summary>Enable or disable trailing stop.</summary>
-	public bool EnableTrailing { get => _enableTrailing.Value; set => _enableTrailing.Value = value; }
-
-	/// <summary>Candle type.</summary>
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
+	public CoensioSwingTraderV06Strategy()
+	{
+		_channelPeriod = Param(nameof(ChannelPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Channel Period", "Period for Donchian Channel", "Indicators");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk");
+
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
+			.SetDisplay("Take Profit %", "Take profit percent", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -98,10 +56,9 @@ public class CoensioSwingTraderV06Strategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_stopPrice = default;
-		_takePrice = default;
-		_entryPrice = default;
-		_breakEvenSet = default;
+		_highs.Clear();
+		_lows.Clear();
+		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />
@@ -109,107 +66,59 @@ public class CoensioSwingTraderV06Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_donchian = new DonchianChannels { Length = ChannelPeriod };
+		StartProtection(
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
+			takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent)
+		);
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.BindEx(_donchian, ProcessCandle)
-		.Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _donchian);
 			DrawOwnTrades(area);
 		}
 	}
 
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
 
-		var dc = (DonchianChannelsValue)donchianValue;
-		if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
-		return;
+		if (_highs.Count > ChannelPeriod)
+			_highs.RemoveAt(0);
+		if (_lows.Count > ChannelPeriod)
+			_lows.RemoveAt(0);
 
-		var step = Security.PriceStep ?? 1m;
-		var threshold = EntryThreshold * step;
+		if (_highs.Count < ChannelPeriod)
+			return;
+
+		var upper = decimal.MinValue;
+		var lower = decimal.MaxValue;
+		for (var i = 0; i < _highs.Count - 1; i++)
+		{
+			if (_highs[i] > upper) upper = _highs[i];
+			if (_lows[i] < lower) lower = _lows[i];
+		}
 
 		var price = candle.ClosePrice;
 
-		if (Position <= 0 && price > upper + threshold)
+		if (price > upper && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 			_entryPrice = price;
-			_stopPrice = price - StopLossPips * step;
-			_takePrice = price + TakeProfitPips * step;
-			_breakEvenSet = false;
 		}
-		else if (Position >= 0 && price < lower - threshold)
+		else if (price < lower && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			if (Position > 0) SellMarket();
+			SellMarket();
 			_entryPrice = price;
-			_stopPrice = price + StopLossPips * step;
-			_takePrice = price - TakeProfitPips * step;
-			_breakEvenSet = false;
-		}
-		else if (Position > 0)
-		{
-			if (!_breakEvenSet && price - _entryPrice >= BreakEvenPips * step)
-			{
-				_stopPrice = _entryPrice;
-				_breakEvenSet = true;
-			}
-
-			if (_breakEvenSet && EnableTrailing)
-			{
-				var newStop = price - TrailingStepPips * step;
-				if (_stopPrice == null || newStop > _stopPrice)
-				_stopPrice = newStop;
-			}
-
-			if (_stopPrice != null && price <= _stopPrice)
-			{
-				SellMarket(Position);
-			}
-			else if (_takePrice != null && price >= _takePrice)
-			{
-				SellMarket(Position);
-			}
-		}
-		else if (Position < 0)
-		{
-			if (!_breakEvenSet && _entryPrice - price >= BreakEvenPips * step)
-			{
-				_stopPrice = _entryPrice;
-				_breakEvenSet = true;
-			}
-
-			if (_breakEvenSet && EnableTrailing)
-			{
-				var newStop = price + TrailingStepPips * step;
-				if (_stopPrice == null || newStop < _stopPrice)
-				_stopPrice = newStop;
-			}
-
-			if (_stopPrice != null && price >= _stopPrice)
-			{
-				BuyMarket(-Position);
-			}
-			else if (_takePrice != null && price <= _takePrice)
-			{
-				BuyMarket(-Position);
-			}
 		}
 	}
 }

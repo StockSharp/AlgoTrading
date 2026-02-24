@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -25,54 +22,37 @@ public class AroonOscillatorSignAlertStrategy : Strategy
 	private readonly StrategyParam<int> _downLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _previousValue;
-	private bool _isInitialized;
+	private decimal? _previousValue;
 
-	/// <summary>
-	/// Period for the Aroon oscillator.
-	/// </summary>
 	public int AroonPeriod
 	{
 		get => _aroonPeriod.Value;
 		set => _aroonPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Threshold generating sell signal when crossed from above.
-	/// </summary>
 	public int UpLevel
 	{
 		get => _upLevel.Value;
 		set => _upLevel.Value = value;
 	}
 
-	/// <summary>
-	/// Threshold generating buy signal when crossed from below.
-	/// </summary>
 	public int DownLevel
 	{
 		get => _downLevel.Value;
 		set => _downLevel.Value = value;
 	}
 
-	/// <summary>
-	/// Type of candles used for calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="AroonOscillatorSignAlertStrategy"/> class.
-	/// </summary>
 	public AroonOscillatorSignAlertStrategy()
 	{
 		_aroonPeriod = Param(nameof(AroonPeriod), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("Aroon Period", "Lookback for Aroon oscillator", "Indicator")
-			;
+			.SetDisplay("Aroon Period", "Lookback for Aroon oscillator", "Indicator");
 
 		_upLevel = Param(nameof(UpLevel), 50)
 			.SetDisplay("Up Level", "Upper threshold for sell signal", "Indicator");
@@ -80,7 +60,7 @@ public class AroonOscillatorSignAlertStrategy : Strategy
 		_downLevel = Param(nameof(DownLevel), -50)
 			.SetDisplay("Down Level", "Lower threshold for buy signal", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for processing", "General");
 	}
 
@@ -91,24 +71,24 @@ public class AroonOscillatorSignAlertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_previousValue = 0m;
-		_isInitialized = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_previousValue = null;
 
 		var aroon = new AroonOscillator { Length = AroonPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(aroon, ProcessCandle).Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, aroon);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal aroonValue)
@@ -119,25 +99,16 @@ public class AroonOscillatorSignAlertStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (!_isInitialized)
+		if (_previousValue is null)
 		{
 			_previousValue = aroonValue;
-			_isInitialized = true;
 			return;
 		}
 
-		// Cross above the down level triggers a long entry
-		if (_previousValue <= DownLevel && aroonValue > DownLevel)
-		{
-			if (Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-		}
-		// Cross below the up level triggers a short entry
-		else if (_previousValue >= UpLevel && aroonValue < UpLevel)
-		{
-			if (Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-		}
+		if (_previousValue <= DownLevel && aroonValue > DownLevel && Position <= 0)
+			BuyMarket();
+		else if (_previousValue >= UpLevel && aroonValue < UpLevel && Position >= 0)
+			SellMarket();
 
 		_previousValue = aroonValue;
 	}

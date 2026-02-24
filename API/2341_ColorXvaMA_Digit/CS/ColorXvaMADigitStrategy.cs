@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -28,73 +25,49 @@ public class ColorXvaMADigitStrategy : Strategy
 
 	private int _previousDirection;
 
-	/// <summary>
-	/// Length of the slow EMA.
-	/// </summary>
 	public int SlowLength
 	{
 		get => _slowLength.Value;
 		set => _slowLength.Value = value;
 	}
 
-	/// <summary>
-	/// Length of the fast JMA.
-	/// </summary>
 	public int FastLength
 	{
 		get => _fastLength.Value;
 		set => _fastLength.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public ColorXvaMADigitStrategy()
 	{
 		_slowLength = Param(nameof(SlowLength), 15)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow Length", "EMA period", "Indicators")
-			
-			.SetOptimize(5, 50, 1);
+			.SetDisplay("Slow Length", "EMA period", "Indicators");
 
 		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast Length", "JMA period", "Indicators")
-			
-			.SetOptimize(2, 20, 1);
+			.SetDisplay("Fast Length", "JMA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_slowMa = null;
-		_fastMa = null;
-		_previousDirection = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		_slowMa = new EMA { Length = SlowLength };
+		base.OnStarted2(time);
+
+		_previousDirection = 0;
+		_slowMa = new ExponentialMovingAverage { Length = SlowLength };
 		_fastMa = new JurikMovingAverage { Length = FastLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -110,10 +83,6 @@ public class ColorXvaMADigitStrategy : Strategy
 			DrawIndicator(area, _fastMa);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
-
-		base.OnStarted2(time);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal slowValue, decimal fastValue)
@@ -121,23 +90,20 @@ public class ColorXvaMADigitStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_slowMa.IsFormed || !_fastMa.IsFormed)
-			return;
-
-		var direction = fastValue > slowValue ? 1 : -1;
-		if (_previousDirection == 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			_previousDirection = direction;
+			_previousDirection = fastValue > slowValue ? 1 : -1;
 			return;
 		}
 
-		if (direction != _previousDirection)
+		var direction = fastValue > slowValue ? 1 : -1;
+
+		if (direction != _previousDirection && _previousDirection != 0)
 		{
-			var volume = Volume + Math.Abs(Position);
 			if (direction > 0 && Position <= 0)
-				BuyMarket(volume);
+				BuyMarket();
 			else if (direction < 0 && Position >= 0)
-				SellMarket(volume);
+				SellMarket();
 		}
 
 		_previousDirection = direction;

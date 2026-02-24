@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,8 +12,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on moving average and standard deviation bands.
-/// The idea is to open positions when price breaks outside a wide band
-/// and close them when price returns inside a narrower band.
+/// Opens positions when price breaks outside a wide band
+/// and closes them when price returns inside a narrower band.
 /// </summary>
 public class CaiStandardDeviationStrategy : Strategy
 {
@@ -26,99 +23,52 @@ public class CaiStandardDeviationStrategy : Strategy
 	private readonly StrategyParam<decimal> _closeMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Moving average length (default: 12).
-	/// </summary>
-	public int MaLength
-	
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
+	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
+	public int StdDevPeriod { get => _stdDevPeriod.Value; set => _stdDevPeriod.Value = value; }
+	public decimal OpenMultiplier { get => _openMultiplier.Value; set => _openMultiplier.Value = value; }
+	public decimal CloseMultiplier { get => _closeMultiplier.Value; set => _closeMultiplier.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Standard deviation period (default: 9).
-	/// </summary>
-	public int StdDevPeriod
-	
-	{
-		get => _stdDevPeriod.Value;
-		set => _stdDevPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier for entry band (default: 2.5).
-	/// </summary>
-	public decimal OpenMultiplier
-	
-	{
-		get => _openMultiplier.Value;
-		set => _openMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier for exit band (default: 1.5).
-	/// </summary>
-	public decimal CloseMultiplier
-	
-	{
-		get => _closeMultiplier.Value;
-		set => _closeMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles used for analysis.
-	/// </summary>
-	public DataType CandleType
-	
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize parameters.
-	/// </summary>
 	public CaiStandardDeviationStrategy()
-	
 	{
 		_maLength = Param(nameof(MaLength), 12)
-		.SetDisplay("MA Length", "Moving average length", "Parameters")
-		
-		.SetOptimize(5, 50, 5);
+			.SetDisplay("MA Length", "Moving average length", "Parameters")
+			.SetOptimize(5, 50, 5);
 
 		_stdDevPeriod = Param(nameof(StdDevPeriod), 9)
-		.SetDisplay("StdDev Period", "Standard deviation period", "Parameters")
-		
-		.SetOptimize(5, 50, 5);
+			.SetDisplay("StdDev Period", "Standard deviation period", "Parameters")
+			.SetOptimize(5, 50, 5);
 
 		_openMultiplier = Param(nameof(OpenMultiplier), 2.5m)
-		.SetDisplay("Open Multiplier", "StdDev multiplier for entries", "Parameters")
-		
-		.SetOptimize(1m, 3m, 0.5m);
+			.SetDisplay("Open Multiplier", "StdDev multiplier for entries", "Parameters")
+			.SetOptimize(1m, 3m, 0.5m);
 
 		_closeMultiplier = Param(nameof(CloseMultiplier), 1.5m)
-		.SetDisplay("Close Multiplier", "StdDev multiplier for exits", "Parameters")
-		
-		.SetOptimize(0.5m, 2m, 0.5m);
+			.SetDisplay("Close Multiplier", "StdDev multiplier for exits", "Parameters")
+			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles used", "Parameters");
+			.SetDisplay("Candle Type", "Type of candles used", "Parameters");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
-	
 	{
 		base.OnStarted2(time);
 
-		var sma = new SMA { Length = MaLength };
+		var sma = new SimpleMovingAverage { Length = MaLength };
 		var stdDev = new StandardDeviation { Length = StdDevPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(sma, stdDev, ProcessCandle)
-		.Start();
+			.Bind(sma, stdDev, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -131,13 +81,12 @@ public class CaiStandardDeviationStrategy : Strategy
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal stdDevValue)
-	
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		var upperOpen = smaValue + OpenMultiplier * stdDevValue;
 		var lowerOpen = smaValue - OpenMultiplier * stdDevValue;
@@ -145,15 +94,15 @@ public class CaiStandardDeviationStrategy : Strategy
 		var lowerClose = smaValue - CloseMultiplier * stdDevValue;
 
 		if (Position <= 0 && candle.ClosePrice > upperOpen)
-		BuyMarket();
+			BuyMarket();
 
 		if (Position >= 0 && candle.ClosePrice < lowerOpen)
-		SellMarket();
+			SellMarket();
 
 		if (Position > 0 && candle.ClosePrice < upperClose)
-		SellMarket();
+			SellMarket();
 
 		if (Position < 0 && candle.ClosePrice > lowerClose)
-		BuyMarket();
+			BuyMarket();
 	}
 }

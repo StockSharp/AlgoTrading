@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -22,83 +19,64 @@ public class DonchianChannelsSystemStrategy : Strategy
 	private readonly StrategyParam<int> _donchianPeriod;
 	private readonly StrategyParam<int> _shift;
 	private readonly StrategyParam<DataType> _candleType;
-	
+
 	private readonly Queue<decimal> _upperBuffer = new();
 	private readonly Queue<decimal> _lowerBuffer = new();
 	private decimal _prevClose;
-	
-	/// <summary>
-	/// Lookback period for Donchian Channel.
-	/// </summary>
+
 	public int DonchianPeriod
 	{
 		get => _donchianPeriod.Value;
 		set => _donchianPeriod.Value = value;
 	}
-	
-	/// <summary>
-	/// Bars offset for breakout evaluation.
-	/// </summary>
+
 	public int Shift
 	{
 		get => _shift.Value;
 		set => _shift.Value = value;
 	}
-	
-	/// <summary>
-	/// Candle timeframe for analysis.
-	/// </summary>
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
-	/// <summary>
-	/// Initialize parameters for the strategy.
-	/// </summary>
+
 	public DonchianChannelsSystemStrategy()
 	{
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
-		.SetDisplay("Donchian Period", "Lookback period for Donchian Channel", "Indicators")
-		
-		.SetOptimize(10, 60, 5);
-		
+			.SetDisplay("Donchian Period", "Lookback period for Donchian Channel", "Indicators")
+			.SetOptimize(10, 60, 5);
+
 		_shift = Param(nameof(Shift), 2)
-		.SetDisplay("Shift", "Bars offset for breakout evaluation", "General");
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Candle timeframe for analysis", "General");
+			.SetDisplay("Shift", "Bars offset for breakout evaluation", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe for analysis", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-	
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_upperBuffer.Clear();
-		_lowerBuffer.Clear();
-		_prevClose = default;
-		
-	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
+
+		_upperBuffer.Clear();
+		_lowerBuffer.Clear();
+		_prevClose = default;
+
 		var donchian = new DonchianChannels { Length = DonchianPeriod };
-		
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(donchian, ProcessCandle)
-		.Start();
-		
+			.BindEx(donchian, ProcessCandle)
+			.Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -107,54 +85,47 @@ public class DonchianChannelsSystemStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 	}
-	
+
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
-		var dc = (DonchianChannelsValue)donchianValue;
-		
+			return;
+
+		if (donchianValue is not IDonchianChannelsValue dc)
+			return;
+
 		if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
-		return;
-		
+			return;
+
 		_upperBuffer.Enqueue(upper);
 		_lowerBuffer.Enqueue(lower);
-		
+
 		if (_upperBuffer.Count > Shift + 1)
 		{
 			_upperBuffer.Dequeue();
 			_lowerBuffer.Dequeue();
 		}
-		
+
 		if (_upperBuffer.Count <= Shift)
 		{
 			_prevClose = candle.ClosePrice;
 			return;
 		}
-		
+
 		var shiftedUpper = _upperBuffer.Peek();
 		var shiftedLower = _lowerBuffer.Peek();
-		
+
 		var upBreak = candle.ClosePrice > shiftedUpper && _prevClose <= shiftedUpper;
 		var dnBreak = candle.ClosePrice < shiftedLower && _prevClose >= shiftedLower;
-		
-		var volume = Volume + Math.Abs(Position);
-		
+
 		if (upBreak && Position <= 0)
-		{
-			BuyMarket(volume);
-			LogInfo($"Buy signal: close {candle.ClosePrice} > shifted upper {shiftedUpper}");
-		}
+			BuyMarket();
 		else if (dnBreak && Position >= 0)
-		{
-			SellMarket(volume);
-			LogInfo($"Sell signal: close {candle.ClosePrice} < shifted lower {shiftedLower}");
-		}
-		
+			SellMarket();
+
 		_prevClose = candle.ClosePrice;
 	}
 }

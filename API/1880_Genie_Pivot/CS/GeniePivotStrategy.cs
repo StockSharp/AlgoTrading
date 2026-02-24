@@ -164,9 +164,6 @@ public class GeniePivotStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var step = Security.PriceStep ?? 1m;
 		var close = candle.ClosePrice;
 		var open = candle.OpenPrice;
@@ -182,7 +179,7 @@ public class GeniePivotStrategy : Strategy
 		_lows[0] = low;
 		_highs[0] = high;
 
-		if (_filled < 7)
+		if (_filled < 4)
 		{
 			_filled++;
 			return;
@@ -190,23 +187,24 @@ public class GeniePivotStrategy : Strategy
 
 		if (Position == 0)
 		{
-			var buyCond = _lows[7] > _lows[6] && _lows[6] > _lows[5] && _lows[5] > _lows[4] && _lows[4] > _lows[3] &&
-						  _lows[3] > _lows[2] && _lows[2] > _lows[1] && _lows[1] < _lows[0] && _highs[1] < close;
+			// Buy when 3 consecutive declining lows followed by a higher low (reversal)
+			var buyCond = _lows[4] > _lows[3] && _lows[3] > _lows[2] && _lows[2] > _lows[1] &&
+						  _lows[1] < _lows[0] && close > _highs[1];
 
-			var sellCond = _highs[7] < _highs[6] && _highs[6] < _highs[5] && _highs[5] < _highs[4] &&
-						   _highs[4] < _highs[3] && _highs[3] < _highs[2] && _highs[2] < _highs[1] &&
-						   _highs[1] > _highs[0] && _lows[1] > close;
+			// Sell when 3 consecutive rising highs followed by a lower high (reversal)
+			var sellCond = _highs[4] < _highs[3] && _highs[3] < _highs[2] && _highs[2] < _highs[1] &&
+						   _highs[1] > _highs[0] && close < _lows[1];
 
 			if (buyCond)
 			{
-				BuyMarket(GetVolume());
+				BuyMarket();
 				_entryPrice = close;
 				_stopPrice = _entryPrice - TrailingStop * step;
 				_targetPrice = _entryPrice + TakeProfit * step;
 			}
 			else if (sellCond)
 			{
-				SellMarket(GetVolume());
+				SellMarket();
 				_entryPrice = close;
 				_stopPrice = _entryPrice + TrailingStop * step;
 				_targetPrice = _entryPrice - TakeProfit * step;
@@ -216,7 +214,7 @@ public class GeniePivotStrategy : Strategy
 		{
 			if (close >= _targetPrice)
 			{
-				ClosePosition();
+				SellMarket();
 				_lossCount = 0;
 			}
 			else
@@ -228,9 +226,9 @@ public class GeniePivotStrategy : Strategy
 						_stopPrice = newStop;
 				}
 
-				if (low <= _stopPrice || open > close)
+				if (low <= _stopPrice)
 				{
-					ClosePosition();
+					SellMarket();
 					_lossCount++;
 				}
 			}
@@ -239,7 +237,7 @@ public class GeniePivotStrategy : Strategy
 		{
 			if (close <= _targetPrice)
 			{
-				ClosePosition();
+				BuyMarket();
 				_lossCount = 0;
 			}
 			else
@@ -251,9 +249,9 @@ public class GeniePivotStrategy : Strategy
 						_stopPrice = newStop;
 				}
 
-				if (high >= _stopPrice || open < close)
+				if (high >= _stopPrice)
 				{
-					ClosePosition();
+					BuyMarket();
 					_lossCount++;
 				}
 			}

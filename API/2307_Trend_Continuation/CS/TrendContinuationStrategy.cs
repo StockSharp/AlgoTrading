@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,77 +12,36 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Trend continuation strategy based on fast and slow EMA cross.
-/// Opens long when the fast EMA crosses above the slow EMA and short when the fast EMA crosses below the slow EMA.
-/// Stop loss and take profit protections are applied at the start.
+/// Opens long when fast EMA crosses above slow EMA, short on opposite.
 /// </summary>
 public class TrendContinuationStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _fast;
-	private ExponentialMovingAverage _slow;
 	private decimal? _prevFast;
 	private decimal? _prevSlow;
 
-	/// <summary>
-	/// Period for the fast EMA.
-	/// </summary>
 	public int Length
 	{
 		get => _length.Value;
 		set => _length.Value = value;
 	}
 
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Protective stop loss in price units.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Profit target in price units.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="TrendContinuationStrategy"/> class.
-	/// </summary>
 	public TrendContinuationStrategy()
 	{
 		_length = Param(nameof(Length), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA Length", "Period for the fast EMA", "Indicators")
-			;
+			.SetDisplay("Fast EMA Length", "Period for the fast EMA", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Protective stop loss in price units", "Risk");
-
-		_takeProfit = Param(nameof(TakeProfit), 2000m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Profit target in price units", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -95,33 +51,26 @@ public class TrendContinuationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevFast = _prevSlow = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(StopLoss, TakeProfit);
+		_prevFast = _prevSlow = null;
 
-		_fast = new EMA { Length = Length };
-		_slow = new EMA { Length = Length * 2 };
+		var fast = new ExponentialMovingAverage { Length = Length };
+		var slow = new ExponentialMovingAverage { Length = Length * 2 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fast, _slow, ProcessCandle)
+			.Bind(fast, slow, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fast);
-			DrawIndicator(area, _slow);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
 	}

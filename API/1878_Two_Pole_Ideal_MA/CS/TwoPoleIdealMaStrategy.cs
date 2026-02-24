@@ -62,7 +62,13 @@ public class TwoPoleIdealMaStrategy : Strategy
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 10).SetDisplay("Fast Period", "Fast MA length", "Indicators");
 		_slowPeriod = Param(nameof(SlowPeriod), 30).SetDisplay("Slow Period", "Slow MA length", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -71,7 +77,7 @@ public class TwoPoleIdealMaStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Initialize indicators.
-		_fastMa = new EMA { Length = FastPeriod };
+		_fastMa = new ExponentialMovingAverage { Length = FastPeriod };
 		_slowMa = new TripleExponentialMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -89,18 +95,20 @@ public class TwoPoleIdealMaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var crossUp = _prevFast <= _prevSlow && fast > slow;
 		var crossDown = _prevFast >= _prevSlow && fast < slow;
 		_prevFast = fast;
 		_prevSlow = slow;
 
-		// Enter long on upward cross, short on downward cross.
 		if (crossUp && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
 		else if (crossDown && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
 	}
 }

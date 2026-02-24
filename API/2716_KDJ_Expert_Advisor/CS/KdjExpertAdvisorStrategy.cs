@@ -117,17 +117,17 @@ public class KdjExpertAdvisorStrategy : Strategy
 			
 			.SetOptimize(1, 15, 1);
 
-		_stopLossPips = Param(nameof(StopLossPips), 25)
+		_stopLossPips = Param(nameof(StopLossPips), 250)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-			
-			.SetOptimize(0, 100, 5);
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 45)
+			.SetOptimize(0, 1000, 50);
+
+		_takeProfitPips = Param(nameof(TakeProfitPips), 450)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
-			
-			.SetOptimize(0, 150, 5);
+
+			.SetOptimize(0, 1500, 50);
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
@@ -167,10 +167,9 @@ public class KdjExpertAdvisorStrategy : Strategy
 			stopLoss: stopLossUnit,
 			useMarketOrders: true);
 
-		var kdj = new Stochastic
+		var kdj = new StochasticOscillator
 		{
-			Length = KdjPeriod,
-			KPeriod = SmoothK,
+			K = { Length = KdjPeriod },
 			D = { Length = SmoothD }
 		};
 
@@ -193,7 +192,7 @@ public class KdjExpertAdvisorStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var stochastic = (StochasticValue)kdjValue;
+		var stochastic = (StochasticOscillatorValue)kdjValue;
 		if (stochastic.K is not decimal k || stochastic.D is not decimal d)
 			return;
 
@@ -216,7 +215,7 @@ public class KdjExpertAdvisorStrategy : Strategy
 
 		if (buySignal || sellSignal)
 		{
-			if (IsFormedAndOnlineAndAllowTrading() && Position == 0)
+			if (Position == 0)
 			{
 				if (buySignal)
 				{

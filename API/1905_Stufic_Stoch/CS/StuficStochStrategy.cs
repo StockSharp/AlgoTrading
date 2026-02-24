@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -29,128 +26,49 @@ public class StuficStochStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private SimpleMovingAverage _fastMa;
+	private SimpleMovingAverage _slowMa;
+
 	private decimal _prevK;
 	private decimal _prevD;
 	private bool _isFirst = true;
 
-	/// <summary>
-	/// Fast moving average period.
-	/// </summary>
-	public int FastMaPeriod
-	{
-		get => _fastMaPeriod.Value;
-		set => _fastMaPeriod.Value = value;
-	}
+	public int FastMaPeriod { get => _fastMaPeriod.Value; set => _fastMaPeriod.Value = value; }
+	public int SlowMaPeriod { get => _slowMaPeriod.Value; set => _slowMaPeriod.Value = value; }
+	public int StochKPeriod { get => _stochKPeriod.Value; set => _stochKPeriod.Value = value; }
+	public int StochDPeriod { get => _stochDPeriod.Value; set => _stochDPeriod.Value = value; }
+	public decimal OverboughtLevel { get => _overboughtLevel.Value; set => _overboughtLevel.Value = value; }
+	public decimal OversoldLevel { get => _oversoldLevel.Value; set => _oversoldLevel.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Slow moving average period.
-	/// </summary>
-	public int SlowMaPeriod
-	{
-		get => _slowMaPeriod.Value;
-		set => _slowMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic %K period.
-	/// </summary>
-	public int StochKPeriod
-	{
-		get => _stochKPeriod.Value;
-		set => _stochKPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic %D period.
-	/// </summary>
-	public int StochDPeriod
-	{
-		get => _stochDPeriod.Value;
-		set => _stochDPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Overbought level for Stochastic.
-	/// </summary>
-	public decimal OverboughtLevel
-	{
-		get => _overboughtLevel.Value;
-		set => _overboughtLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Oversold level for Stochastic.
-	/// </summary>
-	public decimal OversoldLevel
-	{
-		get => _oversoldLevel.Value;
-		set => _oversoldLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public StuficStochStrategy()
 	{
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast MA", "Fast moving average period", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
+			.SetDisplay("Fast MA", "Fast moving average period", "Indicators");
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 30)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow MA", "Slow moving average period", "Indicators")
-			
-			.SetOptimize(20, 60, 10);
+			.SetDisplay("Slow MA", "Slow moving average period", "Indicators");
 
 		_stochKPeriod = Param(nameof(StochKPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Stoch %K", "%K period for Stochastic", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
+			.SetDisplay("Stoch %K", "%K period for Stochastic", "Indicators");
 
-		_stochD = { Length = Param }(nameof(StochDPeriod), 3)
+		_stochDPeriod = Param(nameof(StochDPeriod), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("Stoch %D", "%D period for Stochastic", "Indicators")
-			
-			.SetOptimize(1, 5, 1);
+			.SetDisplay("Stoch %D", "%D period for Stochastic", "Indicators");
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 80m)
-			.SetRange(50, 95)
-			.SetDisplay("Overbought", "Overbought level", "Trading")
-			
-			.SetOptimize(70m, 90m, 5m);
+			.SetDisplay("Overbought", "Overbought level", "Trading");
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 20m)
-			.SetRange(5, 50)
-			.SetDisplay("Oversold", "Oversold level", "Trading")
-			
-			.SetOptimize(10m, 30m, 5m);
+			.SetDisplay("Oversold", "Oversold level", "Trading");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-			
-			.SetOptimize(1m, 5m, 0.5m);
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -163,61 +81,63 @@ public class StuficStochStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevK = 0;
+		_prevD = 0;
+		_isFirst = true;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var fastMa = new SMA { Length = FastMaPeriod };
-		var slowMa = new SMA { Length = SlowMaPeriod };
-		var stochastic = new StochasticOscillator
-		{
-			K = { Length = StochKPeriod },
-			D = { Length = StochDPeriod },
-		};
+		_fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
+		_slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
 
-		// Subscribe to candles
+		var stochastic = new StochasticOscillator();
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(fastMa, slowMa, stochastic, ProcessCandle)
+			.BindEx(stochastic, ProcessCandle)
 			.Start();
 
-		// Enable stop loss protection
 		StartProtection(
-			takeProfit: null,
 			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-			isStopTrailing: false,
-			useMarketOrders: true
+			takeProfit: null
 		);
 
-		// Setup chart if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastMa);
-			DrawIndicator(area, slowMa);
-			var stochArea = CreateChartArea();
-			DrawIndicator(stochArea, stochastic);
+			DrawIndicator(area, _fastMa);
+			DrawIndicator(area, _slowMa);
+			DrawIndicator(area, stochastic);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastValue, IIndicatorValue slowValue, IIndicatorValue stochValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Ensure strategy is ready
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// process MAs manually
+		var fastResult = _fastMa.Process(candle.ClosePrice, candle.OpenTime, true);
+		var slowResult = _slowMa.Process(candle.ClosePrice, candle.OpenTime, true);
+
+		if (!fastResult.IsFormed || !slowResult.IsFormed)
 			return;
 
-		var fast = fastValue.ToDecimal();
-		var slow = slowValue.ToDecimal();
+		var fast = fastResult.ToDecimal();
+		var slow = slowResult.ToDecimal();
+
 		var stoch = (StochasticOscillatorValue)stochValue;
-		var k = stoch.K;
-		var d = stoch.D;
+		if (stoch.K is not decimal k || stoch.D is not decimal d)
+			return;
 
 		if (_isFirst)
 		{
@@ -227,17 +147,17 @@ public class StuficStochStrategy : Strategy
 			return;
 		}
 
-		// Check for bullish signal
+		// Bullish: %K crosses above %D in oversold zone, trend up
 		if (_prevK <= _prevD && k > d && k < OversoldLevel && fast > slow && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		// Check for bearish signal
+		// Bearish: %K crosses below %D in overbought zone, trend down
 		else if (_prevK >= _prevD && k < d && k > OverboughtLevel && fast < slow && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
 		_prevK = k;

@@ -124,14 +124,20 @@ public class AdaptiveRenkoStrategy : Strategy
 		if (diff >= brick)
 		{
 			if (Position <= 0)
-				BuyMarket(Volume);
+			{
+				if (Position < 0) BuyMarket();
+				BuyMarket();
+			}
 
 			_lastBrickPrice = candle.ClosePrice;
 		}
 		else if (diff <= -brick)
 		{
 			if (Position >= 0)
-				SellMarket(Volume);
+			{
+				if (Position > 0) SellMarket();
+				SellMarket();
+			}
 
 			_lastBrickPrice = candle.ClosePrice;
 		}

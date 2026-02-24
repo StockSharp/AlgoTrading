@@ -201,10 +201,9 @@ public class JBrainUltraRsiStrategy : Strategy
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(_rsi, OnRsi)
-		.BindEx(_stochastic, OnStochastic)
-		.Start();
-		
+			.BindEx(_stochastic, ProcessCandle)
+			.Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -214,85 +213,65 @@ public class JBrainUltraRsiStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 	}
-	
-	private void OnRsi(ICandleMessage candle, decimal rsiValue)
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		_currentRsi = rsiValue;
-	}
-	
-	private void OnStochastic(ICandleMessage candle, IIndicatorValue stochValue)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		var stoch = (StochasticOscillatorValue)stochValue;
-		var k = stoch.K;
-		var d = stoch.D;
-		
-		if (_currentRsi is not decimal rsi)
-		{
-			_prevK = k;
-			_prevD = d;
 			return;
-		}
-		
-		ProcessSignals(rsi, k, d);
-		
-		_currentRsi = null;
-	}
-	
-	private void ProcessSignals(decimal rsi, decimal k, decimal d)
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+
+		// process RSI manually
+		var rsiResult = _rsi.Process(candle.ClosePrice, candle.OpenTime, true);
+		if (!rsiResult.IsFormed)
+			return;
+
+		var rsi = rsiResult.ToDecimal();
+
+		var stoch = (StochasticOscillatorValue)stochValue;
+		if (stoch.K is not decimal k || stoch.D is not decimal d)
 		{
 			_prevRsi = rsi;
-			_prevK = k;
-			_prevD = d;
 			return;
 		}
-		
+
 		var rsiUp = _prevRsi is decimal pr && pr <= 50m && rsi > 50m;
 		var rsiDown = _prevRsi is decimal pr2 && pr2 >= 50m && rsi < 50m;
 		var stochUp = _prevK is decimal pk && _prevD is decimal pd && pk <= pd && k > d;
 		var stochDown = _prevK is decimal pk2 && _prevD is decimal pd2 && pk2 >= pd2 && k < d;
-		
+
 		var buySignal = false;
 		var sellSignal = false;
-		
+
 		switch (Mode)
 		{
 			case AlgorithmModes.JBrainSig1Filter:
-			buySignal = rsiUp && k > d;
-			sellSignal = rsiDown && k < d;
-			break;
+				buySignal = rsiUp && k > d;
+				sellSignal = rsiDown && k < d;
+				break;
 			case AlgorithmModes.UltraRsiFilter:
-			buySignal = stochUp && rsi > 50m;
-			sellSignal = stochDown && rsi < 50m;
-			break;
+				buySignal = stochUp && rsi > 50m;
+				sellSignal = stochDown && rsi < 50m;
+				break;
 			case AlgorithmModes.Composition:
-			buySignal = rsiUp && stochUp;
-			sellSignal = rsiDown && stochDown;
-			break;
+				buySignal = rsiUp && stochUp;
+				sellSignal = rsiDown && stochDown;
+				break;
 		}
-		
+
 		if (buySignal)
 		{
 			if (Position < 0 && AllowShortExit)
-			BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			if (AllowLongEntry && Position <= 0)
-			BuyMarket(Volume);
+				BuyMarket();
 		}
 		else if (sellSignal)
 		{
 			if (Position > 0 && AllowLongExit)
-			SellMarket(Position);
+				SellMarket();
 			if (AllowShortEntry && Position >= 0)
-			SellMarket(Volume);
+				SellMarket();
 		}
-		
+
 		_prevRsi = rsi;
 		_prevK = k;
 		_prevD = d;

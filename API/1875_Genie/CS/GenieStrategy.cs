@@ -117,8 +117,6 @@ public class GenieStrategy : Strategy
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
 
 			var adxTyped = (AverageDirectionalIndexValue)adxValue;
 
@@ -159,11 +157,13 @@ public class GenieStrategy : Strategy
 
 				if (sellCondition)
 				{
-					SellMarket(Volume + Math.Abs(Position));
+					if (Position > 0) SellMarket();
+					SellMarket();
 				}
 				else if (buyCondition)
 				{
-					BuyMarket(Volume + Math.Abs(Position));
+					if (Position < 0) BuyMarket();
+					BuyMarket();
 				}
 			}
 			else
@@ -172,11 +172,11 @@ public class GenieStrategy : Strategy
 				{
 					if (Position > 0 && prevCandle.OpenPrice > prevCandle.ClosePrice)
 					{
-						SellMarket(Math.Abs(Position));
+						SellMarket();
 					}
 					else if (Position < 0 && prevCandle.OpenPrice < prevCandle.ClosePrice)
 					{
-						BuyMarket(Math.Abs(Position));
+						BuyMarket();
 					}
 				}
 			}

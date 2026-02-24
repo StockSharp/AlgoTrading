@@ -1,131 +1,116 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Volume Weighted MA Candle strategy.
-/// Opens long when VWMA candle changes from bullish to neutral or bearish.
-/// Opens short when VWMA candle changes from bearish to neutral or bullish.
+/// Uses VWMA slope direction combined with candle direction for signals.
+/// Buys when VWMA turns up and candle is bullish, sells on opposite.
 /// </summary>
 public class VolumeWeightedMaCandleStrategy : Strategy
 {
-private readonly StrategyParam<int> _vwmaPeriod;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _vwmaPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-private VolumeWeightedMovingAverage _openVwma = null!;
-private VolumeWeightedMovingAverage _closeVwma = null!;
+	private decimal? _prevVwma;
+	private decimal? _prevColor;
 
-private decimal? _previousColor;
+	public int VwmaPeriod
+	{
+		get => _vwmaPeriod.Value;
+		set => _vwmaPeriod.Value = value;
+	}
 
-/// <summary>
-/// Period for VWMA calculation.
-/// </summary>
-public int VwmaPeriod
-{
-get => _vwmaPeriod.Value;
-set => _vwmaPeriod.Value = value;
-}
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
-/// <summary>
-/// Candle type for strategy calculation.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+	public VolumeWeightedMaCandleStrategy()
+	{
+		_vwmaPeriod = Param(nameof(VwmaPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("VWMA Period", "Period for volume weighted moving average", "Parameters")
+			.SetOptimize(5, 30, 5);
 
-/// <summary>
-/// Initialize <see cref="VolumeWeightedMaCandleStrategy"/>.
-/// </summary>
-public VolumeWeightedMaCandleStrategy()
-{
-_vwmaPeriod = Param(nameof(VwmaPeriod), 12)
-.SetGreaterThanZero()
-.SetDisplay("VWMA Period", "Period for volume weighted moving averages", "Parameters")
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles for calculations", "Parameters");
+	}
 
-.SetOptimize(5, 30, 5);
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles for calculations", "Parameters");
-}
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+		_prevVwma = null;
+		_prevColor = null;
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+		var vwma = new VolumeWeightedMovingAverage { Length = VwmaPeriod };
 
-_openVwma = new VolumeWeightedMovingAverage
-{
-Length = VwmaPeriod
-};
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.BindEx(vwma, ProcessCandle)
+			.Start();
 
-_closeVwma = new VolumeWeightedMovingAverage
-{
-Length = VwmaPeriod
-};
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, vwma);
+			DrawOwnTrades(area);
+		}
+	}
 
-var subscription = SubscribeCandles(CandleType);
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue vwmaVal)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-subscription
-.Bind(_openVwma, _closeVwma, ProcessCandle)
-.Start();
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-StartProtection(
-takeProfit: new Unit(2, UnitTypes.Percent),
-stopLoss: new Unit(1, UnitTypes.Percent)
-);
+		var vwmaValue = vwmaVal.GetValue<decimal>();
 
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, _openVwma);
-DrawIndicator(area, _closeVwma);
-DrawOwnTrades(area);
-}
-}
+		// Color: 2 = bullish (price above VWMA rising), 0 = bearish, 1 = neutral
+		var priceAbove = candle.ClosePrice > vwmaValue;
+		var priceBelow = candle.ClosePrice < vwmaValue;
+		var rising = _prevVwma != null && vwmaValue > _prevVwma.Value;
+		var falling = _prevVwma != null && vwmaValue < _prevVwma.Value;
 
-private void ProcessCandle(ICandleMessage candle, decimal openVwma, decimal closeVwma)
-{
-if (candle.State != CandleStates.Finished)
-return;
+		decimal currentColor;
+		if (priceAbove && rising)
+			currentColor = 2m;
+		else if (priceBelow && falling)
+			currentColor = 0m;
+		else
+			currentColor = 1m;
 
-var currentColor = openVwma < closeVwma ? 2m : openVwma > closeVwma ? 0m : 1m;
+		if (_prevColor is decimal prevColor)
+		{
+			// Transition from bullish to not-bullish -> sell
+			if (prevColor == 2m && currentColor < 2m && Position >= 0)
+				SellMarket();
+			// Transition from bearish to not-bearish -> buy
+			else if (prevColor == 0m && currentColor > 0m && Position <= 0)
+				BuyMarket();
+		}
 
-if (_previousColor is decimal prevColor)
-{
-if (prevColor == 2m && currentColor < 2m && Position <= 0)
-{
-var volume = Volume + Math.Abs(Position);
-BuyMarket(volume);
-}
-else if (prevColor == 0m && currentColor > 0m && Position >= 0)
-{
-var volume = Volume + Math.Abs(Position);
-SellMarket(volume);
-}
-}
-
-_previousColor = currentColor;
-}
+		_prevColor = currentColor;
+		_prevVwma = vwmaValue;
+	}
 }

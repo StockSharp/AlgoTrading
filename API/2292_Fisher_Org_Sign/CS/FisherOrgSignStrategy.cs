@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -26,62 +23,46 @@ public class FisherOrgSignStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private EhlersFisherTransform _fisher;
-	private decimal _prevFisher;
+	private decimal? _prevFisher;
 
-	/// <summary>
-	/// Fisher transform period length.
-	/// </summary>
 	public int Length
 	{
 		get => _length.Value;
 		set => _length.Value = value;
 	}
 
-	/// <summary>
-	/// Upper level used to generate sell signals.
-	/// </summary>
 	public decimal UpLevel
 	{
 		get => _upLevel.Value;
 		set => _upLevel.Value = value;
 	}
 
-	/// <summary>
-	/// Lower level used to generate buy signals.
-	/// </summary>
 	public decimal DownLevel
 	{
 		get => _downLevel.Value;
 		set => _downLevel.Value = value;
 	}
 
-	/// <summary>
-	/// Type of candles for indicator calculation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="FisherOrgSignStrategy"/>.
-	/// </summary>
 	public FisherOrgSignStrategy()
 	{
 		_length = Param(nameof(Length), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Fisher Length", "Period for Fisher Transform", "General")
-			
 			.SetOptimize(5, 20, 1);
 
-		_upLevel = Param(nameof(UpLevel), 1.5m)
+		_upLevel = Param(nameof(UpLevel), 0.1m)
 			.SetDisplay("Upper Level", "Sell signal level", "General");
 
-		_downLevel = Param(nameof(DownLevel), -1.5m)
+		_downLevel = Param(nameof(DownLevel), -0.1m)
 			.SetDisplay("Lower Level", "Buy signal level", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -92,18 +73,11 @@ public class FisherOrgSignStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevFisher = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		_prevFisher = null;
 
 		_fisher = new EhlersFisherTransform
 		{
@@ -111,7 +85,7 @@ public class FisherOrgSignStrategy : Strategy
 		};
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_fisher, ProcessCandle).Start();
+		subscription.BindEx(_fisher, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -122,32 +96,31 @@ public class FisherOrgSignStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fisherValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fisherVal)
 	{
-		if (candle.State != CandleStates.Finished || !_fisher.IsFormed)
+		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		if (fisherVal is not IEhlersFisherTransformValue typed || typed.MainLine is not decimal fisherValue)
+			return;
+
+		if (_prevFisher is null)
+		{
+			_prevFisher = fisherValue;
+			return;
+		}
+
 		var longCondition = _prevFisher <= DownLevel && fisherValue > DownLevel;
 		var shortCondition = _prevFisher >= UpLevel && fisherValue < UpLevel;
 
 		if (longCondition && Position <= 0)
-		{
-			var volume = Volume;
-			if (Position < 0)
-				volume *= 2;
-			BuyMarket(volume);
-		}
+			BuyMarket();
 
 		if (shortCondition && Position >= 0)
-		{
-			var volume = Volume;
-			if (Position > 0)
-				volume *= 2;
-			SellMarket(volume);
-		}
+			SellMarket();
 
 		_prevFisher = fisherValue;
 	}

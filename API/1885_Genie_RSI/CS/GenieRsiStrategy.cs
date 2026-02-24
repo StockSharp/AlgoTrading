@@ -76,7 +76,7 @@ public class GenieRsiStrategy : Strategy
 			;
 
 		_trailingStop = Param(nameof(TrailingStop), 200m)
-			.SetGreaterThanOrEqualsZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in price units", "Risk Management");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 15)
@@ -85,7 +85,7 @@ public class GenieRsiStrategy : Strategy
 			
 			.SetOptimize(5, 30, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -109,7 +109,7 @@ public class GenieRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var rsi = new RSI { Length = RsiPeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -140,14 +140,14 @@ public class GenieRsiStrategy : Strategy
 		{
 			if (rsi > 80)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				_entryPrice = price;
 				_trailingLevel = price + TrailingStop;
 				_isLong = false;
 			}
 			else if (rsi < 20)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				_entryPrice = price;
 				_trailingLevel = price - TrailingStop;
 				_isLong = true;
@@ -166,7 +166,7 @@ public class GenieRsiStrategy : Strategy
 					_trailingLevel = newLevel;
 				if (price <= _trailingLevel)
 				{
-					SellMarket(Position);
+					SellMarket();
 					_entryPrice = 0m;
 					return;
 				}
@@ -175,7 +175,7 @@ public class GenieRsiStrategy : Strategy
 			// Take profit for long position
 			if (TakeProfit > 0 && price - _entryPrice >= TakeProfit)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_entryPrice = 0m;
 				return;
 			}
@@ -183,7 +183,7 @@ public class GenieRsiStrategy : Strategy
 			// Exit if RSI indicates overbought
 			if (rsi > 80)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_entryPrice = 0m;
 			}
 		}
@@ -197,7 +197,7 @@ public class GenieRsiStrategy : Strategy
 					_trailingLevel = newLevel;
 				if (price >= _trailingLevel)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					_entryPrice = 0m;
 					return;
 				}
@@ -206,7 +206,7 @@ public class GenieRsiStrategy : Strategy
 			// Take profit for short position
 			if (TakeProfit > 0 && _entryPrice - price >= TakeProfit)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_entryPrice = 0m;
 				return;
 			}
@@ -214,7 +214,7 @@ public class GenieRsiStrategy : Strategy
 			// Exit if RSI indicates oversold
 			if (rsi < 20)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_entryPrice = 0m;
 			}
 		}

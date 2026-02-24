@@ -200,9 +200,6 @@ public class Twenty200ExpertStrategy : Strategy
 		if (_opens.Count > maxShift)
 			_opens.Dequeue();
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var priceStep = Security.PriceStep ?? 1m;
 
 		if (Position > 0)
@@ -212,7 +209,7 @@ public class Twenty200ExpertStrategy : Strategy
 			var timedOut = MaxOpenTime > 0 && (candle.OpenTime - _entryTime).TotalHours >= MaxOpenTime;
 			if (candle.HighPrice >= tp || candle.LowPrice <= sl || timedOut)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_entryPrice = 0m;
 				_entryTime = default;
 			}
@@ -224,7 +221,7 @@ public class Twenty200ExpertStrategy : Strategy
 			var timedOut = MaxOpenTime > 0 && (candle.OpenTime - _entryTime).TotalHours >= MaxOpenTime;
 			if (candle.LowPrice <= tp || candle.HighPrice >= sl || timedOut)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_entryPrice = 0m;
 				_entryTime = default;
 			}
@@ -237,8 +234,8 @@ public class Twenty200ExpertStrategy : Strategy
 			return;
 
 		var arr = _opens.ToArray();
-		var openShift1 = arr[^1 - Shift1];
-		var openShift2 = arr[^1 - Shift2];
+		var openShift1 = arr[arr.Length - 1 - Shift1];
+		var openShift2 = arr[arr.Length - 1 - Shift2];
 
 		var diffLong = openShift2 - openShift1;
 		var diffShort = openShift1 - openShift2;
@@ -250,13 +247,13 @@ public class Twenty200ExpertStrategy : Strategy
 
 		if (diffLong > thLong && diffShort <= thShort)
 		{
-			BuyMarket(OrderVolume);
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
 			_entryTime = candle.OpenTime;
 		}
 		else if (diffShort > thShort && diffLong <= thLong)
 		{
-			SellMarket(OrderVolume);
+			SellMarket();
 			_entryPrice = candle.ClosePrice;
 			_entryTime = candle.OpenTime;
 		}

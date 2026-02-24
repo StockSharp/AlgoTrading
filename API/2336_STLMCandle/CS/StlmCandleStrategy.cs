@@ -55,7 +55,7 @@ public class StlmCandleStrategy : Strategy
 	/// </summary>
 	public StlmCandleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
@@ -78,13 +78,11 @@ public class StlmCandleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
+		var sma = new SimpleMovingAverage { Length = 1 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -95,7 +93,7 @@ public class StlmCandleStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal _unused)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -106,12 +104,12 @@ public class StlmCandleStrategy : Strategy
 		if (candle.ClosePrice > candle.OpenPrice)
 		{
 			if (Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 		}
 		else if (candle.ClosePrice < candle.OpenPrice)
 		{
 			if (Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 		}
 	}
 }

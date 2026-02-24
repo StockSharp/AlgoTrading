@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -14,67 +10,40 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that alternates buy and sell orders at fixed time intervals.
-/// Each position is protected with stop-loss and take-profit.
+/// Strategy that alternates buy and sell orders on each candle close.
+/// Each position is protected with stop-loss and take-profit via manual tracking.
 /// </summary>
 public class TimerTradeStrategy : Strategy
 {
-	private readonly StrategyParam<TimeSpan> _timerInterval;
-	private readonly StrategyParam<decimal> _stopLossLevel;
-	private readonly StrategyParam<decimal> _takeProfitLevel;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<DataType> _candleType;
 
 	private bool _isBuyNext = true;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Interval between timer events.
-	/// </summary>
-	public TimeSpan TimerInterval
-	{
-		get => _timerInterval.Value;
-		set => _timerInterval.Value = value;
-	}
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-
-	/// <summary>
-	/// Stop loss distance in points.
-	/// </summary>
-	public decimal StopLossLevel
-	{
-		get => _stopLossLevel.Value;
-		set => _stopLossLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance in points.
-	/// </summary>
-	public decimal TakeProfitLevel
-	{
-		get => _takeProfitLevel.Value;
-		set => _takeProfitLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="TimerTradeStrategy"/>.
-	/// </summary>
 	public TimerTradeStrategy()
 	{
-		_timerInterval = Param(nameof(TimerInterval), TimeSpan.FromSeconds(30))
-			.SetDisplay("Timer Interval", "Interval between trades", "General");
-
-
-		_stopLossLevel = Param(nameof(StopLossLevel), 10m)
-			.SetDisplay("Stop Loss Level", "Stop loss in points", "Risk")
+		_stopLoss = Param(nameof(StopLoss), 300m)
+			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
 			.SetGreaterThanZero();
 
-		_takeProfitLevel = Param(nameof(TakeProfitLevel), 50m)
-			.SetDisplay("Take Profit Level", "Take profit in points", "Risk")
+		_takeProfit = Param(nameof(TakeProfit), 200m)
+			.SetDisplay("Take Profit", "Take profit in price units", "Risk")
 			.SetGreaterThanZero();
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, null)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -82,23 +51,59 @@ public class TimerTradeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(
-			takeProfit: new Unit(TakeProfitLevel, UnitTypes.Step),
-			stopLoss: new Unit(StopLossLevel, UnitTypes.Step));
+		_isBuyNext = true;
+		_entryPrice = 0;
 
-		Timer.Start(TimerInterval, ProcessTimer);
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessTimer()
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_isBuyNext)
-			BuyMarket(Volume);
-		else
-			SellMarket(Volume);
+		var price = candle.ClosePrice;
 
-		_isBuyNext = !_isBuyNext;
+		// Check SL/TP for existing position
+		if (Position > 0)
+		{
+			if (candle.LowPrice <= _entryPrice - StopLoss || candle.HighPrice >= _entryPrice + TakeProfit)
+			{
+				SellMarket();
+				_isBuyNext = !_isBuyNext;
+				return;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (candle.HighPrice >= _entryPrice + StopLoss || candle.LowPrice <= _entryPrice - TakeProfit)
+			{
+				BuyMarket();
+				_isBuyNext = !_isBuyNext;
+				return;
+			}
+		}
+
+		// Open new position when flat
+		if (Position == 0)
+		{
+			if (_isBuyNext)
+				BuyMarket();
+			else
+				SellMarket();
+
+			_entryPrice = price;
+			_isBuyNext = !_isBuyNext;
+		}
 	}
 }

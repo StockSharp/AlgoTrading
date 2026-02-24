@@ -34,6 +34,8 @@ public class LiquidexKeltnerStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevPrice;
+	private SimpleMovingAverage _ma;
+	private RelativeStrengthIndex _rsi;
 
 	/// <summary>
 	/// Moving average period.
@@ -109,7 +111,7 @@ public class LiquidexKeltnerStrategy : Strategy
 			.SetRange(1, 100)
 			.SetDisplay("MA Period", "Moving average period", "General");
 
-		_rangeFilter = Param(nameof(RangeFilter), 10m)
+		_rangeFilter = Param(nameof(RangeFilter), 0m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Range Filter", "Minimum candle body", "General");
 
@@ -174,7 +176,7 @@ public class LiquidexKeltnerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ma = new MovingAverage
+		_ma = new SimpleMovingAverage
 		{
 			Length = MaPeriod,
 		};
@@ -185,14 +187,14 @@ public class LiquidexKeltnerStrategy : Strategy
 			Multiplier = KeltnerMultiplier,
 		};
 
-		var rsi = new RelativeStrengthIndex
+		_rsi = new RelativeStrengthIndex
 		{
 			Length = RsiPeriod,
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(ma, keltner, rsi, ProcessCandle)
+			.BindEx(keltner, ProcessCandle)
 			.Start();
 
 		StartProtection(
@@ -204,73 +206,85 @@ public class LiquidexKeltnerStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ma);
+			DrawIndicator(area, _ma);
 			if (UseKeltnerFilter)
 				DrawIndicator(area, keltner);
 			if (UseRsiFilter)
-				DrawIndicator(area, rsi);
+				DrawIndicator(area, _rsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue keltnerValue, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue keltnerValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var price = candle.ClosePrice;
 		var time = candle.CloseTime;
+
+		// process MA and RSI manually
+		var maResult = _ma.Process(price, candle.OpenTime, true);
+		var rsiResult = _rsi.Process(price, candle.OpenTime, true);
 
 		if (!IsTradingTime(time))
 		{
-			_prevPrice = candle.ClosePrice;
+			_prevPrice = price;
 			return;
 		}
 
 		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
 		if (body < RangeFilter)
 		{
-			_prevPrice = candle.ClosePrice;
+			_prevPrice = price;
 			return;
 		}
 
-		var ma = maValue.GetValue<decimal>();
-		var price = candle.ClosePrice;
+		if (!maResult.IsFinal || !maResult.IsFormed)
+		{
+			_prevPrice = price;
+			return;
+		}
+
+		var ma = maResult.ToDecimal();
+
+		var rsiVal = rsiResult.IsFormed ? rsiResult.ToDecimal() : 50m;
 
 		if (UseKeltnerFilter)
 		{
 			var kc = (KeltnerChannelsValue)keltnerValue;
 
-			if (kc.UpBand is not decimal upper || kc.LowBand is not decimal lower)
+			if (kc.Upper is not decimal upper || kc.Lower is not decimal lower)
 			{
 				_prevPrice = price;
 				return;
 			}
 
-			var crossAbove = _prevPrice <= upper && price > upper;
-			var crossBelow = _prevPrice >= lower && price < lower;
+			var crossAbove = _prevPrice > 0 && _prevPrice <= upper && price > upper;
+			var crossBelow = _prevPrice > 0 && _prevPrice >= lower && price < lower;
 
-			if (crossAbove && price > ma && (!UseRsiFilter || rsiValue.GetValue<decimal>() > 50m) && Position <= 0)
+			if (crossAbove && price > ma && (!UseRsiFilter || rsiVal > 50m) && Position <= 0)
 			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
+				if (Position < 0) BuyMarket();
+				BuyMarket();
 			}
-			else if (crossBelow && price < ma && (!UseRsiFilter || rsiValue.GetValue<decimal>() < 50m) && Position >= 0)
+			else if (crossBelow && price < ma && (!UseRsiFilter || rsiVal < 50m) && Position >= 0)
 			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
+				if (Position > 0) SellMarket();
+				SellMarket();
 			}
 		}
 		else
 		{
-			if (price > ma && (!UseRsiFilter || rsiValue.GetValue<decimal>() > 50m) && Position <= 0)
+			if (price > ma && (!UseRsiFilter || rsiVal > 50m) && Position <= 0)
 			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
+				if (Position < 0) BuyMarket();
+				BuyMarket();
 			}
-			else if (price < ma && (!UseRsiFilter || rsiValue.GetValue<decimal>() < 50m) && Position >= 0)
+			else if (price < ma && (!UseRsiFilter || rsiVal < 50m) && Position >= 0)
 			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
+				if (Position > 0) SellMarket();
+				SellMarket();
 			}
 		}
 

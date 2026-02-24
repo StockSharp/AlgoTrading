@@ -69,7 +69,7 @@ public class CoeffofLineTrueStrategy : Strategy
 	/// </summary>
 	public CoeffofLineTrueStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
 		_slopePeriod = Param(nameof(SlopePeriod), 5)
@@ -91,6 +91,12 @@ public class CoeffofLineTrueStrategy : Strategy
 
 		_sellClose = Param(nameof(SellPosClose), true)
 			.SetDisplay("Sell Close", "Allow closing short positions", "Trading");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -130,23 +136,23 @@ public class CoeffofLineTrueStrategy : Strategy
 		var sellClose = SellPosClose && prev2 <= 0m && prev > 0m;
 
 		if (buyClose && Position > 0)
-		SellMarket(Position);
+			SellMarket();
 
 		if (sellClose && Position < 0)
-		BuyMarket(-Position);
+			BuyMarket();
 
 		if (buyOpen)
 		{
-		if (Position < 0)
-		BuyMarket(-Position);
-		BuyMarket();
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
 
 		if (sellOpen)
 		{
-		if (Position > 0)
-		SellMarket(Position);
-		SellMarket();
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 	}
 }

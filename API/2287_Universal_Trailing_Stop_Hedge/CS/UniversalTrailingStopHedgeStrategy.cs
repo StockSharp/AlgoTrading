@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,133 +11,29 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that demonstrates multiple trailing stop techniques including ATR,
-/// Parabolic SAR, moving average, percentage profit and fixed pips.
-/// A simple entry based on candle direction is used only for demonstration.
+/// ATR-based trailing stop strategy.
+/// Enters on candle direction, trails stop using ATR distance.
 /// </summary>
 public class UniversalTrailingStopHedgeStrategy : Strategy
 {
-	/// <summary>
-	/// Supported trailing stop modes.
-	/// </summary>
-	public enum TrailingModes
-	{
-		/// <summary>
-		/// Fixed distance in pips.
-		/// </summary>
-		Pips,
-
-		/// <summary>
-		/// ATR-based trailing stop.
-		/// </summary>
-		Atr,
-
-		/// <summary>
-		/// Parabolic SAR based trailing stop.
-		/// </summary>
-		ParabolicSar,
-
-		/// <summary>
-		/// Moving average based trailing stop.
-		/// </summary>
-		MovingAverage,
-
-		/// <summary>
-		/// Percentage of profit trailing stop.
-		/// </summary>
-		Percent
-	}
-	private readonly StrategyParam<TrailingModes> _mode;
-	private readonly StrategyParam<int> _delta;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<decimal> _sarStep;
-	private readonly StrategyParam<decimal> _sarMax;
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<decimal> _percentProfit;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
 	private decimal _trailingStop;
 
-	/// <summary>
-	/// Trailing stop calculation mode.
-	/// </summary>
-	public TrailingModes Mode { get => _mode.Value; set => _mode.Value = value; }
-
-	/// <summary>
-	/// Offset in ticks for pips, MA and Parabolic SAR modes.
-	/// </summary>
-	public int Delta { get => _delta.Value; set => _delta.Value = value; }
-
-	/// <summary>
-	/// ATR calculation period.
-	/// </summary>
 	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
-
-	/// <summary>
-	/// Multiplier for ATR value.
-	/// </summary>
 	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
-
-	/// <summary>
-	/// Parabolic SAR acceleration step.
-	/// </summary>
-	public decimal SarStep { get => _sarStep.Value; set => _sarStep.Value = value; }
-
-	/// <summary>
-	/// Parabolic SAR maximum acceleration.
-	/// </summary>
-	public decimal SarMax { get => _sarMax.Value; set => _sarMax.Value = value; }
-
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
-
-	/// <summary>
-	/// Percentage of profit kept as trailing stop.
-	/// </summary>
-	public decimal PercentProfit { get => _percentProfit.Value; set => _percentProfit.Value = value; }
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="UniversalTrailingStopHedgeStrategy"/>.
-	/// </summary>
 	public UniversalTrailingStopHedgeStrategy()
 	{
-		_mode = Param(nameof(Mode), TrailingModes.Atr)
-			.SetDisplay("Trailing Mode", "Algorithm to move stop loss", "General");
-
-		_delta = Param(nameof(Delta), 10)
-			.SetDisplay("Delta", "Offset in ticks", "Risk");
-
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetDisplay("ATR Period", "ATR calculation period", "Indicators")
-			;
+			.SetDisplay("ATR Period", "ATR calculation period", "Indicators");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop distance", "Indicators")
-			.SetGreaterThanZero();
-
-		_sarStep = Param(nameof(SarStep), 0.02m)
-			.SetDisplay("SAR Step", "Parabolic SAR acceleration", "Indicators")
-			.SetGreaterThanZero();
-
-		_sarMax = Param(nameof(SarMax), 0.2m)
-			.SetDisplay("SAR Maximum", "Parabolic SAR maximum acceleration", "Indicators")
-			.SetGreaterThanZero();
-
-		_maPeriod = Param(nameof(MaPeriod), 34)
-			.SetDisplay("MA Period", "Moving average period", "Indicators")
-			;
-
-		_percentProfit = Param(nameof(PercentProfit), 50m)
-			.SetDisplay("Percent Profit", "Percent of profit to trail", "Risk")
 			.SetGreaterThanZero();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -154,151 +47,52 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_entryPrice = 0;
-		_trailingStop = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
+
+		_entryPrice = 0;
+		_trailingStop = 0;
+
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		switch (Mode)
-		{
-			case TrailingModes.Atr:
-				var atr = new AverageTrueRange { Length = AtrPeriod };
-				subscription.Bind(atr, ProcessAtr).Start();
-				break;
-			case TrailingModes.ParabolicSar:
-				var sar = new ParabolicSar { Acceleration = SarStep, AccelerationMax = SarMax };
-				subscription.Bind(sar, ProcessParabolic).Start();
-				break;
-			case TrailingModes.MovingAverage:
-				var ma = new SMA { Length = MaPeriod };
-				subscription.Bind(ma, ProcessMa).Start();
-				break;
-			case TrailingModes.Percent:
-				subscription.Bind(ProcessPercent).Start();
-				break;
-			default:
-				subscription.Bind(ProcessPips).Start();
-				break;
-		}
+		subscription.Bind(atr, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private bool CheckCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal atr)
 	{
-		return candle.State == CandleStates.Finished && IsFormedAndOnlineAndAllowTrading();
-	}
-
-	private void EnterOnCandle(ICandleMessage candle)
-	{
-		if (candle.ClosePrice > candle.OpenPrice)
-		{
-			BuyMarket(Volume);
-			_entryPrice = candle.ClosePrice;
-		}
-		else if (candle.ClosePrice < candle.OpenPrice)
-		{
-			SellMarket(Volume);
-			_entryPrice = candle.ClosePrice;
-		}
-	}
-
-	private decimal TickSize => Security?.PriceStep ?? 1m;
-
-	private void ProcessPips(ICandleMessage candle)
-	{
-		if (!CheckCandle(candle))
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		var distance = Delta * TickSize;
-		ApplyTrailingByDistance(candle, distance);
-	}
-
-	private void ProcessAtr(ICandleMessage candle, decimal atr)
-	{
-		if (!CheckCandle(candle))
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var distance = atr * AtrMultiplier;
-		ApplyTrailingByDistance(candle, distance);
-	}
-
-	private void ProcessParabolic(ICandleMessage candle, decimal sar)
-	{
-		if (!CheckCandle(candle))
-			return;
-
-		var offset = Delta * TickSize;
-		ApplyTrailingByLevel(candle, sar - offset, sar + offset);
-	}
-
-	private void ProcessMa(ICandleMessage candle, decimal ma)
-	{
-		if (!CheckCandle(candle))
-			return;
-
-		var offset = Delta * TickSize;
-		ApplyTrailingByLevel(candle, ma - offset, ma + offset);
-	}
-
-	private void ProcessPercent(ICandleMessage candle)
-	{
-		if (!CheckCandle(candle))
-			return;
 
 		if (Position == 0)
 		{
-			EnterOnCandle(candle);
-			return;
-		}
-
-		if (Position > 0)
-		{
-			var stop = _entryPrice + (candle.ClosePrice - _entryPrice) * PercentProfit / 100m;
-			if (stop > _trailingStop)
-				_trailingStop = stop;
-			if (candle.LowPrice <= _trailingStop)
+			// Enter based on candle direction
+			if (candle.ClosePrice > candle.OpenPrice)
 			{
-				SellMarket(Position);
-				_trailingStop = 0;
-			}
-		}
-		else if (Position < 0)
-		{
-			var stop = _entryPrice - (_entryPrice - candle.ClosePrice) * PercentProfit / 100m;
-			if (_trailingStop == 0 || stop < _trailingStop)
-				_trailingStop = stop;
-			if (candle.HighPrice >= _trailingStop)
-			{
-				BuyMarket(Math.Abs(Position));
-				_trailingStop = 0;
-			}
-		}
-	}
-
-	private void ApplyTrailingByDistance(ICandleMessage candle, decimal distance)
-	{
-		if (Position == 0)
-		{
-			EnterOnCandle(candle);
-			if (Position > 0)
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
 				_trailingStop = candle.ClosePrice - distance;
-			else if (Position < 0)
+			}
+			else if (candle.ClosePrice < candle.OpenPrice)
+			{
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
 				_trailingStop = candle.ClosePrice + distance;
+			}
 			return;
 		}
 
@@ -309,52 +103,18 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 				_trailingStop = newStop;
 			if (candle.LowPrice <= _trailingStop)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_trailingStop = 0;
 			}
 		}
-		else
+		else if (Position < 0)
 		{
 			var newStop = candle.ClosePrice + distance;
-			if (_trailingStop == 0 || newStop < _trailingStop)
+			if (newStop < _trailingStop || _trailingStop == 0)
 				_trailingStop = newStop;
 			if (candle.HighPrice >= _trailingStop)
 			{
-				BuyMarket(Math.Abs(Position));
-				_trailingStop = 0;
-			}
-		}
-	}
-
-	private void ApplyTrailingByLevel(ICandleMessage candle, decimal levelLong, decimal levelShort)
-	{
-		if (Position == 0)
-		{
-			EnterOnCandle(candle);
-			if (Position > 0)
-				_trailingStop = levelLong;
-			else if (Position < 0)
-				_trailingStop = levelShort;
-			return;
-		}
-
-		if (Position > 0)
-		{
-			if (levelLong > _trailingStop)
-				_trailingStop = levelLong;
-			if (candle.LowPrice <= _trailingStop)
-			{
-				SellMarket(Position);
-				_trailingStop = 0;
-			}
-		}
-		else
-		{
-			if (_trailingStop == 0 || levelShort < _trailingStop)
-				_trailingStop = levelShort;
-			if (candle.HighPrice >= _trailingStop)
-			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_trailingStop = 0;
 			}
 		}

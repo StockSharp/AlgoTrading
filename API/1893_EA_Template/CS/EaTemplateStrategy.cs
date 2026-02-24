@@ -8,7 +8,7 @@ using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
+
 
 namespace StockSharp.Samples.Strategies;
 
@@ -132,7 +132,7 @@ public class EaTemplateStrategy : Strategy
 		_spreadLimit = Param(nameof(SpreadLimit), 10)
 				.SetDisplay("Spread Limit", "Maximum spread in points", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -172,14 +172,6 @@ public class EaTemplateStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 				return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-
-		var spread = Security.BestAsk - Security.BestBid;
-		var maxSpread = SpreadLimit * Security.PriceStep;
-		if (maxSpread > 0 && spread > maxSpread)
-				return;
-
 		var isBullish = candle.ClosePrice > candle.OpenPrice;
 		var isBearish = candle.ClosePrice < candle.OpenPrice;
 
@@ -187,14 +179,12 @@ public class EaTemplateStrategy : Strategy
 		{
 				if ((isBullish && !ReverseTrade) || (isBearish && ReverseTrade))
 				{
-					var volume = GetOrderVolume(candle.ClosePrice);
-					BuyMarket(volume);
+					BuyMarket();
 					_entryPrice = candle.ClosePrice;
 				}
 				else if ((isBearish && !ReverseTrade) || (isBullish && ReverseTrade))
 				{
-					var volume = GetOrderVolume(candle.ClosePrice);
-					SellMarket(volume);
+					SellMarket();
 					_entryPrice = candle.ClosePrice;
 				}
 
@@ -205,10 +195,10 @@ public class EaTemplateStrategy : Strategy
 		var exitShort = (isBullish && !ReverseTrade) || (isBearish && ReverseTrade);
 
 		if (Position > 0 && exitLong)
-				SellMarket(Position);
+				SellMarket();
 
 		if (Position < 0 && exitShort)
-				BuyMarket(-Position);
+				BuyMarket();
 
 		if (Position > 0)
 				CheckStopsForLong(candle.ClosePrice);
@@ -230,29 +220,29 @@ public class EaTemplateStrategy : Strategy
 
 	private void CheckStopsForLong(decimal price)
 	{
-		var stop = StopLoss * Security.PriceStep;
+		var stop = StopLoss * (Security.PriceStep ?? 1m);
 		if (stop > 0 && price <= _entryPrice - stop)
 		{
-				SellMarket(Position);
+				SellMarket();
 				return;
 		}
 
-		var profit = TakeProfit * Security.PriceStep;
+		var profit = TakeProfit * (Security.PriceStep ?? 1m);
 		if (profit > 0 && price >= _entryPrice + profit)
-				SellMarket(Position);
+				SellMarket();
 	}
 
 	private void CheckStopsForShort(decimal price)
 	{
-		var stop = StopLoss * Security.PriceStep;
+		var stop = StopLoss * (Security.PriceStep ?? 1m);
 		if (stop > 0 && price >= _entryPrice + stop)
 		{
-				BuyMarket(-Position);
+				BuyMarket();
 				return;
 		}
 
-		var profit = TakeProfit * Security.PriceStep;
+		var profit = TakeProfit * (Security.PriceStep ?? 1m);
 		if (profit > 0 && price <= _entryPrice - profit)
-				BuyMarket(-Position);
+				BuyMarket();
 	}
 }

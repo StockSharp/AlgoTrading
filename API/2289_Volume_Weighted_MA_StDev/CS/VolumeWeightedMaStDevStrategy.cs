@@ -1,22 +1,18 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Volume Weighted Moving Average with Standard Deviation filter.
-/// Opens long when VWMA momentum exceeds thresholds and short on opposite.
+/// Opens long when VWMA momentum exceeds threshold, short on opposite.
 /// </summary>
 public class VolumeWeightedMaStDevStrategy : Strategy
 {
@@ -24,16 +20,19 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 	private readonly StrategyParam<int> _vwmaLength;
 	private readonly StrategyParam<int> _stdPeriod;
 	private readonly StrategyParam<decimal> _k1;
-	private readonly StrategyParam<decimal> _k2;
 
-	private VolumeWeightedMovingAverage _vwma = null!;
-	private StandardDeviation _stdDev = null!;
-
+	private VolumeWeightedMovingAverage _vwma;
+	private StandardDeviation _stdDev;
 	private decimal? _prevVwma;
+
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int VwmaLength { get => _vwmaLength.Value; set => _vwmaLength.Value = value; }
+	public int StdPeriod { get => _stdPeriod.Value; set => _stdPeriod.Value = value; }
+	public decimal K1 { get => _k1.Value; set => _k1.Value = value; }
 
 	public VolumeWeightedMaStDevStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for analysis", "General");
 
 		_vwmaLength = Param(nameof(VwmaLength), 12)
@@ -42,53 +41,14 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 		_stdPeriod = Param(nameof(StdPeriod), 9)
 			.SetDisplay("StdDev Period", "Period for standard deviation", "Indicators");
 
-		_k1 = Param(nameof(K1), 1.5m)
-			.SetDisplay("K1", "First deviation multiplier", "Signal")
-			;
-
-		_k2 = Param(nameof(K2), 2.5m)
-			.SetDisplay("K2", "Second deviation multiplier", "Signal")
-			;
+		_k1 = Param(nameof(K1), 0.5m)
+			.SetDisplay("K1", "Deviation multiplier for signal threshold", "Signal");
 	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public int VwmaLength
-	{
-		get => _vwmaLength.Value;
-		set => _vwmaLength.Value = value;
-	}
-
-	public int StdPeriod
-	{
-		get => _stdPeriod.Value;
-		set => _stdPeriod.Value = value;
-	}
-
-	public decimal K1
-	{
-		get => _k1.Value;
-		set => _k1.Value = value;
-	}
-
-	public decimal K2
-	{
-		get => _k2.Value;
-		set => _k2.Value = value;
-	}
-
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnReseted()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		base.OnReseted();
-		_prevVwma = null;
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -96,15 +56,15 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_prevVwma = null;
+
 		_vwma = new VolumeWeightedMovingAverage { Length = VwmaLength };
 		_stdDev = new StandardDeviation { Length = StdPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_vwma, ProcessCandle)
+			.BindEx(_vwma, ProcessCandle)
 			.Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -115,16 +75,16 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal vwmaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue vwmaInd)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!_vwma.IsFormed)
-		{
-			_prevVwma = vwmaValue;
 			return;
-		}
+
+		var vwmaValue = vwmaInd.GetValue<decimal>();
+		var t = candle.ServerTime;
 
 		if (_prevVwma is null)
 		{
@@ -133,25 +93,22 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 		}
 
 		var diff = vwmaValue - _prevVwma.Value;
-		var stdValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, diff, candle.ServerTime)).ToNullableDecimal();
 
-		if (stdValue is null || !_stdDev.IsFormed)
+		var stdResult = _stdDev.Process(diff, t, true);
+
+		if (!_stdDev.IsFormed)
 		{
 			_prevVwma = vwmaValue;
 			return;
 		}
 
-		var filter1 = K1 * stdValue.Value;
-		var filter2 = K2 * stdValue.Value;
-		_ = filter2;
+		var stdValue = stdResult.GetValue<decimal>();
+		var filter = K1 * stdValue;
 
-		var bulls = diff > filter1;
-		var bears = diff < -filter1;
-
-		if (bulls && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (bears && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		if (diff > filter && Position <= 0)
+			BuyMarket();
+		else if (diff < -filter && Position >= 0)
+			SellMarket();
 
 		_prevVwma = vwmaValue;
 	}

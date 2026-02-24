@@ -154,40 +154,37 @@ public class ExpCandlesXSmoothedStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
-		var highVal = _highMa.Process(candle.HighPrice);
-		var lowVal = _lowMa.Process(candle.LowPrice);
-
-		if (!highVal.IsFinal || !lowVal.IsFinal)
-			return;
-
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var level = Level * Security.PriceStep;
+		var highVal = _highMa.Process(candle.HighPrice, candle.OpenTime, true);
+		var lowVal = _lowMa.Process(candle.LowPrice, candle.OpenTime, true);
+
+		if (!highVal.IsFormed || !lowVal.IsFormed)
+			return;
+
+		var level = Level * (Security.PriceStep ?? 1m);
 		var smoothedHigh = highVal.ToDecimal();
 		var smoothedLow = lowVal.ToDecimal();
 
 		var breakUp = candle.ClosePrice > smoothedHigh + level;
 		var breakDown = candle.ClosePrice < smoothedLow - level;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (breakUp)
 		{
 			if (SellPosClose && Position < 0)
-				BuyMarket(-Position);
+				BuyMarket();
 
 			if (BuyPosOpen && Position <= 0)
-				BuyMarket(Volume);
+				BuyMarket();
 		}
 		else if (breakDown)
 		{
 			if (BuyPosClose && Position > 0)
-				SellMarket(Position);
+				SellMarket();
 
 			if (SellPosOpen && Position >= 0)
-				SellMarket(Volume);
+				SellMarket();
 		}
 	}
 }

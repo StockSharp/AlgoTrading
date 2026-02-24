@@ -79,7 +79,7 @@ public class ColorBbCandlesStrategy : Strategy
 		
 		.SetOptimize(0.5m, 3m, 0.5m);
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 	
@@ -111,7 +111,7 @@ public class ColorBbCandlesStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		
 		subscription
-		.Bind(bollinger, ProcessCandle)
+		.BindEx(bollinger, ProcessCandle)
 		.Start();
 		
 		var area = CreateChartArea();
@@ -123,51 +123,40 @@ public class ColorBbCandlesStrategy : Strategy
 		}
 	}
 	
-	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
+			return;
+
+		var bb = (BollingerBandsValue)bbValue;
+		if (bb.UpBand is not decimal upperBand || bb.LowBand is not decimal lowerBand)
+			return;
+
 		var state = BandStates.Neutral;
-		
+
 		if (candle.ClosePrice > upperBand)
-		state = BandStates.Above;
+			state = BandStates.Above;
 		else if (candle.ClosePrice < lowerBand)
-		state = BandStates.Below;
-		
+			state = BandStates.Below;
+
 		if (state == BandStates.Above && _previousState != BandStates.Above)
 		{
-			var volume = Volume + (Position < 0 ? Math.Abs(Position) : 0);
-			if (volume > 0)
-			{
-				BuyMarket(volume);
-				_entryPrice = candle.ClosePrice;
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
 		}
 		else if (state == BandStates.Below && _previousState != BandStates.Below)
 		{
-			var volume = Volume + (Position > 0 ? Math.Abs(Position) : 0);
-			if (volume > 0)
-			{
-				SellMarket(volume);
-				_entryPrice = candle.ClosePrice;
-			}
+			if (Position > 0) SellMarket();
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
 		}
 		else if (state == BandStates.Neutral && _previousState != BandStates.Neutral)
 		{
-			if (Position > 0)
-			{
-				SellMarket(Position);
-			}
-			else if (Position < 0)
-			{
-				BuyMarket(-Position);
-			}
+			if (Position > 0) SellMarket();
+			else if (Position < 0) BuyMarket();
 		}
-		
+
 		_previousState = state;
 	}
 }

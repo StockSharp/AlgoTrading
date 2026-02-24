@@ -102,7 +102,7 @@ public class RoNzAutoSlTsTpStrategy : Strategy
 	/// </summary>
 	public RoNzAutoSlTsTpStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_takeProfit = Param(nameof(TakeProfit), 500m)
@@ -135,9 +135,9 @@ public class RoNzAutoSlTsTpStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema10 = new EMA { Length = 10 };
-		var ema20 = new EMA { Length = 20 };
-		var ema100 = new EMA { Length = 100 };
+		var ema10 = new ExponentialMovingAverage { Length = 10 };
+		var ema20 = new ExponentialMovingAverage { Length = 20 };
+		var ema100 = new ExponentialMovingAverage { Length = 100 };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -194,7 +194,7 @@ public class RoNzAutoSlTsTpStrategy : Strategy
 		{
 			if ((_takePrice > 0 && price >= _takePrice) || (_stopPrice > 0 && price <= _stopPrice))
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetProtection();
 				return;
 			}
@@ -223,7 +223,7 @@ public class RoNzAutoSlTsTpStrategy : Strategy
 		{
 			if ((_takePrice > 0 && price <= _takePrice) || (_stopPrice > 0 && price >= _stopPrice))
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				ResetProtection();
 				return;
 			}

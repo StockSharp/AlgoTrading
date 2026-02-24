@@ -118,9 +118,6 @@ public class GeniePivotFixedStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		for (var i = 7; i > 0; i--)
 		{
 			_lows[i] = _lows[i - 1];
@@ -132,40 +129,28 @@ public class GeniePivotFixedStrategy : Strategy
 		if (_stored < 8)
 			_stored++;
 
-		if (_stored < 8)
+		if (_stored < 5)
 			return;
 
-		var buySeq = true;
-		for (var i = 7; i >= 2; i--)
-		{
-			if (_lows[i] <= _lows[i - 1])
-			{
-				buySeq = false;
-				break;
-			}
-		}
+		var buySeq = _lows[4] > _lows[3] && _lows[3] > _lows[2] && _lows[2] > _lows[1];
 
 		if (buySeq && _lows[1] < _lows[0] && _highs[1] < candle.ClosePrice)
 		{
+			if (Position < 0)
+				BuyMarket();
 			if (Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 			return;
 		}
 
-		var sellSeq = true;
-		for (var i = 7; i >= 2; i--)
-		{
-			if (_highs[i] >= _highs[i - 1])
-			{
-				sellSeq = false;
-				break;
-			}
-		}
+		var sellSeq = _highs[4] < _highs[3] && _highs[3] < _highs[2] && _highs[2] < _highs[1];
 
 		if (sellSeq && _highs[1] > _highs[0] && _lows[1] > candle.ClosePrice)
 		{
+			if (Position > 0)
+				SellMarket();
 			if (Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 		}
 	}
 }

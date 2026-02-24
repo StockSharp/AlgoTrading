@@ -42,7 +42,7 @@ public class MacdStochasticStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
-	private Stochastic _stochastic = null!;
+	private StochasticOscillator _stochastic = null!;
 	private readonly List<(decimal K, decimal D)> _stochasticHistory = new();
 	private decimal _prevMacd;
 	private decimal _prevSignal;
@@ -293,10 +293,9 @@ public class MacdStochasticStrategy : Strategy
 			
 			.SetOptimize(2, 5, 1);
 
-		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
+		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
 			.SetDisplay("Stochastic %D Period", "Smoothing period for %D line", "Stochastic")
 			.SetGreaterThanZero()
-			
 			.SetOptimize(2, 5, 1);
 
 
@@ -326,22 +325,22 @@ public class MacdStochasticStrategy : Strategy
 		_whenSetNoLossStopPips = Param(nameof(WhenSetNoLossStopPips), 25)
 			.SetDisplay("Activation Profit (pips)", "Profit before enabling trailing", "Risk");
 
-		_session1Start = Param(nameof(Session1Start), new TimeSpan(8, 15, 0))
+		_session1Start = Param(nameof(Session1Start), new TimeSpan(0, 0, 0))
 			.SetDisplay("Session 1 Start", "Start time of first window", "Sessions");
 
-		_session1End = Param(nameof(Session1End), new TimeSpan(8, 35, 0))
+		_session1End = Param(nameof(Session1End), new TimeSpan(23, 59, 59))
 			.SetDisplay("Session 1 End", "End time of first window", "Sessions");
 
-		_session2Start = Param(nameof(Session2Start), new TimeSpan(13, 45, 0))
+		_session2Start = Param(nameof(Session2Start), new TimeSpan(0, 0, 0))
 			.SetDisplay("Session 2 Start", "Start time of second window", "Sessions");
 
-		_session2End = Param(nameof(Session2End), new TimeSpan(14, 42, 0))
+		_session2End = Param(nameof(Session2End), new TimeSpan(0, 0, 0))
 			.SetDisplay("Session 2 End", "End time of second window", "Sessions");
 
-		_session3Start = Param(nameof(Session3Start), new TimeSpan(22, 15, 0))
+		_session3Start = Param(nameof(Session3Start), new TimeSpan(0, 0, 0))
 			.SetDisplay("Session 3 Start", "Start time of third window", "Sessions");
 
-		_session3End = Param(nameof(Session3End), new TimeSpan(22, 45, 0))
+		_session3End = Param(nameof(Session3End), new TimeSpan(0, 0, 0))
 			.SetDisplay("Session 3 End", "End time of third window", "Sessions");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -370,9 +369,9 @@ public class MacdStochasticStrategy : Strategy
 	/// <summary>
 	/// Start indicator subscriptions and chart visualization.
 	/// </summary>
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -384,12 +383,9 @@ public class MacdStochasticStrategy : Strategy
 			SignalMa = { Length = MacdSignalPeriod }
 		};
 
-		_stochastic = new()
-		{
-			Length = StochasticLength,
-			K = StochasticKPeriod,
-			D = { Length = StochasticDPeriod }
-		};
+		_stochastic = new StochasticOscillator();
+		_stochastic.K.Length = StochasticLength;
+		_stochastic.D.Length = StochasticDPeriod;
 
 		UpdatePipSize();
 
@@ -426,7 +422,7 @@ public class MacdStochasticStrategy : Strategy
 		decimal? currentK = null;
 		decimal? currentD = null;
 
-		var stochasticTyped = (StochasticValue)stochasticValue;
+		var stochasticTyped = (StochasticOscillatorValue)stochasticValue;
 		if (stochasticTyped.K is decimal kValue && stochasticTyped.D is decimal dValue)
 		{
 			currentK = kValue;
@@ -434,7 +430,7 @@ public class MacdStochasticStrategy : Strategy
 			UpdateStochasticHistory(kValue, dValue);
 		}
 
-		var allowTrading = IsFormedAndOnlineAndAllowTrading() && Volume > 0m && MaxPositions > 0;
+		var allowTrading = _macd.IsFormed && Volume > 0m && MaxPositions > 0;
 		var macdCrossUp = _hasPrevMacd && _prevMacd <= _prevSignal && macd > signal && macd < 0m && _prevMacd < 0m;
 		var macdCrossDown = _hasPrevMacd && _prevMacd >= _prevSignal && macd < signal && macd > 0m && _prevMacd > 0m;
 

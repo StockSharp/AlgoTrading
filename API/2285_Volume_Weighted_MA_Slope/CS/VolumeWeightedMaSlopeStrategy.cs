@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,50 +12,27 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Volume Weighted Moving Average slope strategy.
-/// Goes long when VWMA is rising for two consecutive bars.
-/// Goes short when VWMA is falling for two consecutive bars.
-/// Closes existing positions on opposite slope.
+/// Goes long when VWMA turns up (valley), short when VWMA turns down (peak).
 /// </summary>
 public class VolumeWeightedMaSlopeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _vwmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevVwma1;
-	private decimal _prevVwma2;
-	private bool _isFirst;
+	private decimal? _prevVwma1;
+	private decimal? _prevVwma2;
 
-	/// <summary>
-	/// VWMA calculation period.
-	/// </summary>
-	public int VwmaPeriod
-	{
-		get => _vwmaPeriod.Value;
-		set => _vwmaPeriod.Value = value;
-	}
+	public int VwmaPeriod { get => _vwmaPeriod.Value; set => _vwmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="VolumeWeightedMaSlopeStrategy"/>.
-	/// </summary>
 	public VolumeWeightedMaSlopeStrategy()
 	{
 		_vwmaPeriod = Param(nameof(VwmaPeriod), 12)
-				.SetGreaterThanZero()
-				.SetDisplay("VWMA Period", "Period of the Volume Weighted Moving Average", "General")
-				
-				.SetOptimize(5, 30, 5);
+			.SetGreaterThanZero()
+			.SetDisplay("VWMA Period", "Period of the Volume Weighted Moving Average", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -68,78 +42,58 @@ public class VolumeWeightedMaSlopeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_prevVwma1 = 0m;
-		_prevVwma2 = 0m;
-		_isFirst = true;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_prevVwma1 = null;
+		_prevVwma2 = null;
 
 		var vwma = new VolumeWeightedMovingAverage { Length = VwmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-				.BindEx(vwma, ProcessCandle)
-				.Start();
-
-		StartProtection(
-				takeProfit: new Unit(2, UnitTypes.Percent),
-				stopLoss: new Unit(1, UnitTypes.Percent)
-		);
+			.BindEx(vwma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, vwma);
-				DrawOwnTrades(area);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, vwma);
+			DrawOwnTrades(area);
 		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue vwmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-				return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-				return;
+			return;
 
-		var currentVwma = vwmaValue.ToDecimal();
+		var currentVwma = vwmaValue.GetValue<decimal>();
 
-		if (_isFirst)
+		if (_prevVwma1 is null)
 		{
-				_prevVwma1 = currentVwma;
-				_prevVwma2 = currentVwma;
-				_isFirst = false;
-				return;
+			_prevVwma1 = currentVwma;
+			return;
 		}
 
-		var upSlope = _prevVwma2 < _prevVwma1 && currentVwma > _prevVwma1;
-		var downSlope = _prevVwma2 > _prevVwma1 && currentVwma < _prevVwma1;
-
-		if (upSlope)
+		if (_prevVwma2 is null)
 		{
-				if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-
-				if (Position <= 0)
-				BuyMarket(Volume);
+			_prevVwma2 = _prevVwma1;
+			_prevVwma1 = currentVwma;
+			return;
 		}
-		else if (downSlope)
-		{
-				if (Position > 0)
-				SellMarket(Math.Abs(Position));
 
-				if (Position >= 0)
-				SellMarket(Volume);
-		}
+		// Valley: was falling, now rising -> buy
+		if (_prevVwma2 > _prevVwma1 && currentVwma > _prevVwma1 && Position <= 0)
+			BuyMarket();
+		// Peak: was rising, now falling -> sell
+		else if (_prevVwma2 < _prevVwma1 && currentVwma < _prevVwma1 && Position >= 0)
+			SellMarket();
 
 		_prevVwma2 = _prevVwma1;
 		_prevVwma1 = currentVwma;

@@ -19,9 +19,6 @@ namespace StockSharp.Samples.Strategies;
 public class GenieStochRsiStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<int> _kPeriod;
-	private readonly StrategyParam<int> _dPeriod;
-	private readonly StrategyParam<int> _slowing;
 	private readonly StrategyParam<decimal> _rsiOverbought;
 	private readonly StrategyParam<decimal> _rsiOversold;
 	private readonly StrategyParam<decimal> _stochOverbought;
@@ -30,65 +27,27 @@ public class GenieStochRsiStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStop;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi;
-	private StochasticOscillator _stochastic;
+	private RelativeStrengthIndex _rsi = null!;
+	private StochasticOscillator _stochastic = null!;
 	private decimal _prevK;
 	private decimal _prevD;
 	private bool _initialized;
 
-	/// <summary>
-	/// RSI calculation period.
-	/// </summary>
+	/// <summary>RSI calculation period.</summary>
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
-
-	/// <summary>
-	/// Stochastic %K period.
-	/// </summary>
-	public int KPeriod { get => _kPeriod.Value; set => _kPeriod.Value = value; }
-
-	/// <summary>
-	/// Stochastic %D period.
-	/// </summary>
-	public int DPeriod { get => _dPeriod.Value; set => _dPeriod.Value = value; }
-
-	/// <summary>
-	/// Stochastic slowing period.
-	/// </summary>
-	public int Slowing { get => _slowing.Value; set => _slowing.Value = value; }
-
-	/// <summary>
-	/// RSI overbought level.
-	/// </summary>
+	/// <summary>RSI overbought level.</summary>
 	public decimal RsiOverbought { get => _rsiOverbought.Value; set => _rsiOverbought.Value = value; }
-
-	/// <summary>
-	/// RSI oversold level.
-	/// </summary>
+	/// <summary>RSI oversold level.</summary>
 	public decimal RsiOversold { get => _rsiOversold.Value; set => _rsiOversold.Value = value; }
-
-	/// <summary>
-	/// Stochastic overbought level.
-	/// </summary>
+	/// <summary>Stochastic overbought level.</summary>
 	public decimal StochOverbought { get => _stochOverbought.Value; set => _stochOverbought.Value = value; }
-
-	/// <summary>
-	/// Stochastic oversold level.
-	/// </summary>
+	/// <summary>Stochastic oversold level.</summary>
 	public decimal StochOversold { get => _stochOversold.Value; set => _stochOversold.Value = value; }
-
-	/// <summary>
-	/// Take profit in price points.
-	/// </summary>
+	/// <summary>Take profit in price points.</summary>
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-
-	/// <summary>
-	/// Trailing stop in price points.
-	/// </summary>
+	/// <summary>Trailing stop in price points.</summary>
 	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
+	/// <summary>Candle type to process.</summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
@@ -99,18 +58,6 @@ public class GenieStochRsiStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation length", "Parameters");
-
-		_kPeriod = Param(nameof(KPeriod), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic K", "Stochastic %K period", "Parameters");
-
-		_dPeriod = Param(nameof(DPeriod), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic D", "Stochastic %D period", "Parameters");
-
-		_slowing = Param(nameof(Slowing), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Slowing", "Stochastic slowing", "Parameters");
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 			.SetDisplay("RSI Overbought", "RSI overbought level", "Signals");
@@ -144,9 +91,6 @@ public class GenieStochRsiStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_rsi = default;
-		_stochastic = default;
 		_prevK = default;
 		_prevD = default;
 		_initialized = false;
@@ -158,15 +102,10 @@ public class GenieStochRsiStrategy : Strategy
 		base.OnStarted2(time);
 
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_stochastic = new StochasticOscillator
-		{
-			K = { Length = KPeriod },
-			D = { Length = DPeriod },
-			Slowing = Slowing
-		};
+		_stochastic = new StochasticOscillator();
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_rsi, _stochastic, ProcessCandle).Start();
+		subscription.BindEx(_stochastic, ProcessCandle).Start();
 
 		StartProtection(
 			new Unit(TakeProfit, UnitTypes.Absolute),
@@ -178,17 +117,25 @@ public class GenieStochRsiStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _rsi);
-			DrawIndicator(area, _stochastic);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal kValue, decimal dValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// Process RSI manually
+		var rsiResult = _rsi.Process(candle.ClosePrice, candle.OpenTime, true);
+
+		if (!_rsi.IsFormed || !_stochastic.IsFormed)
+			return;
+
+		var rsiValue = rsiResult.ToDecimal();
+
+		var stochTyped = (StochasticOscillatorValue)stochValue;
+		if (stochTyped.K is not decimal kValue || stochTyped.D is not decimal dValue)
 			return;
 
 		if (!_initialized)
@@ -199,11 +146,13 @@ public class GenieStochRsiStrategy : Strategy
 			return;
 		}
 
+		// Sell when RSI overbought + stochastic K crosses below D in overbought zone
 		var sellSignal = rsiValue > RsiOverbought &&
 			kValue > StochOverbought &&
 			_prevK > _prevD &&
 			kValue < dValue;
 
+		// Buy when RSI oversold + stochastic K crosses above D in oversold zone
 		var buySignal = rsiValue < RsiOversold &&
 			kValue < StochOversold &&
 			_prevK < _prevD &&
@@ -211,13 +160,13 @@ public class GenieStochRsiStrategy : Strategy
 
 		if (sellSignal && Position >= 0)
 		{
-			var volume = Volume + (Position > 0 ? Position : 0m);
-			SellMarket(volume);
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 		else if (buySignal && Position <= 0)
 		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			BuyMarket(volume);
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
 
 		_prevK = kValue;

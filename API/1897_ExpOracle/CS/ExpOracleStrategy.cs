@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -20,33 +17,40 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpOracleStrategy : Strategy
 {
-        /// <summary>
-        /// Trading algorithm modes.
-        /// </summary>
-        public enum AlgorithmModes
-        {
-                /// <summary>
-                /// Signal line crossing zero.
-                /// </summary>
-                Breakdown,
+	/// <summary>
+	/// Trading algorithm modes.
+	/// </summary>
+	public enum AlgorithmModes
+	{
+		/// <summary>
+		/// Signal line crossing zero.
+		/// </summary>
+		Breakdown,
 
-                /// <summary>
-                /// Change of signal line direction.
-                /// </summary>
-                Twist,
+		/// <summary>
+		/// Change of signal line direction.
+		/// </summary>
+		Twist,
 
-                /// <summary>
-                /// Signal line crossing main line.
-                /// </summary>
-                Disposition
-        }
+		/// <summary>
+		/// Signal line crossing main line.
+		/// </summary>
+		Disposition
+	}
 
-        private readonly StrategyParam<int> _oraclePeriod;
-        private readonly StrategyParam<int> _smooth;
-        private readonly StrategyParam<AlgorithmModes> _mode;
+	private readonly StrategyParam<int> _oraclePeriod;
+	private readonly StrategyParam<int> _smooth;
+	private readonly StrategyParam<AlgorithmModes> _mode;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<bool> _allowBuy;
 	private readonly StrategyParam<bool> _allowSell;
+
+	private RelativeStrengthIndex _rsi;
+	private CommodityChannelIndex _cci;
+	private SimpleMovingAverage _sma;
+
+	private readonly decimal[] _rsiBuf = new decimal[4];
+	private readonly decimal[] _cciBuf = new decimal[4];
 
 	private decimal _prevSignal;
 	private decimal _prevPrevSignal;
@@ -113,20 +117,16 @@ public class ExpOracleStrategy : Strategy
 	{
 		_oraclePeriod = Param(nameof(OraclePeriod), 55)
 			.SetGreaterThanZero()
-			.SetDisplay("Oracle Period", "Oracle period", "Parameters")
-			
-			.SetOptimize(10, 120, 5);
+			.SetDisplay("Oracle Period", "Oracle period", "Parameters");
 
 		_smooth = Param(nameof(Smooth), 8)
 			.SetGreaterThanZero()
-			.SetDisplay("Smooth", "Smoothing length", "Parameters")
-			
-			.SetOptimize(2, 20, 2);
+			.SetDisplay("Smooth", "Smoothing length", "Parameters");
 
 		_mode = Param(nameof(Mode), AlgorithmModes.Twist)
 			.SetDisplay("Mode", "Signal algorithm", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "Parameters");
 
 		_allowBuy = Param(nameof(AllowBuy), true)
@@ -137,105 +137,60 @@ public class ExpOracleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSignal = 0;
+		_prevPrevSignal = 0;
+		_prevOracle = 0;
+		Array.Clear(_rsiBuf, 0, _rsiBuf.Length);
+		Array.Clear(_cciBuf, 0, _cciBuf.Length);
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
+		_rsi = new RelativeStrengthIndex { Length = OraclePeriod };
+		_cci = new CommodityChannelIndex { Length = OraclePeriod };
+		_sma = new SimpleMovingAverage { Length = Smooth };
+
 		StartProtection(null, null);
 
-		var oracle = new OracleIndicator
-		{
-			Length = OraclePeriod,
-			Smooth = Smooth
-		};
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 
-		SubscribeCandles(CandleType)
-			.BindEx(oracle, ProcessCandle)
-			.Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indicatorValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var value = (OracleIndicatorValue)indicatorValue;
-		var signal = value.Signal;
-		var oracle = value.Oracle;
+		// RSI uses decimal input, CCI uses candle input
+		var rsiResult = _rsi.Process(candle.ClosePrice, candle.OpenTime, true);
+		var cciResult = _cci.Process(candle);
 
-		switch (Mode)
-		{
-			case AlgorithmModes.Breakdown:
-				if (AllowBuy && _prevSignal <= 0m && signal > 0m)
-				{
-					var volume = Volume + Math.Abs(Position);
-					BuyMarket(volume);
-				}
-				else if (AllowSell && _prevSignal >= 0m && signal < 0m)
-				{
-					var volume = Volume + Math.Abs(Position);
-					SellMarket(volume);
-				}
-				break;
+		if (!rsiResult.IsFormed || !cciResult.IsFormed)
+			return;
 
-			case AlgorithmModes.Twist:
-				if (AllowBuy && _prevPrevSignal < _prevSignal && signal >= _prevSignal)
-				{
-					var volume = Volume + Math.Abs(Position);
-					BuyMarket(volume);
-				}
-				else if (AllowSell && _prevPrevSignal > _prevSignal && signal <= _prevSignal)
-				{
-					var volume = Volume + Math.Abs(Position);
-					SellMarket(volume);
-				}
-				break;
+		var rsiVal = rsiResult.ToDecimal();
+		var cciVal = cciResult.ToDecimal();
 
-			case AlgorithmModes.Disposition:
-				if (AllowBuy && _prevSignal < _prevOracle && signal >= oracle)
-				{
-					var volume = Volume + Math.Abs(Position);
-					BuyMarket(volume);
-				}
-				else if (AllowSell && _prevSignal > _prevOracle && signal <= oracle)
-				{
-					var volume = Volume + Math.Abs(Position);
-					SellMarket(volume);
-				}
-				break;
-		}
-
-		_prevPrevSignal = _prevSignal;
-		_prevSignal = signal;
-		_prevOracle = oracle;
-	}
-}
-
-/// <summary>
-/// Oracle indicator combining RSI and CCI with smoothing.
-/// </summary>
-public class OracleIndicator : BaseIndicator
-{
-	public int Length { get; set; } = 55;
-	public int Smooth { get; set; } = 8;
-
-	private readonly RelativeStrengthIndex _rsi = new();
-	private readonly CommodityChannelIndex _cci = new();
-	private readonly SimpleMovingAverage _sma = new();
-
-	private readonly decimal[] _rsiBuf = new decimal[4];
-	private readonly decimal[] _cciBuf = new decimal[4];
-
-	/// <inheritdoc />
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
-	{
-		_rsi.Length = Length;
-		_cci.Length = Length;
-		_sma.Length = Smooth;
-
-		var rsiVal = _rsi.Process(input).GetValue<decimal>();
-		var cciVal = _cci.Process(input).GetValue<decimal>();
-
+		// shift buffers
 		_rsiBuf[3] = _rsiBuf[2];
 		_rsiBuf[2] = _rsiBuf[1];
 		_rsiBuf[1] = _rsiBuf[0];
@@ -246,6 +201,7 @@ public class OracleIndicator : BaseIndicator
 		_cciBuf[1] = _cciBuf[0];
 		_cciBuf[0] = cciVal;
 
+		// compute Oracle value
 		var div0 = _cciBuf[0] - _rsiBuf[0];
 		var dDiv = div0;
 		var div1 = _cciBuf[1] - _rsiBuf[1] - dDiv;
@@ -258,39 +214,57 @@ public class OracleIndicator : BaseIndicator
 		var min = Math.Min(Math.Min(div0, div1), Math.Min(div2, div3));
 		var oracle = max + min;
 
-		var signal = _sma.Process(new DecimalIndicatorValue(this, oracle, input.Time)).GetValue<decimal>();
+		// smooth to get signal
+		var signalResult = _sma.Process(oracle, candle.OpenTime, true);
+		if (!signalResult.IsFormed)
+			return;
 
-		return new OracleIndicatorValue(this, input, oracle, signal);
+		var signal = signalResult.ToDecimal();
+
+		switch (Mode)
+		{
+			case AlgorithmModes.Breakdown:
+				if (AllowBuy && _prevSignal <= 0m && signal > 0m && Position <= 0)
+				{
+					if (Position < 0) BuyMarket();
+					BuyMarket();
+				}
+				else if (AllowSell && _prevSignal >= 0m && signal < 0m && Position >= 0)
+				{
+					if (Position > 0) SellMarket();
+					SellMarket();
+				}
+				break;
+
+			case AlgorithmModes.Twist:
+				if (AllowBuy && _prevPrevSignal > _prevSignal && signal >= _prevSignal && Position <= 0)
+				{
+					if (Position < 0) BuyMarket();
+					BuyMarket();
+				}
+				else if (AllowSell && _prevPrevSignal < _prevSignal && signal <= _prevSignal && Position >= 0)
+				{
+					if (Position > 0) SellMarket();
+					SellMarket();
+				}
+				break;
+
+			case AlgorithmModes.Disposition:
+				if (AllowBuy && _prevSignal < _prevOracle && signal >= oracle && Position <= 0)
+				{
+					if (Position < 0) BuyMarket();
+					BuyMarket();
+				}
+				else if (AllowSell && _prevSignal > _prevOracle && signal <= oracle && Position >= 0)
+				{
+					if (Position > 0) SellMarket();
+					SellMarket();
+				}
+				break;
+		}
+
+		_prevPrevSignal = _prevSignal;
+		_prevSignal = signal;
+		_prevOracle = oracle;
 	}
-
-	public override void Reset()
-	{
-		base.Reset();
-		_rsi.Reset();
-		_cci.Reset();
-		_sma.Reset();
-		Array.Clear(_rsiBuf, 0, _rsiBuf.Length);
-		Array.Clear(_cciBuf, 0, _cciBuf.Length);
-	}
-}
-
-/// <summary>
-/// Indicator value for <see cref="OracleIndicator"/>.
-/// </summary>
-public class OracleIndicatorValue : ComplexIndicatorValue
-{
-	public OracleIndicatorValue(IIndicator indicator, IIndicatorValue input, decimal oracle, decimal signal)
-		: base(indicator, input, (nameof(Oracle), oracle), (nameof(Signal), signal))
-	{
-	}
-
-	/// <summary>
-	/// Oracle line value.
-	/// </summary>
-	public decimal Oracle => (decimal)GetValue(nameof(Oracle));
-
-	/// <summary>
-	/// Smoothed signal line value.
-	/// </summary>
-	public decimal Signal => (decimal)GetValue(nameof(Signal));
 }

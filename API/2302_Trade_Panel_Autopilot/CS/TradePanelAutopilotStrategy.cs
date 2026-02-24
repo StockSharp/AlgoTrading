@@ -1,194 +1,141 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Trade panel autopilot strategy v2.
+/// Aggregates 7 price comparison metrics over rolling window.
+/// Buys when buy percentage exceeds open threshold, sells on opposite.
+/// </summary>
 public class TradePanelAutopilotStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _autopilot;
 	private readonly StrategyParam<decimal> _openThreshold;
 	private readonly StrategyParam<decimal> _closeThreshold;
-	private readonly StrategyParam<decimal> _lotFix;
-	private readonly StrategyParam<decimal> _lotPercent;
-	private readonly StrategyParam<bool> _useFixedLot;
-	private readonly StrategyParam<bool> _useStopLoss;
+	private readonly StrategyParam<int> _windowSize;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly TimeSpan[] _timeframes = new[]
-	{
-		TimeSpan.FromMinutes(1),
-		TimeSpan.FromMinutes(5),
-		TimeSpan.FromMinutes(15),
-		TimeSpan.FromMinutes(30),
-		TimeSpan.FromHours(1),
-		TimeSpan.FromHours(4),
-		TimeSpan.FromDays(1),
-		TimeSpan.FromDays(7)
-	};
+	private readonly Queue<(int buy, int sell)> _signalWindow = new();
+	private ICandleMessage _prevCandle;
 
-	private readonly CandleState[] _states;
-
-	private sealed class CandleState
-	{
-		public ICandleMessage Prev;
-		public ICandleMessage Curr;
-		public int Buy;
-		public int Sell;
-	}
+	public decimal OpenThreshold { get => _openThreshold.Value; set => _openThreshold.Value = value; }
+	public decimal CloseThreshold { get => _closeThreshold.Value; set => _closeThreshold.Value = value; }
+	public int WindowSize { get => _windowSize.Value; set => _windowSize.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public TradePanelAutopilotStrategy()
 	{
-		_states = new CandleState[_timeframes.Length];
-		for (var i = 0; i < _states.Length; i++)
-			_states[i] = new CandleState();
+		_openThreshold = Param(nameof(OpenThreshold), 65m)
+			.SetDisplay("Open %", "Threshold for new position", "General");
 
-		_autopilot = Param(nameof(Autopilot), false).SetDisplay("Autopilot", "Autopilot", "General");
-		_openThreshold = Param(nameof(OpenThreshold), 85m).SetDisplay("Open Threshold", "Open Threshold", "General");
-		_closeThreshold = Param(nameof(CloseThreshold), 55m).SetDisplay("Close Threshold", "Close Threshold", "General");
-		_lotFix = Param(nameof(LotFixed), 0.01m).SetDisplay("Fixed Lot", "Fixed Lot", "General");
-		_lotPercent = Param(nameof(LotPercent), 0.01m).SetDisplay("Lot Percent", "Lot Percent", "General");
-		_useFixedLot = Param(nameof(UseFixedLot), false).SetDisplay("Use Fixed Lot", "Use Fixed Lot", "General");
-		_useStopLoss = Param(nameof(UseStopLoss), false).SetDisplay("Use Stop Loss", "Use Stop Loss", "General");
+		_closeThreshold = Param(nameof(CloseThreshold), 40m)
+			.SetDisplay("Close %", "Threshold for closing", "General");
+
+		_windowSize = Param(nameof(WindowSize), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Window Size", "Number of candles for signal aggregation", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	public bool Autopilot { get => _autopilot.Value; set => _autopilot.Value = value; }
-	public decimal OpenThreshold { get => _openThreshold.Value; set => _openThreshold.Value = value; }
-	public decimal CloseThreshold { get => _closeThreshold.Value; set => _closeThreshold.Value = value; }
-	public decimal LotFixed { get => _lotFix.Value; set => _lotFix.Value = value; }
-	public decimal LotPercent { get => _lotPercent.Value; set => _lotPercent.Value = value; }
-	public bool UseFixedLot { get => _useFixedLot.Value; set => _useFixedLot.Value = value; }
-	public bool UseStopLoss { get => _useStopLoss.Value; set => _useStopLoss.Value = value; }
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		if (UseStopLoss)
-			StartProtection(null, null);
+		_prevCandle = null;
+		_signalWindow.Clear();
 
-		for (var i = 0; i < _timeframes.Length; i++)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			var tf = _timeframes[i];
-			var index = i;
-			var subscription = SubscribeCandles(tf);
-			subscription
-				.Bind(c => ProcessCandle(index, c))
-				.Start();
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(int index, ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var state = _states[index];
-		state.Prev = state.Curr;
-		state.Curr = candle;
-
-		if (state.Prev is null)
-			return;
-
-		(state.Buy, state.Sell) = CalculateSignal(state.Prev, state.Curr);
-		UpdateSignals();
-	}
-
-	private static (int buy, int sell) CalculateSignal(ICandleMessage prev, ICandleMessage curr)
-	{
-		var buy = 0;
-		var sell = 0;
-
-		if (curr.OpenPrice > prev.OpenPrice) buy++; else sell++;
-		if (curr.HighPrice > prev.HighPrice) buy++; else sell++;
-		if (curr.LowPrice > prev.LowPrice) buy++; else sell++;
-
-		var currHl2 = (curr.HighPrice + curr.LowPrice) / 2m;
-		var prevHl2 = (prev.HighPrice + prev.LowPrice) / 2m;
-		if (currHl2 > prevHl2) buy++; else sell++;
-
-		if (curr.ClosePrice > prev.ClosePrice) buy++; else sell++;
-
-		var currHlc3 = (curr.HighPrice + curr.LowPrice + curr.ClosePrice) / 3m;
-		var prevHlc3 = (prev.HighPrice + prev.LowPrice + prev.ClosePrice) / 3m;
-		if (currHlc3 > prevHlc3) buy++; else sell++;
-
-		var currHlcc4 = (curr.HighPrice + curr.LowPrice + curr.ClosePrice + curr.ClosePrice) / 4m;
-		var prevHlcc4 = (prev.HighPrice + prev.LowPrice + prev.ClosePrice + prev.ClosePrice) / 4m;
-		if (currHlcc4 > prevHlcc4) buy++; else sell++;
-
-		return (buy, sell);
-	}
-
-	private void UpdateSignals()
-	{
-		var buy = 0;
-		var sell = 0;
-
-		foreach (var s in _states)
+		if (_prevCandle == null)
 		{
-			buy += s.Buy;
-			sell += s.Sell;
-		}
-
-		if (buy + sell == 0)
-			return;
-
-	var buyPercent = (decimal)buy / (buy + sell) * 100m;
-	var sellPercent = 100m - buyPercent;
-
-		if (buy + sell == 0)
-			return;
-
-		var buyPercent = (decimal)buy / (buy + sell) * 100m;
-		var sellPercent = 100m - buyPercent;
-
-		if (!Autopilot)
-			return;
-
-		if (Position > 0 && buyPercent < CloseThreshold)
-		{
-			SellMarket(Position);
+			_prevCandle = candle;
 			return;
 		}
 
-		if (Position < 0 && sellPercent < CloseThreshold)
-		{
-			BuyMarket(-Position);
+		int buy = 0, sell = 0;
+
+		if (candle.OpenPrice > _prevCandle.OpenPrice) buy++; else sell++;
+		if (candle.HighPrice > _prevCandle.HighPrice) buy++; else sell++;
+		if (candle.LowPrice > _prevCandle.LowPrice) buy++; else sell++;
+		if (candle.ClosePrice > _prevCandle.ClosePrice) buy++; else sell++;
+
+		var hlCurr = (candle.HighPrice + candle.LowPrice) / 2m;
+		var hlPrev = (_prevCandle.HighPrice + _prevCandle.LowPrice) / 2m;
+		if (hlCurr > hlPrev) buy++; else sell++;
+
+		var hlcCurr = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
+		var hlcPrev = (_prevCandle.HighPrice + _prevCandle.LowPrice + _prevCandle.ClosePrice) / 3m;
+		if (hlcCurr > hlcPrev) buy++; else sell++;
+
+		var hlccCurr = (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m;
+		var hlccPrev = (_prevCandle.HighPrice + _prevCandle.LowPrice + 2m * _prevCandle.ClosePrice) / 4m;
+		if (hlccCurr > hlccPrev) buy++; else sell++;
+
+		_signalWindow.Enqueue((buy, sell));
+
+		while (_signalWindow.Count > WindowSize)
+			_signalWindow.Dequeue();
+
+		_prevCandle = candle;
+
+		if (_signalWindow.Count < WindowSize)
 			return;
+
+		int totalBuy = 0, totalSell = 0;
+		foreach (var (b, s) in _signalWindow)
+		{
+			totalBuy += b;
+			totalSell += s;
 		}
+
+		var total = totalBuy + totalSell;
+		if (total == 0) return;
+
+		var buyPct = (decimal)totalBuy / total * 100m;
+		var sellPct = (decimal)totalSell / total * 100m;
+
+		if (Position > 0 && buyPct < CloseThreshold)
+			SellMarket();
+		else if (Position < 0 && sellPct < CloseThreshold)
+			BuyMarket();
 
 		if (Position == 0)
 		{
-			var volume = GetVolume();
-
-			if (buyPercent > OpenThreshold)
-			{
-				BuyMarket(volume);
-			}
-			else if (sellPercent > OpenThreshold)
-			{
-				SellMarket(volume);
-			}
+			if (buyPct >= OpenThreshold)
+				BuyMarket();
+			else if (sellPct >= OpenThreshold)
+				SellMarket();
 		}
-	}
-
-	private decimal GetVolume()
-	{
-		if (UseFixedLot)
-			return LotFixed;
-
-		var portfolioValue = Portfolio?.CurrentValue ?? 0m;
-		var volume = portfolioValue * LotPercent / 100m;
-		return volume > 0 ? volume : LotFixed;
 	}
 }

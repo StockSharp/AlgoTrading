@@ -14,7 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Multi-timeframe SMA trend filter strategy.
+/// Multi-timeframe SimpleMovingAverage trend filter strategy.
 /// </summary>
 public class SmaTrendFilterStrategy : Strategy
 {
@@ -25,7 +25,7 @@ public class SmaTrendFilterStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType3;
 	
 	private readonly int[] _periods = { 5, 8, 13, 21, 34 };
-	private readonly SMA[][] _smas = new SMA[3][];
+	private readonly SimpleMovingAverage[][] _smas = new SimpleMovingAverage[3][];
 	private readonly decimal[][] _previous = new decimal[3][];
 	private readonly decimal[] _uitog = new decimal[3];
 	private readonly decimal[] _ditog = new decimal[3];
@@ -94,10 +94,10 @@ public SmaTrendFilterStrategy()
 	
 	for (var i = 0; i < 3; i++)
 	{
-		_smas[i] = new SMA[_periods.Length];
+		_smas[i] = new SimpleMovingAverage[_periods.Length];
 		_previous[i] = new decimal[_periods.Length];
 		for (var j = 0; j < _periods.Length; j++)
-		_smas[i][j] = new SMA { Length = _periods[j] };
+		_smas[i][j] = new SimpleMovingAverage { Length = _periods[j] };
 }
 }
 
@@ -181,8 +181,6 @@ private void EvaluateSignal()
 	else if (_ditog[0] > 50m && _ditog[1] > 50m && _ditog[2] > 50m)
 	_signal = -1;
 	
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
 	
 	var openBuy = _signal > OpenLevel;
 	var openSell = _signal < -OpenLevel;

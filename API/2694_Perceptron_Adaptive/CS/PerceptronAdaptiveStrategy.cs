@@ -213,13 +213,13 @@ public class PerceptronAdaptiveStrategy : Strategy
 	/// </summary>
 	public PerceptronAdaptiveStrategy()
 	{
-		_stopLossOffset = Param(nameof(StopLossOffset), 0.001m)
+		_stopLossOffset = Param(nameof(StopLossOffset), 500m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss Offset", "Stop-loss distance in absolute price units", "Risk Management")
 			
 			.SetOptimize(0.0005m, 0.005m, 0.0005m);
 
-		_takeProfitOffset = Param(nameof(TakeProfitOffset), 0.0004m)
+		_takeProfitOffset = Param(nameof(TakeProfitOffset), 300m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit Offset", "Take-profit distance in absolute price units", "Risk Management")
 			
@@ -353,7 +353,7 @@ public class PerceptronAdaptiveStrategy : Strategy
 
 		HandlePositionManagement(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_rsi.IsFormed || !_cci.IsFormed)
 			return;
 
 		if (Position != 0)
@@ -458,7 +458,10 @@ public class PerceptronAdaptiveStrategy : Strategy
 		if (!hasExit)
 			return;
 
-		ClosePosition();
+		if (Position > 0)
+			SellMarket(Math.Abs(Position));
+		else if (Position < 0)
+			BuyMarket(Math.Abs(Position));
 
 		var profit = _isLongPosition ? exitPrice - _entryPrice : _entryPrice - exitPrice;
 

@@ -48,7 +48,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 
 	public TradeEaTemplateForNewsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 		_useLowNews = Param(nameof(UseLowNews), true);
 		_lowMinutesBefore = Param(nameof(LowMinutesBefore), 15);
 		_lowMinutesAfter = Param(nameof(LowMinutesAfter), 15);
@@ -210,11 +210,11 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 	private void ConfigureProtection()
 	{
 		// Configure stop-loss and take-profit to mirror the 100 point brackets from the template EA.
-		var step = Security?.Step ?? 0m;
+		var step = Security?.PriceStep ?? 0m;
 
 		if (step <= 0m)
 		{
-			LogWarn("Security step is zero. Protective orders cannot be configured.");
+			LogWarning("Security step is zero. Protective orders cannot be configured.");
 			return;
 		}
 
@@ -232,9 +232,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 
 		UpdateNewsState(candle.CloseTime);
 
-		// Skip trading while the infrastructure is not ready to process orders.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// No bound indicators to check readiness for.
 
 		// Abort any signals while a news blackout is active.
 		if (_newsBlocking)
@@ -429,7 +427,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 
 			if (rawParts.Length < 3)
 			{
-				LogWarn($"Unable to parse news entry '{entry}'. Expected at least time, currency and importance.");
+				LogWarning($"Unable to parse news entry '{entry}'. Expected at least time, currency and importance.");
 				continue;
 			}
 
@@ -439,7 +437,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 
 			if (!DateTimeOffset.TryParse(parts[0], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var time))
 			{
-				LogWarn($"Unable to parse time '{parts[0]}' in news entry '{entry}'.");
+				LogWarning($"Unable to parse time '{parts[0]}' in news entry '{entry}'.");
 				continue;
 			}
 
@@ -447,7 +445,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 
 			if (!TryParseImportance(parts[2], out var importance))
 			{
-				LogWarn($"Unable to parse importance '{parts[2]}' in news entry '{entry}'.");
+				LogWarning($"Unable to parse importance '{parts[2]}' in news entry '{entry}'.");
 				continue;
 			}
 

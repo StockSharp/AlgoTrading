@@ -1,56 +1,26 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Directional Movement Index crossover strategy.
+/// Buys when +DI crosses above -DI, sells on opposite.
 /// </summary>
 public class AdxDmiStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<int> _dmiPeriod;
-	private readonly StrategyParam<bool> _allowLong;
-	private readonly StrategyParam<bool> _allowShort;
-	private readonly StrategyParam<bool> _closeLong;
-	private readonly StrategyParam<bool> _closeShort;
 
-	private DirectionalIndex _dmi = null!;
 	private decimal? _prevPlus;
 	private decimal? _prevMinus;
-
-	public AdxDmiStrategy()
-	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame for strategy calculation", "General");
-
-		_dmiPeriod = Param(nameof(DmiPeriod), 14)
-			.SetDisplay("DMI Period", "Directional Movement Index period", "Indicators")
-			.SetGreaterThanZero();
-
-		_allowLong = Param(nameof(AllowLong), true)
-			.SetDisplay("Allow Long", "Enable long entries", "Trading");
-
-		_allowShort = Param(nameof(AllowShort), true)
-			.SetDisplay("Allow Short", "Enable short entries", "Trading");
-
-		_closeLong = Param(nameof(CloseLong), true)
-			.SetDisplay("Close Long", "Close long positions on opposite signal", "Trading");
-
-		_closeShort = Param(nameof(CloseShort), true)
-			.SetDisplay("Close Short", "Close short positions on opposite signal", "Trading");
-	}
 
 	public DataType CandleType
 	{
@@ -64,28 +34,14 @@ public class AdxDmiStrategy : Strategy
 		set => _dmiPeriod.Value = value;
 	}
 
-	public bool AllowLong
+	public AdxDmiStrategy()
 	{
-		get => _allowLong.Value;
-		set => _allowLong.Value = value;
-	}
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Time frame for strategy calculation", "General");
 
-	public bool AllowShort
-	{
-		get => _allowShort.Value;
-		set => _allowShort.Value = value;
-	}
-
-	public bool CloseLong
-	{
-		get => _closeLong.Value;
-		set => _closeLong.Value = value;
-	}
-
-	public bool CloseShort
-	{
-		get => _closeShort.Value;
-		set => _closeShort.Value = value;
+		_dmiPeriod = Param(nameof(DmiPeriod), 14)
+			.SetDisplay("DMI Period", "Directional Movement Index period", "Indicators")
+			.SetGreaterThanZero();
 	}
 
 	/// <inheritdoc />
@@ -97,21 +53,21 @@ public class AdxDmiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_dmi = new DirectionalIndex
-		{
-			Length = DmiPeriod
-		};
+		_prevPlus = null;
+		_prevMinus = null;
+
+		var dmi = new DirectionalIndex { Length = DmiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_dmi, ProcessCandle)
+			.BindEx(dmi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _dmi);
+			DrawIndicator(area, dmi);
 			DrawOwnTrades(area);
 		}
 	}
@@ -121,10 +77,13 @@ public class AdxDmiStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var dmi = (DirectionalIndexValue)dmiValue;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		if (dmi.Plus is not decimal currentPlus ||
-			dmi.Minus is not decimal currentMinus)
+		if (dmiValue is not IDirectionalIndexValue dmi)
+			return;
+
+		if (dmi.Plus is not decimal currentPlus || dmi.Minus is not decimal currentMinus)
 			return;
 
 		if (_prevPlus is null || _prevMinus is null)
@@ -137,23 +96,11 @@ public class AdxDmiStrategy : Strategy
 		var buySignal = _prevMinus > _prevPlus && currentMinus <= currentPlus;
 		var sellSignal = _prevPlus > _prevMinus && currentPlus <= currentMinus;
 
-		if (buySignal)
-		{
-			if (CloseShort && Position < 0)
-				BuyMarket(Math.Abs(Position));
+		if (buySignal && Position <= 0)
+			BuyMarket();
 
-			if (AllowLong && Position <= 0)
-				BuyMarket(Volume);
-		}
-
-		if (sellSignal)
-		{
-			if (CloseLong && Position > 0)
-				SellMarket(Position);
-
-			if (AllowShort && Position >= 0)
-				SellMarket(Volume);
-		}
+		if (sellSignal && Position >= 0)
+			SellMarket();
 
 		_prevPlus = currentPlus;
 		_prevMinus = currentMinus;

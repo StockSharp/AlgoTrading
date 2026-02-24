@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -22,164 +19,101 @@ public class StochasticDiffStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _kPeriod;
 	private readonly StrategyParam<int> _dPeriod;
-	private readonly StrategyParam<int> _slowing;
 	private readonly StrategyParam<int> _smoothingLength;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
-	
-	private StochasticOscillator _stochastic = null!;
-	private ExponentialMovingAverage _smoothing = null!;
+
+	private ExponentialMovingAverage _smoothing;
 	private decimal? _prevDiff;
 	private decimal? _prevPrevDiff;
-	
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// %K period.
-	/// </summary>
-	public int KPeriod
-	{
-		get => _kPeriod.Value;
-		set => _kPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// %D period.
-	/// </summary>
-	public int DPeriod
-	{
-		get => _dPeriod.Value;
-		set => _dPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// %K slowing periods.
-	/// </summary>
-	public int Slowing
-	{
-		get => _slowing.Value;
-		set => _slowing.Value = value;
-	}
-	
-	/// <summary>
-	/// Smoothing length for the %K-%D difference.
-	/// </summary>
-	public int SmoothingLength
-	{
-		get => _smoothingLength.Value;
-		set => _smoothingLength.Value = value;
-	}
-	
-	/// <summary>
-	/// Stop loss in percent.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-	
-	/// <summary>
-	/// Take profit in percent.
-	/// </summary>
-	public decimal TakeProfitPercent
-	{
-		get => _takeProfitPercent.Value;
-		set => _takeProfitPercent.Value = value;
-	}
-	
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int KPeriod { get => _kPeriod.Value; set => _kPeriod.Value = value; }
+	public int DPeriod { get => _dPeriod.Value; set => _dPeriod.Value = value; }
+	public int SmoothingLength { get => _smoothingLength.Value; set => _smoothingLength.Value = value; }
+
 	public StochasticDiffStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Candle type for analysis", "General")
-		;
-		
+			.SetDisplay("Candle Type", "Candle type for analysis", "General");
+
 		_kPeriod = Param(nameof(KPeriod), 5)
-		.SetDisplay("%K Period", "Stochastic %K period", "Stochastic");
-		
+			.SetGreaterThanZero()
+			.SetDisplay("%K Period", "Stochastic %K period", "Stochastic");
+
 		_dPeriod = Param(nameof(DPeriod), 3)
-		.SetDisplay("%D Period", "Stochastic %D period", "Stochastic");
-		
-		_slowing = Param(nameof(Slowing), 3)
-		.SetDisplay("Slowing", "%K slowing periods", "Stochastic");
-		
+			.SetGreaterThanZero()
+			.SetDisplay("%D Period", "Stochastic %D period", "Stochastic");
+
 		_smoothingLength = Param(nameof(SmoothingLength), 13)
-		.SetDisplay("Smoothing Length", "Length for diff smoothing", "Stochastic");
-		
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-		.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-		;
-		
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
-		.SetDisplay("Take Profit %", "Take profit percentage", "Risk")
-		;
+			.SetGreaterThanZero()
+			.SetDisplay("Smoothing Length", "Length for diff smoothing", "Stochastic");
 	}
-	
-	/// <inheritdoc />
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		_stochastic = new StochasticOscillator
-		{ K = { Length = KPeriod },
-			K = { Length = Slowing },
-			D = { Length = DPeriod }
-		};
-		
-		_smoothing = new EMA { Length = SmoothingLength };
-		
-		StartProtection(
-		takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
-		stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
-		
+
+		_prevDiff = null;
+		_prevPrevDiff = null;
+		_smoothing = new ExponentialMovingAverage { Length = SmoothingLength };
+
+		var stoch = new StochasticOscillator();
+		stoch.K.Length = KPeriod;
+		stoch.D.Length = DPeriod;
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(_stochastic, ProcessCandle)
-		.Start();
-		
+		subscription.BindEx(stoch, ProcessCandle).Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _stochastic);
-			DrawIndicator(area, _smoothing);
+			DrawIndicator(area, stoch);
+			DrawOwnTrades(area);
 		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle, decimal kValue, decimal dValue)
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochVal)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		var diff = kValue - dValue;
-		var value = _smoothing.Process(diff);
-		
+			return;
+
+		if (stochVal is not IStochasticOscillatorValue typed)
+			return;
+
+		if (typed.K is not decimal k || typed.D is not decimal d)
+			return;
+
+		var diff = k - d;
+		var smoothResult = _smoothing.Process(diff, candle.CloseTime, true);
+
 		if (!_smoothing.IsFormed)
-		return;
-		
-		var current = value.GetValue<decimal>();
-		
+			return;
+
+		var current = smoothResult.GetValue<decimal>();
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevPrevDiff = _prevDiff;
+			_prevDiff = current;
+			return;
+		}
+
 		if (_prevPrevDiff.HasValue && _prevDiff.HasValue)
 		{
 			var turningUp = _prevDiff < _prevPrevDiff && current >= _prevDiff;
 			var turningDown = _prevDiff > _prevPrevDiff && current <= _prevDiff;
-			
+
 			if (turningUp && Position <= 0)
-			BuyMarket();
+				BuyMarket();
 			else if (turningDown && Position >= 0)
-			SellMarket();
+				SellMarket();
 		}
-		
+
 		_prevPrevDiff = _prevDiff;
 		_prevDiff = current;
 	}

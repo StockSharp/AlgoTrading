@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,77 +11,38 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades breakouts of Fibonacci retracement levels derived from ZigZag swings.
-/// The strategy builds Fibonacci levels between consecutive pivot points and enters when price crosses the 50% level.
+/// Strategy that trades breakouts of Fibonacci 50% retracement levels from ZigZag pivots.
+/// Uses Highest/Lowest to detect pivot points and enters on 50% level crossover.
 /// </summary>
 public class ZZFiboTraderStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _breakout;
-	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<int> _zigZagDepth;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevPivot;
 	private decimal _currPivot;
 	private int _direction;
-	private decimal _level38;
 	private decimal _level50;
-	private decimal _level61;
 
-	/// <summary>
-	/// Minimum distance beyond level to confirm breakout.
-	/// </summary>
-	public decimal Breakout
-	{
-		get => _breakout.Value;
-		set => _breakout.Value = value;
-	}
-
-	/// <summary>
-	/// Absolute stop loss distance.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Number of bars to search for pivots.
-	/// </summary>
 	public int ZigZagDepth
 	{
 		get => _zigZagDepth.Value;
 		set => _zigZagDepth.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ZZFiboTraderStrategy"/> class.
-	/// </summary>
 	public ZZFiboTraderStrategy()
 	{
-		_breakout = Param(nameof(Breakout), 5m)
-			.SetDisplay("Breakout", "Minimum distance beyond level to confirm breakout", "General")
-			.SetNotNegative();
-
-		_stopLoss = Param(nameof(StopLoss), 0m)
-			.SetDisplay("Stop Loss", "Absolute stop loss distance", "Risk")
-			.SetNotNegative();
-
 		_zigZagDepth = Param(nameof(ZigZagDepth), 12)
 			.SetDisplay("ZigZag Depth", "Number of bars to search for pivots", "ZigZag")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -93,19 +51,14 @@ public class ZZFiboTraderStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevPivot = 0m;
-		_currPivot = 0m;
-		_direction = 0;
-		_level38 = _level50 = _level61 = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_prevPivot = 0m;
+		_currPivot = 0m;
+		_direction = 0;
+		_level50 = 0m;
 
 		var highest = new Highest { Length = ZigZagDepth };
 		var lowest = new Lowest { Length = ZigZagDepth };
@@ -123,16 +76,14 @@ public class ZZFiboTraderStrategy : Strategy
 			DrawIndicator(area, lowest);
 			DrawOwnTrades(area);
 		}
-
-		if (StopLoss > 0)
-			StartProtection(stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
-		else
-			StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		// Update pivots when new extremes appear
@@ -149,20 +100,14 @@ public class ZZFiboTraderStrategy : Strategy
 			UpdateLevels();
 		}
 
-		if (_direction == 0 || !IsFormedAndOnlineAndAllowTrading())
+		if (_direction == 0 || _level50 == 0m)
 			return;
 
-		// Enter when price crosses 50% level in direction of trend with breakout confirmation
-		if (_direction == 1 && Position <= 0 &&
-			candle.ClosePrice > _level50 + Breakout * Security.PriceStep)
-		{
+		// Enter when price crosses 50% level in direction of trend
+		if (_direction == 1 && Position <= 0 && candle.ClosePrice > _level50)
 			BuyMarket();
-		}
-		else if (_direction == -1 && Position >= 0 &&
-			candle.ClosePrice < _level50 - Breakout * Security.PriceStep)
-		{
+		else if (_direction == -1 && Position >= 0 && candle.ClosePrice < _level50)
 			SellMarket();
-		}
 	}
 
 	private void UpdateLevels()
@@ -175,9 +120,6 @@ public class ZZFiboTraderStrategy : Strategy
 		var high = _direction == 1 ? _currPivot : _prevPivot;
 		var low = _direction == 1 ? _prevPivot : _currPivot;
 
-		var range = high - low;
-		_level38 = high - range * 0.382m;
-		_level50 = high - range * 0.5m;
-		_level61 = high - range * 0.618m;
+		_level50 = high - (high - low) * 0.5m;
 	}
 }

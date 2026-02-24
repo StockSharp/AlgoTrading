@@ -14,98 +14,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Martingale-style hedging strategy placing buy and sell positions with adaptive limits.
+/// Martingale-style hedging strategy that alternates buy/sell based on price movement.
+/// Opens initial position and doubles down on adverse moves.
 /// </summary>
 public class TwoDirectionMartinStylizedStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _takeProfitPercent;
-	private readonly StrategyParam<decimal> _volumeToOrder;
-	private readonly StrategyParam<decimal> _volumeLimit;
-	private readonly StrategyParam<decimal> _percentSame;
+	private readonly StrategyParam<int> _maxSteps;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order _buyLimitOrder;
-	private Order _sellLimitOrder;
+	private decimal _entryPrice;
+	private int _stepCount;
+	private int _direction; // 1=long, -1=short
 
-	private decimal _currentBid;
-	private decimal _currentAsk;
-	private decimal _spread;
-	private decimal _tp;
+	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
+	public int MaxSteps { get => _maxSteps.Value; set => _maxSteps.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal _buyLimitVolume;
-	private decimal _sellLimitVolume;
-	private decimal _buyLimitPrice;
-	private decimal _sellLimitPrice;
-
-	/// <summary>
-	/// Take profit percentage from current price.
-	/// </summary>
-	public decimal TakeProfitPercent
-	{
-		get => _takeProfitPercent.Value;
-		set => _takeProfitPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Minimal order volume.
-	/// </summary>
-	public decimal VolumeToOrder
-	{
-		get => _volumeToOrder.Value;
-		set => _volumeToOrder.Value = value;
-	}
-
-	/// <summary>
-	/// Max volume for a single order.
-	/// </summary>
-	public decimal VolumeLimitOrder
-	{
-		get => _volumeLimit.Value;
-		set => _volumeLimit.Value = value;
-	}
-
-	/// <summary>
-	/// Percentage for dominant side volume.
-	/// </summary>
-	public decimal PercentSame
-	{
-		get => _percentSame.Value;
-		set => _percentSame.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type parameter.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public TwoDirectionMartinStylizedStrategy()
 	{
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.35m)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit %", "Take profit as percent of price", "General")
-			
-			.SetOptimize(0.1m, 1m, 0.05m);
+			.SetDisplay("Take Profit %", "Take profit as percent of price", "General");
 
-		_volumeToOrder = Param(nameof(VolumeToOrder), 0.10m)
+		_maxSteps = Param(nameof(MaxSteps), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("Base Volume", "Minimal volume to send", "General");
+			.SetDisplay("Max Steps", "Maximum martingale doublings", "General");
 
-		_volumeLimit = Param(nameof(VolumeLimitOrder), 0.75m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume Limit", "Maximum volume per order", "General");
-
-		_percentSame = Param(nameof(PercentSame), 75m)
-			.SetGreaterThanZero()
-			.SetDisplay("Same Side %", "Percent of dominant side", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -116,220 +52,83 @@ public class TwoDirectionMartinStylizedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_buyLimitOrder = null;
-		_sellLimitOrder = null;
-		_currentBid = 0m;
-		_currentAsk = 0m;
-		_spread = 0m;
-		_tp = 0m;
-		_buyLimitVolume = 0m;
-		_sellLimitVolume = 0m;
-		_buyLimitPrice = 0m;
-		_sellLimitPrice = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
-			.Start();
+		var ema = new ExponentialMovingAverage { Length = 20 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		StartProtection(null, null);
+		subscription.Bind(ema, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
-	{
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bid))
-			_currentBid = (decimal)bid;
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var ask))
-			_currentAsk = (decimal)ask;
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_currentBid == 0m || _currentAsk == 0m)
+		var price = candle.ClosePrice;
+
+		if (Position == 0)
+		{
+			// Initial entry based on EMA trend
+			if (price > emaValue)
+			{
+				BuyMarket();
+				_direction = 1;
+			}
+			else
+			{
+				SellMarket();
+				_direction = -1;
+			}
+			_entryPrice = price;
+			_stepCount = 0;
 			return;
-
-		DataForSymbol();
-
-		if (_buyLimitOrder is null && _sellLimitOrder is null)
-		{
-			InitializeOrders();
-			return;
 		}
 
-		if (_buyLimitOrder is null || _sellLimitOrder is null)
+		var tp = _entryPrice * TakeProfitPercent / 100m;
+
+		// Check take profit
+		if (_direction == 1 && price >= _entryPrice + tp)
 		{
-			ShrinkRange();
-			return;
+			// Close long
+			while (Position > 0) SellMarket();
+			_stepCount = 0;
 		}
-
-		if ((_sellLimitPrice > _currentAsk + 2m * _tp && _buyLimitPrice < _currentBid - _tp && _sellLimitVolume <= _buyLimitVolume) ||
-		(_buyLimitPrice < _currentBid - 2m * _tp && _sellLimitPrice > _currentAsk + _tp && _sellLimitVolume >= _buyLimitVolume))
-			ShrinkRange();
-	}
-
-	private void DataForSymbol()
-	{
-		_spread = _currentAsk - _currentBid;
-		_tp = Math.Max(TakeProfitPercent * _currentAsk / 100m, _spread);
-	}
-
-	private void InitializeOrders()
-	{
-		AddSell(VolumeToOrder);
-		var buyPrice = _currentBid - _tp;
-		BuyLimitOrder(VolumeToOrder, buyPrice);
-		_buyLimitVolume = VolumeToOrder;
-		_buyLimitPrice = buyPrice;
-
-		AddBuy(VolumeToOrder);
-		var sellPrice = _currentAsk + _tp;
-		SellLimitOrder(VolumeToOrder, sellPrice);
-		_sellLimitVolume = VolumeToOrder;
-		_sellLimitPrice = sellPrice;
-	}
-
-	private void ShrinkRange()
-	{
-		var oldLoss = (_sellLimitPrice - _currentBid) * _sellLimitVolume +
-		(_currentAsk - _buyLimitPrice) * _buyLimitVolume;
-		var newTotalVol = Math.Max(2m * VolumeToOrder,
-		Math.Ceiling(((oldLoss + _spread) / _tp) * 100m) / 100m);
-
-		decimal newSellLimitVol;
-		decimal newBuyLimitVol;
-		if (_sellLimitVolume >= _buyLimitVolume)
+		else if (_direction == -1 && price <= _entryPrice - tp)
 		{
-			newSellLimitVol = Math.Max(VolumeToOrder, Math.Ceiling(newTotalVol * PercentSame) / 100m);
-			newBuyLimitVol = Math.Max(VolumeToOrder, Math.Round((newTotalVol - newSellLimitVol) * 100m) / 100m);
+			// Close short
+			while (Position < 0) BuyMarket();
+			_stepCount = 0;
 		}
-		else
+		// Check adverse move - double down
+		else if (_direction == 1 && price <= _entryPrice - tp && _stepCount < MaxSteps)
 		{
-			newBuyLimitVol = Math.Max(VolumeToOrder, Math.Ceiling(newTotalVol * PercentSame) / 100m);
-			newSellLimitVol = Math.Max(VolumeToOrder, Math.Round((newTotalVol - newBuyLimitVol) * 100m) / 100m);
+			BuyMarket();
+			_entryPrice = (_entryPrice + price) / 2m;
+			_stepCount++;
 		}
-
-		var addVolume = (newSellLimitVol - newBuyLimitVol) - (_sellLimitVolume - _buyLimitVolume);
-
-		DeleteOld();
-
-		var buyPrice = _currentBid - _tp;
-		BuyLimitOrder(newBuyLimitVol, buyPrice);
-		_buyLimitVolume = newBuyLimitVol;
-		_buyLimitPrice = buyPrice;
-
-		var sellPrice = _currentAsk + _tp;
-		SellLimitOrder(newSellLimitVol, sellPrice);
-		_sellLimitVolume = newSellLimitVol;
-		_sellLimitPrice = sellPrice;
-
-		if (addVolume > 0.005m)
-			AddBuy(addVolume);
-		if (addVolume < -0.005m)
-			AddSell(-addVolume);
-	}
-
-	private void DeleteOld()
-	{
-		if (_buyLimitOrder != null)
+		else if (_direction == -1 && price >= _entryPrice + tp && _stepCount < MaxSteps)
 		{
-			CancelOrder(_buyLimitOrder);
-			_buyLimitOrder = null;
+			SellMarket();
+			_entryPrice = (_entryPrice + price) / 2m;
+			_stepCount++;
 		}
-		if (_sellLimitOrder != null)
+		// Max steps reached - cut loss
+		else if (_stepCount >= MaxSteps)
 		{
-			CancelOrder(_sellLimitOrder);
-			_sellLimitOrder = null;
+			if (Position > 0) SellMarket();
+			else if (Position < 0) BuyMarket();
+			_stepCount = 0;
 		}
-	}
-
-	private void BuyLimitOrder(decimal volume, decimal price)
-	{
-		var remaining = volume;
-		var p = price;
-		while (remaining > VolumeLimitOrder)
-		{
-			BuyLimitOrderSend(VolumeLimitOrder, p);
-			remaining -= VolumeLimitOrder;
-			p -= _spread;
-		}
-		BuyLimitOrderSend(remaining, p);
-	}
-
-	private void SellLimitOrder(decimal volume, decimal price)
-	{
-		var remaining = volume;
-		var p = price;
-		while (remaining > VolumeLimitOrder)
-		{
-			SellLimitOrderSend(VolumeLimitOrder, p);
-			remaining -= VolumeLimitOrder;
-			p += _spread;
-		}
-		SellLimitOrderSend(remaining, p);
-	}
-
-	private void AddBuy(decimal volume)
-	{
-		var remaining = volume;
-		while (remaining > VolumeLimitOrder)
-		{
-			AddBuySend(VolumeLimitOrder);
-			remaining -= VolumeLimitOrder;
-		}
-		AddBuySend(remaining);
-	}
-
-	private void AddSell(decimal volume)
-	{
-		var remaining = volume;
-		while (remaining > VolumeLimitOrder)
-		{
-			AddSellSend(VolumeLimitOrder);
-			remaining -= VolumeLimitOrder;
-		}
-		AddSellSend(remaining);
-	}
-
-	private void BuyLimitOrderSend(decimal volume, decimal price)
-	{
-		_buyLimitOrder = BuyLimit(volume, price);
-	}
-
-	private void SellLimitOrderSend(decimal volume, decimal price)
-	{
-		_sellLimitOrder = SellLimit(volume, price);
-	}
-
-	private void AddBuySend(decimal volume)
-	{
-		BuyMarket(volume);
-	}
-
-	private void AddSellSend(decimal volume)
-	{
-		SellMarket(volume);
 	}
 }

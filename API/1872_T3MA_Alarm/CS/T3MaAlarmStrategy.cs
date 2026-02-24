@@ -109,7 +109,7 @@ public class T3MaAlarmStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema = new EMA { Length = MaPeriod };
+		var ema = new ExponentialMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -130,9 +130,6 @@ public class T3MaAlarmStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		_emaValues.Add(emaValue);
 		var required = MaShift + 2;
 		if (_emaValues.Count > required)
@@ -147,23 +144,23 @@ public class T3MaAlarmStrategy : Strategy
 		if (_prevDirection == -1 && direction == 1)
 		{
 			if (Position < 0 && ReverseOnSignal)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 
 			if (Position <= 0)
 			{
 				_entryPrice = candle.ClosePrice;
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 			}
 		}
 		else if (_prevDirection == 1 && direction == -1)
 		{
 			if (Position > 0 && ReverseOnSignal)
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 
 			if (Position >= 0)
 			{
 				_entryPrice = candle.ClosePrice;
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 			}
 		}
 
@@ -180,16 +177,16 @@ public class T3MaAlarmStrategy : Strategy
 		if (Position > 0)
 		{
 			if (StopLoss > 0m && price <= _entryPrice - StopLoss)
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 			else if (TakeProfit > 0m && price >= _entryPrice + TakeProfit)
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
 			if (StopLoss > 0m && price >= _entryPrice + StopLoss)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			else if (TakeProfit > 0m && price <= _entryPrice - TakeProfit)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 		}
 	}
 }
