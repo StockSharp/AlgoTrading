@@ -15,10 +15,12 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// TTM-based grid trading strategy.
+/// Uses fast and slow EMA to define a channel, places grid trades within the channel.
 /// </summary>
 public class TTMGridStrategy : Strategy
 {
-	private readonly StrategyParam<int> _ttmPeriod;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _gridLevels;
 	private readonly StrategyParam<decimal> _gridSpacing;
 	private readonly StrategyParam<DataType> _candleType;
@@ -26,127 +28,78 @@ public class TTMGridStrategy : Strategy
 	private decimal _gridBasePrice;
 	private int _gridDirection = -1;
 
-	private ExponentialMovingAverage _lowEma;
-	private ExponentialMovingAverage _highEma;
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int GridLevels { get => _gridLevels.Value; set => _gridLevels.Value = value; }
+	public decimal GridSpacing { get => _gridSpacing.Value; set => _gridSpacing.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// EMA period for TTM calculation.
-	/// </summary>
-	public int TtmPeriod
-	{
-		get => _ttmPeriod.Value;
-		set => _ttmPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Number of grid levels.
-	/// </summary>
-	public int GridLevels
-	{
-		get => _gridLevels.Value;
-		set => _gridLevels.Value = value;
-	}
-
-	/// <summary>
-	/// Grid spacing as percentage.
-	/// </summary>
-	public decimal GridSpacing
-	{
-		get => _gridSpacing.Value;
-		set => _gridSpacing.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="TTMGridStrategy"/>.
-	/// </summary>
 	public TTMGridStrategy()
 	{
-		_ttmPeriod = Param(nameof(TtmPeriod), 6)
+		_fastPeriod = Param(nameof(FastPeriod), 6)
 			.SetGreaterThanZero()
-			.SetDisplay("TTM Period", "EMA period for TTM calculation", "Indicators")
-			;
+			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
+
+		_slowPeriod = Param(nameof(SlowPeriod), 18)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
 
 		_gridLevels = Param(nameof(GridLevels), 5)
-			.SetRange(2, 20)
-			.SetDisplay("Grid Levels", "Number of price levels in the grid", "Strategy")
-			;
+			.SetDisplay("Grid Levels", "Number of price levels in the grid", "Strategy");
 
-		_gridSpacing = Param(nameof(GridSpacing), 0.01m)
-			.SetRange(0.001m, 0.05m)
-			.SetDisplay("Grid Spacing", "Distance between grid levels (fraction)", "Strategy")
-			;
+		_gridSpacing = Param(nameof(GridSpacing), 0.005m)
+			.SetDisplay("Grid Spacing", "Distance between grid levels (fraction)", "Strategy");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
 		_gridBasePrice = 0m;
 		_gridDirection = -1;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_lowEma = new EMA
-		{
-			Length = TtmPeriod
-		};
-
-		_highEma = new EMA
-		{
-			Length = TtmPeriod
-		};
+		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_lowEma, _highEma, OnProcess)
-			.Start();
+		subscription.Bind(fastEma, slowEma, OnProcess).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _lowEma);
-			DrawIndicator(area, _highEma);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal lowMa, decimal highMa)
+	private void OnProcess(ICandleMessage candle, decimal fastMa, decimal slowMa)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// Use fast/slow EMA as channel boundaries
+		var lowMa = Math.Min(fastMa, slowMa);
+		var highMa = Math.Max(fastMa, slowMa);
 
-		if (!_lowEma.IsFormed || !_highEma.IsFormed)
-			return;
+		var range = highMa - lowMa;
+		if (range <= 0) return;
 
-		var lowThird = (highMa - lowMa) / 3m + lowMa;
-		var highThird = 2m * (highMa - lowMa) / 3m + lowMa;
+		var lowThird = lowMa + range / 3m;
+		var highThird = lowMa + 2m * range / 3m;
 
 		var currentState = candle.ClosePrice > highThird
 			? 1
@@ -158,7 +111,7 @@ public class TTMGridStrategy : Strategy
 			_gridDirection = currentState;
 		}
 
-		if (_gridDirection == -1)
+		if (_gridDirection == -1 || _gridBasePrice == 0)
 			return;
 
 		for (var i = 1; i <= GridLevels; i++)
@@ -173,19 +126,19 @@ public class TTMGridStrategy : Strategy
 				if (candle.LowPrice <= buyLevel)
 					BuyMarket();
 
-				if (candle.HighPrice >= sellLevel)
+				if (candle.HighPrice >= sellLevel && Position > 0)
 					SellMarket();
 			}
-			else // sell grid
+			else
 			{
-				var buyLevel = _gridBasePrice * (1 + multiplier);
 				var sellLevel = _gridBasePrice * (1 - multiplier);
-
-				if (candle.HighPrice >= buyLevel)
-					BuyMarket();
+				var buyLevel = _gridBasePrice * (1 + multiplier);
 
 				if (candle.LowPrice <= sellLevel)
 					SellMarket();
+
+				if (candle.HighPrice >= buyLevel && Position < 0)
+					BuyMarket();
 			}
 		}
 	}

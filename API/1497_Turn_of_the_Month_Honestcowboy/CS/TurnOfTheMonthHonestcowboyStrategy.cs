@@ -14,7 +14,9 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of Turn of the Month Strategy by Honestcowboy.
+/// Turn of the Month strategy by Honestcowboy.
+/// Goes long near month end and exits early in the new month.
+/// Also uses weekly turn pattern: buy on Thursday/Friday, sell on Monday/Tuesday.
 /// </summary>
 public class TurnOfTheMonthHonestcowboyStrategy : Strategy
 {
@@ -22,51 +24,43 @@ public class TurnOfTheMonthHonestcowboyStrategy : Strategy
 	private readonly StrategyParam<int> _daysAfterStart;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Days before month end to start entry window.
-	/// </summary>
+	private int _prevDay;
+
 	public int DaysBeforeEnd { get => _daysBeforeEnd.Value; set => _daysBeforeEnd.Value = value; }
-
-	/// <summary>
-	/// Days after month start to close position.
-	/// </summary>
 	public int DaysAfterStart { get => _daysAfterStart.Value; set => _daysAfterStart.Value = value; }
-
-	/// <summary>
-	/// Candle type for strategy.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="TurnOfTheMonthHonestcowboyStrategy"/>.
-	/// </summary>
 	public TurnOfTheMonthHonestcowboyStrategy()
 	{
-		_daysBeforeEnd = Param(nameof(DaysBeforeEnd), 2)
+		_daysBeforeEnd = Param(nameof(DaysBeforeEnd), 5)
 			.SetDisplay("Days Before End", "Days before month end to begin entries", "Strategy");
 
-		_daysAfterStart = Param(nameof(DaysAfterStart), 3)
+		_daysAfterStart = Param(nameof(DaysAfterStart), 5)
 			.SetDisplay("Days After Start", "Days after new month to exit", "Strategy");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Strategy");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevDay = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
+		var sma = new SimpleMovingAverage { Length = 10 };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.WhenTicked(ProcessCandle)
-			.Start();
+		subscription.Bind(sma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -76,39 +70,37 @@ public class TurnOfTheMonthHonestcowboyStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var dom = candle.OpenTime.Day;
-		var dow = candle.OpenTime.DayOfWeek;
 		var daysInMonth = DateTime.DaysInMonth(candle.OpenTime.Year, candle.OpenTime.Month);
+
+		// Only trigger once per day change
+		if (dom == _prevDay)
+			return;
+		_prevDay = dom;
+
+		// Monthly turn: buy near end of month
 		var entryBar = daysInMonth - DaysBeforeEnd;
+		var monthlyLong = dom >= entryBar;
+		var monthlyClose = dom <= DaysAfterStart;
 
-		bool longCondition = dom >= entryBar
-			|| (dow == DayOfWeek.Thursday && dom == entryBar - 1)
-			|| (dow == DayOfWeek.Thursday && dom == entryBar - 2)
-			|| (dow == DayOfWeek.Thursday && dom == entryBar - 3);
+		// Weekly turn: buy Thu/Fri, sell Mon/Tue
+		var dow = candle.OpenTime.DayOfWeek;
+		var weeklyLong = dow == DayOfWeek.Thursday || dow == DayOfWeek.Friday;
+		var weeklyClose = dow == DayOfWeek.Monday || dow == DayOfWeek.Tuesday;
 
-		bool closeCondition = (
-				dom >= DaysAfterStart
-				|| (dow == DayOfWeek.Thursday && dom == DaysAfterStart - 1)
-				|| (dow == DayOfWeek.Thursday && dom == DaysAfterStart - 2)
-				|| (dow == DayOfWeek.Thursday && dom == DaysAfterStart - 3))
-			&& dom < entryBar - 10;
-
-		if (longCondition && Position <= 0)
+		// Combine: buy if any long condition, sell if any close condition
+		if ((monthlyLong || weeklyLong) && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 		}
-		else if (closeCondition && Position > 0)
+		else if ((monthlyClose || weeklyClose) && Position > 0)
 		{
-			ClosePosition();
+			SellMarket();
 		}
 	}
 }

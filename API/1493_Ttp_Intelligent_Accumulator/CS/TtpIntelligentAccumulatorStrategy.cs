@@ -14,209 +14,119 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that accumulates long positions when RSI falls below its average minus one standard deviation and exits portions when RSI rises above its average plus one standard deviation.
+/// Strategy that accumulates positions when RSI drops below its mean minus standard deviation,
+/// and exits when RSI rises above its mean plus standard deviation.
 /// </summary>
 public class TtpIntelligentAccumulatorStrategy : Strategy
 {
-private readonly StrategyParam<int> _rsiPeriod;
-private readonly StrategyParam<int> _maPeriod;
-private readonly StrategyParam<int> _stdPeriod;
-private readonly StrategyParam<bool> _addWhileInLossOnly;
-private readonly StrategyParam<decimal> _minProfit;
-private readonly StrategyParam<decimal> _exitPercent;
-private readonly StrategyParam<bool> _useDateFilter;
-private readonly StrategyParam<DateTimeOffset> _startDate;
-private readonly StrategyParam<DateTimeOffset> _endDate;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<int> _lookback;
+	private readonly StrategyParam<DataType> _candleType;
 
-private RelativeStrengthIndex _rsi;
-private SimpleMovingAverage _rsiMa;
-private StandardDeviation _rsiStd;
+	private readonly List<decimal> _rsiHistory = new();
+	private decimal _entryPrice;
 
-private decimal _avgEntryPrice;
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// RSI period.
-/// </summary>
-public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public TtpIntelligentAccumulatorStrategy()
+	{
+		_rsiPeriod = Param(nameof(RsiPeriod), 7)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "RSI calculation length", "Indicators");
 
-/// <summary>
-/// Period for RSI moving average.
-/// </summary>
-public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+		_lookback = Param(nameof(Lookback), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback", "Period for RSI mean and std dev", "Indicators");
 
-/// <summary>
-/// Period for RSI standard deviation.
-/// </summary>
-public int StdPeriod { get => _stdPeriod.Value; set => _stdPeriod.Value = value; }
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
 
-/// <summary>
-/// Add to position only while in loss.
-/// </summary>
-public bool AddWhileInLossOnly { get => _addWhileInLossOnly.Value; set => _addWhileInLossOnly.Value = value; }
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <summary>
-/// Minimum profit percentage required to exit.
-/// </summary>
-public decimal MinProfit { get => _minProfit.Value; set => _minProfit.Value = value; }
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_rsiHistory.Clear();
+		_entryPrice = 0;
+	}
 
-/// <summary>
-/// Percentage of position to exit per signal.
-/// </summary>
-public decimal ExitPercent { get => _exitPercent.Value; set => _exitPercent.Value = value; }
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-/// <summary>
-/// Use date filter for trading window.
-/// </summary>
-public bool UseDateFilter { get => _useDateFilter.Value; set => _useDateFilter.Value = value; }
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-/// <summary>
-/// Start date of trading window.
-/// </summary>
-public DateTimeOffset StartDate { get => _startDate.Value; set => _startDate.Value = value; }
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(rsi, ProcessCandle).Start();
 
-/// <summary>
-/// End date of trading window.
-/// </summary>
-public DateTimeOffset EndDate { get => _endDate.Value; set => _endDate.Value = value; }
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
+	}
 
-/// <summary>
-/// Candle type.
-/// </summary>
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-/// <summary>
-/// Initialize strategy.
-/// </summary>
-public TtpIntelligentAccumulatorStrategy()
-{
-_rsiPeriod = Param(nameof(RsiPeriod), 7)
-.SetGreaterThanZero()
-.SetDisplay("RSI Period", "RSI calculation length", "Indicators")
+		_rsiHistory.Add(rsiVal);
+		if (_rsiHistory.Count > Lookback)
+			_rsiHistory.RemoveAt(0);
 
-.SetOptimize(5, 14, 1);
+		if (_rsiHistory.Count < Lookback)
+			return;
 
-_maPeriod = Param(nameof(MaPeriod), 14)
-.SetGreaterThanZero()
-.SetDisplay("MA Period", "Period for RSI moving average", "Indicators")
+		// Calculate mean and std of RSI
+		var sum = 0m;
+		for (var i = 0; i < _rsiHistory.Count; i++)
+			sum += _rsiHistory[i];
+		var mean = sum / _rsiHistory.Count;
 
-.SetOptimize(10, 30, 2);
+		var sumSq = 0m;
+		for (var i = 0; i < _rsiHistory.Count; i++)
+		{
+			var diff = _rsiHistory[i] - mean;
+			sumSq += diff * diff;
+		}
+		var std = (decimal)Math.Sqrt((double)(sumSq / _rsiHistory.Count));
 
-_stdPeriod = Param(nameof(StdPeriod), 14)
-.SetGreaterThanZero()
-.SetDisplay("Std Dev Period", "Period for RSI standard deviation", "Indicators")
+		if (std <= 0)
+			return;
 
-.SetOptimize(10, 30, 2);
+		var entrySignal = rsiVal < mean - std;
+		var exitSignal = rsiVal > mean + std;
 
-_addWhileInLossOnly = Param(nameof(AddWhileInLossOnly), true)
-.SetDisplay("Add While In Loss Only", "Add to position only if losing", "General");
-
-_minProfit = Param(nameof(MinProfit), 0m)
-.SetDisplay("Min Profit %", "Required open profit percentage to exit", "General");
-
-_exitPercent = Param(nameof(ExitPercent), 100m)
-.SetDisplay("Exit % Per Candle", "Percentage of position to exit per signal", "General");
-
-_useDateFilter = Param(nameof(UseDateFilter), false)
-.SetDisplay("Use Date Filter", "Restrict trading to specific dates", "Backtest");
-
-_startDate = Param(nameof(StartDate), new DateTimeOffset(2022, 6, 1, 0, 0, 0, TimeSpan.Zero))
-.SetDisplay("Start Date", "Backtest start date", "Backtest");
-
-_endDate = Param(nameof(EndDate), new DateTimeOffset(2030, 7, 1, 0, 0, 0, TimeSpan.Zero))
-.SetDisplay("End Date", "Backtest end date", "Backtest");
-
-_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles to use", "General");
-}
-
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
-
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-
-_rsi = null;
-_rsiMa = null;
-_rsiStd = null;
-_avgEntryPrice = 0m;
-}
-
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
-
-_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-_rsiMa = new SMA { Length = MaPeriod };
-_rsiStd = new StandardDeviation { Length = StdPeriod };
-
-var subscription = SubscribeCandles(CandleType);
-subscription
-.Bind(ProcessCandle)
-.Start();
-
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, _rsi);
-DrawOwnTrades(area);
-}
-}
-
-private void ProcessCandle(ICandleMessage candle)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-var rsiValue = _rsi.Process(candle.ClosePrice);
-if (!rsiValue.IsFinal)
-return;
-
-var rsimaValue = _rsiMa.Process(rsiValue);
-var stdValue = _rsiStd.Process(rsiValue);
-
-if (!rsimaValue.IsFinal || !stdValue.IsFinal)
-return;
-
-var rsi = rsiValue.GetValue<decimal>();
-var rsima = rsimaValue.GetValue<decimal>();
-var bbstd = stdValue.GetValue<decimal>();
-
-var inTradeWindow = !UseDateFilter || (candle.OpenTime >= StartDate && candle.OpenTime < EndDate);
-
-if (!inTradeWindow || !IsFormedAndOnlineAndAllowTrading())
-return;
-
-var entrySignal = rsi < rsima - bbstd;
-var exitSignal = rsi > rsima + bbstd;
-
-if (entrySignal && Position >= 0 && (Position == 0 || !AddWhileInLossOnly || candle.ClosePrice < _avgEntryPrice))
-{
-var prevPos = Position;
-BuyMarket(Volume);
-var newPos = prevPos + Volume;
-_avgEntryPrice = prevPos == 0 ? candle.ClosePrice : (_avgEntryPrice * prevPos + candle.ClosePrice * Volume) / newPos;
-}
-else if (exitSignal && Position > 0)
-{
-var profitPercent = _avgEntryPrice == 0 ? 0 : (candle.ClosePrice - _avgEntryPrice) / _avgEntryPrice * 100m;
-if (profitPercent > MinProfit)
-{
-var volumeToSell = Position * ExitPercent / 100m;
-if (volumeToSell > 0)
-{
-SellMarket(volumeToSell);
-if (volumeToSell >= Position)
-_avgEntryPrice = 0m;
-}
-}
-}
-}
+		// Accumulate long when RSI is oversold relative to its own distribution
+		if (entrySignal && Position <= 0)
+		{
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+		}
+		// Exit when RSI is overbought
+		else if (exitSignal && Position > 0)
+		{
+			SellMarket();
+			_entryPrice = 0;
+		}
+		// Also allow short on extreme overbought
+		else if (exitSignal && Position == 0)
+		{
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+		}
+		else if (entrySignal && Position < 0)
+		{
+			BuyMarket();
+			_entryPrice = 0;
+		}
+	}
 }
