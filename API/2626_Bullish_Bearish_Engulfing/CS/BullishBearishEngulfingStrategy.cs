@@ -24,8 +24,6 @@ public class BullishBearishEngulfingStrategy : Strategy
 	private readonly StrategyParam<bool> _closeOpposite;
 	private readonly StrategyParam<Sides> _bullishSide;
 	private readonly StrategyParam<Sides> _bearishSide;
-	private readonly StrategyParam<decimal> _volume;
-
 	private readonly Queue<CandleSnapshot> _candles = new();
 
 	/// <summary>
@@ -56,10 +54,6 @@ public class BullishBearishEngulfingStrategy : Strategy
 
 		_bearishSide = Param(nameof(BearishSide), Sides.Sell)
 			.SetDisplay("Bearish Action", "Order side for bearish engulfing", "Pattern");
-
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Base order volume", "Trading");
 	}
 
 	/// <summary>
@@ -210,17 +204,16 @@ public class BullishBearishEngulfingStrategy : Strategy
 		if (Position > 0)
 			return;
 
-		var volume = Volume;
 		if (Position < 0)
 		{
 			if (!CloseOppositePositions)
 				return;
 
-			volume += Math.Abs(Position);
+			// Close short first
+			BuyMarket();
 		}
 
-		if (volume > 0m)
-			BuyMarket(volume);
+		BuyMarket();
 	}
 
 	private void EnterShort()
@@ -228,17 +221,16 @@ public class BullishBearishEngulfingStrategy : Strategy
 		if (Position < 0)
 			return;
 
-		var volume = Volume;
 		if (Position > 0)
 		{
 			if (!CloseOppositePositions)
 				return;
 
-			volume += Math.Abs(Position);
+			// Close long first
+			SellMarket();
 		}
 
-		if (volume > 0m)
-			SellMarket(volume);
+		SellMarket();
 	}
 
 	private decimal CalculateDistanceInPrice()

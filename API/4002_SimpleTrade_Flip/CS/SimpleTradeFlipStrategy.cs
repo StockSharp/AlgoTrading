@@ -41,7 +41,7 @@ public class SimpleTradeFlipStrategy : Strategy
 			.SetDisplay("Stop-Loss Points", "Protective stop distance expressed in instrument points", "Risk");
 
 		_lookbackBars = Param(nameof(LookbackBars), 3)
-			.SetGreaterOrEqual(1)
+			.SetGreaterThanZero()
 			.SetDisplay("Lookback Bars", "Number of bars used for the open price comparison", "Signals");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -109,34 +109,23 @@ public class SimpleTradeFlipStrategy : Strategy
 		if (StopLossPoints > 0m && step > 0m)
 			stopLossUnit = new Unit(StopLossPoints * step, UnitTypes.Absolute);
 
-		StartProtection(stopLoss: stopLossUnit);
+		StartProtection(null, stopLossUnit);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (candle.State == CandleStates.Finished)
-		{
-			// Store the open price of the finished candle for future comparisons.
-			_openHistory.Add(candle.OpenPrice);
-
-			var maxHistory = Math.Max(LookbackBars + 5, 5);
-			if (_openHistory.Count > maxHistory)
-				_openHistory.RemoveRange(0, _openHistory.Count - maxHistory);
-
-			return;
-		}
-
-		if (candle.State != CandleStates.Active)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Run the entry logic only once per freshly opened bar.
-		if (candle.OpenTime <= _lastProcessedOpenTime)
-			return;
+		// Store the open price for future comparisons.
+		_openHistory.Add(candle.OpenPrice);
 
-		_lastProcessedOpenTime = candle.OpenTime;
+		var maxHistory = Math.Max(LookbackBars + 5, 5);
+		if (_openHistory.Count > maxHistory)
+			_openHistory.RemoveRange(0, _openHistory.Count - maxHistory);
 
 		var lookback = LookbackBars;
-		if (_openHistory.Count < lookback)
+		if (_openHistory.Count <= lookback)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
@@ -147,7 +136,7 @@ public class SimpleTradeFlipStrategy : Strategy
 			return;
 
 		var currentOpen = candle.OpenPrice;
-		var referenceOpen = _openHistory[^lookback];
+		var referenceOpen = _openHistory[^(lookback + 1)];
 
 		// Close any existing position before flipping to the new direction.
 		if (Position > 0m)
@@ -157,12 +146,10 @@ public class SimpleTradeFlipStrategy : Strategy
 
 		if (currentOpen > referenceOpen)
 		{
-			// New bar opened higher than the reference bar -> go long.
 			BuyMarket(volume);
 		}
 		else
 		{
-			// Otherwise the open is equal or lower -> go short.
 			SellMarket(volume);
 		}
 	}

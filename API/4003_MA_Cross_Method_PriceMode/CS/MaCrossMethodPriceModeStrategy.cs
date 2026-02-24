@@ -197,7 +197,7 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_firstMa, _secondMa, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -212,23 +212,10 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal firstDecimal, decimal secondDecimal)
 	{
-		// Work with completed candles only to avoid partial data.
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		var firstPrice = SelectPrice(candle, FirstPriceMode);
-		var secondPrice = SelectPrice(candle, SecondPriceMode);
-
-		var firstValue = _firstMa.Process(new DecimalIndicatorValue(_firstMa, firstPrice, candle.OpenTime));
-		var secondValue = _secondMa.Process(new DecimalIndicatorValue(_secondMa, secondPrice, candle.OpenTime));
-
-		if (!firstValue.IsFinal || !secondValue.IsFinal)
-			return;
-
-		var firstDecimal = firstValue.ToDecimal();
-		var secondDecimal = secondValue.ToDecimal();
 
 		UpdateBuffer(_firstValues, firstDecimal, FirstShift);
 		UpdateBuffer(_secondValues, secondDecimal, SecondShift);
@@ -237,6 +224,9 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 			return;
 
 		if (!TryGetShiftedValues(_secondValues, SecondShift, out var secondCurrent, out _))
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var bullishCross = IsBullishCross(firstPrevious, firstCurrent, secondCurrent);

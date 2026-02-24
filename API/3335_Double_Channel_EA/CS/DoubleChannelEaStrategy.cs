@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Double Channel EA strategy: BB + EMA trend.
-/// Buys when close < lower BB and close > EMA. Sells when close > upper BB and close < EMA.
+/// Buys when close touches lower BB. Sells when close touches upper BB.
 /// </summary>
 public class DoubleChannelEaStrategy : Strategy
 {
@@ -73,7 +73,7 @@ public class DoubleChannelEaStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbVal, decimal ema)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbVal, IIndicatorValue emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -81,15 +81,19 @@ public class DoubleChannelEaStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var bbv = bbVal.IsEmpty ? null : (BollingerBandsValue)bbVal;
-		if (bbv == null)
+		var bb = (BollingerBandsValue)bbVal;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
 			return;
 
+		if (emaVal.IsEmpty)
+			return;
+
+		var ema = emaVal.GetValue<decimal>();
 		var close = candle.ClosePrice;
 
-		if (close < bbv.LowBand && Position <= 0)
+		if (close < lower && close > ema && Position <= 0)
 			BuyMarket();
-		else if (close > bbv.UpBand && Position >= 0)
+		else if (close > upper && close < ema && Position >= 0)
 			SellMarket();
 	}
 }

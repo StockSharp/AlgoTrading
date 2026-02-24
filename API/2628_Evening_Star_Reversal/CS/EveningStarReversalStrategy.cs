@@ -181,8 +181,8 @@ public class EveningStarReversalStrategy : Strategy
 		// Manage any open trade before searching for a new signal.
 		HandleActivePosition(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		//if (!IsFormedAndOnlineAndAllowTrading())
+		//return;
 
 		// The pattern requires three completed candles with the configured shift.
 		var requiredCount = Shift + 2;
@@ -216,12 +216,10 @@ public class EveningStarReversalStrategy : Strategy
 		if (Position < 0 && !CloseOppositePositions)
 		return;
 
-		var volumeToSend = volume;
-		if (CloseOppositePositions && Position < 0)
-		volumeToSend += Math.Abs(Position);
+		if (Position < 0 && CloseOppositePositions)
+		BuyMarket();
 
-		// Enter a long position or flip the existing short exposure.
-		BuyMarket(volumeToSend);
+		BuyMarket();
 
 		_entryPrice = entryPrice;
 		_stopPrice = stopPrice;
@@ -232,12 +230,10 @@ public class EveningStarReversalStrategy : Strategy
 		if (Position > 0 && !CloseOppositePositions)
 		return;
 
-		var volumeToSend = volume;
-		if (CloseOppositePositions && Position > 0)
-		volumeToSend += Math.Abs(Position);
+		if (Position > 0 && CloseOppositePositions)
+		SellMarket();
 
-		// Enter a short position or flip the existing long exposure.
-		SellMarket(volumeToSend);
+		SellMarket();
 
 		_entryPrice = entryPrice;
 		_stopPrice = stopPrice;
@@ -261,7 +257,7 @@ public class EveningStarReversalStrategy : Strategy
 
 		if (stopHit || takeHit)
 		{
-		SellMarket(Position);
+		SellMarket();
 		ResetTargets();
 		}
 		}
@@ -272,7 +268,7 @@ public class EveningStarReversalStrategy : Strategy
 
 		if (stopHit || takeHit)
 		{
-		BuyMarket(Math.Abs(Position));
+		BuyMarket();
 		ResetTargets();
 		}
 		}
@@ -335,36 +331,8 @@ public class EveningStarReversalStrategy : Strategy
 
 	private decimal CalculatePositionSize(decimal entryPrice, decimal stopPrice)
 	{
-		var distance = Math.Abs(entryPrice - stopPrice);
-		if (distance <= 0m)
-		return 0m;
-
-		var equity = Portfolio?.CurrentValue ?? 0m;
-		if (equity <= 0m)
-		return 0m;
-
-		var riskAmount = equity * (RiskPercent / 100m);
-		if (riskAmount <= 0m)
-		return 0m;
-
-		var rawVolume = riskAmount / distance;
-		var step = Security.VolumeStep ?? 1m;
-		var min = Security.VolumeMin ?? step;
-		var max = Security.VolumeMax ?? decimal.MaxValue;
-
-		if (step <= 0m)
-		step = 1m;
-
-		var steps = Math.Floor(rawVolume / step);
-		var volume = steps * step;
-
-		if (volume < min)
-		return 0m;
-
-		if (volume > max)
-		volume = max;
-
-		return volume;
+		// Simplified: always return Volume (from base Strategy)
+		return Volume;
 	}
 
 	private decimal CalculatePipSize()

@@ -167,7 +167,7 @@ public class OpenClose2AmpnStochasticStrategy : Strategy
 
 		// Build the Stochastic oscillator that mirrors the original (9,3,3) setup.
 		_stochastic = new StochasticOscillator
-		{ K = { Length = StochasticLength },
+		{
 			K = { Length = StochasticKLength },
 			D = { Length = StochasticDLength },
 		};
@@ -376,7 +376,7 @@ public class OpenClose2AmpnStochasticStrategy : Strategy
 		if (Position == 0m)
 			return 0m;
 
-		var entryPrice = PositionPrice != 0m ? PositionPrice : _averageEntryPrice;
+		var entryPrice = _averageEntryPrice;
 		if (entryPrice == 0m)
 			return 0m;
 

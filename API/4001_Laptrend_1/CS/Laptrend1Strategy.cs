@@ -244,7 +244,7 @@ public class Laptrend1Strategy : Strategy
 		};
 
 		var signalSubscription = SubscribeCandles(SignalCandleType);
-		signalSubscription.Bind(_fisher, _adx, ProcessSignalCandle).Start();
+		signalSubscription.BindEx(_fisher, _adx, ProcessSignalCandle).Start();
 
 		var trendSubscription = SubscribeCandles(TrendCandleType);
 		trendSubscription.Bind(ProcessTrendCandle).Start();
@@ -264,12 +264,12 @@ public class Laptrend1Strategy : Strategy
 			return;
 
 		// Update LabTrend state on the signal timeframe.
-		_signalTrend.Process(new DecimalIndicatorValue(_signalTrend, candle, ChannelLength));
+		_signalTrend.Process(candle, ChannelLength, RiskFactor);
 
 		// Keep Fisher state in sync whenever a final value is available.
 		if (fisherValue.IsFinal && _fisher.IsFormed)
 		{
-			var fisher = fisherValue.ToDecimal();
+			var fisher = fisherValue.GetValue<decimal>();
 			UpdateFisherFlags(fisher);
 		}
 
@@ -343,7 +343,7 @@ public class Laptrend1Strategy : Strategy
 			return;
 
 		// Track the higher timeframe trend for directional filtering.
-		_trendTrend.Process(new DecimalIndicatorValue(_trendTrend, candle, ChannelLength));
+		_trendTrend.Process(candle, ChannelLength, RiskFactor);
 	}
 
 	private void ManagePosition(ICandleMessage candle, bool canTrade)

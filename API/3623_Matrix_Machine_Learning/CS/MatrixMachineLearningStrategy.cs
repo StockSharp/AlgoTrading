@@ -390,7 +390,7 @@ public class MatrixMachineLearningStrategy : Strategy
 		LogInfo(FormattableString.Invariant($"{title}: count={count} positive={positive} negative={negative} accuracy={accuracy:0.##}%"));
 	}
 
-	private static double[] RunWeights(double[,] weights, double[] input)
+	private double[] RunWeights(double[,] weights, double[] input)
 	{
 		var predictor = weights.GetLength(0);
 		var response = weights.GetLength(1);

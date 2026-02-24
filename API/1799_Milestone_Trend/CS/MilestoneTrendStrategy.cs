@@ -124,19 +124,19 @@ _atrPeriod = Param(nameof(AtrPeriod), 14)
 
 .SetDisplay("ATR Period", "ATR Period", "General");
 
-_minTrend = Param(nameof(MinTrend), 10m)
+_minTrend = Param(nameof(MinTrend), 1m)
 
 .SetDisplay("Minimum Trend", "Minimum Trend", "General");
 
-_maxTrend = Param(nameof(MaxTrend), 100m)
+_maxTrend = Param(nameof(MaxTrend), 10000m)
 
 .SetDisplay("Maximum Trend", "Maximum Trend", "General");
 
-_minRange = Param(nameof(MinRange), 5m)
+_minRange = Param(nameof(MinRange), 1m)
 
 .SetDisplay("Minimum ATR", "Minimum ATR", "General");
 
-_candleSpike = Param(nameof(CandleSpike), 10m)
+_candleSpike = Param(nameof(CandleSpike), 100000m)
 
 .SetDisplay("Maximum Candle Body", "Maximum Candle Body", "General");
 
@@ -191,8 +191,7 @@ private void ProcessCandle(ICandleMessage candle, decimal slowValue, decimal fas
 if (candle.State != CandleStates.Finished)
 return;
 
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
+// indicators are checked by Bind
 
 var trendStrength = slowValue - _prevSlow;
 

@@ -34,6 +34,7 @@ public class SwingBreakoutProStrategy : Strategy
 	private decimal _longTP;
 	private decimal _shortSL;
 	private decimal _shortTP;
+	private bool _waitingExit;
 
 	/// <summary>
 	/// Left bars for pivot calculation.
@@ -90,6 +91,7 @@ public class SwingBreakoutProStrategy : Strategy
 		_lastSwingHigh = _lastSwingLow = 0m;
 		_prevHigh = _prevLow = _prevClose = 0m;
 		_longSL = _longTP = _shortSL = _shortTP = 0m;
+		_waitingExit = false;
 	}
 
 	/// <inheritdoc />
@@ -159,33 +161,63 @@ public class SwingBreakoutProStrategy : Strategy
 			return;
 		}
 
+		// If waiting for exit to complete, check if position is flat
+		if (_waitingExit)
+		{
+			if (Position == 0)
+				_waitingExit = false;
+			else
+			{
+				_prevHigh = candle.HighPrice;
+				_prevLow = candle.LowPrice;
+				_prevClose = candle.ClosePrice;
+				return;
+			}
+		}
+
 		var longCondition = _prevClose > _lastSwingHigh && candle.HighPrice > _prevHigh && _lastSwingHigh != 0m && _lastSwingLow != 0m;
 		var shortCondition = _prevClose < _lastSwingLow && candle.LowPrice < _prevLow && _lastSwingHigh != 0m && _lastSwingLow != 0m;
 
-		if (longCondition && Position <= 0)
-		{
-			var rangeGap = Math.Abs(_lastSwingHigh - _lastSwingLow);
-			_longSL = _lastSwingLow;
-			_longTP = _lastSwingHigh + rangeGap;
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (shortCondition && Position >= 0)
-		{
-			var rangeGap = Math.Abs(_lastSwingHigh - _lastSwingLow);
-			_shortSL = _lastSwingHigh;
-			_shortTP = _lastSwingLow - rangeGap;
-			SellMarket(Volume + Math.Abs(Position));
-		}
-
+		// Check exits first
 		if (Position > 0)
 		{
 			if (candle.LowPrice <= _longSL || candle.HighPrice >= _longTP)
-				SellMarket(Math.Abs(Position));
+			{
+				SellMarket();
+				_waitingExit = true;
+				_prevHigh = candle.HighPrice;
+				_prevLow = candle.LowPrice;
+				_prevClose = candle.ClosePrice;
+				return;
+			}
 		}
 		else if (Position < 0)
 		{
 			if (candle.HighPrice >= _shortSL || candle.LowPrice <= _shortTP)
-				BuyMarket(Math.Abs(Position));
+			{
+				BuyMarket();
+				_waitingExit = true;
+				_prevHigh = candle.HighPrice;
+				_prevLow = candle.LowPrice;
+				_prevClose = candle.ClosePrice;
+				return;
+			}
+		}
+
+		// Check entries only when flat
+		if (longCondition && Position == 0)
+		{
+			var rangeGap = Math.Abs(_lastSwingHigh - _lastSwingLow);
+			_longSL = _lastSwingLow;
+			_longTP = _lastSwingHigh + rangeGap;
+			BuyMarket();
+		}
+		else if (shortCondition && Position == 0)
+		{
+			var rangeGap = Math.Abs(_lastSwingHigh - _lastSwingLow);
+			_shortSL = _lastSwingHigh;
+			_shortTP = _lastSwingLow - rangeGap;
+			SellMarket();
 		}
 
 		_prevHigh = candle.HighPrice;

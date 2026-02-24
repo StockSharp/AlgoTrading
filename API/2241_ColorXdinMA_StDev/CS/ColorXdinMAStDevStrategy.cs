@@ -145,17 +145,20 @@ public class ColorXdinMAStDevStrategy : Strategy
 		if (!_stdDev.IsFormed || stDev == 0)
 			return;
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		var filter = K1 * stDev;
 
 		if (change > filter)
 		{
 			if (Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 		}
 		else if (change < -filter)
 		{
 			if (Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 		}
 	}
 }

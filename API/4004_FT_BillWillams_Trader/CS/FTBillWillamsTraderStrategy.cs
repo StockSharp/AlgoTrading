@@ -83,6 +83,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	private decimal? _shortTakePrice;
 
 	private decimal? _previousClose;
+	private decimal? _entryPrice;
 
 	private decimal _point;
 	private decimal _indentDistance;
@@ -426,6 +427,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 		_longTakePrice = null;
 		_shortTakePrice = null;
 		_previousClose = null;
+		_entryPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -464,6 +466,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 		_longTakePrice = null;
 		_shortTakePrice = null;
 		_previousClose = null;
+		_entryPrice = null;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -482,12 +485,16 @@ public class FTBillWillamsTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnPositionReceived(position);
+		base.OnOwnTradeReceived(trade);
+
+		if (Position != 0 && _entryPrice == null)
+			_entryPrice = trade.Trade.Price;
 
 		if (Position == 0)
 		{
+			_entryPrice = null;
 			_longStopPrice = null;
 			_longTakePrice = null;
 			_shortStopPrice = null;
@@ -495,18 +502,18 @@ public class FTBillWillamsTraderStrategy : Strategy
 			return;
 		}
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice ?? trade.Trade.Price;
 		var stopDistance = StopLossPoints * _point;
 		var takeDistance = TakeProfitPoints * _point;
 
-		if (Position > 0 && delta > 0)
+		if (Position > 0)
 		{
 			_longStopPrice = stopDistance > 0m ? entryPrice - stopDistance : null;
 			_longTakePrice = takeDistance > 0m ? entryPrice + takeDistance : null;
 			_shortStopPrice = null;
 			_shortTakePrice = null;
 		}
-		else if (Position < 0 && delta < 0)
+		else if (Position < 0)
 		{
 			_shortStopPrice = stopDistance > 0m ? entryPrice + stopDistance : null;
 			_shortTakePrice = takeDistance > 0m ? entryPrice - takeDistance : null;
@@ -529,7 +536,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, price, candle.OpenTime));
 		var slopeValue = _slopeSma.Process(new DecimalIndicatorValue(_slopeSma, candle.ClosePrice, candle.OpenTime));
 
-		if (!jawValue.IsFinal || !teethValue.IsFinal || !lipsValue.IsFinal || !slopeValue.IsFinal)
+		if (!_jaw.IsFormed || !_teeth.IsFormed || !_lips.IsFormed || !_slopeSma.IsFormed)
 		{
 			_previousClose = candle.ClosePrice;
 			_newUpFractal = false;
@@ -537,10 +544,10 @@ public class FTBillWillamsTraderStrategy : Strategy
 			return;
 		}
 
-		var jaw = jawValue.ToDecimal();
-		var teeth = teethValue.ToDecimal();
-		var lips = lipsValue.ToDecimal();
-		var slopeSma = slopeValue.ToDecimal();
+		var jaw = jawValue.GetValue<decimal>();
+		var teeth = teethValue.GetValue<decimal>();
+		var lips = lipsValue.GetValue<decimal>();
+		var slopeSma = slopeValue.GetValue<decimal>();
 
 		UpdateHistory(_jawHistory, jaw);
 		UpdateHistory(_teethHistory, teeth);
@@ -549,13 +556,6 @@ public class FTBillWillamsTraderStrategy : Strategy
 
 		ManagePositions(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousClose = candle.ClosePrice;
-			_newUpFractal = false;
-			_newDownFractal = false;
-			return;
-		}
 
 		TryEnterLong(candle);
 		TryEnterShort(candle);
@@ -600,7 +600,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 
 			if (EnableTrailing && hasLips && hasLipsPrevPrev && hasSlopePrev && hasSlopePrevPrev)
 			{
-				var profit = candle.ClosePrice - PositionPrice;
+				var profit = _entryPrice.HasValue ? candle.ClosePrice - _entryPrice.Value : 0m;
 				if (profit > 0m)
 				{
 					var lipsSlope = lipsPrev - lipsPrevPrev;
@@ -650,7 +650,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 
 			if (EnableTrailing && hasLips && hasLipsPrevPrev && hasSlopePrev && hasSlopePrevPrev)
 			{
-				var profit = PositionPrice - candle.ClosePrice;
+				var profit = _entryPrice.HasValue ? _entryPrice.Value - candle.ClosePrice : 0m;
 				if (profit > 0m)
 				{
 					var lipsSlope = lipsPrevPrev - lipsPrev;

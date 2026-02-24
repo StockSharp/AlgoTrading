@@ -92,15 +92,15 @@ public class Xroc2VgTmStrategy : Strategy
 	/// </summary>
 	public Xroc2VgTmStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
-		_rocPeriod1 = Param(nameof(RocPeriod1), 8)
+		_rocPeriod1 = Param(nameof(RocPeriod1), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast ROC Period", "Lookback for the first ROC line", "Indicator")
 			;
 
-		_rocPeriod2 = Param(nameof(RocPeriod2), 14)
+		_rocPeriod2 = Param(nameof(RocPeriod2), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow ROC Period", "Lookback for the second ROC line", "Indicator")
 			;
@@ -122,7 +122,7 @@ public class Xroc2VgTmStrategy : Strategy
 		_rocType = Param(nameof(RocType), RocCalculationTypes.Momentum)
 			.SetDisplay("ROC Mode", "Calculation used for rate of change", "Indicator");
 
-		_signalShift = Param(nameof(SignalShift), 1)
+		_signalShift = Param(nameof(SignalShift), 0)
 			.SetNotNegative()
 			.SetDisplay("Signal Shift", "Bars back to read the signals", "Logic");
 
@@ -138,7 +138,7 @@ public class Xroc2VgTmStrategy : Strategy
 		_allowSellClose = Param(nameof(AllowSellClose), true)
 			.SetDisplay("Allow Short Exit", "Enable closing short positions by indicator", "Trading");
 
-		_useTimeFilter = Param(nameof(UseTimeFilter), true)
+		_useTimeFilter = Param(nameof(UseTimeFilter), false)
 			.SetDisplay("Use Time Filter", "Restrict trading to a time window", "Timing");
 
 		_startTime = Param(nameof(StartTime), TimeSpan.Zero)
@@ -395,15 +395,14 @@ public class Xroc2VgTmStrategy : Strategy
 		var fastValue = _smoothFast.Process(new DecimalIndicatorValue(_smoothFast, fastRoc.Value, candle.OpenTime));
 		var slowValue = _smoothSlow.Process(new DecimalIndicatorValue(_smoothSlow, slowRoc.Value, candle.OpenTime));
 
-		if (!fastValue.IsFinal || !slowValue.IsFinal)
-			return;
+		// Skip until we have enough data for both smoothing indicators
 
-		if (fastValue is not DecimalIndicatorValue fastResult || slowValue is not DecimalIndicatorValue slowResult)
-			return;
+		var fastDecimal = fastValue.GetValue<decimal>();
+		var slowDecimal = slowValue.GetValue<decimal>();
 
 		var historyCapacity = SignalShift + 3;
-		UpdateHistory(_fastHistory, fastResult.Value, historyCapacity);
-		UpdateHistory(_slowHistory, slowResult.Value, historyCapacity);
+		UpdateHistory(_fastHistory, fastDecimal, historyCapacity);
+		UpdateHistory(_slowHistory, slowDecimal, historyCapacity);
 
 		if (_fastHistory.Count <= SignalShift + 1 || _slowHistory.Count <= SignalShift + 1)
 			return;
@@ -413,16 +412,19 @@ public class Xroc2VgTmStrategy : Strategy
 		var slowCurrent = _slowHistory[SignalShift];
 		var slowPrevious = _slowHistory[SignalShift + 1];
 
-		var buyOpenSignal = AllowBuyOpen && fastPrevious > slowPrevious && fastCurrent <= slowCurrent;
-		var sellOpenSignal = AllowSellOpen && fastPrevious < slowPrevious && fastCurrent >= slowCurrent;
-		var buyCloseSignal = AllowBuyClose && fastPrevious < slowPrevious;
-		var sellCloseSignal = AllowSellClose && fastPrevious > slowPrevious;
+		var buyOpenSignal = AllowBuyOpen && fastPrevious <= slowPrevious && fastCurrent > slowCurrent;
+		var sellOpenSignal = AllowSellOpen && fastPrevious >= slowPrevious && fastCurrent < slowCurrent;
+		var buyCloseSignal = AllowBuyClose && fastCurrent < slowCurrent;
+		var sellCloseSignal = AllowSellClose && fastCurrent > slowCurrent;
 
 		var tradeAllowed = !UseTimeFilter || IsWithinTradeWindow(candle.OpenTime);
 
 		if (UseTimeFilter && !tradeAllowed && Position != 0)
 		{
-			ClosePosition();
+			if (Position > 0)
+				SellMarket();
+			else
+				BuyMarket();
 			ResetPositionState();
 			return;
 		}
@@ -432,14 +434,14 @@ public class Xroc2VgTmStrategy : Strategy
 
 		if (sellCloseSignal && Position < 0)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 			ResetPositionState();
 			return;
 		}
 
 		if (buyCloseSignal && Position > 0)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetPositionState();
 			return;
 		}
@@ -447,21 +449,21 @@ public class Xroc2VgTmStrategy : Strategy
 		if (!tradeAllowed)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		//if (!IsFormedAndOnlineAndAllowTrading())
+		//	return;
 
 		if (Position != 0)
 			return;
 
-		if (buyOpenSignal && OrderVolume > 0m)
+		if (buyOpenSignal)
 		{
-			BuyMarket(OrderVolume);
+			BuyMarket();
 			_longEntryPrice = candle.ClosePrice;
 			_shortEntryPrice = null;
 		}
-		else if (sellOpenSignal && OrderVolume > 0m)
+		else if (sellOpenSignal)
 		{
-			SellMarket(OrderVolume);
+			SellMarket();
 			_shortEntryPrice = candle.ClosePrice;
 			_longEntryPrice = null;
 		}
@@ -479,7 +481,7 @@ public class Xroc2VgTmStrategy : Strategy
 				var stopLevel = longEntry - StopLoss;
 				if (candle.LowPrice <= stopLevel)
 				{
-					SellMarket(Position);
+					SellMarket();
 					ResetPositionState();
 					return true;
 				}
@@ -490,7 +492,7 @@ public class Xroc2VgTmStrategy : Strategy
 				var targetLevel = longEntry + TakeProfit;
 				if (candle.HighPrice >= targetLevel)
 				{
-					SellMarket(Position);
+					SellMarket();
 					ResetPositionState();
 					return true;
 				}
@@ -503,7 +505,7 @@ public class Xroc2VgTmStrategy : Strategy
 				var stopLevel = shortEntry + StopLoss;
 				if (candle.HighPrice >= stopLevel)
 				{
-					BuyMarket(-Position);
+					BuyMarket();
 					ResetPositionState();
 					return true;
 				}
@@ -514,7 +516,7 @@ public class Xroc2VgTmStrategy : Strategy
 				var targetLevel = shortEntry - TakeProfit;
 				if (candle.LowPrice <= targetLevel)
 				{
-					BuyMarket(-Position);
+					BuyMarket();
 					ResetPositionState();
 					return true;
 				}
@@ -576,7 +578,7 @@ public class Xroc2VgTmStrategy : Strategy
 
 	private static IIndicator CreateSmoothingIndicator(SmoothingMethods method, int length)
 	{
-		var indicator = method switch
+		IIndicator indicator = method switch
 		{
 			SmoothingMethods.Simple => new SMA { Length = length },
 			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },

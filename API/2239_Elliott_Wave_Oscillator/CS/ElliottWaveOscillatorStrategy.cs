@@ -100,7 +100,7 @@ public class ElliottWaveOscillatorStrategy : Strategy
 			.SetDisplay("Stop Loss %", "Percentage stop loss", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -166,13 +166,13 @@ public class ElliottWaveOscillatorStrategy : Strategy
 		{
 			// Oscillator turns upward - open long
 			if (Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 		}
 		else if (_prevEwo > _prevPrevEwo && ewoValue < _prevEwo)
 		{
 			// Oscillator turns downward - open short
 			if (Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 		}
 
 		_prevPrevEwo = _prevEwo;

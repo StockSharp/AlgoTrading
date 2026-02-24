@@ -82,12 +82,15 @@ public class NrtrExtrStrategy : Strategy
 
 		var atr = atrValue.GetValue<decimal>();
 
+		if (atr <= 0)
+			return;
+
 		if (!_initialized)
 		{
 			_price = candle.ClosePrice;
 			_value = candle.ClosePrice;
-			_trend = 0;
-			_trendPrev = 0;
+			_trend = 1;
+			_trendPrev = 1;
 			_initialized = true;
 			return;
 		}
@@ -99,9 +102,9 @@ public class NrtrExtrStrategy : Strategy
 			_price = Math.Max(_price, candle.HighPrice);
 			_value = Math.Max(_value, _price * (1m - dK));
 
-			if (candle.HighPrice < _value)
+			if (candle.ClosePrice < _value)
 			{
-				_price = candle.HighPrice;
+				_price = candle.LowPrice;
 				_value = _price * (1m + dK);
 				_trend = -1;
 			}
@@ -111,16 +114,16 @@ public class NrtrExtrStrategy : Strategy
 			_price = Math.Min(_price, candle.LowPrice);
 			_value = Math.Min(_value, _price * (1m + dK));
 
-			if (candle.LowPrice > _value)
+			if (candle.ClosePrice > _value)
 			{
-				_price = candle.LowPrice;
+				_price = candle.HighPrice;
 				_value = _price * (1m - dK);
 				_trend = 1;
 			}
 		}
 
-		var buySignal = _trendPrev < 0 && _trend > 0;
-		var sellSignal = _trendPrev > 0 && _trend < 0;
+		var buySignal = _trendPrev <= 0 && _trend > 0;
+		var sellSignal = _trendPrev >= 0 && _trend < 0;
 
 		if (IsFormedAndOnlineAndAllowTrading())
 		{

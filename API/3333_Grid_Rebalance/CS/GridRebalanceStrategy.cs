@@ -80,9 +80,9 @@ public class GridRebalanceStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (rsi < 45m && candle.ClosePrice > ema && Position <= 0)
+		if (rsi < 50m && candle.ClosePrice > ema && Position <= 0)
 			BuyMarket();
-		else if (rsi > 55m && candle.ClosePrice < ema && Position >= 0)
+		else if (rsi > 50m && candle.ClosePrice < ema && Position >= 0)
 			SellMarket();
 	}
 }

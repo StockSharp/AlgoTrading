@@ -519,8 +519,8 @@ public class Xroc2VgX2Strategy : Strategy
 		if (_trend == 0)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		//if (!IsFormedAndOnlineAndAllowTrading())
+		//	return;
 
 		var buyClose = CloseBuyOnLower && previous.up < previous.down;
 		var sellClose = CloseSellOnLower && previous.up > previous.down;
