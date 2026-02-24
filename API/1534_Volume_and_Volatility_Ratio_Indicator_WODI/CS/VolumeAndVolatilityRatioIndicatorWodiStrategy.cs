@@ -14,126 +14,167 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Simplified port of the "Volume and Volatility Ratio Indicator-WODI" strategy.
+/// Volume and volatility ratio indicator strategy (WODI).
 /// Detects increased volume and volatility to enter reversal trades.
+/// Uses volume MA and volatility index with short/long MA crossover.
 /// </summary>
 public class VolumeAndVolatilityRatioIndicatorWodiStrategy : Strategy
 {
-private readonly StrategyParam<int> _volLength;
-private readonly StrategyParam<int> _indexShortLength;
-private readonly StrategyParam<int> _indexLongLength;
-private readonly StrategyParam<decimal> _indexThreshold;
-private readonly StrategyParam<int> _lookbackBars;
-private readonly StrategyParam<bool> _reversalMode;
-private readonly StrategyParam<decimal> _stopLossFib;
-private readonly StrategyParam<decimal> _takeProfitFib;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _volLength;
+	private readonly StrategyParam<int> _indexLength;
+	private readonly StrategyParam<decimal> _stopPct;
+	private readonly StrategyParam<decimal> _tpPct;
+	private readonly StrategyParam<DataType> _candleType;
 
-private decimal _stopLoss;
-private decimal _takeProfit;
-private ICandleMessage _prevCandle;
-private ICandleMessage _prevPrevCandle;
+	private readonly List<decimal> _volumes = new();
+	private readonly List<decimal> _volIndices = new();
+	private decimal _entryPrice;
+	private decimal _stopDist;
+	private ICandleMessage _prevCandle;
+	private ICandleMessage _prevPrevCandle;
 
-public int VolLength { get => _volLength.Value; set => _volLength.Value = value; }
-public int IndexShortLength { get => _indexShortLength.Value; set => _indexShortLength.Value = value; }
-public int IndexLongLength { get => _indexLongLength.Value; set => _indexLongLength.Value = value; }
-public decimal IndexThreshold { get => _indexThreshold.Value; set => _indexThreshold.Value = value; }
-public int LookbackBars { get => _lookbackBars.Value; set => _lookbackBars.Value = value; }
-public bool ReversalMode { get => _reversalMode.Value; set => _reversalMode.Value = value; }
-public decimal StopLossFib { get => _stopLossFib.Value; set => _stopLossFib.Value = value; }
-public decimal TakeProfitFib { get => _takeProfitFib.Value; set => _takeProfitFib.Value = value; }
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int VolLength { get => _volLength.Value; set => _volLength.Value = value; }
+	public int IndexLength { get => _indexLength.Value; set => _indexLength.Value = value; }
+	public decimal StopPct { get => _stopPct.Value; set => _stopPct.Value = value; }
+	public decimal TpPct { get => _tpPct.Value; set => _tpPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-public VolumeAndVolatilityRatioIndicatorWodiStrategy()
-{
-_volLength = Param(nameof(VolLength), 48).SetDisplay("Volume MA Length", null, "Common").SetGreaterThanZero();
-_indexShortLength = Param(nameof(IndexShortLength), 13).SetDisplay("Short Index MA", null, "Common").SetGreaterThanZero();
-_indexLongLength = Param(nameof(IndexLongLength), 26).SetDisplay("Long Index MA", null, "Common").SetGreaterThanZero();
-_indexThreshold = Param(nameof(IndexThreshold), 200m).SetDisplay("Index Threshold %", null, "Common").SetGreaterThanZero();
-_lookbackBars = Param(nameof(LookbackBars), 3).SetDisplay("Lookback Bars", null, "Common").SetGreaterThanZero();
-_reversalMode = Param(nameof(ReversalMode), false).SetDisplay("Reversal Mode", null, "Position");
-_stopLossFib = Param(nameof(StopLossFib), 0m).SetDisplay("Stop Loss Fib", null, "Risk");
-_takeProfitFib = Param(nameof(TakeProfitFib), 1.618m).SetDisplay("Take Profit Fib", null, "Risk");
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", null, "General");
-}
+	public VolumeAndVolatilityRatioIndicatorWodiStrategy()
+	{
+		_volLength = Param(nameof(VolLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume MA Length", "Volume average period", "Parameters");
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+		_indexLength = Param(nameof(IndexLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Index Length", "Volatility index average period", "Parameters");
 
-var volMa = new SMA { Length = VolLength };
-var indexShortMa = new SMA { Length = IndexShortLength };
-var indexLongMa = new SMA { Length = IndexLongLength };
+		_stopPct = Param(nameof(StopPct), 0.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop %", "Stop loss percent", "Risk");
 
-var subscription = SubscribeCandles(CandleType);
+		_tpPct = Param(nameof(TpPct), 1m)
+			.SetGreaterThanZero()
+			.SetDisplay("TP %", "Take profit percent", "Risk");
 
-subscription.Bind(candle =>
-{
-if (candle.State != CandleStates.Finished)
-return;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
 
-var volMaValue = volMa.Process(candle.OpenTime, candle.TotalVolume);
-var volatility = (candle.HighPrice - candle.LowPrice) / candle.ClosePrice * 100m;
-var volatilityIndex = candle.TotalVolume * volatility;
-var shortVal = indexShortMa.Process(candle.OpenTime, volatilityIndex);
-var longVal = indexLongMa.Process(candle.OpenTime, volatilityIndex);
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-if (!volMaValue.IsFinal || !shortVal.IsFinal || !longVal.IsFinal)
-return;
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_volumes.Clear();
+		_volIndices.Clear();
+		_entryPrice = 0;
+		_stopDist = 0;
+		_prevCandle = null;
+		_prevPrevCandle = null;
+	}
 
-if (!volMaValue.TryGetValue(out var volAvg) ||
-!shortVal.TryGetValue(out var _) ||
-!longVal.TryGetValue(out var longAvg))
-return;
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-var threshold = longAvg * IndexThreshold / 100m;
+		var sma = new SimpleMovingAverage { Length = 2 };
 
-var isLongPattern = _prevCandle != null && _prevPrevCandle != null &&
-volatilityIndex > threshold &&
-candle.TotalVolume > volAvg &&
-_prevCandle.ClosePrice < _prevPrevCandle.ClosePrice &&
-candle.ClosePrice > _prevCandle.ClosePrice;
+		_volumes.Clear();
+		_volIndices.Clear();
+		_entryPrice = 0;
+		_stopDist = 0;
+		_prevCandle = null;
+		_prevPrevCandle = null;
 
-var isShortPattern = _prevCandle != null && _prevPrevCandle != null &&
-volatilityIndex > threshold &&
-candle.TotalVolume > volAvg &&
-_prevCandle.ClosePrice > _prevPrevCandle.ClosePrice &&
-candle.ClosePrice < _prevCandle.ClosePrice;
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(sma, ProcessCandle).Start();
 
-var longEntry = ReversalMode ? isShortPattern : isLongPattern;
-var shortEntry = ReversalMode ? isLongPattern : isShortPattern;
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
+	}
 
-if (longEntry && Position <= 0)
-{
-var range = candle.HighPrice - candle.LowPrice;
-_stopLoss = candle.LowPrice - range * StopLossFib;
-_takeProfit = candle.LowPrice + range * TakeProfitFib;
-BuyMarket(Volume + Math.Abs(Position));
-}
-else if (shortEntry && Position >= 0)
-{
-var range = candle.HighPrice - candle.LowPrice;
-_stopLoss = candle.HighPrice + range * StopLossFib;
-_takeProfit = candle.HighPrice - range * TakeProfitFib;
-SellMarket(Volume + Math.Abs(Position));
-}
+	private void ProcessCandle(ICandleMessage candle, decimal _dummy)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-if (Position > 0)
-{
-if (candle.LowPrice <= _stopLoss || candle.HighPrice >= _takeProfit)
-SellMarket(Math.Abs(Position));
-}
-else if (Position < 0)
-{
-if (candle.HighPrice >= _stopLoss || candle.LowPrice <= _takeProfit)
-BuyMarket(Math.Abs(Position));
-}
+		var vol = candle.TotalVolume;
+		var volatility = candle.ClosePrice > 0 ? (candle.HighPrice - candle.LowPrice) / candle.ClosePrice * 100m : 0;
+		var volIndex = vol * volatility;
 
-_prevPrevCandle = _prevCandle;
-_prevCandle = candle;
-});
+		_volumes.Add(vol);
+		_volIndices.Add(volIndex);
 
-subscription.Start();
-}
+		while (_volumes.Count > VolLength + 1)
+			_volumes.RemoveAt(0);
+		while (_volIndices.Count > IndexLength + 1)
+			_volIndices.RemoveAt(0);
+
+		// TP/SL management
+		if (Position > 0 && _entryPrice > 0 && _stopDist > 0)
+		{
+			if (candle.ClosePrice <= _entryPrice - _stopDist || candle.ClosePrice >= _entryPrice + _stopDist * (TpPct / StopPct))
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_stopDist = 0;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0 && _stopDist > 0)
+		{
+			if (candle.ClosePrice >= _entryPrice + _stopDist || candle.ClosePrice <= _entryPrice - _stopDist * (TpPct / StopPct))
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_stopDist = 0;
+			}
+		}
+
+		if (_volumes.Count < VolLength || _volIndices.Count < IndexLength || _prevCandle == null || _prevPrevCandle == null)
+		{
+			_prevPrevCandle = _prevCandle;
+			_prevCandle = candle;
+			return;
+		}
+
+		// Calculate averages
+		var volAvg = _volumes.Take(VolLength).Sum() / VolLength;
+		var indexAvg = _volIndices.Take(IndexLength).Sum() / IndexLength;
+
+		// Entry conditions
+		var highVol = vol > volAvg;
+		var highVolIndex = volIndex > indexAvg * 1.5m;
+
+		var isLongPattern = highVol && highVolIndex
+			&& _prevCandle.ClosePrice < _prevPrevCandle.ClosePrice
+			&& candle.ClosePrice > _prevCandle.ClosePrice;
+
+		var isShortPattern = highVol && highVolIndex
+			&& _prevCandle.ClosePrice > _prevPrevCandle.ClosePrice
+			&& candle.ClosePrice < _prevCandle.ClosePrice;
+
+		if (isLongPattern && Position <= 0)
+		{
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopDist = candle.ClosePrice * StopPct / 100m;
+		}
+		else if (isShortPattern && Position >= 0)
+		{
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopDist = candle.ClosePrice * StopPct / 100m;
+		}
+
+		_prevPrevCandle = _prevCandle;
+		_prevCandle = candle;
+	}
 }

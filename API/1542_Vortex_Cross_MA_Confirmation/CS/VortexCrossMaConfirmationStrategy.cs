@@ -15,161 +15,89 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Vortex indicator cross with moving average confirmation.
+/// Manual Vortex calculation with SMA trend filter.
+/// Buys on VI+ crossing above VI- with price above SMA, sells on opposite.
 /// </summary>
 public class VortexCrossMaConfirmationStrategy : Strategy
 {
 	private readonly StrategyParam<int> _vortexLength;
 	private readonly StrategyParam<int> _smaLength;
-	private readonly StrategyParam<int> _smoothingLength;
-	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma = null!;
-	private DecimalLengthIndicator _smoothMa = null!;
-	private SimpleMovingAverage _vmpAvg = null!;
-	private SimpleMovingAverage _vmmAvg = null!;
-	private SimpleMovingAverage _trAvg = null!;
-
+	private readonly List<decimal> _vmPlus = new();
+	private readonly List<decimal> _vmMinus = new();
+	private readonly List<decimal> _trueRanges = new();
 	private decimal? _prevHigh;
 	private decimal? _prevLow;
 	private decimal? _prevClose;
-	private decimal? _prevVip;
-	private decimal? _prevVim;
+	private decimal _prevVip;
+	private decimal _prevVim;
 
-	/// <summary>
-	/// Vortex period.
-	/// </summary>
-	public int VortexLength
-	{
-		get => _vortexLength.Value;
-		set => _vortexLength.Value = value;
-	}
+	public int VortexLength { get => _vortexLength.Value; set => _vortexLength.Value = value; }
+	public int SmaLength { get => _smaLength.Value; set => _smaLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// SMA length before smoothing.
-	/// </summary>
-	public int SmaLength
-	{
-		get => _smaLength.Value;
-		set => _smaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Smoothing length.
-	/// </summary>
-	public int SmoothingLength
-	{
-		get => _smoothingLength.Value;
-		set => _smoothingLength.Value = value;
-	}
-
-	/// <summary>
-	/// Smoothing method.
-	/// </summary>
-	public MaTypes MaType
-	{
-		get => _maType.Value;
-		set => _maType.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average types.
-	/// </summary>
-	public enum MaTypes
-	{
-		SMA,
-		EMA,
-		RMA,
-		WMA,
-		VWMA,
-		ALMA,
-		HMA
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="VortexCrossMaConfirmationStrategy"/>.
-	/// </summary>
 	public VortexCrossMaConfirmationStrategy()
 	{
 		_vortexLength = Param(nameof(VortexLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Vortex Length", "Period for Vortex indicator", "General")
-			;
+			.SetDisplay("Vortex Length", "Vortex indicator period", "General");
 
 		_smaLength = Param(nameof(SmaLength), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("SMA Length", "Base SMA length", "General")
-			;
-
-		_smoothingLength = Param(nameof(SmoothingLength), 1)
-			.SetGreaterThanZero()
-			.SetDisplay("Smoothing Length", "Length for additional smoothing", "General")
-			;
-
-		_maType = Param(nameof(MaType), MaTypes.SMA)
-			.SetDisplay("MA Type", "Smoothing method", "General")
-			;
+			.SetDisplay("SMA Length", "MA confirmation period", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_vmPlus.Clear();
+		_vmMinus.Clear();
+		_trueRanges.Clear();
+		_prevHigh = null;
+		_prevLow = null;
+		_prevClose = null;
+		_prevVip = 0;
+		_prevVim = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = SmaLength };
-		_smoothMa = MaType switch
-		{
-			MaTypes.EMA => new EMA { Length = SmoothingLength },
-			MaTypes.RMA => new SmoothedMovingAverage { Length = SmoothingLength },
-			MaTypes.WMA => new WeightedMovingAverage { Length = SmoothingLength },
-			MaTypes.VWMA => new VolumeWeightedMovingAverage { Length = SmoothingLength },
-			MaTypes.ALMA => new ArnaudLegouxMovingAverage { Length = SmoothingLength },
-			MaTypes.HMA => new HullMovingAverage { Length = SmoothingLength },
-			_ => new SMA { Length = SmoothingLength }
-		};
+		var sma = new SimpleMovingAverage { Length = SmaLength };
 
-		_vmpAvg = new SMA { Length = VortexLength };
-		_vmmAvg = new SMA { Length = VortexLength };
-		_trAvg = new SMA { Length = VortexLength };
+		_vmPlus.Clear();
+		_vmMinus.Clear();
+		_trueRanges.Clear();
+		_prevHigh = null;
+		_prevLow = null;
+		_prevClose = null;
+		_prevVip = 0;
+		_prevVim = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ProcessCandle)
-			.Start();
+		subscription.Bind(sma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma);
-			DrawIndicator(area, _smoothMa);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		var smaValue = _sma.Process(candle.ClosePrice);
-		var smoothValue = _smoothMa.Process(smaValue.ToDecimal());
 
 		if (_prevHigh == null)
 		{
@@ -179,51 +107,53 @@ public class VortexCrossMaConfirmationStrategy : Strategy
 			return;
 		}
 
+		// Vortex movement
 		var vmp = Math.Abs(candle.HighPrice - _prevLow.Value);
 		var vmm = Math.Abs(candle.LowPrice - _prevHigh.Value);
-		var tr = Math.Max(candle.HighPrice - candle.LowPrice, Math.Max(Math.Abs(candle.HighPrice - _prevClose.Value), Math.Abs(candle.LowPrice - _prevClose.Value)));
+		var tr = Math.Max(candle.HighPrice - candle.LowPrice,
+			Math.Max(Math.Abs(candle.HighPrice - _prevClose.Value),
+				Math.Abs(candle.LowPrice - _prevClose.Value)));
 
-		var vmpValue = _vmpAvg.Process(vmp);
-		var vmmValue = _vmmAvg.Process(vmm);
-		var trValue = _trAvg.Process(tr);
+		_vmPlus.Add(vmp);
+		_vmMinus.Add(vmm);
+		_trueRanges.Add(tr);
+
+		while (_vmPlus.Count > VortexLength)
+		{
+			_vmPlus.RemoveAt(0);
+			_vmMinus.RemoveAt(0);
+			_trueRanges.RemoveAt(0);
+		}
 
 		_prevHigh = candle.HighPrice;
 		_prevLow = candle.LowPrice;
 		_prevClose = candle.ClosePrice;
 
-		if (!smoothValue.IsFinal || !vmpValue.IsFinal || !vmmValue.IsFinal || !trValue.IsFinal)
+		if (_vmPlus.Count < VortexLength)
 			return;
 
-		var vip = vmpValue.ToDecimal() / trValue.ToDecimal();
-		var vim = vmmValue.ToDecimal() / trValue.ToDecimal();
+		var sumTr = _trueRanges.Sum();
+		if (sumTr == 0)
+			return;
 
-		if (_prevVip == null || _prevVim == null)
+		var vip = _vmPlus.Sum() / sumTr;
+		var vim = _vmMinus.Sum() / sumTr;
+
+		if (_prevVip == 0 && _prevVim == 0)
 		{
 			_prevVip = vip;
 			_prevVim = vim;
 			return;
 		}
 
-		bool longCondition = _prevVip < _prevVim && vip > vim && candle.ClosePrice > smoothValue.ToDecimal();
-		bool shortCondition = _prevVip > _prevVim && vip < vim && candle.ClosePrice < smoothValue.ToDecimal();
+		// Crossover signals with MA confirmation
+		var longSignal = _prevVip < _prevVim && vip > vim && candle.ClosePrice > smaVal;
+		var shortSignal = _prevVip > _prevVim && vip < vim && candle.ClosePrice < smaVal;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevVip = vip;
-			_prevVim = vim;
-			return;
-		}
-
-		if (longCondition && Position <= 0)
-		{
-			var qty = Volume + (Position < 0 ? -Position : 0m);
-			BuyMarket(qty);
-		}
-		else if (shortCondition && Position >= 0)
-		{
-			var qty = Volume + (Position > 0 ? Position : 0m);
-			SellMarket(qty);
-		}
+		if (longSignal && Position <= 0)
+			BuyMarket();
+		else if (shortSignal && Position >= 0)
+			SellMarket();
 
 		_prevVip = vip;
 		_prevVim = vim;

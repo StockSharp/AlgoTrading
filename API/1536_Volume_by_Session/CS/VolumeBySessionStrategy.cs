@@ -14,96 +14,134 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Simplified port of the "Volume by Session" indicator.
-/// Calculates average volume for four intraday sessions and trades on deviations.
+/// Volume by session strategy.
+/// Tracks average volume and trades on volume deviations with price confirmation.
+/// Buys when volume spikes above average and price is rising, sells when opposite.
 /// </summary>
 public class VolumeBySessionStrategy : Strategy
 {
-private readonly StrategyParam<int> _smaLength;
-private readonly StrategyParam<int> _session1Start;
-private readonly StrategyParam<int> _session1End;
-private readonly StrategyParam<int> _session2Start;
-private readonly StrategyParam<int> _session2End;
-private readonly StrategyParam<int> _session3Start;
-private readonly StrategyParam<int> _session3End;
-private readonly StrategyParam<int> _session4Start;
-private readonly StrategyParam<int> _session4End;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _volAvgLength;
+	private readonly StrategyParam<decimal> _volMult;
+	private readonly StrategyParam<decimal> _stopPct;
+	private readonly StrategyParam<decimal> _tpPct;
+	private readonly StrategyParam<DataType> _candleType;
 
-private SMA _sma1;
-private SMA _sma2;
-private SMA _sma3;
-private SMA _sma4;
+	private readonly List<decimal> _volumes = new();
+	private decimal _entryPrice;
+	private decimal _stopDist;
 
-public int SmaLength { get => _smaLength.Value; set => _smaLength.Value = value; }
-public int Session1Start { get => _session1Start.Value; set => _session1Start.Value = value; }
-public int Session1End { get => _session1End.Value; set => _session1End.Value = value; }
-public int Session2Start { get => _session2Start.Value; set => _session2Start.Value = value; }
-public int Session2End { get => _session2End.Value; set => _session2End.Value = value; }
-public int Session3Start { get => _session3Start.Value; set => _session3Start.Value = value; }
-public int Session3End { get => _session3End.Value; set => _session3End.Value = value; }
-public int Session4Start { get => _session4Start.Value; set => _session4Start.Value = value; }
-public int Session4End { get => _session4End.Value; set => _session4End.Value = value; }
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int VolAvgLength { get => _volAvgLength.Value; set => _volAvgLength.Value = value; }
+	public decimal VolMult { get => _volMult.Value; set => _volMult.Value = value; }
+	public decimal StopPct { get => _stopPct.Value; set => _stopPct.Value = value; }
+	public decimal TpPct { get => _tpPct.Value; set => _tpPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-public VolumeBySessionStrategy()
-{
-_smaLength = Param(nameof(SmaLength), 20).SetDisplay("SMA Length", null, "General").SetGreaterThanZero();
-_session1Start = Param(nameof(Session1Start), 0).SetDisplay("Session1 Start", null, "Sessions");
-_session1End = Param(nameof(Session1End), 6).SetDisplay("Session1 End", null, "Sessions");
-_session2Start = Param(nameof(Session2Start), 6).SetDisplay("Session2 Start", null, "Sessions");
-_session2End = Param(nameof(Session2End), 12).SetDisplay("Session2 End", null, "Sessions");
-_session3Start = Param(nameof(Session3Start), 12).SetDisplay("Session3 Start", null, "Sessions");
-_session3End = Param(nameof(Session3End), 18).SetDisplay("Session3 End", null, "Sessions");
-_session4Start = Param(nameof(Session4Start), 18).SetDisplay("Session4 Start", null, "Sessions");
-_session4End = Param(nameof(Session4End), 24).SetDisplay("Session4 End", null, "Sessions");
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", null, "General");
-}
+	public VolumeBySessionStrategy()
+	{
+		_volAvgLength = Param(nameof(VolAvgLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Vol Avg Length", "Volume average period", "Parameters");
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+		_volMult = Param(nameof(VolMult), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Vol Multiplier", "Volume spike multiplier", "Parameters");
 
-_sma1 = new SMA { Length = SmaLength };
-_sma2 = new SMA { Length = SmaLength };
-_sma3 = new SMA { Length = SmaLength };
-_sma4 = new SMA { Length = SmaLength };
+		_stopPct = Param(nameof(StopPct), 0.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop %", "Stop loss percent", "Risk");
 
-var subscription = SubscribeCandles(CandleType);
+		_tpPct = Param(nameof(TpPct), 1m)
+			.SetGreaterThanZero()
+			.SetDisplay("TP %", "Take profit percent", "Risk");
 
-subscription.Bind(candle =>
-{
-if (candle.State != CandleStates.Finished)
-return;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
 
-var hour = candle.OpenTime.Hour;
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-ProcessSession(candle, hour, Session1Start, Session1End, _sma1);
-ProcessSession(candle, hour, Session2Start, Session2End, _sma2);
-ProcessSession(candle, hour, Session3Start, Session3End, _sma3);
-ProcessSession(candle, hour, Session4Start, Session4End, _sma4);
-});
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_volumes.Clear();
+		_entryPrice = 0;
+		_stopDist = 0;
+	}
 
-subscription.Start();
-}
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-private void ProcessSession(ICandleMessage candle, int hour, int start, int end, SMA sma)
-{
-if (hour < start || hour >= end)
-return;
+		var sma = new SimpleMovingAverage { Length = 2 };
 
-var val = sma.Process(candle.OpenTime, candle.TotalVolume);
-if (!val.IsFormed || !val.TryGetValue(out var avg))
-return;
+		_volumes.Clear();
+		_entryPrice = 0;
+		_stopDist = 0;
 
-if (candle.TotalVolume > avg && Position <= 0)
-{
-BuyMarket(Volume + Math.Abs(Position));
-}
-else if (candle.TotalVolume < avg && Position >= 0)
-{
-SellMarket(Volume + Math.Abs(Position));
-}
-}
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(sma, ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal _dummy)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var vol = candle.TotalVolume;
+		_volumes.Add(vol);
+
+		while (_volumes.Count > VolAvgLength + 1)
+			_volumes.RemoveAt(0);
+
+		// TP/SL
+		if (Position > 0 && _entryPrice > 0 && _stopDist > 0)
+		{
+			if (candle.ClosePrice <= _entryPrice - _stopDist || candle.ClosePrice >= _entryPrice + _stopDist * (TpPct / StopPct))
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_stopDist = 0;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0 && _stopDist > 0)
+		{
+			if (candle.ClosePrice >= _entryPrice + _stopDist || candle.ClosePrice <= _entryPrice - _stopDist * (TpPct / StopPct))
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_stopDist = 0;
+			}
+		}
+
+		if (_volumes.Count < VolAvgLength)
+			return;
+
+		var avgVol = _volumes.Take(VolAvgLength).Sum() / VolAvgLength;
+		var bullish = candle.ClosePrice > candle.OpenPrice;
+		var bearish = candle.ClosePrice < candle.OpenPrice;
+		var highVol = vol > avgVol * VolMult;
+
+		if (highVol && bullish && Position <= 0)
+		{
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopDist = candle.ClosePrice * StopPct / 100m;
+		}
+		else if (highVol && bearish && Position >= 0)
+		{
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopDist = candle.ClosePrice * StopPct / 100m;
+		}
+	}
 }

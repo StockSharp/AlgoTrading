@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,225 +13,189 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Strategy using ATR volatility expansion with momentum confirmation and delayed exits.
+/// Strategy using volatility expansion with momentum confirmation and dynamic exits.
+/// Uses StdDev as volatility proxy and manual momentum calculation.
+/// Enters on vol expansion + momentum, exits on TP/SL or time-based exit.
 /// </summary>
 public class VolatilityPulseWithDynamicExitStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<int> _stdLength;
 	private readonly StrategyParam<int> _momentumLength;
 	private readonly StrategyParam<decimal> _volThreshold;
-	private readonly StrategyParam<decimal> _minVolatility;
 	private readonly StrategyParam<int> _exitBars;
 	private readonly StrategyParam<decimal> _riskReward;
-	
-	private AverageTrueRange _atr;
-	private SimpleMovingAverage _atrAverage;
-	private Momentum _momentum;
-	
+	private readonly StrategyParam<decimal> _stopPct;
+
+	private readonly List<decimal> _closes = new();
 	private int _barIndex;
 	private int _entryBarIndex;
 	private decimal _entryPrice;
-	private bool _exitOrdersPlaced;
-	
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// ATR calculation length.
-	/// </summary>
-	public int AtrLength
-	{
-		get => _atrLength.Value;
-		set => _atrLength.Value = value;
-	}
-	
-	/// <summary>
-	/// Momentum lookback length.
-	/// </summary>
-	public int MomentumLength
-	{
-		get => _momentumLength.Value;
-		set => _momentumLength.Value = value;
-	}
-	
-	/// <summary>
-	/// Volatility expansion multiplier.
-	/// </summary>
-	public decimal VolThreshold
-	{
-		get => _volThreshold.Value;
-		set => _volThreshold.Value = value;
-	}
-	
-	/// <summary>
-	/// Minimum ATR threshold.
-	/// </summary>
-	public decimal MinVolatility
-	{
-		get => _minVolatility.Value;
-		set => _minVolatility.Value = value;
-	}
-	
-	/// <summary>
-	/// Maximum holding bars before placing exits.
-	/// </summary>
-	public int ExitBars
-	{
-		get => _exitBars.Value;
-		set => _exitBars.Value = value;
-	}
-	
-	/// <summary>
-	/// Risk to reward ratio.
-	/// </summary>
-	public decimal RiskReward
-	{
-		get => _riskReward.Value;
-		set => _riskReward.Value = value;
-	}
-	
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+	private decimal _stopDist;
+
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int StdLength { get => _stdLength.Value; set => _stdLength.Value = value; }
+	public int MomentumLength { get => _momentumLength.Value; set => _momentumLength.Value = value; }
+	public decimal VolThreshold { get => _volThreshold.Value; set => _volThreshold.Value = value; }
+	public int ExitBars { get => _exitBars.Value; set => _exitBars.Value = value; }
+	public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
+	public decimal StopPct { get => _stopPct.Value; set => _stopPct.Value = value; }
+
 	public VolatilityPulseWithDynamicExitStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
-		
-		_atrLength = Param(nameof(AtrLength), 14)
-		.SetRange(1, 100)
-		.SetDisplay("ATR Length", "ATR calculation length", "Parameters");
-		
+			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_stdLength = Param(nameof(StdLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("StdDev Length", "Volatility period", "Parameters");
+
 		_momentumLength = Param(nameof(MomentumLength), 20)
-		.SetRange(1, 100)
-		.SetDisplay("Momentum Length", "Momentum lookback length", "Parameters");
-		
-		_volThreshold = Param(nameof(VolThreshold), 0.5m)
-		.SetRange(0.1m, 5m)
-		.SetDisplay("Volatility Threshold", "ATR expansion multiplier", "Parameters");
-		
-		_minVolatility = Param(nameof(MinVolatility), 1m)
-		.SetRange(0.1m, 5m)
-		.SetDisplay("Min Volatility", "Minimum ATR threshold", "Parameters");
-		
+			.SetGreaterThanZero()
+			.SetDisplay("Momentum Length", "Momentum lookback", "Parameters");
+
+		_volThreshold = Param(nameof(VolThreshold), 1.2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Vol Threshold", "StdDev expansion multiplier", "Parameters");
+
 		_exitBars = Param(nameof(ExitBars), 42)
-		.SetGreaterThanZero()
-		.SetDisplay("Exit Bars", "Bars before placing exits", "Risk");
-		
+			.SetGreaterThanZero()
+			.SetDisplay("Exit Bars", "Time-based exit after N bars", "Risk");
+
 		_riskReward = Param(nameof(RiskReward), 2m)
-		.SetRange(0.5m, 5m)
-		.SetDisplay("Risk Reward", "Take-profit to stop-loss ratio", "Risk");
+			.SetGreaterThanZero()
+			.SetDisplay("Risk Reward", "TP to SL ratio", "Risk");
+
+		_stopPct = Param(nameof(StopPct), 1m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop %", "Stop loss percent", "Risk");
 	}
-	
-	/// <inheritdoc />
+
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-	
-	/// <inheritdoc />
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		
+		_closes.Clear();
 		_barIndex = 0;
 		_entryBarIndex = -1;
-		_entryPrice = 0m;
-		_exitOrdersPlaced = false;
+		_entryPrice = 0;
+		_stopDist = 0;
 	}
-	
-	/// <inheritdoc />
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		_atr = new AverageTrueRange { Length = AtrLength };
-		_atrAverage = new SMA { Length = 20 };
-		_momentum = new Momentum { Length = MomentumLength };
-		
+
+		var stdDev = new StandardDeviation { Length = StdLength };
+		var sma = new SimpleMovingAverage { Length = StdLength };
+
+		_closes.Clear();
+		_barIndex = 0;
+		_entryBarIndex = -1;
+		_entryPrice = 0;
+		_stopDist = 0;
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(_atr, _momentum, ProcessCandle)
-		.Start();
-		
+		subscription.Bind(stdDev, sma, ProcessCandle).Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _atr);
-			DrawIndicator(area, _atrAverage);
-			DrawIndicator(area, _momentum);
+			DrawIndicator(area, stdDev);
 			DrawOwnTrades(area);
 		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal momentumValue)
+
+	private void ProcessCandle(ICandleMessage candle, decimal stdVal, decimal smaVal)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
-		var atrBase = _atrAverage.Process(new DecimalIndicatorValue(_atrAverage, atrValue, candle.ServerTime)).ToDecimal();
-		
-		var volExpansion = atrValue > atrBase * VolThreshold;
-		var lowVolatility = atrValue < atrBase * MinVolatility;
-		var momentumUp = momentumValue > 0m;
-		var momentumDown = momentumValue < 0m;
-		
-		if (volExpansion && momentumUp && !lowVolatility && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-			_entryBarIndex = _barIndex;
-			_exitOrdersPlaced = false;
-		}
-		else if (volExpansion && momentumDown && !lowVolatility && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-			_entryBarIndex = _barIndex;
-			_exitOrdersPlaced = false;
-		}
-		
-		if (Position > 0 && !_exitOrdersPlaced && _entryBarIndex >= 0 && _barIndex - _entryBarIndex >= ExitBars)
-		{
-			var longSl = _entryPrice - atrValue;
-			var longTp = _entryPrice + atrValue * RiskReward;
-			var volume = Math.Abs(Position);
-			
-			SellStop(longSl, volume);
-			SellLimit(longTp, volume);
-			_exitOrdersPlaced = true;
-		}
-		else if (Position < 0 && !_exitOrdersPlaced && _entryBarIndex >= 0 && _barIndex - _entryBarIndex >= ExitBars)
-		{
-			var shortSl = _entryPrice + atrValue;
-			var shortTp = _entryPrice - atrValue * RiskReward;
-			var volume = Math.Abs(Position);
-			
-			BuyStop(shortSl, volume);
-			BuyLimit(shortTp, volume);
-			_exitOrdersPlaced = true;
-		}
-		
-		if (Position == 0)
-		{
-			_entryBarIndex = -1;
-			_exitOrdersPlaced = false;
-		}
-		
+			return;
+
+		var close = candle.ClosePrice;
+		_closes.Add(close);
+
+		while (_closes.Count > MomentumLength + 1)
+			_closes.RemoveAt(0);
+
 		_barIndex++;
+
+		if (_closes.Count <= MomentumLength || stdVal <= 0 || smaVal <= 0)
+			return;
+
+		// Momentum = current close - close N bars ago
+		var momentum = close - _closes[0];
+
+		// Volatility expansion: stdDev relative to price vs average
+		var volRatio = stdVal / smaVal;
+		var volExpansion = volRatio > VolThreshold * 0.01m;
+
+		var momentumUp = momentum > 0;
+		var momentumDown = momentum < 0;
+
+		// TP/SL management
+		if (Position > 0 && _entryPrice > 0 && _stopDist > 0)
+		{
+			var sl = _entryPrice - _stopDist;
+			var tp = _entryPrice + _stopDist * RiskReward;
+
+			if (close <= sl || close >= tp)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_stopDist = 0;
+				_entryBarIndex = -1;
+			}
+			// Time-based exit
+			else if (_entryBarIndex >= 0 && _barIndex - _entryBarIndex >= ExitBars)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_stopDist = 0;
+				_entryBarIndex = -1;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0 && _stopDist > 0)
+		{
+			var sl = _entryPrice + _stopDist;
+			var tp = _entryPrice - _stopDist * RiskReward;
+
+			if (close >= sl || close <= tp)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_stopDist = 0;
+				_entryBarIndex = -1;
+			}
+			// Time-based exit
+			else if (_entryBarIndex >= 0 && _barIndex - _entryBarIndex >= ExitBars)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_stopDist = 0;
+				_entryBarIndex = -1;
+			}
+		}
+
+		// Entry signals
+		if (Position <= 0 && volExpansion && momentumUp)
+		{
+			BuyMarket();
+			_entryPrice = close;
+			_stopDist = close * StopPct / 100m;
+			_entryBarIndex = _barIndex;
+		}
+		else if (Position >= 0 && volExpansion && momentumDown)
+		{
+			SellMarket();
+			_entryPrice = close;
+			_stopDist = close * StopPct / 100m;
+			_entryBarIndex = _barIndex;
+		}
 	}
 }
