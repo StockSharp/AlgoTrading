@@ -22,6 +22,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class VrOverturnStrategy : Strategy
 {
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _volumeEpsilon;
 
 	public enum InitialDirections
@@ -75,6 +76,9 @@ public class VrOverturnStrategy : Strategy
 	/// </summary>
 	public VrOverturnStrategy()
 	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type for data feed", "General");
+
 		_volumeEpsilon = Param(nameof(VolumeEpsilon), 1e-6m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Epsilon", "Minimum volume threshold to treat position as flat", "Risk");
@@ -90,12 +94,12 @@ public class VrOverturnStrategy : Strategy
 			.SetDisplay("Base Volume", "Initial order size", "Risk")
 			;
 
-		_stopLossPips = Param(nameof(StopLossPips), 30)
+		_stopLossPips = Param(nameof(StopLossPips), 300)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Distance to stop loss in pips", "Risk")
 			;
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 90)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 900)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Distance to take profit in pips", "Risk")
 			;
@@ -104,6 +108,15 @@ public class VrOverturnStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Multiplier", "Multiplier applied after losses or wins", "Risk")
 			;
+	}
+
+	/// <summary>
+	/// Candle type for data feed.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -170,6 +183,12 @@ public class VrOverturnStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
@@ -198,12 +217,24 @@ public class VrOverturnStrategy : Strategy
 		var stopDistance = StopLossPips * _pipSize;
 		var takeDistance = TakeProfitPips * _pipSize;
 
+		// Subscribe to candles so the backtest emulator has price data.
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(OnCandle).Start();
+
 		StartProtection(
 		takeProfit: new Unit(takeDistance, UnitTypes.Absolute),
 		stopLoss: new Unit(stopDistance, UnitTypes.Absolute),
 		useMarketOrders: true);
+	}
 
-		TryOpenNextPosition();
+	private void OnCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		// Try to open a position if flat (handles both initial and post-exit entries).
+		if (Position == 0 && !_pendingEntrySide.HasValue)
+			TryOpenNextPosition();
 	}
 
 	/// <inheritdoc />
@@ -281,8 +312,7 @@ public class VrOverturnStrategy : Strategy
 
 	private void TryOpenNextPosition()
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// Strategy has no indicators to check formation on.
 
 		if (Position != 0 || _pendingEntrySide.HasValue)
 		return;

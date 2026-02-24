@@ -74,7 +74,7 @@ public class StopreversalTmStrategy : Strategy
 			.SetDisplay("Allow Short Exits", "Close existing short positions when a buy signal arrives", "Signals")
 			;
 
-		_useTimeFilter = Param(nameof(UseTimeFilter), true)
+		_useTimeFilter = Param(nameof(UseTimeFilter), false)
 			.SetDisplay("Use Time Filter", "Restrict trading to the configured session", "Session");
 
 		_startHour = Param(nameof(StartHour), 0)
@@ -107,7 +107,7 @@ public class StopreversalTmStrategy : Strategy
 			.SetDisplay("Signal Bar Delay", "Number of completed bars to wait before acting", "Indicator")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 
 		_appliedPrice = Param(nameof(AppliedPrice), StopreversalAppliedPrices.Close)
@@ -186,7 +186,7 @@ public class StopreversalTmStrategy : Strategy
 		EnqueueSignal(action, candle.CloseTime);
 	}
 
-	private void EnqueueSignal(SignalInfo signal, DateTimeOffset currentTime)
+	private void EnqueueSignal(SignalInfo signal, DateTime currentTime)
 	{
 		_signalQueue.Enqueue(signal);
 
@@ -197,12 +197,17 @@ public class StopreversalTmStrategy : Strategy
 		}
 	}
 
-	private void HandleSignal(SignalInfo signal, DateTimeOffset currentTime)
+	private void HandleSignal(SignalInfo signal, DateTime currentTime)
 	{
 		var inWindow = !UseTimeFilter || IsWithinTradingWindow(currentTime);
 
 		if (UseTimeFilter && !inWindow && Position != 0)
-			ClosePosition();
+		{
+			if (Position > 0)
+				SellMarket();
+			else
+				BuyMarket();
+		}
 
 		if (signal.CloseLong && Position > 0)
 			SellMarket();
@@ -280,7 +285,7 @@ public class StopreversalTmStrategy : Strategy
 		return ((result - candle.LowPrice) + (result - candle.HighPrice)) / 2m;
 	}
 
-	private bool IsWithinTradingWindow(DateTimeOffset time)
+	private bool IsWithinTradingWindow(DateTime time)
 	{
 		var start = new TimeSpan(StartHour, StartMinute, 0);
 		var end = new TimeSpan(EndHour, EndMinute, 0);

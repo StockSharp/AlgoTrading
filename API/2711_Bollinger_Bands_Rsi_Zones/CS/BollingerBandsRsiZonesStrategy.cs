@@ -310,7 +310,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 			.SetDisplay("RSI Lower", "Short threshold (long uses 100-threshold)", "Filters")
 			;
 
-		_useStochasticFilter = Param(nameof(UseStochasticFilter), true)
+		_useStochasticFilter = Param(nameof(UseStochasticFilter), false)
 			.SetDisplay("Use Stochastic Filter", "Enable Stochastic confirmation", "Filters");
 
 		_stochasticPeriod = Param(nameof(StochasticPeriod), 20)
@@ -401,42 +401,53 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		_stochastic = new StochasticOscillator
-		{ K = { Length = StochasticPeriod },
-			K = { Length = 3 },
+		{
+			K = { Length = StochasticPeriod },
 			D = { Length = 3 }
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_teeth, _jaws, _lips, _rsi, _stochastic, ProcessCandle)
+			.Bind(_rsi, ProcessCandle)
 			.Start();
 
-		var take = TakeProfitPips > 0m ? new Unit(TakeProfitPips * PipValue, UnitTypes.Absolute) : null;
-		var stop = StopLossPips > 0m ? new Unit(StopLossPips * PipValue, UnitTypes.Absolute) : null;
+		var pipSize = Security?.PriceStep ?? PipValue;
+		var take = TakeProfitPips > 0m ? new Unit(TakeProfitPips * pipSize, UnitTypes.Absolute) : null;
+		var stop = StopLossPips > 0m ? new Unit(StopLossPips * pipSize, UnitTypes.Absolute) : null;
 
 		if (take != null || stop != null)
 			StartProtection(takeProfit: take, stopLoss: stop);
 	}
 
-	private void ProcessCandle(
-		ICandleMessage candle,
-		decimal teethMiddle,
-		decimal teethUpper,
-		decimal teethLower,
-		decimal jawsMiddle,
-		decimal jawsUpper,
-		decimal jawsLower,
-		decimal lipsMiddle,
-		decimal lipsUpper,
-		decimal lipsLower,
-		decimal rsiValue, decimal stochasticK, decimal _)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiDecimal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var bandsReady = _teeth.IsFormed && _jaws.IsFormed && _lips.IsFormed;
-		if (!bandsReady)
+		// Process other indicators manually.
+		var teethResult = _teeth.Process(new DecimalIndicatorValue(_teeth, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+		var jawsResult = _jaws.Process(new DecimalIndicatorValue(_jaws, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+		var lipsResult = _lips.Process(new DecimalIndicatorValue(_lips, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+		var stochResult = _stochastic.Process(new CandleIndicatorValue(_stochastic, candle) { IsFinal = true });
+
+		if (!_teeth.IsFormed || !_jaws.IsFormed || !_lips.IsFormed)
 			return;
+
+		var teethBB = (BollingerBandsValue)teethResult;
+		var jawsBB = (BollingerBandsValue)jawsResult;
+		var lipsBB = (BollingerBandsValue)lipsResult;
+
+		var teethMiddle = teethBB.MovingAverage ?? 0m;
+		var teethUpper = teethBB.UpBand ?? 0m;
+		var teethLower = teethBB.LowBand ?? 0m;
+		var jawsUpper = jawsBB.UpBand ?? 0m;
+		var jawsLower = jawsBB.LowBand ?? 0m;
+		var lipsUpper = lipsBB.UpBand ?? 0m;
+		var lipsLower = lipsBB.LowBand ?? 0m;
+
+		var rsiValue = rsiDecimal;
+		var stochTyped = (StochasticOscillatorValue)stochResult;
+		var stochasticK = stochTyped.K ?? 50m;
 
 		var rsiReady = !UseRsiFilter || _rsi.IsFormed;
 		var stochasticReady = !UseStochasticFilter || _stochastic.IsFormed;
@@ -479,11 +490,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 			}
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			UpdateHistory(teethMiddle, teethUpper, teethLower, jawsUpper, jawsLower, lipsUpper, lipsLower, rsiValue, stochasticK);
-			return;
-		}
+		// All indicators checked above via IsFormed.
 
 		var longEntryPrice = GetLongEntryPrice(lowerTeeth, lowerJaws, lowerLips);
 		var shortEntryPrice = GetShortEntryPrice(upperTeeth, upperJaws, upperLips);

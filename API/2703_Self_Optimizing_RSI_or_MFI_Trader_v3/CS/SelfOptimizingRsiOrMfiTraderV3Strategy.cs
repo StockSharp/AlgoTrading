@@ -379,7 +379,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_indicator.IsFormed || !_atr.IsFormed)
 			return;
 
 		_history.Add((indicatorValue, candle.ClosePrice));
@@ -394,9 +394,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 		if (priceStep <= 0m)
 			priceStep = 1m;
 
-		var stepPrice = Security?.StepPrice ?? priceStep;
-		if (stepPrice <= 0m)
-			stepPrice = priceStep;
+		var stepPrice = priceStep;
 
 		var triggerDiff = UseBreakEven ? BreakEvenTriggerPoints * priceStep : 0m;
 		var paddingPoints = BreakEvenPaddingPoints > BreakEvenTriggerPoints ? 0 : BreakEvenPaddingPoints;
@@ -598,7 +596,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 		if (UseDynamicVolume && stopLossDiff > 0m && Security != null)
 		{
 			var priceStep = Security.PriceStep ?? 0m;
-			var stepPrice = Security.StepPrice ?? 0m;
+			var stepPrice = priceStep;
 			if (priceStep > 0m && stepPrice > 0m)
 			{
 				var stopPoints = stopLossDiff / priceStep;

@@ -49,10 +49,10 @@ public class OsMaSterV0Strategy : Strategy
 			.SetDisplay("Signal Smoothing", "Signal moving average period", "Indicators")
 			.SetGreaterThanZero();
 
-		_stopLossPips = Param(nameof(StopLossPips), 30)
+		_stopLossPips = Param(nameof(StopLossPips), 500)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 1000)
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -187,8 +187,8 @@ public class OsMaSterV0Strategy : Strategy
 
 		// Convert pip-based risk controls into absolute price offsets.
 		StartProtection(
-			takeProfit: TakeProfitPips > 0 ? new Unit(TakeProfitPips * pipSize, UnitTypes.Point) : null,
-			stopLoss: StopLossPips > 0 ? new Unit(StopLossPips * pipSize, UnitTypes.Point) : null);
+			takeProfit: TakeProfitPips > 0 ? new Unit(TakeProfitPips * pipSize, UnitTypes.Absolute) : null,
+			stopLoss: StopLossPips > 0 ? new Unit(StopLossPips * pipSize, UnitTypes.Absolute) : null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
@@ -198,7 +198,7 @@ public class OsMaSterV0Strategy : Strategy
 			return;
 
 		// Ensure the strategy is synchronized with the market and permitted to trade.
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!macdValue.IsFormed)
 			return;
 
 		var macdTyped = (MovingAverageConvergenceDivergenceHistogramValue)macdValue;

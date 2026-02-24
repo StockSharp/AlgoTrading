@@ -43,6 +43,7 @@ public class RsiEraserStrategy : Strategy
 	private decimal _stopDistance;
 	private bool _isBreakEvenActivated;
 	private decimal _pipSize;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// RSI averaging period.
@@ -129,8 +130,8 @@ public class RsiEraserStrategy : Strategy
 		.SetRange(0m, 100m)
 		.SetDisplay("RSI Neutral", "Neutral level used to detect direction", "Indicators");
 
-		_stopLossPips = Param(nameof(StopLossPips), 50m)
-		.SetRange(1m, 500m)
+		_stopLossPips = Param(nameof(StopLossPips), 500m)
+		.SetRange(1m, 5000m)
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in pips", "Risk Management");
 
 		_riskPercent = Param(nameof(RiskPercent), 5m)
@@ -145,7 +146,7 @@ public class RsiEraserStrategy : Strategy
 		.SetRange(0m, 100m)
 		.SetDisplay("Daily Buffer (pips)", "Extra pips added to yesterday's range", "Filters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe for signals", "General");
 
 		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -179,6 +180,7 @@ public class RsiEraserStrategy : Strategy
 		_stopDistance = 0m;
 		_isBreakEvenActivated = false;
 		_pipSize = 0m;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -227,7 +229,7 @@ public class RsiEraserStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_rsi.IsFormed)
 		return;
 
 		if (_rsi == null || !_rsi.IsFormed)
@@ -271,7 +273,7 @@ public class RsiEraserStrategy : Strategy
 
 			if (!_isBreakEvenActivated && _stopDistance > 0m)
 			{
-				var entryPrice = PositionPrice;
+				var entryPrice = _entryPrice;
 				if (candle.ClosePrice - entryPrice >= _stopDistance)
 				{
 					_stopPrice = entryPrice;
@@ -302,7 +304,7 @@ public class RsiEraserStrategy : Strategy
 
 			if (!_isBreakEvenActivated && _stopDistance > 0m)
 			{
-				var entryPrice = PositionPrice;
+				var entryPrice = _entryPrice;
 				if (entryPrice - candle.ClosePrice >= _stopDistance)
 				{
 					_stopPrice = entryPrice;
@@ -325,7 +327,7 @@ public class RsiEraserStrategy : Strategy
 		if (_stopPrice.HasValue && _takePrice.HasValue)
 		return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice == 0m)
 		entryPrice = referencePrice;
 
@@ -382,6 +384,7 @@ public class RsiEraserStrategy : Strategy
 		var tradeVolume = volume + Math.Abs(Position);
 		BuyMarket(tradeVolume);
 
+		_entryPrice = entryPrice;
 		_lastBuyDate = today;
 		_stopPrice = stopPrice;
 		_takePrice = entryPrice + stopDistance * TakeProfitMultiplier;
@@ -424,6 +427,7 @@ public class RsiEraserStrategy : Strategy
 		var tradeVolume = volume + Math.Abs(Position);
 		SellMarket(tradeVolume);
 
+		_entryPrice = entryPrice;
 		_lastSellDate = today;
 		_stopPrice = stopPrice;
 		_takePrice = entryPrice - stopDistance * TakeProfitMultiplier;
