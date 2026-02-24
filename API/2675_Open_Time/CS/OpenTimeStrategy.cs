@@ -51,7 +51,7 @@ public class OpenTimeStrategy : Strategy
 	/// </summary>
 	public OpenTimeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle subscription type", "General");
 		_useCloseTime = Param(nameof(UseCloseTime), true)
 			.SetDisplay("Use Close Window", "Enable automatic closing window", "Trading");
@@ -73,7 +73,7 @@ public class OpenTimeStrategy : Strategy
 			.SetDisplay("Duration", "Window length in seconds", "Trading");
 		_enableSell = Param(nameof(EnableSell), true)
 			.SetDisplay("Enable Sell", "Allow short entries", "Trading");
-		_enableBuy = Param(nameof(EnableBuy), false)
+		_enableBuy = Param(nameof(EnableBuy), true)
 			.SetDisplay("Enable Buy", "Allow long entries", "Trading");
 		_stopLossPips = Param(nameof(StopLossPips), 0)
 			.SetDisplay("Stop Loss", "Initial stop loss in pips", "Risk");
@@ -272,8 +272,7 @@ public class OpenTimeStrategy : Strategy
 		UpdateTrailingStops(candle);
 		CheckRiskManagement(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// no bound indicators to check
 
 		// Skip entries outside the trading window.
 		if (!IsWithinWindow(now, TradeHour, TradeMinute, DurationSeconds))
