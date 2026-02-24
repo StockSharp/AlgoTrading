@@ -1,175 +1,134 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Combines four MACD indicators and an RSI filter.
-/// Buys when averaged MACD turns positive with RSI below threshold.
+/// Combines multiple EMA difference lines (simulating MACD histogram) with RSI filter.
+/// Buys when averaged MACD histogram turns positive with RSI below threshold.
 /// </summary>
 public class TrippleMacdStrategy : Strategy
 {
-private readonly StrategyParam<DataType> _candleType;
-private readonly StrategyParam<int> _rsiPeriod;
-private readonly StrategyParam<int> _signalPeriod;
-private readonly StrategyParam<decimal> _takeProfitPercent;
-private readonly StrategyParam<int> _fast1;
-private readonly StrategyParam<int> _slow1;
-private readonly StrategyParam<int> _fast2;
-private readonly StrategyParam<int> _slow2;
-private readonly StrategyParam<int> _fast3;
-private readonly StrategyParam<int> _slow3;
-private readonly StrategyParam<int> _fast4;
-private readonly StrategyParam<int> _slow4;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<int> _fast1;
+	private readonly StrategyParam<int> _slow1;
+	private readonly StrategyParam<int> _fast2;
+	private readonly StrategyParam<int> _slow2;
 
-private decimal _prevHist;
+	private readonly List<decimal> _closes = new();
+	private decimal _prevHist;
 
-/// <summary>
-/// Candle type for analysis.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
+	public int Fast1 { get => _fast1.Value; set => _fast1.Value = value; }
+	public int Slow1 { get => _slow1.Value; set => _slow1.Value = value; }
+	public int Fast2 { get => _fast2.Value; set => _fast2.Value = value; }
+	public int Slow2 { get => _slow2.Value; set => _slow2.Value = value; }
 
-/// <summary>
-/// RSI period.
-/// </summary>
-public int RsiPeriod
-{
-get => _rsiPeriod.Value;
-set => _rsiPeriod.Value = value;
-}
+	public TrippleMacdStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetDisplay("RSI Period", "RSI calculation length", "Indicators");
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
+		_fast1 = Param(nameof(Fast1), 8).SetDisplay("Fast1", "Fast period 1", "Indicators");
+		_slow1 = Param(nameof(Slow1), 21).SetDisplay("Slow1", "Slow period 1", "Indicators");
+		_fast2 = Param(nameof(Fast2), 13).SetDisplay("Fast2", "Fast period 2", "Indicators");
+		_slow2 = Param(nameof(Slow2), 34).SetDisplay("Slow2", "Slow period 2", "Indicators");
+	}
 
-/// <summary>
-/// Signal period for all MACD indicators.
-/// </summary>
-public int SignalPeriod
-{
-get => _signalPeriod.Value;
-set => _signalPeriod.Value = value;
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <summary>
-/// Take profit in percent.
-/// </summary>
-public decimal TakeProfitPercent
-{
-get => _takeProfitPercent.Value;
-set => _takeProfitPercent.Value = value;
-}
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_closes.Clear();
+		_prevHist = 0;
+	}
 
-public int Fast1 { get => _fast1.Value; set => _fast1.Value = value; }
-public int Slow1 { get => _slow1.Value; set => _slow1.Value = value; }
-public int Fast2 { get => _fast2.Value; set => _fast2.Value = value; }
-public int Slow2 { get => _slow2.Value; set => _slow2.Value = value; }
-public int Fast3 { get => _fast3.Value; set => _fast3.Value = value; }
-public int Slow3 { get => _slow3.Value; set => _slow3.Value = value; }
-public int Fast4 { get => _fast4.Value; set => _fast4.Value = value; }
-public int Slow4 { get => _slow4.Value; set => _slow4.Value = value; }
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-public TrippleMacdStrategy()
-{
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles", "General");
-_rsiPeriod = Param(nameof(RsiPeriod), 14)
-.SetDisplay("RSI Period", "RSI calculation length", "Indicators");
-_signalPeriod = Param(nameof(SignalPeriod), 9)
-.SetDisplay("Signal Period", "MACD signal period", "Indicators");
-_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
-.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
-_fast1 = Param(nameof(Fast1), 5).SetDisplay("Fast1", "Fast period of MACD1", "Indicators");
-_slow1 = Param(nameof(Slow1), 8).SetDisplay("Slow1", "Slow period of MACD1", "Indicators");
-_fast2 = Param(nameof(Fast2), 13).SetDisplay("Fast2", "Fast period of MACD2", "Indicators");
-_slow2 = Param(nameof(Slow2), 21).SetDisplay("Slow2", "Slow period of MACD2", "Indicators");
-_fast3 = Param(nameof(Fast3), 34).SetDisplay("Fast3", "Fast period of MACD3", "Indicators");
-_slow3 = Param(nameof(Slow3), 144).SetDisplay("Slow3", "Slow period of MACD3", "Indicators");
-_fast4 = Param(nameof(Fast4), 68).SetDisplay("Fast4", "Fast period of MACD4", "Indicators");
-_slow4 = Param(nameof(Slow4), 288).SetDisplay("Slow4", "Slow period of MACD4", "Indicators");
-}
+		var emaFast1 = new ExponentialMovingAverage { Length = Fast1 };
+		var emaSlow1 = new ExponentialMovingAverage { Length = Slow1 };
+		var emaFast2 = new ExponentialMovingAverage { Length = Fast2 };
+		var emaSlow2 = new ExponentialMovingAverage { Length = Slow2 };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-/// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
-{
-base.OnStarted(time);
+		StartProtection(
+			new Unit(TakeProfitPercent, UnitTypes.Percent),
+			new Unit(TakeProfitPercent * 2, UnitTypes.Percent),
+			useMarketOrders: true);
 
-StartProtection(new Unit(TakeProfitPercent, UnitTypes.Percent), new Unit(0));
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(emaFast1, emaSlow1, emaFast2, emaSlow2, rsi, ProcessCandle).Start();
 
-var macd1 = new MovingAverageConvergenceDivergenceSignal
-{
-Macd = { ShortMa = { Length = Fast1 }, LongMa = { Length = Slow1 } },
-SignalMa = { Length = SignalPeriod }
-};
-var macd2 = new MovingAverageConvergenceDivergenceSignal
-{
-Macd = { ShortMa = { Length = Fast2 }, LongMa = { Length = Slow2 } },
-SignalMa = { Length = SignalPeriod }
-};
-var macd3 = new MovingAverageConvergenceDivergenceSignal
-{
-Macd = { ShortMa = { Length = Fast3 }, LongMa = { Length = Slow3 } },
-SignalMa = { Length = SignalPeriod }
-};
-var macd4 = new MovingAverageConvergenceDivergenceSignal
-{
-Macd = { ShortMa = { Length = Fast4 }, LongMa = { Length = Slow4 } },
-SignalMa = { Length = SignalPeriod }
-};
-var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, emaFast1);
+			DrawIndicator(area, emaSlow1);
+			DrawOwnTrades(area);
+		}
+	}
 
-var subscription = SubscribeCandles(CandleType);
-subscription
-.BindEx(macd1, macd2, macd3, macd4, rsi, ProcessCandle)
-.Start();
+	private void ProcessCandle(ICandleMessage candle, decimal f1, decimal s1, decimal f2, decimal s2, decimal rsiVal)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, macd1);
-DrawIndicator(area, rsi);
-DrawOwnTrades(area);
-}
-}
+		// Simulated MACD histograms
+		var macd1 = f1 - s1;
+		var macd2 = f2 - s2;
+		var hist = (macd1 + macd2) / 2m;
 
+		if (_prevHist == 0)
+		{
+			_prevHist = hist;
+			return;
+		}
 
-private void ProcessCandle(ICandleMessage candle, IIndicatorValue macd1Value, IIndicatorValue macd2Value, IIndicatorValue macd3Value, IIndicatorValue macd4Value, IIndicatorValue rsiValue)
-{
-if (candle.State != CandleStates.Finished)
-return;
+		// Buy: histogram crosses above zero, bullish candle, RSI not overbought
+		if (_prevHist <= 0m && hist > 0m && candle.ClosePrice > candle.OpenPrice && rsiVal < 55m && Position <= 0)
+		{
+			BuyMarket();
+		}
+		// Sell: histogram crosses below zero, bearish candle
+		else if (Position > 0 && _prevHist > 0m && hist < 0m && candle.OpenPrice > candle.ClosePrice)
+		{
+			SellMarket();
+		}
+		// Short: histogram crosses below zero, bearish candle, RSI not oversold
+		else if (_prevHist >= 0m && hist < 0m && candle.ClosePrice < candle.OpenPrice && rsiVal > 45m && Position >= 0)
+		{
+			SellMarket();
+		}
+		// Cover short: histogram crosses above zero
+		else if (Position < 0 && _prevHist < 0m && hist > 0m && candle.ClosePrice > candle.OpenPrice)
+		{
+			BuyMarket();
+		}
 
-if (!macd1Value.IsFinal || !macd2Value.IsFinal || !macd3Value.IsFinal || !macd4Value.IsFinal || !rsiValue.IsFinal)
-return;
-
-var m1 = (MovingAverageConvergenceDivergenceSignalValue)macd1Value;
-var m2 = (MovingAverageConvergenceDivergenceSignalValue)macd2Value;
-var m3 = (MovingAverageConvergenceDivergenceSignalValue)macd3Value;
-var m4 = (MovingAverageConvergenceDivergenceSignalValue)macd4Value;
-var rsi = rsiValue.ToDecimal();
-
-var hist = ((m1.Macd + m2.Macd + m3.Macd + m4.Macd) / 4m) - ((m1.Signal + m2.Signal + m3.Signal + m4.Signal) / 4m);
-
-if (IsFormedAndOnlineAndAllowTrading())
-{
-if (_prevHist <= 0m && hist > 0m && candle.ClosePrice > candle.OpenPrice && rsi < 55m && Position <= 0)
-BuyMarket(Volume + Math.Abs(Position));
-else if (Position > 0 && _prevHist > 0m && hist < 0m && candle.OpenPrice > candle.ClosePrice)
-SellMarket(Math.Abs(Position));
-}
-
-_prevHist = hist;
-}
+		_prevHist = hist;
+	}
 }

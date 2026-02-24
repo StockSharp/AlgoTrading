@@ -1,22 +1,21 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Correlation-based TSI with SuperTrend direction.
+/// Calculates price-time correlation as trend strength, uses SuperTrend for direction.
 /// </summary>
 public class TsiSuperTrendDecisionStrategy : Strategy
 {
@@ -25,105 +24,59 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 	private readonly StrategyParam<int> _stLength;
 	private readonly StrategyParam<decimal> _stMultiplier;
 	private readonly StrategyParam<decimal> _threshold;
-	private readonly StrategyParam<Sides?> _direction;
-	private readonly StrategyParam<ProtectionTypes> _tpsl;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
 
-	private SuperTrend _superTrend;
-	private decimal[] _prices;
+	private decimal[] _prices = Array.Empty<decimal>();
 	private int _index;
 
-	public enum ProtectionTypes
-	{
-		None,
-		TP,
-		SL,
-		Both
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public int TsiLength
-	{
-		get => _tsiLength.Value;
-		set
-		{
-			_tsiLength.Value = value;
-			_prices = new decimal[value];
-		}
-	}
-
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int TsiLength { get => _tsiLength.Value; set => _tsiLength.Value = value; }
 	public int StLength { get => _stLength.Value; set => _stLength.Value = value; }
 	public decimal StMultiplier { get => _stMultiplier.Value; set => _stMultiplier.Value = value; }
 	public decimal Threshold { get => _threshold.Value; set => _threshold.Value = value; }
-	public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
-	public ProtectionTypes Tpsl { get => _tpsl.Value; set => _tpsl.Value = value; }
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 
 	public TsiSuperTrendDecisionStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Type of candles", "General");
 		_tsiLength = Param(nameof(TsiLength), 64)
-		.SetDisplay("TSI Length", "Correlation period", "Indicators");
+			.SetDisplay("TSI Length", "Correlation period", "Indicators");
 		_stLength = Param(nameof(StLength), 10)
-		.SetDisplay("ST Length", "SuperTrend length", "Indicators");
+			.SetDisplay("ST Length", "SuperTrend length", "Indicators");
 		_stMultiplier = Param(nameof(StMultiplier), 3m)
-		.SetDisplay("ST Mult", "SuperTrend factor", "Indicators");
+			.SetDisplay("ST Mult", "SuperTrend factor", "Indicators");
 		_threshold = Param(nameof(Threshold), 0.241m)
-		.SetDisplay("TSI Threshold", "Entry threshold", "Trading");
-		_direction = Param(nameof(Direction), (Sides?)null)
-		.SetDisplay("Direction", "Trade direction", "Trading");
-		_tpsl = Param(nameof(Tpsl), ProtectionTypes.None)
-		.SetDisplay("TPSL", "Protection type", "Risk");
-		_takeProfit = Param(nameof(TakeProfit), 30m)
-		.SetDisplay("Take Profit %", "Take profit", "Risk");
-		_stopLoss = Param(nameof(StopLoss), 20m)
-		.SetDisplay("Stop Loss %", "Stop loss", "Risk");
-
-		_prices = new decimal[TsiLength];
+			.SetDisplay("TSI Threshold", "Entry threshold", "Trading");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prices = Array.Empty<decimal>();
+		_index = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		switch (Tpsl)
-		{
-			case ProtectionTypes.TP:
-				StartProtection(new Unit(TakeProfit, UnitTypes.Percent), new Unit(0));
-				break;
-			case ProtectionTypes.SL:
-				StartProtection(new Unit(0), new Unit(StopLoss, UnitTypes.Percent));
-				break;
-			case ProtectionTypes.Both:
-				StartProtection(new Unit(TakeProfit, UnitTypes.Percent), new Unit(StopLoss, UnitTypes.Percent));
-				break;
-			default:
-				StartProtection(null, null);
-				break;
-		}
+		_prices = new decimal[TsiLength];
+		_index = 0;
 
-		_superTrend = new SuperTrend { Length = StLength, Multiplier = StMultiplier };
+		var superTrend = new SuperTrend { Length = StLength, Multiplier = StMultiplier };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(_superTrend, ProcessCandle).Start();
+		subscription.BindEx(superTrend, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _superTrend);
+			DrawIndicator(area, superTrend);
 			DrawOwnTrades(area);
 		}
 	}
@@ -133,7 +86,9 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var st = (SuperTrendIndicatorValue)stValue;
+		if (stValue is not SuperTrendIndicatorValue st)
+			return;
+
 		var isUp = st.IsUpTrend;
 
 		_prices[_index % TsiLength] = candle.ClosePrice;
@@ -144,18 +99,25 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 
 		var tsi = CalculateCorrelation();
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// Entry: SuperTrend direction + correlation confirms trend
+		if (isUp && tsi > -Threshold && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (!isUp && tsi < Threshold && Position >= 0)
+		{
+			SellMarket();
+		}
 
-		if ((Direction == null || Direction == Sides.Buy) && isUp && tsi > -Threshold && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if ((Direction == null || Direction == Sides.Sell) && !isUp && tsi < Threshold && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-
+		// Exit: trend reversal or correlation weakens
 		if (Position > 0 && (!isUp || tsi < Threshold))
-			SellMarket(Math.Abs(Position));
+		{
+			SellMarket();
+		}
 		else if (Position < 0 && (isUp || tsi > -Threshold))
-			BuyMarket(Math.Abs(Position));
+		{
+			BuyMarket();
+		}
 	}
 
 	private decimal CalculateCorrelation()
@@ -165,7 +127,7 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 		for (var i = 0; i < n; i++)
 		{
 			var x = _prices[(_index - n + i) % n];
-			var y = i;
+			var y = (decimal)i;
 			sumX += x;
 			sumY += y;
 			sumX2 += x * x;
@@ -173,10 +135,10 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 			sumXY += x * y;
 		}
 
-		var num = n * sumXY - sumX * sumY;
+		var num = (double)(n * sumXY - sumX * sumY);
 		var den = Math.Sqrt((double)(n * sumX2 - sumX * sumX) * (double)(n * sumY2 - sumY * sumY));
 		if (den == 0.0)
 			return 0m;
-		return (decimal)(num / (decimal)den);
+		return (decimal)(num / den);
 	}
 }

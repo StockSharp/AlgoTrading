@@ -1,141 +1,117 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// True Strength Index breakout strategy.
-/// Opens long when TSI breaks above prior high and short when it breaks below prior low.
+/// True Strength Index-inspired breakout strategy.
+/// Uses RSI as momentum oscillator, tracks its rolling highest/lowest.
+/// Opens long when RSI breaks above prior high, short when breaks below prior low.
 /// </summary>
 public class TsiLongShortForBtc2HStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _longLength;
-	private readonly StrategyParam<int> _shortLength;
+	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _lookback;
 
-	private TrueStrengthIndex _tsi;
-	private Highest _highest;
-	private Lowest _lowest;
-	private decimal _prevTsi;
+	private readonly List<decimal> _rsiHistory = new();
+	private decimal _prevRsi;
 	private decimal _prevHigh;
 	private decimal _prevLow;
-	private int _count;
 
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Long EMA length for TSI.
-	/// </summary>
-	public int LongLength
-	{
-		get => _longLength.Value;
-		set => _longLength.Value = value;
-	}
-
-	/// <summary>
-	/// Short EMA length for TSI.
-	/// </summary>
-	public int ShortLength
-	{
-		get => _shortLength.Value;
-		set => _shortLength.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback period for highest/lowest.
-	/// </summary>
-	public int Lookback
-	{
-		get => _lookback.Value;
-		set => _lookback.Value = value;
-	}
-
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
 
 	public TsiLongShortForBtc2HStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
-		_longLength = Param(nameof(LongLength), 25)
-		.SetDisplay("Long Length", "Long EMA for TSI", "Indicators");
-		_shortLength = Param(nameof(ShortLength), 13)
-		.SetDisplay("Short Length", "Short EMA for TSI", "Indicators");
-		_lookback = Param(nameof(Lookback), 100)
-		.SetDisplay("Lookback", "Bars for highs/lows", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
+		_lookback = Param(nameof(Lookback), 50)
+			.SetDisplay("Lookback", "Bars for highest/lowest RSI", "Indicators");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_rsiHistory.Clear();
+		_prevRsi = 0;
+		_prevHigh = 0;
+		_prevLow = 100;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_tsi = new TrueStrengthIndex { LongLength = LongLength, ShortLength = ShortLength };
-		_highest = new Highest { Length = Lookback };
-		_lowest = new Lowest { Length = Lookback };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(rsi, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _tsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var tsiVal = _tsi.Process(candle.ClosePrice, candle.ServerTime).ToDecimal();
-		var high = _highest.Process(tsiVal, candle.ServerTime).ToDecimal();
-		var low = _lowest.Process(tsiVal, candle.ServerTime).ToDecimal();
+		_rsiHistory.Add(rsiVal);
+		if (_rsiHistory.Count > Lookback)
+			_rsiHistory.RemoveAt(0);
 
-		if (_count < Lookback)
+		if (_rsiHistory.Count < Lookback)
 		{
-			_count++;
-			_prevTsi = tsiVal;
-			_prevHigh = high;
-			_prevLow = low;
+			_prevRsi = rsiVal;
 			return;
 		}
 
-		if (IsFormedAndOnlineAndAllowTrading())
+		// Calculate rolling highest and lowest RSI
+		var high = decimal.MinValue;
+		var low = decimal.MaxValue;
+		for (var i = 0; i < _rsiHistory.Count - 1; i++)
 		{
-			var longCon = _prevTsi <= _prevHigh && tsiVal > _prevHigh;
-			var shortCon = _prevTsi >= _prevLow && tsiVal < _prevLow;
-
-			if (longCon && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-			else if (shortCon && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+			if (_rsiHistory[i] > high) high = _rsiHistory[i];
+			if (_rsiHistory[i] < low) low = _rsiHistory[i];
 		}
 
-		_prevTsi = tsiVal;
+		// Breakout conditions
+		var longCond = _prevRsi <= _prevHigh && rsiVal > high;
+		var shortCond = _prevRsi >= _prevLow && rsiVal < low;
+
+		if (longCond && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (shortCond && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevRsi = rsiVal;
 		_prevHigh = high;
 		_prevLow = low;
 	}
