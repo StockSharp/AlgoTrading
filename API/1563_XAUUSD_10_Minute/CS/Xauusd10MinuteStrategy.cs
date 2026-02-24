@@ -14,236 +14,161 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// XAUUSD 10-minute strategy using MACD, RSI and Bollinger Bands.
-/// Opens long when bullish conditions are met and short on bearish signals.
-/// Uses ATR-based stop-loss and take-profit with spread adjustment.
+/// XAUUSD 10-minute strategy using RSI, dual EMA crossover, and Bollinger bands.
+/// Combines momentum (RSI), trend (EMA cross), and volatility (StdDev bands) signals.
 /// </summary>
 public class Xauusd10MinuteStrategy : Strategy
 {
-	private readonly StrategyParam<int> _macdFast;
-	private readonly StrategyParam<int> _macdSlow;
-	private readonly StrategyParam<int> _macdSignal;
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<decimal> _rsiOverbought;
 	private readonly StrategyParam<decimal> _rsiOversold;
-	private readonly StrategyParam<int> _bollingerLength;
-	private readonly StrategyParam<decimal> _bollingerWidth;
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<decimal> _stopLossMul;
-	private readonly StrategyParam<decimal> _takeProfitMul;
-	private readonly StrategyParam<int> _spreadPoints;
+	private readonly StrategyParam<int> _fastEma;
+	private readonly StrategyParam<int> _slowEma;
+	private readonly StrategyParam<decimal> _stopMult;
+	private readonly StrategyParam<decimal> _tpMult;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevMacd;
-	private decimal _prevSignal;
+	private decimal _prevFastEma;
+	private decimal _prevSlowEma;
 	private decimal _entryPrice;
-	private decimal _stopLoss;
-	private decimal _takeProfit;
+	private decimal _stopPrice;
+	private decimal _takePrice;
 
-	/// <summary>
-	/// MACD fast length.
-	/// </summary>
-	public int MacdFast { get => _macdFast.Value; set => _macdFast.Value = value; }
-
-	/// <summary>
-	/// MACD slow length.
-	/// </summary>
-	public int MacdSlow { get => _macdSlow.Value; set => _macdSlow.Value = value; }
-
-	/// <summary>
-	/// MACD signal length.
-	/// </summary>
-	public int MacdSignal { get => _macdSignal.Value; set => _macdSignal.Value = value; }
-
-	/// <summary>
-	/// RSI period.
-	/// </summary>
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
-
-	/// <summary>
-	/// RSI overbought level.
-	/// </summary>
 	public decimal RsiOverbought { get => _rsiOverbought.Value; set => _rsiOverbought.Value = value; }
-
-	/// <summary>
-	/// RSI oversold level.
-	/// </summary>
 	public decimal RsiOversold { get => _rsiOversold.Value; set => _rsiOversold.Value = value; }
-
-	/// <summary>
-	/// Bollinger length.
-	/// </summary>
-	public int BollingerLength { get => _bollingerLength.Value; set => _bollingerLength.Value = value; }
-
-	/// <summary>
-	/// Bollinger width.
-	/// </summary>
-	public decimal BollingerWidth { get => _bollingerWidth.Value; set => _bollingerWidth.Value = value; }
-
-	/// <summary>
-	/// ATR period.
-	/// </summary>
-	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
-
-	/// <summary>
-	/// Stop-loss ATR multiplier.
-	/// </summary>
-	public decimal StopLossMul { get => _stopLossMul.Value; set => _stopLossMul.Value = value; }
-
-	/// <summary>
-	/// Take-profit ATR multiplier.
-	/// </summary>
-	public decimal TakeProfitMul { get => _takeProfitMul.Value; set => _takeProfitMul.Value = value; }
-
-	/// <summary>
-	/// Spread in price steps.
-	/// </summary>
-	public int SpreadPoints { get => _spreadPoints.Value; set => _spreadPoints.Value = value; }
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
+	public int FastEma { get => _fastEma.Value; set => _fastEma.Value = value; }
+	public int SlowEma { get => _slowEma.Value; set => _slowEma.Value = value; }
+	public decimal StopMult { get => _stopMult.Value; set => _stopMult.Value = value; }
+	public decimal TpMult { get => _tpMult.Value; set => _tpMult.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public Xauusd10MinuteStrategy()
 	{
-		_macdFast = Param(nameof(MacdFast), 12).SetGreaterThanZero();
-		_macdSlow = Param(nameof(MacdSlow), 26).SetGreaterThanZero();
-		_macdSignal = Param(nameof(MacdSignal), 9).SetGreaterThanZero();
-		_rsiLength = Param(nameof(RsiLength), 14).SetGreaterThanZero();
-		_rsiOverbought = Param(nameof(RsiOverbought), 65m).SetDisplay("RSI Overbought", "Overbought level", "RSI");
-		_rsiOversold = Param(nameof(RsiOversold), 35m).SetDisplay("RSI Oversold", "Oversold level", "RSI");
-		_bollingerLength = Param(nameof(BollingerLength), 20).SetGreaterThanZero();
-		_bollingerWidth = Param(nameof(BollingerWidth), 2m).SetGreaterThanZero();
-		_atrLength = Param(nameof(AtrLength), 14).SetGreaterThanZero();
-		_stopLossMul = Param(nameof(StopLossMul), 3m).SetGreaterThanZero();
-		_takeProfitMul = Param(nameof(TakeProfitMul), 5m).SetGreaterThanZero();
-		_spreadPoints = Param(nameof(SpreadPoints), 38).SetNotNegative();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame());
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
+
+		_rsiOverbought = Param(nameof(RsiOverbought), 65m)
+			.SetDisplay("RSI Overbought", "Overbought level", "Indicators");
+
+		_rsiOversold = Param(nameof(RsiOversold), 35m)
+			.SetDisplay("RSI Oversold", "Oversold level", "Indicators");
+
+		_fastEma = Param(nameof(FastEma), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEma = Param(nameof(SlowEma), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
+		_stopMult = Param(nameof(StopMult), 3m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Mult", "StdDev mult for stop", "Risk");
+
+		_tpMult = Param(nameof(TpMult), 5m)
+			.SetGreaterThanZero()
+			.SetDisplay("TP Mult", "StdDev mult for TP", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevMacd = 0;
-		_prevSignal = 0;
+		_prevFastEma = 0;
+		_prevSlowEma = 0;
 		_entryPrice = 0;
-		_stopLoss = 0;
-		_takeProfit = 0;
+		_stopPrice = 0;
+		_takePrice = 0;
 	}
 
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = MacdFast },
-				LongMa = { Length = MacdSlow },
-			},
-			SignalMa = { Length = MacdSignal }
-		};
+		base.OnStarted2(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var bollinger = new BollingerBands { Length = BollingerLength, Width = BollingerWidth };
-		var atr = new AverageTrueRange { Length = AtrLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEma };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEma };
+		var stdDev = new StandardDeviation { Length = 14 };
+
+		_prevFastEma = 0;
+		_prevSlowEma = 0;
+		_entryPrice = 0;
+		_stopPrice = 0;
+		_takePrice = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(macd, rsi, bollinger, atr, ProcessCandle)
-			.Start();
+		subscription.Bind(rsi, fastEma, slowEma, stdDev, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi);
-			DrawIndicator(area, bollinger);
-			DrawIndicator(area, macd);
-			DrawIndicator(area, atr);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue rsiValue, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal fastVal, decimal slowVal, decimal stdVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (!macdValue.IsFinal || !rsiValue.IsFinal || !bollingerValue.IsFinal || !atrValue.IsFinal)
-			return;
-
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var rsi = rsiValue.ToDecimal();
-		var bb = (BollingerBandsValue)bollingerValue;
-
-		if (bb.UpBand is not decimal upperBand || bb.LowBand is not decimal lowerBand)
-			return;
-
-		var atr = atrValue.ToDecimal();
-		var close = candle.ClosePrice;
-
-		var macdBuy = _prevMacd <= _prevSignal && macdTyped.Macd > macdTyped.Signal;
-		var macdSell = _prevMacd >= _prevSignal && macdTyped.Macd < macdTyped.Signal;
-
-		var buyCondition = macdBuy || rsi < RsiOversold || close < lowerBand;
-		var sellCondition = macdSell || rsi > RsiOverbought || close > upperBand;
-
-		var step = Security?.PriceStep ?? 1m;
-		var spread = SpreadPoints * step;
-
-		if (Position > 0)
+		// TP/SL management
+		if (Position > 0 && _entryPrice > 0)
 		{
-			if (sellCondition || close <= _stopLoss || close >= _takeProfit)
+			if (candle.ClosePrice <= _stopPrice || candle.ClosePrice >= _takePrice)
 			{
-				SellMarket(Volume + Position);
+				SellMarket();
 				_entryPrice = 0;
 			}
 		}
-		else if (Position < 0)
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			if (buyCondition || close >= _stopLoss || close <= _takeProfit)
+			if (candle.ClosePrice >= _stopPrice || candle.ClosePrice <= _takePrice)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				_entryPrice = 0;
 			}
 		}
 
-		if (Position == 0)
+		if (_prevFastEma == 0 || _prevSlowEma == 0 || stdVal <= 0)
 		{
-			if (buyCondition)
-			{
-				_entryPrice = close + spread;
-				_stopLoss = _entryPrice - StopLossMul * atr;
-				_takeProfit = _entryPrice + TakeProfitMul * atr;
-				BuyMarket(Volume);
-			}
-			else if (sellCondition)
-			{
-				_entryPrice = close - spread;
-				_stopLoss = _entryPrice + StopLossMul * atr;
-				_takeProfit = _entryPrice - TakeProfitMul * atr;
-				SellMarket(Volume);
-			}
+			_prevFastEma = fastVal;
+			_prevSlowEma = slowVal;
+			return;
 		}
 
-		_prevMacd = macdTyped.Macd;
-		_prevSignal = macdTyped.Signal;
+		var emaCrossUp = _prevFastEma <= _prevSlowEma && fastVal > slowVal;
+		var emaCrossDown = _prevFastEma >= _prevSlowEma && fastVal < slowVal;
+		var buySignal = emaCrossUp || rsiVal < RsiOversold;
+		var sellSignal = emaCrossDown || rsiVal > RsiOverbought;
+
+		if (buySignal && Position <= 0)
+		{
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopPrice = _entryPrice - StopMult * stdVal;
+			_takePrice = _entryPrice + TpMult * stdVal;
+		}
+		else if (sellSignal && Position >= 0)
+		{
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopPrice = _entryPrice + StopMult * stdVal;
+			_takePrice = _entryPrice - TpMult * stdVal;
+		}
+
+		_prevFastEma = fastVal;
+		_prevSlowEma = slowVal;
 	}
 }
