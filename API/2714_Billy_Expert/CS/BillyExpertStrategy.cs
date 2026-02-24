@@ -149,7 +149,7 @@ public class BillyExpertStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 32)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 320)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk");
 
@@ -214,8 +214,8 @@ public class BillyExpertStrategy : Strategy
 
 		Volume = TradeVolume;
 
-		_fastStochastic = new StochasticOscillator {, D = {  K = { Length = 3 } }, Smooth = 3 };
-		_slowStochastic = new StochasticOscillator {, D = {  K = { Length = 3 } }, Smooth = 3 };
+		_fastStochastic = new StochasticOscillator { K = { Length = 14 }, D = { Length = 3 } };
+		_slowStochastic = new StochasticOscillator { K = { Length = 14 }, D = { Length = 3 } };
 
 		var candleSubscription = SubscribeCandles(CandleType);
 		candleSubscription
@@ -269,8 +269,8 @@ public class BillyExpertStrategy : Strategy
 		}
 
 		var typed = (StochasticOscillatorValue)value;
-		_fastMainCurrent = typed.K;
-		_fastSignalCurrent = typed.D;
+		_fastMainCurrent = typed.K ?? 0m;
+		_fastSignalCurrent = typed.D ?? 0m;
 		_fastHasCurrent = true;
 	}
 
@@ -293,8 +293,8 @@ public class BillyExpertStrategy : Strategy
 		}
 
 		var typed = (StochasticOscillatorValue)value;
-		_slowMainCurrent = typed.K;
-		_slowSignalCurrent = typed.D;
+		_slowMainCurrent = typed.K ?? 0m;
+		_slowSignalCurrent = typed.D ?? 0m;
 		_slowHasCurrent = true;
 	}
 
@@ -316,10 +316,7 @@ public class BillyExpertStrategy : Strategy
 
 			if (decreasingHighs && decreasingOpens && fastBullish && slowBullish && projectedVolume <= maxLongVolume + VolumeTolerance)
 			{
-				if (IsFormedAndOnlineAndAllowTrading())
-				{
 					BuyMarket(TradeVolume);
-				}
 			}
 		}
 

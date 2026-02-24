@@ -150,7 +150,7 @@ public class Martin1Strategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to evaluate conditions", "General");
 
-		_useTradingHours = Param(nameof(UseTradingHours), true)
+		_useTradingHours = Param(nameof(UseTradingHours), false)
 			.SetDisplay("Use Trading Hours", "Restrict entries to a time window", "General");
 
 		_startHour = Param(nameof(StartHour), 2)
@@ -185,11 +185,11 @@ public class Martin1Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Baseline order size", "Money Management");
 
-		_stopLossPips = Param(nameof(StopLossPips), 40)
+		_stopLossPips = Param(nameof(StopLossPips), 400)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Distance before hedging the opposite side", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 1000)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Distance to pyramid in the same direction", "Risk");
 	}
@@ -235,8 +235,7 @@ public class Martin1Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// No indicators to check.
 
 		var closePrice = candle.ClosePrice;
 		var totalProfit = CalculateOpenProfit(closePrice);
@@ -452,7 +451,7 @@ public class Martin1Strategy : Strategy
 	private decimal ConvertPriceToMoney(decimal priceDifference, decimal volume)
 	{
 		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = Security?.StepPrice ?? 0m;
+		var stepPrice = priceStep;
 
 		if (priceStep <= 0m || stepPrice <= 0m)
 			return priceDifference * volume;
@@ -517,7 +516,7 @@ public class Martin1Strategy : Strategy
 		return total;
 	}
 
-	private bool IsWithinTradingHours(DateTimeOffset time)
+	private bool IsWithinTradingHours(DateTime time)
 	{
 		var hour = time.Hour;
 		return hour >= StartHour && hour <= EndHour;

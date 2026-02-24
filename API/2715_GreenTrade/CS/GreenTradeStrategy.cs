@@ -240,7 +240,7 @@ public class GreenTradeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum number of volume units allowed", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle subscription", "Data");
 	}
 
@@ -293,8 +293,8 @@ public class GreenTradeStrategy : Strategy
 			return;
 
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
-		var maValue = _smma.Process(new DecimalIndicatorValue(_smma, medianPrice, candle.OpenTime)).ToDecimal();
-		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var maValue = _smma.Process(new DecimalIndicatorValue(_smma, medianPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		_maHistory.Add(maValue);
 		_rsiHistory.Add(rsiValue);
@@ -303,8 +303,7 @@ public class GreenTradeStrategy : Strategy
 		if (!_smma.IsFormed || !_rsi.IsFormed)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// Indicators checked above.
 
 		var shift0 = ShiftBar;
 		var shift1 = shift0 + ShiftBar1;

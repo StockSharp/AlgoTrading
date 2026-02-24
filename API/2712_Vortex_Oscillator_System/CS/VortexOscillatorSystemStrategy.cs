@@ -47,7 +47,7 @@ public class VortexOscillatorSystemStrategy : Strategy
 			
 			.SetOptimize(7, 28, 7);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to build candles for calculations.", "General");
 
 		_useBuyStopLoss = Param(nameof(UseBuyStopLoss), false)
@@ -214,19 +214,22 @@ public class VortexOscillatorSystemStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(_vortexIndicator, ProcessCandle)
+			.BindEx(_vortexIndicator, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal viPlus, decimal viMinus)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue vortexValue)
 	{
 		// Process only finished candles to mirror bar-close logic from the original script.
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Ensure the strategy is ready for trading and the indicator has accumulated enough data.
-		if (!IsFormedAndOnlineAndAllowTrading() || !_vortexIndicator.IsFormed)
+		if (!_vortexIndicator.IsFormed)
 			return;
+
+		var vortexTyped = (VortexIndicatorValue)vortexValue;
+		var viPlus = vortexTyped.PlusVi ?? 0m;
+		var viMinus = vortexTyped.MinusVi ?? 0m;
 
 		// Vortex oscillator equals the difference between VI+ and VI- lines.
 		var oscillator = viPlus - viMinus;
