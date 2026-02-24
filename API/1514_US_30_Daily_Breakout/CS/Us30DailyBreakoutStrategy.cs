@@ -14,122 +14,159 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// US 30 Daily Breakout Strategy.
+/// Daily breakout strategy using rolling high/low from previous session.
+/// Buys on breakout above previous session high, sells on breakdown below previous session low.
+/// Uses percent-based TP/SL.
 /// </summary>
 public class Us30DailyBreakoutStrategy : Strategy
 {
-private readonly StrategyParam<DataType> _candleType;
-private readonly StrategyParam<decimal> _takeProfitPips;
-private readonly StrategyParam<decimal> _stopLossPips;
+	private readonly StrategyParam<int> _lookback;
+	private readonly StrategyParam<decimal> _tpPct;
+	private readonly StrategyParam<decimal> _slPct;
+	private readonly StrategyParam<DataType> _candleType;
 
-private ICandleMessage _prevDayCandle;
-private decimal _prevDayHigh;
-private decimal _prevDayLow;
-private bool _breakoutTraded;
-private bool _breakdownTraded;
-private decimal _entryPrice;
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
+	private decimal _entryPrice;
+	private bool _breakoutTraded;
+	private bool _breakdownTraded;
+	private int _barsSinceReset;
 
-/// <summary>
-/// Candle type for intraday trading.
-/// </summary>
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
+	public decimal TpPct { get => _tpPct.Value; set => _tpPct.Value = value; }
+	public decimal SlPct { get => _slPct.Value; set => _slPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// Take profit in points.
-/// </summary>
-public decimal TakeProfitPips { get => _takeProfitPips.Value; set => _takeProfitPips.Value = value; }
+	public Us30DailyBreakoutStrategy()
+	{
+		_lookback = Param(nameof(Lookback), 48)
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback", "Bars for high/low calculation", "General");
 
-/// <summary>
-/// Stop loss in points.
-/// </summary>
-public decimal StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
+		_tpPct = Param(nameof(TpPct), 0.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("TP %", "Take profit percent", "Risk");
 
-public Us30DailyBreakoutStrategy()
-{
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-.SetDisplay("Candle Type", "Intraday candles", "General");
+		_slPct = Param(nameof(SlPct), 0.3m)
+			.SetGreaterThanZero()
+			.SetDisplay("SL %", "Stop loss percent", "Risk");
 
-_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-.SetGreaterThanZero()
-.SetDisplay("Take Profit", "Take profit points", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
+	}
 
-_stopLossPips = Param(nameof(StopLossPips), 50m)
-.SetGreaterThanZero()
-.SetDisplay("Stop Loss", "Stop loss points", "Risk");
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_prevDayCandle = null;
-_prevDayHigh = 0m;
-_prevDayLow = 0m;
-_breakoutTraded = false;
-_breakdownTraded = false;
-_entryPrice = 0m;
-}
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_highs.Clear();
+		_lows.Clear();
+		_entryPrice = 0;
+		_breakoutTraded = false;
+		_breakdownTraded = false;
+		_barsSinceReset = 0;
+	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-var intraday = SubscribeCandles(CandleType);
-intraday.Bind(ProcessIntraday).Start();
+		var sma = new SimpleMovingAverage { Length = 2 };
 
-var daily = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
-daily.Bind(ProcessDaily).Start();
-}
+		_highs.Clear();
+		_lows.Clear();
+		_entryPrice = 0;
+		_breakoutTraded = false;
+		_breakdownTraded = false;
+		_barsSinceReset = 0;
 
-private void ProcessDaily(ICandleMessage candle)
-{
-if (candle.State != CandleStates.Finished)
-return;
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(sma, ProcessCandle).Start();
 
-if (_prevDayCandle != null)
-{
-_prevDayHigh = _prevDayCandle.HighPrice;
-_prevDayLow = _prevDayCandle.LowPrice;
-_breakoutTraded = false;
-_breakdownTraded = false;
-}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
+	}
 
-_prevDayCandle = candle;
-}
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-private void ProcessIntraday(ICandleMessage candle)
-{
-if (candle.State != CandleStates.Finished)
-return;
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+		_barsSinceReset++;
 
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
+		while (_highs.Count > Lookback + 1)
+		{
+			_highs.RemoveAt(0);
+			_lows.RemoveAt(0);
+		}
 
-if (Position == 0)
-{
-if (!_breakoutTraded && candle.ClosePrice > _prevDayHigh)
-{
-BuyMarket();
-_entryPrice = candle.ClosePrice;
-_breakoutTraded = true;
-}
-else if (!_breakdownTraded && candle.ClosePrice < _prevDayLow)
-{
-SellMarket();
-_entryPrice = candle.ClosePrice;
-_breakdownTraded = true;
-}
-}
-else if (Position > 0)
-{
-if (candle.ClosePrice >= _entryPrice + TakeProfitPips || candle.ClosePrice <= _entryPrice - StopLossPips)
-SellMarket(Position);
-}
-else if (Position < 0)
-{
-if (candle.ClosePrice <= _entryPrice - TakeProfitPips || candle.ClosePrice >= _entryPrice + StopLossPips)
-BuyMarket(Math.Abs(Position));
-}
-}
+		if (_highs.Count <= Lookback)
+			return;
+
+		// Previous session high/low (excluding current bar)
+		decimal prevHigh = decimal.MinValue;
+		decimal prevLow = decimal.MaxValue;
+		for (int i = 0; i < _highs.Count - 1; i++)
+		{
+			if (_highs[i] > prevHigh) prevHigh = _highs[i];
+			if (_lows[i] < prevLow) prevLow = _lows[i];
+		}
+
+		// Reset breakout flags periodically (every lookback bars)
+		if (_barsSinceReset >= Lookback)
+		{
+			_breakoutTraded = false;
+			_breakdownTraded = false;
+			_barsSinceReset = 0;
+		}
+
+		// TP/SL management
+		if (Position > 0 && _entryPrice > 0)
+		{
+			if (candle.ClosePrice >= _entryPrice * (1m + TpPct / 100m) ||
+				candle.ClosePrice <= _entryPrice * (1m - SlPct / 100m))
+			{
+				SellMarket();
+				_entryPrice = 0;
+				return;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (candle.ClosePrice <= _entryPrice * (1m - TpPct / 100m) ||
+				candle.ClosePrice >= _entryPrice * (1m + SlPct / 100m))
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				return;
+			}
+		}
+
+		// Entry signals
+		if (Position == 0)
+		{
+			if (!_breakoutTraded && candle.ClosePrice > prevHigh)
+			{
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+				_breakoutTraded = true;
+			}
+			else if (!_breakdownTraded && candle.ClosePrice < prevLow)
+			{
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+				_breakdownTraded = true;
+			}
+		}
+	}
 }

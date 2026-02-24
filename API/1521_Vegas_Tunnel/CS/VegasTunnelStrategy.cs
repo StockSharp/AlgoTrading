@@ -14,185 +14,122 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Vegas Tunnel strategy using multiple EMAs and ATR based stops.
+/// Vegas Tunnel strategy using multiple EMAs.
+/// Goes long when price is above the tunnel (EMA 144/169) with fast EMA confirmation.
+/// Uses StdDev-based stops and risk/reward targets.
 /// </summary>
 public class VegasTunnelStrategy : Strategy
 {
-private readonly StrategyParam<DataType> _candleType;
-private readonly StrategyParam<decimal> _riskRewardRatio;
-private readonly StrategyParam<bool> _useAtr;
-private readonly StrategyParam<int> _atrLength;
-private readonly StrategyParam<decimal> _atrMult;
+	private readonly StrategyParam<decimal> _riskRewardRatio;
+	private readonly StrategyParam<decimal> _stopMult;
+	private readonly StrategyParam<DataType> _candleType;
 
-private ExponentialMovingAverage _emaFast = null!;
-private ExponentialMovingAverage _emaMedium = null!;
-private ExponentialMovingAverage _emaSlow = null!;
-private ExponentialMovingAverage _emaTunnel = null!;
-private AverageTrueRange _atr = null!;
+	private decimal _stopPrice;
+	private decimal _takePrice;
 
-private decimal _stopPrice;
-private decimal _takePrice;
+	public decimal RiskRewardRatio { get => _riskRewardRatio.Value; set => _riskRewardRatio.Value = value; }
+	public decimal StopMult { get => _stopMult.Value; set => _stopMult.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// Candle type to process.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+	public VegasTunnelStrategy()
+	{
+		_riskRewardRatio = Param(nameof(RiskRewardRatio), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Risk/Reward", "Risk to reward ratio", "General");
 
-/// <summary>
-/// Risk/reward ratio for targets.
-/// </summary>
-public decimal RiskRewardRatio
-{
-get => _riskRewardRatio.Value;
-set => _riskRewardRatio.Value = value;
-}
+		_stopMult = Param(nameof(StopMult), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Mult", "StdDev multiplier for stop", "General");
 
-/// <summary>
-/// Use ATR for stop calculation.
-/// </summary>
-public bool UseAtr
-{
-get => _useAtr.Value;
-set => _useAtr.Value = value;
-}
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe", "General");
+	}
 
-/// <summary>
-/// ATR length.
-/// </summary>
-public int AtrLength
-{
-get => _atrLength.Value;
-set => _atrLength.Value = value;
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <summary>
-/// ATR multiplier.
-/// </summary>
-public decimal AtrMult
-{
-get => _atrMult.Value;
-set => _atrMult.Value = value;
-}
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_stopPrice = 0;
+		_takePrice = 0;
+	}
 
-/// <summary>
-/// Initializes a new instance of <see cref="VegasTunnelStrategy"/>.
-/// </summary>
-public VegasTunnelStrategy()
-{
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Timeframe", "General");
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-_riskRewardRatio = Param(nameof(RiskRewardRatio), 2m)
-.SetGreaterThanZero()
-.SetDisplay("Risk/Reward", "Risk to reward ratio", "General")
-;
+		var emaFast = new ExponentialMovingAverage { Length = 12 };
+		var emaSlow = new ExponentialMovingAverage { Length = 144 };
+		var emaTunnel = new ExponentialMovingAverage { Length = 169 };
+		var stdDev = new StandardDeviation { Length = 14 };
 
-_useAtr = Param(nameof(UseAtr), true)
-.SetDisplay("Use ATR", "Use ATR for stop", "General");
+		_stopPrice = 0;
+		_takePrice = 0;
 
-_atrLength = Param(nameof(AtrLength), 14)
-.SetGreaterThanZero()
-.SetDisplay("ATR Length", "ATR period", "General")
-;
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(emaFast, emaSlow, emaTunnel, stdDev, ProcessCandle).Start();
 
-_atrMult = Param(nameof(AtrMult), 1.5m)
-.SetGreaterThanZero()
-.SetDisplay("ATR Mult", "ATR multiplier", "General")
-;
-}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
+			DrawIndicator(area, emaTunnel);
+			DrawOwnTrades(area);
+		}
+	}
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal tunnel, decimal stdVal)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
+		// Exit management
+		if (Position > 0 && _stopPrice > 0)
+		{
+			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
+			{
+				SellMarket();
+				_stopPrice = 0;
+				_takePrice = 0;
+			}
+		}
+		else if (Position < 0 && _stopPrice > 0)
+		{
+			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
+			{
+				BuyMarket();
+				_stopPrice = 0;
+				_takePrice = 0;
+			}
+		}
 
-_emaFast = default!;
-_emaMedium = default!;
-_emaSlow = default!;
-_emaTunnel = default!;
-_atr = default!;
-_stopPrice = 0m;
-_takePrice = 0m;
-}
+		// Tunnel direction
+		var tunnelUp = slow < tunnel;
+		var tunnelDown = slow > tunnel;
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+		var longCond = candle.ClosePrice > slow && candle.ClosePrice > tunnel && tunnelUp &&
+			fast > slow && fast > tunnel;
+		var shortCond = candle.ClosePrice < slow && candle.ClosePrice < tunnel && tunnelDown &&
+			fast < slow && fast < tunnel;
 
-_emaFast = new EMA { Length = 12 };
-_emaMedium = new EMA { Length = 25 };
-_emaSlow = new EMA { Length = 144 };
-_emaTunnel = new EMA { Length = 169 };
-_atr = new AverageTrueRange { Length = AtrLength };
-
-var subscription = SubscribeCandles(CandleType);
-subscription.Bind(_emaFast, _emaMedium, _emaSlow, _emaTunnel, _atr, ProcessCandle).Start();
-
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, _emaFast);
-DrawIndicator(area, _emaMedium);
-DrawIndicator(area, _emaSlow);
-DrawIndicator(area, _emaTunnel);
-DrawOwnTrades(area);
-}
-}
-
-private void ProcessCandle(ICandleMessage candle, decimal fast, decimal medium, decimal slow, decimal tunnel, decimal atr)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-var tunnelUp = slow < tunnel;
-var tunnelDown = slow > tunnel;
-
-var longCond = candle.ClosePrice > slow && candle.ClosePrice > tunnel && tunnelUp &&
-fast > slow && fast > tunnel;
-var shortCond = candle.ClosePrice < slow && candle.ClosePrice < tunnel && tunnelDown &&
-fast < slow && fast < tunnel;
-
-if (Position > 0)
-{
-if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
-SellMarket(Position);
-}
-else if (Position < 0)
-{
-if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
-BuyMarket(-Position);
-}
-
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
-
-if (longCond && Position <= 0)
-{
-var entry = candle.ClosePrice;
-_stopPrice = UseAtr ? entry - AtrMult * atr : slow;
-_takePrice = entry + (entry - _stopPrice) * RiskRewardRatio;
-var volume = Volume + (Position < 0 ? -Position : 0m);
-BuyMarket(volume);
-}
-else if (shortCond && Position >= 0)
-{
-var entry = candle.ClosePrice;
-_stopPrice = UseAtr ? entry + AtrMult * atr : slow;
-_takePrice = entry - (_stopPrice - entry) * RiskRewardRatio;
-var volume = Volume + (Position > 0 ? Position : 0m);
-SellMarket(volume);
-}
-}
+		if (longCond && Position <= 0 && stdVal > 0)
+		{
+			BuyMarket();
+			var entry = candle.ClosePrice;
+			_stopPrice = entry - StopMult * stdVal;
+			_takePrice = entry + (entry - _stopPrice) * RiskRewardRatio;
+		}
+		else if (shortCond && Position >= 0 && stdVal > 0)
+		{
+			SellMarket();
+			var entry = candle.ClosePrice;
+			_stopPrice = entry + StopMult * stdVal;
+			_takePrice = entry - (_stopPrice - entry) * RiskRewardRatio;
+		}
+	}
 }
