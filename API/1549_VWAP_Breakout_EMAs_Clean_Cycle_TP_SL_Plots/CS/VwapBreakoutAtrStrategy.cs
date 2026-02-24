@@ -14,140 +14,141 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// VWAP breakout strategy with ATR based stop-loss and take-profit.
+/// VWAP breakout strategy with StdDev-based stop-loss and take-profit.
+/// Uses SMA as VWAP proxy and StdDev for ATR-like volatility stops.
+/// Enters on price crossing above/below the moving average.
 /// </summary>
 public class VwapBreakoutAtrStrategy : Strategy
 {
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<decimal> _stopAtrMultiplier;
-	private readonly StrategyParam<decimal> _takeAtrMultiplier;
+	private readonly StrategyParam<int> _maLength;
+	private readonly StrategyParam<int> _stdLength;
+	private readonly StrategyParam<decimal> _stopMult;
+	private readonly StrategyParam<decimal> _takeMult;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private VWAP _vwap = null!;
-	private AverageTrueRange _atr = null!;
-
 	private decimal _prevClose;
-	private decimal _prevVwap;
+	private decimal _prevMa;
 	private bool _hasPrev;
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private decimal _takePrice;
 
-	/// <summary>
-	/// ATR period.
-	/// </summary>
-	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
-
-	/// <summary>
-	/// ATR multiplier for stop-loss.
-	/// </summary>
-	public decimal StopAtrMultiplier { get => _stopAtrMultiplier.Value; set => _stopAtrMultiplier.Value = value; }
-
-	/// <summary>
-	/// ATR multiplier for take-profit.
-	/// </summary>
-	public decimal TakeAtrMultiplier { get => _takeAtrMultiplier.Value; set => _takeAtrMultiplier.Value = value; }
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
+	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
+	public int StdLength { get => _stdLength.Value; set => _stdLength.Value = value; }
+	public decimal StopMult { get => _stopMult.Value; set => _stopMult.Value = value; }
+	public decimal TakeMult { get => _takeMult.Value; set => _takeMult.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public VwapBreakoutAtrStrategy()
 	{
-		_atrLength = Param(nameof(AtrLength), 14)
+		_maLength = Param(nameof(MaLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR period", "Parameters");
+			.SetDisplay("MA Length", "Moving average period", "Parameters");
 
-		_stopAtrMultiplier = Param(nameof(StopAtrMultiplier), 1.5m)
+		_stdLength = Param(nameof(StdLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop ATR Mult", "ATR multiplier for stop", "Parameters");
+			.SetDisplay("StdDev Length", "Volatility period", "Parameters");
 
-		_takeAtrMultiplier = Param(nameof(TakeAtrMultiplier), 2m)
+		_stopMult = Param(nameof(StopMult), 1.5m)
 			.SetGreaterThanZero()
-			.SetDisplay("Take ATR Mult", "ATR multiplier for take profit", "Parameters");
+			.SetDisplay("Stop Mult", "StdDev multiplier for stop", "Parameters");
+
+		_takeMult = Param(nameof(TakeMult), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Take Mult", "StdDev multiplier for TP", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "Parameters");
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevClose = 0m;
-		_prevVwap = 0m;
+		_prevClose = 0;
+		_prevMa = 0;
 		_hasPrev = false;
-		_entryPrice = 0m;
-		_stopPrice = 0m;
-		_takePrice = 0m;
+		_entryPrice = 0;
+		_stopPrice = 0;
+		_takePrice = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_vwap = new VWAP();
-		_atr = new AverageTrueRange { Length = AtrLength };
+		var sma = new SimpleMovingAverage { Length = MaLength };
+		var stdDev = new StandardDeviation { Length = StdLength };
+
+		_prevClose = 0;
+		_prevMa = 0;
+		_hasPrev = false;
+		_entryPrice = 0;
+		_stopPrice = 0;
+		_takePrice = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_vwap, _atr, ProcessCandle)
-			.Start();
+		subscription.Bind(sma, stdDev, ProcessCandle).Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal vwap, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaVal, decimal stdVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_vwap.IsFormed || !_atr.IsFormed)
-			return;
-
-		if (_hasPrev)
-		{
-			var crossOver = _prevClose <= _prevVwap && candle.ClosePrice > vwap;
-			var crossUnder = _prevClose >= _prevVwap && candle.ClosePrice < vwap;
-
-			if (crossOver && Position <= 0)
-			{
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice - atrValue * StopAtrMultiplier;
-				_takePrice = _entryPrice + atrValue * TakeAtrMultiplier;
-				BuyMarket();
-			}
-			else if (crossUnder && Position >= 0)
-			{
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice + atrValue * StopAtrMultiplier;
-				_takePrice = _entryPrice - atrValue * TakeAtrMultiplier;
-				SellMarket();
-			}
-		}
-
-		_prevClose = candle.ClosePrice;
-		_prevVwap = vwap;
-		_hasPrev = true;
-
+		// TP/SL management
 		if (Position > 0)
 		{
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
+			{
 				SellMarket();
+				_entryPrice = 0;
+			}
 		}
 		else if (Position < 0)
 		{
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
+			{
 				BuyMarket();
+				_entryPrice = 0;
+			}
 		}
+
+		if (_hasPrev && stdVal > 0)
+		{
+			var crossOver = _prevClose <= _prevMa && candle.ClosePrice > smaVal;
+			var crossUnder = _prevClose >= _prevMa && candle.ClosePrice < smaVal;
+
+			if (crossOver && Position <= 0)
+			{
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+				_stopPrice = _entryPrice - stdVal * StopMult;
+				_takePrice = _entryPrice + stdVal * TakeMult;
+			}
+			else if (crossUnder && Position >= 0)
+			{
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+				_stopPrice = _entryPrice + stdVal * StopMult;
+				_takePrice = _entryPrice - stdVal * TakeMult;
+			}
+		}
+
+		_prevClose = candle.ClosePrice;
+		_prevMa = smaVal;
+		_hasPrev = true;
 	}
 }

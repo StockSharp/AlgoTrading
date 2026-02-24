@@ -15,265 +15,142 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// VoVix DEVMA strategy.
-/// Trades volatility regime shifts using deviation moving averages
-/// and manages risk with ATR-based exits.
+/// Uses fast/slow StdDev deviation crossover as volatility regime shift signal.
+/// Enters on deviation crossover, exits on percent TP/SL.
 /// </summary>
 public class VoVixDevmaStrategy : Strategy
 {
-	private readonly StrategyParam<int> _devLookback;
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<bool> _useAtrStops;
-	private readonly StrategyParam<decimal> _atrStopMultiplier;
-	private readonly StrategyParam<decimal> _atrProfitMultiplier;
+	private readonly StrategyParam<decimal> _stopPct;
+	private readonly StrategyParam<decimal> _tpMult;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AverageTrueRange _atrFast;
-	private AverageTrueRange _atrSlow;
-	private StandardDeviation _atrFastStd;
-	private StandardDeviation _srcStd;
-	private SimpleMovingAverage _fastDevMa;
-	private SimpleMovingAverage _slowDevMa;
-
-	private bool _initialized;
-	private decimal _prevFast;
-	private decimal _prevSlow;
+	private decimal _prevFastStd;
+	private decimal _prevSlowStd;
 	private decimal _entryPrice;
-	private decimal _stopPrice;
-	private decimal _profitTarget;
+	private decimal _stopDist;
 
-	/// <summary>
-	/// Deviation lookback period.
-	/// </summary>
-	public int DevLookback
-	{
-		get => _devLookback.Value;
-		set => _devLookback.Value = value;
-	}
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public decimal StopPct { get => _stopPct.Value; set => _stopPct.Value = value; }
+	public decimal TpMult { get => _tpMult.Value; set => _tpMult.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Fast DEVMA and ATR length.
-	/// </summary>
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
-
-	/// <summary>
-	/// Slow DEVMA and ATR length.
-	/// </summary>
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
-
-	/// <summary>
-	/// Use ATR-based stop-loss and take-profit.
-	/// </summary>
-	public bool UseAtrStops
-	{
-		get => _useAtrStops.Value;
-		set => _useAtrStops.Value = value;
-	}
-
-	/// <summary>
-	/// ATR stop-loss multiplier.
-	/// </summary>
-	public decimal AtrStopMultiplier
-	{
-		get => _atrStopMultiplier.Value;
-		set => _atrStopMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// ATR take-profit multiplier.
-	/// </summary>
-	public decimal AtrProfitMultiplier
-	{
-		get => _atrProfitMultiplier.Value;
-		set => _atrProfitMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public VoVixDevmaStrategy()
 	{
-		_devLookback = Param(nameof(DevLookback), 59)
-			.SetRange(15, 100)
-			.SetDisplay("Deviation Lookback", "Lookback for deviation calculation", "DEVMA")
-			
-			.SetOptimize(20, 80, 10);
-
-		_fastLength = Param(nameof(FastLength), 20)
-			.SetRange(10, 50)
-			.SetDisplay("Fast Length", "Fast DEVMA and ATR length", "DEVMA")
-			
-			.SetOptimize(10, 40, 5);
-
-		_slowLength = Param(nameof(SlowLength), 60)
-			.SetRange(30, 100)
-			.SetDisplay("Slow Length", "Slow DEVMA and ATR length", "DEVMA")
-			
-			.SetOptimize(40, 100, 10);
-
-		_useAtrStops = Param(nameof(UseAtrStops), true)
-			.SetDisplay("Use ATR Stops", "Use ATR-based exits", "Risk");
-
-		_atrStopMultiplier = Param(nameof(AtrStopMultiplier), 2m)
+		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR SL Mult", "ATR stop-loss multiplier", "Risk")
-			
-			.SetOptimize(1m, 4m, 0.5m);
+			.SetDisplay("Fast Length", "Fast StdDev period", "DEVMA");
 
-		_atrProfitMultiplier = Param(nameof(AtrProfitMultiplier), 3m)
+		_slowLength = Param(nameof(SlowLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR TP Mult", "ATR take-profit multiplier", "Risk")
-			
-			.SetOptimize(1m, 6m, 0.5m);
+			.SetDisplay("Slow Length", "Slow StdDev period", "DEVMA");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_stopPct = Param(nameof(StopPct), 1m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop %", "Stop loss percent", "Risk");
+
+		_tpMult = Param(nameof(TpMult), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("TP Mult", "Take profit as multiple of stop", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_initialized = false;
-		_prevFast = 0m;
-		_prevSlow = 0m;
-		_entryPrice = 0m;
-		_stopPrice = 0m;
-		_profitTarget = 0m;
+		_prevFastStd = 0;
+		_prevSlowStd = 0;
+		_entryPrice = 0;
+		_stopDist = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_atrFast = new AverageTrueRange { Length = FastLength };
-		_atrSlow = new AverageTrueRange { Length = SlowLength };
-		_atrFastStd = new StandardDeviation { Length = DevLookback };
-		_srcStd = new StandardDeviation { Length = DevLookback };
-		_fastDevMa = new SMA { Length = FastLength };
-		_slowDevMa = new SMA { Length = SlowLength };
+		var fastStd = new StandardDeviation { Length = FastLength };
+		var slowStd = new StandardDeviation { Length = SlowLength };
+		var ema = new ExponentialMovingAverage { Length = FastLength };
+
+		_prevFastStd = 0;
+		_prevSlowStd = 0;
+		_entryPrice = 0;
+		_stopDist = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_atrFast, _atrSlow, _atrFastStd, ProcessCandle)
-			.Start();
+		subscription.Bind(fastStd, slowStd, ema, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastDevMa);
-			DrawIndicator(area, _slowDevMa);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrFastValue, decimal atrSlowValue, decimal atrFastStdValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastStdVal, decimal slowStdVal, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (!_atrFast.IsFormed || !_atrSlow.IsFormed || !_atrFastStd.IsFormed)
-			return;
-
-		if (atrFastStdValue == 0m)
-			return;
-
-		var src = (atrFastValue - atrSlowValue) / atrFastStdValue;
-		var devValue = _srcStd.Process(src);
-		if (!devValue.IsFinal)
-			return;
-
-		var dev = devValue.GetValue<decimal>();
-		var fastValue = _fastDevMa.Process(dev);
-		var slowValue = _slowDevMa.Process(dev);
-		if (!fastValue.IsFinal || !slowValue.IsFinal)
-			return;
-
-		var fast = fastValue.GetValue<decimal>();
-		var slow = slowValue.GetValue<decimal>();
-
-		if (!_initialized)
+		// TP/SL management
+		if (Position > 0 && _entryPrice > 0 && _stopDist > 0)
 		{
-			_prevFast = fast;
-			_prevSlow = slow;
-			_initialized = true;
+			if (candle.ClosePrice <= _entryPrice - _stopDist || candle.ClosePrice >= _entryPrice + _stopDist * TpMult)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_stopDist = 0;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0 && _stopDist > 0)
+		{
+			if (candle.ClosePrice >= _entryPrice + _stopDist || candle.ClosePrice <= _entryPrice - _stopDist * TpMult)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_stopDist = 0;
+			}
+		}
+
+		if (_prevFastStd == 0 || _prevSlowStd == 0 || fastStdVal <= 0 || slowStdVal <= 0)
+		{
+			_prevFastStd = fastStdVal;
+			_prevSlowStd = slowStdVal;
 			return;
 		}
 
-		var bullCross = _prevFast <= _prevSlow && fast > slow;
-		var bearCross = _prevFast >= _prevSlow && fast < slow;
+		// Deviation crossover: fast vol crossing above slow vol = regime shift
+		// Use price direction relative to EMA for trade direction
+		var volExpanding = fastStdVal > slowStdVal;
+		var wasContracting = _prevFastStd <= _prevSlowStd;
+		var bullCross = wasContracting && volExpanding && candle.ClosePrice > emaVal;
+		var bearCross = wasContracting && volExpanding && candle.ClosePrice < emaVal;
 
 		if (bullCross && Position <= 0)
 		{
-			CancelActiveOrders();
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
-
-			if (UseAtrStops)
-			{
-				_stopPrice = candle.ClosePrice - atrFastValue * AtrStopMultiplier;
-				_profitTarget = candle.ClosePrice + atrFastValue * AtrProfitMultiplier;
-			}
+			_stopDist = candle.ClosePrice * StopPct / 100m;
 		}
 		else if (bearCross && Position >= 0)
 		{
-			CancelActiveOrders();
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket();
 			_entryPrice = candle.ClosePrice;
-
-			if (UseAtrStops)
-			{
-				_stopPrice = candle.ClosePrice + atrFastValue * AtrStopMultiplier;
-				_profitTarget = candle.ClosePrice - atrFastValue * AtrProfitMultiplier;
-			}
-		}
-		else if (UseAtrStops && Position != 0)
-		{
-			if (Position > 0)
-			{
-				if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _profitTarget)
-					SellMarket(Position);
-			}
-			else if (Position < 0)
-			{
-				if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _profitTarget)
-					BuyMarket(Math.Abs(Position));
-			}
+			_stopDist = candle.ClosePrice * StopPct / 100m;
 		}
 
-		_prevFast = fast;
-		_prevSlow = slow;
+		_prevFastStd = fastStdVal;
+		_prevSlowStd = slowStdVal;
 	}
 }
