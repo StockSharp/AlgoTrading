@@ -39,7 +39,8 @@ public class JSChaosStrategy : Strategy
 	private SmoothedMovingAverage _teeth;
 	private SmoothedMovingAverage _lips;
 	private SmoothedMovingAverage _ma21;
-	private AwesomeOscillator _ao;
+	private SimpleMovingAverage _aoShort;
+	private SimpleMovingAverage _aoLong;
 	private SimpleMovingAverage _aoSma;
 	private StandardDeviation _stdDev;
 
@@ -225,7 +226,7 @@ public class JSChaosStrategy : Strategy
 	/// </summary>
 	public JSChaosStrategy()
 	{
-		_useTime = Param(nameof(UseTime), true)
+		_useTime = Param(nameof(UseTime), false)
 			.SetDisplay("Use Time", "Enable trading window", "General");
 
 		_openHour = Param(nameof(OpenHour), 7)
@@ -285,7 +286,7 @@ public class JSChaosStrategy : Strategy
 			.SetDisplay("Lips Shift", "Shift applied to the lips moving average", "Indicator")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -338,7 +339,8 @@ public class JSChaosStrategy : Strategy
 		_teeth = new SmoothedMovingAverage { Length = 8 };
 		_lips = new SmoothedMovingAverage { Length = 5 };
 		_ma21 = new SmoothedMovingAverage { Length = 21 };
-		_ao = new AwesomeOscillator { ShortMa = { Length = 5 }, LongMa = { Length = 34 } };
+		_aoShort = new SMA { Length = 5 };
+		_aoLong = new SMA { Length = 34 };
 		_aoSma = new SMA { Length = 5 };
 		_stdDev = new StandardDeviation { Length = 10 };
 
@@ -359,24 +361,25 @@ public class JSChaosStrategy : Strategy
 
 		UpdateAlligator(median, candle);
 
-		var maValue = _ma21.Process(new DecimalIndicatorValue(_ma21, candle.ClosePrice, candle.ServerTime));
+		var maValue = _ma21.Process(new DecimalIndicatorValue(_ma21, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
 		if (maValue.IsFormed)
 			_ma21Value = maValue.ToDecimal();
 
-		var aoValue = _ao.Process(new DecimalIndicatorValue(_ao, median, candle.ServerTime));
-		if (!aoValue.IsFinal)
+		var aoShortValue = _aoShort.Process(new DecimalIndicatorValue(_aoShort, median, candle.OpenTime) { IsFinal = true });
+		var aoLongValue = _aoLong.Process(new DecimalIndicatorValue(_aoLong, median, candle.OpenTime) { IsFinal = true });
+		if (!_aoShort.IsFormed || !_aoLong.IsFormed)
 			return;
 
-		var ao = aoValue.ToDecimal();
-		var aoSmaValue = _aoSma.Process(new DecimalIndicatorValue(_aoSma, ao, candle.ServerTime));
-		if (!aoSmaValue.IsFinal)
+		var ao = aoShortValue.ToDecimal() - aoLongValue.ToDecimal();
+		var aoSmaValue = _aoSma.Process(new DecimalIndicatorValue(_aoSma, ao, candle.OpenTime) { IsFinal = true });
+		if (!_aoSma.IsFormed)
 			return;
 
 		var aoSma = aoSmaValue.ToDecimal();
 		var ac = ao - aoSma;
 
-		var stdValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, candle.ClosePrice, candle.ServerTime));
-		if (!stdValue.IsFinal)
+		var stdValue = _stdDev.Process(new DecimalIndicatorValue(_stdDev, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+		if (!_stdDev.IsFormed)
 			return;
 
 		var stdDev = stdValue.ToDecimal();
@@ -403,7 +406,7 @@ public class JSChaosStrategy : Strategy
 		}
 
 		var signal = GetSignal();
-		var canTrade = IsTradingTime(candle.OpenTime) && IsFormedAndOnlineAndAllowTrading();
+		var canTrade = IsTradingTime(candle.OpenTime);
 
 		if (canTrade)
 			TryPlaceOrders(signal, candle.ClosePrice);
@@ -420,7 +423,7 @@ public class JSChaosStrategy : Strategy
 
 	private void UpdateAlligator(decimal median, ICandleMessage candle)
 	{
-		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.ServerTime));
+		var jawValue = _jaw.Process(new DecimalIndicatorValue(_jaw, median, candle.OpenTime) { IsFinal = true });
 		if (jawValue.IsFormed)
 		{
 			_jawQueue.Enqueue(jawValue.ToDecimal());
@@ -428,7 +431,7 @@ public class JSChaosStrategy : Strategy
 				_jawValue = _jawQueue.Dequeue();
 		}
 
-		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.ServerTime));
+		var teethValue = _teeth.Process(new DecimalIndicatorValue(_teeth, median, candle.OpenTime) { IsFinal = true });
 		if (teethValue.IsFormed)
 		{
 			_teethQueue.Enqueue(teethValue.ToDecimal());
@@ -436,7 +439,7 @@ public class JSChaosStrategy : Strategy
 				_teethValue = _teethQueue.Dequeue();
 		}
 
-		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.ServerTime));
+		var lipsValue = _lips.Process(new DecimalIndicatorValue(_lips, median, candle.OpenTime) { IsFinal = true });
 		if (lipsValue.IsFormed)
 		{
 			_lipsQueue.Enqueue(lipsValue.ToDecimal());
@@ -731,8 +734,7 @@ public class JSChaosStrategy : Strategy
 
 	private void TriggerPendingOrders(ICandleMessage candle)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// indicators checked above
 
 		for (var i = _pendingOrders.Count - 1; i >= 0; i--)
 		{
@@ -808,7 +810,7 @@ public class JSChaosStrategy : Strategy
 
 		foreach (var trade in _activeTrades)
 		{
-			if (!trade.IsSecondary || trade.MovedToBreakeven)
+			if (trade.IsPrimary || trade.MovedToBreakeven)
 				continue;
 
 			var primaryExists = _activeTrades.Exists(t => t.Side == trade.Side && t.IsPrimary);
@@ -900,7 +902,7 @@ public class JSChaosStrategy : Strategy
 			BuyMarket(trade.Volume);
 	}
 
-	private bool IsTradingTime(DateTimeOffset time)
+	private bool IsTradingTime(DateTime time)
 	{
 		if (!UseTime)
 			return true;
@@ -937,7 +939,7 @@ public class JSChaosStrategy : Strategy
 		if (Security is null)
 			return;
 
-		var step = Security.PriceStep ?? Security.MinPriceStep;
+		var step = Security.PriceStep;
 		if (step is not decimal priceStep || priceStep <= 0m)
 			return;
 
@@ -955,7 +957,7 @@ public class JSChaosStrategy : Strategy
 
 	private decimal NormalizePrice(decimal price)
 	{
-		var step = Security?.PriceStep ?? Security?.MinPriceStep;
+		var step = Security?.PriceStep;
 		if (step is decimal priceStep && priceStep > 0m)
 			return Math.Round(price / priceStep, MidpointRounding.AwayFromZero) * priceStep;
 

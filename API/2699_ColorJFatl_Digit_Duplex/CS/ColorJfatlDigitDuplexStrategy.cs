@@ -51,9 +51,9 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 
 	public ColorJfatlDigitDuplexStrategy()
 	{
-		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(4).TimeFrame())
+		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Long Candle Type", "Timeframe for the long indicator", "General");
-		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(4).TimeFrame())
+		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Short Candle Type", "Timeframe for the short indicator", "General");
 
 		_longJmaLength = Param(nameof(LongJmaLength), 5)
@@ -343,9 +343,6 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 		if (indicatorValue is not ColorJfatlDigitValue value || !value.IsReady)
 		return;
 
@@ -357,7 +354,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 
 		if (EnableLongClose && currentColor == 0 && Position > 0)
 		{
-			ClosePosition();
+			CloseCurrentPosition();
 			ClearLongRisk();
 			return;
 		}
@@ -373,9 +370,6 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 		if (indicatorValue is not ColorJfatlDigitValue value || !value.IsReady)
 		return;
 
@@ -387,7 +381,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 
 		if (EnableShortClose && currentColor == 2 && Position < 0)
 		{
-			ClosePosition();
+			CloseCurrentPosition();
 			ClearShortRisk();
 			return;
 		}
@@ -450,14 +444,14 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 
 		if (_longStopPrice is decimal stop && candle.LowPrice <= stop)
 		{
-			ClosePosition();
+			CloseCurrentPosition();
 			ClearLongRisk();
 			return true;
 		}
 
 		if (_longTakePrice is decimal take && candle.HighPrice >= take)
 		{
-			ClosePosition();
+			CloseCurrentPosition();
 			ClearLongRisk();
 			return true;
 		}
@@ -475,14 +469,14 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 
 		if (_shortStopPrice is decimal stop && candle.HighPrice >= stop)
 		{
-			ClosePosition();
+			CloseCurrentPosition();
 			ClearShortRisk();
 			return true;
 		}
 
 		if (_shortTakePrice is decimal take && candle.LowPrice <= take)
 		{
-			ClosePosition();
+			CloseCurrentPosition();
 			ClearShortRisk();
 			return true;
 		}
@@ -500,6 +494,14 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 	{
 		_shortStopPrice = null;
 		_shortTakePrice = null;
+	}
+
+	private void CloseCurrentPosition()
+	{
+		if (Position > 0)
+			SellMarket(Math.Abs(Position));
+		else if (Position < 0)
+			BuyMarket(Math.Abs(Position));
 	}
 
 	/// <summary>
@@ -605,7 +607,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 			if (candle == null || candle.State != CandleStates.Finished)
 			{
 				IsFormed = false;
-				return new ColorJfatlDigitValue(this, input, null, null, null, null);
+				return new ColorJfatlDigitValue(this, input.Time, null, null, null);
 			}
 
 			var length = Math.Max(1, Length);
@@ -633,7 +635,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 			if (_priceBuffer.Count < fatlPeriod)
 			{
 				IsFormed = false;
-				return new ColorJfatlDigitValue(this, input, null, null, null, null);
+				return new ColorJfatlDigitValue(this, candle.OpenTime, null, null, null);
 			}
 
 			decimal fatl = 0m;
@@ -643,7 +645,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 				fatl += FatlWeights[i] * _priceBuffer[priceIndex];
 			}
 
-			var jmaValue = _jma.Process(new DecimalIndicatorValue(_jma, fatl, candle.CloseTime));
+			var jmaValue = _jma.Process(new DecimalIndicatorValue(_jma, fatl, candle.CloseTime) { IsFinal = true });
 			var baseValue = jmaValue.ToDecimal();
 			var adjusted = ApplyPhase(baseValue);
 			var rounded = Round(adjusted);
@@ -659,7 +661,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 			if (_history.Count <= signalBar)
 			{
 				IsFormed = false;
-				return new ColorJfatlDigitValue(this, input, null, null, null, null);
+				return new ColorJfatlDigitValue(this, candle.OpenTime, null, null, null);
 			}
 
 			var index = _history.Count - 1 - signalBar;
@@ -669,11 +671,11 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 			if (prevColor == null)
 			{
 				IsFormed = false;
-				return new ColorJfatlDigitValue(this, input, null, null, null, null);
+				return new ColorJfatlDigitValue(this, candle.OpenTime, null, null, null);
 			}
 
 			IsFormed = true;
-			return new ColorJfatlDigitValue(this, input, entry.Value, entry.Color, prevColor.Value, entry.Time);
+			return new ColorJfatlDigitValue(this, entry.Time, entry.Value, entry.Color, prevColor.Value);
 		}
 
 		private decimal GetPrice(ICandleMessage candle)
@@ -773,23 +775,47 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 		}
 	}
 
-	private sealed record IndicatorEntry(DateTimeOffset Time, decimal Value, int Color);
+	private sealed record IndicatorEntry(DateTime Time, decimal Value, int Color);
 
-	private sealed class ColorJfatlDigitValue : ComplexIndicatorValue
+	private sealed class ColorJfatlDigitValue : BaseIndicatorValue
 	{
-		public ColorJfatlDigitValue(IIndicator indicator, IIndicatorValue input, decimal? value, int? currentColor, int? previousColor, DateTimeOffset? signalTime)
-		: base(indicator, input,
-		(nameof(Value), value),
-		(nameof(CurrentColor), currentColor),
-		(nameof(PreviousColor), previousColor),
-		(nameof(SignalTime), signalTime))
+		public ColorJfatlDigitValue(IIndicator indicator, DateTime time, decimal? value, int? currentColor, int? previousColor)
+		: base(indicator, time)
 		{
+			Value = value;
+			CurrentColor = currentColor;
+			PreviousColor = previousColor;
 		}
 
-		public decimal? Value => (decimal?)GetValue(nameof(Value));
-		public int? CurrentColor => (int?)GetValue(nameof(CurrentColor));
-		public int? PreviousColor => (int?)GetValue(nameof(PreviousColor));
-		public DateTimeOffset? SignalTime => (DateTimeOffset?)GetValue(nameof(SignalTime));
+		public decimal? Value { get; }
+		public int? CurrentColor { get; }
+		public int? PreviousColor { get; }
 		public bool IsReady => Value.HasValue && CurrentColor.HasValue && PreviousColor.HasValue;
+
+		public override bool IsEmpty { get; set; }
+		public override bool IsFinal { get; set; } = true;
+
+		public override T GetValue<T>(Level1Fields? field)
+		{
+			if (Value.HasValue && typeof(T) == typeof(decimal))
+				return (T)(object)Value.Value;
+			return default!;
+		}
+
+		public override int CompareTo(IIndicatorValue other)
+		{
+			if (other is ColorJfatlDigitValue o && Value.HasValue && o.Value.HasValue)
+				return Value.Value.CompareTo(o.Value.Value);
+			return 0;
+		}
+
+		public override IEnumerable<object> ToValues()
+		{
+			yield return Value ?? 0m;
+			yield return CurrentColor ?? 0;
+			yield return PreviousColor ?? 0;
+		}
+
+		public override void FromValues(object[] values) { }
 	}
 }

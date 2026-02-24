@@ -140,15 +140,15 @@ public class MamAcdStrategy : Strategy
 		.SetDisplay("MACD Slow", "Slow EMA length of MACD", "Indicators")
 		;
 
-		_stopLossPips = Param(nameof(StopLossPips), 15)
+		_stopLossPips = Param(nameof(StopLossPips), 500)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk management");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 15)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 500)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 	}
 
@@ -170,9 +170,9 @@ public class MamAcdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_firstLowMa = new WeightedMovingAverage { Length = FirstLowMaLength };
 		_secondLowMa = new WeightedMovingAverage { Length = SecondLowMaLength };
@@ -196,16 +196,16 @@ public class MamAcdStrategy : Strategy
 		if (priceArea != null)
 		{
 			DrawCandles(priceArea, subscription);
-			DrawIndicator(priceArea, _firstLowMa, "LWMA Low #1");
-			DrawIndicator(priceArea, _secondLowMa, "LWMA Low #2");
-			DrawIndicator(priceArea, _triggerEma, "EMA Trigger");
+			DrawIndicator(priceArea, _firstLowMa);
+			DrawIndicator(priceArea, _secondLowMa);
+			DrawIndicator(priceArea, _triggerEma);
 			DrawOwnTrades(priceArea);
 
 			var macdArea = CreateChartArea();
 			if (macdArea != null)
 			{
 				macdArea.Title = "MACD";
-				DrawIndicator(macdArea, _macd, "MACD");
+				DrawIndicator(macdArea, _macd);
 			}
 		}
 	}
@@ -216,10 +216,10 @@ public class MamAcdStrategy : Strategy
 		return;
 
 		// Feed indicator chain: LWMAs work on low prices, EMA and MACD on closes.
-		var firstLowValue = _firstLowMa.Process(new DecimalIndicatorValue(_firstLowMa, candle.LowPrice, candle.OpenTime));
-		var secondLowValue = _secondLowMa.Process(new DecimalIndicatorValue(_secondLowMa, candle.LowPrice, candle.OpenTime));
-		var triggerValue = _triggerEma.Process(new DecimalIndicatorValue(_triggerEma, candle.ClosePrice, candle.OpenTime));
-		var macdValue = _macd.Process(new DecimalIndicatorValue(_macd, candle.ClosePrice, candle.OpenTime));
+		var firstLowValue = _firstLowMa.Process(new DecimalIndicatorValue(_firstLowMa, candle.LowPrice, candle.OpenTime) { IsFinal = true });
+		var secondLowValue = _secondLowMa.Process(new DecimalIndicatorValue(_secondLowMa, candle.LowPrice, candle.OpenTime) { IsFinal = true });
+		var triggerValue = _triggerEma.Process(new DecimalIndicatorValue(_triggerEma, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+		var macdValue = _macd.Process(new DecimalIndicatorValue(_macd, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
 
 		// Wait for all indicators to collect enough history.
 		if (!_firstLowMa.IsFormed || !_secondLowMa.IsFormed || !_triggerEma.IsFormed || !_macd.IsFormed)
@@ -229,11 +229,7 @@ public class MamAcdStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousMacd = macdValue.ToDecimal();
-			return;
-		}
+		// indicators already checked above
 
 		var ma1 = firstLowValue.ToDecimal();
 		var ma2 = secondLowValue.ToDecimal();

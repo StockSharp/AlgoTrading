@@ -257,7 +257,7 @@ public class NrtrAtrStopStrategy : Strategy
 		.SetDisplay("End Minute", "Minute when trading stops", "Session")
 		.SetOptimize(0, 59, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe used by the NRTR ATR Stop indicator", "General");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 20)
@@ -358,7 +358,7 @@ public class NrtrAtrStopStrategy : Strategy
 			_shortStop = _shortStop.HasValue ? Math.Min(_shortStop.Value, newStop) : newStop;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_atrIndicator.IsFormed)
 		return;
 
 		if (UseTradingWindow && !inTradingWindow)

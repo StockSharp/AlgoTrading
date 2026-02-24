@@ -87,7 +87,7 @@ public class BlauCMomentumStrategy : Strategy
 		_entryMode = Param(nameof(EntryMode), EntryModes.Twist)
 			.SetDisplay("Entry Mode", "Choose between zero breakout or twist logic", "Logic");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Indicator Timeframe", "Candle type used for indicator calculations", "Data");
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethods.Exponential)
@@ -371,8 +371,7 @@ public class BlauCMomentumStrategy : Strategy
 		if (_indicatorHistory.Count > requiredHistory)
 			_indicatorHistory.RemoveRange(0, _indicatorHistory.Count - requiredHistory);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// indicators are checked via history availability below
 
 		var current = GetHistoryValue(SignalBar);
 		var previous = GetHistoryValue(SignalBar + 1);
@@ -785,9 +784,9 @@ public class BlauCMomentumStrategy : Strategy
 			var momentum = value1 - reference;
 			var time = candle.OpenTime;
 
-			var smooth1 = _ma1.Process(new DecimalIndicatorValue(_ma1, momentum, time)).ToDecimal();
-			var smooth2 = _ma2.Process(new DecimalIndicatorValue(_ma2, smooth1, time)).ToDecimal();
-			var smooth3 = _ma3.Process(new DecimalIndicatorValue(_ma3, smooth2, time)).ToDecimal();
+			var smooth1 = _ma1.Process(new DecimalIndicatorValue(_ma1, momentum, time) { IsFinal = true }).ToDecimal();
+			var smooth2 = _ma2.Process(new DecimalIndicatorValue(_ma2, smooth1, time) { IsFinal = true }).ToDecimal();
+			var smooth3 = _ma3.Process(new DecimalIndicatorValue(_ma3, smooth2, time) { IsFinal = true }).ToDecimal();
 
 			if (!_ma3.IsFormed)
 				return null;
