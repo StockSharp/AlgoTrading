@@ -15,178 +15,103 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Tri-Monthly BTC Swing strategy.
-/// Goes long when price is above EMA200, MACD line above signal and RSI above threshold.
-/// Allows only one trade per defined interval.
+/// Goes long when price is above slow EMA, fast EMA above slow EMA and RSI above threshold.
+/// Limits trade frequency via a minimum time interval.
 /// </summary>
 public class TriMonthlyBtcSwingStrategy : Strategy
 {
-	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<int> _macdFast;
-	private readonly StrategyParam<int> _macdSlow;
-	private readonly StrategyParam<int> _macdSignal;
+	private readonly StrategyParam<int> _slowEmaLength;
+	private readonly StrategyParam<int> _fastEmaLength;
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<decimal> _rsiThreshold;
-	private readonly StrategyParam<TimeSpan> _tradeInterval;
+	private readonly StrategyParam<int> _tradeIntervalBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _ema = null!;
-	private MovingAverageConvergenceDivergenceSignal _macd = null!;
-	private RelativeStrengthIndex _rsi = null!;
-	private DateTimeOffset? _lastTradeTime;
+	private int _barsSinceLastTrade;
 
-	/// <summary>
-	/// EMA period.
-	/// </summary>
-	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
-
-	/// <summary>
-	/// MACD fast period.
-	/// </summary>
-	public int MacdFast { get => _macdFast.Value; set => _macdFast.Value = value; }
-
-	/// <summary>
-	/// MACD slow period.
-	/// </summary>
-	public int MacdSlow { get => _macdSlow.Value; set => _macdSlow.Value = value; }
-
-	/// <summary>
-	/// MACD signal period.
-	/// </summary>
-	public int MacdSignal { get => _macdSignal.Value; set => _macdSignal.Value = value; }
-
-	/// <summary>
-	/// RSI period.
-	/// </summary>
+	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
+	public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
-
-	/// <summary>
-	/// RSI threshold.
-	/// </summary>
 	public decimal RsiThreshold { get => _rsiThreshold.Value; set => _rsiThreshold.Value = value; }
-
-	/// <summary>
-	/// Minimum interval between trades.
-	/// </summary>
-	public TimeSpan TradeInterval { get => _tradeInterval.Value; set => _tradeInterval.Value = value; }
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
+	public int TradeIntervalBars { get => _tradeIntervalBars.Value; set => _tradeIntervalBars.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="TriMonthlyBtcSwingStrategy"/>.
-	/// </summary>
 	public TriMonthlyBtcSwingStrategy()
 	{
-		_emaLength = Param(nameof(EmaLength), 200)
+		_slowEmaLength = Param(nameof(SlowEmaLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "EMA period", "General")
-			;
+			.SetDisplay("Slow EMA", "Slow EMA period", "General");
 
-		_macdFast = Param(nameof(MacdFast), 12)
+		_fastEmaLength = Param(nameof(FastEmaLength), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("MACD Fast", "Fast period", "General")
-			;
-
-		_macdSlow = Param(nameof(MacdSlow), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Slow", "Slow period", "General")
-			;
-
-		_macdSignal = Param(nameof(MacdSignal), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Signal", "Signal period", "General")
-			;
+			.SetDisplay("Fast EMA", "Fast EMA period", "General");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "General")
-			;
+			.SetDisplay("RSI Length", "RSI period", "General");
 
 		_rsiThreshold = Param(nameof(RsiThreshold), 50m)
-			.SetDisplay("RSI Threshold", "RSI level", "General")
-			;
+			.SetDisplay("RSI Threshold", "RSI level for entry", "General");
 
-		_tradeInterval = Param(nameof(TradeInterval), TimeSpan.FromDays(90))
-			.SetDisplay("Trade Interval", "Minimum time between trades", "General");
+		_tradeIntervalBars = Param(nameof(TradeIntervalBars), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Trade Interval Bars", "Min bars between entries", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_ema = null!;
-		_macd = null!;
-		_rsi = null!;
-		_lastTradeTime = null;
+		_barsSinceLastTrade = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ema = new EMA { Length = EmaLength };
-		_macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow } }, SignalMa = { Length = MacdSignal } };
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_ema, _macd, _rsi, ProcessCandle)
-			.Start();
-
-		StartProtection(null, null);
+		subscription.Bind(slowEma, fastEma, rsi, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
-			var osc = CreateChartArea();
-			if (osc != null)
-			{
-				osc.Title = "Oscillators";
-				DrawIndicator(osc, _macd);
-				DrawIndicator(osc, _rsi);
-			}
+			DrawIndicator(area, slowEma);
+			DrawIndicator(area, fastEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal macd, decimal signal, decimal _, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle, decimal slowEma, decimal fastEma, decimal rsiVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		_barsSinceLastTrade++;
 
-		var now = candle.CloseTime;
-		var canTrade = _lastTradeTime == null || now - _lastTradeTime > TradeInterval;
-
-		var longCondition = candle.ClosePrice > ema && macd > signal && rsi > RsiThreshold && canTrade;
-		var exitCondition = macd < signal || rsi < RsiThreshold;
+		var canTrade = _barsSinceLastTrade >= TradeIntervalBars;
+		var longCondition = candle.ClosePrice > slowEma && fastEma > slowEma && rsiVal > RsiThreshold && canTrade;
+		var exitCondition = fastEma < slowEma || rsiVal < RsiThreshold;
 
 		if (longCondition && Position <= 0)
 		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			BuyMarket(volume);
-			_lastTradeTime = now;
+			BuyMarket();
+			_barsSinceLastTrade = 0;
 		}
 		else if (exitCondition && Position > 0)
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
 	}
 }

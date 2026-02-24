@@ -15,192 +15,148 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Triangle breakout strategy for BTC.
-/// Trades breakouts of simple moving average triangle with volume confirmation and ATR stops.
+/// Builds SMA of highs/lows as triangle bounds, trades breakouts with TP/SL.
 /// </summary>
 public class TriangleBreakoutBtcMark804Strategy : Strategy
 {
 	private readonly StrategyParam<int> _triangleLength;
-	private readonly StrategyParam<int> _volumeSmaLength;
-	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<decimal> _volumeMultiplier;
-	private readonly StrategyParam<decimal> _atrMultiplierSl;
-	private readonly StrategyParam<decimal> _atrMultiplierTp;
+	private readonly StrategyParam<decimal> _stopPct;
+	private readonly StrategyParam<decimal> _takePct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _upper = null!;
-	private SimpleMovingAverage _lower = null!;
-	private SimpleMovingAverage _volumeSma = null!;
-	private AverageTrueRange _atr = null!;
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
+	private decimal _prevClose;
+	private decimal _prevUpper;
+	private decimal _prevLower;
+	private decimal _entryPrice;
 
-	private decimal? _prevClose;
-	private decimal? _prevUpper;
-	private decimal? _prevLower;
-	private decimal _stopPrice;
-	private decimal _takePrice;
-
-	/// <summary>
-	/// Triangle lookback length.
-	/// </summary>
 	public int TriangleLength { get => _triangleLength.Value; set => _triangleLength.Value = value; }
-
-	/// <summary>
-	/// Volume SMA length.
-	/// </summary>
-	public int VolumeSmaLength { get => _volumeSmaLength.Value; set => _volumeSmaLength.Value = value; }
-
-	/// <summary>
-	/// ATR period.
-	/// </summary>
-	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
-
-	/// <summary>
-	/// Volume spike multiplier.
-	/// </summary>
-	public decimal VolumeMultiplier { get => _volumeMultiplier.Value; set => _volumeMultiplier.Value = value; }
-
-	/// <summary>
-	/// ATR stop-loss multiplier.
-	/// </summary>
-	public decimal AtrMultiplierSl { get => _atrMultiplierSl.Value; set => _atrMultiplierSl.Value = value; }
-
-	/// <summary>
-	/// ATR take-profit multiplier.
-	/// </summary>
-	public decimal AtrMultiplierTp { get => _atrMultiplierTp.Value; set => _atrMultiplierTp.Value = value; }
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
+	public decimal StopPct { get => _stopPct.Value; set => _stopPct.Value = value; }
+	public decimal TakePct { get => _takePct.Value; set => _takePct.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="TriangleBreakoutBtcMark804Strategy"/>.
-	/// </summary>
 	public TriangleBreakoutBtcMark804Strategy()
 	{
-		_triangleLength = Param(nameof(TriangleLength), 50)
+		_triangleLength = Param(nameof(TriangleLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Triangle Length", "Lookback for SMA lines", "General")
-			;
+			.SetDisplay("Triangle Length", "Lookback for SMA lines", "General");
 
-		_volumeSmaLength = Param(nameof(VolumeSmaLength), 20)
+		_stopPct = Param(nameof(StopPct), 1m)
 			.SetGreaterThanZero()
-			.SetDisplay("Volume SMA Length", "Lookback for volume average", "General")
-			;
+			.SetDisplay("Stop %", "Stop loss percent", "Risk");
 
-		_atrLength = Param(nameof(AtrLength), 14)
+		_takePct = Param(nameof(TakePct), 1.5m)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR period", "General")
-			;
+			.SetDisplay("Take %", "Take profit percent", "Risk");
 
-		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
-			.SetDisplay("Volume Multiplier", "Volume spike multiplier", "General")
-			;
-
-		_atrMultiplierSl = Param(nameof(AtrMultiplierSl), 1m)
-			.SetDisplay("ATR SL Multiplier", "Stop loss ATR multiplier", "General")
-			;
-
-		_atrMultiplierTp = Param(nameof(AtrMultiplierTp), 1.5m)
-			.SetDisplay("ATR TP Multiplier", "Take profit ATR multiplier", "General")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_upper = null!;
-		_lower = null!;
-		_volumeSma = null!;
-		_atr = null!;
-		_prevClose = null;
-		_prevUpper = null;
-		_prevLower = null;
-		_stopPrice = 0m;
-		_takePrice = 0m;
+		_highs.Clear();
+		_lows.Clear();
+		_prevClose = 0;
+		_prevUpper = 0;
+		_prevLower = 0;
+		_entryPrice = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_upper = new SMA { Length = TriangleLength };
-		_lower = new SMA { Length = TriangleLength };
-		_volumeSma = new SMA { Length = VolumeSmaLength };
-		_atr = new AverageTrueRange { Length = AtrLength };
+		var sma = new SimpleMovingAverage { Length = TriangleLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(sma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _upper);
-			DrawIndicator(area, _lower);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var upperVal = _upper.Process(new DecimalIndicatorValue(_upper, candle.HighPrice, candle.CloseTime));
-		var lowerVal = _lower.Process(new DecimalIndicatorValue(_lower, candle.LowPrice, candle.CloseTime));
-		var volVal = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, candle.TotalVolume, candle.CloseTime));
-		var atrVal = _atr.Process(candle);
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
 
-		if (!upperVal.IsFinal || !lowerVal.IsFinal || !volVal.IsFinal || !atrVal.IsFinal)
+		if (_highs.Count > TriangleLength)
+		{
+			_highs.RemoveAt(0);
+			_lows.RemoveAt(0);
+		}
+
+		if (_highs.Count < TriangleLength)
+		{
+			_prevClose = candle.ClosePrice;
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var upper = upperVal.ToDecimal();
-		var lower = lowerVal.ToDecimal();
-		var volumeAvg = volVal.ToDecimal();
-		var atr = atrVal.ToDecimal();
-
-		var breakoutUp = _prevClose is decimal pc && _prevUpper is decimal pu && pc <= pu && candle.ClosePrice > upper;
-		var breakoutDown = _prevClose is decimal pc2 && _prevLower is decimal pl && pc2 >= pl && candle.ClosePrice < lower;
-		var volConfirmed = candle.TotalVolume > volumeAvg * VolumeMultiplier;
-
-		if (breakoutUp && volConfirmed && Position <= 0)
-		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			BuyMarket(volume);
-			_stopPrice = candle.ClosePrice - atr * AtrMultiplierSl;
-			_takePrice = candle.ClosePrice + atr * AtrMultiplierTp;
 		}
-		else if (breakoutDown && volConfirmed && Position >= 0)
+
+		// Calculate SMA of highs and lows as triangle bounds
+		var upper = 0m;
+		var lower = 0m;
+		for (var i = 0; i < _highs.Count; i++)
 		{
-			var volume = Volume + (Position > 0 ? Position : 0m);
-			SellMarket(volume);
-			_stopPrice = candle.ClosePrice + atr * AtrMultiplierSl;
-			_takePrice = candle.ClosePrice - atr * AtrMultiplierTp;
+			upper += _highs[i];
+			lower += _lows[i];
 		}
-		else if (Position > 0)
+		upper /= _highs.Count;
+		lower /= _lows.Count;
+
+		// Check exits first
+		if (Position > 0 && _entryPrice > 0)
 		{
-			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
-				SellMarket(Position);
+			var stop = _entryPrice * (1m - StopPct / 100m);
+			var take = _entryPrice * (1m + TakePct / 100m);
+			if (candle.LowPrice <= stop || candle.HighPrice >= take)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
 		}
-		else if (Position < 0)
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
-				BuyMarket(Math.Abs(Position));
+			var stop = _entryPrice * (1m + StopPct / 100m);
+			var take = _entryPrice * (1m - TakePct / 100m);
+			if (candle.HighPrice >= stop || candle.LowPrice <= take)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
+		}
+
+		// Breakout detection
+		if (_prevClose > 0 && _prevUpper > 0)
+		{
+			var breakoutUp = _prevClose <= _prevUpper && candle.ClosePrice > upper;
+			var breakoutDown = _prevClose >= _prevLower && candle.ClosePrice < lower;
+
+			if (breakoutUp && Position <= 0)
+			{
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+			}
+			else if (breakoutDown && Position >= 0)
+			{
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+			}
 		}
 
 		_prevClose = candle.ClosePrice;
