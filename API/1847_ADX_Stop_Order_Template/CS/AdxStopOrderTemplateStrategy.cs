@@ -63,7 +63,7 @@ public class AdxStopOrderTemplateStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Max Spread", "Maximum allowed spread in price steps.", "Orders");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for analysis.", "General");
 	}
 	
@@ -132,7 +132,7 @@ public class AdxStopOrderTemplateStrategy : Strategy
 		base.OnStarted2(time);
 		
 		var dmi = new DirectionalIndex { Length = AdxPeriod };
-		var adx = new AverageDirectionalIndex { Length = AdxPeriod, Smoothing = AdxPeriod };
+		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(dmi, adx, ProcessCandle).Start();
@@ -167,45 +167,25 @@ public class AdxStopOrderTemplateStrategy : Strategy
 		if (adxTyped.MovingAverage is not decimal adx)
 		return;
 		
-		var step = Security.PriceStep ?? 1m;
-		var bid = Security.BestBidPrice ?? candle.ClosePrice;
-		var ask = Security.BestAskPrice ?? candle.ClosePrice;
-		var spread = (ask - bid) / step;
-		
-		if (Position == 0 && spread < MaxSpread)
+		if (adx > AdxSignal && diPlus > diMinus && _prevPrevPlus < _prevPrevMinus && Position <= 0)
 		{
-			if (adx > AdxSignal && diPlus > diMinus && _prevPrevPlus < _prevPrevMinus && _lastOrder != 1)
-			{
-				CancelActiveOrders();
-				var price = ask + Pips * step;
-				BuyStop(Volume, price);
-				_lastOrder = 1;
-			}
-			else if (adx > AdxSignal && diPlus < diMinus && _prevPrevPlus > _prevPrevMinus && _lastOrder != 0)
-			{
-				CancelActiveOrders();
-				var price = bid - Pips * step;
-				SellStop(Volume, price);
-				_lastOrder = 0;
-			}
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-		else if (Position > 0)
+		else if (adx > AdxSignal && diPlus < diMinus && _prevPrevPlus > _prevPrevMinus && Position >= 0)
 		{
-			if (diPlus < diMinus)
-			{
-				CancelActiveOrders();
-				SellMarket(Position);
-				_lastOrder = 2;
-			}
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
-		else if (Position < 0)
+		else if (Position > 0 && diPlus < diMinus)
 		{
-			if (diPlus > diMinus)
-			{
-				CancelActiveOrders();
-				BuyMarket(Math.Abs(Position));
-				_lastOrder = 2;
-			}
+			SellMarket();
+		}
+		else if (Position < 0 && diPlus > diMinus)
+		{
+			BuyMarket();
 		}
 		
 		_prevPrevPlus = _prevPlus;

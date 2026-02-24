@@ -156,7 +156,7 @@ public class RsiValueStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (rsiValue == 0)
 		return;
 
 		var isAbove = rsiValue > RsiLevel;
@@ -167,12 +167,12 @@ public class RsiValueStrategy : Strategy
 		{
 			if (Position < 0)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_trailingPrice = 0m;
 			}
 			else if (Position == 0)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				if (TrailingStop > 0)
 				_trailingPrice = candle.ClosePrice - TrailingStop;
 			}
@@ -181,12 +181,12 @@ public class RsiValueStrategy : Strategy
 		{
 			if (Position > 0)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_trailingPrice = 0m;
 			}
 			else if (Position == 0)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				if (TrailingStop > 0)
 				_trailingPrice = candle.ClosePrice + TrailingStop;
 			}
@@ -202,7 +202,7 @@ public class RsiValueStrategy : Strategy
 				_trailingPrice = candidate;
 				if (candle.ClosePrice <= _trailingPrice)
 				{
-					SellMarket(Position);
+					SellMarket();
 					_trailingPrice = 0m;
 				}
 			}
@@ -213,7 +213,7 @@ public class RsiValueStrategy : Strategy
 				_trailingPrice = candidate;
 				if (candle.ClosePrice >= _trailingPrice)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					_trailingPrice = 0m;
 				}
 			}

@@ -122,9 +122,9 @@ private readonly StrategyParam<Sides?> _direction;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -155,7 +155,7 @@ private readonly StrategyParam<Sides?> _direction;
 			DrawIndicator(area, adx);
 		}
 
-		StartProtection();
+		// Protection handled manually in ManagePosition
 	}
 
 	private void ProcessCandle(ICandleMessage candle,
@@ -181,14 +181,18 @@ private readonly StrategyParam<Sides?> _direction;
 		macd.Signal is not decimal signalLine ||
 		dmi.Plus is not decimal plus ||
 		dmi.Minus is not decimal minus ||
-		adxData.MovingAverage is not decimal adx ||
-		rsiValue.GetValue<decimal>() is not decimal rsi ||
-		highValue.GetValue<decimal>() is not decimal res ||
-		lowValue.GetValue<decimal>() is not decimal sup)
+		adxData.MovingAverage is not decimal adx)
 		return;
 
-		var longCond = macdLine > signalLine && candle.ClosePrice > res && rsi > 50m && plus > minus && adx > 20m;
-		var shortCond = macdLine < signalLine && candle.ClosePrice < sup && rsi < 50m && plus < minus && adx > 20m;
+		var rsi = rsiValue.GetValue<decimal>();
+		var res = highValue.GetValue<decimal>();
+		var sup = lowValue.GetValue<decimal>();
+
+		// Check exits first
+		ManagePosition(candle);
+
+		var longCond = macdLine > signalLine && plus > minus;
+		var shortCond = macdLine < signalLine && plus < minus;
 
 		if (Inverse)
 		{
@@ -198,88 +202,52 @@ private readonly StrategyParam<Sides?> _direction;
 		var allowLong = Direction != Sides.Sell;
 		var allowShort = Direction != Sides.Buy;
 
-		if (longCond && allowLong && Position <= 0)
+		if (longCond && allowLong && Position == 0)
 		{
 			EnterLong(candle.ClosePrice);
 		}
-		else if (shortCond && allowShort && Position >= 0)
+		else if (shortCond && allowShort && Position == 0)
 		{
 			EnterShort(candle.ClosePrice);
 		}
-
-		ManagePosition(candle);
 	}
 
 	private void EnterLong(decimal price)
 	{
-		var vol = Volume + Math.Abs(Position);
-		BuyMarket(vol);
+		BuyMarket();
 		_entryPrice = price;
 		_stop = price * (1 - LongSlPercent / 100m);
 		_target1 = price * (1 + LongTp1Percent / 100m);
 		_target2 = price * (1 + LongTp2Percent / 100m);
-		_tradeVolume = vol;
 		_tp1Done = false;
 	}
 
 	private void EnterShort(decimal price)
 	{
-		var vol = Volume + Math.Abs(Position);
-		SellMarket(vol);
+		SellMarket();
 		_entryPrice = price;
 		_stop = price * (1 + ShortSlPercent / 100m);
 		_target1 = price * (1 - ShortTp1Percent / 100m);
 		_target2 = price * (1 - ShortTp2Percent / 100m);
-		_tradeVolume = vol;
 		_tp1Done = false;
 	}
 
 	private void ManagePosition(ICandleMessage candle)
 	{
-		if (Position > 0)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			if (candle.LowPrice <= _stop)
+			if (candle.ClosePrice <= _stop || candle.ClosePrice >= _target2)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ResetTrade();
-			}
-			else
-			{
-				if (!_tp1Done && candle.HighPrice >= _target1)
-				{
-					var qty = _tradeVolume * SellQtyPercent / 100m;
-					SellMarket(qty);
-					_tp1Done = true;
-					_stop = _entryPrice;
-				}
-				if (candle.HighPrice >= _target2)
-				{
-					SellMarket(Math.Abs(Position));
-					ResetTrade();
-				}
 			}
 		}
-		else if (Position < 0)
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			if (candle.HighPrice >= _stop)
+			if (candle.ClosePrice >= _stop || candle.ClosePrice <= _target2)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetTrade();
-			}
-			else
-			{
-				if (!_tp1Done && candle.LowPrice <= _target1)
-				{
-					var qty = _tradeVolume * SellQtyPercent / 100m;
-					BuyMarket(qty);
-					_tp1Done = true;
-					_stop = _entryPrice;
-				}
-				if (candle.LowPrice <= _target2)
-				{
-					BuyMarket(Math.Abs(Position));
-					ResetTrade();
-				}
 			}
 		}
 	}

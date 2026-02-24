@@ -15,143 +15,106 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Flash strategy with Minervini stage analysis filter.
-/// Combines EMA crossover, SuperTrend direction and momentum RSI.
+/// Uses EMA crossover, RSI momentum and MA alignment.
 /// </summary>
 public class FlashMinerviniQualifierStrategy : Strategy
 {
-private readonly StrategyParam<int> _momRsiLength;
-private readonly StrategyParam<decimal> _momRsiThreshold;
-private readonly StrategyParam<int> _emaLength;
-private readonly StrategyParam<decimal> _emaPercent;
-private readonly StrategyParam<int> _superTrendPeriod;
-private readonly StrategyParam<decimal> _superTrendMultiplier;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<decimal> _rsiThreshold;
+	private readonly StrategyParam<int> _emaFastLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-private RelativeStrengthIndex _rsi = null!;
-private ExponentialMovingAverage _emaTrail = null!;
-private ExponentialMovingAverage _ema50 = null!;
-private ExponentialMovingAverage _ema150 = null!;
-private ExponentialMovingAverage _ema200 = null!;
-private SuperTrend _superTrend = null!;
+	private decimal _prevFast;
+	private decimal _prev50;
 
-private decimal _prevClose;
-private decimal? _prevTrail2;
-private decimal _prevTrail1;
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public decimal RsiThreshold { get => _rsiThreshold.Value; set => _rsiThreshold.Value = value; }
+	public int EmaFastLength { get => _emaFastLength.Value; set => _emaFastLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-public int MomRsiLength { get => _momRsiLength.Value; set => _momRsiLength.Value = value; }
-public decimal MomRsiThreshold { get => _momRsiThreshold.Value; set => _momRsiThreshold.Value = value; }
-public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
-public decimal EmaPercent { get => _emaPercent.Value; set => _emaPercent.Value = value; }
-public int SuperTrendPeriod { get => _superTrendPeriod.Value; set => _superTrendPeriod.Value = value; }
-public decimal SuperTrendMultiplier { get => _superTrendMultiplier.Value; set => _superTrendMultiplier.Value = value; }
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public FlashMinerviniQualifierStrategy()
+	{
+		_rsiLength = Param(nameof(RsiLength), 10)
+			.SetDisplay("RSI Length", "Length for RSI", "Parameters")
+			.SetGreaterThanZero();
+		_rsiThreshold = Param(nameof(RsiThreshold), 60m)
+			.SetDisplay("RSI Threshold", "RSI threshold for momentum", "Parameters");
+		_emaFastLength = Param(nameof(EmaFastLength), 12)
+			.SetDisplay("EMA Fast Length", "Fast EMA period", "Parameters")
+			.SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "Parameters");
+	}
 
-public FlashMinerviniQualifierStrategy()
-{
-_momRsiLength = Param(nameof(MomRsiLength), 10)
-.SetDisplay("Mom RSI Length", "Length for momentum RSI", "Parameters")
-.SetGreaterThanZero();
-_momRsiThreshold = Param(nameof(MomRsiThreshold), 60m)
-.SetDisplay("Mom RSI Threshold", "Threshold for momentum RSI", "Parameters");
-_emaLength = Param(nameof(EmaLength), 12)
-.SetDisplay("EMA Length", "EMA period", "Parameters")
-.SetGreaterThanZero();
-_emaPercent = Param(nameof(EmaPercent), 0.01m)
-.SetDisplay("EMA Percent", "Trailing percentage", "Parameters")
-.SetGreaterThanZero();
-_superTrendPeriod = Param(nameof(SuperTrendPeriod), 10)
-.SetDisplay("SuperTrend Period", "ATR length for SuperTrend", "Parameters")
-.SetGreaterThanZero();
-_superTrendMultiplier = Param(nameof(SuperTrendMultiplier), 3m)
-.SetDisplay("SuperTrend Multiplier", "ATR multiplier", "Parameters")
-.SetGreaterThanZero();
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles", "Parameters");
-}
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0m;
+		_prev50 = 0m;
+	}
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_prevClose = 0m;
-_prevTrail2 = null;
-_prevTrail1 = 0m;
-}
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var emaFast = new ExponentialMovingAverage { Length = EmaFastLength };
+		var ema50 = new ExponentialMovingAverage { Length = 50 };
+		var ema150 = new ExponentialMovingAverage { Length = 150 };
+		var ema200 = new ExponentialMovingAverage { Length = 200 };
 
-_rsi = new RelativeStrengthIndex { Length = MomRsiLength };
-_emaTrail = new EMA { Length = EmaLength };
-_ema50 = new EMA { Length = 50 };
-_ema150 = new EMA { Length = 150 };
-_ema200 = new EMA { Length = 200 };
-_superTrend = new SuperTrend { Length = SuperTrendPeriod, Multiplier = SuperTrendMultiplier };
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(rsi, emaFast, ema50, ema150, ema200, ProcessCandle)
+			.Start();
+	}
 
-var subscription = SubscribeCandles(CandleType);
-subscription
-.BindEx(_superTrend, _emaTrail, _ema50, _ema150, _ema200, ProcessCandle)
-.Start();
+	private void ProcessCandle(ICandleMessage candle, decimal rsiVal, decimal fastVal, decimal ema50Val, decimal ema150Val, decimal ema200Val)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-StartProtection(null, null);
-}
+		// Check exits first
+		if (Position > 0 && (fastVal < ema50Val || rsiVal < 40))
+		{
+			SellMarket();
+			_prevFast = fastVal;
+			_prev50 = ema50Val;
+			return;
+		}
+		else if (Position < 0 && (fastVal > ema50Val || rsiVal < 40))
+		{
+			BuyMarket();
+			_prevFast = fastVal;
+			_prev50 = ema50Val;
+			return;
+		}
 
-private void ProcessCandle(ICandleMessage candle, IIndicatorValue stVal, IIndicatorValue emaVal, IIndicatorValue ema50Val, IIndicatorValue ema150Val, IIndicatorValue ema200Val)
-{
-if (candle.State != CandleStates.Finished)
-return;
+		// Minervini stage conditions
+		bool longStage = candle.ClosePrice > ema150Val && ema50Val > ema150Val && ema150Val > ema200Val;
+		bool shortStage = candle.ClosePrice < ema150Val && ema50Val < ema150Val && ema150Val < ema200Val;
 
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
+		// Entry signals: EMA cross + RSI momentum + stage alignment
+		if (Position == 0 && _prevFast != 0 && _prev50 != 0)
+		{
+			bool fastCrossUp = _prevFast <= _prev50 && fastVal > ema50Val;
+			bool fastCrossDown = _prevFast >= _prev50 && fastVal < ema50Val;
 
-var st = (SuperTrendIndicatorValue)stVal;
-decimal trail1 = emaVal.ToDecimal();
-decimal ema50 = ema50Val.ToDecimal();
-decimal ema150 = ema150Val.ToDecimal();
-decimal ema200 = ema200Val.ToDecimal();
+			if (fastCrossUp && longStage && rsiVal > RsiThreshold)
+				BuyMarket();
+			else if (fastCrossDown && shortStage && rsiVal > RsiThreshold)
+				SellMarket();
+		}
 
-decimal mom = _prevClose == 0m ? 0m : candle.ClosePrice - _prevClose;
-var rsiVal = _rsi.Process(mom);
-if (!rsiVal.IsFinal)
-return;
-decimal rsi = rsiVal.ToDecimal();
-_prevClose = candle.ClosePrice;
-
-decimal trail2;
-if (_prevTrail2 is null)
-trail2 = trail1;
-else
-{
-var sl = trail1 * EmaPercent;
-var iff1 = trail1 > _prevTrail2.Value ? trail1 - sl : trail1 + sl;
-var iff2 = trail1 < _prevTrail2.Value && _prevTrail1 < _prevTrail2.Value ? Math.Min(_prevTrail2.Value, trail1 + sl) : iff1;
-trail2 = trail1 > _prevTrail2.Value && _prevTrail1 > _prevTrail2.Value ? Math.Max(_prevTrail2.Value, trail1 - sl) : iff2;
-}
-_prevTrail1 = trail1;
-_prevTrail2 = trail2;
-
-bool longCond = candle.ClosePrice > ema150 && ema50 > ema150 && ema150 > ema200;
-bool shortCond = candle.ClosePrice < ema150 && ema50 < ema150 && ema150 < ema200;
-
-bool buySignal = trail1 > trail2 && st.IsUpTrend && rsi > MomRsiThreshold;
-bool sellSignal = trail1 < trail2 && !st.IsUpTrend && rsi > MomRsiThreshold;
-
-if (Position <= 0 && longCond && buySignal)
-BuyMarket();
-else if (Position >= 0 && shortCond && sellSignal)
-SellMarket();
-
-if (Position > 0 && (trail1 < trail2 || !st.IsUpTrend))
-SellMarket(Position);
-else if (Position < 0 && (trail1 > trail2 || st.IsUpTrend))
-BuyMarket(Math.Abs(Position));
-}
+		_prevFast = fastVal;
+		_prev50 = ema50Val;
+	}
 }

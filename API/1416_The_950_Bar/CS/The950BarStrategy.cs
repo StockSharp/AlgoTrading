@@ -14,16 +14,16 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trades the 9:50 AM New York five-minute bar with fixed target and stop.
+/// Trades a specific time bar each day with fixed target and stop.
+/// Buys when the candle is bullish, sells when bearish, then manages TP/SL.
 /// </summary>
 public class The950BarStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _tickSize;
-	private readonly StrategyParam<int> _targetTicks;
-	private readonly StrategyParam<int> _stopTicks;
+	private readonly StrategyParam<decimal> _targetPercent;
+	private readonly StrategyParam<decimal> _stopPercent;
+	private readonly StrategyParam<int> _tradeHour;
 
-	private readonly TimeZoneInfo _nyTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
 	private DateTime? _tradeDate;
 	private decimal _targetPrice;
 	private decimal _stopPrice;
@@ -34,43 +34,35 @@ public class The950BarStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
-	/// Instrument tick size.
+	/// Profit target percent.
 	/// </summary>
-	public decimal TickSize { get => _tickSize.Value; set => _tickSize.Value = value; }
+	public decimal TargetPercent { get => _targetPercent.Value; set => _targetPercent.Value = value; }
 
 	/// <summary>
-	/// Profit target in ticks.
+	/// Stop loss percent.
 	/// </summary>
-	public int TargetTicks { get => _targetTicks.Value; set => _targetTicks.Value = value; }
+	public decimal StopPercent { get => _stopPercent.Value; set => _stopPercent.Value = value; }
 
 	/// <summary>
-	/// Stop loss in ticks.
+	/// Hour of day (UTC) to enter trade.
 	/// </summary>
-	public int StopTicks { get => _stopTicks.Value; set => _stopTicks.Value = value; }
+	public int TradeHour { get => _tradeHour.Value; set => _tradeHour.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="The950BarStrategy"/> class.
-	/// </summary>
 	public The950BarStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_tickSize = Param(nameof(TickSize), 0.25m)
-			.SetDisplay("Tick Size", "Instrument tick size", "Parameters");
-
-		_targetTicks = Param(nameof(TargetTicks), 150)
+		_targetPercent = Param(nameof(TargetPercent), 1m)
 			.SetGreaterThanZero()
-			.SetDisplay("Target Ticks", "Profit target in ticks", "Parameters")
-			
-			.SetOptimize(50, 300, 50);
+			.SetDisplay("Target %", "Profit target percent", "Parameters");
 
-		_stopTicks = Param(nameof(StopTicks), 200)
+		_stopPercent = Param(nameof(StopPercent), 1.5m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Ticks", "Stop loss in ticks", "Parameters")
-			
-			.SetOptimize(50, 300, 50);
+			.SetDisplay("Stop %", "Stop loss percent", "Parameters");
 
+		_tradeHour = Param(nameof(TradeHour), 14)
+			.SetDisplay("Trade Hour", "UTC hour to enter trade", "Parameters");
 	}
 
 	/// <inheritdoc />
@@ -92,54 +84,57 @@ public class The950BarStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
 
+		var sma = new SimpleMovingAverage { Length = 10 };
 		var sub = SubscribeCandles(CandleType);
-		sub.Bind(ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, sub);
-			DrawOwnTrades(area);
-		}
+		sub.Bind(sma, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var nyTime = TimeZoneInfo.ConvertTime(candle.OpenTime, _nyTimeZone);
-
-		if (_tradeDate != nyTime.Date && nyTime.Hour == 9 && nyTime.Minute == 50)
-		{
-			_tradeDate = nyTime.Date;
-			var isLong = candle.ClosePrice > candle.OpenPrice;
-			if (isLong)
-			{
-				BuyMarket();
-				_targetPrice = candle.ClosePrice + TickSize * TargetTicks;
-				_stopPrice = candle.ClosePrice - TickSize * StopTicks;
-			}
-			else
-			{
-				SellMarket();
-				_targetPrice = candle.ClosePrice - TickSize * TargetTicks;
-				_stopPrice = candle.ClosePrice + TickSize * StopTicks;
-			}
-			return;
-		}
-
+		// Check exits first
 		if (Position > 0)
 		{
 			if (candle.HighPrice >= _targetPrice || candle.LowPrice <= _stopPrice)
-				SellMarket(Math.Abs(Position));
+			{
+				SellMarket();
+				return;
+			}
 		}
 		else if (Position < 0)
 		{
 			if (candle.LowPrice <= _targetPrice || candle.HighPrice >= _stopPrice)
-				BuyMarket(Math.Abs(Position));
+			{
+				BuyMarket();
+				return;
+			}
+		}
+
+		// Entry: only when flat and at the designated hour, once per day
+		if (Position == 0)
+		{
+			var utcTime = candle.OpenTime;
+			if (_tradeDate != utcTime.Date && utcTime.Hour == TradeHour && utcTime.Minute == 50)
+			{
+				_tradeDate = utcTime.Date;
+				var isLong = candle.ClosePrice > candle.OpenPrice;
+
+				if (isLong)
+				{
+					BuyMarket();
+					_targetPrice = candle.ClosePrice * (1 + TargetPercent / 100m);
+					_stopPrice = candle.ClosePrice * (1 - StopPercent / 100m);
+				}
+				else
+				{
+					SellMarket();
+					_targetPrice = candle.ClosePrice * (1 - TargetPercent / 100m);
+					_stopPrice = candle.ClosePrice * (1 + StopPercent / 100m);
+				}
+			}
 		}
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,30 +11,27 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy that trades the US session after a tight EU session range.
+/// Breakout strategy that trades after a tight consolidation range.
+/// Captures the range from a "quiet" session, then trades breakouts in the following session.
 /// </summary>
 public class EurUsdSessionBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _euSessionLengthBars;
-
-	// Strategy parameters
-	private readonly StrategyParam<int> _startHourEuSession;
-	private readonly StrategyParam<int> _startHourUsSession;
-	private readonly StrategyParam<int> _endHourUsSession;
-	private readonly StrategyParam<decimal> _smallSessionPips;
-	private readonly StrategyParam<bool> _tradeOnMonday;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _breakoutBufferPoints;
+	private readonly StrategyParam<int> _startHourRangeSession;
+	private readonly StrategyParam<int> _startHourTradeSession;
+	private readonly StrategyParam<int> _endHourTradeSession;
+	private readonly StrategyParam<decimal> _smallSessionThreshold;
+	private readonly StrategyParam<decimal> _stopLossDistance;
+	private readonly StrategyParam<decimal> _takeProfitDistance;
+	private readonly StrategyParam<decimal> _breakoutBuffer;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Indicators and cached values
 	private Highest _highest = null!;
 	private Lowest _lowest = null!;
 	private decimal _currentHighest;
 	private decimal _currentLowest;
-	private decimal _euSessionHigh;
-	private decimal _euSessionLow;
+	private decimal _rangeSessionHigh;
+	private decimal _rangeSessionLow;
 	private bool _sessionFound;
 	private bool _smallSession;
 	private bool _longOpened;
@@ -47,119 +41,83 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 	private decimal _takePrice;
 	private DateTime _currentDate;
 
-	// Price conversions
-	private decimal _pipSize;
-	private decimal _smallSessionThreshold;
-	private decimal _stopLossDistance;
-	private decimal _takeProfitDistance;
-	private decimal _breakoutBuffer;
-
 	public EurUsdSessionBreakoutStrategy()
 	{
-		_startHourEuSession = Param(nameof(StartHourEuSession), 5)
-			.SetDisplay("EU Session Start", "Start hour of the EU session", "Schedule")
-			;
+		_startHourRangeSession = Param(nameof(StartHourRangeSession), 0)
+			.SetDisplay("Range Session Start", "Start hour of the consolidation range session", "Schedule");
 
-		_startHourUsSession = Param(nameof(StartHourUsSession), 2)
-			.SetDisplay("US Session Start", "Start hour of the US session", "Schedule")
-			;
+		_startHourTradeSession = Param(nameof(StartHourTradeSession), 8)
+			.SetDisplay("Trade Session Start", "Start hour of the trading session", "Schedule");
 
-		_endHourUsSession = Param(nameof(EndHourUsSession), 16)
-			.SetDisplay("US Session End", "End hour of the US session", "Schedule")
-			;
+		_endHourTradeSession = Param(nameof(EndHourTradeSession), 20)
+			.SetDisplay("Trade Session End", "End hour of the trading session", "Schedule");
 
-		_smallSessionPips = Param(nameof(SmallSessionPips), 72m)
-			.SetDisplay("Small EU Session (pips)", "Maximum EU session range to trade", "Risk")
-			;
+		_smallSessionThreshold = Param(nameof(SmallSessionThreshold), 2000m)
+			.SetDisplay("Small Session Threshold", "Maximum range session price range to trigger trading", "Risk");
 
-		_tradeOnMonday = Param(nameof(TradeOnMonday), false)
-			.SetDisplay("Trade On Monday", "Allow trading on Mondays", "Schedule");
+		_stopLossDistance = Param(nameof(StopLossDistance), 500m)
+			.SetDisplay("Stop Loss Distance", "Stop loss distance in price units", "Risk");
 
-		_stopLossPips = Param(nameof(StopLossPips), 12m)
-			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-			;
+		_takeProfitDistance = Param(nameof(TakeProfitDistance), 800m)
+			.SetDisplay("Take Profit Distance", "Take profit distance in price units", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 15m)
-			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
-			;
+		_breakoutBuffer = Param(nameof(BreakoutBuffer), 50m)
+			.SetDisplay("Breakout Buffer", "Extra price buffer added to breakout trigger", "Entries");
 
-		_breakoutBufferPoints = Param(nameof(BreakoutBufferPoints), 3m)
-			.SetDisplay("Breakout Buffer (points)", "Extra points added to the breakout trigger", "Entries")
-			;
-
-		_euSessionLengthBars = Param(nameof(EuSessionLengthBars), 24)
+		_euSessionLengthBars = Param(nameof(EuSessionLengthBars), 12)
 			.SetRange(1, 72)
-			.SetDisplay("EU Session Length (bars)", "Number of bars representing the EU session range", "Schedule")
-			;
+			.SetDisplay("Range Session Length (bars)", "Number of bars representing the range session", "Schedule");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for calculations", "General");
 	}
 
-	public int StartHourEuSession
+	public int StartHourRangeSession
 	{
-		get => _startHourEuSession.Value;
-		set => _startHourEuSession.Value = value;
+		get => _startHourRangeSession.Value;
+		set => _startHourRangeSession.Value = value;
 	}
 
-	public int StartHourUsSession
+	public int StartHourTradeSession
 	{
-		get => _startHourUsSession.Value;
-		set => _startHourUsSession.Value = value;
+		get => _startHourTradeSession.Value;
+		set => _startHourTradeSession.Value = value;
 	}
 
-	public int EndHourUsSession
+	public int EndHourTradeSession
 	{
-		get => _endHourUsSession.Value;
-		set => _endHourUsSession.Value = value;
+		get => _endHourTradeSession.Value;
+		set => _endHourTradeSession.Value = value;
 	}
 
-	public decimal SmallSessionPips
+	public decimal SmallSessionThreshold
 	{
-		get => _smallSessionPips.Value;
-		set => _smallSessionPips.Value = value;
+		get => _smallSessionThreshold.Value;
+		set => _smallSessionThreshold.Value = value;
 	}
 
-	public bool TradeOnMonday
+	public decimal StopLossDistance
 	{
-		get => _tradeOnMonday.Value;
-		set => _tradeOnMonday.Value = value;
+		get => _stopLossDistance.Value;
+		set => _stopLossDistance.Value = value;
 	}
 
-	public decimal StopLossPips
+	public decimal TakeProfitDistance
 	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
+		get => _takeProfitDistance.Value;
+		set => _takeProfitDistance.Value = value;
 	}
 
-	public decimal TakeProfitPips
+	public decimal BreakoutBuffer
 	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	public decimal BreakoutBufferPoints
-	{
-		get => _breakoutBufferPoints.Value;
-		set => _breakoutBufferPoints.Value = value;
+		get => _breakoutBuffer.Value;
+		set => _breakoutBuffer.Value = value;
 	}
 
 	public int EuSessionLengthBars
 	{
 		get => _euSessionLengthBars.Value;
-		set
-		{
-			_euSessionLengthBars.Value = value;
-			if (_highest != null)
-			{
-				_highest.Length = value;
-			}
-
-			if (_lowest != null)
-			{
-				_lowest.Length = value;
-			}
-		}
+		set => _euSessionLengthBars.Value = value;
 	}
 
 	public DataType CandleType
@@ -168,32 +126,28 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Convert pip-based parameters into price distances using the instrument metadata.
-		_pipSize = GetAdjustedPoint();
-		_smallSessionThreshold = SmallSessionPips * _pipSize;
-		_stopLossDistance = StopLossPips * _pipSize;
-		_takeProfitDistance = TakeProfitPips * _pipSize;
-		_breakoutBuffer = GetPriceStep() * BreakoutBufferPoints;
-
-		// Prepare rolling highest/lowest indicators that emulate the 24-bar EU session range.
 		_highest = new Highest { Length = EuSessionLengthBars };
 		_lowest = new Lowest { Length = EuSessionLengthBars };
 
-		// Reset the per-day state before processing real data.
-		ResetDailyState(time.Date);
+		_currentDate = time.Date;
+		_sessionFound = false;
+		_smallSession = false;
+		_longOpened = false;
+		_shortOpened = false;
 
-		// Subscribe to candles and route them through the processing pipeline.
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -201,19 +155,15 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Manage protective exits before we alter any daily state.
+		// Manage protective exits first
 		ManageActivePosition(candle);
 
-		// Detect a new trading day to mimic the static variable reset from the MQL version.
+		// Detect a new day
 		var candleDate = candle.OpenTime.Date;
 		if (candleDate != _currentDate)
 			ResetDailyState(candleDate);
 
-		// Skip signal evaluation on forbidden weekdays.
-		if (!IsTradingDay(candle.OpenTime.DayOfWeek))
-			return;
-
-		// Update the highest/lowest trackers before making decisions.
+		// Update rolling highest/lowest (do NOT reset daily - keep them rolling)
 		var previousHighest = _currentHighest;
 		var previousLowest = _currentLowest;
 
@@ -228,49 +178,40 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 
 		var hour = candle.OpenTime.Hour;
 
-		// Capture the EU session range once the configured US session hour begins.
-		if (!_sessionFound && hour == StartHourUsSession)
+		// Capture the range session high/low when the trading session starts
+		if (!_sessionFound && hour >= StartHourTradeSession && previousHighest > 0 && previousLowest > 0)
 		{
-			_euSessionHigh = previousHighest;
-			_euSessionLow = previousLowest;
+			_rangeSessionHigh = previousHighest;
+			_rangeSessionLow = previousLowest;
 
-			if (_euSessionHigh <= 0m || _euSessionLow <= 0m)
-				return;
-
-			_smallSession = (_euSessionHigh - _euSessionLow) <= _smallSessionThreshold;
+			_smallSession = (_rangeSessionHigh - _rangeSessionLow) <= SmallSessionThreshold;
 			_sessionFound = true;
 		}
 
-		// Trade only if the EU session was calm and we are within the US session window.
+		// Trade only if the range session was calm and we are within the trade session window
 		if (!_sessionFound || !_smallSession)
 			return;
 
-		if (hour < StartHourUsSession || hour >= EndHourUsSession)
-			return;
-
-		if (hour <= StartHourEuSession + 5 || hour >= StartHourEuSession + 10)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (hour < StartHourTradeSession || hour >= EndHourTradeSession)
 			return;
 
 		if (Position != 0)
 			return;
 
-		var breakoutHigh = _euSessionHigh + _breakoutBuffer;
-		var breakoutLow = _euSessionLow - _breakoutBuffer;
+		var breakoutHigh = _rangeSessionHigh + BreakoutBuffer;
+		var breakoutLow = _rangeSessionLow - BreakoutBuffer;
 
-		// Go long when the previous bar stayed above the EU range plus the buffer.
+		// Go long when the bar is fully above the range plus buffer
 		if (!_longOpened && candle.LowPrice > breakoutHigh)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 			SetLongTargets(candle.ClosePrice);
 			_longOpened = true;
 		}
-		// Go short when the previous bar closed fully below the EU range minus the buffer.
+		// Go short when the bar is fully below the range minus buffer
 		else if (!_shortOpened && candle.HighPrice < breakoutLow)
 		{
-			SellMarket(Volume);
+			SellMarket();
 			SetShortTargets(candle.ClosePrice);
 			_shortOpened = true;
 		}
@@ -283,23 +224,23 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 
 		if (Position > 0)
 		{
-			var exitByStop = _stopLossDistance > 0m && candle.LowPrice <= _stopPrice;
-			var exitByTake = _takeProfitDistance > 0m && candle.HighPrice >= _takePrice;
+			var exitByStop = StopLossDistance > 0m && candle.LowPrice <= _stopPrice;
+			var exitByTake = TakeProfitDistance > 0m && candle.HighPrice >= _takePrice;
 
 			if (exitByStop || exitByTake)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				ClearTargets();
 			}
 		}
 		else if (Position < 0)
 		{
-			var exitByStop = _stopLossDistance > 0m && candle.HighPrice >= _stopPrice;
-			var exitByTake = _takeProfitDistance > 0m && candle.LowPrice <= _takePrice;
+			var exitByStop = StopLossDistance > 0m && candle.HighPrice >= _stopPrice;
+			var exitByTake = TakeProfitDistance > 0m && candle.LowPrice <= _takePrice;
 
 			if (exitByStop || exitByTake)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ClearTargets();
 			}
 		}
@@ -308,15 +249,15 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 	private void SetLongTargets(decimal entryPrice)
 	{
 		_entryPrice = entryPrice;
-		_stopPrice = entryPrice - _stopLossDistance;
-		_takePrice = entryPrice + _takeProfitDistance;
+		_stopPrice = entryPrice - StopLossDistance;
+		_takePrice = entryPrice + TakeProfitDistance;
 	}
 
 	private void SetShortTargets(decimal entryPrice)
 	{
 		_entryPrice = entryPrice;
-		_stopPrice = entryPrice + _stopLossDistance;
-		_takePrice = entryPrice - _takeProfitDistance;
+		_stopPrice = entryPrice + StopLossDistance;
+		_takePrice = entryPrice - TakeProfitDistance;
 	}
 
 	private void ClearTargets()
@@ -333,52 +274,10 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 		_smallSession = false;
 		_longOpened = false;
 		_shortOpened = false;
-		_euSessionHigh = 0m;
-		_euSessionLow = 0m;
-		_currentHighest = 0m;
-		_currentLowest = 0m;
+		_rangeSessionHigh = 0m;
+		_rangeSessionLow = 0m;
 
 		if (Position == 0)
 			ClearTargets();
-
-		_highest?.Reset();
-		_lowest?.Reset();
-	}
-
-	private bool IsTradingDay(DayOfWeek dayOfWeek)
-	{
-		if (dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday)
-			return false;
-
-		if (dayOfWeek == DayOfWeek.Monday && !TradeOnMonday)
-			return false;
-
-		return true;
-	}
-
-	private decimal GetPriceStep()
-	{
-		var step = Security?.PriceStep;
-		if (step.HasValue && step.Value > 0m)
-			return step.Value;
-
-		return CalculateStepFromDecimals();
-	}
-
-	private decimal GetAdjustedPoint()
-	{
-		var baseStep = GetPriceStep();
-		var decimals = Security?.Decimals ?? 4;
-		var adjust = (decimals == 3 || decimals == 5) ? 10m : 1m;
-		return baseStep * adjust;
-	}
-
-	private decimal CalculateStepFromDecimals()
-	{
-		var decimals = Security?.Decimals ?? 4;
-		decimal step = 1m;
-		for (var i = 0; i < decimals; i++)
-			step /= 10m;
-		return step;
 	}
 }

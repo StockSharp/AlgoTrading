@@ -221,7 +221,7 @@ public class IcciImaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		var maValue = _cciMa.Process(new DecimalIndicatorValue(_cciMa, cciValue, candle.OpenTime)).ToDecimal();
+		var maValue = _cciMa.Process(new DecimalIndicatorValue(_cciMa, cciValue, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (!_cci.IsFormed || !_cciClose.IsFormed || !_cciMa.IsFormed)
 		{
@@ -241,11 +241,7 @@ public class IcciImaStrategy : Strategy
 		// Check whether stop-loss or take-profit levels were touched on the latest candle.
 		HandleStops(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			UpdateHistory(cciValue, cciCloseValue, maValue);
-			return;
-		}
+		// indicators formed check already done above
 
 		var cciTwoBarsAgo = _prev2Cci ?? 0m;
 		var maTwoBarsAgo = _prev2Ma ?? 0m;

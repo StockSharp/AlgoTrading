@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-using StockSharp.Algo.Indicators;
+
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -70,7 +68,7 @@ public class XdpoCandleStrategy : Strategy
 			.SetDisplay("Slow Length", "Length of the second EMA", "Parameters")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -99,7 +97,6 @@ public class XdpoCandleStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -117,9 +114,9 @@ public class XdpoCandleStrategy : Strategy
 		var goShort = color == 0 && _previousColor != 0;
 
 		if (goLong && Position <= 0)
-		BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		else if (goShort && Position >= 0)
-		SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 
 		_previousColor = color;
 	}

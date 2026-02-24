@@ -38,7 +38,7 @@ public class BWWiseMan2Strategy : Strategy
 	/// </summary>
 	public BWWiseMan2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -89,19 +89,22 @@ public class BWWiseMan2Strategy : Strategy
 			return; // Not enough data yet
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		var buySignal = _ao4 > 0m && _ao3 > 0m && _ao4 < _ao3 && _ao3 > _ao2 && _ao2 > _ao1 && _ao1 > _ao0;
-		var sellSignal = _ao4 < 0m && _ao3 < 0m && _ao4 > _ao3 && _ao3 < _ao2 && _ao2 < _ao1 && _ao1 < _ao0;
+		// Buy: AO crosses from negative to positive area, or 3 consecutive rising bars
+		var buySignal = (_ao2 < 0 && _ao1 < 0 && _ao0 > 0) || (_ao2 < _ao1 && _ao1 < _ao0 && _ao0 > 0);
+		// Sell: AO crosses from positive to negative area, or 3 consecutive falling bars
+		var sellSignal = (_ao2 > 0 && _ao1 > 0 && _ao0 < 0) || (_ao2 > _ao1 && _ao1 > _ao0 && _ao0 < 0);
 
 		if (buySignal && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
 		else if (sellSignal && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 	}
 }

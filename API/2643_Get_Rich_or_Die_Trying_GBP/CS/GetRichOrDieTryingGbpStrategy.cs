@@ -226,8 +226,8 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 		if (_exitRequested)
 			return; // Wait for the pending exit order.
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		//if (!IsFormedAndOnlineAndAllowTrading())
+		//	return;
 
 		if (_directionQueue.Count < CountBars)
 			return; // Need full history to evaluate imbalance.
@@ -412,16 +412,11 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 
 	private bool IsWithinTradingWindow(DateTimeOffset time)
 	{
-		var hour = (decimal)time.Hour;
-		var minute = time.Minute;
-		var firstHour = 22m + AdditionalHour;
-		var secondHour = 19m + AdditionalHour;
-		var tolerance = 0.0001m;
+		var hour = time.Hour;
+		var firstHour = (int)(22m + AdditionalHour) % 24;
+		var secondHour = (int)(19m + AdditionalHour) % 24;
 
-		var matchesFirst = Math.Abs(firstHour - hour) < tolerance;
-		var matchesSecond = Math.Abs(secondHour - hour) < tolerance;
-
-		return (matchesFirst || matchesSecond) && minute < 5;
+		return hour == firstHour || hour == secondHour;
 	}
 
 	private decimal CalculatePipValue()
@@ -429,11 +424,11 @@ public class GetRichOrDieTryingGbpStrategy : Strategy
 		if (Security == null)
 			return 1m;
 
-		var step = Security.PriceStep;
+		var step = Security.PriceStep ?? 0.01m;
 		if (step <= 0m)
 			return 1m;
 
-		var decimals = Security.Decimals;
+		var decimals = Security.Decimals ?? 2;
 		if (decimals == 3 || decimals == 5)
 			return step * 10m;
 

@@ -25,7 +25,8 @@ public class SwingHighLowPivotsLvStrategy : Strategy
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _ema = null!;
+	private decimal _emaValue;
+	private bool _emaFormed;
 	private decimal[] _highBuffer = Array.Empty<decimal>();
 	private decimal[] _lowBuffer = Array.Empty<decimal>();
 	private decimal[] _openBuffer = Array.Empty<decimal>();
@@ -130,7 +131,8 @@ public class SwingHighLowPivotsLvStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ema = null!;
+		_emaValue = 0;
+		_emaFormed = false;
 		_highBuffer = Array.Empty<decimal>();
 		_lowBuffer = Array.Empty<decimal>();
 		_openBuffer = Array.Empty<decimal>();
@@ -145,11 +147,11 @@ public class SwingHighLowPivotsLvStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ema = new EMA { Length = MaLength };
+		var ema = new ExponentialMovingAverage { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(ema, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -160,12 +162,13 @@ public class SwingHighLowPivotsLvStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_ema.Process(candle.ClosePrice);
+		_emaValue = emaVal;
+		_emaFormed = true;
 
 		UpdateBuffers(candle);
 
@@ -188,8 +191,8 @@ public class SwingHighLowPivotsLvStrategy : Strategy
 					isLow = false;
 			}
 
-			var maOkLong = !UseMa || (_ema.IsFormed && _closeBuffer[pivotIndex] > _ema.GetCurrentValue<decimal>());
-			var maOkShort = !UseMa || (_ema.IsFormed && _closeBuffer[pivotIndex] < _ema.GetCurrentValue<decimal>());
+			var maOkLong = !UseMa || (_emaFormed && _closeBuffer[pivotIndex] > _emaValue);
+			var maOkShort = !UseMa || (_emaFormed && _closeBuffer[pivotIndex] < _emaValue);
 
 			if (isLow && Position == 0 && maOkLong)
 			{

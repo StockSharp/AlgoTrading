@@ -14,8 +14,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on moving averages and RSI crossover.
-/// Goes long when both fast EMA and RSI exceed their slow counterparts, and short in the opposite case.
+/// Strategy based on moving averages and RelativeStrengthIndex crossover.
+/// Goes long when both fast EMA and RelativeStrengthIndex exceed their slow counterparts, and short in the opposite case.
 /// </summary>
 public class MaRsiTriggerStrategy : Strategy
 {
@@ -32,12 +32,12 @@ public class MaRsiTriggerStrategy : Strategy
 	private int _previousTrend;
 
 	/// <summary>
-	/// Fast RSI period.
+	/// Fast RelativeStrengthIndex period.
 	/// </summary>
 	public int FastRsiPeriod { get => _fastRsiPeriod.Value; set => _fastRsiPeriod.Value = value; }
 
 	/// <summary>
-	/// Slow RSI period.
+	/// Slow RelativeStrengthIndex period.
 	/// </summary>
 	public int SlowRsiPeriod { get => _slowRsiPeriod.Value; set => _slowRsiPeriod.Value = value; }
 
@@ -83,13 +83,13 @@ public class MaRsiTriggerStrategy : Strategy
 	{
 		_fastRsiPeriod = Param(nameof(FastRsiPeriod), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast RSI Period", "Period of the fast RSI", "RSI")
+			.SetDisplay("Fast RelativeStrengthIndex Period", "Period of the fast RelativeStrengthIndex", "RelativeStrengthIndex")
 			
 			.SetOptimize(2, 10, 1);
 
 		_slowRsiPeriod = Param(nameof(SlowRsiPeriod), 13)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow RSI Period", "Period of the slow RSI", "RSI")
+			.SetDisplay("Slow RelativeStrengthIndex Period", "Period of the slow RelativeStrengthIndex", "RelativeStrengthIndex")
 			
 			.SetOptimize(10, 30, 1);
 
@@ -117,7 +117,7 @@ public class MaRsiTriggerStrategy : Strategy
 		_allowShortExit = Param(nameof(AllowShortExit), true)
 			.SetDisplay("Allow Short Exit", "Enable exiting short positions", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -139,10 +139,10 @@ public class MaRsiTriggerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastRsi = new RSI { Length = FastRsiPeriod };
-		var slowRsi = new RSI { Length = SlowRsiPeriod };
-		var fastMa = new EMA { Length = FastMaPeriod };
-		var slowMa = new EMA { Length = SlowMaPeriod };
+		var fastRsi = new RelativeStrengthIndex { Length = FastRsiPeriod };
+		var slowRsi = new RelativeStrengthIndex { Length = SlowRsiPeriod };
+		var fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
+		var slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -168,10 +168,6 @@ public class MaRsiTriggerStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Ensure strategy is ready for trading
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var trend = 0;
 
 		if (fastMaValue > slowMaValue)
@@ -188,19 +184,19 @@ public class MaRsiTriggerStrategy : Strategy
 		{
 			// Trend turned bullish
 			if (AllowShortExit && Position < 0)
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 
 			if (AllowBuyEntry && Position <= 0)
-				BuyMarket(Volume);
+				BuyMarket();
 		}
 		else if (_previousTrend > 0 && trend < 0)
 		{
 			// Trend turned bearish
 			if (AllowLongExit && Position > 0)
-				SellMarket(Position);
+				SellMarket();
 
 			if (AllowSellEntry && Position >= 0)
-				SellMarket(Volume);
+				SellMarket();
 		}
 
 		_previousTrend = trend;

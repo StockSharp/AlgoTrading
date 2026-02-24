@@ -67,7 +67,7 @@ public class AfStarStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Volume used for market orders", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for candles", "General");
 
 		_startFast = Param(nameof(StartFast), 3m)
@@ -103,23 +103,23 @@ public class AfStarStrategy : Strategy
 		.SetDisplay("Risk Step", "Increment for risk parameter", "Williams %R");
 
 		_rangeLength = Param(nameof(RangeLength), 10)
-		.SetRange(1, 200, 1)
+		.SetRange(1, 200)
 		.SetDisplay("Range Length", "Bars used to compute the average range filter", "Indicator");
 
 		_maxHistory = Param(nameof(MaxHistory), 512)
-		.SetRange(10, 5000, 1)
+		.SetRange(10, 5000)
 		.SetDisplay("Max History", "Maximum candles stored for calculations", "General");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetRange(0, 10, 1)
+		.SetRange(0, 10)
 		.SetDisplay("Signal Bar", "Delay in bars before executing a signal", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 1000)
-		.SetRange(0, 100000, 1)
+		.SetRange(0, 100000)
 		.SetDisplay("Stop Loss (pips)", "Stop loss distance in price steps", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 2000)
-		.SetRange(0, 100000, 1)
+		.SetRange(0, 100000)
 		.SetDisplay("Take Profit (pips)", "Take profit distance in price steps", "Risk");
 
 		_enableBuyEntries = Param(nameof(BuyEntriesEnabled), true)
@@ -360,8 +360,7 @@ public class AfStarStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// manual indicators, no bound check needed
 
 		_candles.Add(candle);
 		_value2History.Add(0m);

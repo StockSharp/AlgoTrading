@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -24,67 +21,30 @@ public class ColorXtrixHistogramStrategy : Strategy
 	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private TripleExponentialMovingAverage _tripleEma = null!;
-	private RateOfChange _roc = null!;
-	private ExponentialMovingAverage _smoother = null!;
+	private TripleExponentialMovingAverage _tripleEma;
+	private RateOfChange _roc;
+	private ExponentialMovingAverage _smoother;
 
 	private decimal? _prev1;
 	private decimal? _prev2;
 
-	/// <summary>
-	/// TRIX base length.
-	/// </summary>
-	public int TrixLength
-	{
-		get => _trixLength.Value;
-		set => _trixLength.Value = value;
-	}
+	public int TrixLength { get => _trixLength.Value; set => _trixLength.Value = value; }
+	public int SmoothLength { get => _smoothLength.Value; set => _smoothLength.Value = value; }
+	public int MomentumPeriod { get => _momentumPeriod.Value; set => _momentumPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Additional smoothing length.
-	/// </summary>
-	public int SmoothLength
-	{
-		get => _smoothLength.Value;
-		set => _smoothLength.Value = value;
-	}
-
-	/// <summary>
-	/// Momentum calculation period.
-	/// </summary>
-	public int MomentumPeriod
-	{
-		get => _momentumPeriod.Value;
-		set => _momentumPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="ColorXtrixHistogramStrategy"/>.
-	/// </summary>
 	public ColorXtrixHistogramStrategy()
 	{
 		_trixLength = Param(nameof(TrixLength), 5)
-			.SetDisplay("TRIX Length", "Length for base triple EMA", "Indicators")
-			;
+			.SetDisplay("TRIX Length", "Length for base triple EMA", "Indicators");
 
 		_smoothLength = Param(nameof(SmoothLength), 5)
-			.SetDisplay("Smooth Length", "Length for additional smoothing", "Indicators")
-			;
+			.SetDisplay("Smooth Length", "Length for additional smoothing", "Indicators");
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 1)
-			.SetDisplay("Momentum Period", "Period for rate of change", "Indicators")
-			;
+			.SetDisplay("Momentum Period", "Period for rate of change", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -93,24 +53,21 @@ public class ColorXtrixHistogramStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prev1 = null;
-		_prev2 = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
+		_prev1 = null;
+		_prev2 = null;
+
 		_tripleEma = new TripleExponentialMovingAverage { Length = TrixLength };
 		_roc = new RateOfChange { Length = MomentumPeriod };
-		_smoother = new EMA { Length = SmoothLength };
+		_smoother = new ExponentialMovingAverage { Length = SmoothLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -118,8 +75,6 @@ public class ColorXtrixHistogramStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -127,20 +82,24 @@ public class ColorXtrixHistogramStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var t = candle.ServerTime;
 		var logClose = (decimal)Math.Log((double)candle.ClosePrice);
-		var emaVal = _tripleEma.Process(logClose);
-		if (!emaVal.IsFinal)
+
+		var emaResult = _tripleEma.Process(logClose, t, true);
+		if (!_tripleEma.IsFormed)
 			return;
 
-		var rocVal = _roc.Process(emaVal.ToDecimal());
-		if (!rocVal.IsFinal)
+		var emaVal = emaResult.GetValue<decimal>();
+		var rocResult = _roc.Process(emaVal, t, true);
+		if (!_roc.IsFormed)
 			return;
 
-		var smoothVal = _smoother.Process(rocVal.ToDecimal());
-		if (!smoothVal.IsFinal)
+		var rocVal = rocResult.GetValue<decimal>();
+		var smoothResult = _smoother.Process(rocVal, t, true);
+		if (!_smoother.IsFormed)
 			return;
 
-		var trix = smoothVal.ToDecimal();
+		var trix = smoothResult.GetValue<decimal>();
 
 		if (_prev1 is null || _prev2 is null)
 		{

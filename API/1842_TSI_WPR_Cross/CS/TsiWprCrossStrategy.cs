@@ -11,29 +11,21 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Williams %R driven True Strength Index.
-/// Buys when TSI crosses above its signal line and sells when it crosses below.
+/// Strategy based on True Strength Index crossover filtered by Williams %R.
+/// Buys when TSI crosses above its signal line and WPR is in oversold,
+/// sells when TSI crosses below its signal line and WPR is in overbought.
 /// </summary>
 public class TsiWprCrossStrategy : Strategy
 {
 	private readonly StrategyParam<int> _wprPeriod;
-	private readonly StrategyParam<int> _shortLength;
-	private readonly StrategyParam<int> _longLength;
-	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private WilliamsR _wpr;
-	private TrueStrengthIndex _tsi;
-	private ExponentialMovingAverage _signal;
 
 	private decimal _prevTsi;
 	private decimal _prevSignal;
-	private bool _isInitialized;
+	private bool _initialized;
 
 	/// <summary>
 	/// Williams %R period.
@@ -45,33 +37,6 @@ public class TsiWprCrossStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Short length for TSI.
-	/// </summary>
-	public int ShortLength
-	{
-		get => _shortLength.Value;
-		set => _shortLength.Value = value;
-	}
-
-	/// <summary>
-	/// Long length for TSI.
-	/// </summary>
-	public int LongLength
-	{
-		get => _longLength.Value;
-		set => _longLength.Value = value;
-	}
-
-	/// <summary>
-	/// Signal line length.
-	/// </summary>
-	public int SignalLength
-	{
-		get => _signalLength.Value;
-		set => _signalLength.Value = value;
-	}
-
-	/// <summary>
 	/// Candles type to process.
 	/// </summary>
 	public DataType CandleType
@@ -80,28 +45,13 @@ public class TsiWprCrossStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initialize <see cref="TsiWprCrossStrategy"/>.
-	/// </summary>
 	public TsiWprCrossStrategy()
 	{
-		_wprPeriod = Param(nameof(WprPeriod), 25)
+		_wprPeriod = Param(nameof(WprPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Period for Williams %R", "Indicators");
 
-		_shortLength = Param(nameof(ShortLength), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Short Length", "Short EMA length for TSI", "Indicators");
-
-		_longLength = Param(nameof(LongLength), 8)
-			.SetGreaterThanZero()
-			.SetDisplay("Long Length", "Long EMA length for TSI", "Indicators");
-
-		_signalLength = Param(nameof(SignalLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Signal Length", "Length of the signal moving average", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy", "General");
 	}
 
@@ -112,82 +62,67 @@ public class TsiWprCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevTsi = 0m;
-		_prevSignal = 0m;
-		_isInitialized = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_wpr = new WilliamsR { Length = WprPeriod };
-		_tsi = new TrueStrengthIndex { ShortLength = ShortLength, LongLength = LongLength };
-		_signal = new EMA { Length = SignalLength };
+		var tsi = new TrueStrengthIndex();
+		var wpr = new WilliamsR { Length = WprPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_wpr, ProcessCandle)
+			.BindEx(tsi, wpr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			var oscArea = CreateChartArea();
-			if (oscArea != null)
-			{
-				DrawIndicator(oscArea, _tsi);
-				DrawIndicator(oscArea, _signal);
-			}
+			DrawIndicator(area, tsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal wprValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue tsiValue, IIndicatorValue wprValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var tsiValue = _tsi.Process(wprValue, candle.ServerTime).ToDecimal();
-		var signalValue = _signal.Process(tsiValue, candle.ServerTime).ToDecimal();
+		if (!tsiValue.IsFinal || !wprValue.IsFinal)
+			return;
 
-		if (!_isInitialized)
+		var tv = (ITrueStrengthIndexValue)tsiValue;
+		if (tv.Tsi is not decimal tsi || tv.Signal is not decimal signal)
+			return;
+
+		var wpr = wprValue.GetValue<decimal>();
+
+		if (!_initialized)
 		{
-			_prevTsi = tsiValue;
-			_prevSignal = signalValue;
-			_isInitialized = true;
+			_prevTsi = tsi;
+			_prevSignal = signal;
+			_initialized = true;
 			return;
 		}
 
-		var crossedUp = _prevTsi <= _prevSignal && tsiValue > signalValue;
-		var crossedDown = _prevTsi >= _prevSignal && tsiValue < signalValue;
+		var crossedUp = _prevTsi <= _prevSignal && tsi > signal;
+		var crossedDown = _prevTsi >= _prevSignal && tsi < signal;
 
-		if (IsFormedAndOnlineAndAllowTrading())
+		// WPR range: -100 to 0. Oversold < -80, Overbought > -20
+		if (crossedUp && wpr < -50 && Position <= 0)
 		{
-			if (crossedUp)
-			{
-				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
-				if (Position <= 0)
-					BuyMarket(Volume + Math.Abs(Position));
-			}
-			else if (crossedDown)
-			{
-				if (Position > 0)
-					SellMarket(Position);
-				if (Position >= 0)
-					SellMarket(Volume + Math.Abs(Position));
-			}
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+		}
+		else if (crossedDown && wpr > -50 && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 
-		_prevTsi = tsiValue;
-		_prevSignal = signalValue;
+		_prevTsi = tsi;
+		_prevSignal = signal;
 	}
 }

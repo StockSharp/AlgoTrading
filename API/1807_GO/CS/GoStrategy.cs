@@ -24,37 +24,33 @@ public class GoStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<decimal> _openLevel;
 	private readonly StrategyParam<decimal> _closeLevelDiff;
-	private readonly StrategyParam<bool> _showGo;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal _emaHigh;
+	private decimal _emaLow;
+	private decimal _emaOpen;
+	private decimal _emaClose;
+	private int _count;
+	private decimal _k;
 
 	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
 	public decimal OpenLevel { get => _openLevel.Value; set => _openLevel.Value = value; }
 	public decimal CloseLevelDiff { get => _closeLevelDiff.Value; set => _closeLevelDiff.Value = value; }
-	public bool ShowGo { get => _showGo.Value; set => _showGo.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public GoStrategy()
 	{
 		_maPeriod = Param(nameof(MaPeriod), 174)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Length of EMA for price smoothing", "Parameters")
-			
-			.SetOptimize(50, 300, 50);
+			.SetDisplay("MA Period", "Length of EMA for price smoothing", "Parameters");
 
 		_openLevel = Param(nameof(OpenLevel), 0m)
-			.SetDisplay("Open Level", "GO level to open positions", "Parameters")
-			
-			.SetOptimize(-10m, 10m, 1m);
+			.SetDisplay("Open Level", "GO level to open positions", "Parameters");
 
 		_closeLevelDiff = Param(nameof(CloseLevelDiff), 0m)
-			.SetDisplay("Close Level Diff", "Difference between open and close levels", "Parameters")
-			
-			.SetOptimize(0m, 5m, 0.5m);
+			.SetDisplay("Close Level Diff", "Difference between open and close levels", "Parameters");
 
-		_showGo = Param(nameof(ShowGo), true)
-			.SetDisplay("Show GO", "Log GO values", "Parameters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -67,65 +63,62 @@ public class GoStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		_count = 0;
+		_k = 2m / (MaPeriod + 1m);
 
-		var highMa = new EMA { Length = MaPeriod };
-		var lowMa = new EMA { Length = MaPeriod };
-		var openMa = new EMA { Length = MaPeriod };
-		var closeMa = new EMA { Length = MaPeriod };
+		// Use a dummy SMA just as a binding mechanism to get candle events
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(closeMa, (candle, closeVal) =>
+		subscription.Bind(sma, ProcessCandle).Start();
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		_count++;
+
+		if (_count == 1)
 		{
-			if (candle.State != CandleStates.Finished)
-				return;
+			_emaHigh = candle.HighPrice;
+			_emaLow = candle.LowPrice;
+			_emaOpen = candle.OpenPrice;
+			_emaClose = candle.ClosePrice;
+			return;
+		}
 
-			// Update EMAs for other price parts
-			var highVal = highMa.Process(candle.OpenTime, candle.HighPrice);
-			var lowVal = lowMa.Process(candle.OpenTime, candle.LowPrice);
-			var openVal = openMa.Process(candle.OpenTime, candle.OpenPrice);
+		_emaHigh = candle.HighPrice * _k + _emaHigh * (1m - _k);
+		_emaLow = candle.LowPrice * _k + _emaLow * (1m - _k);
+		_emaOpen = candle.OpenPrice * _k + _emaOpen * (1m - _k);
+		_emaClose = candle.ClosePrice * _k + _emaClose * (1m - _k);
 
-			if (!highVal.IsFinal || !lowVal.IsFinal || !openVal.IsFinal)
-				return;
+		if (_count < MaPeriod)
+			return;
 
-			if (highVal.Value is not decimal high ||
-				lowVal.Value is not decimal low ||
-				openVal.Value is not decimal open)
-				return;
+		var vol = candle.TotalVolume == 0 ? 1m : candle.TotalVolume;
+		var go = ((_emaClose - _emaOpen) + (_emaHigh - _emaOpen) + (_emaLow - _emaOpen) + (_emaClose - _emaLow) + (_emaClose - _emaHigh)) * vol;
 
-			var go = ((closeVal - open) + (high - open) + (low - open) + (closeVal - low) + (closeVal - high)) * candle.TotalVolume;
+		var closeBuy = go < (OpenLevel - CloseLevelDiff);
+		var closeSell = go > -(OpenLevel - CloseLevelDiff);
+		var openBuy = go > OpenLevel;
+		var openSell = go < -OpenLevel;
 
-			if (ShowGo)
-				LogInfo($"GO={go}");
-
-			var closeBuy = go < (OpenLevel - CloseLevelDiff);
-			var closeSell = go > -(OpenLevel - CloseLevelDiff);
-			var openBuy = go > OpenLevel;
-			var openSell = go < -OpenLevel;
-
-			if (Position > 0 && closeBuy)
-			{
-				SellMarket(Position);
-			}
-			else if (Position < 0 && closeSell)
-			{
-				BuyMarket(-Position);
-			}
-			else if (Position == 0)
-			{
-				if (openBuy && !openSell)
-				BuyMarket(Volume);
-				else if (openSell && !openBuy)
-				SellMarket(Volume);
-			}
-		}).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
+		if (Position > 0 && closeBuy)
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, closeMa);
-			DrawOwnTrades(area);
+			SellMarket();
+		}
+		else if (Position < 0 && closeSell)
+		{
+			BuyMarket();
+		}
+		else if (Position == 0)
+		{
+			if (openBuy && !openSell)
+				BuyMarket();
+			else if (openSell && !openBuy)
+				SellMarket();
 		}
 	}
 }

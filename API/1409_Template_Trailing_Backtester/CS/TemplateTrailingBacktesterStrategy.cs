@@ -1,4 +1,3 @@
-
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -24,23 +23,20 @@ public class TemplateTrailingBacktesterStrategy : Strategy
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _trailStart;
 	private readonly StrategyParam<decimal> _trailDistance;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA _fast = new();
-	private EMA _slow = new();
 	private decimal _prevFast;
 	private decimal _prevSlow;
-	private decimal? _stop;
-	private decimal? _tp;
-	private decimal? _trail;
+	private decimal _entryPrice;
+	private decimal _trailStop;
+	private decimal _highSinceEntry;
+	private decimal _lowSinceEntry;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 	public decimal TakeProfitPercent { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 	public decimal StopLossPercent { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-	public decimal TrailStartPercent { get => _trailStart.Value; set => _trailStart.Value = value; }
 	public decimal TrailDistancePercent { get => _trailDistance.Value; set => _trailDistance.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
@@ -50,99 +46,106 @@ public class TemplateTrailingBacktesterStrategy : Strategy
 		_slowLength = Param(nameof(SlowLength), 50);
 		_takeProfit = Param(nameof(TakeProfitPercent), 2m);
 		_stopLoss = Param(nameof(StopLossPercent), 1m);
-		_trailStart = Param(nameof(TrailStartPercent), 1m);
 		_trailDistance = Param(nameof(TrailDistancePercent), 0.5m);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, CandleType);
+		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 		_prevFast = 0m;
 		_prevSlow = 0m;
-		_stop = null;
-		_tp = null;
-		_trail = null;
+		_entryPrice = 0m;
+		_trailStop = 0m;
+		_highSinceEntry = 0m;
+		_lowSinceEntry = decimal.MaxValue;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_fast.Length = FastLength;
-		_slow.Length = SlowLength;
-		var sub = SubscribeCandles(CandleType);
-		sub.Bind(Process).Start();
 
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, sub);
-			DrawIndicator(area, _fast);
-			DrawIndicator(area, _slow);
-			DrawOwnTrades(area);
-		}
+		var fast = new ExponentialMovingAverage { Length = FastLength };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+
+		var sub = SubscribeCandles(CandleType);
+		sub.Bind(fast, slow, Process).Start();
 	}
 
-	private void Process(ICandleMessage candle)
+	private void Process(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fastVal = _fast.Process(candle.ClosePrice);
-		var slowVal = _slow.Process(candle.ClosePrice);
-
-		var longCond = _prevFast <= _prevSlow && fastVal > slowVal;
-		var shortCond = _prevFast >= _prevSlow && fastVal < slowVal;
-
-		if (longCond && Position <= 0)
+		// Manage trailing and exits first
+		if (Position > 0 && _entryPrice > 0)
 		{
-			BuyMarket();
-			var entry = candle.ClosePrice;
-			_tp = entry * (1 + TakeProfitPercent / 100m);
-			_stop = entry * (1 - StopLossPercent / 100m);
-			_trail = null;
-		}
-		else if (shortCond && Position >= 0)
-		{
-			SellMarket();
-			var entry = candle.ClosePrice;
-			_tp = entry * (1 - TakeProfitPercent / 100m);
-			_stop = entry * (1 + StopLossPercent / 100m);
-			_trail = null;
-		}
+			_highSinceEntry = Math.Max(_highSinceEntry, candle.HighPrice);
+			var newTrail = _highSinceEntry * (1 - TrailDistancePercent / 100m);
+			_trailStop = Math.Max(_trailStop, newTrail);
 
-		if (Position > 0)
-		{
-			var trigger = PositionPrice * (1 + TrailStartPercent / 100m);
-			if (candle.ClosePrice >= trigger)
+			var tp = _entryPrice * (1 + TakeProfitPercent / 100m);
+			var sl = _entryPrice * (1 - StopLossPercent / 100m);
+			var effectiveStop = Math.Max(sl, _trailStop);
+
+			if (candle.ClosePrice <= effectiveStop || candle.ClosePrice >= tp)
 			{
-				var newStop = candle.ClosePrice * (1 - TrailDistancePercent / 100m);
-				if (!_trail.HasValue || newStop > _trail)
-					_trail = newStop;
+				SellMarket();
+				_entryPrice = 0m;
+				_prevFast = fastVal;
+				_prevSlow = slowVal;
+				return;
 			}
-			if ((_trail.HasValue && candle.LowPrice <= _trail) || (_stop.HasValue && candle.LowPrice <= _stop))
-				SellMarket(Math.Abs(Position));
-			else if (_tp.HasValue && candle.HighPrice >= _tp)
-				SellMarket(Math.Abs(Position));
 		}
-		else if (Position < 0)
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			var trigger = PositionPrice * (1 - TrailStartPercent / 100m);
-			if (candle.ClosePrice <= trigger)
+			_lowSinceEntry = Math.Min(_lowSinceEntry, candle.LowPrice);
+			var newTrail = _lowSinceEntry * (1 + TrailDistancePercent / 100m);
+			if (_trailStop == 0 || newTrail < _trailStop)
+				_trailStop = newTrail;
+
+			var tp = _entryPrice * (1 - TakeProfitPercent / 100m);
+			var sl = _entryPrice * (1 + StopLossPercent / 100m);
+			var effectiveStop = _trailStop > 0 ? Math.Min(sl, _trailStop) : sl;
+
+			if (candle.ClosePrice >= effectiveStop || candle.ClosePrice <= tp)
 			{
-				var newStop = candle.ClosePrice * (1 + TrailDistancePercent / 100m);
-				if (!_trail.HasValue || newStop < _trail)
-					_trail = newStop;
+				BuyMarket();
+				_entryPrice = 0m;
+				_prevFast = fastVal;
+				_prevSlow = slowVal;
+				return;
 			}
-			if ((_trail.HasValue && candle.HighPrice >= _trail) || (_stop.HasValue && candle.HighPrice >= _stop))
-				BuyMarket(Math.Abs(Position));
-			else if (_tp.HasValue && candle.LowPrice <= _tp)
-				BuyMarket(Math.Abs(Position));
+		}
+
+		// Entries only when flat
+		if (Position == 0 && _prevFast != 0 && _prevSlow != 0)
+		{
+			var longCond = _prevFast <= _prevSlow && fastVal > slowVal;
+			var shortCond = _prevFast >= _prevSlow && fastVal < slowVal;
+
+			if (longCond)
+			{
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+				_highSinceEntry = candle.HighPrice;
+				_trailStop = 0m;
+			}
+			else if (shortCond)
+			{
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+				_lowSinceEntry = candle.LowPrice;
+				_trailStop = 0m;
+			}
 		}
 
 		_prevFast = fastVal;

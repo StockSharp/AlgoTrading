@@ -11,9 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -25,12 +22,13 @@ public class ExpHullTrendStrategy : Strategy
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private WeightedMovingAverage _wmaHalf;
-	private WeightedMovingAverage _wmaFull;
-	private WeightedMovingAverage _wmaFinal;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _initialized;
 
-	private decimal? _prevFast;
-	private decimal? _prevSlow;
+	// Manual WMA for final smoothing
+	private readonly List<decimal> _finalBuffer = new();
+	private int _finalLength;
 
 	/// <summary>
 	/// Base period for Hull moving average.
@@ -56,10 +54,9 @@ public class ExpHullTrendStrategy : Strategy
 	public ExpHullTrendStrategy()
 	{
 		_length = Param(nameof(Length), 20)
-			.SetDisplay("Hull Length", "Base period for Hull calculation", "Indicator")
-			;
+			.SetDisplay("Hull Length", "Base period for Hull calculation", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for processing", "General");
 	}
 
@@ -70,66 +67,76 @@ public class ExpHullTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_wmaHalf?.Reset();
-		_wmaFull?.Reset();
-		_wmaFinal?.Reset();
-		_prevFast = null;
-		_prevSlow = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_wmaHalf = new WeightedMovingAverage { Length = Math.Max(1, Length / 2) };
-		_wmaFull = new WeightedMovingAverage { Length = Length };
-		_wmaFinal = new WeightedMovingAverage { Length = Math.Max(1, (int)Math.Sqrt(Length)) };
+		_finalLength = Math.Max(1, (int)Math.Sqrt(Length));
+
+		var wmaHalf = new WeightedMovingAverage { Length = Math.Max(1, Length / 2) };
+		var wmaFull = new WeightedMovingAverage { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(_wmaHalf, _wmaFull, ProcessCandle).Start();
+		subscription.Bind(wmaHalf, wmaFull, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _wmaFinal);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue halfValue, IIndicatorValue fullValue)
+	private decimal CalcWma(decimal newVal)
+	{
+		_finalBuffer.Add(newVal);
+		if (_finalBuffer.Count > _finalLength)
+			_finalBuffer.RemoveAt(0);
+
+		if (_finalBuffer.Count < _finalLength)
+			return newVal;
+
+		decimal sumWeight = 0;
+		decimal sumVal = 0;
+		for (int i = 0; i < _finalBuffer.Count; i++)
+		{
+			var w = i + 1;
+			sumVal += _finalBuffer[i] * w;
+			sumWeight += w;
+		}
+		return sumVal / sumWeight;
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal halfValue, decimal fullValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var half = halfValue.ToDecimal();
-		var full = fullValue.ToDecimal();
+		var fast = 2m * halfValue - fullValue; // intermediate Hull value
+		var slow = CalcWma(fast); // smoothed Hull
 
-		var fast = 2m * half - full; // intermediate Hull value
-		var slow = _wmaFinal.Process(new DecimalIndicatorValue(_wmaFinal, fast, candle.ServerTime)).ToDecimal(); // smoothed Hull
-
-		if (!_prevFast.HasValue)
+		if (!_initialized)
 		{
 			_prevFast = fast;
 			_prevSlow = slow;
+			_initialized = true;
 			return;
 		}
 
 		var crossUp = _prevFast <= _prevSlow && fast > slow;
 		var crossDown = _prevFast >= _prevSlow && fast < slow;
 
-		if (IsFormedAndOnlineAndAllowTrading())
+		if (crossUp && Position <= 0)
 		{
-			if (crossUp && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-			else if (crossDown && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 
 		_prevFast = fast;

@@ -73,7 +73,7 @@ public class Ema235CrossStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 50m).SetGreaterThanZero().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
 		_takeProfit = Param(nameof(TakeProfit), 150m).SetGreaterThanZero().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 		_trailingStop = Param(nameof(TrailingStop), 50m).SetNotNegative().SetDisplay("Trailing Stop", "Trailing stop in price steps", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
@@ -99,8 +99,8 @@ public class Ema235CrossStrategy : Strategy
 
 		StartProtection(null, null);
 
-		var fastEma = new EMA { Length = FastLength };
-		var slowEma = new EMA { Length = SlowLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -121,69 +121,80 @@ public class Ema235CrossStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!_isInitialized)
 		{
-			if (!double.IsNaN((double)fastValue) && !double.IsNaN((double)slowValue))
-			{
-				_wasFastBelowSlow = fastValue < slowValue;
-				_isInitialized = true;
-			}
+			_wasFastBelowSlow = fastValue < slowValue;
+			_isInitialized = true;
 			return;
 		}
 
+		var step = Security.PriceStep ?? 1m;
 		var isFastBelowSlow = fastValue < slowValue;
 
-		if (_wasFastBelowSlow && !isFastBelowSlow)
-		{
-			if (Position <= 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice - StopLoss * Security.PriceStep;
-				_takePrice = _entryPrice + TakeProfit * Security.PriceStep;
-			}
-		}
-		else if (!_wasFastBelowSlow && isFastBelowSlow)
-		{
-			if (Position >= 0)
-			{
-				SellMarket(Volume + Math.Abs(Position));
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice + StopLoss * Security.PriceStep;
-				_takePrice = _entryPrice - TakeProfit * Security.PriceStep;
-			}
-		}
-
+		// Check exits first
 		if (Position > 0)
 		{
 			if (TrailingStop > 0m)
 			{
-				var newStop = candle.ClosePrice - TrailingStop * Security.PriceStep;
+				var newStop = candle.ClosePrice - TrailingStop * step;
 				if (newStop > _stopPrice)
 					_stopPrice = newStop;
 			}
 
 			if (_stopPrice != 0m && candle.ClosePrice <= _stopPrice)
-				SellMarket(Math.Abs(Position));
-			else if (_takePrice != 0m && candle.ClosePrice >= _takePrice)
-				SellMarket(Math.Abs(Position));
+			{
+				SellMarket();
+				_wasFastBelowSlow = isFastBelowSlow;
+				return;
+			}
+			if (_takePrice != 0m && candle.ClosePrice >= _takePrice)
+			{
+				SellMarket();
+				_wasFastBelowSlow = isFastBelowSlow;
+				return;
+			}
 		}
 		else if (Position < 0)
 		{
 			if (TrailingStop > 0m)
 			{
-				var newStop = candle.ClosePrice + TrailingStop * Security.PriceStep;
+				var newStop = candle.ClosePrice + TrailingStop * step;
 				if (_stopPrice == 0m || newStop < _stopPrice)
 					_stopPrice = newStop;
 			}
 
 			if (_stopPrice != 0m && candle.ClosePrice >= _stopPrice)
-				BuyMarket(Math.Abs(Position));
-			else if (_takePrice != 0m && candle.ClosePrice <= _takePrice)
-				BuyMarket(Math.Abs(Position));
+			{
+				BuyMarket();
+				_wasFastBelowSlow = isFastBelowSlow;
+				return;
+			}
+			if (_takePrice != 0m && candle.ClosePrice <= _takePrice)
+			{
+				BuyMarket();
+				_wasFastBelowSlow = isFastBelowSlow;
+				return;
+			}
+		}
+
+		// Entry signals
+		if (_wasFastBelowSlow && !isFastBelowSlow && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopPrice = _entryPrice - StopLoss * step;
+			_takePrice = _entryPrice + TakeProfit * step;
+		}
+		else if (!_wasFastBelowSlow && isFastBelowSlow && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopPrice = _entryPrice + StopLoss * step;
+			_takePrice = _entryPrice - TakeProfit * step;
 		}
 
 		_wasFastBelowSlow = isFastBelowSlow;

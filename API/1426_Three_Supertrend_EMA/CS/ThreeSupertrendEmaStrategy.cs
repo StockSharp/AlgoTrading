@@ -39,7 +39,7 @@ public class ThreeSupertrendEmaStrategy : Strategy
 		_multiplier1 = Param(nameof(Multiplier1), 3m);
 		_multiplier2 = Param(nameof(Multiplier2), 2m);
 		_multiplier3 = Param(nameof(Multiplier3), 1m);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -49,46 +49,51 @@ public class ThreeSupertrendEmaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema = new EMA { Length = EmaLength };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 		var st1 = new SuperTrend { Length = AtrPeriod, Multiplier = Multiplier1 };
 		var st2 = new SuperTrend { Length = AtrPeriod, Multiplier = Multiplier2 };
 		var st3 = new SuperTrend { Length = AtrPeriod, Multiplier = Multiplier3 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ema, st1, st2, st3, ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
-			DrawIndicator(area, st1);
-			DrawIndicator(area, st2);
-			DrawIndicator(area, st3);
-			DrawOwnTrades(area);
-		}
+		subscription
+			.BindEx(ema, st1, st2, st3, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaVal, IIndicatorValue st1Val, IIndicatorValue st2Val, IIndicatorValue st3Val)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaIv, IIndicatorValue st1Val, IIndicatorValue st2Val, IIndicatorValue st3Val)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var st1 = (SuperTrendIndicatorValue)st1Val;
-		var st2 = (SuperTrendIndicatorValue)st2Val;
-		var st3 = (SuperTrendIndicatorValue)st3Val;
+		if (st1Val is not SuperTrendIndicatorValue st1 ||
+			st2Val is not SuperTrendIndicatorValue st2 ||
+			st3Val is not SuperTrendIndicatorValue st3)
+			return;
 
-		var longCond = st1.IsUpTrend && st2.IsUpTrend && st3.IsUpTrend && candle.ClosePrice > emaVal;
-		var shortCond = !st1.IsUpTrend && !st2.IsUpTrend && !st3.IsUpTrend && candle.ClosePrice < emaVal;
+		var emaVal = emaIv.GetValue<decimal>();
 
-		if (longCond && Position <= 0)
-			BuyMarket();
-		else if (shortCond && Position >= 0)
-			SellMarket();
-
+		// Check exits first
 		if (Position > 0 && !st3.IsUpTrend)
-			SellMarket(Position);
+		{
+			SellMarket();
+			return;
+		}
 		else if (Position < 0 && st3.IsUpTrend)
-			BuyMarket(-Position);
+		{
+			BuyMarket();
+			return;
+		}
+
+		// Entries when flat
+		if (Position == 0)
+		{
+			var longCond = st1.IsUpTrend && st2.IsUpTrend && st3.IsUpTrend && candle.ClosePrice > emaVal;
+			var shortCond = !st1.IsUpTrend && !st2.IsUpTrend && !st3.IsUpTrend && candle.ClosePrice < emaVal;
+
+			if (longCond)
+				BuyMarket();
+			else if (shortCond)
+				SellMarket();
+		}
 	}
 }

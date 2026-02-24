@@ -11,8 +11,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Strategy using the Gap Momentum System by Perry Kaufman.
 /// Buys when the gap momentum signal rises and sells or reverses when it falls.
@@ -24,8 +22,15 @@ public class GapMomentumSystemStrategy : Strategy
 	private readonly StrategyParam<bool> _longOnly;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private GapMomentum _gapMomentum;
 	private decimal _prevSignal;
+	private decimal? _prevClose;
+	private readonly Queue<decimal> _up = new();
+	private readonly Queue<decimal> _dn = new();
+	private readonly Queue<decimal> _ratio = new();
+	private decimal _sumUp;
+	private decimal _sumDn;
+	private decimal _sumRatio;
+	private int _candleCount;
 
 	/// <summary>
 	/// Period for gap sums.
@@ -76,7 +81,7 @@ public class GapMomentumSystemStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Period", "SMA period", "Parameters");
 
-		_longOnly = Param(nameof(LongOnly), true)
+		_longOnly = Param(nameof(LongOnly), false)
 			.SetDisplay("Long Only", "Only long trades", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -93,8 +98,15 @@ public class GapMomentumSystemStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_gapMomentum?.Reset();
 		_prevSignal = 0m;
+		_prevClose = null;
+		_up.Clear();
+		_dn.Clear();
+		_ratio.Clear();
+		_sumUp = 0m;
+		_sumDn = 0m;
+		_sumRatio = 0m;
+		_candleCount = 0;
 	}
 
 	/// <inheritdoc />
@@ -102,123 +114,64 @@ public class GapMomentumSystemStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_gapMomentum = new GapMomentum
-		{
-			Period = Period,
-			SignalPeriod = SignalPeriod
-		};
+		var sma = new SimpleMovingAverage { Length = 10 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_gapMomentum, ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal signal)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_gapMomentum.IsFormed)
+		// Calculate gap momentum
+		var prevClose = _prevClose ?? candle.OpenPrice;
+		var gap = candle.OpenPrice - prevClose;
+		var up = gap > 0m ? gap : 0m;
+		var dn = gap < 0m ? -gap : 0m;
+
+		_sumUp += up;
+		_sumDn += dn;
+		_up.Enqueue(up);
+		_dn.Enqueue(dn);
+		if (_up.Count > Period)
+			_sumUp -= _up.Dequeue();
+		if (_dn.Count > Period)
+			_sumDn -= _dn.Dequeue();
+
+		var ratio = _sumDn == 0m ? 1m : 100m * _sumUp / _sumDn;
+		_sumRatio += ratio;
+		_ratio.Enqueue(ratio);
+		if (_ratio.Count > SignalPeriod)
+			_sumRatio -= _ratio.Dequeue();
+
+		_prevClose = candle.ClosePrice;
+		_candleCount++;
+
+		if (_ratio.Count < SignalPeriod || _candleCount < Period + SignalPeriod)
 		{
-			_prevSignal = signal;
+			_prevSignal = _sumRatio / Math.Max(1, _ratio.Count);
 			return;
 		}
+
+		var signal = _sumRatio / SignalPeriod;
 
 		if (signal > _prevSignal)
 		{
 			if (Position <= 0)
-			{
-				var vol = Position < 0 && !LongOnly ? Math.Abs(Position) + Volume : Volume;
-				BuyMarket(vol);
-			}
+				BuyMarket();
 		}
 		else if (signal < _prevSignal)
 		{
-			if (Position >= 0)
-			{
-				if (LongOnly)
-				{
-					if (Position > 0)
-						SellMarket(Position);
-				}
-				else
-				{
-					var vol = Position > 0 ? Position + Volume : Volume;
-					SellMarket(vol);
-				}
-			}
+			if (Position > 0)
+				SellMarket();
+			else if (!LongOnly && Position >= 0)
+				SellMarket();
 		}
 
 		_prevSignal = signal;
-	}
-
-	private class GapMomentum : BaseIndicator
-	{
-		public int Period { get; set; } = 40;
-		public int SignalPeriod { get; set; } = 20;
-
-		private readonly Queue<decimal> _up = new();
-		private readonly Queue<decimal> _dn = new();
-		private readonly Queue<decimal> _ratio = new();
-		private decimal _sumUp;
-		private decimal _sumDn;
-		private decimal _sumRatio;
-		private decimal? _prevClose;
-
-		protected override IIndicatorValue OnProcess(IIndicatorValue input)
-		{
-			var candle = input.GetValue<ICandleMessage>();
-			var prevClose = _prevClose ?? candle.OpenPrice;
-			var gap = candle.OpenPrice - prevClose;
-			var up = gap > 0m ? gap : 0m;
-			var dn = gap < 0m ? -gap : 0m;
-
-			_sumUp += up;
-			_sumDn += dn;
-			_up.Enqueue(up);
-			_dn.Enqueue(dn);
-			if (_up.Count > Period)
-				_sumUp -= _up.Dequeue();
-			if (_dn.Count > Period)
-				_sumDn -= _dn.Dequeue();
-
-			var ratio = _sumDn == 0m ? 1m : 100m * _sumUp / _sumDn;
-			_sumRatio += ratio;
-			_ratio.Enqueue(ratio);
-			if (_ratio.Count > SignalPeriod)
-				_sumRatio -= _ratio.Dequeue();
-
-			_prevClose = candle.ClosePrice;
-
-			if (_ratio.Count < SignalPeriod)
-			{
-				IsFormed = false;
-				return new DecimalIndicatorValue(this, 0m, input.Time);
-			}
-
-			IsFormed = true;
-			var signal = _sumRatio / SignalPeriod;
-			return new DecimalIndicatorValue(this, signal, input.Time);
-		}
-
-		public override void Reset()
-		{
-			base.Reset();
-			_up.Clear();
-			_dn.Clear();
-			_ratio.Clear();
-			_sumUp = 0m;
-			_sumDn = 0m;
-			_sumRatio = 0m;
-			_prevClose = null;
-		}
 	}
 }

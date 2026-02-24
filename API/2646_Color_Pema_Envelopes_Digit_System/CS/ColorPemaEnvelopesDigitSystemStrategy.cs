@@ -48,7 +48,7 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 	/// </summary>
 	public ColorPemaEnvelopesDigitSystemStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -322,7 +322,7 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 		// Determine the color code based on envelope breakouts.
 		var currentColor = CalculateColor(candle, upperForColor, lowerForColor);
 
-		if (!_pema.IsFormed || !IsFormedAndOnlineAndAllowTrading())
+		if (!_pema.IsFormed)
 		{
 			UpdateHistories(currentColor, upperCurrent, lowerCurrent, shift);
 			return;
@@ -537,7 +537,7 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 
 			IsFormed = _count > 8;
 
-			return new DecimalIndicatorValue(this, pema, input.Time);
+			return new DecimalIndicatorValue(this, pema, input.Time) { IsFinal = true };
 		}
 
 		public override void Reset()

@@ -54,7 +54,7 @@ public class BezierStDevStrategy : Strategy
 			
 			.SetOptimize(5, 20, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used", "General");
 	}
 
@@ -112,13 +112,13 @@ public class BezierStDevStrategy : Strategy
 
 			if (isLocalMin)
 			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
+				if (Position <= 0)
+					BuyMarket();
 			}
 			else if (isLocalMax)
 			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
+				if (Position >= 0)
+					SellMarket();
 			}
 		}
 

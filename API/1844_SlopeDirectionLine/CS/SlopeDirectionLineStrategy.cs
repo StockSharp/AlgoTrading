@@ -88,7 +88,7 @@ public class SlopeDirectionLineStrategy : Strategy
 	/// </summary>
 	public SlopeDirectionLineStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 
 		_length = Param(nameof(Length), 12)
@@ -160,29 +160,24 @@ public class SlopeDirectionLineStrategy : Strategy
 		if (!regValue.IsFinal)
 			return;
 
-		var slope = ((LinearRegressionValue)regValue).LinearRegSlope;
-		if (slope is null)
+		var lrv = (ILinearRegressionValue)regValue;
+		if (lrv.LinearRegSlope is not decimal currentSlope)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var currentSlope = (decimal)slope;
 
 		if (_prevSlope is decimal prev)
 		{
 			if (currentSlope > 0 && prev <= 0)
 			{
 				if (Position < 0)
-					ClosePosition();
-				else if (Position == 0 && AllowLong)
+					BuyMarket();
+				if (Position <= 0 && AllowLong)
 					BuyMarket();
 			}
 			else if (currentSlope < 0 && prev >= 0)
 			{
 				if (Position > 0)
-					ClosePosition();
-				else if (Position == 0 && AllowShort)
+					SellMarket();
+				if (Position >= 0 && AllowShort)
 					SellMarket();
 			}
 		}

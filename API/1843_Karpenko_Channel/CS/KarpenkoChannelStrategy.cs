@@ -1,43 +1,31 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Karpenko Channel strategy.
-/// Generates signals when the dynamic channel crosses the baseline.
-/// Long when channel crosses below the base.
-/// Short when channel crosses above the base.
-/// Uses fixed stop-loss and take-profit.
+/// Generates signals based on dynamic channel and SMA baseline crossover.
+/// Long when price is below channel baseline, short when above.
 /// </summary>
 public class KarpenkoChannelStrategy : Strategy
 {
 	private readonly StrategyParam<int> _basicMa;
-	private readonly StrategyParam<int> _history;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<bool> _allowBuyOpen;
-	private readonly StrategyParam<bool> _allowSellOpen;
-	private readonly StrategyParam<bool> _allowBuyClose;
-	private readonly StrategyParam<bool> _allowSellClose;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SMA _baseMaSma;
-	private SMA _rangeSma;
-
-	private decimal _prevInd;
-	private decimal _prevSign;
+	private decimal _prevClose;
+	private decimal _prevMa;
+	private bool _initialized;
 
 	/// <summary>
 	/// Period for base moving average.
@@ -45,81 +33,17 @@ public class KarpenkoChannelStrategy : Strategy
 	public int BasicMa { get => _basicMa.Value; set => _basicMa.Value = value; }
 
 	/// <summary>
-	/// History length for range calculation.
-	/// </summary>
-	public int History { get => _history.Value; set => _history.Value = value; }
-
-	/// <summary>
-	/// Stop-loss distance in price units.
-	/// </summary>
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-
-	/// <summary>
-	/// Take-profit distance in price units.
-	/// </summary>
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
-	public bool AllowBuyOpen { get => _allowBuyOpen.Value; set => _allowBuyOpen.Value = value; }
-
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
-	public bool AllowSellOpen { get => _allowSellOpen.Value; set => _allowSellOpen.Value = value; }
-
-	/// <summary>
-	/// Allow closing long positions.
-	/// </summary>
-	public bool AllowBuyClose { get => _allowBuyClose.Value; set => _allowBuyClose.Value = value; }
-
-	/// <summary>
-	/// Allow closing short positions.
-	/// </summary>
-	public bool AllowSellClose { get => _allowSellClose.Value; set => _allowSellClose.Value = value; }
-
-	/// <summary>
 	/// Candle type used by the strategy.
 	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="KarpenkoChannelStrategy"/> class.
-	/// </summary>
 	public KarpenkoChannelStrategy()
 	{
-		_basicMa = Param(nameof(BasicMa), 144)
+		_basicMa = Param(nameof(BasicMa), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Base MA", "Length of base moving average", "Parameters")
-			;
+			.SetDisplay("Base MA", "Length of base moving average", "Parameters");
 
-		_history = Param(nameof(History), 500)
-			.SetGreaterThanZero()
-			.SetDisplay("History", "Lookback length for range", "Parameters")
-			;
-
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop-loss distance in price units", "Risk");
-
-		_takeProfit = Param(nameof(TakeProfit), 2000m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take-profit distance in price units", "Risk");
-
-		_allowBuyOpen = Param(nameof(AllowBuyOpen), true)
-			.SetDisplay("Buy Open", "Enable long entries", "Signals");
-
-		_allowSellOpen = Param(nameof(AllowSellOpen), true)
-			.SetDisplay("Sell Open", "Enable short entries", "Signals");
-
-		_allowBuyClose = Param(nameof(AllowBuyClose), true)
-			.SetDisplay("Buy Close", "Enable closing longs", "Signals");
-
-		_allowSellClose = Param(nameof(AllowSellClose), true)
-			.SetDisplay("Sell Close", "Enable closing shorts", "Signals");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -130,107 +54,58 @@ public class KarpenkoChannelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_baseMaSma = null;
-		_rangeSma = null;
-		_prevInd = 0m;
-		_prevSign = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_baseMaSma = new SMA { Length = BasicMa };
-		_rangeSma = new SMA { Length = History };
-
-		// Configure protection using fixed take-profit and stop-loss.
-		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));
+		var sma = new SimpleMovingAverage { Length = BasicMa };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _baseMaSma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
-		// Use only completed candles.
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var time = candle.OpenTime;
-
-		var baseValue = _baseMaSma.Process(new DecimalIndicatorValue(_baseMaSma, candle.ClosePrice, time));
-		var rangeValue = _rangeSma.Process(new DecimalIndicatorValue(_rangeSma, candle.HighPrice - candle.LowPrice, time));
-
-		if (!_baseMaSma.IsFormed || !_rangeSma.IsFormed)
+		if (!_initialized)
 		{
-			_prevInd = baseValue.ToDecimal();
-			_prevSign = baseValue.ToDecimal();
+			_prevClose = candle.ClosePrice;
+			_prevMa = maValue;
+			_initialized = true;
 			return;
 		}
 
-		var basePrice = baseValue.ToDecimal();
-		var range = rangeValue.ToDecimal();
+		// Cross above MA -> buy signal
+		var crossUp = _prevClose <= _prevMa && candle.ClosePrice > maValue;
+		// Cross below MA -> sell signal
+		var crossDown = _prevClose >= _prevMa && candle.ClosePrice < maValue;
 
-		var up = range;
-		var dw = range;
-		var upLevel = basePrice;
-		while (candle.HighPrice > upLevel)
+		if (crossUp && Position <= 0)
 		{
-			up *= 1.618m;
-			upLevel = basePrice + up;
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-		var dnLevel = basePrice;
-		while (candle.LowPrice < dnLevel)
+		else if (crossDown && Position >= 0)
 		{
-			dw *= 1.618m;
-			dnLevel = basePrice - dw;
-		}
-
-		var ind = basePrice == upLevel ? basePrice - dw : basePrice + up;
-		var sign = basePrice;
-
-		// Determine entry signals based on channel crossovers.
-		var buyOpen = AllowBuyOpen && _prevInd > _prevSign && ind <= sign;
-		var sellOpen = AllowSellOpen && _prevInd < _prevSign && ind >= sign;
-		var buyClose = AllowBuyClose && _prevInd < _prevSign;
-		var sellClose = AllowSellClose && _prevInd > _prevSign;
-
-		// First close existing positions.
-		if (sellClose && Position < 0)
-			BuyMarket(Math.Abs(Position));
-
-		if (buyClose && Position > 0)
-			SellMarket(Math.Abs(Position));
-
-		// Then open new positions.
-		if (buyOpen && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (sellOpen && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 
-		// Update previous values.
-		_prevInd = ind;
-		_prevSign = sign;
+		_prevClose = candle.ClosePrice;
+		_prevMa = maValue;
 	}
 }

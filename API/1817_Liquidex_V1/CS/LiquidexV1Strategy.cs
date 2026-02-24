@@ -79,7 +79,7 @@ public class LiquidexV1Strategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), new Unit(30, UnitTypes.Point))
 			.SetDisplay("Stop Loss", "Stop loss size in points", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
@@ -117,9 +117,6 @@ public class LiquidexV1Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var range = candle.HighPrice - candle.LowPrice;
 
 		if (range < RangeFilter)
@@ -130,15 +127,15 @@ public class LiquidexV1Strategy : Strategy
 
 		if (crossAbove && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			LogInfo($"Buy signal: price crossed above WMA at {wmaValue}");
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
 		else if (crossBelow && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			LogInfo($"Sell signal: price crossed below WMA at {wmaValue}");
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 	}
 }

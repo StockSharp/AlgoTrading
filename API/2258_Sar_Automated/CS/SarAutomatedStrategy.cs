@@ -182,25 +182,25 @@ public class SarAutomatedStrategy : Strategy
 
 			if (candle.HighPrice - _entryPrice >= TakeProfit)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				return;
 			}
 
 			if (_entryPrice - candle.LowPrice >= StopLoss)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				return;
 			}
 
 			if (TrailingStop > 0m && _highestPrice - candle.ClosePrice >= TrailingStop)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				return;
 			}
 
 			if (sarValue > candle.ClosePrice)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 			}
 		}
 		else if (Position < 0)
@@ -209,25 +209,25 @@ public class SarAutomatedStrategy : Strategy
 
 			if (_entryPrice - candle.LowPrice >= TakeProfit)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				return;
 			}
 
 			if (candle.HighPrice - _entryPrice >= StopLoss)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				return;
 			}
 
 			if (TrailingStop > 0m && candle.ClosePrice - _lowestPrice >= TrailingStop)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				return;
 			}
 
 			if (sarValue < candle.ClosePrice)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			}
 		}
 	}

@@ -27,7 +27,6 @@ public class TableToFilterTradesPerDayStrategy : Strategy
 	private decimal _entryPrice;
 	private decimal _target;
 	private decimal _stop;
-	private decimal _volume;
 	private decimal _prevFast;
 	private decimal _prevSlow;
 
@@ -40,17 +39,17 @@ public class TableToFilterTradesPerDayStrategy : Strategy
 	public TableToFilterTradesPerDayStrategy()
 	{
 		_fastLength = Param(nameof(FastLength), 50)
-		.SetGreaterThanZero()
-		.SetDisplay("Fast SMA", "Length for fast SMA", "Parameters");
+			.SetGreaterThanZero()
+			.SetDisplay("Fast SMA", "Length for fast SMA", "Parameters");
 		_slowLength = Param(nameof(SlowLength), 200)
-		.SetGreaterThanZero()
-		.SetDisplay("Slow SMA", "Length for slow SMA", "Parameters");
+			.SetGreaterThanZero()
+			.SetDisplay("Slow SMA", "Length for slow SMA", "Parameters");
 		_profitPoints = Param(nameof(ProfitPoints), 300m)
-		.SetDisplay("Profit", "Take profit in price units", "Parameters");
+			.SetDisplay("Profit", "Take profit in price units", "Parameters");
 		_lossPoints = Param(nameof(LossPoints), 300m)
-		.SetDisplay("Loss", "Stop loss in price units", "Parameters");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Working timeframe", "Parameters");
+			.SetDisplay("Loss", "Stop loss in price units", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Working timeframe", "Parameters");
 	}
 
 	/// <inheritdoc />
@@ -66,7 +65,6 @@ public class TableToFilterTradesPerDayStrategy : Strategy
 		_entryPrice = 0m;
 		_target = 0m;
 		_stop = 0m;
-		_volume = 0m;
 		_prevFast = 0m;
 		_prevSlow = 0m;
 	}
@@ -75,85 +73,64 @@ public class TableToFilterTradesPerDayStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		var fast = new SMA { Length = FastLength };
-		var slow = new SMA { Length = SlowLength };
+		var fast = new SimpleMovingAverage { Length = FastLength };
+		var slow = new SimpleMovingAverage { Length = SlowLength };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(fast, slow, ProcessCandle).Start();
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, fast);
-			DrawIndicator(area, slow);
-		}
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// Check exits first
+		if (Position > 0 && _entryPrice > 0)
+		{
+			if (candle.ClosePrice >= _target || candle.ClosePrice <= _stop)
+			{
+				SellMarket();
+				_entryPrice = 0m;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			if (candle.ClosePrice <= _target || candle.ClosePrice >= _stop)
+			{
+				BuyMarket();
+				_entryPrice = 0m;
+				_prevFast = fastValue;
+				_prevSlow = slowValue;
+				return;
+			}
+		}
 
-		var crossUp = _prevFast <= _prevSlow && fastValue > slowValue;
-		var crossDown = _prevFast >= _prevSlow && fastValue < slowValue;
+		// Entries only when flat
+		if (Position == 0 && _prevFast != 0 && _prevSlow != 0)
+		{
+			var crossUp = _prevFast <= _prevSlow && fastValue > slowValue;
+			var crossDown = _prevFast >= _prevSlow && fastValue < slowValue;
 
-		if (crossUp && Position <= 0)
-		EnterLong(candle.ClosePrice);
-		else if (crossDown && Position >= 0)
-		EnterShort(candle.ClosePrice);
-
-		ManagePosition(candle);
+			if (crossUp)
+			{
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+				_target = candle.ClosePrice + ProfitPoints;
+				_stop = candle.ClosePrice - LossPoints;
+			}
+			else if (crossDown)
+			{
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+				_target = candle.ClosePrice - ProfitPoints;
+				_stop = candle.ClosePrice + LossPoints;
+			}
+		}
 
 		_prevFast = fastValue;
 		_prevSlow = slowValue;
-	}
-
-	private void EnterLong(decimal price)
-	{
-		_volume = Volume + Math.Abs(Position);
-		BuyMarket(_volume);
-		_entryPrice = price;
-		_target = price + ProfitPoints;
-		_stop = price - LossPoints;
-	}
-
-	private void EnterShort(decimal price)
-	{
-		_volume = Volume + Math.Abs(Position);
-		SellMarket(_volume);
-		_entryPrice = price;
-		_target = price - ProfitPoints;
-		_stop = price + LossPoints;
-	}
-
-	private void ManagePosition(ICandleMessage candle)
-	{
-		if (Position > 0)
-		{
-			if (candle.HighPrice >= _target || candle.LowPrice <= _stop)
-			{
-				SellMarket(Math.Abs(Position));
-				ResetTrade();
-			}
-		}
-		else if (Position < 0)
-		{
-			if (candle.LowPrice <= _target || candle.HighPrice >= _stop)
-			{
-				BuyMarket(Math.Abs(Position));
-				ResetTrade();
-			}
-		}
-	}
-
-	private void ResetTrade()
-	{
-		_entryPrice = 0m;
-		_target = 0m;
-		_stop = 0m;
-		_volume = 0m;
 	}
 }

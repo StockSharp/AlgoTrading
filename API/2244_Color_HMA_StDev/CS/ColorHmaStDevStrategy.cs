@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,88 +12,42 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Hull Moving Average with standard deviation filter.
-/// It opens positions when price deviates from the HMA by a defined multiplier.
+/// Opens positions when price deviates from the HMA by a defined multiplier.
 /// </summary>
 public class ColorHmaStDevStrategy : Strategy
 {
 	private readonly StrategyParam<int> _hmaPeriod;
 	private readonly StrategyParam<int> _stdPeriod;
 	private readonly StrategyParam<decimal> _k1;
-	private readonly StrategyParam<decimal> _k2;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Hull Moving Average period.
-	/// </summary>
-	public int HmaPeriod
-	{
-		get => _hmaPeriod.Value;
-		set => _hmaPeriod.Value = value;
-	}
+	public int HmaPeriod { get => _hmaPeriod.Value; set => _hmaPeriod.Value = value; }
+	public int StdPeriod { get => _stdPeriod.Value; set => _stdPeriod.Value = value; }
+	public decimal K1 { get => _k1.Value; set => _k1.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Standard deviation period.
-	/// </summary>
-	public int StdPeriod
-	{
-		get => _stdPeriod.Value;
-		set => _stdPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Deviation multiplier for entries.
-	/// </summary>
-	public decimal K1
-	{
-		get => _k1.Value;
-		set => _k1.Value = value;
-	}
-
-	/// <summary>
-	/// Deviation multiplier for exits.
-	/// </summary>
-	public decimal K2
-	{
-		get => _k2.Value;
-		set => _k2.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize ColorHmaStDev strategy.
-	/// </summary>
 	public ColorHmaStDevStrategy()
 	{
 		_hmaPeriod = Param(nameof(HmaPeriod), 13)
 			.SetDisplay("HMA Period", "Hull Moving Average period", "Indicators")
-			
 			.SetOptimize(5, 30, 2);
 
 		_stdPeriod = Param(nameof(StdPeriod), 9)
 			.SetDisplay("StdDev Period", "Standard deviation period", "Indicators")
-			
 			.SetOptimize(5, 20, 1);
 
-		_k1 = Param(nameof(K1), 1.5m)
+		_k1 = Param(nameof(K1), 0.5m)
 			.SetDisplay("Entry Multiplier", "Deviation multiplier for entry", "Parameters")
-			
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetOptimize(0.5m, 3m, 0.5m);
 
-		_k2 = Param(nameof(K2), 2.5m)
-			.SetDisplay("Exit Multiplier", "Deviation multiplier for exit", "Parameters")
-			
-			.SetOptimize(2m, 5m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to subscribe", "Common");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -129,35 +80,15 @@ public class ColorHmaStDevStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		if (stdValue == 0)
+			return;
+
 		var upperEntry = hmaValue + K1 * stdValue;
 		var lowerEntry = hmaValue - K1 * stdValue;
-		var upperExit = hmaValue + K2 * stdValue;
-		var lowerExit = hmaValue - K2 * stdValue;
 
-		// Entry rules based on deviation from HMA
 		if (candle.ClosePrice > upperEntry && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			LogInfo($"Buy signal: close {candle.ClosePrice} > {upperEntry}");
-		}
+			BuyMarket();
 		else if (candle.ClosePrice < lowerEntry && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			LogInfo($"Sell signal: close {candle.ClosePrice} < {lowerEntry}");
-		}
-
-		// Exit rules when price returns inside wider band
-		if (Position > 0 && candle.ClosePrice < lowerExit)
-		{
-			SellMarket(Position);
-			LogInfo($"Exit long: close {candle.ClosePrice} < {lowerExit}");
-		}
-		else if (Position < 0 && candle.ClosePrice > upperExit)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: close {candle.ClosePrice} > {upperExit}");
-		}
+			SellMarket();
 	}
 }

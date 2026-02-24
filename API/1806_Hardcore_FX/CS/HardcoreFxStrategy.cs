@@ -94,7 +94,7 @@ public class HardcoreFxStrategy : Strategy
 		_trailingStop = Param(nameof(TrailingStop), 500)
 			.SetDisplay("Trailing Stop", "Trailing distance in points", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -140,9 +140,6 @@ public class HardcoreFxStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		// Update ZigZag pivots.
 		if (candle.HighPrice >= highest && _direction != 1)
 		{
@@ -157,21 +154,7 @@ public class HardcoreFxStrategy : Strategy
 
 		var step = Security.PriceStep ?? 1m;
 
-		// Entry signals.
-		if (_lastHigh != 0m && candle.ClosePrice > _lastHigh && Position <= 0)
-		{
-			_entryPrice = candle.ClosePrice;
-			_highestSinceEntry = _entryPrice;
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (_lastLow != 0m && candle.ClosePrice < _lastLow && Position >= 0)
-		{
-			_entryPrice = candle.ClosePrice;
-			_lowestSinceEntry = _entryPrice;
-			SellMarket(Volume + Math.Abs(Position));
-		}
-
-		// Manage open position.
+		// Manage open position first.
 		if (Position > 0)
 		{
 			_highestSinceEntry = Math.Max(_highestSinceEntry, candle.HighPrice);
@@ -181,7 +164,10 @@ public class HardcoreFxStrategy : Strategy
 			var trailPrice = _highestSinceEntry - TrailingStop * step;
 
 			if (candle.LowPrice <= stopPrice || candle.HighPrice >= takePrice || candle.LowPrice <= trailPrice)
-				SellMarket(Math.Abs(Position));
+			{
+				SellMarket();
+				return;
+			}
 		}
 		else if (Position < 0)
 		{
@@ -192,7 +178,27 @@ public class HardcoreFxStrategy : Strategy
 			var trailPrice = _lowestSinceEntry + TrailingStop * step;
 
 			if (candle.HighPrice >= stopPrice || candle.LowPrice <= takePrice || candle.HighPrice >= trailPrice)
-				BuyMarket(Math.Abs(Position));
+			{
+				BuyMarket();
+				return;
+			}
+		}
+
+		// Entry signals.
+		if (Position == 0)
+		{
+			if (_lastHigh != 0m && candle.ClosePrice > _lastHigh)
+			{
+				_entryPrice = candle.ClosePrice;
+				_highestSinceEntry = _entryPrice;
+				BuyMarket();
+			}
+			else if (_lastLow != 0m && candle.ClosePrice < _lastLow)
+			{
+				_entryPrice = candle.ClosePrice;
+				_lowestSinceEntry = _entryPrice;
+				SellMarket();
+			}
 		}
 	}
 }

@@ -11,31 +11,21 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// True Strength Index calculated on DeMarker indicator.
+/// True Strength Index crossover strategy filtered by DeMarker.
 /// Trades on crossover between TSI and its signal line.
 /// </summary>
 public class TSIDeMarkerStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _demarkerPeriod;
-	private readonly StrategyParam<int> _shortLength;
-	private readonly StrategyParam<int> _longLength;
-	private readonly StrategyParam<int> _signalLength;
-	
-	private DeMarker _demarker;
-	private TrueStrengthIndex _tsi;
-	private SimpleMovingAverage _signal;
-	
+
 	private decimal _prevTsi;
 	private decimal _prevSignal;
-	private bool _isFirst = true;
-	
+	private bool _initialized;
+
 	/// <summary>
 	/// Candle type for processing.
 	/// </summary>
@@ -44,7 +34,7 @@ public class TSIDeMarkerStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
+
 	/// <summary>
 	/// Period for DeMarker indicator.
 	/// </summary>
@@ -53,108 +43,83 @@ public class TSIDeMarkerStrategy : Strategy
 		get => _demarkerPeriod.Value;
 		set => _demarkerPeriod.Value = value;
 	}
-	
-	/// <summary>
-	/// Short smoothing length for TSI.
-	/// </summary>
-	public int ShortLength
-	{
-		get => _shortLength.Value;
-		set => _shortLength.Value = value;
-	}
-	
-	/// <summary>
-	/// Long smoothing length for TSI.
-	/// </summary>
-	public int LongLength
-	{
-		get => _longLength.Value;
-		set => _longLength.Value = value;
-	}
-	
-	/// <summary>
-	/// Moving average period for signal line.
-	/// </summary>
-	public int SignalLength
-	{
-		get => _signalLength.Value;
-		set => _signalLength.Value = value;
-	}
-	
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
+
 	public TSIDeMarkerStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe for strategy", "General");
-		_demarkerPeriod = Param(nameof(DemarkerPeriod), 25)
-		.SetDisplay("DeMarker Period", "Period for DeMarker", "Indicators");
-		_shortLength = Param(nameof(ShortLength), 5)
-		.SetDisplay("Short Length", "Short EMA for TSI", "Indicators");
-		_longLength = Param(nameof(LongLength), 8)
-		.SetDisplay("Long Length", "Long EMA for TSI", "Indicators");
-		_signalLength = Param(nameof(SignalLength), 20)
-		.SetDisplay("Signal Length", "Smoothing for TSI", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
+		_demarkerPeriod = Param(nameof(DemarkerPeriod), 14)
+			.SetDisplay("DeMarker Period", "Period for DeMarker", "Indicators");
 	}
-	
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		StartProtection(null, null);
-		
-		_demarker = new DeMarker { Length = DemarkerPeriod };
-		_tsi = new TrueStrengthIndex { ShortLength = ShortLength, LongLength = LongLength };
-		_signal = new SMA { Length = SignalLength };
-		
+
+		var tsi = new TrueStrengthIndex();
+		var demarker = new DeMarker { Length = DemarkerPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-		
+		subscription
+			.BindEx(tsi, demarker, ProcessCandle)
+			.Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _tsi);
-			DrawIndicator(area, _signal);
+			DrawIndicator(area, tsi);
 			DrawOwnTrades(area);
 		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle)
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue tsiValue, IIndicatorValue demarkerValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		var demVal = _demarker.Process(candle).ToDecimal();
-		var tsiVal = _tsi.Process(demVal, candle.ServerTime).ToDecimal();
-		var signalVal = _signal.Process(tsiVal, candle.ServerTime).ToDecimal();
-		
-		if (_isFirst)
+			return;
+
+		if (!tsiValue.IsFinal || !demarkerValue.IsFinal)
+			return;
+
+		var tv = (ITrueStrengthIndexValue)tsiValue;
+		if (tv.Tsi is not decimal tsi || tv.Signal is not decimal signal)
+			return;
+
+		var dem = demarkerValue.GetValue<decimal>();
+
+		if (!_initialized)
 		{
-			_prevTsi = tsiVal;
-			_prevSignal = signalVal;
-			_isFirst = false;
+			_prevTsi = tsi;
+			_prevSignal = signal;
+			_initialized = true;
 			return;
 		}
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
+
+		var crossUp = _prevTsi <= _prevSignal && tsi > signal;
+		var crossDown = _prevTsi >= _prevSignal && tsi < signal;
+
+		// DeMarker: 0-1 range, >0.7 overbought, <0.3 oversold
+		if (crossUp && dem < 0.7m && Position <= 0)
 		{
-			_prevTsi = tsiVal;
-			_prevSignal = signalVal;
-			return;
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-		
-		var crossUp = _prevTsi <= _prevSignal && tsiVal > signalVal;
-		var crossDown = _prevTsi >= _prevSignal && tsiVal < signalVal;
-		
-		if (crossUp && Position <= 0)
-		BuyMarket(Volume + Math.Abs(Position));
-		else if (crossDown && Position >= 0)
-		SellMarket(Volume + Math.Abs(Position));
-		
-		_prevTsi = tsiVal;
-		_prevSignal = signalVal;
+		else if (crossDown && dem > 0.3m && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+		}
+
+		_prevTsi = tsi;
+		_prevSignal = signal;
 	}
 }

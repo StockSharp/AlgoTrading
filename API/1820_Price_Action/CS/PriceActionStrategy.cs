@@ -95,7 +95,7 @@ public class PriceActionStrategy : Strategy
 		_initialDirection = Param(nameof(InitialDirection), TradeDirections.Buy)
 			.SetDisplay("Initial Direction", "First trade side", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for logic", "General");
 	}
 
@@ -130,14 +130,14 @@ public class PriceActionStrategy : Strategy
 		{
 			if (_nextDirection == TradeDirections.Buy)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				_stopPrice = candle.ClosePrice - TP;
 				_takeProfitPrice = candle.ClosePrice + Leverage * TP;
 				_nextDirection = TradeDirections.Sell;
 			}
 			else
 			{
-				SellMarket(Volume);
+				SellMarket();
 				_stopPrice = candle.ClosePrice + TP;
 				_takeProfitPrice = candle.ClosePrice - Leverage * TP;
 				_nextDirection = TradeDirections.Buy;
@@ -153,7 +153,7 @@ public class PriceActionStrategy : Strategy
 			}
 
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
-				SellMarket(Position);
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
@@ -165,7 +165,7 @@ public class PriceActionStrategy : Strategy
 			}
 
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
-				BuyMarket(-Position);
+				BuyMarket();
 		}
 	}
 }

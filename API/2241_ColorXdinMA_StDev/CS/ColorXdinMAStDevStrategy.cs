@@ -1,9 +1,6 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -12,10 +9,9 @@ using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Strategy based on difference of two moving averages with standard deviation filter.
+/// Buys when xdin change exceeds K1*StdDev, sells when below -K1*StdDev.
 /// </summary>
 public class ColorXdinMAStDevStrategy : Strategy
 {
@@ -24,38 +20,26 @@ public class ColorXdinMAStDevStrategy : Strategy
 	private readonly StrategyParam<int> _plusLength;
 	private readonly StrategyParam<int> _stdPeriod;
 	private readonly StrategyParam<decimal> _k1;
-	private readonly StrategyParam<decimal> _k2;
 
-	private SimpleMovingAverage _mainMa;
-	private SimpleMovingAverage _plusMa;
 	private StandardDeviation _stdDev;
-
 	private decimal? _prevXdin;
 
 	public ColorXdinMAStDevStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Type of candles", "General");
 
 		_mainLength = Param(nameof(MainLength), 10)
-			.SetDisplay("Main MA Length", "Length of primary moving average", "Parameters")
-			;
+			.SetDisplay("Main MA Length", "Length of primary moving average", "Parameters");
 
 		_plusLength = Param(nameof(PlusLength), 20)
-			.SetDisplay("Plus MA Length", "Length of secondary moving average", "Parameters")
-			;
+			.SetDisplay("Plus MA Length", "Length of secondary moving average", "Parameters");
 
 		_stdPeriod = Param(nameof(StdPeriod), 9)
-			.SetDisplay("StdDev Period", "Period for standard deviation of MA changes", "Parameters")
-			;
+			.SetDisplay("StdDev Period", "Period for standard deviation of MA changes", "Parameters");
 
-		_k1 = Param(nameof(K1), 1.5m)
-			.SetDisplay("Filter K1", "First multiplier for standard deviation", "Parameters")
-			;
-
-		_k2 = Param(nameof(K2), 2.5m)
-			.SetDisplay("Filter K2", "Second multiplier for standard deviation", "Parameters")
-			;
+		_k1 = Param(nameof(K1), 0.5m)
+			.SetDisplay("Filter K1", "Multiplier for standard deviation filter", "Parameters");
 	}
 
 	public DataType CandleType
@@ -88,12 +72,6 @@ public class ColorXdinMAStDevStrategy : Strategy
 		set => _k1.Value = value;
 	}
 
-	public decimal K2
-	{
-		get => _k2.Value;
-		set => _k2.Value = value;
-	}
-
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
@@ -105,21 +83,23 @@ public class ColorXdinMAStDevStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_mainMa = new SMA { Length = MainLength };
-		_plusMa = new SMA { Length = PlusLength };
+		_prevXdin = null;
 		_stdDev = new StandardDeviation { Length = StdPeriod };
+
+		var mainMa = new SimpleMovingAverage { Length = MainLength };
+		var plusMa = new SimpleMovingAverage { Length = PlusLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_mainMa, _plusMa, ProcessCandle)
+			.Bind(mainMa, plusMa, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _mainMa);
-			DrawIndicator(area, _plusMa);
+			DrawIndicator(area, mainMa);
+			DrawIndicator(area, plusMa);
 			DrawOwnTrades(area);
 		}
 	}
@@ -129,6 +109,7 @@ public class ColorXdinMAStDevStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		// xdin = extrapolated price using MA difference
 		var xdin = mainValue * 2m - plusValue;
 
 		if (_prevXdin is null)
@@ -140,9 +121,12 @@ public class ColorXdinMAStDevStrategy : Strategy
 		var change = xdin - _prevXdin.Value;
 		_prevXdin = xdin;
 
-		var stDev = _stdDev.Process(new DecimalIndicatorValue(_stdDev, change, candle.ServerTime)).ToDecimal();
+		var stdResult = _stdDev.Process(new DecimalIndicatorValue(_stdDev, change, candle.ServerTime) { IsFinal = true });
+		if (!_stdDev.IsFormed)
+			return;
 
-		if (!_stdDev.IsFormed || stDev == 0)
+		var stDev = stdResult.ToDecimal();
+		if (stDev == 0)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
@@ -150,15 +134,9 @@ public class ColorXdinMAStDevStrategy : Strategy
 
 		var filter = K1 * stDev;
 
-		if (change > filter)
-		{
-			if (Position <= 0)
-				BuyMarket();
-		}
-		else if (change < -filter)
-		{
-			if (Position >= 0)
-				SellMarket();
-		}
+		if (change > filter && Position <= 0)
+			BuyMarket();
+		else if (change < -filter && Position >= 0)
+			SellMarket();
 	}
 }

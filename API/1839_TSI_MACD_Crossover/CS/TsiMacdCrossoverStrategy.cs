@@ -1,19 +1,17 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
-
-
 
 /// <summary>
 /// True Strength Index MACD crossover strategy.
@@ -22,14 +20,10 @@ namespace StockSharp.Samples.Strategies;
 public class TsiMacdCrossoverStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _longLength;
-	private readonly StrategyParam<int> _shortLength;
-	private readonly StrategyParam<int> _signalLength;
 
-	private TrueStrengthIndex _tsi;
-	private ExponentialMovingAverage _signal;
 	private decimal _prevTsi;
 	private decimal _prevSignal;
+	private bool _initialized;
 
 	/// <summary>
 	/// Candle type for processing.
@@ -40,43 +34,10 @@ public class TsiMacdCrossoverStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Long smoothing length for TSI.
-	/// </summary>
-	public int LongLength
-	{
-		get => _longLength.Value;
-		set => _longLength.Value = value;
-	}
-
-	/// <summary>
-	/// Short smoothing length for TSI.
-	/// </summary>
-	public int ShortLength
-	{
-		get => _shortLength.Value;
-		set => _shortLength.Value = value;
-	}
-
-	/// <summary>
-	/// Signal line EMA length.
-	/// </summary>
-	public int SignalLength
-	{
-		get => _signalLength.Value;
-		set => _signalLength.Value = value;
-	}
-
 	public TsiMacdCrossoverStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-		_longLength = Param(nameof(LongLength), 21)
-			.SetDisplay("Long Length", "Slow period for TSI", "Indicators");
-		_shortLength = Param(nameof(ShortLength), 8)
-			.SetDisplay("Short Length", "Fast period for TSI", "Indicators");
-		_signalLength = Param(nameof(SignalLength), 5)
-			.SetDisplay("Signal Length", "EMA period for signal line", "Indicators");
 	}
 
 	/// <inheritdoc />
@@ -86,70 +47,63 @@ public class TsiMacdCrossoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevTsi = default;
-		_prevSignal = default;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_tsi = new TrueStrengthIndex
-		{
-			LongLength = LongLength,
-			ShortLength = ShortLength
-		};
-
-		_signal = new EMA { Length = SignalLength };
+		var tsi = new TrueStrengthIndex();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_tsi, ProcessCandle)
+			.BindEx(tsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _tsi);
-			DrawIndicator(area, _signal);
+			DrawIndicator(area, tsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal tsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue tsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var signalValue = _signal.Process(new DecimalIndicatorValue(_signal, tsiValue, candle.ServerTime));
-		if (!signalValue.IsFormed)
+		if (!tsiValue.IsFinal)
+			return;
+
+		var tv = (ITrueStrengthIndexValue)tsiValue;
+		if (tv.Tsi is not decimal tsi || tv.Signal is not decimal signal)
+			return;
+
+		if (!_initialized)
 		{
-			_prevTsi = tsiValue;
-			_prevSignal = signalValue.ToDecimal();
+			_prevTsi = tsi;
+			_prevSignal = signal;
+			_initialized = true;
 			return;
 		}
 
-		var signal = signalValue.ToDecimal();
+		var crossUp = _prevTsi <= _prevSignal && tsi > signal;
+		var crossDown = _prevTsi >= _prevSignal && tsi < signal;
 
-		if (IsFormedAndOnlineAndAllowTrading())
+		if (crossUp && Position <= 0)
 		{
-			var crossUp = _prevTsi <= _prevSignal && tsiValue > signal;
-			var crossDown = _prevTsi >= _prevSignal && tsiValue < signal;
-
-			if (crossUp && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-			else if (crossDown && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+		}
+		else if (crossDown && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 
-		_prevTsi = tsiValue;
+		_prevTsi = tsi;
 		_prevSignal = signal;
 	}
 }

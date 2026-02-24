@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TfmStrategy : Strategy
 {
-	private readonly StrategyParam<TimeSpan> _candleTime;
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _multiplier;
 	private readonly StrategyParam<bool> _allowShort;
 
@@ -26,9 +26,9 @@ public class TfmStrategy : Strategy
 	private decimal _lowLevel;
 
 	/// <summary>
-	/// Base candle timeframe.
+	/// Base candle type.
 	/// </summary>
-	public TimeSpan CandleTime { get => _candleTime.Value; set => _candleTime.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
 	/// Higher timeframe multiplier.
@@ -40,29 +40,23 @@ public class TfmStrategy : Strategy
 	/// </summary>
 	public bool AllowShort { get => _allowShort.Value; set => _allowShort.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="TfmStrategy"/> class.
-	/// </summary>
 	public TfmStrategy()
 	{
-		_candleTime = Param(nameof(CandleTime), TimeSpan.FromMinutes(1))
-			.SetDisplay("Candle Time", "Base candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Base candle timeframe", "General");
 
 		_multiplier = Param(nameof(Multiplier), 2)
 			.SetGreaterThanZero()
-			.SetDisplay("Multiplier", "Higher timeframe multiplier", "Parameters")
-			
-			.SetOptimize(2, 5, 1);
+			.SetDisplay("Multiplier", "Higher timeframe multiplier", "Parameters");
 
-		_allowShort = Param(nameof(AllowShort), false)
+		_allowShort = Param(nameof(AllowShort), true)
 			.SetDisplay("Allow Short", "Enable short trades", "Parameters");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, CandleTime.TimeFrame());
-		yield return (Security, TimeSpan.FromTicks(CandleTime.Ticks * Multiplier).TimeFrame());
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -78,47 +72,64 @@ public class TfmStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var baseSub = SubscribeCandles(CandleTime.TimeFrame());
-		baseSub.Bind(ProcessBase).Start();
+		// Use a dummy SMA on base candles so Bind delivers candles
+		var sma = new SimpleMovingAverage { Length = 10 };
 
-		var highSub = SubscribeCandles(TimeSpan.FromTicks(CandleTime.Ticks * Multiplier).TimeFrame());
-		highSub.Bind(ProcessHigh).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, baseSub);
-			DrawOwnTrades(area);
-		}
+		var baseSub = SubscribeCandles(CandleType);
+		baseSub.Bind(sma, ProcessBase).Start();
 	}
 
-	private void ProcessHigh(ICandleMessage candle)
+	private void ProcessBase(ICandleMessage candle, decimal smaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_highLevel = candle.HighPrice;
-		_lowLevel = candle.LowPrice;
-	}
+		// Update higher timeframe levels using rolling window approach
+		// Use the close prices to track high/low over a window of Multiplier candles
+		UpdateHighLowLevels(candle);
 
-	private void ProcessBase(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_highLevel == 0 || _lowLevel == 0)
 			return;
 
 		if (candle.ClosePrice > _highLevel && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		else if (candle.ClosePrice < _lowLevel)
 		{
 			if (AllowShort && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 			else if (!AllowShort && Position > 0)
-				SellMarket(Position);
+				SellMarket();
+		}
+	}
+
+	private readonly List<(decimal high, decimal low)> _candleBuffer = new();
+
+	private void UpdateHighLowLevels(ICandleMessage candle)
+	{
+		_candleBuffer.Add((candle.HighPrice, candle.LowPrice));
+
+		// Keep a window of Multiplier candles to simulate the higher timeframe
+		var windowSize = Multiplier;
+		if (_candleBuffer.Count < windowSize)
+			return;
+
+		// When we have enough candles, compute high/low of the completed "higher tf" bar
+		if (_candleBuffer.Count % windowSize == 0)
+		{
+			var start = _candleBuffer.Count - windowSize;
+			var high = decimal.MinValue;
+			var low = decimal.MaxValue;
+
+			for (var i = start; i < _candleBuffer.Count; i++)
+			{
+				if (_candleBuffer[i].high > high) high = _candleBuffer[i].high;
+				if (_candleBuffer[i].low < low) low = _candleBuffer[i].low;
+			}
+
+			_highLevel = high;
+			_lowLevel = low;
 		}
 	}
 }

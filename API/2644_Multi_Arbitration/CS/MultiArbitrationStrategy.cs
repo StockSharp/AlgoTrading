@@ -117,9 +117,6 @@ public class MultiArbitrationStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!_initialOrderPlaced)
 		{
 			OpenLong(candle);

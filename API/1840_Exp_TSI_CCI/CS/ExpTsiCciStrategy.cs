@@ -1,37 +1,31 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Strategy based on True Strength Index calculated from Commodity Channel Index.
-/// Opens long when TSI crosses above its signal line and short when below.
+/// Strategy based on True Strength Index crossover filtered by Commodity Channel Index.
+/// Opens long when TSI crosses above its signal line and CCI is positive,
+/// opens short when TSI crosses below its signal line and CCI is negative.
 /// </summary>
 public class ExpTsiCciStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _cciPeriod;
-	private readonly StrategyParam<int> _tsiShortLength;
-	private readonly StrategyParam<int> _tsiLongLength;
-	private readonly StrategyParam<int> _signalLength;
-
-	private CommodityChannelIndex _cci;
-	private TrueStrengthIndex _tsi;
-	private ExponentialMovingAverage _signal;
 
 	private decimal _prevTsi;
 	private decimal _prevSignal;
+	private bool _initialized;
 
 	/// <summary>
 	/// Candle type for strategy calculation.
@@ -51,64 +45,14 @@ public class ExpTsiCciStrategy : Strategy
 		set => _cciPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Short smoothing length for TSI.
-	/// </summary>
-	public int TsiShortLength
-	{
-		get => _tsiShortLength.Value;
-		set => _tsiShortLength.Value = value;
-	}
-
-	/// <summary>
-	/// Long smoothing length for TSI.
-	/// </summary>
-	public int TsiLongLength
-	{
-		get => _tsiLongLength.Value;
-		set => _tsiLongLength.Value = value;
-	}
-
-	/// <summary>
-	/// Signal line EMA length.
-	/// </summary>
-	public int SignalLength
-	{
-		get => _signalLength.Value;
-		set => _signalLength.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public ExpTsiCciStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_cciPeriod = Param(nameof(CciPeriod), 15)
+		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("CCI Period", "CCI calculation period", "CCI")
-			
-			.SetOptimize(5, 40, 1);
-
-		_tsiShortLength = Param(nameof(TsiShortLength), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("TSI Short Length", "Short smoothing length", "TSI")
-			
-			.SetOptimize(2, 20, 1);
-
-		_tsiLongLength = Param(nameof(TsiLongLength), 8)
-			.SetGreaterThanZero()
-			.SetDisplay("TSI Long Length", "Long smoothing length", "TSI")
-			
-			.SetOptimize(5, 40, 1);
-
-		_signalLength = Param(nameof(SignalLength), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Signal Length", "Signal EMA length", "TSI")
-			
-			.SetOptimize(5, 30, 1);
+			.SetDisplay("CCI Period", "CCI calculation period", "CCI");
 	}
 
 	/// <inheritdoc />
@@ -118,66 +62,64 @@ public class ExpTsiCciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevTsi = default;
-		_prevSignal = default;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_cci = new CommodityChannelIndex { Length = CciPeriod };
-		_tsi = new TrueStrengthIndex { ShortLength = TsiShortLength, LongLength = TsiLongLength };
-		_signal = new EMA { Length = SignalLength };
+		var tsi = new TrueStrengthIndex();
+		var cci = new CommodityChannelIndex { Length = CciPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_cci, ProcessCandle)
+			.BindEx(tsi, cci, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _tsi);
-			DrawIndicator(area, _signal);
+			DrawIndicator(area, tsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal cciValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue tsiValue, IIndicatorValue cciValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var tsiValue = _tsi.Process(new DecimalIndicatorValue(_tsi, cciValue, candle.ServerTime));
-		if (!tsiValue.IsFinal)
+		if (!tsiValue.IsFinal || !cciValue.IsFinal)
 			return;
-		var tsi = tsiValue.ToDecimal();
 
-		var signalValue = _signal.Process(new DecimalIndicatorValue(_signal, tsi, candle.ServerTime));
-		if (!signalValue.IsFinal)
+		var tv = (ITrueStrengthIndexValue)tsiValue;
+		if (tv.Tsi is not decimal tsi || tv.Signal is not decimal signal)
 			return;
-		var signal = signalValue.ToDecimal();
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var cci = cciValue.GetValue<decimal>();
+
+		if (!_initialized)
 		{
 			_prevTsi = tsi;
 			_prevSignal = signal;
+			_initialized = true;
 			return;
 		}
 
 		var crossUp = _prevTsi <= _prevSignal && tsi > signal;
 		var crossDown = _prevTsi >= _prevSignal && tsi < signal;
 
-		if (crossUp && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (crossDown && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		if (crossUp && cci > 0 && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+		}
+		else if (crossDown && cci < 0 && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+		}
 
 		_prevTsi = tsi;
 		_prevSignal = signal;

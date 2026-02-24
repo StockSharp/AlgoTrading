@@ -1,4 +1,3 @@
-
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -12,101 +11,28 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// SwingCyborg strategy using RSI overbought/oversold levels.
+/// Buys on oversold and sells on overbought.
+/// </summary>
 public class SwingCyborgStrategy : Strategy
 {
-	private readonly StrategyParam<TrendTypes> _trendPrediction;
-	private readonly StrategyParam<TrendTimeframes> _trendTimeframe;
-	private readonly StrategyParam<DateTimeOffset> _trendStart;
-	private readonly StrategyParam<DateTimeOffset> _trendEnd;
-	private readonly StrategyParam<Aggressiveness> _mode;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private DataType _candleType;
-	private int _takeProfitSteps;
-	private int _stopLossSteps;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-
-	/// <summary>
-	/// Expected trend direction.
-	/// </summary>
-	public TrendTypes TrendPrediction
-	{
-		get => _trendPrediction.Value;
-		set => _trendPrediction.Value = value;
-	}
-
-	/// <summary>
-	/// Timeframe of expected trend.
-	/// </summary>
-	public TrendTimeframes TrendTimeframe
-	{
-		get => _trendTimeframe.Value;
-		set => _trendTimeframe.Value = value;
-	}
-
-	/// <summary>
-	/// Beginning of the expected trend.
-	/// </summary>
-	public DateTimeOffset TrendStart
-	{
-		get => _trendStart.Value;
-		set => _trendStart.Value = value;
-	}
-
-	/// <summary>
-	/// End of the expected trend.
-	/// </summary>
-	public DateTimeOffset TrendEnd
-	{
-		get => _trendEnd.Value;
-		set => _trendEnd.Value = value;
-	}
-
-	/// <summary>
-	/// Money management preset.
-	/// </summary>
-	public Aggressiveness Mode
-	{
-		get => _mode.Value;
-		set => _mode.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes <see cref="SwingCyborgStrategy"/>.
-	/// </summary>
 	public SwingCyborgStrategy()
 	{
-
-		_trendPrediction = Param(nameof(TrendPrediction), TrendTypes.Uptrend)
-		.SetDisplay("Trend Prediction", "Expected trend direction", "General");
-
-		_trendTimeframe = Param(nameof(TrendTimeframe), TrendTimeframes.H1)
-		.SetDisplay("Trend Timeframe", "Timeframe of expected trend", "General");
-
-		_trendStart = Param(nameof(TrendStart), new DateTimeOffset(2023, 1, 1, 0, 0, 0, TimeSpan.Zero))
-		.SetDisplay("Trend Start", "Beginning of the expected trend", "General");
-
-		_trendEnd = Param(nameof(TrendEnd), new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero))
-		.SetDisplay("Trend End", "End of the expected trend", "General");
-
-		_mode = Param(nameof(Mode), Aggressiveness.Medium)
-		.SetDisplay("Aggressiveness", "Money management preset", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		_candleType = TrendTimeframe switch
-		{
-			TrendTimeframes.M30 => TimeSpan.FromMinutes(30).TimeFrame(),
-			TrendTimeframes.H1 => TimeSpan.FromHours(1).TimeFrame(),
-			TrendTimeframes.H4 => TimeSpan.FromHours(4).TimeFrame(),
-			_ => TimeSpan.FromHours(1).TimeFrame()
-		};
-		return [(Security, _candleType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -114,27 +40,10 @@ public class SwingCyborgStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		(_takeProfitSteps, _stopLossSteps) = Mode switch
-		{
-			Aggressiveness.Low => (300, 200),
-			Aggressiveness.Medium => (500, 250),
-			Aggressiveness.High => (600, 300),
-			_ => (500, 250)
-		};
-
 		var rsi = new RelativeStrengthIndex { Length = 14 };
-		var subscription = SubscribeCandles(_candleType);
+
+		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(rsi, ProcessCandle).Start();
-
-		StartProtection(new Unit(_takeProfitSteps, UnitTypes.Step), new Unit(_stopLossSteps, UnitTypes.Step));
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi);
-			DrawOwnTrades(area);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
@@ -142,53 +51,20 @@ public class SwingCyborgStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var currentTime = candle.OpenTime;
-
-		if (currentTime < TrendStart || currentTime > TrendEnd)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (Position == 0)
+		if (Position > 0 && rsiValue >= 70m)
 		{
-			if (TrendPrediction == TrendTypes.Uptrend && rsiValue <= 65m)
-			{
-				BuyMarket(Volume);
-			}
-			else if (TrendPrediction == TrendTypes.Downtrend && rsiValue >= 35m)
-			{
-				SellMarket(Volume);
-			}
+			SellMarket();
 		}
-	}
-
-	/// <summary>
-	/// Expected trend direction.
-	/// </summary>
-	public enum TrendTypes
-	{
-		Uptrend,
-		Downtrend
-	}
-
-	/// <summary>
-	/// Timeframe of expected trend.
-	/// </summary>
-	public enum TrendTimeframes
-	{
-		M30,
-		H1,
-		H4
-	}
-
-	/// <summary>
-	/// Money management preset.
-	/// </summary>
-	public enum Aggressiveness
-	{
-		Low,
-		Medium,
-		High
+		else if (Position < 0 && rsiValue <= 30m)
+		{
+			BuyMarket();
+		}
+		else if (Position == 0)
+		{
+			if (rsiValue <= 30m)
+				BuyMarket();
+			else if (rsiValue >= 70m)
+				SellMarket();
+		}
 	}
 }

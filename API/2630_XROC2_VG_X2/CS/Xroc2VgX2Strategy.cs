@@ -86,10 +86,10 @@ public class Xroc2VgX2Strategy : Strategy
 	/// </summary>
 	public Xroc2VgX2Strategy()
 	{
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(6).TimeFrame())
+		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Higher TF", "Higher timeframe candles", "General");
 
-		_lowerCandleType = Param(nameof(LowerCandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_lowerCandleType = Param(nameof(LowerCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Lower TF", "Lower timeframe candles", "General");
 
 		_higherSignalBar = Param(nameof(HigherSignalBar), 1)
@@ -706,7 +706,7 @@ public class Xroc2VgX2Strategy : Strategy
 					break;
 			}
 
-			var indicatorValue = _smoother.Process(new DecimalIndicatorValue(_smoother, roc, time.UtcDateTime));
+			var indicatorValue = _smoother.Process(new DecimalIndicatorValue(_smoother, roc, time.UtcDateTime) { IsFinal = true });
 
 			return indicatorValue switch
 			{

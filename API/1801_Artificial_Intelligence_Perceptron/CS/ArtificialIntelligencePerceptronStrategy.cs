@@ -52,7 +52,7 @@ public class ArtificialIntelligencePerceptronStrategy : Strategy
 		_x3 = Param(nameof(X3), 16).SetDisplay("X3", "Perceptron weight 3", "Perceptron");
 		_x4 = Param(nameof(X4), 93).SetDisplay("X4", "Perceptron weight 4", "Perceptron");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -126,48 +126,18 @@ public class ArtificialIntelligencePerceptronStrategy : Strategy
 
 		if (Position > 0)
 		{
-			if (price <= _stopPrice)
+			if (price <= _stopPrice || openSell)
 			{
 				SellMarket();
 				return;
 			}
-
-			if (openSell)
-			{
-				var profit = price - _stopPrice;
-				if (profit > StopLoss * 2m * step)
-				{
-					SellMarket(Math.Abs(Position) + Volume);
-					_entryPrice = price;
-					_stopPrice = price + StopLoss * step;
-				}
-				else
-				{
-					_stopPrice = _entryPrice;
-				}
-			}
 		}
 		else if (Position < 0)
 		{
-			if (price >= _stopPrice)
+			if (price >= _stopPrice || openBuy)
 			{
 				BuyMarket();
 				return;
-			}
-
-			if (openBuy)
-			{
-				var profit = _stopPrice - price;
-				if (profit > StopLoss * 2m * step)
-				{
-					BuyMarket(Math.Abs(Position) + Volume);
-					_entryPrice = price;
-					_stopPrice = price - StopLoss * step;
-				}
-				else
-				{
-					_stopPrice = _entryPrice;
-				}
 			}
 		}
 	}

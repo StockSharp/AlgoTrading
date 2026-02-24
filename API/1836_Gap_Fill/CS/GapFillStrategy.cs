@@ -27,7 +27,7 @@ public class GapFillStrategy : Strategy
 	private decimal _prevHigh;
 	private decimal _prevLow;
 	private bool _hasPrev;
-	private DateTimeOffset _lastOrderTime;
+	private decimal _targetPrice;
 
 	/// <summary>
 	/// Minimum gap size in points (price steps).
@@ -37,7 +37,6 @@ public class GapFillStrategy : Strategy
 		get => _minGapSize.Value;
 		set => _minGapSize.Value = value;
 	}
-
 
 	/// <summary>
 	/// Candle type.
@@ -56,8 +55,7 @@ public class GapFillStrategy : Strategy
 		_minGapSize = Param(nameof(MinGapSize), 1)
 			.SetDisplay("Min Gap Size", "Minimum gap size in points", "Parameters");
 
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "Data");
 	}
 
@@ -74,7 +72,7 @@ public class GapFillStrategy : Strategy
 		_prevHigh = 0m;
 		_prevLow = 0m;
 		_hasPrev = false;
-		_lastOrderTime = default;
+		_targetPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -98,9 +96,6 @@ public class GapFillStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!_hasPrev)
 		{
 			_prevHigh = candle.HighPrice;
@@ -110,24 +105,31 @@ public class GapFillStrategy : Strategy
 		}
 
 		var priceStep = Security.PriceStep ?? 1m;
-		var spread = (Security.BestAsk?.Price - Security.BestBid?.Price) ?? 0m;
-		var threshold = MinGapSize * priceStep + spread;
+		var threshold = MinGapSize * priceStep;
 
-		// Check for gap up
-		if (candle.OpenTime != _lastOrderTime && candle.OpenPrice > _prevHigh + threshold && Position <= 0)
+		// Check if position target reached
+		if (Position > 0 && _targetPrice > 0 && candle.ClosePrice >= _targetPrice)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			BuyLimit(volume, _prevHigh + spread);
-			_lastOrderTime = candle.OpenTime;
+			SellMarket();
+			_targetPrice = 0;
 		}
-		// Check for gap down
-		else if (candle.OpenTime != _lastOrderTime && candle.OpenPrice < _prevLow - threshold && Position >= 0)
+		else if (Position < 0 && _targetPrice > 0 && candle.ClosePrice <= _targetPrice)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			SellLimit(volume, _prevLow - spread);
-			_lastOrderTime = candle.OpenTime;
+			BuyMarket();
+			_targetPrice = 0;
+		}
+
+		// Check for gap up - sell expecting fill back to previous high
+		if (Position == 0 && candle.OpenPrice > _prevHigh + threshold)
+		{
+			SellMarket();
+			_targetPrice = _prevHigh;
+		}
+		// Check for gap down - buy expecting fill back to previous low
+		else if (Position == 0 && candle.OpenPrice < _prevLow - threshold)
+		{
+			BuyMarket();
+			_targetPrice = _prevLow;
 		}
 
 		_prevHigh = candle.HighPrice;

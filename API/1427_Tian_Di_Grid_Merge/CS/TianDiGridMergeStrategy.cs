@@ -14,130 +14,99 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Grid trading strategy with arithmetic or geometric spacing.
+/// Grid trading strategy with arithmetic spacing.
+/// Buys when price drops below a grid level, sells when it rises above.
 /// </summary>
 public class TianDiGridMergeStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _upperBound;
-	private readonly StrategyParam<decimal> _lowerBound;
 	private readonly StrategyParam<int> _gridQty;
-	private readonly StrategyParam<decimal> _orderValue;
-	private readonly StrategyParam<bool> _useArithmetic;
-	private readonly StrategyParam<bool> _useGeometric;
-	private readonly StrategyParam<bool> _longEnabled;
-	private readonly StrategyParam<bool> _shortEnabled;
-	private readonly StrategyParam<bool> _closeOnProfit;
+	private readonly StrategyParam<decimal> _gridPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private decimal _basePrice;
 	private decimal[] _grid;
-	private bool[] _opened;
-	private decimal[] _qty;
-	private decimal _gridWidth;
+	private int _currentLevel;
 
-	public decimal UpperBound { get => _upperBound.Value; set => _upperBound.Value = value; }
-	public decimal LowerBound { get => _lowerBound.Value; set => _lowerBound.Value = value; }
+	/// <summary>Number of grid levels.</summary>
 	public int GridQty { get => _gridQty.Value; set => _gridQty.Value = value; }
-	public decimal OrderValue { get => _orderValue.Value; set => _orderValue.Value = value; }
-	public bool UseArithmetic { get => _useArithmetic.Value; set => _useArithmetic.Value = value; }
-	public bool UseGeometric { get => _useGeometric.Value; set => _useGeometric.Value = value; }
-	public bool LongEnabled { get => _longEnabled.Value; set => _longEnabled.Value = value; }
-	public bool ShortEnabled { get => _shortEnabled.Value; set => _shortEnabled.Value = value; }
-	public bool CloseOnProfit { get => _closeOnProfit.Value; set => _closeOnProfit.Value = value; }
+	/// <summary>Percentage spacing between grid levels.</summary>
+	public decimal GridPercent { get => _gridPercent.Value; set => _gridPercent.Value = value; }
+	/// <summary>Candle type.</summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public TianDiGridMergeStrategy()
 	{
-		_upperBound = Param(nameof(UpperBound), 3900m);
-		_lowerBound = Param(nameof(LowerBound), 900m);
-		_gridQty = Param(nameof(GridQty), 20);
-		_orderValue = Param(nameof(OrderValue), 100m);
-		_useArithmetic = Param(nameof(UseArithmetic), true);
-		_useGeometric = Param(nameof(UseGeometric), false);
-		_longEnabled = Param(nameof(LongEnabled), true);
-		_shortEnabled = Param(nameof(ShortEnabled), false);
-		_closeOnProfit = Param(nameof(CloseOnProfit), true);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
+		_gridQty = Param(nameof(GridQty), 10)
+			.SetGreaterThanZero();
+		_gridPercent = Param(nameof(GridPercent), 0.5m)
+			.SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_basePrice = 0;
+		_grid = null;
+		_currentLevel = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_buildGrid();
+
+		var sma = new SimpleMovingAverage { Length = 10 };
 		var sub = SubscribeCandles(CandleType);
-		sub.Bind(ProcessCandle).Start();
+		sub.Bind(sma, ProcessCandle).Start();
 	}
 
-	private void _buildGrid()
-	{
-		_grid = new decimal[GridQty];
-		_opened = new bool[GridQty];
-		_qty = new decimal[GridQty];
-		if (UseGeometric && !UseArithmetic)
-		{
-			var factor = Math.Pow((double)(UpperBound / LowerBound), 1.0 / (GridQty - 1));
-			for (var i = 0; i < GridQty; i++)
-				_grid[i] = LowerBound * (decimal)Math.Pow(factor, i);
-		}
-		else
-		{
-			_gridWidth = (UpperBound - LowerBound) / (GridQty - 1);
-			for (var i = 0; i < GridQty; i++)
-				_grid[i] = LowerBound + _gridWidth * i;
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		var price = candle.ClosePrice;
-		for (var i = 1; i < GridQty; i++)
+
+		// Initialize grid on first candle
+		if (_grid == null)
 		{
-			var level = _grid[i];
-			var prev = _grid[i - 1];
-			if (LongEnabled && !ShortEnabled)
+			_basePrice = price;
+			_grid = new decimal[GridQty * 2 + 1];
+			for (var i = 0; i < _grid.Length; i++)
 			{
-				if (price < level && !_opened[i - 1])
-				{
-					var q = OrderValue / price;
-					BuyMarket(q);
-					_opened[i - 1] = true;
-					_qty[i - 1] = q;
-				}
-				else if (price > level && _opened[i - 1])
-				{
-					SellMarket(_qty[i - 1]);
-					_opened[i - 1] = false;
-				}
+				var offset = i - GridQty;
+				_grid[i] = _basePrice * (1 + offset * GridPercent / 100m);
 			}
-			else if (ShortEnabled && !LongEnabled)
-			{
-				if (price > prev && !_opened[i])
-				{
-					var q = OrderValue / price;
-					SellMarket(q);
-					_opened[i] = true;
-					_qty[i] = q;
-				}
-				else if (price < prev && _opened[i])
-				{
-					BuyMarket(_qty[i]);
-					_opened[i] = false;
-				}
-			}
+			_currentLevel = GridQty; // middle
+			return;
 		}
 
-		if (CloseOnProfit)
+		// Find which level price is at
+		var newLevel = _currentLevel;
+		for (var i = 0; i < _grid.Length; i++)
 		{
-			var step = _gridWidth == 0m ? _grid[1] - _grid[0] : _gridWidth;
-			if (Position > 0 && price >= PositionPrice + step)
-				SellMarket(Position);
-			else if (Position < 0 && price <= PositionPrice - step)
-				BuyMarket(-Position);
+			if (price < _grid[i])
+			{
+				newLevel = i;
+				break;
+			}
+			if (i == _grid.Length - 1)
+				newLevel = _grid.Length;
 		}
+
+		// Grid trades: price dropped to lower level => buy, rose to higher => sell
+		if (newLevel < _currentLevel && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (newLevel > _currentLevel && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_currentLevel = newLevel;
 	}
 }

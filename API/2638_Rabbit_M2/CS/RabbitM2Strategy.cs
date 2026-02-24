@@ -495,11 +495,11 @@ public class RabbitM2Strategy : Strategy
 			_tradeVolume = steps * step.Value;
 		}
 
-		var max = Security?.VolumeMax;
+		var max = Security?.MaxVolume;
 		if (max.HasValue && max.Value > 0m && _tradeVolume > max.Value)
 			_tradeVolume = max.Value;
 
-		var min = Security?.VolumeMin;
+		var min = Security?.MinVolume;
 		if (min.HasValue && min.Value > 0m && _tradeVolume < min.Value)
 			_tradeVolume = 0m;
 

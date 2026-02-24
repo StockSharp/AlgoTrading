@@ -48,7 +48,7 @@ public class OmniTrendStrategy : Strategy
 
 	public OmniTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to build Omni Trend signals", "General")
 			;
 
@@ -219,7 +219,6 @@ public class OmniTrendStrategy : Strategy
 		_atr = new AverageTrueRange
 		{
 			Length = AtrLength,
-			Type = MovingAverageType.Exponential
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -249,7 +248,7 @@ public class OmniTrendStrategy : Strategy
 
 		var atrValue = _atr.Process(new CandleIndicatorValue(_atr, candle));
 		var appliedPrice = GetAppliedPrice(candle, AppliedPrice);
-		var maValue = _ma.Process(new DecimalIndicatorValue(_ma, appliedPrice));
+		var maValue = _ma.Process(new DecimalIndicatorValue(_ma, appliedPrice, candle.OpenTime) { IsFinal = true });
 
 		if (!atrValue.IsFinal || !maValue.IsFinal)
 			return;
@@ -396,7 +395,7 @@ public class OmniTrendStrategy : Strategy
 		if (Security is null)
 			return;
 
-		var step = Security.PriceStep;
+		var step = Security?.PriceStep ?? 0.01m;
 		if (step <= 0m)
 			return;
 

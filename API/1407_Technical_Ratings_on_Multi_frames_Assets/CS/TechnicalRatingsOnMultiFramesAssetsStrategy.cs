@@ -83,13 +83,13 @@ public class TechnicalRatingsOnMultiFramesAssetsStrategy : Strategy
 	/// </summary>
 	public TechnicalRatingsOnMultiFramesAssetsStrategy()
 	{
-		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromMinutes(60).TimeFrame())
+		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Short Time Frame", "Shortest candle interval", "General");
 
-		_midCandleType = Param(nameof(MidCandleType), TimeSpan.FromMinutes(240).TimeFrame())
+		_midCandleType = Param(nameof(MidCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Middle Time Frame", "Middle candle interval", "General");
 
-		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Long Time Frame", "Longest candle interval", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 50)
@@ -128,7 +128,7 @@ public class TechnicalRatingsOnMultiFramesAssetsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		// Protection not needed
 
 		CreateSubscription(ShortCandleType, ProcessShort);
 		CreateSubscription(MidCandleType, ProcessMid);

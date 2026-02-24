@@ -28,7 +28,7 @@ public class TaLibraryStrategy : Strategy
 	public TaLibraryStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Working timeframe", "General");
+			.SetDisplay("Candle Type", "Working timeframe", "General");
 	}
 
 	/// <inheritdoc />
@@ -49,18 +49,17 @@ public class TaLibraryStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		var sma = new SimpleMovingAverage { Length = 10 };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-		StartProtection(null, null);
+		subscription.Bind(sma, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		if (_prevTime is null)
 		{
@@ -69,20 +68,20 @@ public class TaLibraryStrategy : Strategy
 			return;
 		}
 
-		var days = (candle.OpenTime - _prevTime.Value).TotalDays;
-		if (days >= 1)
+		var hours = (candle.OpenTime - _prevTime.Value).TotalHours;
+		if (hours >= 1)
 		{
 			var rate = candle.ClosePrice / _prevClose;
-			var years = days / 365m;
-			var cagr = (decimal)(Math.Pow((double)rate, 1.0 / (double)years) - 1) * 100m;
+			var years = (decimal)hours / (365m * 24m);
+			var cagr = years > 0 ? (decimal)(Math.Pow((double)rate, 1.0 / (double)years) - 1) * 100m : 0m;
 
 			if (cagr > 0m && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 			else if (cagr < 0m && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-		}
+				SellMarket();
 
-		_prevTime = candle.OpenTime;
-		_prevClose = candle.ClosePrice;
+			_prevTime = candle.OpenTime;
+			_prevClose = candle.ClosePrice;
+		}
 	}
 }

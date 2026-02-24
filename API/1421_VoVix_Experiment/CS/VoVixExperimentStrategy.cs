@@ -13,112 +13,45 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// VoVix experiment strategy using volatility ratio z-score.
+/// Uses fast/slow StdDev ratio to detect volatility spikes, then trades in candle direction.
+/// </summary>
 public class VoVixExperimentStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastAtrLength;
-	private readonly StrategyParam<int> _slowAtrLength;
-	private readonly StrategyParam<int> _zScoreWindow;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<int> _zWindow;
 	private readonly StrategyParam<decimal> _entryZ;
-	private readonly StrategyParam<decimal> _exitZ;
-	private readonly StrategyParam<int> _localMaxWindow;
-	private readonly StrategyParam<decimal> _superZ;
-	private readonly StrategyParam<decimal> _minVolume;
-	private readonly StrategyParam<decimal> _maxVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal __prevZ;
+	private readonly List<decimal> _ratioBuffer = new();
+
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public int ZWindow { get => _zWindow.Value; set => _zWindow.Value = value; }
+	public decimal EntryZ { get => _entryZ.Value; set => _entryZ.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public VoVixExperimentStrategy()
 	{
-		fastAtrLength = Param(nameof(FastAtrLength), 13)
-			.SetDisplay("Fast ATR Length", "Period for fast ATR", "Indicators");
+		_fastLength = Param(nameof(FastLength), 13)
+			.SetDisplay("Fast Length", "Period for fast StdDev", "Indicators")
+			.SetGreaterThanZero();
 
-		slowAtrLength = Param(nameof(SlowAtrLength), 26)
-			.SetDisplay("Slow ATR Length", "Period for slow ATR", "Indicators");
+		_slowLength = Param(nameof(SlowLength), 26)
+			.SetDisplay("Slow Length", "Period for slow StdDev", "Indicators")
+			.SetGreaterThanZero();
 
-		zScoreWindow = Param(nameof(ZScoreWindow), 81)
-			.SetDisplay("Z-Score Window", "Lookback for z-score", "Indicators");
+		_zWindow = Param(nameof(ZWindow), 50)
+			.SetDisplay("Z-Score Window", "Lookback for z-score", "Indicators")
+			.SetGreaterThanZero();
 
-		entryZ = Param(nameof(EntryZ), 1.0m)
+		_entryZ = Param(nameof(EntryZ), 1.0m)
 			.SetDisplay("Entry Z", "Minimum z-score to enter", "Strategy");
 
-		exitZ = Param(nameof(ExitZ), 1.4m)
-			.SetDisplay("Exit Z", "Z-score threshold to exit", "Strategy");
-
-		localMaxWindow = Param(nameof(LocalMaxWindow), 6)
-			.SetDisplay("Local Max Window", "Bars for local maximum", "Indicators");
-
-		superZ = Param(nameof(SuperZ), 2.0m)
-			.SetDisplay("Super Spike Z", "Z-score for super spike", "Strategy");
-
-		minVolume = Param(nameof(MinVolume), 1m)
-			.SetDisplay("Min Volume", "Volume for normal spike", "General");
-
-		maxVolume = Param(nameof(MaxVolume), 2m)
-			.SetDisplay("Max Volume", "Volume for super spike", "General");
-
-		candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
-	}
-
-	public int FastAtrLength
-	{
-		get => _fastAtrLength.Value;
-		set => _fastAtrLength.Value = value;
-	}
-
-	public int SlowAtrLength
-	{
-		get => _slowAtrLength.Value;
-		set => _slowAtrLength.Value = value;
-	}
-
-	public int ZScoreWindow
-	{
-		get => _zScoreWindow.Value;
-		set => _zScoreWindow.Value = value;
-	}
-
-	public decimal EntryZ
-	{
-		get => _entryZ.Value;
-		set => _entryZ.Value = value;
-	}
-
-	public decimal ExitZ
-	{
-		get => _exitZ.Value;
-		set => _exitZ.Value = value;
-	}
-
-	public int LocalMaxWindow
-	{
-		get => _localMaxWindow.Value;
-		set => _localMaxWindow.Value = value;
-	}
-
-	public decimal SuperZ
-	{
-		get => _superZ.Value;
-		set => _superZ.Value = value;
-	}
-
-	public decimal MinVolume
-	{
-		get => _minVolume.Value;
-		set => _minVolume.Value = value;
-	}
-
-	public decimal MaxVolume
-	{
-		get => _maxVolume.Value;
-		set => _maxVolume.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -129,76 +62,72 @@ public class VoVixExperimentStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevZ = 0m;
+		_ratioBuffer.Clear();
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var fastAtr = new AverageTrueRange { Length = FastAtrLength };
-		var slowAtr = new AverageTrueRange { Length = SlowAtrLength };
-		var zMa = new SMA { Length = ZScoreWindow };
-		var zSd = new StandardDeviation { Length = ZScoreWindow };
-		var localMax = new Highest { Length = LocalMaxWindow };
+		var fastSd = new StandardDeviation { Length = FastLength };
+		var slowSd = new StandardDeviation { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(fastAtr, slowAtr, (candle, fast, slow) =>
-			{
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				if (!IsFormedAndOnlineAndAllowTrading())
-					return;
-
-				var voVix = slow == 0m ? 0m : fast / slow;
-				var maVal = zMa.Process(new DecimalIndicatorValue(zMa, voVix, candle.ServerTime)).ToDecimal();
-				var sdVal = zSd.Process(new DecimalIndicatorValue(zSd, voVix, candle.ServerTime)).ToDecimal();
-				var z = sdVal == 0m ? 0m : (voVix - maVal) / sdVal;
-				var maxVal = localMax.Process(new DecimalIndicatorValue(localMax, voVix, candle.ServerTime)).ToDecimal();
-
-				if (!zMa.IsFormed || !zSd.IsFormed || !localMax.IsFormed)
-				{
-					_prevZ = z;
-					return;
-				}
-
-				var isSpike = z > EntryZ && voVix >= maxVal;
-				var isSuper = z > SuperZ;
-				var exit = z < ExitZ;
-
-				var volume = isSuper ? MaxVolume : MinVolume;
-
-				if (isSpike && candle.ClosePrice > candle.OpenPrice && Position <= 0)
-				{
-					BuyMarket(volume + Math.Abs(Position));
-				}
-				else if (isSpike && candle.ClosePrice < candle.OpenPrice && Position >= 0)
-				{
-					SellMarket(volume + Math.Abs(Position));
-				}
-				else if (exit && Position > 0)
-				{
-					SellMarket(Math.Abs(Position));
-				}
-				else if (exit && Position < 0)
-				{
-					BuyMarket(Math.Abs(Position));
-				}
-
-				_prevZ = z;
-			})
+			.Bind(fastSd, slowSd, ProcessCandle)
 			.Start();
+	}
 
-		var area = CreateChartArea();
-		if (area != null)
+	private void ProcessCandle(ICandleMessage candle, decimal fastSd, decimal slowSd)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (slowSd <= 0)
+			return;
+
+		var voVix = fastSd / slowSd;
+
+		_ratioBuffer.Add(voVix);
+		if (_ratioBuffer.Count > ZWindow)
+			_ratioBuffer.RemoveAt(0);
+
+		if (_ratioBuffer.Count < ZWindow)
+			return;
+
+		// Compute z-score of voVix
+		var mean = _ratioBuffer.Average();
+		var variance = _ratioBuffer.Sum(x => (x - mean) * (x - mean)) / _ratioBuffer.Count;
+		var sd = (decimal)Math.Sqrt((double)variance);
+
+		if (sd <= 0)
+			return;
+
+		var z = (voVix - mean) / sd;
+
+		// High z-score = volatility spike
+		var isSpike = z > EntryZ;
+		var exit = z < 0;
+
+		// Check exits first
+		if (Position > 0 && exit)
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, fastAtr);
-			DrawIndicator(area, slowAtr);
-			DrawOwnTrades(area);
+			SellMarket();
+			return;
+		}
+		else if (Position < 0 && exit)
+		{
+			BuyMarket();
+			return;
+		}
+
+		// Entries: on spike, trade in candle direction
+		if (Position == 0 && isSpike)
+		{
+			if (candle.ClosePrice > candle.OpenPrice)
+				BuyMarket();
+			else if (candle.ClosePrice < candle.OpenPrice)
+				SellMarket();
 		}
 	}
 }

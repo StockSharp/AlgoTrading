@@ -139,50 +139,45 @@ public class SwingFxProPanelV1Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (emaFast > emaSlow && Position <= 0)
+		// Check exits first
+		if (Position > 0 && _entryPrice > 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-		}
-		else if (emaFast < emaSlow && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_entryPrice = candle.ClosePrice;
-		}
-
-		if (Position > 0)
-		{
-			if (candle.HighPrice - _entryPrice >= ProfitTarget || _entryPrice - candle.LowPrice >= StopLoss)
+			if (candle.ClosePrice - _entryPrice >= ProfitTarget || _entryPrice - candle.ClosePrice >= StopLoss)
 			{
-				var isWin = candle.HighPrice - _entryPrice >= ProfitTarget;
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_totalTrades++;
-				if (isWin)
+				if (candle.ClosePrice - _entryPrice >= ProfitTarget)
 					_winTrades++;
+				_entryPrice = 0;
+				return;
 			}
 		}
-		else if (Position < 0)
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			if (_entryPrice - candle.LowPrice >= ProfitTarget || candle.HighPrice - _entryPrice >= StopLoss)
+			if (_entryPrice - candle.ClosePrice >= ProfitTarget || candle.ClosePrice - _entryPrice >= StopLoss)
 			{
-				var isWin = _entryPrice - candle.LowPrice >= ProfitTarget;
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_totalTrades++;
-				if (isWin)
+				if (_entryPrice - candle.ClosePrice >= ProfitTarget)
 					_winTrades++;
+				_entryPrice = 0;
+				return;
 			}
 		}
 
-		var equity = InitialCapital + PnL;
-		if (equity > _maxEquity)
-			_maxEquity = equity;
-		var drawdown = _maxEquity - equity;
-		if (drawdown > _maxDrawdown)
-			_maxDrawdown = drawdown;
-
-		var roi = InitialCapital == 0m ? 0m : PnL / InitialCapital * 100m;
-		var winRatio = _totalTrades == 0 ? 0m : (decimal)_winTrades / _totalTrades * 100m;
-
-		LogInfo($"ROI={roi:F2}% Trades={_totalTrades} WinRatio={winRatio:F2}% MaxDD={_maxDrawdown:F2}");
+		// Entries only when flat
+		if (Position == 0)
+		{
+			if (emaFast > emaSlow)
+			{
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+			}
+			else if (emaFast < emaSlow)
+			{
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+			}
+		}
 	}
 }

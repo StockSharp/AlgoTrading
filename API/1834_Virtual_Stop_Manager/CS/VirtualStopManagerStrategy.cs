@@ -130,7 +130,7 @@ public class VirtualStopManagerStrategy : Strategy
 		// Open long position if none exists.
 		if (Position == 0)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 			return;
 		}
 
@@ -156,7 +156,7 @@ public class VirtualStopManagerStrategy : Strategy
 		// Exit on stop loss or take profit levels.
 		if (close <= _stopPrice || close >= _targetPrice)
 		{
-			SellMarket(Position);
+			SellMarket();
 			ResetState();
 		}
 	}

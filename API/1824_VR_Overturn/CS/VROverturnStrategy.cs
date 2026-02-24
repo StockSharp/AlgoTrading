@@ -15,6 +15,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// VR Overturn strategy implementing martingale and anti-martingale principles.
+/// Alternates direction and adjusts volume based on win/loss results.
 /// </summary>
 public class VROverturnStrategy : Strategy
 {
@@ -28,48 +29,18 @@ public class VROverturnStrategy : Strategy
 	private readonly StrategyParam<Sides> _startSide;
 	private readonly StrategyParam<int> _takePoints;
 	private readonly StrategyParam<int> _stopPoints;
-	private readonly StrategyParam<decimal> _startVolume;
-	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _currentVolume;
 	private decimal _entryPrice;
 	private Sides _currentSide;
-	private Order _stopOrder;
-	private Order _tpOrder;
+	private int _consecutiveLosses;
 
-	/// <summary>
-	/// Trade mode selection.
-	/// </summary>
 	public TradeModes Mode { get => _tradeMode.Value; set => _tradeMode.Value = value; }
-
-	/// <summary>
-	/// Initial trade side.
-	/// </summary>
 	public Sides StartSide { get => _startSide.Value; set => _startSide.Value = value; }
-
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
 	public int TakeProfit { get => _takePoints.Value; set => _takePoints.Value = value; }
-
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
 	public int StopLoss { get => _stopPoints.Value; set => _stopPoints.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initial volume.
-	/// </summary>
-	public decimal StartVolume { get => _startVolume.Value; set => _startVolume.Value = value; }
-
-	/// <summary>
-	/// Volume multiplier.
-	/// </summary>
-	public decimal Multiplier { get => _multiplier.Value; set => _multiplier.Value = value; }
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="VROverturnStrategy"/>.
-	/// </summary>
 	public VROverturnStrategy()
 	{
 		_tradeMode = Param(nameof(Mode), TradeModes.Martingale)
@@ -86,31 +57,14 @@ public class VROverturnStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk");
 
-		_startVolume = Param(nameof(StartVolume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Start Volume", "Initial trade volume", "Volume");
-
-		_multiplier = Param(nameof(Multiplier), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Multiplier", "Volume multiplier", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, DataType.Ticks)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_currentVolume = StartVolume;
-		_entryPrice = 0m;
-		_currentSide = StartSide;
-		_stopOrder = null;
-		_tpOrder = null;
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -118,69 +72,84 @@ public class VROverturnStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		OpenOrder(_currentSide, _currentVolume);
+		_currentSide = StartSide;
+		_consecutiveLosses = 0;
+
+		var sma = new SimpleMovingAverage { Length = 10 };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(sma, ProcessCandle).Start();
 	}
 
-	private void OpenOrder(Sides side, decimal volume)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		if (side == Sides.Buy)
-			BuyMarket(volume);
-		else
-			SellMarket(volume);
-	}
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
+		var step = Security.PriceStep ?? 1m;
+		var price = candle.ClosePrice;
 
-		if (Position != 0 && _entryPrice == 0m)
+		if (Position == 0)
 		{
-			_entryPrice = trade.Trade.Price;
-			RegisterProtection(_currentSide == Sides.Buy);
+			_entryPrice = price;
+			if (_currentSide == Sides.Buy)
+				BuyMarket();
+			else
+				SellMarket();
 			return;
 		}
 
-		if (Position == 0 && _entryPrice != 0m)
+		if (Position > 0)
 		{
-			var exitPrice = trade.Trade.Price;
-			var profit = (_currentSide == Sides.Buy ? exitPrice - _entryPrice : _entryPrice - exitPrice) * _currentVolume;
+			var tp = _entryPrice + TakeProfit * step;
+			var sl = _entryPrice - StopLoss * step;
 
-			if (Mode == TradeModes.Martingale)
+			if (price >= tp)
 			{
-				_currentVolume = profit > 0m ? StartVolume : _currentVolume * Multiplier;
+				SellMarket();
+				OnTradeResult(true);
 			}
-			else
+			else if (price <= sl)
 			{
-				_currentVolume = profit > 0m ? _currentVolume * Multiplier : StartVolume;
+				SellMarket();
+				OnTradeResult(false);
 			}
+		}
+		else if (Position < 0)
+		{
+			var tp = _entryPrice - TakeProfit * step;
+			var sl = _entryPrice + StopLoss * step;
 
-			if (profit < 0m)
-				_currentSide = _currentSide == Sides.Buy ? Sides.Sell : Sides.Buy;
-
-			_entryPrice = 0m;
-
-			OpenOrder(_currentSide, _currentVolume);
+			if (price <= tp)
+			{
+				BuyMarket();
+				OnTradeResult(true);
+			}
+			else if (price >= sl)
+			{
+				BuyMarket();
+				OnTradeResult(false);
+			}
 		}
 	}
 
-	private void RegisterProtection(bool isLong)
+	private void OnTradeResult(bool isWin)
 	{
-		if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
-			CancelOrder(_stopOrder);
-		if (_tpOrder != null && _tpOrder.State == OrderStates.Active)
-			CancelOrder(_tpOrder);
+		if (Mode == TradeModes.Martingale)
+		{
+			if (isWin)
+				_consecutiveLosses = 0;
+			else
+				_consecutiveLosses++;
+		}
+		else
+		{
+			if (isWin)
+				_consecutiveLosses++;
+			else
+				_consecutiveLosses = 0;
+		}
 
-		var step = Security.PriceStep ?? 1m;
-		var stopOffset = StopLoss * step;
-		var takeOffset = TakeProfit * step;
-
-		_stopOrder = isLong
-			? SellStop(_currentVolume, _entryPrice - stopOffset)
-			: BuyStop(_currentVolume, _entryPrice + stopOffset);
-
-		_tpOrder = isLong
-			? SellLimit(_currentVolume, _entryPrice + takeOffset)
-			: BuyLimit(_currentVolume, _entryPrice - takeOffset);
+		if (!isWin)
+			_currentSide = _currentSide == Sides.Buy ? Sides.Sell : Sides.Buy;
 	}
 }
