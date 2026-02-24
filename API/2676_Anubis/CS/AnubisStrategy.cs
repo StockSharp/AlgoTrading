@@ -82,6 +82,8 @@ public class AnubisStrategy : Strategy
 	private DateTimeOffset? _lastShortSignalTime;
 	private decimal _lastShortPrice;
 
+	private decimal _entryPrice;
+
 	/// <summary>
 	/// Trade volume for each entry.
 	/// </summary>
@@ -314,7 +316,7 @@ public class AnubisStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow StdDev Length", "Secondary standard deviation period used for take-profit", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Signal Candle Type", "Timeframe used for MACD and ATR", "General");
 	}
 
@@ -366,15 +368,16 @@ public class AnubisStrategy : Strategy
 		_shortEntries = 0;
 		_lastShortSignalTime = null;
 		_lastShortPrice = 0m;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = TradeVolume;
-		StartProtection();
+		StartProtection(null, null);
 
 		InitializeIndicators();
 		InitializeDistances();
@@ -480,7 +483,7 @@ public class AnubisStrategy : Strategy
 		var price = candle.ClosePrice;
 
 		// Wait until all indicators provide valid data before trading.
-		if (!IsFormedAndOnlineAndAllowTrading() || !_higherReady || !_atrReady || !hasMacdHistory || _stdSlowValue <= 0m)
+		if (!_macdIndicator.IsFormed || !_higherReady || !_atrReady || !hasMacdHistory || _stdSlowValue <= 0m)
 		{
 			UpdateStateAfterProcess(macdCurrent, signalCurrent, candle);
 			return;
@@ -510,6 +513,7 @@ public class AnubisStrategy : Strategy
 			if (allowEntry && spacedEnough && newBar)
 			{
 				BuyMarket(TradeVolume);
+				_entryPrice = price;
 				_longEntries++;
 				_lastLongPrice = price;
 				_lastLongSignalTime = candle.OpenTime;
@@ -535,6 +539,7 @@ public class AnubisStrategy : Strategy
 			if (allowEntry && spacedEnough && newBar)
 			{
 				SellMarket(TradeVolume);
+				_entryPrice = price;
 				_shortEntries++;
 				_lastShortPrice = price;
 				_lastShortSignalTime = candle.OpenTime;
@@ -550,7 +555,7 @@ public class AnubisStrategy : Strategy
 		{
 			var prevRange = _hasPrevCandle ? _prevCandleClose - _prevCandleOpen : 0m;
 			var exitByRange = _hasPrevCandle && prevRange > CloseAtrMultiplier * _lastAtr;
-			var exitByMacd = macd1 < macd2 && price - PositionPrice > _thresholdDistance;
+			var exitByMacd = macd1 < macd2 && price - _entryPrice > _thresholdDistance;
 
 			// Check range-based and MACD-based exit conditions.
 			if (exitByRange || exitByMacd)
@@ -567,7 +572,7 @@ public class AnubisStrategy : Strategy
 		{
 			var prevRange = _hasPrevCandle ? _prevCandleOpen - _prevCandleClose : 0m;
 			var exitByRange = _hasPrevCandle && prevRange > CloseAtrMultiplier * _lastAtr;
-			var exitByMacd = macd1 > macd2 && PositionPrice - price > _thresholdDistance;
+			var exitByMacd = macd1 > macd2 && _entryPrice - price > _thresholdDistance;
 
 			if (exitByRange || exitByMacd)
 			{
@@ -592,10 +597,10 @@ public class AnubisStrategy : Strategy
 	private void UpdateBreakeven(decimal price)
 	{
 		// Long side breakeven management.
-		if (Position > 0m && !_longBreakevenActivated && _breakevenDistance > 0m && price - _breakevenDistance > PositionPrice && _longStopPrice > 0m)
+		if (Position > 0m && !_longBreakevenActivated && _breakevenDistance > 0m && price - _breakevenDistance > _entryPrice && _longStopPrice > 0m)
 		{
 			_longBreakevenActivated = true;
-			_longStopPrice = PositionPrice;
+			_longStopPrice = _entryPrice;
 		}
 		else if (Position <= 0m)
 		{
@@ -603,10 +608,10 @@ public class AnubisStrategy : Strategy
 		}
 
 		// Short side breakeven management.
-		if (Position < 0m && !_shortBreakevenActivated && _breakevenDistance > 0m && price + _breakevenDistance < PositionPrice && _shortStopPrice > 0m)
+		if (Position < 0m && !_shortBreakevenActivated && _breakevenDistance > 0m && price + _breakevenDistance < _entryPrice && _shortStopPrice > 0m)
 		{
 			_shortBreakevenActivated = true;
-			_shortStopPrice = PositionPrice;
+			_shortStopPrice = _entryPrice;
 		}
 		else if (Position >= 0m)
 		{

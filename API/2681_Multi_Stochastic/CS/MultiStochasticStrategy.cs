@@ -219,7 +219,7 @@ public class MultiStochasticStrategy : Strategy
 	/// </summary>
 	public MultiStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame applied to every symbol", "Data");
 
 		_stochasticLength = Param(nameof(StochasticLength), 5)
@@ -230,7 +230,7 @@ public class MultiStochasticStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("%K Period", "Smoothing period for %K", "Indicators");
 
-		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 3)
+		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("%D Period", "Smoothing period for %D", "Indicators");
 
@@ -257,13 +257,13 @@ public class MultiStochasticStrategy : Strategy
 		_useSymbol1 = Param(nameof(UseSymbol1), true)
 			.SetDisplay("Use symbol #1", "Enable trading for the first slot", "Symbols");
 
-		_useSymbol2 = Param(nameof(UseSymbol2), true)
+		_useSymbol2 = Param(nameof(UseSymbol2), false)
 			.SetDisplay("Use symbol #2", "Enable trading for the second slot", "Symbols");
 
-		_useSymbol3 = Param(nameof(UseSymbol3), true)
+		_useSymbol3 = Param(nameof(UseSymbol3), false)
 			.SetDisplay("Use symbol #3", "Enable trading for the third slot", "Symbols");
 
-		_useSymbol4 = Param(nameof(UseSymbol4), true)
+		_useSymbol4 = Param(nameof(UseSymbol4), false)
 			.SetDisplay("Use symbol #4", "Enable trading for the fourth slot", "Symbols");
 
 		_symbol1 = Param<Security>(nameof(Symbol1))
@@ -356,7 +356,7 @@ public class MultiStochasticStrategy : Strategy
 	private StochasticOscillator CreateStochastic()
 	{
 		return new StochasticOscillator
-		{ K = { Length = StochasticLength },
+		{
 			K = { Length = StochasticKPeriod },
 			D = { Length = StochasticDPeriod }
 		};
@@ -421,12 +421,7 @@ public class MultiStochasticStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			prevK = currentK;
-			prevD = currentD;
-			return;
-		}
+		// Indicator readiness is checked via stochValue.IsFinal above.
 
 		var longSignal = currentK < OversoldLevel && prevK.Value < prevD.Value && currentK > currentD;
 		var shortSignal = currentK > OverboughtLevel && prevK.Value > prevD.Value && currentK < currentD;

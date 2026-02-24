@@ -59,8 +59,23 @@ public class VortexIndicatorSystemStrategy : Strategy
 			
 			.SetOptimize(7, 28, 7);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for analysis", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousPlus = 0m;
+		_previousMinus = 0m;
+		_hasPrevious = false;
+		_pendingBuyTrigger = null;
+		_pendingSellTrigger = null;
 	}
 
 	/// <inheritdoc />
@@ -76,19 +91,24 @@ public class VortexIndicatorSystemStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(_vortex, ProcessCandle)
+			.BindEx(_vortex, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal viPlus, decimal viMinus)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue vortexValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_vortex.IsFormed)
 			return;
 
-		if (!_vortex.IsFormed)
+		if (vortexValue is not VortexIndicatorValue typed)
+			return;
+
+		var viPlusN = typed.PlusVi;
+		var viMinusN = typed.MinusVi;
+		if (viPlusN is not decimal viPlus || viMinusN is not decimal viMinus)
 			return;
 
 		if (_pendingBuyTrigger is decimal buyTrigger && candle.HighPrice > buyTrigger)
@@ -128,7 +148,7 @@ public class VortexIndicatorSystemStrategy : Strategy
 			if (Position < 0)
 			{
 				// Flatten existing short positions when a bullish crossover appears.
-				ClosePosition();
+				BuyMarket(Math.Abs(Position));
 			}
 
 			_pendingBuyTrigger = candle.HighPrice;
@@ -139,7 +159,7 @@ public class VortexIndicatorSystemStrategy : Strategy
 			if (Position > 0)
 			{
 				// Flatten existing long positions when a bearish crossover appears.
-				ClosePosition();
+				SellMarket(Math.Abs(Position));
 			}
 
 			_pendingSellTrigger = candle.LowPrice;

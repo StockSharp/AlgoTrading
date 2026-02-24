@@ -102,7 +102,7 @@ public class MT45Strategy : Strategy
 			
 			.SetOptimize(100m, 2000m, 50m);
 
-		_baseVolume = Param(nameof(BaseVolume), 0.01m)
+		_baseVolume = Param(nameof(BaseVolume), 1m)
 			.SetDisplay("Base Volume", "Initial trade volume used by the strategy", "Trading");
 
 		_multiplier = Param(nameof(MartingaleMultiplier), 2m)
