@@ -1,128 +1,39 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Q2MA cross strategy based on open and close moving averages.
+/// Buys when close MA crosses above open MA, sells on opposite.
 /// </summary>
 public class Q2maCrossStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<int> _stopLoss;
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<bool> _buyPosOpen;
-	private readonly StrategyParam<bool> _sellPosOpen;
-	private readonly StrategyParam<bool> _buyPosClose;
-	private readonly StrategyParam<bool> _sellPosClose;
-	private readonly StrategyParam<bool> _invert;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _closeMa = null!;
-	private SimpleMovingAverage _openMa = null!;
-	private decimal _prevUp;
-	private decimal _prevDn;
-	private bool _hasPrev;
+	private ExponentialMovingAverage _closeMa;
+	private ExponentialMovingAverage _openMa;
+	private decimal? _prevUp;
+	private decimal? _prevDn;
 
-	private decimal? _stopLossPrice;
-	private decimal? _takeProfitPrice;
-
-	/// <summary>
-	/// Moving average length.
-	/// </summary>
 	public int Length { get => _length.Value; set => _length.Value = value; }
-
-	/// <summary>
-	/// Stop loss in ticks.
-	/// </summary>
-	public int StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-
-	/// <summary>
-	/// Take profit in ticks.
-	/// </summary>
-	public int TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
-	public bool BuyPosOpen { get => _buyPosOpen.Value; set => _buyPosOpen.Value = value; }
-
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
-	public bool SellPosOpen { get => _sellPosOpen.Value; set => _sellPosOpen.Value = value; }
-
-	/// <summary>
-	/// Allow closing long positions by trend.
-	/// </summary>
-	public bool BuyPosClose { get => _buyPosClose.Value; set => _buyPosClose.Value = value; }
-
-	/// <summary>
-	/// Allow closing short positions by trend.
-	/// </summary>
-	public bool SellPosClose { get => _sellPosClose.Value; set => _sellPosClose.Value = value; }
-
-	/// <summary>
-	/// Invert indicator lines.
-	/// </summary>
-	public bool Invert { get => _invert.Value; set => _invert.Value = value; }
-
-	/// <summary>
-	/// Candle type used for analysis.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-
-	/// <summary>
-	/// Initializes <see cref="Q2maCrossStrategy"/>.
-	/// </summary>
 	public Q2maCrossStrategy()
 	{
 		_length = Param(nameof(Length), 8)
-			.SetGreaterThanZero()
-			.SetDisplay("Length", "Moving average length", "Indicator")
-			;
+			.SetDisplay("Length", "Moving average length", "Indicator");
 
-		_stopLoss = Param(nameof(StopLoss), 1000)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss in ticks", "Trading")
-			;
-
-		_takeProfit = Param(nameof(TakeProfit), 2000)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit in ticks", "Trading")
-			;
-
-		_buyPosOpen = Param(nameof(BuyPosOpen), true)
-			.SetDisplay("Buy Open", "Allow opening long positions", "Trading");
-
-		_sellPosOpen = Param(nameof(SellPosOpen), true)
-			.SetDisplay("Sell Open", "Allow opening short positions", "Trading");
-
-		_buyPosClose = Param(nameof(BuyPosClose), true)
-			.SetDisplay("Buy Close", "Allow closing long positions", "Trading");
-
-		_sellPosClose = Param(nameof(SellPosClose), true)
-			.SetDisplay("Sell Close", "Allow closing short positions", "Trading");
-
-		_invert = Param(nameof(Invert), false)
-			.SetDisplay("Invert", "Invert indicator lines", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Indicator timeframe", "General");
-
 	}
 
 	/// <inheritdoc />
@@ -132,38 +43,27 @@ public class Q2maCrossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_stopLossPrice = null;
-		_takeProfitPrice = null;
-		_prevUp = 0m;
-		_prevDn = 0m;
-		_hasPrev = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_closeMa = new SMA { Length = Length };
-		_openMa = new SMA { Length = Length };
+		_prevUp = null;
+		_prevDn = null;
+
+		_closeMa = new ExponentialMovingAverage { Length = Length };
+		_openMa = new ExponentialMovingAverage { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _closeMa);
-			DrawIndicator(area, _openMa);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -171,79 +71,32 @@ public class Q2maCrossStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var upValue = _closeMa.Process(candle.ClosePrice);
-		var dnValue = _openMa.Process(candle.OpenPrice);
+		var t = candle.ServerTime;
 
-		if (!upValue.IsFinal || !dnValue.IsFinal)
+		var upResult = _closeMa.Process(candle.ClosePrice, t, true);
+		var dnResult = _openMa.Process(candle.OpenPrice, t, true);
+
+		if (!_closeMa.IsFormed || !_openMa.IsFormed)
 			return;
 
-		var up = upValue.GetValue<decimal>();
-		var dn = dnValue.GetValue<decimal>();
+		var up = upResult.GetValue<decimal>();
+		var dn = dnResult.GetValue<decimal>();
 
-		if (Invert)
-			(up, dn) = (dn, up);
-
-		if (_hasPrev)
+		if (_prevUp is null || _prevDn is null)
 		{
-			if (_prevUp > _prevDn)
-			{
-			if (SellPosClose && Position < 0)
-			{
-			BuyMarket(-Position);
-			_stopLossPrice = null;
-			_takeProfitPrice = null;
-			}
-
-			if (BuyPosOpen && up <= dn && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
-			{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			var step = Security?.PriceStep ?? 1m;
-			BuyMarket(volume);
-			_stopLossPrice = candle.ClosePrice - StopLoss * step;
-			_takeProfitPrice = candle.ClosePrice + TakeProfit * step;
-			}
-			}
-			else if (_prevUp < _prevDn)
-			{
-			if (BuyPosClose && Position > 0)
-			{
-			SellMarket(Position);
-			_stopLossPrice = null;
-			_takeProfitPrice = null;
-			}
-
-			if (SellPosOpen && up >= dn && Position >= 0 && IsFormedAndOnlineAndAllowTrading())
-			{
-			var volume = Volume + (Position > 0 ? Position : 0m);
-			var step = Security?.PriceStep ?? 1m;
-			SellMarket(volume);
-			_stopLossPrice = candle.ClosePrice + StopLoss * step;
-			_takeProfitPrice = candle.ClosePrice - TakeProfit * step;
-			}
-			}
+			_prevUp = up;
+			_prevDn = dn;
+			return;
 		}
 
-		if (Position > 0 && _stopLossPrice != null && _takeProfitPrice != null)
-		{
-			if (candle.LowPrice <= _stopLossPrice || candle.HighPrice >= _takeProfitPrice)
-			{
-			SellMarket(Position);
-			_stopLossPrice = null;
-			_takeProfitPrice = null;
-			}
-		}
-		else if (Position < 0 && _stopLossPrice != null && _takeProfitPrice != null)
-		{
-			if (candle.HighPrice >= _stopLossPrice || candle.LowPrice <= _takeProfitPrice)
-			{
-			BuyMarket(-Position);
-			_stopLossPrice = null;
-			_takeProfitPrice = null;
-			}
-		}
+		// Close MA crosses above Open MA -> buy signal
+		if (_prevUp <= _prevDn && up > dn && Position <= 0)
+			BuyMarket();
+		// Close MA crosses below Open MA -> sell signal
+		else if (_prevUp >= _prevDn && up < dn && Position >= 0)
+			SellMarket();
 
 		_prevUp = up;
 		_prevDn = dn;
-		_hasPrev = true;
 	}
 }

@@ -44,13 +44,13 @@ public class HeikenAshiSimplifiedEaStrategy : Strategy
 			
 			.SetOptimize(1, 5, 1);
 
-		_distancePoints = Param(nameof(DistancePoints), 300)
+		_distancePoints = Param(nameof(DistancePoints), 1)
 			.SetDisplay("Distance Points", "Minimum distance in price steps from last HA open", "General")
 			
 			.SetOptimize(50, 500, 50);
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for Heikin Ashi calculation", "General");
 	}
 
@@ -109,7 +109,7 @@ public class HeikenAshiSimplifiedEaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_priceDistance = DistancePoints * (Security?.MinPriceStep ?? 1m);
+		_priceDistance = DistancePoints * (Security.PriceStep ?? 1m);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -143,22 +143,21 @@ public class HeikenAshiSimplifiedEaStrategy : Strategy
 			var f = _haClose2;
 			var g = _haClose1;
 
-			var w = a - b;
-			var x = b - c;
-			var y = c - s;
-
 			var direction = 0;
 
-			if (e > a && f > b && g > c && y > 0 && y < x && x < w)
+			// Bullish: last 3 HA candles are bullish (close > open)
+			if (g > s && f > c && e > b)
 				direction = 1;
-			else if (e < a && f < b && g < c && y < 0 && y > x && x > w)
+			// Bearish: last 3 HA candles are bearish (close < open)
+			else if (g < s && f < c && e < b)
 				direction = -1;
 
 			if (direction != 0)
 			{
 				if (Position * direction < 0)
 				{
-					ClosePosition();
+					if (Position > 0) SellMarket();
+					else if (Position < 0) BuyMarket();
 					_positionCount = 0;
 				}
 
@@ -168,12 +167,12 @@ public class HeikenAshiSimplifiedEaStrategy : Strategy
 				{
 					if (direction > 0 && _positionCount < MaxPositions)
 					{
-						BuyMarket(Volume);
+						BuyMarket();
 						_positionCount++;
 					}
 					else if (direction < 0 && -_positionCount < MaxPositions)
 					{
-						SellMarket(Volume);
+						SellMarket();
 						_positionCount--;
 					}
 				}

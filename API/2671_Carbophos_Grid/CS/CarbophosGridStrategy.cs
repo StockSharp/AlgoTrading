@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Grid strategy converted from the Carbophos MetaTrader 5 expert advisor.
-/// Places symmetric limit order ladders and manages profit and loss on the aggregated position.
+/// Simulates symmetric grid levels and manages profit and loss on the aggregated position.
 /// </summary>
 public class CarbophosGridStrategy : Strategy
 {
@@ -24,14 +24,17 @@ public class CarbophosGridStrategy : Strategy
 	private readonly StrategyParam<int> _stepPips;
 	private readonly StrategyParam<int> _ordersPerSide;
 	private readonly StrategyParam<decimal> _orderVolume;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _bestBid;
-	private decimal _bestAsk;
+	private decimal? _entryPrice;
+	private decimal _gridCenterPrice;
 	private bool _gridPlaced;
-	private bool _gridPendingActivation;
+
+	private readonly List<decimal> _buyLevels = new();
+	private readonly List<decimal> _sellLevels = new();
 
 	/// <summary>
-	/// Floating profit level (in money) that triggers closing of all positions and orders.
+	/// Floating profit level (in absolute price * volume) that triggers closing of all positions.
 	/// </summary>
 	public decimal ProfitTarget
 	{
@@ -40,7 +43,7 @@ public class CarbophosGridStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Maximum allowed floating loss (in money) before the grid is closed.
+	/// Maximum allowed floating loss before the grid is closed.
 	/// </summary>
 	public decimal MaxLoss
 	{
@@ -67,12 +70,21 @@ public class CarbophosGridStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Volume for each limit order registered by the grid.
+	/// Volume for each grid level order.
 	/// </summary>
 	public decimal OrderVolume
 	{
 		get => _orderVolume.Value;
 		set => _orderVolume.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used by the strategy.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -83,36 +95,35 @@ public class CarbophosGridStrategy : Strategy
 		_profitTarget = Param(nameof(ProfitTarget), 500m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Target", "Floating profit target in money", "Risk")
-			
 			.SetOptimize(100m, 1000m, 50m);
 
 		_maxLoss = Param(nameof(MaxLoss), 150m)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Loss", "Maximum floating loss before closing", "Risk")
-			
 			.SetOptimize(50m, 500m, 25m);
 
 		_stepPips = Param(nameof(StepPips), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Step (pips)", "Distance between grid levels in pips", "Grid")
-			
 			.SetOptimize(10, 150, 10);
 
 		_ordersPerSide = Param(nameof(OrdersPerSide), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Orders Per Side", "Number of pending orders on each side", "Grid")
-			
 			.SetOptimize(1, 10, 1);
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume for each pending order", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, DataType.Level1)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -120,10 +131,11 @@ public class CarbophosGridStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_bestBid = 0m;
-		_bestAsk = 0m;
+		_entryPrice = null;
+		_gridCenterPrice = 0m;
 		_gridPlaced = false;
-		_gridPendingActivation = false;
+		_buyLevels.Clear();
+		_sellLevels.Clear();
 	}
 
 	/// <inheritdoc />
@@ -131,107 +143,149 @@ public class CarbophosGridStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Subscribe to Level1 data to track best bid and ask updates.
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
-			.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 
-		// Enable the built-in protection subsystem once.
-		StartProtection(null, null);
-	}
-
-	private void ProcessLevel1(Level1ChangeMessage level1)
-	{
-		if (level1 == null)
-			return;
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bid))
-			_bestBid = (decimal)bid;
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var ask))
-			_bestAsk = (decimal)ask;
-
-		// Re-evaluate the grid whenever new price data arrives.
-		CheckGridState();
-	}
-
-	private void CheckGridState()
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var activeOrders = GetActiveOrdersCount();
-
-		if (_gridPendingActivation && activeOrders > 0)
-			_gridPendingActivation = false;
-
-		if (Position == 0 && activeOrders == 0)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			if (!_gridPendingActivation)
-				_gridPlaced = false;
-
-			if (!_gridPlaced && TryPlaceGrid())
-				_gridPlaced = true;
-
-			return;
-		}
-
-		// No need to check profit if we do not have an open position yet.
-		if (Position == 0)
-			return;
-
-		var evaluationPrice = GetEvaluationPrice();
-		if (evaluationPrice == 0m)
-			return;
-
-		var floatingPnL = CalculateFloatingPnL(evaluationPrice);
-
-		if (floatingPnL >= ProfitTarget)
-		{
-			ClosePositionsAndOrders("Profit target reached.");
-		}
-		else if (floatingPnL <= -MaxLoss)
-		{
-			ClosePositionsAndOrders("Maximum loss reached.");
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private bool TryPlaceGrid()
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (OrdersPerSide <= 0)
-			return false;
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var currentPrice = candle.ClosePrice;
+
+		// Check if any grid levels were hit by this candle
+		CheckGridFills(candle);
+
+		// Check profit/loss on position
+		if (Position != 0 && _entryPrice is decimal entry)
+		{
+			var floatingPnL = (currentPrice - entry) * Position;
+
+			if (floatingPnL >= ProfitTarget)
+			{
+				CloseAll("Profit target reached.");
+				return;
+			}
+
+			if (floatingPnL <= -MaxLoss)
+			{
+				CloseAll("Maximum loss reached.");
+				return;
+			}
+		}
+
+		// Place grid if none is active
+		if (!_gridPlaced || (Position == 0 && _buyLevels.Count == 0 && _sellLevels.Count == 0))
+		{
+			PlaceGrid(currentPrice);
+		}
+	}
+
+	private void PlaceGrid(decimal centerPrice)
+	{
+		_buyLevels.Clear();
+		_sellLevels.Clear();
 
 		var stepSize = GetGridStep();
-		if (stepSize <= 0m)
-			return false;
-
-		if (_bestBid <= 0m || _bestAsk <= 0m)
-			return false;
-
-		var placed = false;
+		if (stepSize <= 0m || centerPrice <= 0m)
+			return;
 
 		for (var i = 1; i <= OrdersPerSide; i++)
 		{
 			var offset = stepSize * i;
-			var sellPrice = _bestBid + offset;
-			var buyPrice = _bestAsk - offset;
+			var buyPrice = centerPrice - offset;
+			var sellPrice = centerPrice + offset;
 
-			// Register sell limit orders above the best bid price.
-			SellLimit(OrderVolume, sellPrice);
-			placed = true;
-
-			// Register buy limit orders below the best ask price if it stays positive.
 			if (buyPrice > 0m)
+				_buyLevels.Add(buyPrice);
+
+			_sellLevels.Add(sellPrice);
+		}
+
+		_gridCenterPrice = centerPrice;
+		_gridPlaced = true;
+	}
+
+	private void CheckGridFills(ICandleMessage candle)
+	{
+		// Check buy levels (price goes down to the level)
+		for (var i = _buyLevels.Count - 1; i >= 0; i--)
+		{
+			if (candle.LowPrice <= _buyLevels[i])
 			{
-				BuyLimit(OrderVolume, buyPrice);
-				placed = true;
+				BuyMarket(OrderVolume);
+				UpdateEntryPrice(_buyLevels[i], OrderVolume, true);
+				_buyLevels.RemoveAt(i);
 			}
 		}
 
-		if (placed)
-			_gridPendingActivation = true;
+		// Check sell levels (price goes up to the level)
+		for (var i = _sellLevels.Count - 1; i >= 0; i--)
+		{
+			if (candle.HighPrice >= _sellLevels[i])
+			{
+				SellMarket(OrderVolume);
+				UpdateEntryPrice(_sellLevels[i], OrderVolume, false);
+				_sellLevels.RemoveAt(i);
+			}
+		}
+	}
 
-		return placed;
+	private void UpdateEntryPrice(decimal fillPrice, decimal volume, bool isBuy)
+	{
+		if (_entryPrice is not decimal existingEntry || Position == 0)
+		{
+			_entryPrice = fillPrice;
+			return;
+		}
+
+		// Weighted average entry price calculation
+		var existingPos = Position;
+		var newPos = isBuy ? existingPos + volume : existingPos - volume;
+
+		if (newPos == 0)
+		{
+			_entryPrice = null;
+			return;
+		}
+
+		// Only update if adding to position in same direction
+		if ((isBuy && existingPos > 0) || (!isBuy && existingPos < 0))
+		{
+			var totalVolume = Math.Abs(existingPos) + volume;
+			_entryPrice = (existingEntry * Math.Abs(existingPos) + fillPrice * volume) / totalVolume;
+		}
+		else
+		{
+			// Reducing position - keep same entry price
+			if (Math.Abs(newPos) > 0)
+				_entryPrice = existingEntry;
+			else
+				_entryPrice = null;
+		}
+	}
+
+	private void CloseAll(string reason)
+	{
+		if (Position > 0)
+			SellMarket(Math.Abs(Position));
+		else if (Position < 0)
+			BuyMarket(Math.Abs(Position));
+
+		_buyLevels.Clear();
+		_sellLevels.Clear();
+		_gridPlaced = false;
+		_entryPrice = null;
+
+		LogInfo(reason);
 	}
 
 	private decimal GetGridStep()
@@ -246,68 +300,5 @@ public class CarbophosGridStrategy : Strategy
 
 		var multiplier = (security.Decimals == 3 || security.Decimals == 5) ? 10m : 1m;
 		return StepPips * priceStep * multiplier;
-	}
-
-	private int GetActiveOrdersCount()
-	{
-		var count = 0;
-
-		foreach (var order in Orders)
-		{
-			if (order == null || order.Security != Security)
-				continue;
-
-			if (order.State == OrderStates.Active)
-				count++;
-		}
-
-		return count;
-	}
-
-	private decimal GetEvaluationPrice()
-	{
-		if (Position > 0)
-			return _bestBid;
-
-		if (Position < 0)
-			return _bestAsk;
-
-		return 0m;
-	}
-
-	private decimal CalculateFloatingPnL(decimal marketPrice)
-	{
-		var security = Security;
-		if (security == null)
-			return 0m;
-
-		var priceStep = security.PriceStep ?? 0m;
-		var stepPrice = security.StepPrice ?? priceStep;
-
-		if (priceStep <= 0m || stepPrice <= 0m || PositionPrice == 0m)
-			return 0m;
-
-		var diff = marketPrice - PositionPrice;
-		var steps = diff / priceStep;
-
-		return steps * stepPrice * Position;
-	}
-
-	private void ClosePositionsAndOrders(string reason)
-	{
-		if (Position > 0)
-		{
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0)
-		{
-			BuyMarket(Math.Abs(Position));
-		}
-
-		CancelActiveOrders();
-		_gridPlaced = false;
-		_gridPendingActivation = false;
-
-		LogInfo(reason);
 	}
 }

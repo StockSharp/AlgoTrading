@@ -15,155 +15,69 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Time range statistics strategy.
-/// Collects basic statistics between start and end bars and trades based on percent change.
+/// Collects statistics over rolling windows and trades based on percent change.
 /// </summary>
 public class TimeRangeStatisticsStrategy : Strategy
 {
-private readonly StrategyParam<int> _startIndex;
-private readonly StrategyParam<int> _endIndex;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _windowSize;
+	private readonly StrategyParam<decimal> _changeThreshold;
+	private readonly StrategyParam<DataType> _candleType;
 
-private int _barIndex;
-private decimal _sumPrice;
-private decimal _sumVolume;
-private decimal _maxPrice;
-private decimal _minPrice;
-private decimal _startPrice;
-private int _count;
-private int _gapCount;
-private decimal? _prevHigh;
-private decimal? _prevLow;
+	private readonly List<decimal> _closes = new();
 
-/// <summary>
-/// Start bar index.
-/// </summary>
-public int StartIndex
-{
-get => _startIndex.Value;
-set => _startIndex.Value = value;
-}
+	public int WindowSize { get => _windowSize.Value; set => _windowSize.Value = value; }
+	public decimal ChangeThreshold { get => _changeThreshold.Value; set => _changeThreshold.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// End bar index.
-/// </summary>
-public int EndIndex
-{
-get => _endIndex.Value;
-set => _endIndex.Value = value;
-}
+	public TimeRangeStatisticsStrategy()
+	{
+		_windowSize = Param(nameof(WindowSize), 100)
+			.SetGreaterThanZero();
+		_changeThreshold = Param(nameof(ChangeThreshold), 0.5m)
+			.SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+	}
 
-/// <summary>
-/// Candle type to process.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <summary>
-/// Initializes a new instance of <see cref="TimeRangeStatisticsStrategy"/>.
-/// </summary>
-public TimeRangeStatisticsStrategy()
-{
-_startIndex = Param(nameof(StartIndex), 9000)
-.SetGreaterThanZero()
-.SetDisplay("Start Index", "Start bar index", "General")
-;
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_closes.Clear();
+	}
 
-_endIndex = Param(nameof(EndIndex), 10000)
-.SetGreaterThanZero()
-.SetDisplay("End Index", "End bar index", "General")
-;
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles", "General");
-}
+		var sma = new SimpleMovingAverage { Length = 10 };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(sma, ProcessCandle).Start();
+	}
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+	private void ProcessCandle(ICandleMessage candle, decimal smaVal)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
+		_closes.Add(candle.ClosePrice);
+		if (_closes.Count > WindowSize)
+			_closes.RemoveAt(0);
 
-_barIndex = 0;
-_sumPrice = 0m;
-_sumVolume = 0m;
-_maxPrice = 0m;
-_minPrice = decimal.MaxValue;
-_startPrice = 0m;
-_count = 0;
-_gapCount = 0;
-_prevHigh = default;
-_prevLow = default;
-}
+		if (_closes.Count < WindowSize)
+			return;
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+		var startPrice = _closes[0];
+		var endPrice = _closes[_closes.Count - 1];
+		var percentChange = (endPrice - startPrice) / startPrice * 100m;
 
-var subscription = SubscribeCandles(CandleType);
-subscription.Bind(ProcessCandle).Start();
-}
-
-private void ProcessCandle(ICandleMessage candle)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-_barIndex++;
-
-if (_barIndex < StartIndex || _barIndex > EndIndex)
-{
-_prevHigh = candle.HighPrice;
-_prevLow = candle.LowPrice;
-return;
-}
-
-if (_count == 0)
-{
-_startPrice = candle.ClosePrice;
-_maxPrice = candle.ClosePrice;
-_minPrice = candle.ClosePrice;
-}
-
-_sumPrice += candle.ClosePrice;
-_sumVolume += candle.TotalVolume;
-_maxPrice = Math.Max(_maxPrice, candle.ClosePrice);
-_minPrice = Math.Min(_minPrice, candle.ClosePrice);
-_count++;
-
-if (_prevHigh != null && _prevLow != null)
-{
-if (candle.OpenPrice > _prevHigh || candle.OpenPrice < _prevLow)
-_gapCount++;
-}
-
-_prevHigh = candle.HighPrice;
-_prevLow = candle.LowPrice;
-
-if (_barIndex != EndIndex)
-return;
-
-var mean = _sumPrice / _count;
-var normRange = (_maxPrice - _minPrice) / (_maxPrice + _minPrice);
-var percentChange = (candle.ClosePrice - _startPrice) / _startPrice * 100m;
-var avgVolume = _sumVolume / _count;
-
-this.LogInfo($"Mean={mean}; NormRange={normRange}; PercentChange={percentChange}; AvgVol={avgVolume}; Gaps={_gapCount}");
-
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
-
-if (percentChange > 0 && Position <= 0)
-BuyMarket();
-else if (percentChange < 0 && Position >= 0)
-SellMarket();
-}
+		// Trade based on percent change over the window
+		if (percentChange > ChangeThreshold && Position <= 0)
+			BuyMarket();
+		else if (percentChange < -ChangeThreshold && Position >= 0)
+			SellMarket();
+	}
 }

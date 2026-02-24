@@ -102,7 +102,7 @@ public class SlimeMoldRsiStrategy : Strategy
 			
 			.SetOptimize(-200m, 200m, 10m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles used in calculations", "General");
 	}
 
@@ -153,10 +153,10 @@ public class SlimeMoldRsiStrategy : Strategy
 		// Median price replicates PRICE_MEDIAN used in the original script.
 		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2m;
 
-		var rsi12Value = _rsi12.Process(new DecimalIndicatorValue(_rsi12, medianPrice, candle.ServerTime)).ToDecimal();
-		var rsi36Value = _rsi36.Process(new DecimalIndicatorValue(_rsi36, medianPrice, candle.ServerTime)).ToDecimal();
-		var rsi108Value = _rsi108.Process(new DecimalIndicatorValue(_rsi108, medianPrice, candle.ServerTime)).ToDecimal();
-		var rsi324Value = _rsi324.Process(new DecimalIndicatorValue(_rsi324, medianPrice, candle.ServerTime)).ToDecimal();
+		var rsi12Value = _rsi12.Process(new DecimalIndicatorValue(_rsi12, medianPrice, candle.ServerTime) { IsFinal = true }).ToDecimal();
+		var rsi36Value = _rsi36.Process(new DecimalIndicatorValue(_rsi36, medianPrice, candle.ServerTime) { IsFinal = true }).ToDecimal();
+		var rsi108Value = _rsi108.Process(new DecimalIndicatorValue(_rsi108, medianPrice, candle.ServerTime) { IsFinal = true }).ToDecimal();
+		var rsi324Value = _rsi324.Process(new DecimalIndicatorValue(_rsi324, medianPrice, candle.ServerTime) { IsFinal = true }).ToDecimal();
 
 		// Wait until every RSI is fully formed before evaluating signals.
 		if (!_rsi12.IsFormed || !_rsi36.IsFormed || !_rsi108.IsFormed || !_rsi324.IsFormed)
@@ -178,11 +178,7 @@ public class SlimeMoldRsiStrategy : Strategy
 		var previousPerceptron = _previousPerceptron.Value;
 
 		// Even if trading is disabled, keep the state in sync with the incoming data.
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousPerceptron = currentPerceptron;
-			return;
-		}
+		// indicators already checked above via IsFormed
 
 		// Zero-crossing from negative to positive triggers a long entry.
 		if (previousPerceptron < 0m && currentPerceptron > 0m && Position <= 0m)

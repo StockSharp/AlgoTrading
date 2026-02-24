@@ -14,17 +14,19 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Displays RSI candles and its moving average.
-/// This strategy is for visualization only and does not trade.
+/// RSI crossover strategy using RSI and SMA of price.
+/// Buys when RSI crosses above oversold and price above SMA.
+/// Sells when RSI crosses below overbought and price below SMA.
 /// </summary>
 public class TimeCandlesStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _smaLength;
+	private readonly StrategyParam<decimal> _oversold;
+	private readonly StrategyParam<decimal> _overbought;
 
-	private RelativeStrengthIndex _rsi;
-	private SimpleMovingAverage _sma;
+	private decimal _prevRsi;
 
 	/// <summary>
 	/// Candle type.
@@ -53,9 +55,18 @@ public class TimeCandlesStrategy : Strategy
 		set => _smaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes <see cref="TimeCandlesStrategy"/>.
-	/// </summary>
+	public decimal Oversold
+	{
+		get => _oversold.Value;
+		set => _oversold.Value = value;
+	}
+
+	public decimal Overbought
+	{
+		get => _overbought.Value;
+		set => _overbought.Value = value;
+	}
+
 	public TimeCandlesStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -63,13 +74,17 @@ public class TimeCandlesStrategy : Strategy
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "Parameters")
-			;
+			.SetDisplay("RSI Length", "RSI period", "Parameters");
 
 		_smaLength = Param(nameof(SmaLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("SMA Length", "Average period", "Parameters")
-			;
+			.SetDisplay("SMA Length", "Average period", "Parameters");
+
+		_oversold = Param(nameof(Oversold), 30m)
+			.SetDisplay("Oversold", "RSI oversold level", "Parameters");
+
+		_overbought = Param(nameof(Overbought), 70m)
+			.SetDisplay("Overbought", "RSI overbought level", "Parameters");
 	}
 
 	/// <inheritdoc />
@@ -82,9 +97,7 @@ public class TimeCandlesStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_rsi = default;
-		_sma = default;
+		_prevRsi = 0;
 	}
 
 	/// <inheritdoc />
@@ -92,18 +105,19 @@ public class TimeCandlesStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_sma = new SMA { Length = SmaLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var sma = new SimpleMovingAverage { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_rsi, _sma, ProcessCandle).Start();
+		subscription.Bind(rsi, sma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsi);
-			DrawIndicator(area, _sma);
+			DrawIndicator(area, rsi);
+			DrawIndicator(area, sma);
+			DrawOwnTrades(area);
 		}
 	}
 
@@ -112,6 +126,21 @@ public class TimeCandlesStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		AddInfo($"RSI: {rsiValue:F2} SMA: {smaValue:F2}");
+		if (_prevRsi == 0)
+		{
+			_prevRsi = rsiValue;
+			return;
+		}
+
+		var close = candle.ClosePrice;
+
+		// RSI crosses above oversold and price above SMA -> buy
+		if (_prevRsi <= Oversold && rsiValue > Oversold && close > smaValue && Position <= 0)
+			BuyMarket();
+		// RSI crosses below overbought and price below SMA -> sell
+		else if (_prevRsi >= Overbought && rsiValue < Overbought && close < smaValue && Position >= 0)
+			SellMarket();
+
+		_prevRsi = rsiValue;
 	}
 }

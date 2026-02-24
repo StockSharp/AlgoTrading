@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -22,107 +19,29 @@ public class TrendArrowsStrategy : Strategy
 {
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<bool> _canOpenLong;
-	private readonly StrategyParam<bool> _canOpenShort;
-	private readonly StrategyParam<bool> _canCloseLong;
-	private readonly StrategyParam<bool> _canCloseShort;
 
 	private bool _prevTrendUp;
 	private bool _prevTrendDown;
+	private decimal? _prevHighest;
+	private decimal? _prevLowest;
 
-	/// <summary>
-	/// Period length for highest and lowest calculations.
-	/// </summary>
-	public int Period
-	{
-		get => _period.Value;
-		set => _period.Value = value;
-	}
+	public int Period { get => _period.Value; set => _period.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Type of candles used for analysis.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
-	public bool CanOpenLong
-	{
-		get => _canOpenLong.Value;
-		set => _canOpenLong.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
-	public bool CanOpenShort
-	{
-		get => _canOpenShort.Value;
-		set => _canOpenShort.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing long positions.
-	/// </summary>
-	public bool CanCloseLong
-	{
-		get => _canCloseLong.Value;
-		set => _canCloseLong.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing short positions.
-	/// </summary>
-	public bool CanCloseShort
-	{
-		get => _canCloseShort.Value;
-		set => _canCloseShort.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes new instance of <see cref="TrendArrowsStrategy"/>.
-	/// </summary>
 	public TrendArrowsStrategy()
 	{
 		_period = Param(nameof(Period), 15)
-			 .SetGreaterThanZero()
-			 .SetDisplay("Period", "Number of bars for extreme calculation", "Parameters")
-			 
-			 .SetOptimize(5, 30, 5);
+			.SetDisplay("Period", "Number of bars for extreme calculation", "Parameters")
+			.SetOptimize(5, 30, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			 .SetDisplay("Candle Type", "Timeframe of candles", "Parameters");
-
-		_canOpenLong = Param(nameof(CanOpenLong), true)
-			 .SetDisplay("Open Long", "Allow opening long positions", "Trading");
-
-		_canOpenShort = Param(nameof(CanOpenShort), true)
-			 .SetDisplay("Open Short", "Allow opening short positions", "Trading");
-
-		_canCloseLong = Param(nameof(CanCloseLong), true)
-			 .SetDisplay("Close Long", "Allow closing long positions", "Trading");
-
-		_canCloseShort = Param(nameof(CanCloseShort), true)
-			 .SetDisplay("Close Short", "Allow closing short positions", "Trading");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe of candles", "Parameters");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, CandleType);
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevTrendUp = false;
-		_prevTrendDown = false;
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -130,13 +49,18 @@ public class TrendArrowsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_prevTrendUp = false;
+		_prevTrendDown = false;
+		_prevHighest = null;
+		_prevLowest = null;
+
 		var highest = new Highest { Length = Period };
 		var lowest = new Lowest { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			 .Bind(highest, lowest, ProcessCandle)
-			 .Start();
+			.Bind(highest, lowest, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -148,18 +72,28 @@ public class TrendArrowsStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)
+	private void ProcessCandle(ICandleMessage candle, decimal highestVal, decimal lowestVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Determine current trend state
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		// Use previous bar's highest/lowest to detect breakout
+		if (_prevHighest is null || _prevLowest is null)
+		{
+			_prevHighest = highestVal;
+			_prevLowest = lowestVal;
+			return;
+		}
+
 		var trendUp = false;
 		var trendDown = false;
 
-		if (candle.ClosePrice > highest)
+		if (candle.ClosePrice > _prevHighest.Value)
 			trendUp = true;
-		else if (candle.ClosePrice < lowest)
+		else if (candle.ClosePrice < _prevLowest.Value)
 			trendDown = true;
 		else
 		{
@@ -168,24 +102,16 @@ public class TrendArrowsStrategy : Strategy
 		}
 
 		// Buy when up trend appears
-		if (!_prevTrendUp && trendUp)
-		{
-			if (CanCloseShort && Position < 0)
-				BuyMarket(Math.Abs(Position));
-			if (CanOpenLong && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-		}
+		if (!_prevTrendUp && trendUp && Position <= 0)
+			BuyMarket();
 
 		// Sell when down trend appears
-		if (!_prevTrendDown && trendDown)
-		{
-			if (CanCloseLong && Position > 0)
-				SellMarket(Math.Abs(Position));
-			if (CanOpenShort && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-		}
+		if (!_prevTrendDown && trendDown && Position >= 0)
+			SellMarket();
 
 		_prevTrendUp = trendUp;
 		_prevTrendDown = trendDown;
+		_prevHighest = highestVal;
+		_prevLowest = lowestVal;
 	}
 }

@@ -14,60 +14,39 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Tomas Ratio strategy with multi-timeframe analysis.
+/// Tomas Ratio strategy: momentum scoring with gain/loss ratio.
+/// Accumulates signal points based on momentum vs mean, enters when threshold reached.
 /// </summary>
 public class TomasRatioWithMultiTimeFrameAnalysisStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<int> _deviationLength;
-	private readonly StrategyParam<int> _pointsTarget;
-	private readonly StrategyParam<bool> _useStdDev;
-
-	private StandardDeviation _deviation;
-	private SimpleMovingAverage _gainsAvg;
-	private SimpleMovingAverage _lossesAvg;
-	private SimpleMovingAverage _gainsWeightAvg;
-	private SimpleMovingAverage _lossesWeightAvg;
-	private SimpleMovingAverage _ma100;
-	private ExponentialMovingAverage _ema720;
-	private SimpleMovingAverage _buyPointsAvg;
-	private SimpleMovingAverage _closePointsAvg;
+	private readonly StrategyParam<int> _lookback;
+	private readonly StrategyParam<decimal> _entryThreshold;
 
 	private decimal _prevHlc3;
 	private decimal _prevSignal;
-	private decimal _buySignalPoints;
-	private decimal _buyPoints;
-	private decimal _closePoints;
+	private decimal _signalPoints;
+	private int _gainsCount;
+	private int _lossesCount;
+	private decimal _gainsSum;
+	private decimal _lossesSum;
+	private int _barCount;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int Length { get => _length.Value; set => _length.Value = value; }
-	public int DeviationLength { get => _deviationLength.Value; set => _deviationLength.Value = value; }
-	public int PointsTarget { get => _pointsTarget.Value; set => _pointsTarget.Value = value; }
-	public bool UseStandardDeviation { get => _useStdDev.Value; set => _useStdDev.Value = value; }
+	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
+	public decimal EntryThreshold { get => _entryThreshold.Value; set => _entryThreshold.Value = value; }
 
 	public TomasRatioWithMultiTimeFrameAnalysisStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle type", "General");
 
-		_length = Param(nameof(Length), 720)
+		_lookback = Param(nameof(Lookback), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Length", "Monthly weight length", "Parameters")
-			;
+			.SetDisplay("Lookback", "Lookback for ratio calculation", "Parameters");
 
-		_deviationLength = Param(nameof(DeviationLength), 168)
-			.SetGreaterThanZero()
-			.SetDisplay("Deviation Length", "Weekly deviation length", "Parameters")
-			;
-
-		_pointsTarget = Param(nameof(PointsTarget), 100)
-			.SetGreaterThanZero()
-			.SetDisplay("Points Target", "Target points for entry", "Parameters")
-			;
-
-		_useStdDev = Param(nameof(UseStandardDeviation), true)
-			.SetDisplay("Use StdDev", "Enable standard deviation increment", "Parameters");
+		_entryThreshold = Param(nameof(EntryThreshold), 5m)
+			.SetDisplay("Entry Threshold", "Signal points threshold for entry", "Parameters");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -78,99 +57,103 @@ public class TomasRatioWithMultiTimeFrameAnalysisStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_deviation = default;
-		_gainsAvg = default;
-		_lossesAvg = default;
-		_gainsWeightAvg = default;
-		_lossesWeightAvg = default;
-		_ma100 = default;
-		_ema720 = default;
-		_buyPointsAvg = default;
-		_closePointsAvg = default;
-		_prevHlc3 = default;
-		_prevSignal = default;
-		_buySignalPoints = default;
-		_buyPoints = default;
-		_closePoints = default;
+		_prevHlc3 = 0;
+		_prevSignal = 0;
+		_signalPoints = 0;
+		_gainsCount = 0;
+		_lossesCount = 0;
+		_gainsSum = 0;
+		_lossesSum = 0;
+		_barCount = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_deviation = new StandardDeviation { Length = DeviationLength };
-		_gainsAvg = new SMA { Length = DeviationLength };
-		_lossesAvg = new SMA { Length = DeviationLength };
-		_gainsWeightAvg = new SMA { Length = Length };
-		_lossesWeightAvg = new SMA { Length = Length };
-		_ma100 = new SMA { Length = 100 };
-		_ema720 = new EMA { Length = 720 };
-		_buyPointsAvg = new SMA { Length = 24 };
-		_closePointsAvg = new SMA { Length = 24 };
+		var ema = new ExponentialMovingAverage { Length = 50 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(ema, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma100);
-			DrawIndicator(area, _ema720);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		var hlc3 = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
-		var deviationValue = _deviation.Process(hlc3);
-		var deviation = deviationValue.ToDecimal();
-		var move = Math.Abs(hlc3 - _prevHlc3);
-		var moveStrength = UseStandardDeviation && deviation != 0m ? 1m + move / deviation : 1m;
 
-		var gainsWeight = hlc3 > _prevHlc3 ? moveStrength * moveStrength : 0m;
-		var lossesWeight = hlc3 < _prevHlc3 ? moveStrength * moveStrength : 0m;
-		var gains = hlc3 > _prevHlc3 ? 1m : 0m;
-		var losses = hlc3 < _prevHlc3 ? 1m : 0m;
+		if (_prevHlc3 == 0)
+		{
+			_prevHlc3 = hlc3;
+			return;
+		}
 
-		var weightedGains = _gainsAvg.Process(gains).ToDecimal();
-		var weightedLosses = _lossesAvg.Process(losses).ToDecimal();
-		var dailyPositive = _gainsWeightAvg.Process(gainsWeight).ToDecimal() * Length / 7m;
-		var dailyNegative = _lossesWeightAvg.Process(lossesWeight).ToDecimal() * Length / 7m;
+		_barCount++;
+		var change = hlc3 - _prevHlc3;
 
-		var averageGain = dailyPositive * weightedGains;
-		var averageLoss = dailyNegative * weightedLosses;
-		var signalLine = averageGain - averageLoss;
+		if (change > 0)
+		{
+			_gainsCount++;
+			_gainsSum += change;
+		}
+		else if (change < 0)
+		{
+			_lossesCount++;
+			_lossesSum += Math.Abs(change);
+		}
 
-		var ma100 = _ma100.Process(signalLine).ToDecimal();
-		var ema720 = _ema720.Process(candle.ClosePrice).ToDecimal();
+		if (_barCount < Lookback)
+		{
+			_prevHlc3 = hlc3;
+			return;
+		}
 
-		var inc = signalLine > _prevSignal ? signalLine : 0m;
-		var dec = signalLine < ma100 ? Math.Max(signalLine, 5m) : 0m;
+		// Tomas ratio: weighted gain/loss ratio
+		var avgGain = _gainsCount > 0 ? _gainsSum / _gainsCount : 0m;
+		var avgLoss = _lossesCount > 0 ? _lossesSum / _lossesCount : 1m;
+		var ratio = avgLoss != 0 ? avgGain / avgLoss : 1m;
+		var signal = (ratio - 1m) * 100m; // positive = bullish momentum
 
-		_buyPoints = _buyPointsAvg.Process(inc).ToDecimal() * 24m;
-		_closePoints = _closePointsAvg.Process(dec).ToDecimal() * 24m;
+		// Accumulate points
+		if (signal > _prevSignal)
+			_signalPoints += signal * 0.1m;
+		else
+			_signalPoints -= Math.Abs(signal) * 0.1m;
 
-		if (signalLine > _prevSignal && _buyPoints > _closePoints)
-			_buySignalPoints += signalLine;
+		// Clamp
+		_signalPoints = Math.Max(-EntryThreshold * 2, Math.Min(EntryThreshold * 2, _signalPoints));
 
-		if (_buySignalPoints <= -100m)
-			_buySignalPoints = -100m;
-
-		if (_buySignalPoints >= PointsTarget && Position <= 0 && candle.ClosePrice > ema720)
+		// Trading logic
+		if (_signalPoints >= EntryThreshold && candle.ClosePrice > emaVal && Position <= 0)
 		{
 			BuyMarket();
-			_buySignalPoints = 0m;
+			_signalPoints = 0;
 		}
-		else if (_closePoints > _buyPoints && Position > 0)
+		else if (_signalPoints <= -EntryThreshold && candle.ClosePrice < emaVal && Position >= 0)
 		{
-			SellMarket(Position);
+			SellMarket();
+			_signalPoints = 0;
+		}
+		else if (Position > 0 && signal < _prevSignal && _signalPoints < 0)
+		{
+			SellMarket();
+		}
+		else if (Position < 0 && signal > _prevSignal && _signalPoints > 0)
+		{
+			BuyMarket();
 		}
 
-		_prevSignal = signalLine;
+		_prevSignal = signal;
 		_prevHlc3 = hlc3;
 	}
 }

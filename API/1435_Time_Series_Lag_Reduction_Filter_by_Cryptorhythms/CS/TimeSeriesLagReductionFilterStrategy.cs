@@ -23,7 +23,7 @@ public class TimeSeriesLagReductionFilterStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevEma;
-	private bool _isFirst;
+	private bool _isFirst = true;
 	private bool _prevAboveFilter;
 
 	/// <summary>
@@ -58,15 +58,15 @@ public class TimeSeriesLagReductionFilterStrategy : Strategy
 	/// </summary>
 	public TimeSeriesLagReductionFilterStrategy()
 	{
-		_lagReduction = Param(nameof(LagReduction), 20m)
+		_lagReduction = Param(nameof(LagReduction), 5m)
 			.SetDisplay("Lag Reduction", "Smoothing factor", "General")
-			
-			.SetOptimize(10m, 30m, 5m);
 
-		_emaLength = Param(nameof(EmaLength), 100)
+			.SetOptimize(1m, 10m, 1m);
+
+		_emaLength = Param(nameof(EmaLength), 10)
 			.SetDisplay("EMA Length", "Period for EMA", "Indicators")
-			
-			.SetOptimize(50, 150, 10);
+
+			.SetOptimize(5, 30, 5);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -91,7 +91,7 @@ public class TimeSeriesLagReductionFilterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema = new EMA
+		var ema = new ExponentialMovingAverage
 		{
 			Length = EmaLength
 		};
@@ -115,9 +115,6 @@ public class TimeSeriesLagReductionFilterStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (_isFirst)
 		{
 			_prevEma = ema;
@@ -135,7 +132,14 @@ public class TimeSeriesLagReductionFilterStrategy : Strategy
 			return;
 		}
 
-		var lagFilter = (decimal)Math.Exp((double)(LagReduction * Math.Log((double)ratio))) * ema;
+		var exponent = (double)LagReduction * Math.Log((double)ratio);
+		if (Math.Abs(exponent) > 50)
+		{
+			_prevEma = ema;
+			return;
+		}
+
+		var lagFilter = (decimal)Math.Exp(exponent) * ema;
 
 		var isAbove = candle.ClosePrice > lagFilter;
 		var crossedAbove = isAbove && !_prevAboveFilter;
@@ -143,11 +147,11 @@ public class TimeSeriesLagReductionFilterStrategy : Strategy
 
 		if (crossedAbove && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		else if (crossedBelow && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 
 		_prevAboveFilter = isAbove;

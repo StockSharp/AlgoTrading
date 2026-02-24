@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Chaos Trader Lite strategy implementing Bill Williams' three wise men entry concepts.
-/// Places stop orders when divergent bars, Awesome Oscillator accelerations or confirmed fractals appear.
+/// Uses market orders when divergent bars, Awesome Oscillator accelerations or confirmed fractals appear.
 /// </summary>
 public class ChaosTraderLiteStrategy : Strategy
 {
@@ -55,8 +55,11 @@ public class ChaosTraderLiteStrategy : Strategy
 	private decimal? _longStopLoss;
 	private decimal? _shortStopLoss;
 
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
+	// Pending entry prices for stop-like behavior
+	private decimal? _pendingBuyPrice;
+	private decimal? _pendingSellPrice;
+	private decimal? _pendingBuyStop;
+	private decimal? _pendingSellStop;
 
 	/// <summary>
 	/// Magnitude threshold in pips between price and Alligator lips.
@@ -112,7 +115,6 @@ public class ChaosTraderLiteStrategy : Strategy
 		set => _useThirdWiseMan.Value = value;
 	}
 
-
 	/// <summary>
 	/// Candle type processed by the strategy.
 	/// </summary>
@@ -148,8 +150,7 @@ public class ChaosTraderLiteStrategy : Strategy
 		_useThirdWiseMan = Param(nameof(UseThirdWiseMan), true)
 			.SetDisplay("Third Wise Man", "Enable fractal breakout setup", "General");
 
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -183,15 +184,16 @@ public class ChaosTraderLiteStrategy : Strategy
 		_longStopLoss = null;
 		_shortStopLoss = null;
 
-		_buyStopOrder = null;
-		_sellStopOrder = null;
+		_pendingBuyPrice = null;
+		_pendingSellPrice = null;
+		_pendingBuyStop = null;
+		_pendingSellStop = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
 
 		_lipsSmma = new SmoothedMovingAverage { Length = 5 };
 		_teethSmma = new SmoothedMovingAverage { Length = 8 };
@@ -216,16 +218,21 @@ public class ChaosTraderLiteStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		// Check pending stop-like entries first
+		CheckPendingEntries(candle);
+
 		UpdateBarHistory(candle);
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-		var lipsValue = _lipsSmma.Process(median);
-		var teethValue = _teethSmma.Process(median);
-		var awesomeValue = _awesomeOscillator.Process(candle.HighPrice, candle.LowPrice);
+		var candleInput = new CandleIndicatorValue(_lipsSmma, candle);
+
+		var lipsValue = _lipsSmma.Process(new DecimalIndicatorValue(_lipsSmma, median, candle.ServerTime) { IsFinal = true });
+		var teethValue = _teethSmma.Process(new DecimalIndicatorValue(_teethSmma, median, candle.ServerTime) { IsFinal = true });
+		var awesomeValue = _awesomeOscillator.Process(new CandleIndicatorValue(_awesomeOscillator, candle));
 
 		if (lipsValue.IsFinal)
 		{
-			var lips = lipsValue.GetValue<decimal>();
+			var lips = lipsValue.ToDecimal();
 			_lipsShiftQueue.Enqueue(lips);
 			if (_lipsShiftQueue.Count > LipsShift)
 			{
@@ -235,7 +242,7 @@ public class ChaosTraderLiteStrategy : Strategy
 
 		if (teethValue.IsFinal)
 		{
-			var teeth = teethValue.GetValue<decimal>();
+			var teeth = teethValue.ToDecimal();
 			_teethShiftQueue.Enqueue(teeth);
 			if (_teethShiftQueue.Count > TeethShift)
 			{
@@ -246,7 +253,7 @@ public class ChaosTraderLiteStrategy : Strategy
 
 		if (awesomeValue.IsFinal)
 		{
-			var ao = awesomeValue.GetValue<decimal>();
+			var ao = awesomeValue.ToDecimal();
 			_ao5 = _ao4;
 			_ao4 = _ao3;
 			_ao3 = _ao2;
@@ -258,10 +265,53 @@ public class ChaosTraderLiteStrategy : Strategy
 		var upFractal = GetUpFractal();
 		var downFractal = GetDownFractal();
 
-		if (IsFormedAndOnlineAndAllowTrading())
+		if (_lipsSmma.IsFormed && _teethSmma.IsFormed)
 			EvaluateSignals(candle, upFractal, downFractal);
 
 		UpdateProtection(candle);
+	}
+
+	private void CheckPendingEntries(ICandleMessage candle)
+	{
+		// Simulate buy stop: if candle high reaches or exceeds pending buy price, enter long
+		if (_pendingBuyPrice is decimal buyPrice && candle.HighPrice >= buyPrice)
+		{
+			if (Position <= 0)
+			{
+				if (Position < 0)
+				{
+					BuyMarket(-Position);
+					_shortStopLoss = null;
+				}
+				if (Volume > 0)
+				{
+					BuyMarket(Volume);
+					_longStopLoss = _pendingBuyStop;
+				}
+			}
+			_pendingBuyPrice = null;
+			_pendingBuyStop = null;
+		}
+
+		// Simulate sell stop: if candle low reaches or goes below pending sell price, enter short
+		if (_pendingSellPrice is decimal sellPrice && candle.LowPrice <= sellPrice)
+		{
+			if (Position >= 0)
+			{
+				if (Position > 0)
+				{
+					SellMarket(Position);
+					_longStopLoss = null;
+				}
+				if (Volume > 0)
+				{
+					SellMarket(Volume);
+					_shortStopLoss = _pendingSellStop;
+				}
+			}
+			_pendingSellPrice = null;
+			_pendingSellStop = null;
+		}
 	}
 
 	private void EvaluateSignals(ICandleMessage candle, decimal? upFractal, decimal? downFractal)
@@ -344,32 +394,19 @@ public class ChaosTraderLiteStrategy : Strategy
 		if (Volume <= 0)
 			return;
 
-		var entryPrice = bar.HighPrice + point;
+		var entryPrice = bar.High + point;
 		if (entryPrice <= 0m)
 			return;
 
-		var stopPrice = bar.LowPrice - point;
+		var stopPrice = bar.Low - point;
 
-		CancelOrderIfActive(ref _sellStopOrder);
+		// Cancel pending sell
+		_pendingSellPrice = null;
+		_pendingSellStop = null;
 
-		if (Position < 0)
-		{
-			BuyMarket(-Position);
-			_shortStopLoss = null;
-		}
-
-		CancelOrderIfActive(ref _buyStopOrder);
-		_buyStopOrder = BuyStop(Volume, entryPrice);
-
-		if (_longStopLoss is decimal existing)
-		{
-			if (stopPrice > existing)
-				_longStopLoss = stopPrice;
-		}
-		else
-		{
-			_longStopLoss = stopPrice;
-		}
+		// Set pending buy entry (simulates buy stop order)
+		_pendingBuyPrice = entryPrice;
+		_pendingBuyStop = stopPrice;
 	}
 
 	private void PlaceSellSetup(CandleInfo bar, decimal point)
@@ -377,32 +414,19 @@ public class ChaosTraderLiteStrategy : Strategy
 		if (Volume <= 0)
 			return;
 
-		var entryPrice = bar.LowPrice - point;
+		var entryPrice = bar.Low - point;
 		if (entryPrice <= 0m)
 			return;
 
-		var stopPrice = bar.HighPrice + point;
+		var stopPrice = bar.High + point;
 
-		CancelOrderIfActive(ref _buyStopOrder);
+		// Cancel pending buy
+		_pendingBuyPrice = null;
+		_pendingBuyStop = null;
 
-		if (Position > 0)
-		{
-			SellMarket(Position);
-			_longStopLoss = null;
-		}
-
-		CancelOrderIfActive(ref _sellStopOrder);
-		_sellStopOrder = SellStop(Volume, entryPrice);
-
-		if (_shortStopLoss is decimal existing)
-		{
-			if (stopPrice < existing)
-				_shortStopLoss = stopPrice;
-		}
-		else
-		{
-			_shortStopLoss = stopPrice;
-		}
+		// Set pending sell entry (simulates sell stop order)
+		_pendingSellPrice = entryPrice;
+		_pendingSellStop = stopPrice;
 	}
 
 	private static bool IsBullishDivergent(CandleInfo current, CandleInfo previous)
@@ -453,26 +477,6 @@ public class ChaosTraderLiteStrategy : Strategy
 			Low = candle.LowPrice,
 			Close = candle.ClosePrice
 		};
-	}
-
-	private void CancelOrderIfActive(ref Order order)
-	{
-		if (order != null && order.State == OrderStates.Active)
-			CancelOrder(order);
-
-		order = null;
-	}
-
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position <= 0)
-			_longStopLoss = null;
-		if (Position >= 0)
-			_shortStopLoss = null;
 	}
 
 	private struct CandleInfo

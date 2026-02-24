@@ -8,7 +8,7 @@ using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Localization;
+
 
 namespace StockSharp.Samples.Strategies;
 
@@ -254,8 +254,7 @@ public class BurgExtrapolatorStrategy : Strategy
 		StartProtection(
 		takeProfit: TakeProfitPips > 0m ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute) : null,
 		stopLoss: StopLossPips > 0m ? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute) : null,
-		isStopTrailing: TrailingStopPips > 0m,
-		trailingStop: TrailingStopPips > 0m ? new Unit(TrailingStopPips * _pipSize, UnitTypes.Absolute) : null);
+		isStopTrailing: TrailingStopPips > 0m);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -274,8 +273,7 @@ public class BurgExtrapolatorStrategy : Strategy
 		if (!TryBuildInputSeries(out var average))
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// no bound indicators; skip only until enough bars collected
 
 		if (!TryCalculateSignals(average, currentOpen, out var openSignal, out var closeSignal))
 		return;

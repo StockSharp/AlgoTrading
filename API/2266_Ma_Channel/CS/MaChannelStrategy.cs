@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,13 +12,18 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Moving average channel breakout strategy.
-/// Buys when price crosses above the upper channel and sells when price crosses below the lower channel.
+/// Buys when price crosses above the upper channel (MA of highs + offset).
+/// Sells when price crosses below the lower channel (MA of lows - offset).
 /// </summary>
 public class MaChannelStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<decimal> _offset;
 	private readonly StrategyParam<DataType> _candleType;
+
+	private ExponentialMovingAverage _maHigh;
+	private ExponentialMovingAverage _maLow;
+	private int _trend;
 
 	public int Length { get => _length.Value; set => _length.Value = value; }
 	public decimal Offset { get => _offset.Value; set => _offset.Value = value; }
@@ -30,18 +32,14 @@ public class MaChannelStrategy : Strategy
 	public MaChannelStrategy()
 	{
 		_length = Param(nameof(Length), 8)
-			.SetGreaterThanZero()
 			.SetDisplay("Length", "Moving average period", "Parameters")
-			
 			.SetOptimize(5, 20, 1);
 
-		_offset = Param(nameof(Offset), 10m)
-			.SetGreaterThanZero()
+		_offset = Param(nameof(Offset), 100m)
 			.SetDisplay("Offset", "Price offset from the average", "Parameters")
-			
-			.SetOptimize(5m, 20m, 5m);
+			.SetOptimize(50m, 500m, 50m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
 
@@ -56,51 +54,49 @@ public class MaChannelStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create moving averages for channel boundaries
-		var maHigh = new EMA { Length = Length };
-		var maLow = new EMA { Length = Length };
-
-		// Trend state: +1 for uptrend, -1 for downtrend
-		var trend = 0;
+		_trend = 0;
+		_maHigh = new ExponentialMovingAverage { Length = Length };
+		_maLow = new ExponentialMovingAverage { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(maHigh, maLow, (candle, highMa, lowMa) =>
-			{
-				// Process only finished candles
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				// Ensure trading is allowed and data is ready
-				if (!IsFormedAndOnlineAndAllowTrading())
-					return;
-
-				// Calculate upper and lower channel values
-				var upper = highMa + Offset;
-				var lower = lowMa - Offset;
-
-				var prevTrend = trend;
-
-				// Update trend depending on price position
-				if (candle.HighPrice > upper)
-					trend = +1;
-				else if (candle.LowPrice < lower)
-					trend = -1;
-
-				// Generate trading signals when trend changes
-				if (prevTrend <= 0 && trend > 0)
-				{
-					// Enter long or close short position
-					if (Position <= 0)
-						BuyMarket(Volume + Math.Abs(Position));
-				}
-				else if (prevTrend >= 0 && trend < 0)
-				{
-					// Enter short or close long position
-					if (Position >= 0)
-						SellMarket(Volume + Math.Abs(Position));
-				}
-			})
+			.Bind(ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var t = candle.ServerTime;
+
+		var highResult = _maHigh.Process(candle.HighPrice, t, true);
+		var lowResult = _maLow.Process(candle.LowPrice, t, true);
+
+		if (!_maHigh.IsFormed || !_maLow.IsFormed)
+			return;
+
+		var upper = highResult.GetValue<decimal>() + Offset;
+		var lower = lowResult.GetValue<decimal>() - Offset;
+
+		var prevTrend = _trend;
+
+		if (candle.HighPrice > upper)
+			_trend = 1;
+		else if (candle.LowPrice < lower)
+			_trend = -1;
+
+		if (prevTrend <= 0 && _trend > 0 && Position <= 0)
+			BuyMarket();
+		else if (prevTrend >= 0 && _trend < 0 && Position >= 0)
+			SellMarket();
 	}
 }

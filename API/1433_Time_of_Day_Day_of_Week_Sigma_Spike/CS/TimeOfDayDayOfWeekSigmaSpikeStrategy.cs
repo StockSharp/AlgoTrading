@@ -15,153 +15,100 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Time of day / day of week sigma spike strategy.
-/// Calculates return z-score and buys on spikes.
-/// Counts spikes per hour for statistics.
+/// Calculates return z-score and buys on spikes, sells when spike subsides.
 /// </summary>
 public class TimeOfDayDayOfWeekSigmaSpikeStrategy : Strategy
 {
-private readonly StrategyParam<decimal> _threshold;
-private readonly StrategyParam<bool> _allDays;
-private readonly StrategyParam<DayOfWeek> _dayOfWeek;
-private readonly StrategyParam<int> _stdevLength;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _threshold;
+	private readonly StrategyParam<int> _stdevLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-private readonly int[] _hourCounts = new int[24];
-private StandardDeviation _stdev;
-private decimal? _prevClose;
-private decimal _prevSd;
+	private decimal _prevClose;
+	private readonly List<decimal> _returns = new();
 
-/// <summary>
-/// Sigma spike threshold.
-/// </summary>
-public decimal Threshold
-{
-get => _threshold.Value;
-set => _threshold.Value = value;
-}
+	public decimal Threshold { get => _threshold.Value; set => _threshold.Value = value; }
+	public int StdevLength { get => _stdevLength.Value; set => _stdevLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// Use all days.
-/// </summary>
-public bool AllDays
-{
-get => _allDays.Value;
-set => _allDays.Value = value;
-}
+	public TimeOfDayDayOfWeekSigmaSpikeStrategy()
+	{
+		_threshold = Param(nameof(Threshold), 2.0m)
+			.SetGreaterThanZero();
+		_stdevLength = Param(nameof(StdevLength), 20)
+			.SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+	}
 
-/// <summary>
-/// Day of week filter.
-/// </summary>
-public DayOfWeek DayOfWeekFilter
-{
-get => _dayOfWeek.Value;
-set => _dayOfWeek.Value = value;
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <summary>
-/// Standard deviation length.
-/// </summary>
-public int StdevLength
-{
-get => _stdevLength.Value;
-set => _stdevLength.Value = value;
-}
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0m;
+		_returns.Clear();
+	}
 
-/// <summary>
-/// Candle type to process.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-/// <summary>
-/// Initializes a new instance of <see cref="TimeOfDayDayOfWeekSigmaSpikeStrategy"/>.
-/// </summary>
-public TimeOfDayDayOfWeekSigmaSpikeStrategy()
-{
-_threshold = Param(nameof(Threshold), 2.5m)
-.SetGreaterThanZero()
-.SetDisplay("Threshold", "Sigma spike threshold", "General")
-;
+		var sma = new SimpleMovingAverage { Length = 10 };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(sma, ProcessCandle).Start();
+	}
 
-_allDays = Param(nameof(AllDays), false)
-.SetDisplay("All Days", "Ignore day filter", "General");
+	private void ProcessCandle(ICandleMessage candle, decimal smaVal)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-_dayOfWeek = Param(nameof(DayOfWeekFilter), System.DayOfWeek.Monday)
-.SetDisplay("Day Of Week", "Day filter", "General");
+		if (_prevClose == 0)
+		{
+			_prevClose = candle.ClosePrice;
+			return;
+		}
 
-_stdevLength = Param(nameof(StdevLength), 20)
-.SetGreaterThanZero()
-.SetDisplay("Stdev Length", "Standard deviation length", "General")
-;
+		var ret = candle.ClosePrice / _prevClose - 1m;
+		_prevClose = candle.ClosePrice;
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles", "General");
-}
+		_returns.Add(ret);
+		if (_returns.Count > StdevLength)
+			_returns.RemoveAt(0);
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+		if (_returns.Count < StdevLength)
+			return;
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
+		var mean = _returns.Average();
+		var variance = _returns.Sum(r => (r - mean) * (r - mean)) / _returns.Count;
+		var sd = (decimal)Math.Sqrt((double)variance);
 
-_stdev = default;
-_prevClose = default;
-_prevSd = 0m;
-Array.Clear(_hourCounts, 0, _hourCounts.Length);
-}
+		if (sd <= 0)
+			return;
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+		var sigma = Math.Abs(ret / sd);
 
-_stdev = new StandardDeviation { Length = StdevLength };
+		// Check exits first
+		if (Position > 0 && sigma < Threshold * 0.5m)
+		{
+			SellMarket();
+			return;
+		}
+		else if (Position < 0 && sigma < Threshold * 0.5m)
+		{
+			BuyMarket();
+			return;
+		}
 
-var subscription = SubscribeCandles(CandleType);
-subscription.Bind(ProcessCandle).Start();
-}
-
-private void ProcessCandle(ICandleMessage candle)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-if (_prevClose == null)
-{
-_prevClose = candle.ClosePrice;
-return;
-}
-
-var ret = candle.ClosePrice / _prevClose.Value - 1m;
-var sdValue = _stdev.Process(ret);
-if (!sdValue.IsFinal)
-{
-_prevClose = candle.ClosePrice;
-return;
-}
-
-var sigma = _prevSd == 0m ? 0m : Math.Abs(ret / _prevSd);
-_prevSd = sdValue.ToDecimal();
-_prevClose = candle.ClosePrice;
-
-if (sigma >= Threshold && (AllDays || candle.OpenTime.DayOfWeek == DayOfWeekFilter))
-{
-_hourCounts[candle.OpenTime.Hour]++;
-
-if (Position <= 0 && IsFormedAndOnlineAndAllowTrading())
-BuyMarket();
-}
-else if (Position > 0 && sigma < Threshold && IsFormedAndOnlineAndAllowTrading())
-{
-SellMarket(Position);
-}
-}
+		// Entry on spike
+		if (Position == 0 && sigma >= Threshold)
+		{
+			if (ret > 0)
+				BuyMarket();
+			else
+				SellMarket();
+		}
+	}
 }

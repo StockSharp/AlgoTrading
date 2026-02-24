@@ -32,7 +32,7 @@ public class EugeneCandlePatternStrategy : Strategy
 		_sl = Param(nameof(StopLossPoints), 0).SetDisplay("Stop Loss (points)", "Stop loss in price steps, 0 - disabled", "Risk");
 		_tp = Param(nameof(TakeProfitPoints), 0).SetDisplay("Take Profit (points)", "Take profit in price steps, 0 - disabled", "Risk");
 		_inv = Param(nameof(InvertSignals), false).SetDisplay("Invert Signals", "Swap buy and sell signals", "General");
-		_cType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+		_cType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
@@ -70,13 +70,13 @@ public class EugeneCandlePatternStrategy : Strategy
 		if (InvertSignals)
 		{ (ob, os) = (os, ob); (cb, cs) = (cs, cb); }
 		if (Position > 0 && cb)
-			ClosePosition();
+			ClosePos();
 		else if (Position < 0 && cs)
-			ClosePosition();
+			ClosePos();
 		if (Position <= 0 && ob && !os && !cb)
-		{ BuyMarket(Volume); SetStops(c.ClosePrice, true); }
+		{ if (Position < 0) BuyMarket(); BuyMarket(); SetStops(c.ClosePrice, true); }
 		else if (Position >= 0 && os && !ob && !cs)
-		{ SellMarket(Volume); SetStops(c.ClosePrice, false); }
+		{ if (Position > 0) SellMarket(); SellMarket(); SetStops(c.ClosePrice, false); }
 	}
 
 	private void Compute(out bool ob, out bool os, out bool cb, out bool cs)
@@ -115,17 +115,23 @@ public class EugeneCandlePatternStrategy : Strategy
 		{ _stop = StopLossPoints > 0 ? price + step * StopLossPoints : 0m; _take = TakeProfitPoints > 0 ? price - step * TakeProfitPoints : 0m; }
 	}
 
+	private void ClosePos()
+	{
+		if (Position > 0) SellMarket();
+		else if (Position < 0) BuyMarket();
+	}
+
 	private void CheckStops(ICandleMessage c)
 	{
 		if (Position > 0)
 		{
 			if ((_stop != 0m && c.LowPrice <= _stop) || (_take != 0m && c.HighPrice >= _take))
-				ClosePosition();
+				ClosePos();
 		}
 		else if (Position < 0)
 		{
 			if ((_stop != 0m && c.HighPrice >= _stop) || (_take != 0m && c.LowPrice <= _take))
-				ClosePosition();
+				ClosePos();
 		}
 	}
 }

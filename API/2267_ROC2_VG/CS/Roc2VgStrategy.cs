@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -57,7 +54,7 @@ public class Roc2VgStrategy : Strategy
 
 	public Roc2VgStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 		_rocPeriod1 = Param(nameof(RocPeriod1), 8).SetGreaterThanZero()
 			.SetDisplay("ROC Period 1", "Length of first ROC", "Indicator");
@@ -68,6 +65,12 @@ public class Roc2VgStrategy : Strategy
 		_rocType2 = Param(nameof(RocType2), RocTypes.Momentum)
 			.SetDisplay("ROC Type 2", "Type of second ROC", "Indicator");
 		_invert = Param(nameof(Invert), false).SetDisplay("Invert", "Swap ROC lines", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -122,15 +125,9 @@ public class Roc2VgStrategy : Strategy
 		if (_prevUp is decimal pUp && _prevDn is decimal pDn)
 		{
 			if (pUp > pDn && up <= dn && Position <= 0)
-			{
-				var vol = Position < 0 ? 2m : 1m;
-				BuyMarket(volume: vol);
-			}
+				BuyMarket();
 			else if (pUp < pDn && up >= dn && Position >= 0)
-			{
-				var vol = Position > 0 ? 2m : 1m;
-				SellMarket(volume: vol);
-			}
+				SellMarket();
 		}
 
 		_prevUp = up;

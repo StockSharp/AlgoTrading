@@ -81,7 +81,7 @@ public class ComboRightStrategy : Strategy
 	public int P4 { get => _p4.Value; set => _p4.Value = value; }
 	public int Pass { get => _pass.Value; set => _pass.Value = value; }
 	public int Shift { get => _shift.Value; set => _shift.Value = value; }
-	public new decimal Volume { get => _volume.Value; set => _volume.Value = value; }
+	public decimal TradeVolume { get => _volume.Value; set => _volume.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ComboRightStrategy()
@@ -110,8 +110,8 @@ public class ComboRightStrategy : Strategy
 		_p4 = Param(nameof(P4), 20).SetDisplay("P4", "General perceptron period", "Perceptron");
 		_pass = Param(nameof(Pass), 1).SetDisplay("Pass", "Mode of operation", "General");
 		_shift = Param(nameof(Shift), 1).SetDisplay("Shift", "Bar shift", "General");
-		_volume = Param(nameof(Volume), 0.1m).SetDisplay("Volume", "Trading volume", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+		_volume = Param(nameof(TradeVolume), 0.1m).SetDisplay("Volume", "Trading volume", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -169,11 +169,11 @@ public class ComboRightStrategy : Strategy
 		_closeBuffer = new decimal[maxShift];
 		_barIndex = 0;
 
-		var cci = new CCI { Length = CciPeriod };
+		var cci = new CommodityChannelIndex { Length = CciPeriod };
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(cci, ProcessCandle).Start();
 
-		StartProtection(new Unit(TakeProfit1, UnitTypes.Step), new Unit(StopLoss1, UnitTypes.Step));
+		StartProtection(new Unit(TakeProfit1, UnitTypes.Absolute), new Unit(StopLoss1, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -196,18 +196,19 @@ public class ComboRightStrategy : Strategy
 		if (_barIndex <= len)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 		var signal = Supervisor(cciValue);
 
 		if (signal > 0 && Position <= 0)
 		{
-		BuyMarket(Volume + Math.Abs(Position));
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
 		else if (signal < 0 && Position >= 0)
 		{
-		SellMarket(Volume + Math.Abs(Position));
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 	}
 

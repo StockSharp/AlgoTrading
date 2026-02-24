@@ -22,107 +22,27 @@ public class ExchangePriceStrategy : Strategy
 	private readonly StrategyParam<int> _shortPeriod;
 	private readonly StrategyParam<int> _longPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<bool> _allowLongEntry;
-	private readonly StrategyParam<bool> _allowShortEntry;
-	private readonly StrategyParam<bool> _allowLongExit;
-	private readonly StrategyParam<bool> _allowShortExit;
 
 	private readonly List<decimal> _prices = new();
 	private decimal? _prevUpDiff;
 	private decimal? _prevDownDiff;
 
-	/// <summary>
-	/// Number of bars for short lookback period.
-	/// </summary>
-	public int ShortPeriod
-	{
-		get => _shortPeriod.Value;
-		set => _shortPeriod.Value = value;
-	}
+	public int ShortPeriod { get => _shortPeriod.Value; set => _shortPeriod.Value = value; }
+	public int LongPeriod { get => _longPeriod.Value; set => _longPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Number of bars for long lookback period.
-	/// </summary>
-	public int LongPeriod
-	{
-		get => _longPeriod.Value;
-		set => _longPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
-	public bool AllowLongEntry
-	{
-		get => _allowLongEntry.Value;
-		set => _allowLongEntry.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
-	public bool AllowShortEntry
-	{
-		get => _allowShortEntry.Value;
-		set => _allowShortEntry.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing long positions.
-	/// </summary>
-	public bool AllowLongExit
-	{
-		get => _allowLongExit.Value;
-		set => _allowLongExit.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing short positions.
-	/// </summary>
-	public bool AllowShortExit
-	{
-		get => _allowShortExit.Value;
-		set => _allowShortExit.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="ExchangePriceStrategy"/>.
-	/// </summary>
 	public ExchangePriceStrategy()
 	{
-		_shortPeriod = Param(nameof(ShortPeriod), 96)
+		_shortPeriod = Param(nameof(ShortPeriod), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Short Period", "Bars for short lookback", "General")
-			;
+			.SetDisplay("Short Period", "Bars for short lookback", "General");
 
-		_longPeriod = Param(nameof(LongPeriod), 288)
+		_longPeriod = Param(nameof(LongPeriod), 48)
 			.SetGreaterThanZero()
-			.SetDisplay("Long Period", "Bars for long lookback", "General")
-			;
+			.SetDisplay("Long Period", "Bars for long lookback", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_allowLongEntry = Param(nameof(AllowLongEntry), true)
-			.SetDisplay("Allow Long Entry", "Open long positions", "Trading");
-
-		_allowShortEntry = Param(nameof(AllowShortEntry), true)
-			.SetDisplay("Allow Short Entry", "Open short positions", "Trading");
-
-		_allowLongExit = Param(nameof(AllowLongExit), true)
-			.SetDisplay("Allow Long Exit", "Close long positions", "Trading");
-
-		_allowShortExit = Param(nameof(AllowShortExit), true)
-			.SetDisplay("Allow Short Exit", "Close short positions", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -135,7 +55,6 @@ public class ExchangePriceStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
 		_prices.Clear();
 		_prevUpDiff = null;
 		_prevDownDiff = null;
@@ -159,22 +78,19 @@ public class ExchangePriceStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Work only with finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		_prices.Add(candle.ClosePrice);
 
-		// Keep only required number of prices
 		if (_prices.Count > LongPeriod + 1)
 			_prices.RemoveAt(0);
 
-		// Wait until enough data is collected
 		if (_prices.Count <= LongPeriod)
 			return;
 
-		var priceShort = _prices[^1 - ShortPeriod];
-		var priceLong = _prices[^1 - LongPeriod];
+		var priceShort = _prices[_prices.Count - 1 - ShortPeriod];
+		var priceLong = _prices[_prices.Count - 1 - LongPeriod];
 
 		var upDiff = candle.ClosePrice - priceShort;
 		var downDiff = candle.ClosePrice - priceLong;
@@ -184,25 +100,17 @@ public class ExchangePriceStrategy : Strategy
 			var crossUp = prevUp <= prevDown && upDiff > downDiff;
 			var crossDown = prevUp >= prevDown && upDiff < downDiff;
 
-			if (crossUp)
+			if (crossUp && Position <= 0)
 			{
-				// Close short position if needed
-				if (AllowShortExit && Position < 0)
-					BuyMarket(-Position);
-
-				// Open long position if allowed
-				if (AllowLongEntry && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
-					BuyMarket(Volume);
+				if (Position < 0)
+					BuyMarket();
+				BuyMarket();
 			}
-			else if (crossDown)
+			else if (crossDown && Position >= 0)
 			{
-				// Close long position if needed
-				if (AllowLongExit && Position > 0)
-					SellMarket(Position);
-
-				// Open short position if allowed
-				if (AllowShortEntry && Position >= 0 && IsFormedAndOnlineAndAllowTrading())
-					SellMarket(Volume);
+				if (Position > 0)
+					SellMarket();
+				SellMarket();
 			}
 		}
 

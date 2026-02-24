@@ -29,34 +29,11 @@ public class TradingViewToTemplateWithDynamicAlertsStrategy : Strategy
 	private decimal _stopPrice;
 	private decimal _takePrice;
 
-	/// <summary>
-	/// RSI length.
-	/// </summary>
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
-
-	/// <summary>
-	/// Upper RSI trigger level.
-	/// </summary>
 	public int UpperLevel { get => _upperLevel.Value; set => _upperLevel.Value = value; }
-
-	/// <summary>
-	/// Lower RSI trigger level.
-	/// </summary>
 	public int LowerLevel { get => _lowerLevel.Value; set => _lowerLevel.Value = value; }
-
-	/// <summary>
-	/// Stop loss percent.
-	/// </summary>
 	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
-
-	/// <summary>
-	/// Take profit percent.
-	/// </summary>
 	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public TradingViewToTemplateWithDynamicAlertsStrategy()
@@ -79,7 +56,7 @@ public class TradingViewToTemplateWithDynamicAlertsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Take profit %", "Percent take profit", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Type of candles", "General");
 	}
 
@@ -87,6 +64,15 @@ public class TradingViewToTemplateWithDynamicAlertsStrategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0;
+		_stopPrice = 0;
+		_takePrice = 0;
 	}
 
 	/// <inheritdoc />
@@ -111,36 +97,44 @@ public class TradingViewToTemplateWithDynamicAlertsStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (Position > 0)
+		// Check TP/SL exits first
+		if (Position > 0 && _stopPrice > 0)
 		{
-		if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
-		SellMarket(Position);
+			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
+			{
+				SellMarket();
+				_stopPrice = 0;
+				_takePrice = 0;
+				return;
+			}
 		}
-		else if (Position < 0)
+		else if (Position < 0 && _stopPrice > 0)
 		{
-		if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
-		BuyMarket(-Position);
+			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
+			{
+				BuyMarket();
+				_stopPrice = 0;
+				_takePrice = 0;
+				return;
+			}
 		}
 
+		// Entry signals
 		if (rsiValue > UpperLevel && Position <= 0)
 		{
-		if (Position < 0)
-		BuyMarket(Math.Abs(Position));
-		_entryPrice = candle.ClosePrice;
-		_stopPrice = _entryPrice * (1 - StopLossPct / 100m);
-		_takePrice = _entryPrice * (1 + TakeProfitPct / 100m);
-		BuyMarket(Volume);
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopPrice = _entryPrice * (1 - StopLossPct / 100m);
+			_takePrice = _entryPrice * (1 + TakeProfitPct / 100m);
 		}
 		else if (rsiValue < LowerLevel && Position >= 0)
 		{
-		if (Position > 0)
-		SellMarket(Position);
-		_entryPrice = candle.ClosePrice;
-		_stopPrice = _entryPrice * (1 + StopLossPct / 100m);
-		_takePrice = _entryPrice * (1 - TakeProfitPct / 100m);
-		SellMarket(Volume);
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopPrice = _entryPrice * (1 + StopLossPct / 100m);
+			_takePrice = _entryPrice * (1 - TakeProfitPct / 100m);
 		}
 	}
 }

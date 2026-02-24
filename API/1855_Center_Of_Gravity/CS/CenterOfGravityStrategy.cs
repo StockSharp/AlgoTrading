@@ -1,135 +1,99 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Center of Gravity Strategy.
-/// Uses product of SMA and WMA compared to a smoothed average.
-/// Opens long when the center line crosses above the smoothed line and short on opposite cross.
+/// Uses SMA and WMA crossover.
+/// Opens long when SMA crosses above WMA and short on opposite cross.
 /// </summary>
 public class CenterOfGravityStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<int> _smoothPeriod;
 
-	private SimpleMovingAverage _sma;
-	private WeightedMovingAverage _wma;
-	private SimpleMovingAverage _signal;
+	private decimal _prevSma;
+	private decimal _prevWma;
+	private bool _initialized;
 
-	private decimal? _prevColor;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int Period { get => _period.Value; set => _period.Value = value; }
 
 	public CenterOfGravityStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculation", "General");
 
 		_period = Param(nameof(Period), 10)
 			.SetDisplay("Period", "Center of Gravity averaging period", "Indicators");
-
-		_smoothPeriod = Param(nameof(SmoothPeriod), 3)
-			.SetDisplay("Smooth Period", "Signal line smoothing period", "Indicators");
 	}
 
-	public DataType CandleType
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		return [(Security, CandleType)];
 	}
 
-	public int Period
-	{
-		get => _period.Value;
-		set => _period.Value = value;
-	}
-
-	public int SmoothPeriod
-	{
-		get => _smoothPeriod.Value;
-		set => _smoothPeriod.Value = value;
-	}
-
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_prevColor = null;
-	}
-
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = Period };
-		_wma = new WeightedMovingAverage { Length = Period };
-		_signal = new SMA { Length = SmoothPeriod };
+		var sma = new SimpleMovingAverage { Length = Period };
+		var wma = new WeightedMovingAverage { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_sma, _wma, Process).Start();
-
-		StartProtection(null, null);
+		subscription.Bind(sma, wma, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _signal);
+			DrawIndicator(area, sma);
+			DrawIndicator(area, wma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void Process(ICandleMessage candle, decimal smaValue, decimal wmaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal wmaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_sma.IsFormed || !_wma.IsFormed)
-			return;
-
-		var center = smaValue * wmaValue;
-		var signalVal = _signal.Process(new DecimalIndicatorValue(_signal, center, candle.CloseTime));
-
-		if (!signalVal.IsFinal)
-			return;
-
-		var signal = signalVal.ToDecimal();
-		var color = center >= signal ? 1m : 2m;
-
-		if (_prevColor is null)
+		if (!_initialized)
 		{
-			_prevColor = color;
-			if (color == 1m && Position < 0)
-				BuyMarket(Math.Abs(Position));
-			else if (color == 2m && Position > 0)
-				SellMarket(Math.Abs(Position));
+			_prevSma = smaValue;
+			_prevWma = wmaValue;
+			_initialized = true;
 			return;
 		}
 
-		if (color == 1m && Position < 0)
-			BuyMarket(Math.Abs(Position));
-		else if (color == 2m && Position > 0)
-			SellMarket(Math.Abs(Position));
-
-		var crossUp = _prevColor == 2m && color == 1m;
-		var crossDown = _prevColor == 1m && color == 2m;
+		var crossUp = _prevSma <= _prevWma && smaValue > wmaValue;
+		var crossDown = _prevSma >= _prevWma && smaValue < wmaValue;
 
 		if (crossUp && Position <= 0)
-			BuyMarket(Volume);
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
 		else if (crossDown && Position >= 0)
-			SellMarket(Volume);
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
 
-		_prevColor = color;
+		_prevSma = smaValue;
+		_prevWma = wmaValue;
 	}
 }

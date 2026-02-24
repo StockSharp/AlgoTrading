@@ -1,35 +1,25 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// True Strength Index cross with delayed line.
+/// True Strength Index cross with shifted TSI line.
 /// Opens long when TSI crosses above its shifted value and short on opposite cross.
 /// </summary>
 public class TsiCloudCrossStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _longLength;
-	private readonly StrategyParam<int> _shortLength;
+	private readonly StrategyParam<int> _firstLength;
+	private readonly StrategyParam<int> _secondLength;
 	private readonly StrategyParam<int> _triggerShift;
-	private readonly StrategyParam<bool> _invert;
-	private readonly StrategyParam<bool> _enableLong;
-	private readonly StrategyParam<bool> _enableShort;
-	private readonly StrategyParam<bool> _closeLongOnSignal;
-	private readonly StrategyParam<bool> _closeShortOnSignal;
 
 	private TrueStrengthIndex _tsi;
 	private readonly Queue<decimal> _tsiValues = new();
@@ -37,87 +27,30 @@ public class TsiCloudCrossStrategy : Strategy
 	private decimal _prevTrigger;
 	private bool _isInitialized;
 
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public int LongLength
-	{
-		get => _longLength.Value;
-		set => _longLength.Value = value;
-	}
-
-	public int ShortLength
-	{
-		get => _shortLength.Value;
-		set => _shortLength.Value = value;
-	}
-
-	public int TriggerShift
-	{
-		get => _triggerShift.Value;
-		set => _triggerShift.Value = value;
-	}
-
-	public bool Invert
-	{
-		get => _invert.Value;
-		set => _invert.Value = value;
-	}
-
-	public bool EnableLong
-	{
-		get => _enableLong.Value;
-		set => _enableLong.Value = value;
-	}
-
-	public bool EnableShort
-	{
-		get => _enableShort.Value;
-		set => _enableShort.Value = value;
-	}
-
-	public bool CloseLongOnSignal
-	{
-		get => _closeLongOnSignal.Value;
-		set => _closeLongOnSignal.Value = value;
-	}
-
-	public bool CloseShortOnSignal
-	{
-		get => _closeShortOnSignal.Value;
-		set => _closeShortOnSignal.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int FirstLength { get => _firstLength.Value; set => _firstLength.Value = value; }
+	public int SecondLength { get => _secondLength.Value; set => _secondLength.Value = value; }
+	public int TriggerShift { get => _triggerShift.Value; set => _triggerShift.Value = value; }
 
 	public TsiCloudCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-		_longLength = Param(nameof(LongLength), 25)
-			.SetDisplay("Long Length", "Long EMA length for TSI", "TSI")
-			.SetGreaterThanZero()
-			
-			.SetOptimize(10, 50, 1);
-		_shortLength = Param(nameof(ShortLength), 13)
-			.SetDisplay("Short Length", "Short EMA length for TSI", "TSI")
-			.SetGreaterThanZero()
-			
-			.SetOptimize(5, 30, 1);
-		_triggerShift = Param(nameof(TriggerShift), 1)
-			.SetDisplay("Trigger Shift", "Bars to shift TSI", "TSI")
+		_firstLength = Param(nameof(FirstLength), 25)
+			.SetDisplay("First Length", "First smoothing period for TSI", "TSI")
 			.SetGreaterThanZero();
-		_invert = Param(nameof(Invert), false)
-			.SetDisplay("Invert", "Reverse signal direction", "General");
-		_enableLong = Param(nameof(EnableLong), true)
-			.SetDisplay("Enable Long", "Allow long trades", "Trading");
-		_enableShort = Param(nameof(EnableShort), true)
-			.SetDisplay("Enable Short", "Allow short trades", "Trading");
-		_closeLongOnSignal = Param(nameof(CloseLongOnSignal), true)
-			.SetDisplay("Close Long On Signal", "Close long when opposite signal", "Trading");
-		_closeShortOnSignal = Param(nameof(CloseShortOnSignal), true)
-			.SetDisplay("Close Short On Signal", "Close short when opposite signal", "Trading");
+		_secondLength = Param(nameof(SecondLength), 13)
+			.SetDisplay("Second Length", "Second smoothing period for TSI", "TSI")
+			.SetGreaterThanZero();
+		_triggerShift = Param(nameof(TriggerShift), 1)
+			.SetDisplay("Trigger Shift", "Bars to shift TSI for trigger", "TSI")
+			.SetGreaterThanZero();
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -125,17 +58,18 @@ public class TsiCloudCrossStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		_tsiValues.Clear();
+		_isInitialized = false;
 
 		_tsi = new TrueStrengthIndex
 		{
-			LongLength = LongLength,
-			ShortLength = ShortLength,
+			FirstLength = FirstLength,
+			SecondLength = SecondLength,
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_tsi, ProcessCandle)
+			.BindEx(_tsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -147,30 +81,36 @@ public class TsiCloudCrossStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal tsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
+
+		if (value is not ITrueStrengthIndexValue tsiVal || tsiVal.Tsi is not decimal tsiValue)
+			return;
+
+		if (!_tsi.IsFormed)
+			return;
 
 		_tsiValues.Enqueue(tsiValue);
 		if (_tsiValues.Count > TriggerShift + 1)
-		_tsiValues.Dequeue();
+			_tsiValues.Dequeue();
 
 		if (_tsiValues.Count < TriggerShift + 1)
 		{
-		_prevTsi = tsiValue;
-		_prevTrigger = tsiValue;
-		return;
+			_prevTsi = tsiValue;
+			_prevTrigger = tsiValue;
+			return;
 		}
 
 		var trigger = _tsiValues.Peek();
 
 		if (!_isInitialized)
 		{
-		_prevTsi = tsiValue;
-		_prevTrigger = trigger;
-		_isInitialized = true;
-		return;
+			_prevTsi = tsiValue;
+			_prevTrigger = trigger;
+			_isInitialized = true;
+			return;
 		}
 
 		var crossUp = _prevTsi <= _prevTrigger && tsiValue > trigger;
@@ -179,20 +119,9 @@ public class TsiCloudCrossStrategy : Strategy
 		_prevTsi = tsiValue;
 		_prevTrigger = trigger;
 
-		if (Invert)
-		(crossUp, crossDown) = (crossDown, crossUp);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (EnableLong && crossUp && Position <= 0)
-		BuyMarket(Volume + Math.Abs(Position));
-		else if (EnableShort && crossDown && Position >= 0)
-		SellMarket(Volume + Math.Abs(Position));
-
-		if (Position > 0 && CloseLongOnSignal && crossDown)
-		SellMarket(Position);
-		else if (Position < 0 && CloseShortOnSignal && crossUp)
-		BuyMarket(-Position);
+		if (crossUp && Position <= 0)
+			BuyMarket();
+		else if (crossDown && Position >= 0)
+			SellMarket();
 	}
 }

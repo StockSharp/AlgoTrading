@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,103 +11,70 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Directed Movement Strategy - contrarian RSI cross system.
+/// Directed Movement Strategy - RSI cross system with two MA smoothing.
 /// </summary>
 public class DirectedMovementStrategy : Strategy
 {
-	/// <summary>
-	/// Types of moving averages available for smoothing.
-	/// </summary>
-	public enum MaTypes
-	{
-		SMA,
-		EMA,
-		SMMA,
-		WMA,
-		HMA,
-	}
-
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<MaTypes> _firstMaType;
-	private readonly StrategyParam<int> _firstMaLength;
-	private readonly StrategyParam<MaTypes> _secondMaType;
-	private readonly StrategyParam<int> _secondMaLength;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<int> _fastMaLength;
+	private readonly StrategyParam<int> _slowMaLength;
 
-	private RelativeStrengthIndex _rsi = null!;
-	private DecimalLengthIndicator _fastMa = null!;
-	private DecimalLengthIndicator _slowMa = null!;
+	private DecimalLengthIndicator _fastMa;
+	private DecimalLengthIndicator _slowMa;
 	private decimal _prevFast;
 	private decimal _prevSlow;
 
-	public DirectedMovementStrategy()
-	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-				.SetGreaterThanZero()
-				.SetDisplay("RSI Period", "RSI calculation period", "General")
-				;
-
-		_firstMaType = Param(nameof(FirstMaType), MaTypes.SMA)
-				.SetDisplay("Fast MA Type", "Moving average for fast line", "General");
-
-		_firstMaLength = Param(nameof(FirstMaLength), 12)
-				.SetGreaterThanZero()
-				.SetDisplay("Fast MA Length", "Period of fast moving average", "General")
-				;
-
-		_secondMaType = Param(nameof(SecondMaType), MaTypes.EMA)
-				.SetDisplay("Slow MA Type", "Moving average for slow line", "General");
-
-		_secondMaLength = Param(nameof(SecondMaLength), 5)
-				.SetGreaterThanZero()
-				.SetDisplay("Slow MA Length", "Period of slow moving average", "General")
-				;
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 0m)
-				.SetDisplay("Stop Loss %", "Stop loss in percent", "Risk");
-
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0m)
-				.SetDisplay("Take Profit %", "Take profit in percent", "Risk");
-	}
-
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
-	public MaTypes FirstMaType { get => _firstMaType.Value; set => _firstMaType.Value = value; }
-	public int FirstMaLength { get => _firstMaLength.Value; set => _firstMaLength.Value = value; }
-	public MaTypes SecondMaType { get => _secondMaType.Value; set => _secondMaType.Value = value; }
-	public int SecondMaLength { get => _secondMaLength.Value; set => _secondMaLength.Value = value; }
-	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
-	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
+	public int FastMaLength { get => _fastMaLength.Value; set => _fastMaLength.Value = value; }
+	public int SlowMaLength { get => _slowMaLength.Value; set => _slowMaLength.Value = value; }
+
+	public DirectedMovementStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetDisplay("RSI Period", "RSI calculation period", "Indicators");
+
+		_fastMaLength = Param(nameof(FastMaLength), 12)
+			.SetDisplay("Fast MA Length", "Period of fast moving average", "Indicators");
+
+		_slowMaLength = Param(nameof(SlowMaLength), 5)
+			.SetDisplay("Slow MA Length", "Period of slow moving average", "Indicators");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_fastMa = CreateMa(FirstMaType, FirstMaLength);
-		_slowMa = CreateMa(SecondMaType, SecondMaLength);
 		_prevFast = 0m;
 		_prevSlow = 0m;
 
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		_fastMa = new SimpleMovingAverage { Length = FastMaLength };
+		_slowMa = new ExponentialMovingAverage { Length = SlowMaLength };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_rsi, ProcessCandle).Start();
+		subscription
+			.Bind(rsi, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastMa);
-			DrawIndicator(area, _slowMa);
+			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(new Unit(TakeProfitPercent, UnitTypes.Percent), new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
@@ -118,15 +82,23 @@ public class DirectedMovementStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var fast = _fastMa.Process(new DecimalIndicatorValue(_fastMa, rsiValue, candle.OpenTime)).ToDecimal();
-		var slow = _slowMa.Process(new DecimalIndicatorValue(_slowMa, fast, candle.OpenTime)).ToDecimal();
+		var t = candle.ServerTime;
 
+		var fastResult = _fastMa.Process(rsiValue, t, true);
+		if (!_fastMa.IsFormed)
+			return;
+
+		var fast = fastResult.GetValue<decimal>();
+
+		var slowResult = _slowMa.Process(fast, t, true);
 		if (!_slowMa.IsFormed)
 		{
 			_prevFast = fast;
-			_prevSlow = slow;
+			_prevSlow = fast;
 			return;
 		}
+
+		var slow = slowResult.GetValue<decimal>();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 		{
@@ -135,30 +107,14 @@ public class DirectedMovementStrategy : Strategy
 			return;
 		}
 
-		if (_prevFast > _prevSlow && fast <= slow)
-		{
-			if (Position < 0)
-				BuyMarket(-Position); // close short
-			BuyMarket(); // open long
-		}
-		else if (_prevFast < _prevSlow && fast >= slow)
-		{
-			if (Position > 0)
-				SellMarket(Position); // close long
-			SellMarket(); // open short
-		}
+		// Crossover: fast crosses below slow -> buy
+		if (_prevFast > _prevSlow && fast <= slow && Position <= 0)
+			BuyMarket();
+		// Crossover: fast crosses above slow -> sell
+		else if (_prevFast < _prevSlow && fast >= slow && Position >= 0)
+			SellMarket();
 
 		_prevFast = fast;
 		_prevSlow = slow;
 	}
-
-	private static DecimalLengthIndicator CreateMa(MaTypes type, int length)
-		=> type switch
-		{
-			MaTypes.EMA => new EMA { Length = length },
-			MaTypes.SMMA => new SmoothedMovingAverage { Length = length },
-			MaTypes.WMA => new WeightedMovingAverage { Length = length },
-			MaTypes.HMA => new HullMovingAverage { Length = length },
-			_ => new SMA { Length = length },
-		};
 }

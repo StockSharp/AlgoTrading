@@ -29,12 +29,12 @@ public class LongShortExpertMacdStrategy : Strategy
 		/// Long trades only.
 		/// </summary>
 		Long,
-		
+
 		/// <summary>
 		/// Short trades only.
 		/// </summary>
 		Short,
-		
+
 		/// <summary>
 		/// Long and short trades are allowed.
 		/// </summary>
@@ -49,11 +49,14 @@ public class LongShortExpertMacdStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private MovingAverageConvergenceDivergenceSignal _macd;
+
 	private bool? _prevIsMacdAboveSignal;
 	private decimal _longStopPrice;
 	private decimal _longTakePrice;
 	private decimal _shortStopPrice;
 	private decimal _shortTakePrice;
+	private decimal? _entryPrice;
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="LongShortExpertMacdStrategy"/>.
@@ -66,34 +69,34 @@ public class LongShortExpertMacdStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast MACD EMA length", "MACD")
-			
+
 			.SetOptimize(8, 16, 2);
 
 		_slowLength = Param(nameof(SlowLength), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow MACD EMA length", "MACD")
-			
+
 			.SetOptimize(20, 40, 2);
 
 		_signalLength = Param(nameof(SignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal EMA", "MACD signal EMA length", "MACD")
-			
+
 			.SetOptimize(5, 15, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in price points", "Risk")
-			
+
 			.SetOptimize(0, 150, 10);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance in price points", "Risk")
-			
+
 			.SetOptimize(0, 100, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 
 		Volume = 1;
@@ -178,15 +181,16 @@ public class LongShortExpertMacdStrategy : Strategy
 		base.OnReseted();
 
 		_prevIsMacdAboveSignal = null;
+		_entryPrice = null;
 		ResetProtection();
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		var macd = new MovingAverageConvergenceDivergenceSignal
+		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
 			{
@@ -198,14 +202,14 @@ public class LongShortExpertMacdStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(macd, ProcessCandle)
+			.BindEx(_macd, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, macd);
+			DrawIndicator(area, _macd);
 			DrawOwnTrades(area);
 		}
 	}
@@ -224,7 +228,7 @@ public class LongShortExpertMacdStrategy : Strategy
 
 		var isMacdAboveSignal = macd > signal;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!_macd.IsFormed)
 		{
 			_prevIsMacdAboveSignal = isMacdAboveSignal;
 			return;
@@ -259,6 +263,7 @@ public class LongShortExpertMacdStrategy : Strategy
 						{
 							ResetProtection();
 							BuyMarket(volume);
+							_entryPrice = candle.ClosePrice;
 						}
 					}
 					else
@@ -268,6 +273,7 @@ public class LongShortExpertMacdStrategy : Strategy
 						{
 							BuyMarket(volume);
 							ResetProtection();
+							_entryPrice = null;
 						}
 					}
 				}
@@ -277,6 +283,7 @@ public class LongShortExpertMacdStrategy : Strategy
 					{
 						ResetProtection();
 						BuyMarket(Volume);
+						_entryPrice = candle.ClosePrice;
 					}
 				}
 			}
@@ -287,6 +294,7 @@ public class LongShortExpertMacdStrategy : Strategy
 				{
 					BuyMarket(volume);
 					ResetProtection();
+					_entryPrice = null;
 				}
 			}
 		}
@@ -304,6 +312,7 @@ public class LongShortExpertMacdStrategy : Strategy
 						{
 							ResetProtection();
 							SellMarket(volume);
+							_entryPrice = candle.ClosePrice;
 						}
 					}
 					else
@@ -313,6 +322,7 @@ public class LongShortExpertMacdStrategy : Strategy
 						{
 							SellMarket(volume);
 							ResetProtection();
+							_entryPrice = null;
 						}
 					}
 				}
@@ -322,6 +332,7 @@ public class LongShortExpertMacdStrategy : Strategy
 					{
 						ResetProtection();
 						SellMarket(Volume);
+						_entryPrice = candle.ClosePrice;
 					}
 				}
 			}
@@ -332,6 +343,7 @@ public class LongShortExpertMacdStrategy : Strategy
 				{
 					SellMarket(volume);
 					ResetProtection();
+					_entryPrice = null;
 				}
 			}
 		}
@@ -341,19 +353,25 @@ public class LongShortExpertMacdStrategy : Strategy
 
 	private void UpdateProtectionLevels()
 	{
+		if (_entryPrice is not decimal entry)
+		{
+			ResetProtection();
+			return;
+		}
+
 		if (Position > 0)
 		{
 			var step = GetPriceStep();
-			_longStopPrice = StopLossPoints > 0 ? PositionPrice - StopLossPoints * step : 0m;
-			_longTakePrice = TakeProfitPoints > 0 ? PositionPrice + TakeProfitPoints * step : 0m;
+			_longStopPrice = StopLossPoints > 0 ? entry - StopLossPoints * step : 0m;
+			_longTakePrice = TakeProfitPoints > 0 ? entry + TakeProfitPoints * step : 0m;
 			_shortStopPrice = 0m;
 			_shortTakePrice = 0m;
 		}
 		else if (Position < 0)
 		{
 			var step = GetPriceStep();
-			_shortStopPrice = StopLossPoints > 0 ? PositionPrice + StopLossPoints * step : 0m;
-			_shortTakePrice = TakeProfitPoints > 0 ? PositionPrice - TakeProfitPoints * step : 0m;
+			_shortStopPrice = StopLossPoints > 0 ? entry + StopLossPoints * step : 0m;
+			_shortTakePrice = TakeProfitPoints > 0 ? entry - TakeProfitPoints * step : 0m;
 			_longStopPrice = 0m;
 			_longTakePrice = 0m;
 		}
@@ -375,6 +393,7 @@ public class LongShortExpertMacdStrategy : Strategy
 				{
 					SellMarket(volume);
 					ResetProtection();
+					_entryPrice = null;
 					return true;
 				}
 
@@ -382,6 +401,7 @@ public class LongShortExpertMacdStrategy : Strategy
 				{
 					SellMarket(volume);
 					ResetProtection();
+					_entryPrice = null;
 					return true;
 				}
 			}
@@ -396,6 +416,7 @@ public class LongShortExpertMacdStrategy : Strategy
 				{
 					BuyMarket(volume);
 					ResetProtection();
+					_entryPrice = null;
 					return true;
 				}
 
@@ -403,6 +424,7 @@ public class LongShortExpertMacdStrategy : Strategy
 				{
 					BuyMarket(volume);
 					ResetProtection();
+					_entryPrice = null;
 					return true;
 				}
 			}

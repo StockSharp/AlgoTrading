@@ -14,51 +14,35 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// XAUUSD strategy with EMA, RSI and MACD filters and fixed pip targets.
+/// Strategy with EMA, RSI and MACD crossover filters with percent-based TP/SL.
 /// </summary>
 public class TpcXauusdStrategy : Strategy
 {
 	private readonly StrategyParam<int> _ema200Len;
 	private readonly StrategyParam<int> _ema21Len;
 	private readonly StrategyParam<int> _rsiLen;
-	private readonly StrategyParam<int> _macdFast;
-	private readonly StrategyParam<int> _macdSlow;
-	private readonly StrategyParam<int> _macdSignal;
-	private readonly StrategyParam<decimal> _slPips;
-	private readonly StrategyParam<decimal> _tpPips;
+	private readonly StrategyParam<decimal> _slPercent;
+	private readonly StrategyParam<decimal> _tpPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA _ema200;
-	private EMA _ema21;
-	private RSI _rsi;
-	private MACD _macd;
-
-	private decimal _prevMacd;
-	private decimal _prevSignal;
-
-	private decimal? _stop;
-	private decimal? _take;
+	private decimal _prevShortEma;
+	private decimal _prevLongEma;
+	private decimal _entryPrice;
 
 	public int Ema200Length { get => _ema200Len.Value; set => _ema200Len.Value = value; }
 	public int Ema21Length { get => _ema21Len.Value; set => _ema21Len.Value = value; }
 	public int RsiLength { get => _rsiLen.Value; set => _rsiLen.Value = value; }
-	public int MacdFast { get => _macdFast.Value; set => _macdFast.Value = value; }
-	public int MacdSlow { get => _macdSlow.Value; set => _macdSlow.Value = value; }
-	public int MacdSignal { get => _macdSignal.Value; set => _macdSignal.Value = value; }
-	public decimal SlPips { get => _slPips.Value; set => _slPips.Value = value; }
-	public decimal TpPips { get => _tpPips.Value; set => _tpPips.Value = value; }
+	public decimal SlPercent { get => _slPercent.Value; set => _slPercent.Value = value; }
+	public decimal TpPercent { get => _tpPercent.Value; set => _tpPercent.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public TpcXauusdStrategy()
 	{
-		_ema200Len = Param(nameof(Ema200Length), 200);
+		_ema200Len = Param(nameof(Ema200Length), 100);
 		_ema21Len = Param(nameof(Ema21Length), 21);
 		_rsiLen = Param(nameof(RsiLength), 14);
-		_macdFast = Param(nameof(MacdFast), 12);
-		_macdSlow = Param(nameof(MacdSlow), 26);
-		_macdSignal = Param(nameof(MacdSignal), 9);
-		_slPips = Param(nameof(SlPips), 15m);
-		_tpPips = Param(nameof(TpPips), 22.5m);
+		_slPercent = Param(nameof(SlPercent), 0.5m);
+		_tpPercent = Param(nameof(TpPercent), 0.75m);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
@@ -69,68 +53,97 @@ public class TpcXauusdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevShortEma = 0;
+		_prevLongEma = 0;
+		_entryPrice = 0;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_ema200 = new EMA { Length = Ema200Length };
-		_ema21 = new EMA { Length = Ema21Length };
-		_rsi = new RSI { Length = RsiLength };
-		_macd = new MACD { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow }, SignalPeriod = MacdSignal };
+		var emaLong = new ExponentialMovingAverage { Length = Ema200Length };
+		var emaShort = new ExponentialMovingAverage { Length = Ema21Length };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_ema200, _ema21, _rsi, _macd, Process).Start();
+		subscription.Bind(emaLong, emaShort, rsi, ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, emaLong);
+			DrawIndicator(area, emaShort);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void Process(ICandleMessage candle, decimal ema200, decimal ema21, decimal rsi, decimal macdLine, decimal signalLine)
+	private void ProcessCandle(ICandleMessage candle, decimal emaLongVal, decimal emaShortVal, decimal rsiVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_ema200.IsFormed || !_ema21.IsFormed || !_rsi.IsFormed || !_macd.IsFormed)
+		var close = candle.ClosePrice;
+
+		// Check TP/SL exits first
+		if (Position > 0 && _entryPrice > 0)
+		{
+			var sl = _entryPrice * (1 - SlPercent / 100m);
+			var tp = _entryPrice * (1 + TpPercent / 100m);
+			if (candle.LowPrice <= sl || candle.HighPrice >= tp)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_prevShortEma = emaShortVal;
+				_prevLongEma = emaLongVal;
+				return;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			var sl = _entryPrice * (1 + SlPercent / 100m);
+			var tp = _entryPrice * (1 - TpPercent / 100m);
+			if (candle.HighPrice >= sl || candle.LowPrice <= tp)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_prevShortEma = emaShortVal;
+				_prevLongEma = emaLongVal;
+				return;
+			}
+		}
+
+		if (_prevShortEma == 0)
+		{
+			_prevShortEma = emaShortVal;
+			_prevLongEma = emaLongVal;
 			return;
+		}
 
-		var sl = SlPips * Security.PriceStep * 10m;
-		var tp = TpPips * Security.PriceStep * 10m;
+		// EMA crossover + trend + RSI filter
+		var shortCrossAboveLong = _prevShortEma <= _prevLongEma && emaShortVal > emaLongVal;
+		var shortCrossBelowLong = _prevShortEma >= _prevLongEma && emaShortVal < emaLongVal;
 
-		var longCond = candle.ClosePrice > ema200 && candle.ClosePrice > ema21 && rsi > 50m &&
-			macdLine > signalLine && _prevMacd <= _prevSignal && macdLine > _prevMacd;
-		var shortCond = candle.ClosePrice < ema200 && candle.ClosePrice < ema21 && rsi < 50m &&
-			macdLine < signalLine && _prevMacd >= _prevSignal && macdLine < _prevMacd;
+		var longCond = close > emaLongVal && shortCrossAboveLong && rsiVal > 50m;
+		var shortCond = close < emaLongVal && shortCrossBelowLong && rsiVal < 50m;
 
 		if (longCond && Position <= 0)
 		{
-			BuyMarket(Volume);
-			_stop = candle.ClosePrice - sl;
-			_take = candle.ClosePrice + tp;
+			BuyMarket();
+			_entryPrice = close;
 		}
 		else if (shortCond && Position >= 0)
 		{
-			SellMarket(Volume);
-			_stop = candle.ClosePrice + sl;
-			_take = candle.ClosePrice - tp;
+			SellMarket();
+			_entryPrice = close;
 		}
 
-		if (Position > 0)
-		{
-			if (candle.LowPrice <= _stop || candle.HighPrice >= _take)
-			{
-				SellMarket(Math.Abs(Position));
-				_stop = null;
-				_take = null;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (candle.HighPrice >= _stop || candle.LowPrice <= _take)
-			{
-				BuyMarket(Math.Abs(Position));
-				_stop = null;
-				_take = null;
-			}
-		}
-
-		_prevMacd = macdLine;
-		_prevSignal = signalLine;
+		_prevShortEma = emaShortVal;
+		_prevLongEma = emaLongVal;
 	}
 }

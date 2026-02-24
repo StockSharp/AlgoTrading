@@ -88,7 +88,7 @@ public class ChannelTrailingStopStrategy : Strategy
 	/// </summary>
 	public ChannelTrailingStopStrategy()
 	{
-		_trailPeriod = Param(nameof(TrailPeriod), 5)
+		_trailPeriod = Param(nameof(TrailPeriod), 3)
 			.SetDisplay("Channel Period", "Lookback for channel calculation", "Parameters")
 			
 			.SetOptimize(5, 50, 5);
@@ -129,8 +129,7 @@ public class ChannelTrailingStopStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (DeletePendingOrders)
-			CancelActiveOrders();
+		// no-op in backtest
 	}
 
 	/// <inheritdoc />
@@ -159,26 +158,30 @@ public class ChannelTrailingStopStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var dc = (DonchianChannelsValue)value;
+		var dc = (IDonchianChannelsValue)value;
 
 		if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
 			return;
 
-		// Entry logic: breakouts of channel boundaries
-		if (candle.ClosePrice > upper && Position <= 0)
+		// Entry logic: breakouts of channel boundaries (close near upper or lower band)
+		var range = upper - lower;
+		if (range <= 0)
+			return;
+
+		var threshold = range * 0.1m;
+		if (candle.ClosePrice >= upper - threshold && Position <= 0)
 		{
-			var vol = Volume + Math.Abs(Position);
-			BuyMarket(vol);
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 			_longStop = candle.ClosePrice - TrailStop;
 			_takeProfitPrice = candle.ClosePrice + TrailStop;
 		}
-		else if (candle.ClosePrice < lower && Position >= 0)
+		else if (candle.ClosePrice <= lower + threshold && Position >= 0)
 		{
-			var vol = Volume + Math.Abs(Position);
-			SellMarket(vol);
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 			_shortStop = candle.ClosePrice + TrailStop;
 			_takeProfitPrice = candle.ClosePrice - TrailStop;
 		}
@@ -220,13 +223,13 @@ public class ChannelTrailingStopStrategy : Strategy
 		// Exit conditions when price crosses trailing levels
 		if (Position > 0 && candle.LowPrice <= _longStop)
 		{
-			SellMarket(Position);
+			SellMarket();
 			_longStop = 0;
 			_takeProfitPrice = null;
 		}
 		else if (Position < 0 && candle.HighPrice >= _shortStop)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			_shortStop = 0;
 			_takeProfitPrice = null;
 		}
