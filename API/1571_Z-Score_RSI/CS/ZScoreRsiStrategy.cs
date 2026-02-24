@@ -15,6 +15,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// RSI of price Z-Score with EMA smoothing.
+/// Computes Z-score of price, feeds it to RSI, smooths with EMA.
 /// Buys when RSI crosses above its EMA and sells on opposite cross.
 /// </summary>
 public class ZScoreRsiStrategy : Strategy
@@ -24,11 +25,10 @@ public class ZScoreRsiStrategy : Strategy
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly RelativeStrengthIndex _rsi = new();
-	private readonly ExponentialMovingAverage _rsiMa = new();
-
-	private decimal? _prevRsiZ;
-	private decimal? _prevRsiMa;
+	private readonly List<decimal> _closes = new();
+	private decimal _prevRsiZ;
+	private decimal _prevRsiMa;
+	private bool _hasPrev;
 
 	public int ZScoreLength { get => _zScoreLength.Value; set => _zScoreLength.Value = value; }
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
@@ -39,92 +39,122 @@ public class ZScoreRsiStrategy : Strategy
 	{
 		_zScoreLength = Param(nameof(ZScoreLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Z-Score Length", "Length for mean and deviation", "Indicators")
-			;
+			.SetDisplay("Z-Score Length", "Length for mean and deviation", "Indicators");
 
 		_rsiLength = Param(nameof(RsiLength), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "Length for RSI", "Indicators")
-			;
+			.SetDisplay("RSI Length", "Length for RSI", "Indicators");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 15)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI EMA Length", "EMA length over RSI", "Indicators")
-			;
+			.SetDisplay("RSI EMA Length", "EMA length over RSI", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevRsiZ = null;
-		_prevRsiMa = null;
+		_closes.Clear();
+		_prevRsiZ = 0;
+		_prevRsiMa = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_rsi.Length = RsiLength;
-		_rsiMa.Length = SmoothingLength;
+		// Use SMA + StdDev via Bind to compute Z-score components
+		var sma = new SimpleMovingAverage { Length = ZScoreLength };
+		var stdDev = new StandardDeviation { Length = ZScoreLength };
 
-		var mean = new SMA { Length = ZScoreLength };
-		var std = new StandardDeviation { Length = ZScoreLength };
+		_closes.Clear();
+		_prevRsiZ = 0;
+		_prevRsiMa = 0;
+		_hasPrev = false;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(mean, std, ProcessCandle).Start();
+		subscription.Bind(sma, stdDev, ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal meanValue, decimal stdValue)
+	private void ProcessCandle(ICandleMessage candle, decimal meanVal, decimal stdVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (stdVal <= 0)
 			return;
 
-		if (stdValue == 0)
+		// Compute Z-score
+		var z = (candle.ClosePrice - meanVal) / stdVal;
+
+		// Manual RSI on Z-score values
+		_closes.Add(z);
+		if (_closes.Count > RsiLength + SmoothingLength + 10)
+			_closes.RemoveAt(0);
+
+		if (_closes.Count < RsiLength + 1)
 			return;
 
-		var z = (candle.ClosePrice - meanValue) / stdValue;
-
-		var rsiValue = _rsi.Process(candle.OpenTime, z);
-		if (!rsiValue.IsFinal)
-			return;
-		var rsiZ = rsiValue.GetValue<decimal>();
-
-		var maValue = _rsiMa.Process(candle.OpenTime, rsiZ);
-		if (!maValue.IsFinal)
-			return;
-		var rsiMa = maValue.GetValue<decimal>();
-
-		if (_prevRsiZ is null)
+		// Calculate RSI manually on Z-score series
+		decimal avgGain = 0, avgLoss = 0;
+		for (int i = _closes.Count - RsiLength; i < _closes.Count; i++)
 		{
+			var change = _closes[i] - _closes[i - 1];
+			if (change > 0) avgGain += change;
+			else avgLoss += Math.Abs(change);
+		}
+		avgGain /= RsiLength;
+		avgLoss /= RsiLength;
+
+		decimal rsiZ;
+		if (avgLoss == 0)
+			rsiZ = 100;
+		else
+		{
+			var rs = avgGain / avgLoss;
+			rsiZ = 100 - (100 / (1 + rs));
+		}
+
+		// EMA smoothing of RSI
+		decimal rsiMa;
+		if (!_hasPrev)
+		{
+			rsiMa = rsiZ;
 			_prevRsiZ = rsiZ;
 			_prevRsiMa = rsiMa;
+			_hasPrev = true;
 			return;
 		}
 
+		var k = 2m / (SmoothingLength + 1);
+		rsiMa = rsiZ * k + _prevRsiMa * (1 - k);
+
+		// Crossover signals
 		var crossUp = _prevRsiZ <= _prevRsiMa && rsiZ > rsiMa;
 		var crossDown = _prevRsiZ >= _prevRsiMa && rsiZ < rsiMa;
 
 		if (crossUp && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		else if (crossDown && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 
 		_prevRsiZ = rsiZ;

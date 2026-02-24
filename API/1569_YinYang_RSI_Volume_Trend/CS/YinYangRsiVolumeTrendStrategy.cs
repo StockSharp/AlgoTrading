@@ -15,322 +15,141 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// YinYang RSI Volume Trend strategy.
-/// Defines dynamic buy and sell zones using volume-weighted price and RSI.
-/// Enters long when price crosses above the lower zone and short when crossing below the upper zone.
-/// Optional stop-loss and take-profit are based on zone distances.
+/// Defines dynamic buy/sell zones using SMA, StdDev, and RSI.
+/// Enters long when price crosses above lower zone, short when below upper zone.
 /// </summary>
 public class YinYangRsiVolumeTrendStrategy : Strategy
 {
-	/// <summary>
-	/// Options for resetting purchase availability.
-	/// </summary>
-	public enum ResetConditions
-	{
-		/// <summary>
-		/// Reset after entry condition is met.
-		/// </summary>
-		Entry,
-		/// <summary>
-		/// Reset after stop-loss triggers.
-		/// </summary>
-		StopLoss,
-		/// <summary>
-		/// No automatic reset.
-		/// </summary>
-		None
-	}
-
-	public enum CandlePrices
-	{
-		Open,
-		High,
-		Low,
-		Close,
-		Median,
-		Typical,
-		Weighted
-	}
-
 	private readonly StrategyParam<int> _trendLength;
-	private readonly StrategyParam<bool> _useTakeProfit;
-	private readonly StrategyParam<bool> _useStopLoss;
 	private readonly StrategyParam<decimal> _stopLossMultiplier;
-	private readonly StrategyParam<ResetConditions> _resetCondition;
-	private readonly StrategyParam<CandlePrices> _purchaseSource;
-	private readonly StrategyParam<CandlePrices> _exitSource;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private ExponentialMovingAverage _midEma = null!;
-	private SimpleMovingAverage _avgVolume = null!;
-	private VolumeWeightedMovingAverage _midVolVwma = null!;
-	private SimpleMovingAverage _diffSma = null!;
-	private RelativeStrengthIndex _rsi = null!;
-
-	private decimal _prevPurchaseSrc;
-	private decimal _prevExitSrc;
+	private decimal _prevClose;
 	private decimal _prevZoneHigh;
 	private decimal _prevZoneLow;
 	private decimal _prevZoneBasis;
-	private decimal _prevStopHigh;
-	private decimal _prevStopLow;
 	private bool _initialized;
-	private bool _longAvailable;
-	private bool _longTakeProfitAvailable;
-	private bool _longStopLoss;
-	private bool _shortAvailable;
-	private bool _shortTakeProfitAvailable;
-	private bool _shortStopLoss;
 
-	/// <summary>
-	/// Trend calculation length.
-	/// </summary>
 	public int TrendLength { get => _trendLength.Value; set => _trendLength.Value = value; }
-
-	/// <summary>
-	/// Use take-profit logic.
-	/// </summary>
-	public bool UseTakeProfit { get => _useTakeProfit.Value; set => _useTakeProfit.Value = value; }
-
-	/// <summary>
-	/// Use stop-loss logic.
-	/// </summary>
-	public bool UseStopLoss { get => _useStopLoss.Value; set => _useStopLoss.Value = value; }
-
-	/// <summary>
-	/// Stop-loss multiplier in percent.
-	/// </summary>
 	public decimal StopLossMultiplier { get => _stopLossMultiplier.Value; set => _stopLossMultiplier.Value = value; }
-
-	/// <summary>
-	/// Reset mode for purchase availability.
-	/// </summary>
-	public ResetConditions ResetCondition { get => _resetCondition.Value; set => _resetCondition.Value = value; }
-
-	/// <summary>
-	/// Price source for purchase checks.
-	/// </summary>
-	public CandlePrices PurchaseSource { get => _purchaseSource.Value; set => _purchaseSource.Value = value; }
-
-	/// <summary>
-	/// Price source for exit checks.
-	/// </summary>
-	public CandlePrices ExitSource { get => _exitSource.Value; set => _exitSource.Value = value; }
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="YinYangRsiVolumeTrendStrategy"/>.
-	/// </summary>
 	public YinYangRsiVolumeTrendStrategy()
 	{
-		_trendLength = Param(nameof(TrendLength), 80)
-		.SetGreaterThanZero()
-		.SetDisplay("Trend Length", "Lookback length for calculations", "General");
+		_trendLength = Param(nameof(TrendLength), 40)
+			.SetGreaterThanZero()
+			.SetDisplay("Trend Length", "Lookback length", "General");
 
-		_useTakeProfit = Param(nameof(UseTakeProfit), true)
-		.SetDisplay("Use Take Profit", "Enable take profit logic", "Risk");
+		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 0.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("SL Mult %", "Stop distance percent", "Risk");
 
-		_useStopLoss = Param(nameof(UseStopLoss), true)
-		.SetDisplay("Use Stop Loss", "Enable stop loss logic", "Risk");
-
-		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Stoploss Multiplier %", "Distance from purchase lines", "Risk");
-
-		_resetCondition = Param(nameof(ResetCondition), ResetConditions.Entry)
-		.SetDisplay("Reset After", "When to reset purchase availability", "General");
-
-		_purchaseSource = Param(nameof(PurchaseSource), CandlePrices.Close)
-		.SetDisplay("Purchase Source", "Price source for entry", "General");
-
-		_exitSource = Param(nameof(ExitSource), CandlePrices.Close)
-		.SetDisplay("Exit Source", "Price source for exit", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevPurchaseSrc = 0m;
-		_prevExitSrc = 0m;
-		_prevZoneHigh = 0m;
-		_prevZoneLow = 0m;
-		_prevZoneBasis = 0m;
-		_prevStopHigh = 0m;
-		_prevStopLow = 0m;
+		_prevClose = 0;
+		_prevZoneHigh = 0;
+		_prevZoneLow = 0;
+		_prevZoneBasis = 0;
 		_initialized = false;
-		_longAvailable = false;
-		_longTakeProfitAvailable = false;
-		_longStopLoss = false;
-		_shortAvailable = false;
-		_shortTakeProfitAvailable = false;
-		_shortStopLoss = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_highest = new Highest { Length = TrendLength, CandlePrice = CandlePrices.High };
-		_lowest = new Lowest { Length = TrendLength, CandlePrice = CandlePrices.Low };
-		_midEma = new EMA { Length = TrendLength };
-		_avgVolume = new SMA { Length = TrendLength };
-		_midVolVwma = new VolumeWeightedMovingAverage { Length = 3 };
-		_diffSma = new SMA { Length = TrendLength };
-		_rsi = new RelativeStrengthIndex { Length = TrendLength };
+		var sma = new SimpleMovingAverage { Length = TrendLength };
+		var stdDev = new StandardDeviation { Length = TrendLength };
+		var rsi = new RelativeStrengthIndex { Length = 14 };
+
+		_prevClose = 0;
+		_prevZoneHigh = 0;
+		_prevZoneLow = 0;
+		_prevZoneBasis = 0;
+		_initialized = false;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.Bind(_highest, _lowest, ProcessCandle)
-		.Start();
+		subscription.Bind(sma, stdDev, rsi, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)
+	private void ProcessCandle(ICandleMessage candle, decimal smaVal, decimal stdVal, decimal rsiVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var mid = (highest + lowest) / 2m;
-		var midSmoothed = _midEma.Process(new DecimalIndicatorValue(_midEma, mid, candle.OpenTime)).ToDecimal();
+		if (stdVal <= 0)
+			return;
 
-		var avgVol = _avgVolume.Process(new DecimalIndicatorValue(_avgVolume, candle.TotalVolume, candle.OpenTime)).ToDecimal();
-		var volDiff = avgVol == 0 ? 0 : candle.TotalVolume / avgVol;
-		var midVol = midSmoothed * volDiff;
-		var midVolSmoothed = _midVolVwma.Process(new DecimalIndicatorValue(_midVolVwma, midVol, candle.OpenTime)).ToDecimal();
-
-		var diff = highest - lowest;
-		var midDifference = _diffSma.Process(new DecimalIndicatorValue(_diffSma, diff, candle.OpenTime)).ToDecimal();
-		var midRsi = _rsi.Process(new DecimalIndicatorValue(_rsi, midVolSmoothed, candle.OpenTime)).ToDecimal() * 0.01m;
-		var midAdd = midRsi * midDifference;
-
-		var zoneHigh = midSmoothed + midAdd;
-		var zoneLow = midSmoothed - midAdd;
-		var zoneBasis = (zoneHigh + zoneLow) / 2m;
+		// Dynamic zones based on SMA +/- RSI-weighted StdDev
+		var rsiWeight = rsiVal / 100m; // 0..1
+		var zoneWidth = stdVal * (0.5m + rsiWeight);
+		var zoneBasis = smaVal;
+		var zoneHigh = zoneBasis + zoneWidth;
+		var zoneLow = zoneBasis - zoneWidth;
 		var stopHigh = zoneHigh * (1 + StopLossMultiplier / 100m);
 		var stopLow = zoneLow * (1 - StopLossMultiplier / 100m);
 
-		var purchaseSrc = GetPrice(candle, PurchaseSource);
-		var exitSrc = GetPrice(candle, ExitSource);
+		var close = candle.ClosePrice;
 
 		if (!_initialized)
 		{
-			_prevPurchaseSrc = purchaseSrc;
-			_prevExitSrc = exitSrc;
+			_prevClose = close;
 			_prevZoneHigh = zoneHigh;
 			_prevZoneLow = zoneLow;
 			_prevZoneBasis = zoneBasis;
-			_prevStopHigh = stopHigh;
-			_prevStopLow = stopLow;
 			_initialized = true;
-			_longAvailable = true;
-			_shortAvailable = true;
 			return;
 		}
 
-		var longEntry = CrossDown(_prevPurchaseSrc, _prevZoneLow, purchaseSrc, zoneLow);
-		var longStart = CrossUp(_prevPurchaseSrc, _prevZoneLow, purchaseSrc, zoneLow) && _longAvailable;
-		var longEnd = CrossUp(_prevExitSrc, _prevZoneHigh, exitSrc, zoneHigh);
-		_longStopLoss = CrossDown(_prevExitSrc, _prevStopLow, exitSrc, stopLow);
-		var crossAboveBasis = CrossUp(_prevExitSrc, _prevZoneBasis, exitSrc, zoneBasis);
-		if (crossAboveBasis)
-			_longTakeProfitAvailable = true;
-		else if (longEnd)
-			_longTakeProfitAvailable = false;
-		var longTakeProfit = CrossDown(_prevExitSrc, _prevZoneBasis, exitSrc, zoneBasis) && _longTakeProfitAvailable;
+		// Cross detections
+		var longStart = _prevClose <= _prevZoneLow && close > zoneLow;
+		var longEnd = _prevClose <= _prevZoneHigh && close > zoneHigh;
+		var longStopLoss = _prevClose >= _prevZoneLow && close < stopLow;
 
-		var longAvailReset = CrossDown(_prevPurchaseSrc, _prevZoneHigh, purchaseSrc, zoneHigh)
-			|| (ResetCondition == ResetConditions.StopLoss && _longStopLoss)
-			|| (ResetCondition == ResetConditions.Entry && longEntry);
+		var shortStart = _prevClose >= _prevZoneHigh && close < zoneHigh;
+		var shortEnd = _prevClose >= _prevZoneLow && close < zoneLow;
+		var shortStopLoss = _prevClose <= _prevZoneHigh && close > stopHigh;
 
-		if (longAvailReset)
-			_longAvailable = true;
-		else if (longStart)
-			_longAvailable = false;
-
-		var shortEntry = CrossUp(_prevPurchaseSrc, _prevZoneHigh, purchaseSrc, zoneHigh);
-		var shortStart = CrossDown(_prevPurchaseSrc, _prevZoneHigh, purchaseSrc, zoneHigh) && _shortAvailable;
-		var shortEnd = CrossDown(_prevExitSrc, _prevZoneLow, exitSrc, zoneLow);
-		_shortStopLoss = CrossUp(_prevExitSrc, _prevStopHigh, exitSrc, stopHigh);
-		var crossUnderBasis = CrossDown(_prevExitSrc, _prevZoneBasis, exitSrc, zoneBasis);
-		if (crossUnderBasis)
-			_shortTakeProfitAvailable = true;
-		else if (shortEnd)
-			_shortTakeProfitAvailable = false;
-		var shortTakeProfit = CrossUp(_prevExitSrc, _prevZoneBasis, exitSrc, zoneBasis) && _shortTakeProfitAvailable;
-
-		var shortAvailReset = CrossUp(_prevPurchaseSrc, _prevZoneLow, purchaseSrc, zoneLow)
-			|| (ResetCondition == ResetConditions.StopLoss && _shortStopLoss)
-			|| (ResetCondition == ResetConditions.Entry && shortEntry);
-
-		if (shortAvailReset)
-			_shortAvailable = true;
-		else if (shortStart)
-			_shortAvailable = false;
-
+		// Long entry: price crosses up from below lower zone
 		if (longStart && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (Position > 0 && (longEnd || (UseStopLoss && _longStopLoss) || (UseTakeProfit && longTakeProfit)))
-			SellMarket(Math.Abs(Position));
+		{
+			BuyMarket();
+		}
+		else if (Position > 0 && (longEnd || longStopLoss))
+		{
+			SellMarket();
+		}
 
+		// Short entry: price crosses down from above upper zone
 		if (shortStart && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-		else if (Position < 0 && (shortEnd || (UseStopLoss && _shortStopLoss) || (UseTakeProfit && shortTakeProfit)))
-			BuyMarket(Math.Abs(Position));
+		{
+			SellMarket();
+		}
+		else if (Position < 0 && (shortEnd || shortStopLoss))
+		{
+			BuyMarket();
+		}
 
-		_prevPurchaseSrc = purchaseSrc;
-		_prevExitSrc = exitSrc;
+		_prevClose = close;
 		_prevZoneHigh = zoneHigh;
 		_prevZoneLow = zoneLow;
 		_prevZoneBasis = zoneBasis;
-		_prevStopHigh = stopHigh;
-		_prevStopLow = stopLow;
-	}
-
-	private static bool CrossUp(decimal prevSrc, decimal prevLine, decimal src, decimal line)
-	{
-		return prevSrc <= prevLine && src > line;
-	}
-
-	private static bool CrossDown(decimal prevSrc, decimal prevLine, decimal src, decimal line)
-	{
-		return prevSrc >= prevLine && src < line;
-	}
-
-	private static decimal GetPrice(ICandleMessage candle, CandlePrices price)
-	{
-		return price switch
-		{
-			CandlePrices.Open => candle.OpenPrice,
-			CandlePrices.High => candle.HighPrice,
-			CandlePrices.Low => candle.LowPrice,
-			CandlePrices.Close => candle.ClosePrice,
-			CandlePrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			CandlePrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			CandlePrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-			_ => candle.ClosePrice,
-		};
 	}
 }

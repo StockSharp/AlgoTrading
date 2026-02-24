@@ -14,249 +14,113 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy entering above yesterday's high with optional ROC and trailing stop filters.
+/// Breakout strategy entering above yesterday's high with trailing stop and EMA filter.
+/// Tracks daily highs and enters when price breaks above the previous day's high.
 /// </summary>
 public class YesterdaysHighStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _gap;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<bool> _useRocFilter;
-	private readonly StrategyParam<decimal> _rocThreshold;
-	private readonly StrategyParam<bool> _useTrailing;
-	private readonly StrategyParam<decimal> _trailEnter;
 	private readonly StrategyParam<decimal> _trailOffset;
-	private readonly StrategyParam<bool> _closeOnEma;
-	private readonly StrategyParam<int> _emaLength;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevHigh;
 	private decimal _currentHigh;
-	private decimal _prevClose;
 	private DateTime _sessionDate;
-	private decimal _lastClose;
-
+	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private decimal _takePrice;
-	private bool _trailActive;
-	private decimal _trailActivationPrice;
 	private decimal _trailHighest;
-	private decimal _trailStopPrice;
-	private bool _entryInitialized;
+	private bool _trailActive;
 
-	private readonly ExponentialMovingAverage _ema = new();
+	public decimal Gap { get => _gap.Value; set => _gap.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal TrailOffset { get => _trailOffset.Value; set => _trailOffset.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Gap percent for entry price above previous high.
-	/// </summary>
-	public decimal Gap
-	{
-		get => _gap.Value;
-		set => _gap.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss percent from entry price.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit percent from entry price.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Enable rate of change filter.
-	/// </summary>
-	public bool UseRocFilter
-	{
-		get => _useRocFilter.Value;
-		set => _useRocFilter.Value = value;
-	}
-
-	/// <summary>
-	/// ROC threshold percent.
-	/// </summary>
-	public decimal RocThreshold
-	{
-		get => _rocThreshold.Value;
-		set => _rocThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Enable trailing stop.
-	/// </summary>
-	public bool UseTrailing
-	{
-		get => _useTrailing.Value;
-		set => _useTrailing.Value = value;
-	}
-
-	/// <summary>
-	/// Activation percent for trailing stop.
-	/// </summary>
-	public decimal TrailEnter
-	{
-		get => _trailEnter.Value;
-		set => _trailEnter.Value = value;
-	}
-
-	/// <summary>
-	/// Offset percent for trailing stop.
-	/// </summary>
-	public decimal TrailOffset
-	{
-		get => _trailOffset.Value;
-		set => _trailOffset.Value = value;
-	}
-
-	/// <summary>
-	/// Close position when price crosses below EMA.
-	/// </summary>
-	public bool CloseOnEma
-	{
-		get => _closeOnEma.Value;
-		set => _closeOnEma.Value = value;
-	}
-
-	/// <summary>
-	/// EMA period length.
-	/// </summary>
-	public int EmaLength
-	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="YesterdaysHighStrategy"/>.
-	/// </summary>
 	public YesterdaysHighStrategy()
 	{
-		_gap = Param(nameof(Gap), 1m)
-			.SetDisplay("Gap%", "Entry gap percent", "Entry");
-		_stopLoss = Param(nameof(StopLoss), 3m)
-			.SetDisplay("Stop-loss", "Stop-loss percent", "Entry");
-		_takeProfit = Param(nameof(TakeProfit), 9m)
-			.SetDisplay("Take-profit", "Take-profit percent", "Entry");
-		_useRocFilter = Param(nameof(UseRocFilter), false)
-			.SetDisplay("ROC Filter", "Enable ROC filter", "Filters");
-		_rocThreshold = Param(nameof(RocThreshold), 1m)
-			.SetDisplay("Treshold", "ROC threshold", "Filters");
-		_useTrailing = Param(nameof(UseTrailing), true)
-			.SetDisplay("Trailing-stop", "Enable trailing stop", "Trailing");
-		_trailEnter = Param(nameof(TrailEnter), 2m)
-			.SetDisplay("Trailing-stop", "Activation percent", "Trailing");
+		_gap = Param(nameof(Gap), 0.1m)
+			.SetDisplay("Gap%", "Entry gap percent above prev high", "Entry");
+
+		_stopLoss = Param(nameof(StopLoss), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop-loss", "Stop-loss percent", "Risk");
+
+		_takeProfit = Param(nameof(TakeProfit), 5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Take-profit", "Take-profit percent", "Risk");
+
 		_trailOffset = Param(nameof(TrailOffset), 1m)
-			.SetDisplay("Offset Trailing", "Offset percent", "Trailing");
-		_closeOnEma = Param(nameof(CloseOnEma), false)
-			.SetDisplay("Close EMA", "Close on EMA cross", "Trailing Stop Settings");
-		_emaLength = Param(nameof(EmaLength), 10)
-			.SetDisplay("EMA length", "EMA length", "Trailing Stop Settings");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetGreaterThanZero()
+			.SetDisplay("Trail Offset", "Trailing stop offset percent", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
 		_prevHigh = 0;
 		_currentHigh = 0;
-		_prevClose = 0;
-		_lastClose = 0;
 		_sessionDate = default;
+		_entryPrice = 0;
 		_stopPrice = 0;
 		_takePrice = 0;
-		_trailActive = false;
-		_trailActivationPrice = 0;
 		_trailHighest = 0;
-		_trailStopPrice = 0;
-		_entryInitialized = false;
+		_trailActive = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_ema.Length = EmaLength;
+
+		var ema = new ExponentialMovingAverage { Length = 20 };
+
+		_prevHigh = 0;
+		_currentHigh = 0;
+		_sessionDate = default;
+		_entryPrice = 0;
+		_stopPrice = 0;
+		_takePrice = 0;
+		_trailHighest = 0;
+		_trailActive = false;
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_ema, ProcessCandle)
-			.Start();
+		subscription.Bind(ema, ProcessCandle).Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ema)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		UpdateSession(candle);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var price = candle.ClosePrice;
-
-		if (Position <= 0)
-		{
-			_entryInitialized = false;
-			if (ShouldEnter(price))
-			{
-				CancelActiveOrders();
-				var activation = _prevHigh * (1 + Gap / 100m);
-				BuyStop(Volume + Math.Abs(Position), activation);
-			}
-		}
-		else
-		{
-			ManagePosition(price, ema);
-		}
-	}
-
-	private void UpdateSession(ICandleMessage candle)
-	{
+		// Track daily highs
 		var date = candle.OpenTime.Date;
 		if (_sessionDate == default)
 		{
 			_sessionDate = date;
 			_currentHigh = candle.HighPrice;
-			_prevClose = candle.ClosePrice;
 		}
 		else if (date > _sessionDate)
 		{
 			_prevHigh = _currentHigh;
-			_prevClose = _lastClose;
 			_currentHigh = candle.HighPrice;
 			_sessionDate = date;
 		}
@@ -265,68 +129,55 @@ public class YesterdaysHighStrategy : Strategy
 			if (candle.HighPrice > _currentHigh)
 				_currentHigh = candle.HighPrice;
 		}
-		_lastClose = candle.ClosePrice;
-	}
 
-	private bool ShouldEnter(decimal price)
-	{
-		if (_prevHigh == 0)
-			return false;
-		if (UseRocFilter && _prevClose > 0)
-		{
-			var roc = (price - _prevClose) / _prevClose * 100m;
-			if (roc <= RocThreshold)
-				return false;
-		}
-		return price < _prevHigh;
-	}
+		var price = candle.ClosePrice;
 
-	private void ManagePosition(decimal price, decimal ema)
-	{
-		if (!_entryInitialized)
+		// Exit management
+		if (Position > 0 && _entryPrice > 0)
 		{
-			var entry = PositionPrice;
-			_stopPrice = entry * (1 - StopLoss / 100m);
-			_takePrice = entry * (1 + TakeProfit / 100m);
-			_trailActive = false;
-			_trailActivationPrice = entry * (1 + TrailEnter / 100m);
-			_trailHighest = 0;
-			_entryInitialized = true;
-		}
+			if (price > _trailHighest)
+				_trailHighest = price;
 
-		if (CloseOnEma && price < ema)
-		{
-			SellMarket(Position);
-			return;
-		}
-
-		if (UseTrailing)
-		{
-			if (!_trailActive && price > _trailActivationPrice)
+			// Trailing stop activation
+			if (!_trailActive && price >= _entryPrice * (1 + TrailOffset / 100m))
 			{
 				_trailActive = true;
-				_trailHighest = price;
 			}
+
 			if (_trailActive)
 			{
-				_trailHighest = Math.Max(_trailHighest, price);
-				_trailStopPrice = _trailHighest * (1 - TrailOffset / 100m);
-				if (price < _trailStopPrice)
+				var trailStop = _trailHighest * (1 - TrailOffset / 100m);
+				if (price <= trailStop)
 				{
-					SellMarket(Position);
+					SellMarket();
+					_entryPrice = 0;
 					return;
 				}
 			}
+
+			// Fixed SL/TP
+			if (price <= _stopPrice || price >= _takePrice)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				return;
+			}
 		}
 
-		if (price < _stopPrice)
+		// Entry: price breaks above yesterday's high
+		if (Position == 0 && _prevHigh > 0)
 		{
-			SellMarket(Position);
-			return;
-		}
-		if (price > _takePrice)
-		{
-			SellMarket(Position);
+			var breakoutLevel = _prevHigh * (1 + Gap / 100m);
+
+			if (price > breakoutLevel && price > emaVal)
+			{
+				BuyMarket();
+				_entryPrice = price;
+				_stopPrice = _entryPrice * (1 - StopLoss / 100m);
+				_takePrice = _entryPrice * (1 + TakeProfit / 100m);
+				_trailHighest = price;
+				_trailActive = false;
+			}
 		}
 	}
 }
