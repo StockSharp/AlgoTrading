@@ -14,277 +14,168 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volatility breakout strategy with momentum filter and ATR based risk management.
+/// Volatility breakout strategy with momentum filter.
+/// Breaks out above/below rolling high/low with EMA trend and RSI momentum filter.
+/// Uses StdDev-based stop and risk/reward target.
 /// </summary>
 public class VolatilityMomentumBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<int> _lookback;
-	private readonly StrategyParam<int> _emaPeriod;
-	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<decimal> _rsiLongThreshold;
-	private readonly StrategyParam<decimal> _rsiShortThreshold;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<decimal> _rsiLong;
+	private readonly StrategyParam<decimal> _rsiShort;
 	private readonly StrategyParam<decimal> _riskReward;
-	private readonly StrategyParam<decimal> _atrStopMultiplier;
+	private readonly StrategyParam<decimal> _stopMult;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest = null!;
-	private Lowest _lowest = null!;
-	private decimal _prevHighest;
-	private decimal _prevLowest;
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
 	private decimal _entryPrice;
-	private decimal _entryAtr;
+	private decimal _stopDist;
 
-	/// <summary>
-	/// ATR calculation period.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
+	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
+	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public decimal RsiLong { get => _rsiLong.Value; set => _rsiLong.Value = value; }
+	public decimal RsiShort { get => _rsiShort.Value; set => _rsiShort.Value = value; }
+	public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
+	public decimal StopMult { get => _stopMult.Value; set => _stopMult.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ATR multiplier for breakout levels.
-	/// </summary>
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback period for breakout levels.
-	/// </summary>
-	public int Lookback
-	{
-		get => _lookback.Value;
-		set => _lookback.Value = value;
-	}
-
-	/// <summary>
-	/// EMA period used as trend filter.
-	/// </summary>
-	public int EmaPeriod
-	{
-		get => _emaPeriod.Value;
-		set => _emaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// RSI threshold for long trades.
-	/// </summary>
-	public decimal RsiLongThreshold
-	{
-		get => _rsiLongThreshold.Value;
-		set => _rsiLongThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// RSI threshold for short trades.
-	/// </summary>
-	public decimal RsiShortThreshold
-	{
-		get => _rsiShortThreshold.Value;
-		set => _rsiShortThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Risk-reward ratio for targets.
-	/// </summary>
-	public decimal RiskReward
-	{
-		get => _riskReward.Value;
-		set => _riskReward.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for stop loss.
-	/// </summary>
-	public decimal AtrStopMultiplier
-	{
-		get => _atrStopMultiplier.Value;
-		set => _atrStopMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="VolatilityMomentumBreakoutStrategy"/> class.
-	/// </summary>
 	public VolatilityMomentumBreakoutStrategy()
 	{
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR calculation period", "General")
-			
-			.SetOptimize(7, 28, 7);
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Multiplier", "ATR multiplier for breakout", "General")
-			
-			.SetOptimize(1m, 3m, 0.5m);
-
 		_lookback = Param(nameof(Lookback), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback", "Breakout lookback period", "General")
-			
-			.SetOptimize(10, 50, 10);
+			.SetDisplay("Lookback", "Breakout lookback", "General");
 
-		_emaPeriod = Param(nameof(EmaPeriod), 50)
+		_emaLength = Param(nameof(EmaLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "EMA period for trend filter", "General")
-			
-			.SetOptimize(20, 100, 10);
+			.SetDisplay("EMA Length", "EMA trend filter", "General");
 
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "RSI calculation period", "General")
-			
-			.SetOptimize(7, 28, 7);
+			.SetDisplay("RSI Length", "RSI period", "General");
 
-		_rsiLongThreshold = Param(nameof(RsiLongThreshold), 50m)
-			.SetDisplay("RSI Long Threshold", "RSI threshold for long trades", "General")
-			
-			.SetOptimize(40m, 60m, 5m);
+		_rsiLong = Param(nameof(RsiLong), 50m)
+			.SetDisplay("RSI Long", "RSI above for longs", "General");
 
-		_rsiShortThreshold = Param(nameof(RsiShortThreshold), 50m)
-			.SetDisplay("RSI Short Threshold", "RSI threshold for short trades", "General")
-			
-			.SetOptimize(40m, 60m, 5m);
+		_rsiShort = Param(nameof(RsiShort), 50m)
+			.SetDisplay("RSI Short", "RSI below for shorts", "General");
 
 		_riskReward = Param(nameof(RiskReward), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Risk Reward", "Risk-reward ratio", "Risk Management")
-			
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetDisplay("Risk/Reward", "Target ratio", "Risk");
 
-		_atrStopMultiplier = Param(nameof(AtrStopMultiplier), 1m)
+		_stopMult = Param(nameof(StopMult), 1m)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Stop Mult", "ATR multiplier for stop", "Risk Management")
-			
-			.SetOptimize(0.5m, 2m, 0.5m);
+			.SetDisplay("Stop Mult", "StdDev multiplier for stop", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevHighest = 0m;
-		_prevLowest = 0m;
-		_entryPrice = 0m;
-		_entryAtr = 0m;
+		_highs.Clear();
+		_lows.Clear();
+		_entryPrice = 0;
+		_stopDist = 0;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-		var ema = new EMA { Length = EmaPeriod };
-		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_highest = new Highest { Length = Lookback };
-		_lowest = new Lowest { Length = Lookback };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var stdDev = new StandardDeviation { Length = 14 };
+
+		_highs.Clear();
+		_lows.Clear();
+		_entryPrice = 0;
+		_stopDist = 0;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(atr, ema, rsi, ProcessCandle)
-			.Start();
+		subscription.Bind(ema, rsi, stdDev, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ema);
-			DrawIndicator(area, _highest);
-			DrawIndicator(area, _lowest);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal emaValue, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal, decimal rsiVal, decimal stdVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var currentHighest = _highest.Process(candle).ToDecimal();
-		var currentLowest = _lowest.Process(candle).ToDecimal();
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		while (_highs.Count > Lookback + 1)
 		{
-			_prevHighest = currentHighest;
-			_prevLowest = currentLowest;
+			_highs.RemoveAt(0);
+			_lows.RemoveAt(0);
+		}
+
+		if (_highs.Count <= Lookback)
 			return;
+
+		// Previous highest/lowest (exclude current bar)
+		decimal prevHigh = decimal.MinValue;
+		decimal prevLow = decimal.MaxValue;
+		for (int i = 0; i < _highs.Count - 1; i++)
+		{
+			if (_highs[i] > prevHigh) prevHigh = _highs[i];
+			if (_lows[i] < prevLow) prevLow = _lows[i];
 		}
 
-		var longBreakoutLevel = _prevHighest + AtrMultiplier * atrValue;
-		var shortBreakoutLevel = _prevLowest - AtrMultiplier * atrValue;
-
-		if (Position <= 0 && candle.ClosePrice > longBreakoutLevel && candle.ClosePrice > emaValue && rsiValue > RsiLongThreshold)
+		// TP/SL management
+		if (Position > 0 && _entryPrice > 0 && _stopDist > 0)
 		{
+			var sl = _entryPrice - _stopDist;
+			var tp = _entryPrice + _stopDist * RiskReward;
+			if (candle.LowPrice <= sl || candle.HighPrice >= tp)
+			{
+				SellMarket();
+				_entryPrice = 0;
+				_stopDist = 0;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0 && _stopDist > 0)
+		{
+			var sl = _entryPrice + _stopDist;
+			var tp = _entryPrice - _stopDist * RiskReward;
+			if (candle.HighPrice >= sl || candle.LowPrice <= tp)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+				_stopDist = 0;
+			}
+		}
+
+		// Entry signals
+		if (Position <= 0 && candle.ClosePrice > prevHigh && candle.ClosePrice > emaVal && rsiVal > RsiLong && stdVal > 0)
+		{
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
-			_entryAtr = atrValue;
-			BuyMarket(Volume + Math.Abs(Position));
+			_stopDist = StopMult * stdVal;
 		}
-		else if (Position >= 0 && candle.ClosePrice < shortBreakoutLevel && candle.ClosePrice < emaValue && rsiValue < RsiShortThreshold)
+		else if (Position >= 0 && candle.ClosePrice < prevLow && candle.ClosePrice < emaVal && rsiVal < RsiShort && stdVal > 0)
 		{
+			SellMarket();
 			_entryPrice = candle.ClosePrice;
-			_entryAtr = atrValue;
-			SellMarket(Volume + Math.Abs(Position));
+			_stopDist = StopMult * stdVal;
 		}
-
-		if (Position > 0)
-		{
-			var longStop = _entryPrice - AtrStopMultiplier * _entryAtr;
-			var longTarget = _entryPrice + (_entryPrice - longStop) * RiskReward;
-
-			if (candle.LowPrice <= longStop || candle.HighPrice >= longTarget)
-				SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0)
-		{
-			var shortStop = _entryPrice + AtrStopMultiplier * _entryAtr;
-			var shortTarget = _entryPrice - (shortStop - _entryPrice) * RiskReward;
-
-			if (candle.HighPrice >= shortStop || candle.LowPrice <= shortTarget)
-				BuyMarket(Math.Abs(Position));
-		}
-
-		if (Position == 0)
-		{
-			_entryPrice = 0m;
-			_entryAtr = 0m;
-		}
-
-		_prevHighest = currentHighest;
-		_prevLowest = currentLowest;
 	}
 }
