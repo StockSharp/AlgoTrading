@@ -3,9 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -110,13 +107,27 @@ public class ScalpRsiStrategy : Strategy
 			.SetDisplay("Enable Buy", "Allow buy trades", "General");
 		_enableSell = Param(nameof(EnableSell), true)
 			.SetDisplay("Enable Sell", "Allow sell trades", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "General");
 
 		_tradeDelaySeconds = Param(nameof(TradeDelaySeconds), 360)
 			.SetDisplay("Trade Delay", "Seconds between trades", "General");
 		_maxOpenTrades = Param(nameof(MaxOpenTrades), 3)
 			.SetDisplay("Max Trades", "Maximum open trades", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_buyRsiValues.Clear();
+		_sellRsiValues.Clear();
+		_openTrades = 0;
+		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />
@@ -147,14 +158,14 @@ public class ScalpRsiStrategy : Strategy
 		// Check buy conditions
 		var buySignal = EnableBuy && _buyRsiValues.Count > BuyPeriod
 			&& _buyRsiValues.Count >= 2
-			&& _buyRsiValues[^1 - BuyPeriod] - _buyRsiValues[^1] >= BuyMovement
+			&& _buyRsiValues[_buyRsiValues.Count - 1 - BuyPeriod] - _buyRsiValues[^1] >= BuyMovement
 			&& _buyRsiValues[^2] - _buyRsiValues[^1] > BuyBreakdown
 			&& _buyRsiValues[^1] < BuyRsiValue;
 
 		// Check sell conditions
 		var sellSignal = EnableSell && _sellRsiValues.Count > SellPeriod
 			&& _sellRsiValues.Count >= 2
-			&& _sellRsiValues[^1] - _sellRsiValues[^1 - SellPeriod] >= SellMovement
+			&& _sellRsiValues[^1] - _sellRsiValues[_sellRsiValues.Count - 1 - SellPeriod] >= SellMovement
 			&& _sellRsiValues[^1] - _sellRsiValues[^2] > SellBreakdown
 			&& _sellRsiValues[^1] > SellRsiValue;
 

@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,19 +10,16 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
+/// <summary>
+/// Instantaneous Trend Filter strategy.
+/// Uses a custom digital filter formula to detect trend changes.
+/// </summary>
 public class InstantaneousTrendFilterStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _alpha;
 
-	private decimal _k0;
-	private decimal _k1;
-	private decimal _k2;
-	private decimal _k3;
-	private decimal _k4;
-
+	private decimal _k0, _k1, _k2, _k3, _k4;
 	private decimal _prevClose;
 	private decimal _prevPrevClose;
 	private decimal _itrendPrev1;
@@ -31,20 +27,41 @@ public class InstantaneousTrendFilterStrategy : Strategy
 	private decimal _triggerPrev;
 	private int _bars;
 
-	public InstantaneousTrendFilterStrategy()
-	{
-		_candleType = Param("Candle Type", TimeSpan.FromHours(4).TimeFrame());
-		_alpha = Param("Alpha", 0.07m);
-	}
-
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public decimal Alpha { get => _alpha.Value; set => _alpha.Value = value; }
+
+	public InstantaneousTrendFilterStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
+		_alpha = Param(nameof(Alpha), 0.07m)
+			.SetDisplay("Alpha", "Filter smoothing coefficient", "Indicator");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_bars = 0;
+		_prevClose = 0;
+		_prevPrevClose = 0;
+		_itrendPrev1 = 0;
+		_itrendPrev2 = 0;
+		_triggerPrev = 0;
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
+		_bars = 0;
 		var a2 = Alpha * Alpha;
 		_k0 = Alpha - a2 / 4m;
 		_k1 = 0.5m * a2;
@@ -52,8 +69,16 @@ public class InstantaneousTrendFilterStrategy : Strategy
 		_k3 = 2m * (1m - Alpha);
 		_k4 = (1m - Alpha) * (1m - Alpha);
 
+		var passthrough = new SimpleMovingAverage { Length = 1 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(passthrough, (candle, _) => ProcessCandle(candle)).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -65,30 +90,26 @@ public class InstantaneousTrendFilterStrategy : Strategy
 
 		decimal itrend;
 		if (_bars < 2)
-			itrend = close; // not enough data, use close price
+			itrend = close;
 		else if (_bars < 4)
-			itrend = (close + 2m * _prevClose + _prevPrevClose) / 4m; // warm-up phase
+			itrend = (close + 2m * _prevClose + _prevPrevClose) / 4m;
 		else
-			itrend = _k0 * close + _k1 * _prevClose - _k2 * _prevPrevClose + _k3 * _itrendPrev1 - _k4 * _itrendPrev2; // main formula
+			itrend = _k0 * close + _k1 * _prevClose - _k2 * _prevPrevClose + _k3 * _itrendPrev1 - _k4 * _itrendPrev2;
 
-		var trigger = 2m * itrend - _itrendPrev2; // trigger line
+		var trigger = 2m * itrend - _itrendPrev2;
 
-		var crossDown = _triggerPrev > _itrendPrev1 && trigger < itrend; // trigger crossed below trend
-		var crossUp = _triggerPrev < _itrendPrev1 && trigger > itrend; // trigger crossed above trend
+		var crossDown = _triggerPrev > _itrendPrev1 && trigger < itrend;
+		var crossUp = _triggerPrev < _itrendPrev1 && trigger > itrend;
 
-		if (crossDown)
+		if (crossDown && Position <= 0)
 		{
-			if (Position < 0)
-				BuyMarket(-Position); // close short position
-			if (Position <= 0)
-				BuyMarket(); // open long position
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (crossUp)
+		else if (crossUp && Position >= 0)
 		{
-			if (Position > 0)
-				SellMarket(Position); // close long position
-			if (Position >= 0)
-				SellMarket(); // open short position
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
 		_itrendPrev2 = _itrendPrev1;

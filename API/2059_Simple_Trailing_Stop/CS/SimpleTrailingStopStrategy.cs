@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,45 +11,35 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that demonstrates a basic trailing stop.
-/// Opens a long position and lets the stop follow the price.
+/// Simple trailing stop strategy.
+/// Uses EMA crossover for entries with a trailing stop for protection.
 /// </summary>
 public class SimpleTrailingStopStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _trailPoints;
+	private readonly StrategyParam<decimal> _trailPercent;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _positionOpened;
+	public decimal TrailPercent { get => _trailPercent.Value; set => _trailPercent.Value = value; }
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Distance in price points for trailing stop.
-	/// </summary>
-	public decimal TrailPoints
-	{
-		get => _trailPoints.Value;
-		set => _trailPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes <see cref="SimpleTrailingStopStrategy"/>.
-	/// </summary>
 	public SimpleTrailingStopStrategy()
 	{
-		_trailPoints = Param(nameof(TrailPoints), 25m)
-			.SetDisplay("Trail Points", "Distance for trailing stop", "Protection")
-			
-			.SetOptimize(10m, 100m, 5m);
+		_trailPercent = Param(nameof(TrailPercent), 2m)
+			.SetDisplay("Trail %", "Trailing stop distance as percentage", "Protection");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_fastLength = Param(nameof(FastLength), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicator");
+
+		_slowLength = Param(nameof(SlowLength), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicator");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -63,43 +50,48 @@ public class SimpleTrailingStopStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_positionOpened = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		StartProtection(
 			takeProfit: null,
-			stopLoss: new Unit(TrailPoints, UnitTypes.Absolute),
+			stopLoss: new Unit(TrailPercent, UnitTypes.Percent),
 			isStopTrailing: true,
 			useMarketOrders: true);
 
+		var fast = new ExponentialMovingAverage { Length = FastLength };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenCandlesFinished(ProcessCandle).Start();
+		subscription
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_positionOpened)
+		if (fastVal > slowVal && Position <= 0)
 		{
-			BuyMarket(Volume);
-			_positionOpened = true;
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		else if (fastVal < slowVal && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 	}
 }

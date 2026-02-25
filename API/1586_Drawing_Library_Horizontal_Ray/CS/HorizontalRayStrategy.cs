@@ -59,17 +59,17 @@ public class HorizontalRayStrategy : Strategy
 	/// </summary>
 	public HorizontalRayStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 20)
+		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Fast SMA length", "General")
 			;
 
-		_slowLength = Param(nameof(SlowLength), 50)
+		_slowLength = Param(nameof(SlowLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow SMA length", "General")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -110,26 +110,12 @@ public class HorizontalRayStrategy : Strategy
 		var crossUp = _prevFast <= _prevSlow && fast > slow;
 		var crossDown = _prevFast >= _prevSlow && fast < slow;
 
-		if (crossUp)
-		{
-			DrawRay(candle.OpenTime, candle.ClosePrice);
-			if (Position <= 0)
-				BuyMarket(Position < 0 ? Math.Abs(Position) + 1 : 1);
-		}
-		else if (crossDown)
-		{
-			DrawRay(candle.OpenTime, candle.ClosePrice);
-			if (Position >= 0)
-				SellMarket(Position > 0 ? Position + 1 : 1);
-		}
+		if (crossUp && Position <= 0)
+			BuyMarket();
+		else if (crossDown && Position >= 0)
+			SellMarket();
 
 		_prevFast = fast;
 		_prevSlow = slow;
-	}
-
-	private void DrawRay(DateTimeOffset time, decimal price)
-	{
-		var end = time + TimeSpan.FromDays(30);
-		DrawLine(time, price, end, price);
 	}
 }

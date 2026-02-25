@@ -3,9 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -88,7 +85,7 @@ public class MsleaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Distance", "Offset from extreme in ticks", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -116,7 +113,12 @@ public class MsleaStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -137,17 +139,15 @@ public class MsleaStrategy : Strategy
 
 		if (_msh is decimal top && _msl is decimal bottom)
 		{
-			var offset = Security.PriceStep * Distance;
+			var step = Security.PriceStep ?? 0.01m;
+			var offset = step * Distance;
 			var upper = top + offset;
 			var lower = bottom - offset;
 
-			if (IsFormedAndOnlineAndAllowTrading() && Math.Abs(Position) < MaxTrades)
-			{
-				if (candle.ClosePrice > upper && Position <= 0)
-					BuyMarket();
-				else if (candle.ClosePrice < lower && Position >= 0)
-					SellMarket();
-			}
+			if (candle.ClosePrice > upper && Position <= 0)
+				BuyMarket();
+			else if (candle.ClosePrice < lower && Position >= 0)
+				SellMarket();
 		}
 	}
 

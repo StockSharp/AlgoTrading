@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,52 +12,37 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Trailing stop management based on CandleStop logic.
+/// Uses EMA crossover for entries and Highest/Lowest channel for trailing exits.
 /// </summary>
 public class CandleStopTrailingStrategy : Strategy
 {
-	private readonly StrategyParam<int> _upTrailPeriods;
-	private readonly StrategyParam<int> _dnTrailPeriods;
+	private readonly StrategyParam<int> _trailPeriod;
+	private readonly StrategyParam<int> _fastEma;
+	private readonly StrategyParam<int> _slowEma;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private Highest _highest;
+	private Lowest _lowest;
 	private decimal _stopPrice;
+
+	public int TrailPeriod { get => _trailPeriod.Value; set => _trailPeriod.Value = value; }
+	public int FastEma { get => _fastEma.Value; set => _fastEma.Value = value; }
+	public int SlowEma { get => _slowEma.Value; set => _slowEma.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public CandleStopTrailingStrategy()
 	{
-		_upTrailPeriods = Param(nameof(UpTrailPeriods), 5)
-			.SetDisplay("Up Trail Periods", "Look-back period for highest high used in short trailing.", "Parameters");
+		_trailPeriod = Param(nameof(TrailPeriod), 5)
+			.SetDisplay("Trail Period", "Look-back for channel trailing", "Parameters");
 
-		_dnTrailPeriods = Param(nameof(DnTrailPeriods), 5)
-			.SetDisplay("Down Trail Periods", "Look-back period for lowest low used in long trailing.", "Parameters");
+		_fastEma = Param(nameof(FastEma), 10)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for analysis.", "General");
-	}
+		_slowEma = Param(nameof(SlowEma), 30)
+			.SetDisplay("Slow EMA", "Slow EMA period", "Parameters");
 
-	/// <summary>
-	/// Look-back period to calculate highest high for short positions.
-	/// </summary>
-	public int UpTrailPeriods
-	{
-		get => _upTrailPeriods.Value;
-		set => _upTrailPeriods.Value = value;
-	}
-
-	/// <summary>
-	/// Look-back period to calculate lowest low for long positions.
-	/// </summary>
-	public int DnTrailPeriods
-	{
-		get => _dnTrailPeriods.Value;
-		set => _dnTrailPeriods.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type for analysis", "General");
 	}
 
 	/// <inheritdoc />
@@ -79,63 +61,73 @@ public class CandleStopTrailingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var upChannel = new DonchianChannels { Length = UpTrailPeriods };
-		var downChannel = new DonchianChannels { Length = DnTrailPeriods };
+		var fast = new ExponentialMovingAverage { Length = FastEma };
+		var slow = new ExponentialMovingAverage { Length = SlowEma };
+		_highest = new Highest { Length = TrailPeriod };
+		_lowest = new Lowest { Length = TrailPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(upChannel, downChannel, ProcessCandle)
+			.Bind(fast, slow, (candle, fastVal, slowVal) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				var highResult = _highest.Process(candle);
+				var lowResult = _lowest.Process(candle);
+
+				if (!highResult.IsFormed || !lowResult.IsFormed)
+					return;
+
+				var upper = highResult.ToDecimal();
+				var lower = lowResult.ToDecimal();
+
+				// Entry logic based on EMA crossover
+				if (Position == 0)
+				{
+					if (fastVal > slowVal && candle.ClosePrice > slowVal)
+					{
+						BuyMarket();
+						_stopPrice = lower;
+					}
+					else if (fastVal < slowVal && candle.ClosePrice < slowVal)
+					{
+						SellMarket();
+						_stopPrice = upper;
+					}
+				}
+				else if (Position > 0)
+				{
+					if (lower > _stopPrice)
+						_stopPrice = lower;
+
+					if (candle.LowPrice <= _stopPrice)
+					{
+						SellMarket();
+						_stopPrice = 0m;
+					}
+				}
+				else if (Position < 0)
+				{
+					if (_stopPrice == 0 || upper < _stopPrice)
+						_stopPrice = upper;
+
+					if (candle.HighPrice >= _stopPrice)
+					{
+						BuyMarket();
+						_stopPrice = 0m;
+					}
+				}
+			})
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, upChannel);
-			DrawIndicator(area, downChannel);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
-		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue upValue, IIndicatorValue downValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var up = (DonchianChannelsValue)upValue;
-		var dn = (DonchianChannelsValue)downValue;
-
-		if (up.UpperBand is not decimal upper || dn.LowerBand is not decimal lower)
-			return;
-
-		if (Position > 0)
-		{
-			if (_stopPrice == 0m || lower > _stopPrice)
-				_stopPrice = lower;
-
-			if (candle.LowPrice <= _stopPrice)
-			{
-				SellMarket(Position);
-				_stopPrice = 0m;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_stopPrice == 0m || upper < _stopPrice)
-				_stopPrice = upper;
-
-			if (candle.HighPrice >= _stopPrice)
-			{
-				BuyMarket(Math.Abs(Position));
-				_stopPrice = 0m;
-			}
-		}
-		else
-		{
-			_stopPrice = 0m;
 		}
 	}
 }

@@ -1,115 +1,42 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Kalman Filter color change signals.
-/// Opens long when the filter turns upward and short when it turns downward.
+/// Strategy based on Kalman Filter direction signals.
+/// Opens long when price crosses above filter, short when below.
 /// </summary>
 public class KalmanFilterSignalStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _processNoise;
-	private readonly StrategyParam<decimal> _measurementNoise;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<SignalModes> _signalMode;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _takeProfit;
 
-	private KalmanFilter _kalman;
 	private decimal? _prevFilter;
 	private decimal? _prevSignal;
 
-	/// <summary>
-	/// Kalman filter process noise coefficient.
-	/// </summary>
-	public decimal ProcessNoise
-	{
-		get => _processNoise.Value;
-		set => _processNoise.Value = value;
-	}
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Kalman filter measurement noise coefficient.
-	/// </summary>
-	public decimal MeasurementNoise
-	{
-		get => _measurementNoise.Value;
-		set => _measurementNoise.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Mode used to calculate signals.
-	/// </summary>
-	public SignalModes Mode
-	{
-		get => _signalMode.Value;
-		set => _signalMode.Value = value;
-	}
-
-	/// <summary>
-	/// Absolute stop loss in price units.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Absolute take profit in price units.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize strategy parameters.
-	/// </summary>
 	public KalmanFilterSignalStrategy()
 	{
-		_processNoise = Param(nameof(ProcessNoise), 1.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Process Noise", "Process noise coefficient", "Kalman Filter");
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_measurementNoise = Param(nameof(MeasurementNoise), 1.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Measurement Noise", "Measurement noise coefficient", "Kalman Filter");
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(3).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
-
-		_signalMode = Param(nameof(Mode), SignalModes.Kalman)
-			.SetDisplay("Signal Mode", "Use price vs filter or filter slope", "Signal");
-
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetDisplay("Stop Loss", "Absolute stop loss", "Risk");
-
-		_takeProfit = Param(nameof(TakeProfit), 2000m)
-			.SetDisplay("Take Profit", "Absolute take profit", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -122,10 +49,8 @@ public class KalmanFilterSignalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
 		_prevFilter = null;
 		_prevSignal = null;
-		_kalman = null;
 	}
 
 	/// <inheritdoc />
@@ -133,26 +58,23 @@ public class KalmanFilterSignalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_kalman = new KalmanFilter
-		{
-			ProcessNoise = ProcessNoise,
-			MeasurementNoise = MeasurementNoise
-		};
+		var kalman = new KalmanFilter();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_kalman, ProcessCandle)
+			.Bind(kalman, ProcessCandle)
 			.Start();
 
 		StartProtection(
-			stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
-			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute));
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _kalman);
+			DrawIndicator(area, kalman);
 			DrawOwnTrades(area);
 		}
 	}
@@ -162,46 +84,23 @@ public class KalmanFilterSignalStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var signal = Mode == SignalModes.Kalman
-			? candle.ClosePrice > filterValue ? 1m : 0m
-			: (_prevFilter.HasValue && filterValue >= _prevFilter.Value ? 1m : 0m);
+		var signal = candle.ClosePrice > filterValue ? 1m : 0m;
 
 		if (_prevSignal.HasValue && signal != _prevSignal.Value)
 		{
 			if (signal > 0 && Position <= 0)
 			{
-				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
-				BuyMarket(Volume);
+				if (Position < 0) BuyMarket();
+				BuyMarket();
 			}
 			else if (signal == 0 && Position >= 0)
 			{
-				if (Position > 0)
-					SellMarket(Math.Abs(Position));
-				SellMarket(Volume);
+				if (Position > 0) SellMarket();
+				SellMarket();
 			}
 		}
 
 		_prevFilter = filterValue;
 		_prevSignal = signal;
-	}
-
-	/// <summary>
-	/// Signal calculation mode.
-	/// </summary>
-	public enum SignalModes
-	{
-		/// <summary>
-		/// Use Kalman filter value relative to price.
-		/// </summary>
-		Kalman,
-
-		/// <summary>
-		/// Use filter slope direction.
-		/// </summary>
-		Trend
 	}
 }

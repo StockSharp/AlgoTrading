@@ -1,11 +1,8 @@
-
 using System;
 using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -17,146 +14,80 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Short strategy based on consecutive closes above previous highs.
 /// </summary>
-public class ConsecutiveCloseHigh1MeanReversionStrategy : Strategy {
+public class ConsecutiveCloseHigh1MeanReversionStrategy : Strategy
+{
 	private readonly StrategyParam<int> _threshold;
-	private readonly StrategyParam<bool> _useEmaFilter;
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<DateTimeOffset> _startTime;
-	private readonly StrategyParam<DateTimeOffset> _endTime;
 
-	private ExponentialMovingAverage _ema200;
 	private int _bullCount;
-	private decimal? _prevHigh;
-	private decimal? _prevLow;
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private bool _isReady;
 
-	/// <summary>
-	/// Consecutive count required for entry.
-	/// </summary>
-	public int Threshold {
-		get => _threshold.Value;
-		set => _threshold.Value = value;
-	}
+	public int Threshold { get => _threshold.Value; set => _threshold.Value = value; }
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Enable EMA trend filter.
-	/// </summary>
-	public bool UseEmaFilter {
-		get => _useEmaFilter.Value;
-		set => _useEmaFilter.Value = value;
-	}
+	public ConsecutiveCloseHigh1MeanReversionStrategy()
+	{
+		_threshold = Param(nameof(Threshold), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Threshold", "Consecutive closes above prior high", "Parameters");
 
-	/// <summary>
-	/// EMA period for trend filter.
-	/// </summary>
-	public int EmaPeriod {
-		get => _emaPeriod.Value;
-		set => _emaPeriod.Value = value;
-	}
+		_emaPeriod = Param(nameof(EmaPeriod), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "EMA length for trend filter", "Filters");
 
-	/// <summary>
-	/// Candle type to process.
-	/// </summary>
-	public DataType CandleType {
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Start time for signals.
-	/// </summary>
-	public DateTimeOffset StartTime {
-		get => _startTime.Value;
-		set => _startTime.Value = value;
-	}
-
-	/// <summary>
-	/// End time for signals.
-	/// </summary>
-	public DateTimeOffset EndTime {
-		get => _endTime.Value;
-		set => _endTime.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see
-	/// cref="ConsecutiveCloseHigh1MeanReversionStrategy"/>.
-	/// </summary>
-	public ConsecutiveCloseHigh1MeanReversionStrategy() {
-		_threshold =
-			Param(nameof(Threshold), 3)
-				.SetGreaterThanZero()
-				.SetDisplay("Threshold", "Consecutive closes above prior high",
-							"Parameters")
-				;
-
-		_useEmaFilter =
-			Param(nameof(UseEmaFilter), true)
-				.SetDisplay("Use EMA Filter", "Enable 200 EMA trend filter",
-							"Filters");
-
-		_emaPeriod = Param(nameof(EmaPeriod), 200)
-						 .SetGreaterThanZero()
-						 .SetDisplay("EMA Period",
-									 "EMA length for trend filter", "Filters")
-						 ;
-
-		_candleType =
-			Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_startTime =
-			Param(nameof(StartTime),
-				  new DateTimeOffset(2014, 1, 1, 0, 0, 0, TimeSpan.Zero))
-				.SetDisplay("Start Time", "Start time for signals", "Time");
-
-		_endTime = Param(nameof(EndTime),
-						 new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero))
-					   .SetDisplay("End Time", "End time for signals", "Time");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)>
-	GetWorkingSecurities() {
-		return [(Security, CandleType)];
-	}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnReseted() {
+	protected override void OnReseted()
+	{
 		base.OnReseted();
-
-		_ema200 = default;
 		_bullCount = 0;
-		_prevHigh = default;
-		_prevLow = default;
+		_prevHigh = 0;
+		_prevLow = 0;
+		_isReady = false;
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time) {
+	protected override void OnStarted2(DateTime time)
+	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_ema200 = new EMA { Length = EmaPeriod };
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_ema200, ProcessCandle).Start();
+		subscription
+			.Bind(ema, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
-		if (area != null) {
+		if (area != null)
+		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema200);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue) {
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevHigh is null || _prevLow is null) {
+		if (!_isReady)
+		{
 			_prevHigh = candle.HighPrice;
 			_prevLow = candle.LowPrice;
+			_isReady = true;
 			return;
 		}
 
@@ -165,18 +96,11 @@ public class ConsecutiveCloseHigh1MeanReversionStrategy : Strategy {
 		if (candle.ClosePrice < _prevLow)
 			_bullCount = 0;
 
-		var inWindow =
-			candle.OpenTime >= StartTime && candle.OpenTime <= EndTime;
-
-		var shortCondition = inWindow && _bullCount >= Threshold &&
-							 (!UseEmaFilter || candle.ClosePrice < emaValue);
-
-		if (shortCondition && Position >= 0) {
-			var volume = Volume + (Position > 0 ? Position : 0m);
-			SellMarket(volume);
-		} else if (Position < 0 && candle.ClosePrice < _prevLow) {
-			BuyMarket(Math.Abs(Position));
-		}
+		// Short: consecutive closes above prior high, below EMA
+		if (_bullCount >= Threshold && candle.ClosePrice < emaValue && Position >= 0)
+			SellMarket();
+		else if (Position < 0 && candle.ClosePrice < _prevLow)
+			BuyMarket();
 
 		_prevHigh = candle.HighPrice;
 		_prevLow = candle.LowPrice;

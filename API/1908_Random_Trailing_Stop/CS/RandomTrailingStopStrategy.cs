@@ -1,98 +1,71 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Random entry strategy with trailing stop management.
+/// Biases trade direction using SMA trend filter.
 /// </summary>
 public class RandomTrailingStopStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _minStopLevel;
 	private readonly StrategyParam<decimal> _trailingStep;
-	private readonly StrategyParam<int> _sleepMinutes;
+	private readonly StrategyParam<int> _sleepBars;
 	private readonly StrategyParam<int> _smaPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly Random _random = new();
-	private DateTimeOffset _nextTradeTime;
+	private int _barsSinceLastTrade;
 	private decimal? _stopPrice;
 
-	/// <summary>
-	/// Minimal distance for stop orders.
-	/// </summary>
-	public decimal MinStopLevel
-	{
-		get => _minStopLevel.Value;
-		set => _minStopLevel.Value = value;
-	}
+	public decimal MinStopLevel { get => _minStopLevel.Value; set => _minStopLevel.Value = value; }
+	public decimal TrailingStep { get => _trailingStep.Value; set => _trailingStep.Value = value; }
+	public int SleepBars { get => _sleepBars.Value; set => _sleepBars.Value = value; }
+	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Step for trailing stop update.
-	/// </summary>
-	public decimal TrailingStep
-	{
-		get => _trailingStep.Value;
-		set => _trailingStep.Value = value;
-	}
-
-	/// <summary>
-	/// Pause before the next trade in minutes.
-	/// </summary>
-	public int SleepMinutes
-	{
-		get => _sleepMinutes.Value;
-		set => _sleepMinutes.Value = value;
-	}
-
-	/// <summary>
-	/// SMA period used for biasing random side.
-	/// </summary>
-	public int SmaPeriod
-	{
-		get => _smaPeriod.Value;
-		set => _smaPeriod.Value = value;
-	}
-
-
-	/// <summary>
-	/// Initializes <see cref="RandomTrailingStopStrategy"/>.
-	/// </summary>
 	public RandomTrailingStopStrategy()
 	{
-		_minStopLevel = Param(nameof(MinStopLevel), 0.00036m)
+		_minStopLevel = Param(nameof(MinStopLevel), 0.5m)
 			.SetGreaterThanZero()
-			.SetDisplay("Min Stop Level", "Minimal stop distance", "Trading");
+			.SetDisplay("Min Stop %", "Minimal stop distance percent", "Trading");
 
-		_trailingStep = Param(nameof(TrailingStep), 0.00001m)
+		_trailingStep = Param(nameof(TrailingStep), 0.1m)
 			.SetGreaterThanZero()
-			.SetDisplay("Trailing Step", "Trailing stop adjustment step", "Trading");
+			.SetDisplay("Trailing Step %", "Trailing stop adjustment step percent", "Trading");
 
-		_sleepMinutes = Param(nameof(SleepMinutes), 5)
+		_sleepBars = Param(nameof(SleepBars), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Sleep Minutes", "Pause before next trade in minutes", "General");
+			.SetDisplay("Sleep Bars", "Pause before next trade in bars", "General");
 
-		_smaPeriod = Param(nameof(SmaPeriod), 100)
+		_smaPeriod = Param(nameof(SmaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Simple moving average period", "Indicators");
 
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, TimeSpan.FromMinutes(1).TimeFrame())];
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_barsSinceLastTrade = 0;
+		_stopPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -100,8 +73,8 @@ public class RandomTrailingStopStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SMA { Length = SmaPeriod };
-		var subscription = SubscribeCandles(TimeSpan.FromMinutes(1).TimeFrame());
+		var sma = new SimpleMovingAverage { Length = SmaPeriod };
+		var subscription = SubscribeCandles(CandleType);
 
 		subscription.Bind(sma, ProcessCandle).Start();
 
@@ -110,10 +83,8 @@ public class RandomTrailingStopStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
-			DrawIndicator(area, sma, "SMA");
+			DrawIndicator(area, sma);
 		}
-
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
@@ -121,49 +92,62 @@ public class RandomTrailingStopStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_barsSinceLastTrade++;
+
 		if (Position == 0)
 		{
-			if (candle.CloseTime < _nextTradeTime)
+			if (_barsSinceLastTrade < SleepBars)
 				return;
 
-			var side = GetRandomSide(candle.ClosePrice, smaValue);
 			_stopPrice = null;
 
+			var side = GetRandomSide(candle.ClosePrice, smaValue);
+
 			if (side == Sides.Buy)
-				BuyMarket(Volume);
+				BuyMarket();
 			else
-				SellMarket(Volume);
+				SellMarket();
 
-			_nextTradeTime = candle.CloseTime + TimeSpan.FromMinutes(SleepMinutes);
-
+			_barsSinceLastTrade = 0;
 			return;
 		}
+
+		var stopDist = candle.ClosePrice * MinStopLevel / 100m;
+		var trailDist = candle.ClosePrice * TrailingStep / 100m;
 
 		if (_stopPrice == null)
 		{
 			if (Position > 0)
-				_stopPrice = candle.ClosePrice - MinStopLevel;
+				_stopPrice = candle.ClosePrice - stopDist;
 			else
-				_stopPrice = candle.ClosePrice + MinStopLevel;
+				_stopPrice = candle.ClosePrice + stopDist;
 
 			return;
 		}
 
 		if (Position > 0)
 		{
-			if (candle.ClosePrice - _stopPrice >= TrailingStep)
-				_stopPrice = candle.ClosePrice - MinStopLevel;
+			var newStop = candle.ClosePrice - stopDist;
+			if (newStop - _stopPrice >= trailDist)
+				_stopPrice = newStop;
 
 			if (candle.LowPrice <= _stopPrice)
-				SellMarket(Position);
+			{
+				SellMarket();
+				_barsSinceLastTrade = 0;
+			}
 		}
 		else if (Position < 0)
 		{
-			if (_stopPrice - candle.ClosePrice >= TrailingStep)
-				_stopPrice = candle.ClosePrice + MinStopLevel;
+			var newStop = candle.ClosePrice + stopDist;
+			if (_stopPrice - newStop >= trailDist)
+				_stopPrice = newStop;
 
 			if (candle.HighPrice >= _stopPrice)
-				BuyMarket(-Position);
+			{
+				BuyMarket();
+				_barsSinceLastTrade = 0;
+			}
 		}
 	}
 

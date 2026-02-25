@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -13,43 +10,45 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Strategy based on Schaff Trend Cycle level crossovers.
+/// Buys when STC crosses above the high level, sells when below low level.
+/// </summary>
 public class ColorSchaffJjrsxTrendCycleStrategy : Strategy
 {
+	private readonly StrategyParam<decimal> _highLevel;
+	private readonly StrategyParam<decimal> _lowLevel;
+	private readonly StrategyParam<DataType> _candleType;
+
 	private decimal? _prevStc;
 
-	private StrategyParam<int> _fast;
-	private StrategyParam<int> _slow;
-	private StrategyParam<int> _cycle;
-	private StrategyParam<decimal> _highLevel;
-	private StrategyParam<decimal> _lowLevel;
-
-	public int Fast { get => _fast.Value; set => _fast.Value = value; }
-	public int Slow { get => _slow.Value; set => _slow.Value = value; }
-	public int Cycle { get => _cycle.Value; set => _cycle.Value = value; }
 	public decimal HighLevel { get => _highLevel.Value; set => _highLevel.Value = value; }
 	public decimal LowLevel { get => _lowLevel.Value; set => _lowLevel.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ColorSchaffJjrsxTrendCycleStrategy()
 	{
-		_fast = Param(nameof(Fast), 23)
-			.SetDisplay("Fast JJRSX", "Fast period for the Schaff Trend Cycle", "Indicator")
-			;
+		_highLevel = Param(nameof(HighLevel), 75m)
+			.SetDisplay("High Level", "Upper threshold for signals", "Levels");
 
-		_slow = Param(nameof(Slow), 50)
-			.SetDisplay("Slow JJRSX", "Slow period for the Schaff Trend Cycle", "Indicator")
-			;
+		_lowLevel = Param(nameof(LowLevel), 25m)
+			.SetDisplay("Low Level", "Lower threshold for signals", "Levels");
 
-		_cycle = Param(nameof(Cycle), 10)
-			.SetDisplay("Cycle", "Cycle length of the Schaff Trend Cycle", "Indicator")
-			;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+	}
 
-		_highLevel = Param(nameof(HighLevel), 60m)
-			.SetDisplay("High Level", "Upper threshold for signals", "Levels")
-			;
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-		_lowLevel = Param(nameof(LowLevel), -60m)
-			.SetDisplay("Low Level", "Lower threshold for signals", "Levels")
-			;
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevStc = null;
 	}
 
 	/// <inheritdoc />
@@ -57,19 +56,20 @@ public class ColorSchaffJjrsxTrendCycleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		var stc = new SchaffTrendCycle
-		{
-			FastPeriod = Fast,
-			SlowPeriod = Slow,
-			Cycle = Cycle
-		};
+		var stc = new SchaffTrendCycle();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(stc, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, stc);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal stc)
@@ -83,21 +83,15 @@ public class ColorSchaffJjrsxTrendCycleStrategy : Strategy
 			return;
 		}
 
-		if (_prevStc <= HighLevel && stc > HighLevel)
+		if (_prevStc <= HighLevel && stc > HighLevel && Position <= 0)
 		{
-			if (Position < 0)
-				ClosePosition();
-
-			if (Position <= 0)
-				BuyMarket();
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (_prevStc >= LowLevel && stc < LowLevel)
+		else if (_prevStc >= LowLevel && stc < LowLevel && Position >= 0)
 		{
-			if (Position > 0)
-				ClosePosition();
-
-			if (Position >= 0)
-				SellMarket();
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
 		_prevStc = stc;

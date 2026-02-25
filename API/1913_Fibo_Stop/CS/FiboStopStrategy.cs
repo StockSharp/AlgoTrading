@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,79 +11,40 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trails stop loss along predefined Fibonacci levels.
-/// The stop is moved when the price crosses each Fibonacci retracement level.
+/// Strategy that uses Fibonacci retracement levels for entry and trailing stop.
+/// Enters on pullback to Fibonacci level and trails stop along levels.
 /// </summary>
 public class FiboStopStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _fiboStart;
-	private readonly StrategyParam<decimal> _fiboEnd;
-	private readonly StrategyParam<int> _offsetPoints;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<decimal> _entryFiboLevel;
+	private readonly StrategyParam<decimal> _stopLossPct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private static readonly decimal[] _coefficients = { 0m, 0.236m, 0.386m, 0.5m, 0.618m, 0.786m, 1m, 1.27m };
-	private decimal _diff;
-	private bool _isLong;
-	private decimal _stopPrice;
-	private int _nextLevelIndex;
+	private decimal _highestHigh;
+	private decimal _lowestLow;
+	private int _barCount;
+	private bool _rangeSet;
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Fibonacci start price.
-	/// </summary>
-	public decimal FiboStart
-	{
-		get => _fiboStart.Value;
-		set => _fiboStart.Value = value;
-	}
+	public int LookbackPeriod { get => _lookbackPeriod.Value; set => _lookbackPeriod.Value = value; }
+	public decimal EntryFiboLevel { get => _entryFiboLevel.Value; set => _entryFiboLevel.Value = value; }
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Fibonacci end price.
-	/// </summary>
-	public decimal FiboEnd
-	{
-		get => _fiboEnd.Value;
-		set => _fiboEnd.Value = value;
-	}
-
-	/// <summary>
-	/// Distance from Fibonacci level to stop in price steps.
-	/// </summary>
-	public int OffsetPoints
-	{
-		get => _offsetPoints.Value;
-		set => _offsetPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes parameters.
-	/// </summary>
 	public FiboStopStrategy()
 	{
-		_fiboStart = Param(nameof(FiboStart), 100m)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Start Price", "Fibonacci start level", "Fibonacci")
-			;
+			.SetDisplay("Lookback", "Bars to calculate high/low range", "General");
 
-		_fiboEnd = Param(nameof(FiboEnd), 110m)
-			.SetGreaterThanZero()
-			.SetDisplay("End Price", "Fibonacci end level", "Fibonacci")
-			;
+		_entryFiboLevel = Param(nameof(EntryFiboLevel), 0.382m)
+			.SetDisplay("Entry Fibo", "Fibonacci level for entry (0.236, 0.382, 0.5, 0.618)", "Fibonacci");
 
-		_offsetPoints = Param(nameof(OffsetPoints), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Offset Points", "Distance from level to stop in price steps", "Risk")
-			;
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -100,10 +58,11 @@ public class FiboStopStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_diff = 0m;
-		_isLong = false;
-		_stopPrice = 0m;
-		_nextLevelIndex = 0;
+		_highestHigh = decimal.MinValue;
+		_lowestLow = decimal.MaxValue;
+		_barCount = 0;
+		_rangeSet = false;
+		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />
@@ -111,22 +70,18 @@ public class FiboStopStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_diff = FiboEnd - FiboStart;
-		_isLong = _diff > 0m;
-		_nextLevelIndex = 1;
-
-		var direction = _isLong ? 1m : -1m;
-		_stopPrice = FiboStart - direction * OffsetPoints * Security.PriceStep;
-
-		if (_isLong)
-			BuyMarket(Volume);
-		else
-			SellMarket(Volume);
+		_highestHigh = decimal.MinValue;
+		_lowestLow = decimal.MaxValue;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			takeProfit: null
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -141,35 +96,68 @@ public class FiboStopStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		_barCount++;
+
+		if (candle.HighPrice > _highestHigh)
+			_highestHigh = candle.HighPrice;
+		if (candle.LowPrice < _lowestLow)
+			_lowestLow = candle.LowPrice;
+
+		if (_barCount < LookbackPeriod)
 			return;
 
-		var price = candle.ClosePrice;
-		var direction = _isLong ? 1m : -1m;
-
-		while (_nextLevelIndex < _coefficients.Length)
+		if (!_rangeSet)
 		{
-			var level = FiboStart + _diff * _coefficients[_nextLevelIndex];
-			if ((_isLong && price > level) || (!_isLong && price < level))
+			_rangeSet = true;
+			return;
+		}
+
+		var range = _highestHigh - _lowestLow;
+		if (range <= 0)
+			return;
+
+		// Calculate Fibonacci retracement levels from high
+		var fiboLevel = _highestHigh - range * EntryFiboLevel;
+		var fibo618 = _highestHigh - range * 0.618m;
+
+		if (Position == 0)
+		{
+			// Buy when price pulls back to Fibonacci level from above
+			if (candle.ClosePrice <= fiboLevel && candle.ClosePrice > fibo618)
 			{
-				_stopPrice = level - direction * OffsetPoints * Security.PriceStep;
-				_nextLevelIndex++;
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
 			}
-			else
+			// Sell when price rises to Fibonacci level from below
+			else if (candle.ClosePrice >= _lowestLow + range * (1m - EntryFiboLevel) && candle.ClosePrice < _lowestLow + range * 0.382m)
 			{
-				break;
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+			}
+		}
+		else if (Position > 0)
+		{
+			// Close long if price breaks below 61.8% retracement
+			if (candle.ClosePrice < fibo618)
+			{
+				SellMarket();
+			}
+		}
+		else if (Position < 0)
+		{
+			// Close short if price breaks above 38.2% retracement from bottom
+			if (candle.ClosePrice > _lowestLow + range * 0.618m)
+			{
+				BuyMarket();
 			}
 		}
 
-		if (_isLong)
+		// Update rolling high/low
+		if (_barCount > LookbackPeriod * 2)
 		{
-			if (price <= _stopPrice && Position > 0)
-				SellMarket(Position);
-		}
-		else
-		{
-			if (price >= _stopPrice && Position < 0)
-				BuyMarket(-Position);
+			_highestHigh = candle.HighPrice;
+			_lowestLow = candle.LowPrice;
+			_barCount = LookbackPeriod;
 		}
 	}
 }

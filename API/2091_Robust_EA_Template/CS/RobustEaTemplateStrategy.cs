@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,20 +11,17 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy ported from Robust_EA_Template.
-/// Uses CCI and RSI indicators to generate trading signals with fixed take profit and stop loss.
+/// Strategy using CCI and RSI indicators to generate trading signals.
 /// </summary>
 public class RobustEaTemplateStrategy : Strategy
 {
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _volume;
+	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<decimal> _stopLossPct;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private CommodityChannelIndex _cci;
-	private RelativeStrengthIndex _rsi;
 
 	public int CciPeriod
 	{
@@ -41,22 +35,16 @@ public class RobustEaTemplateStrategy : Strategy
 		set => _rsiPeriod.Value = value;
 	}
 
-	public decimal TakeProfitPips
+	public decimal TakeProfitPct
 	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
+		get => _takeProfitPct.Value;
+		set => _takeProfitPct.Value = value;
 	}
 
-	public decimal StopLossPips
+	public decimal StopLossPct
 	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	public new decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
+		get => _stopLossPct.Value;
+		set => _stopLossPct.Value = value;
 	}
 
 	public DataType CandleType
@@ -76,14 +64,11 @@ public class RobustEaTemplateStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "Relative Strength Index period", "Indicators");
 
-		_takeProfit = Param(nameof(TakeProfitPips), 50m)
-			.SetDisplay("Take Profit (pips)", "Take profit in pips", "Risk");
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_stopLoss = Param(nameof(StopLossPips), 50m)
-			.SetDisplay("Stop Loss (pips)", "Stop loss in pips", "Risk");
-
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Volume", "Trade volume", "General");
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -96,47 +81,47 @@ public class RobustEaTemplateStrategy : Strategy
 		base.OnStarted2(time);
 
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_cci, _rsi, ProcessCandle).Start();
+		subscription.Bind(rsi, (candle, rsiValue) =>
+		{
+			if (candle.State != CandleStates.Finished)
+				return;
+
+			var cciResult = _cci.Process(candle);
+			if (!cciResult.IsFormed)
+				return;
+
+			var cciValue = cciResult.ToDecimal();
+
+			// Wider signal conditions
+			var longSignal = cciValue < -50m && rsiValue < 40m;
+			var shortSignal = cciValue > 50m && rsiValue > 60m;
+
+			if (longSignal && Position <= 0)
+			{
+				if (Position < 0) BuyMarket();
+				BuyMarket();
+			}
+			else if (shortSignal && Position >= 0)
+			{
+				if (Position > 0) SellMarket();
+				SellMarket();
+			}
+		}).Start();
+
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _cci);
-			DrawIndicator(area, _rsi);
+			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
-		}
-
-		var step = Security.PriceStep ?? 1m;
-		StartProtection(
-			takeProfit: new Unit(TakeProfitPips * step, UnitTypes.Point),
-			stopLoss: new Unit(StopLossPips * step, UnitTypes.Point));
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal cciValue, decimal rsiValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var longSignal = ((cciValue > -200 && cciValue <= -150) || (cciValue > -100 && cciValue <= -50)) &&
-			(rsiValue > 0 && rsiValue <= 25);
-
-		var shortSignal = (cciValue > 50 && cciValue <= 150) &&
-			(rsiValue > 80 && rsiValue <= 100);
-
-		if (longSignal && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (shortSignal && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
 		}
 	}
 }

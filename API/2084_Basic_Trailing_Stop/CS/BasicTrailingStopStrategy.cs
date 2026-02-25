@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -18,73 +15,53 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BasicTrailingStopStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _stopLossPips;
+	private readonly StrategyParam<decimal> _stopLossPct;
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private CommodityChannelIndex _cci;
 	private decimal _stopPrice;
 
-	/// <summary>
-	/// Trailing stop distance in pips.
-	/// </summary>
-	public decimal StopLossPips
+	public decimal StopLossPct
 	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
+		get => _stopLossPct.Value;
+		set => _stopLossPct.Value = value;
 	}
 
-	/// <summary>
-	/// CCI period.
-	/// </summary>
 	public int CciPeriod
 	{
 		get => _cciPeriod.Value;
 		set => _cciPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// RSI period.
-	/// </summary>
 	public int RsiPeriod
 	{
 		get => _rsiPeriod.Value;
 		set => _rsiPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="BasicTrailingStopStrategy"/> class.
-	/// </summary>
 	public BasicTrailingStopStrategy()
 	{
-		_stopLossPips = Param(nameof(StopLossPips), 20m)
+		_stopLossPct = Param(nameof(StopLossPct), 1.5m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss Pips", "Trailing stop distance in pips", "Risk Management")
-			
-			.SetOptimize(10m, 50m, 5m);
+			.SetDisplay("Stop Loss %", "Trailing stop distance as percentage", "Risk Management");
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("CCI Period", "Commodity Channel Index period", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
+			.SetDisplay("CCI Period", "Commodity Channel Index period", "Indicators");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Relative Strength Index period", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
+			.SetDisplay("RSI Period", "Relative Strength Index period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -98,8 +75,6 @@ public class BasicTrailingStopStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		// Reset trailing stop level
 		_stopPrice = 0m;
 	}
 
@@ -108,50 +83,47 @@ public class BasicTrailingStopStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var cci = new CommodityChannelIndex { Length = CciPeriod };
+		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(cci, rsi, ProcessCandle)
+			.Bind(rsi, (candle, rsiValue) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				var cciResult = _cci.Process(candle);
+				if (!cciResult.IsFormed)
+					return;
+
+				var cciValue = cciResult.ToDecimal();
+				ProcessCandle(candle, cciValue, rsiValue);
+			})
 			.Start();
 
-		// Prepare chart visuals
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, cci);
 			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
 	}
+
 	private void ProcessCandle(ICandleMessage candle, decimal cciValue, decimal rsiValue)
 	{
-		// Process only finished candles
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Ensure the strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var step = Security.Step ?? 1m;
-		var stopOffset = StopLossPips * step;
+		var stopOffset = candle.ClosePrice * StopLossPct / 100m;
 
 		if (Position > 0)
 		{
-			// Update trailing stop for long position
 			var newStop = candle.ClosePrice - stopOffset;
 			if (newStop > _stopPrice)
 				_stopPrice = newStop;
 
-			// Exit if price hits trailing stop
 			if (candle.LowPrice <= _stopPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_stopPrice = 0m;
 			}
 
@@ -160,15 +132,13 @@ public class BasicTrailingStopStrategy : Strategy
 
 		if (Position < 0)
 		{
-			// Update trailing stop for short position
 			var newStop = candle.ClosePrice + stopOffset;
 			if (_stopPrice == 0m || newStop < _stopPrice)
 				_stopPrice = newStop;
 
-			// Exit if price hits trailing stop
 			if (candle.HighPrice >= _stopPrice)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_stopPrice = 0m;
 			}
 
@@ -176,17 +146,17 @@ public class BasicTrailingStopStrategy : Strategy
 		}
 
 		// No position - evaluate entry signals
-		var longSignal = cciValue > -150m && cciValue <= -100m && rsiValue > 0m && rsiValue <= 30m;
-		var shortSignal = cciValue > 100m && cciValue <= 250m && rsiValue > 70m && rsiValue <= 100m;
+		var longSignal = cciValue < -50m && rsiValue < 40m;
+		var shortSignal = cciValue > 50m && rsiValue > 60m;
 
 		if (longSignal)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 			_stopPrice = candle.ClosePrice - stopOffset;
 		}
 		else if (shortSignal)
 		{
-			SellMarket(Volume);
+			SellMarket();
 			_stopPrice = candle.ClosePrice + stopOffset;
 		}
 	}

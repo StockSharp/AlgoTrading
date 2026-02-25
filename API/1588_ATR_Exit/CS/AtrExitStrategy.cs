@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,123 +12,114 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// EMA crossover strategy with ATR based exits and partial profit.
+/// EMA crossover strategy with ATR based trailing exits.
 /// </summary>
 public class AtrExitStrategy : Strategy
 {
-private readonly StrategyParam<int> _fastLen;
-private readonly StrategyParam<int> _slowLen;
-private readonly StrategyParam<int> _atrLen;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastLen;
+	private readonly StrategyParam<int> _slowLen;
+	private readonly StrategyParam<int> _atrLen;
+	private readonly StrategyParam<DataType> _candleType;
 
-private decimal _entryPrice;
-private decimal _stopPrice;
-private decimal _takeProfitPrice;
-private decimal _atrRef;
-private decimal _atrDown;
-private decimal _atrUp;
-private bool _tookProfit;
+	private decimal _entryPrice;
+	private decimal _stopPrice;
+	private decimal _prevFast;
+	private decimal _prevSlow;
 
-public int FastLength { get => _fastLen.Value; set => _fastLen.Value = value; }
-public int SlowLength { get => _slowLen.Value; set => _slowLen.Value = value; }
-public int AtrLength { get => _atrLen.Value; set => _atrLen.Value = value; }
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int FastLength { get => _fastLen.Value; set => _fastLen.Value = value; }
+	public int SlowLength { get => _slowLen.Value; set => _slowLen.Value = value; }
+	public int AtrLength { get => _atrLen.Value; set => _atrLen.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-public AtrExitStrategy()
-{
-_fastLen = Param(nameof(FastLength), 5).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA length", "General");
-_slowLen = Param(nameof(SlowLength), 20).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA length", "General");
-_atrLen = Param(nameof(AtrLength), 14).SetGreaterThanZero().SetDisplay("ATR Length", "ATR period", "General");
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles to process", "General");
-}
+	public AtrExitStrategy()
+	{
+		_fastLen = Param(nameof(FastLength), 10).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA length", "General");
+		_slowLen = Param(nameof(SlowLength), 30).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA length", "General");
+		_atrLen = Param(nameof(AtrLength), 14).SetGreaterThanZero().SetDisplay("ATR Length", "ATR period", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to process", "General");
+	}
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-=> [(Security, CandleType)];
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_entryPrice = 0m;
-_stopPrice = 0m;
-_takeProfitPrice = 0m;
-_atrRef = 0m;
-_atrDown = 0m;
-_atrUp = 0m;
-_tookProfit = false;
-}
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_prevFast = 0m;
+		_prevSlow = 0m;
+	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-var fast = new EMA { Length = FastLength };
-var slow = new EMA { Length = SlowLength };
-var atr = new Atr { Length = AtrLength };
+		var fast = new ExponentialMovingAverage { Length = FastLength };
+		var slow = new ExponentialMovingAverage { Length = SlowLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
-subscribe();
+		var sub = SubscribeCandles(CandleType);
+		sub.Bind(fast, slow, atr, Process).Start();
 
-void subscribe()
-{
-var sub = SubscribeCandles(CandleType);
-sub.Bind(fast, slow, atr, Process).Start();
-}
-}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, sub);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
+			DrawOwnTrades(area);
+		}
+	}
 
-private void Process(ICandleMessage candle, decimal fast, decimal slow, decimal atr)
-{
-if (candle.State != CandleStates.Finished)
-return;
+	private void Process(ICandleMessage candle, decimal fast, decimal slow, decimal atr)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
+		var crossUp = _prevFast <= _prevSlow && fast > slow;
+		var crossDown = _prevFast >= _prevSlow && fast < slow;
 
-var avg = (candle.HighPrice + candle.LowPrice) / 2m;
+		if (Position == 0)
+		{
+			if (crossUp)
+			{
+				_entryPrice = candle.ClosePrice;
+				_stopPrice = _entryPrice - 1.5m * atr;
+				BuyMarket();
+			}
+			else if (crossDown)
+			{
+				_entryPrice = candle.ClosePrice;
+				_stopPrice = _entryPrice + 1.5m * atr;
+				SellMarket();
+			}
+		}
+		else if (Position > 0)
+		{
+			// Trailing stop using ATR
+			var newStop = candle.ClosePrice - 1.5m * atr;
+			if (newStop > _stopPrice)
+				_stopPrice = newStop;
 
-if (Position == 0)
-{
-if (fast > slow)
-{
-_entryPrice = avg;
-_atrRef = atr;
-_stopPrice = _entryPrice - 1.5m * _atrRef;
-_takeProfitPrice = _entryPrice + 3m * _atrRef;
-_atrDown = _entryPrice - 1.5m * _atrRef;
-_atrUp = _entryPrice + 1m * _atrRef;
-_tookProfit = false;
-BuyMarket(2);
-}
-return;
-}
+			if (candle.ClosePrice < _stopPrice || crossDown)
+				SellMarket();
+		}
+		else if (Position < 0)
+		{
+			var newStop = candle.ClosePrice + 1.5m * atr;
+			if (newStop < _stopPrice)
+				_stopPrice = newStop;
 
-var stopCondition = avg < _stopPrice;
-var takeProfitCondition = avg > _takeProfitPrice;
+			if (candle.ClosePrice > _stopPrice || crossUp)
+				BuyMarket();
+		}
 
-if (avg < _atrDown)
-stopCondition = true;
-
-if (avg > _atrUp)
-{
-if (_tookProfit)
-_atrRef = atr;
-var atrDiv = Math.Floor((avg - _entryPrice) / _atrRef);
-_atrDown = _entryPrice + _atrRef * (atrDiv - 1m);
-_atrUp = _entryPrice + _atrRef * (atrDiv + 1m);
-}
-
-if (takeProfitCondition && !_tookProfit)
-{
-SellMarket(1);
-_tookProfit = true;
-}
-
-if (stopCondition && Position > 0)
-{
-SellMarket(Position);
-_tookProfit = false;
-}
-}
+		_prevFast = fast;
+		_prevSlow = slow;
+	}
 }

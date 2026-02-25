@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,34 +11,43 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that inserts take-profit and stop-loss orders for existing positions.
-/// Designed to protect manual or external trades.
+/// EMA crossover strategy with take-profit and stop-loss protection.
 /// </summary>
 public class TpslInsertStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _stopLossPips;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Take-profit distance in pips.
-	/// </summary>
-	public decimal TakeProfitPips { get => _takeProfitPips.Value; set => _takeProfitPips.Value = value; }
+	private decimal _prevDiff;
 
-	/// <summary>
-	/// Stop-loss distance in pips.
-	/// </summary>
-	public decimal StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="TpslInsertStrategy"/>.
-	/// </summary>
 	public TpslInsertStrategy()
 	{
-		_takeProfitPips = Param(nameof(TakeProfitPips), 35m)
-			.SetDisplay("Take Profit (pips)", "Distance to take profit in pips", "Protection");
+		_fastLength = Param(nameof(FastLength), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "General");
 
-		_stopLossPips = Param(nameof(StopLossPips), 100m)
-			.SetDisplay("Stop Loss (pips)", "Distance to stop loss in pips", "Protection");
+		_slowLength = Param(nameof(SlowLength), 21)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle Type", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevDiff = 0;
 	}
 
 	/// <inheritdoc />
@@ -49,10 +55,35 @@ public class TpslInsertStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var step = Security?.PriceStep ?? 1m;
+		var emaFast = new ExponentialMovingAverage { Length = FastLength };
+		var emaSlow = new ExponentialMovingAverage { Length = SlowLength };
 
-		StartProtection(
-			takeProfit: new Unit(TakeProfitPips * step, UnitTypes.Point),
-			stopLoss: new Unit(StopLossPips * step, UnitTypes.Point));
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(emaFast, emaSlow, ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var diff = fast - slow;
+		var crossUp = _prevDiff <= 0 && diff > 0;
+		var crossDown = _prevDiff >= 0 && diff < 0;
+		_prevDiff = diff;
+
+		if (crossUp && Position <= 0)
+			BuyMarket();
+		else if (crossDown && Position >= 0)
+			SellMarket();
 	}
 }

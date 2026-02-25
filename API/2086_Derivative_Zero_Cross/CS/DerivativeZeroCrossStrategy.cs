@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,149 +12,57 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on zero crossing of the price derivative.
-/// The derivative is calculated as momentum divided by period and scaled by 100.
-/// When the derivative switches sign the opposite position is opened and the current is closed.
+/// The derivative is calculated as momentum divided by period.
+/// When the derivative switches sign, the position is reversed.
 /// </summary>
 public class DerivativeZeroCrossStrategy : Strategy
 {
-	public enum PriceTypes
-	{
-		Close,
-		Open,
-		High,
-		Low,
-		Median,
-		Typical,
-		Weighted
-	}
-
 	private readonly StrategyParam<int> _derivativePeriod;
-	private readonly StrategyParam<PriceTypes> _priceType;
-	private readonly StrategyParam<bool> _buyEntry;
-	private readonly StrategyParam<bool> _sellEntry;
-	private readonly StrategyParam<bool> _buyExit;
-	private readonly StrategyParam<bool> _sellExit;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Momentum _momentum = null!;
 	private decimal? _prevDerivative;
 
-	/// <summary>
-	/// Derivative smoothing period.
-	/// </summary>
 	public int DerivativePeriod
 	{
 		get => _derivativePeriod.Value;
 		set => _derivativePeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Price type used in derivative calculation.
-	/// </summary>
-	public PriceTypes PriceType
+	public decimal StopLossPct
 	{
-		get => _priceType.Value;
-		set => _priceType.Value = value;
+		get => _stopLossPct.Value;
+		set => _stopLossPct.Value = value;
 	}
 
-	/// <summary>
-	/// Enable long entries.
-	/// </summary>
-	public bool BuyEntry
+	public decimal TakeProfitPct
 	{
-		get => _buyEntry.Value;
-		set => _buyEntry.Value = value;
+		get => _takeProfitPct.Value;
+		set => _takeProfitPct.Value = value;
 	}
 
-	/// <summary>
-	/// Enable short entries.
-	/// </summary>
-	public bool SellEntry
-	{
-		get => _sellEntry.Value;
-		set => _sellEntry.Value = value;
-	}
-
-	/// <summary>
-	/// Enable closing long positions.
-	/// </summary>
-	public bool BuyExit
-	{
-		get => _buyExit.Value;
-		set => _buyExit.Value = value;
-	}
-
-	/// <summary>
-	/// Enable closing short positions.
-	/// </summary>
-	public bool SellExit
-	{
-		get => _sellExit.Value;
-		set => _sellExit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for subscription.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="DerivativeZeroCrossStrategy"/>.
-	/// </summary>
 	public DerivativeZeroCrossStrategy()
 	{
-		_derivativePeriod = Param(nameof(DerivativePeriod), 34)
+		_derivativePeriod = Param(nameof(DerivativePeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Derivative Period", "Smoothing period for derivative", "Indicator");
 
-		_priceType = Param(nameof(PriceType), PriceTypes.Weighted)
-			.SetDisplay("Price Type", "Source price for derivative", "Indicator");
-
-		_buyEntry = Param(nameof(BuyEntry), true)
-			.SetDisplay("Buy Entry", "Allow long entries", "Trading");
-
-		_sellEntry = Param(nameof(SellEntry), true)
-			.SetDisplay("Sell Entry", "Allow short entries", "Trading");
-
-		_buyExit = Param(nameof(BuyExit), true)
-			.SetDisplay("Buy Exit", "Allow closing longs", "Trading");
-
-		_sellExit = Param(nameof(SellExit), true)
-			.SetDisplay("Sell Exit", "Allow closing shorts", "Trading");
-
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 			.SetGreaterThanZero();
 
-		_takeProfit = Param(nameof(TakeProfit), 2000m)
-			.SetDisplay("Take Profit", "Take profit in points", "Risk")
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -172,7 +77,6 @@ public class DerivativeZeroCrossStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevDerivative = null;
-		_momentum = null!;
 	}
 
 	/// <inheritdoc />
@@ -180,79 +84,51 @@ public class DerivativeZeroCrossStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_momentum = new Momentum { Length = DerivativePeriod };
+		var momentum = new Momentum { Length = DerivativePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(momentum, (candle, momValue) =>
+		{
+			if (candle.State != CandleStates.Finished)
+				return;
+
+			var derivative = momValue / DerivativePeriod * 100m;
+
+			if (_prevDerivative is null)
+			{
+				_prevDerivative = derivative;
+				return;
+			}
+
+			var prev = _prevDerivative.Value;
+
+			// Derivative crossed up through zero -> buy
+			if (prev <= 0m && derivative > 0m)
+			{
+				if (Position < 0) BuyMarket();
+				if (Position <= 0) BuyMarket();
+			}
+			// Derivative crossed down through zero -> sell
+			else if (prev >= 0m && derivative < 0m)
+			{
+				if (Position > 0) SellMarket();
+				if (Position >= 0) SellMarket();
+			}
+
+			_prevDerivative = derivative;
+		}).Start();
 
 		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Point),
-			stopLoss: new Unit(StopLoss, UnitTypes.Point),
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
 			useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _momentum);
+			DrawIndicator(area, momentum);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		// Only process finished candles
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var price = GetPrice(candle);
-		var momentumValue = _momentum.Process(new DecimalIndicatorValue(_momentum, price, candle.OpenTime)).ToDecimal();
-
-		var derivative = momentumValue / DerivativePeriod * 100m;
-
-		if (_prevDerivative is null)
-		{
-			_prevDerivative = derivative;
-			return;
-		}
-
-		var prev = _prevDerivative.Value;
-
-		// Derivative crossed down through zero
-		if (prev > 0m && derivative <= 0m)
-		{
-			if (SellExit && Position < 0)
-				BuyMarket(Math.Abs(Position));
-			if (BuyEntry && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-		}
-		// Derivative crossed up through zero
-		else if (prev < 0m && derivative >= 0m)
-		{
-			if (BuyExit && Position > 0)
-				SellMarket(Position);
-			if (SellEntry && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-		}
-
-		_prevDerivative = derivative;
-	}
-
-	private decimal GetPrice(ICandleMessage candle)
-	{
-		return PriceType switch
-		{
-			PriceTypes.Close => candle.ClosePrice,
-			PriceTypes.Open => candle.OpenPrice,
-			PriceTypes.High => candle.HighPrice,
-			PriceTypes.Low => candle.LowPrice,
-			PriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			PriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			PriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-			_ => candle.ClosePrice
-		};
 	}
 }

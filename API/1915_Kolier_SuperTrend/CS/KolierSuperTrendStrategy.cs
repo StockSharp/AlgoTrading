@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Kolier SuperTrend strategy based on ATR bands.
-/// The strategy enters long when price crosses above the SuperTrend line and enters short when crossing below.
+/// Enters long when price crosses above the SuperTrend line and short when crossing below.
 /// </summary>
 public class KolierSuperTrendStrategy : Strategy
 {
@@ -23,53 +20,26 @@ public class KolierSuperTrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Track previous state of price relative to SuperTrend line
+	private AverageTrueRange _atr;
 	private bool _prevPriceAbove;
 	private decimal _prevSupertrend;
+	private bool _isInitialized;
 
-	/// <summary>
-	/// ATR period used in SuperTrend calculation.
-	/// </summary>
-	public int Period
-	{
-		get => _period.Value;
-		set => _period.Value = value;
-	}
+	public int Period { get => _period.Value; set => _period.Value = value; }
+	public decimal Multiplier { get => _multiplier.Value; set => _multiplier.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Multiplier applied to ATR for band width.
-	/// </summary>
-	public decimal Multiplier
-	{
-		get => _multiplier.Value;
-		set => _multiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for strategy calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes parameters for Kolier SuperTrend strategy.
-	/// </summary>
 	public KolierSuperTrendStrategy()
 	{
 		_period = Param(nameof(Period), 10)
 			.SetDisplay("ATR Period", "ATR period for SuperTrend", "Indicators")
-			
 			.SetOptimize(5, 20, 1);
 
 		_multiplier = Param(nameof(Multiplier), 3.0m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for SuperTrend", "Indicators")
-			
 			.SetOptimize(2.0m, 4.0m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -85,6 +55,7 @@ public class KolierSuperTrendStrategy : Strategy
 		base.OnReseted();
 		_prevPriceAbove = false;
 		_prevSupertrend = 0m;
+		_isInitialized = false;
 	}
 
 	/// <inheritdoc />
@@ -92,11 +63,11 @@ public class KolierSuperTrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var atr = new AverageTrueRange { Length = Period };
+		_atr = new AverageTrueRange { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(atr, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -107,25 +78,28 @@ public class KolierSuperTrendStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var atrResult = _atr.Process(candle);
+		if (!atrResult.IsFormed)
 			return;
 
+		var atrValue = atrResult.ToDecimal();
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
 		var upper = median + Multiplier * atrValue;
 		var lower = median - Multiplier * atrValue;
 
 		decimal supertrend;
 
-		if (_prevSupertrend == 0m)
+		if (!_isInitialized)
 		{
 			supertrend = candle.ClosePrice > median ? lower : upper;
 			_prevSupertrend = supertrend;
 			_prevPriceAbove = candle.ClosePrice > supertrend;
+			_isInitialized = true;
 			return;
 		}
 
@@ -142,13 +116,13 @@ public class KolierSuperTrendStrategy : Strategy
 
 		if (crossUp && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
 		else if (crossDown && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
 		_prevSupertrend = supertrend;

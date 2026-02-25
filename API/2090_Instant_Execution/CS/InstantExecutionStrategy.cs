@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,105 +11,56 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that instantly opens a position and manages it with
+/// Strategy that opens a position based on EMA direction and manages it with
 /// take profit, stop loss and trailing stop rules.
 /// </summary>
 public class InstantExecutionStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _trailingStart;
-	private readonly StrategyParam<decimal> _trailingSize;
+	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<Sides> _direction;
 
-	private decimal _entryPrice;
-	private decimal? _trailingStop;
+	private decimal? _prevEma;
 
-	/// <summary>
-	/// Target profit in price units.
-	/// </summary>
-	public decimal TakeProfit
+	public decimal TakeProfitPct
 	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
+		get => _takeProfitPct.Value;
+		set => _takeProfitPct.Value = value;
 	}
 
-	/// <summary>
-	/// Stop loss in price units.
-	/// </summary>
-	public decimal StopLoss
+	public decimal StopLossPct
 	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
+		get => _stopLossPct.Value;
+		set => _stopLossPct.Value = value;
 	}
 
-	/// <summary>
-	/// Minimum profit before trailing starts.
-	/// </summary>
-	public decimal TrailingStart
+	public int EmaPeriod
 	{
-		get => _trailingStart.Value;
-		set => _trailingStart.Value = value;
+		get => _emaPeriod.Value;
+		set => _emaPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Distance for trailing stop.
-	/// </summary>
-	public decimal TrailingSize
-	{
-		get => _trailingSize.Value;
-		set => _trailingSize.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to process.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Direction of the initial order.
-	/// </summary>
-	public Sides Direction
-	{
-		get => _direction.Value;
-		set => _direction.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public InstantExecutionStrategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 70m)
-			.SetDisplay("Take Profit", "Target profit in price units", "Risk")
-			
-			.SetOptimize(20m, 200m, 10m);
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_stopLoss = Param(nameof(StopLoss), 0m)
-			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
-			
-			.SetOptimize(10m, 100m, 10m);
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_trailingStart = Param(nameof(TrailingStart), 5m)
-			.SetDisplay("Trailing Start", "Minimum profit before trailing", "Risk")
-			
-			.SetOptimize(1m, 20m, 1m);
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "EMA trend filter period", "Indicator");
 
-		_trailingSize = Param(nameof(TrailingSize), 5m)
-			.SetDisplay("Trailing Size", "Distance for trailing stop", "Risk")
-			
-			.SetOptimize(1m, 20m, 1m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_direction = Param(nameof(Direction), Sides.Buy)
-			.SetDisplay("Direction", "Initial order direction", "General");
 	}
 
 	/// <inheritdoc />
@@ -125,8 +73,7 @@ public class InstantExecutionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = 0m;
-		_trailingStop = null;
+		_prevEma = null;
 	}
 
 	/// <inheritdoc />
@@ -134,115 +81,46 @@ public class InstantExecutionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-	}
-
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (Position == 0)
+		subscription.Bind(ema, (candle, emaValue) =>
 		{
-			_entryPrice = candle.ClosePrice;
-			if (Direction == Sides.Buy)
-				BuyMarket(Volume);
-			else
-				SellMarket(Volume);
-			return;
-		}
+			if (candle.State != CandleStates.Finished)
+				return;
 
-		if (Position > 0)
-			ProcessLong(candle);
-		else if (Position < 0)
-			ProcessShort(candle);
-	}
+			if (_prevEma.HasValue)
+			{
+				var rising = emaValue > _prevEma.Value;
+				var falling = emaValue < _prevEma.Value;
 
-	private void ProcessLong(ICandleMessage candle)
-	{
-		var price = candle.ClosePrice;
+				if (rising && candle.ClosePrice > emaValue && Position <= 0)
+				{
+					if (Position < 0) BuyMarket();
+					BuyMarket();
+				}
+				else if (falling && candle.ClosePrice < emaValue && Position >= 0)
+				{
+					if (Position > 0) SellMarket();
+					SellMarket();
+				}
+			}
 
-		if (TakeProfit > 0m && price - _entryPrice >= TakeProfit)
+			_prevEma = emaValue;
+		}).Start();
+
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			isStopTrailing: true,
+			useMarketOrders: true);
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			SellMarket(Position);
-			_entryPrice = 0m;
-			_trailingStop = null;
-			return;
-		}
-
-		if (StopLoss > 0m && _entryPrice - price >= StopLoss)
-		{
-			SellMarket(Position);
-			_entryPrice = 0m;
-			_trailingStop = null;
-			return;
-		}
-
-		if (TrailingStart <= 0m)
-			return;
-
-		if (_trailingStop is null)
-		{
-			if (price - _entryPrice >= TrailingStart)
-				_trailingStop = price - TrailingSize;
-			return;
-		}
-
-		var newStop = price - TrailingSize;
-		if (newStop > _trailingStop)
-			_trailingStop = newStop;
-
-		if (price <= _trailingStop)
-		{
-			SellMarket(Position);
-			_entryPrice = 0m;
-			_trailingStop = null;
-		}
-	}
-
-	private void ProcessShort(ICandleMessage candle)
-	{
-		var price = candle.ClosePrice;
-
-		if (TakeProfit > 0m && _entryPrice - price >= TakeProfit)
-		{
-			BuyMarket(-Position);
-			_entryPrice = 0m;
-			_trailingStop = null;
-			return;
-		}
-
-		if (StopLoss > 0m && price - _entryPrice >= StopLoss)
-		{
-			BuyMarket(-Position);
-			_entryPrice = 0m;
-			_trailingStop = null;
-			return;
-		}
-
-		if (TrailingStart <= 0m)
-			return;
-
-		if (_trailingStop is null)
-		{
-			if (_entryPrice - price >= TrailingStart)
-				_trailingStop = price + TrailingSize;
-			return;
-		}
-
-		var newStop = price + TrailingSize;
-		if (newStop < _trailingStop)
-			_trailingStop = newStop;
-
-		if (price >= _trailingStop)
-		{
-			BuyMarket(-Position);
-			_entryPrice = 0m;
-			_trailingStop = null;
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ema);
+			DrawOwnTrades(area);
 		}
 	}
 }

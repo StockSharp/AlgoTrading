@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,185 +11,122 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Automatically attaches stop loss and take profit to existing positions and trails the stop.
+/// Strategy that opens positions using a simple MA crossover and protects
+/// them with a trailing stop loss and take profit.
 /// </summary>
 public class AutoTrailingStopStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _fridayTrade;
-	private readonly StrategyParam<bool> _useTrailingStop;
-	private readonly StrategyParam<bool> _autoTrailingStop;
-	private readonly StrategyParam<decimal> _trailingStop;
-	private readonly StrategyParam<decimal> _trailingStopStep;
-	private readonly StrategyParam<bool> _automaticTakeProfit;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<bool> _automaticStopLoss;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _fastMaPeriod;
+	private readonly StrategyParam<int> _slowMaPeriod;
+	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<decimal> _stopLossPct;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private Order _stopOrder;
-	private Order _takeProfitOrder;
-	private decimal _trailDistance;
-	private decimal _trailStart;
-	
+
+	private SimpleMovingAverage _slowMa;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _isFirst = true;
+
+	public int FastMaPeriod { get => _fastMaPeriod.Value; set => _fastMaPeriod.Value = value; }
+	public int SlowMaPeriod { get => _slowMaPeriod.Value; set => _slowMaPeriod.Value = value; }
+	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public AutoTrailingStopStrategy()
 	{
-		_fridayTrade = Param(nameof(FridayTrade), true)
-		.SetDisplay("Friday Trade", "Allow trailing on Friday.", "General");
-		
-		_useTrailingStop = Param(nameof(UseTrailingStop), true)
-		.SetDisplay("Use Trailing Stop", "Enable trailing stop.", "Protection");
-		
-		_autoTrailingStop = Param(nameof(AutoTrailingStop), true)
-		.SetDisplay("Auto Trailing Stop", "Use default trailing stop value.", "Protection");
-		
-		_trailingStop = Param(nameof(TrailingStop), 6m)
-		.SetDisplay("Trailing Stop", "Trailing stop distance.", "Protection")
-		;
-		
-		_trailingStopStep = Param(nameof(TrailingStopStep), 1m)
-		.SetDisplay("Trailing Stop Step", "Step to move trailing stop.", "Protection");
-		
-		_automaticTakeProfit = Param(nameof(AutomaticTakeProfit), true)
-		.SetDisplay("Automatic Take Profit", "Place automatic take profit.", "Protection");
-		
-		_takeProfit = Param(nameof(TakeProfit), 35m)
-		.SetDisplay("Take Profit", "Take profit distance.", "Protection")
-		;
-		
-		_automaticStopLoss = Param(nameof(AutomaticStopLoss), true)
-		.SetDisplay("Automatic Stop Loss", "Place automatic stop loss.", "Protection");
-		
-		_stopLoss = Param(nameof(StopLoss), 114m)
-		.SetDisplay("Stop Loss", "Stop loss distance.", "Protection")
-		;
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Candle type for price updates.", "General");
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast MA", "Fast moving average period", "Indicators");
+
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow MA", "Slow moving average period", "Indicators");
+
+		_takeProfitPct = Param(nameof(TakeProfitPct), 5m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Protection");
+
+		_stopLossPct = Param(nameof(StopLossPct), 3m)
+			.SetDisplay("Stop Loss %", "Initial stop loss percentage", "Protection");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type for price updates", "General");
 	}
-	
-	public bool FridayTrade { get => _fridayTrade.Value; set => _fridayTrade.Value = value; }
-	public bool UseTrailingStop { get => _useTrailingStop.Value; set => _useTrailingStop.Value = value; }
-	public bool AutoTrailingStop { get => _autoTrailingStop.Value; set => _autoTrailingStop.Value = value; }
-	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
-	public decimal TrailingStopStep { get => _trailingStopStep.Value; set => _trailingStopStep.Value = value; }
-	public bool AutomaticTakeProfit { get => _automaticTakeProfit.Value; set => _automaticTakeProfit.Value = value; }
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public bool AutomaticStopLoss { get => _automaticStopLoss.Value; set => _automaticStopLoss.Value = value; }
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	=> [(Security, CandleType)];
-	
+		=> [(Security, CandleType)];
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		
-		_stopOrder = null;
-		_takeProfitOrder = null;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_isFirst = true;
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		_trailDistance = AutoTrailingStop ? 6m : TrailingStop;
-		_trailStart = _trailDistance / 2m;
-		
+
+		var fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
+		_slowMa = new SimpleMovingAverage { Length = SlowMaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(fastMa, ProcessCandle)
+			.Start();
+
+		StartProtection(
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent)
+		);
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastMa);
+			DrawIndicator(area, _slowMa);
+			DrawOwnTrades(area);
+		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle)
+
+	private void ProcessCandle(ICandleMessage candle, decimal fast)
 	{
-		// Process only finished candles to avoid premature decisions.
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		// Optional skip of trailing logic on Fridays.
-		if (!FridayTrade && candle.OpenTime.DayOfWeek == DayOfWeek.Friday)
-		return;
-		
-		var price = candle.ClosePrice;
-		
-		if (Position > 0)
+			return;
+
+		var slowResult = _slowMa.Process(candle.ClosePrice, candle.OpenTime, true);
+		if (!slowResult.IsFormed)
+			return;
+
+		var slow = slowResult.ToDecimal();
+
+		if (_isFirst)
 		{
-			// Manage protective orders for long position.
-			EnsureProtection(true, price);
-			
-			// Update trailing stop when price moves enough in favor.
-			if (UseTrailingStop && price - PositionPrice >= _trailStart)
-			{
-				var newStop = price - _trailDistance;
-				if (_stopOrder == null || newStop - _stopOrder.Price >= TrailingStopStep)
-				MoveStop(true, newStop);
-			}
+			_prevFast = fast;
+			_prevSlow = slow;
+			_isFirst = false;
+			return;
 		}
-		else if (Position < 0)
+
+		// Bullish crossover: fast crosses above slow
+		if (_prevFast <= _prevSlow && fast > slow && Position <= 0)
 		{
-			// Manage protective orders for short position.
-			EnsureProtection(false, price);
-			
-			// Update trailing stop for short position.
-			if (UseTrailingStop && PositionPrice - price >= _trailStart)
-			{
-				var newStop = price + _trailDistance;
-				if (_stopOrder == null || _stopOrder.Price - newStop >= TrailingStopStep)
-				MoveStop(false, newStop);
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-	}
-	
-	private void EnsureProtection(bool isLong, decimal price)
-	{
-		// Place initial stop-loss if it is missing.
-		if (_stopOrder == null && AutomaticStopLoss)
+		// Bearish crossover: fast crosses below slow
+		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0)
 		{
-			var slPrice = isLong ? price - StopLoss : price + StopLoss;
-			_stopOrder = isLong
-			? SellStop(Math.Abs(Position), slPrice)
-			: BuyStop(Math.Abs(Position), slPrice);
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
-		
-		// Place initial take-profit if it is missing.
-		if (_takeProfitOrder == null && AutomaticTakeProfit)
-		{
-			var tpPrice = isLong ? price + TakeProfit : price - TakeProfit;
-			_takeProfitOrder = isLong
-			? SellLimit(Math.Abs(Position), tpPrice)
-			: BuyLimit(Math.Abs(Position), tpPrice);
-		}
-	}
-	
-	private void MoveStop(bool isLong, decimal price)
-	{
-		// Cancel previous stop order before placing a new one.
-		if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
-		CancelOrder(_stopOrder);
-		
-		// Register updated stop order in the required direction.
-		_stopOrder = isLong
-		? SellStop(Math.Abs(Position), price)
-		: BuyStop(Math.Abs(Position), price);
-	}
-	
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-		
-		if (Position == 0)
-		{
-			if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
-			CancelOrder(_stopOrder);
-			if (_takeProfitOrder != null && _takeProfitOrder.State == OrderStates.Active)
-			CancelOrder(_takeProfitOrder);
-			
-			_stopOrder = null;
-			_takeProfitOrder = null;
-		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

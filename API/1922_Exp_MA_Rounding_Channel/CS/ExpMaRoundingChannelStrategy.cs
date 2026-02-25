@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -23,161 +20,38 @@ public class ExpMaRoundingChannelStrategy : Strategy
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrFactor;
-	private readonly StrategyParam<int> _maRoundTicks;
-	private readonly StrategyParam<bool> _allowBuy;
-	private readonly StrategyParam<bool> _allowSell;
-	private readonly StrategyParam<bool> _allowCloseLong;
-	private readonly StrategyParam<bool> _allowCloseShort;
-	private readonly StrategyParam<int> _stopLossTicks;
-	private readonly StrategyParam<int> _takeProfitTicks;
+	private readonly StrategyParam<decimal> _roundStep;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private AverageTrueRange _atr;
 	private decimal _prevUpper;
 	private decimal _prevLower;
 	private decimal _prevClose;
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="ExpMaRoundingChannelStrategy"/>.
-	/// </summary>
+	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal AtrFactor { get => _atrFactor.Value; set => _atrFactor.Value = value; }
+	public decimal RoundStep { get => _roundStep.Value; set => _roundStep.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public ExpMaRoundingChannelStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for calculation", "General");
-
 		_maLength = Param(nameof(MaLength), 12)
-			.SetDisplay("MA Period", "Length of moving average", "Indicator")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Length of moving average", "Indicator");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 12)
-			.SetDisplay("ATR Period", "ATR period for channel width", "Indicator")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "ATR period for channel width", "Indicator");
 
 		_atrFactor = Param(nameof(AtrFactor), 1m)
-			.SetDisplay("ATR Factor", "Multiplier for ATR channel", "Indicator")
-			;
+			.SetDisplay("ATR Factor", "Multiplier for ATR channel", "Indicator");
 
-		_maRoundTicks = Param(nameof(MaRoundTicks), 500)
-			.SetDisplay("MA Rounding (ticks)", "Rounding step in ticks", "Indicator")
-			;
+		_roundStep = Param(nameof(RoundStep), 500m)
+			.SetDisplay("Round Step", "Rounding step for the moving average", "Indicator");
 
-		_allowBuy = Param(nameof(AllowBuy), true)
-			.SetDisplay("Allow Buy", "Permission to open long positions", "Trading");
-
-		_allowSell = Param(nameof(AllowSell), true)
-			.SetDisplay("Allow Sell", "Permission to open short positions", "Trading");
-
-		_allowCloseLong = Param(nameof(AllowCloseLong), true)
-			.SetDisplay("Close Long", "Allow closing long positions", "Trading");
-
-		_allowCloseShort = Param(nameof(AllowCloseShort), true)
-			.SetDisplay("Close Short", "Allow closing short positions", "Trading");
-
-		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
-			.SetDisplay("Stop Loss (ticks)", "Stop loss distance in ticks", "Risk")
-			;
-
-		_takeProfitTicks = Param(nameof(TakeProfitTicks), 2000)
-			.SetDisplay("Take Profit (ticks)", "Take profit distance in ticks", "Risk")
-			;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int MaLength
-	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
-	}
-
-	/// <summary>
-	/// ATR calculation period.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier to form the channel.
-	/// </summary>
-	public decimal AtrFactor
-	{
-		get => _atrFactor.Value;
-		set => _atrFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Rounding step in ticks for the moving average.
-	/// </summary>
-	public int MaRoundTicks
-	{
-		get => _maRoundTicks.Value;
-		set => _maRoundTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
-	public bool AllowBuy
-	{
-		get => _allowBuy.Value;
-		set => _allowBuy.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
-	public bool AllowSell
-	{
-		get => _allowSell.Value;
-		set => _allowSell.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing long positions.
-	/// </summary>
-	public bool AllowCloseLong
-	{
-		get => _allowCloseLong.Value;
-		set => _allowCloseLong.Value = value;
-	}
-
-	/// <summary>
-	/// Allow closing short positions.
-	/// </summary>
-	public bool AllowCloseShort
-	{
-		get => _allowCloseShort.Value;
-		set => _allowCloseShort.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance in ticks.
-	/// </summary>
-	public int StopLossTicks
-	{
-		get => _stopLossTicks.Value;
-		set => _stopLossTicks.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance in ticks.
-	/// </summary>
-	public int TakeProfitTicks
-	{
-		get => _takeProfitTicks.Value;
-		set => _takeProfitTicks.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for calculation", "General");
 	}
 
 	/// <inheritdoc />
@@ -191,57 +65,61 @@ public class ExpMaRoundingChannelStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema = new EMA { Length = MaLength };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		_prevClose = 0;
+		_prevUpper = 0;
+		_prevLower = 0;
+
+		var ema = new ExponentialMovingAverage { Length = MaLength };
+		_atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ema, atr, ProcessCandle)
+			.Bind(ema, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(3, UnitTypes.Percent),
+			stopLoss: new Unit(2, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ema);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
-
-		var step = Security.PriceStep ?? 1m;
-		StartProtection(
-			takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Point),
-			stopLoss: new Unit(StopLossTicks * step, UnitTypes.Point));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var atrResult = _atr.Process(candle);
+		if (!atrResult.IsFormed)
 			return;
 
-		var roundStep = (Security.PriceStep ?? 1m) * MaRoundTicks;
-		var roundedMa = roundStep > 0 ? Math.Round(maValue / roundStep) * roundStep : maValue;
+		var atrValue = atrResult.ToDecimal();
+
+		// Round the MA value
+		var step = RoundStep;
+		var roundedMa = step > 0 ? Math.Round(maValue / step) * step : maValue;
 		var upper = roundedMa + atrValue * AtrFactor;
 		var lower = roundedMa - atrValue * AtrFactor;
 
 		if (_prevClose != 0m)
 		{
-			if (AllowBuy && _prevClose > _prevUpper)
+			// Price broke above upper channel -> buy
+			if (_prevClose > _prevUpper && Position <= 0)
 			{
-				if (Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-				if (AllowCloseShort && Position < 0)
-				BuyMarket(Math.Abs(Position));
+				if (Position < 0) BuyMarket();
+				BuyMarket();
 			}
-			else if (AllowSell && _prevClose < _prevLower)
+			// Price broke below lower channel -> sell
+			else if (_prevClose < _prevLower && Position >= 0)
 			{
-				if (Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-				if (AllowCloseLong && Position > 0)
-				SellMarket(Position);
+				if (Position > 0) SellMarket();
+				SellMarket();
 			}
 		}
 

@@ -1,89 +1,97 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
 /// <summary>
-/// Simplified Visual Trader order manager.
-/// Sends a single market order and attaches stop-loss and take-profit protection.
+/// Visual Trader strategy with EMA crossover and stop/take protection.
 /// </summary>
 public class VisualTraderSimulatorEditionStrategy : Strategy
 {
-	public enum TradeDirections
-	{
-		Buy,
-		Sell
-	}
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly StrategyParam<TradeDirections> _tradeDirection;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
+
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public VisualTraderSimulatorEditionStrategy()
 	{
-		_tradeDirection = Param(nameof(Direction), TradeDirections.Buy)
-			.SetDisplay("Trade Direction", "Initial trade direction", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_takeProfit = Param(nameof(TakeProfit), 0m)
-			.SetDisplay("Take Profit", "Take profit in absolute price", "Protection")
-			;
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_stopLoss = Param(nameof(StopLoss), 0m)
-			.SetDisplay("Stop Loss", "Stop loss in absolute price", "Protection")
-			;
-
-		Volume = 1;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <summary>
-	/// Direction of the initial trade.
-	/// </summary>
-	public TradeDirections Direction
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		get => _tradeDirection.Value;
-		set => _tradeDirection.Value = value;
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
 	}
 
-	/// <summary>
-	/// Take profit value in absolute price. Zero disables take profit.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss value in absolute price. Zero disables stop loss.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(
-			takeProfit: TakeProfit > 0 ? new Unit(TakeProfit, UnitTypes.Absolute) : default,
-			stopLoss: StopLoss > 0 ? new Unit(StopLoss, UnitTypes.Absolute) : default);
+		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
 
-		if (Direction == TradeDirections.Buy)
-			BuyMarket();
-		else
-			SellMarket();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (_hasPrev)
+		{
+			var crossUp = _prevFast <= _prevSlow && fast > slow;
+			var crossDown = _prevFast >= _prevSlow && fast < slow;
+
+			if (crossUp && Position <= 0)
+				BuyMarket();
+			else if (crossDown && Position >= 0)
+				SellMarket();
+		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
+		_hasPrev = true;
 	}
 }

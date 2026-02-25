@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -19,136 +16,43 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ITrendStrategy : Strategy
 {
-	/// <summary>
-	/// Bollinger Band line selection.
-	/// </summary>
-	public enum BandModes
-	{
-		Upper,
-		Lower,
-		Middle
-	}
-
-	public enum AppliedPrices
-	{
-		PriceOpen,
-		PriceHigh,
-		PriceLow,
-		PriceClose,
-		PriceMedian,
-		PriceTypical,
-		PriceWeighted,
-		PriceSimple,
-		PriceQuarter,
-		PriceTrendFollow0,
-		PriceTrendFollow1,
-		PriceDeMark
-	}
-
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _bbPeriod;
 	private readonly StrategyParam<decimal> _bbDeviation;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<AppliedPrices> _priceType;
-	private readonly StrategyParam<BandModes> _bbMode;
-	
+
 	private decimal _prevInd;
 	private decimal _prevSign;
 	private bool _isInitialized;
-	
-	/// <summary>
-	/// Period for the moving average.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// Period for Bollinger Bands.
-	/// </summary>
-	public int BbPeriod
-	{
-		get => _bbPeriod.Value;
-		set => _bbPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// Standard deviation for Bollinger Bands.
-	/// </summary>
-	public decimal BbDeviation
-	{
-		get => _bbDeviation.Value;
-		set => _bbDeviation.Value = value;
-	}
-	
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// Price type for iTrend calculation.
-	/// </summary>
-	public AppliedPrices PriceType
-	{
-		get => _priceType.Value;
-		set => _priceType.Value = value;
-	}
-	
-	/// <summary>
-	/// Selected Bollinger Band line.
-	/// </summary>
-	public BandModes BbMode
-	{
-		get => _bbMode.Value;
-		set => _bbMode.Value = value;
-	}
-	
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+
+	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public int BbPeriod { get => _bbPeriod.Value; set => _bbPeriod.Value = value; }
+	public decimal BbDeviation { get => _bbDeviation.Value; set => _bbDeviation.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public ITrendStrategy()
 	{
 		_maPeriod = Param(nameof(MaPeriod), 13)
-		.SetGreaterThanZero()
-		.SetDisplay("MA Period", "Moving average length", "Indicator")
-		
-		.SetOptimize(5, 50, 5);
-		
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Moving average length", "Indicator");
+
 		_bbPeriod = Param(nameof(BbPeriod), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("BB Period", "Bollinger Bands period", "Indicator")
-		
-		.SetOptimize(10, 50, 5);
-		
+			.SetGreaterThanZero()
+			.SetDisplay("BB Period", "Bollinger Bands period", "Indicator");
+
 		_bbDeviation = Param(nameof(BbDeviation), 2.0m)
-		.SetGreaterThanZero()
-		.SetDisplay("BB Deviation", "Standard deviation for Bollinger Bands", "Indicator")
-		
-		.SetOptimize(1.0m, 3.0m, 0.5m);
-		
-		_priceType = Param(nameof(PriceType), AppliedPrices.PriceClose)
-		.SetDisplay("Price Type", "Applied price for iTrend", "General");
-		
-		_bbMode = Param(nameof(BbMode), BandModes.Upper)
-		.SetDisplay("Band Mode", "Bollinger Band line used for comparison", "General");
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles used", "General");
+			.SetDisplay("BB Deviation", "Standard deviation for Bollinger Bands", "Indicator");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles used", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
@@ -157,23 +61,39 @@ public class ITrendStrategy : Strategy
 		_prevSign = 0m;
 		_isInitialized = false;
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		StartProtection(null, null);
-		
-		var ma = new EMA { Length = MaPeriod };
+
+		var ma = new ExponentialMovingAverage { Length = MaPeriod };
 		var bb = new BollingerBands { Length = BbPeriod, Width = BbDeviation };
-		
+
 		var subscription = SubscribeCandles(CandleType);
-		
+
 		subscription
-			.Bind(ma, bb, ProcessCandle)
+			.BindEx(bb, (candle, bbValue) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				if (!bbValue.IsFormed)
+					return;
+
+				var maResult = ma.Process(candle.ClosePrice, candle.OpenTime, true);
+				if (!maResult.IsFormed)
+					return;
+
+				var maVal = maResult.ToDecimal();
+				var bbVal = (BollingerBandsValue)bbValue;
+				if (bbVal.UpBand is not decimal upperBand)
+					return;
+
+				ProcessCandle(candle, maVal, upperBand);
+			})
 			.Start();
-		
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -183,27 +103,14 @@ public class ITrendStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal middleBand, decimal upperBand, decimal lowerBand)
+
+	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal band)
 	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
-		var price = GetPrice(candle, PriceType);
-		
-		var band = BbMode switch
-		{
-			BandModes.Upper => upperBand,
-			BandModes.Lower => lowerBand,
-			_ => middleBand,
-		};
-		
+		var price = candle.ClosePrice;
+
 		var ind = price - band;
 		var sign = 2m * maValue - (candle.LowPrice + candle.HighPrice);
-		
+
 		if (!_isInitialized)
 		{
 			_prevInd = ind;
@@ -211,59 +118,22 @@ public class ITrendStrategy : Strategy
 			_isInitialized = true;
 			return;
 		}
-		
+
 		var crossUp = _prevInd <= _prevSign && ind > sign;
 		var crossDown = _prevInd >= _prevSign && ind < sign;
-		
-		if (crossUp)
+
+		if (crossUp && Position <= 0)
 		{
-			if (Position < 0)
-			BuyMarket(Math.Abs(Position));
-			if (Position <= 0)
-			BuyMarket(Volume);
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (crossDown)
+		else if (crossDown && Position >= 0)
 		{
-			if (Position > 0)
-			SellMarket(Math.Abs(Position));
-			if (Position >= 0)
-			SellMarket(Volume);
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
-		
+
 		_prevInd = ind;
 		_prevSign = sign;
-	}
-	
-	private static decimal GetPrice(ICandleMessage candle, AppliedPrices type)
-	{
-		return type switch
-		{
-			AppliedPrices.PriceOpen => candle.OpenPrice,
-			AppliedPrices.PriceHigh => candle.HighPrice,
-			AppliedPrices.PriceLow => candle.LowPrice,
-			AppliedPrices.PriceMedian => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrices.PriceTypical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrices.PriceWeighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrices.PriceSimple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrices.PriceQuarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrices.PriceTrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice :
-			candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-			AppliedPrices.PriceTrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m :
-			candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-			AppliedPrices.PriceDeMark => CalculateDeMarkPrice(candle),
-			_ => candle.ClosePrice,
-		};
-	}
-
-	private static decimal CalculateDeMarkPrice(ICandleMessage candle)
-	{
-		var res = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
-		if (candle.ClosePrice < candle.OpenPrice)
-			res = (res + candle.LowPrice) / 2m;
-		else if (candle.ClosePrice > candle.OpenPrice)
-			res = (res + candle.HighPrice) / 2m;
-		else
-			res = (res + candle.ClosePrice) / 2m;
-		return ((res - candle.LowPrice) + (res - candle.HighPrice)) / 2m;
 	}
 }

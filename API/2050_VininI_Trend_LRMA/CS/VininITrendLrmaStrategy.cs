@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,72 +12,66 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// VininI Trend LRMA strategy.
-/// Uses linear regression moving average to detect breakouts or twists.
+/// Computes a trend oscillator as deviation from linear regression.
+/// Buys when oscillator crosses above upper level, sells when below lower level.
 /// </summary>
 public class VininITrendLrmaStrategy : Strategy
 {
-	/// <summary>
-	/// Entry algorithm.
-	/// </summary>
-	public enum EntryModes
-	{
-		/// <summary>Enter on level breakout.</summary>
-		Breakdown,
-		/// <summary>Enter when direction changes.</summary>
-		Twist
-	}
-
 	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<int> _upLevel;
-	private readonly StrategyParam<int> _dnLevel;
-	private readonly StrategyParam<EntryModes> _mode;
+	private readonly StrategyParam<decimal> _upLevel;
+	private readonly StrategyParam<decimal> _dnLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LinearRegression _lrma = null!;
+	private decimal? _prevOsc;
 
-	private decimal? _prev;
-	private decimal? _prevPrev;
+	public int Period { get => _period.Value; set => _period.Value = value; }
+	public decimal UpLevel { get => _upLevel.Value; set => _upLevel.Value = value; }
+	public decimal DnLevel { get => _dnLevel.Value; set => _dnLevel.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="VininITrendLrmaStrategy"/>.
-	/// </summary>
 	public VininITrendLrmaStrategy()
 	{
-		_period = Param(nameof(Period), 13).SetDisplay("LRMA period", "LRMA period", "General");
-		_upLevel = Param(nameof(UpLevel), 10).SetDisplay("Upper level", "Upper level", "General");
-		_dnLevel = Param(nameof(DnLevel), -10).SetDisplay("Lower level", "Lower level", "General");
-		_mode = Param(nameof(Mode), EntryModes.Breakdown).SetDisplay("Entry mode", "Entry mode", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
+		_period = Param(nameof(Period), 13)
+			.SetGreaterThanZero()
+			.SetDisplay("LRMA period", "Linear regression period", "General");
+
+		_upLevel = Param(nameof(UpLevel), 0.1m)
+			.SetDisplay("Upper level", "Upper trigger level (percent)", "General");
+
+		_dnLevel = Param(nameof(DnLevel), -0.1m)
+			.SetDisplay("Lower level", "Lower trigger level (percent)", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
-	/// <summary>LRMA period.</summary>
-	public int Period { get => _period.Value; set => _period.Value = value; }
-
-	/// <summary>Upper trigger level.</summary>
-	public int UpLevel { get => _upLevel.Value; set => _upLevel.Value = value; }
-
-	/// <summary>Lower trigger level.</summary>
-	public int DnLevel { get => _dnLevel.Value; set => _dnLevel.Value = value; }
-
-	/// <summary>Entry algorithm.</summary>
-	public EntryModes Mode { get => _mode.Value; set => _mode.Value = value; }
-
-	/// <summary>Candle series type.</summary>
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_lrma = new LinearRegression { Length = Period };
+		_prevOsc = null;
+
+		var lrma = new LinearReg { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_lrma, ProcessCandle)
+			.Bind(lrma, ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, lrma);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal lrma)
@@ -88,28 +79,27 @@ public class VininITrendLrmaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (Mode == EntryModes.Breakdown)
+		if (lrma == 0)
+			return;
+
+		// Compute trend oscillator as percentage deviation from LRMA
+		var osc = (candle.ClosePrice - lrma) / lrma * 100m;
+
+		if (_prevOsc is not null)
 		{
-			if (_prev is not null)
+			// Breakout mode
+			if (osc > UpLevel && _prevOsc <= UpLevel && Position <= 0)
 			{
-				if (lrma > UpLevel && _prev <= UpLevel && Position <= 0)
-					BuyMarket();
-				else if (lrma < DnLevel && _prev >= DnLevel && Position >= 0)
-					SellMarket();
+				if (Position < 0) BuyMarket();
+				BuyMarket();
 			}
-		}
-		else
-		{
-			if (_prev is not null && _prevPrev is not null)
+			else if (osc < DnLevel && _prevOsc >= DnLevel && Position >= 0)
 			{
-				if (_prevPrev < _prev && lrma > _prev && Position <= 0)
-					BuyMarket();
-				else if (_prevPrev > _prev && lrma < _prev && Position >= 0)
-					SellMarket();
+				if (Position > 0) SellMarket();
+				SellMarket();
 			}
 		}
 
-		_prevPrev = _prev;
-		_prev = lrma;
+		_prevOsc = osc;
 	}
 }

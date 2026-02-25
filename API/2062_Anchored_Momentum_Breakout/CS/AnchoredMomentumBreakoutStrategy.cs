@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,6 +12,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on anchored momentum indicator.
+/// Computes momentum as EMA/SMA ratio and trades reversals.
 /// </summary>
 public class AnchoredMomentumBreakoutStrategy : Strategy
 {
@@ -34,13 +32,18 @@ public class AnchoredMomentumBreakoutStrategy : Strategy
 	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
 
-        public AnchoredMomentumBreakoutStrategy()
+	public AnchoredMomentumBreakoutStrategy()
 	{
-		_smaPeriod = Param(nameof(SmaPeriod), 34).SetRange(10,100).SetDisplay("SMA Period","Period for simple moving average","Indicators");
-		_emaPeriod = Param(nameof(EmaPeriod), 20).SetRange(5,50).SetDisplay("EMA Period","Period for exponential moving average","Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame()).SetDisplay("Candle Type","Type of candles to use","General");
-		_stopLossPercent = Param(nameof(StopLossPercent),2m).SetRange(0.5m,10m).SetDisplay("Stop Loss %","Stop loss percentage","Risk Management");
-		_takeProfitPercent = Param(nameof(TakeProfitPercent),4m).SetRange(1m,20m).SetDisplay("Take Profit %","Take profit percentage","Risk Management");
+		_smaPeriod = Param(nameof(SmaPeriod), 34)
+			.SetDisplay("SMA Period", "Period for simple moving average", "Indicators");
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
+			.SetDisplay("EMA Period", "Period for exponential moving average", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
@@ -56,8 +59,9 @@ public class AnchoredMomentumBreakoutStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		var sma = new SMA { Length = SmaPeriod };
-		var ema = new EMA { Length = EmaPeriod };
+
+		var sma = new SimpleMovingAverage { Length = SmaPeriod };
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(sma, ema, ProcessCandle).Start();
 
@@ -81,9 +85,6 @@ public class AnchoredMomentumBreakoutStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (smaVal == 0)
 			return;
 
@@ -97,12 +98,16 @@ public class AnchoredMomentumBreakoutStrategy : Strategy
 			return;
 		}
 
-		var volume = Volume + Math.Abs(Position);
-
 		if (_prev < _prevPrev && mom >= _prev && Position <= 0)
-			BuyMarket(volume);
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
 		else if (_prev > _prevPrev && mom <= _prev && Position >= 0)
-			SellMarket(volume);
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
 
 		_prevPrev = _prev;
 		_prev = mom;

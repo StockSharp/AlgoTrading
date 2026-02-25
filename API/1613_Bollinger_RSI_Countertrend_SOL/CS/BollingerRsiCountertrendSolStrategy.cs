@@ -3,9 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -125,7 +122,7 @@ public class BollingerRsiCountertrendSolStrategy : Strategy
 		_shortProfitPercent = Param(nameof(ShortProfitPercent), 3.5m)
 			.SetDisplay("Short Profit %", "Short profit percent", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -157,19 +154,32 @@ public class BollingerRsiCountertrendSolStrategy : Strategy
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(bollinger, rsi, ProcessCandle).Start();
+		subscription.BindEx(bollinger, rsi, ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, bollinger);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue rsiVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var day = candle.OpenTime.DayOfWeek;
-		var isWeekday = day >= DayOfWeek.Monday && day <= DayOfWeek.Friday;
+		var bb = (BollingerBandsValue)bbValue;
+		if (bb.UpBand is not decimal upper ||
+			bb.LowBand is not decimal lower ||
+			bb.MovingAverage is not decimal middle)
+			return;
 
-		var longEntry = _prevClose < _prevLower && candle.ClosePrice > lower && rsiValue < LongRsi && isWeekday;
-		var shortEntry = _prevClose > _prevUpper && candle.ClosePrice < upper && rsiValue > ShortRsi && isWeekday;
+		var rsiValue = rsiVal.IsFormed ? rsiVal.GetValue<decimal>() : 50m;
+
+		var longEntry = _prevClose != 0 && _prevClose < _prevLower && candle.ClosePrice > lower && rsiValue < LongRsi;
+		var shortEntry = _prevClose != 0 && _prevClose > _prevUpper && candle.ClosePrice < upper && rsiValue > ShortRsi;
 
 		var longTp = Position > 0 && _prevClose <= _prevUpper && candle.ClosePrice > upper;
 		var shortTp1 = Position < 0 && _prevClose <= _prevBasis && candle.ClosePrice > middle;

@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,12 +10,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Strategy based on Ichimoku oscillator smoothed by Jurik moving average.
-/// Opens a long position when the oscillator turns up and crosses above its previous value.
-/// Opens a short position when the oscillator turns down and crosses below its previous value.
+/// Strategy based on Ichimoku oscillator smoothed by EMA.
+/// Opens long when oscillator turns up, short when it turns down.
 /// </summary>
 public class IchimokuOscillatorStrategy : Strategy
 {
@@ -26,133 +22,60 @@ public class IchimokuOscillatorStrategy : Strategy
 	private readonly StrategyParam<int> _smoothingPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<bool> _enableStopLoss;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 
-	private Ichimoku _ichimoku;
-	private JurikMovingAverage _jma;
-
+	private ExponentialMovingAverage _ema;
 	private decimal? _prevValue;
 	private decimal? _prevPrevValue;
 
-	/// <summary>
-	/// Tenkan-sen period for the Ichimoku indicator.
-	/// </summary>
-	public int TenkanPeriod
-	{
-		get => _tenkanPeriod.Value;
-		set => _tenkanPeriod.Value = value;
-	}
+	public int TenkanPeriod { get => _tenkanPeriod.Value; set => _tenkanPeriod.Value = value; }
+	public int KijunPeriod { get => _kijunPeriod.Value; set => _kijunPeriod.Value = value; }
+	public int SenkouSpanBPeriod { get => _senkouSpanBPeriod.Value; set => _senkouSpanBPeriod.Value = value; }
+	public int SmoothingPeriod { get => _smoothingPeriod.Value; set => _smoothingPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
 
-	/// <summary>
-	/// Kijun-sen period for the Ichimoku indicator.
-	/// </summary>
-	public int KijunPeriod
-	{
-		get => _kijunPeriod.Value;
-		set => _kijunPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Senkou Span B period for the Ichimoku indicator.
-	/// </summary>
-	public int SenkouSpanBPeriod
-	{
-		get => _senkouSpanBPeriod.Value;
-		set => _senkouSpanBPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Period used for smoothing the oscillator with Jurik moving average.
-	/// </summary>
-	public int SmoothingPeriod
-	{
-		get => _smoothingPeriod.Value;
-		set => _smoothingPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percent.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Enable stop loss.
-	/// </summary>
-	public bool EnableStopLoss
-	{
-		get => _enableStopLoss.Value;
-		set => _enableStopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit percent.
-	/// </summary>
-	public decimal TakeProfitPercent
-	{
-		get => _takeProfitPercent.Value;
-		set => _takeProfitPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="IchimokuOscillatorStrategy"/>.
-	/// </summary>
 	public IchimokuOscillatorStrategy()
 	{
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
-		.SetGreaterThanZero()
-		.SetDisplay("Tenkan Period", "Period for Tenkan-sen line", "Ichimoku")
-		
-		.SetOptimize(5, 20, 1);
+			.SetGreaterThanZero()
+			.SetDisplay("Tenkan Period", "Period for Tenkan-sen line", "Ichimoku");
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
-		.SetGreaterThanZero()
-		.SetDisplay("Kijun Period", "Period for Kijun-sen line", "Ichimoku")
-		
-		.SetOptimize(10, 40, 1);
+			.SetGreaterThanZero()
+			.SetDisplay("Kijun Period", "Period for Kijun-sen line", "Ichimoku");
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
-		.SetGreaterThanZero()
-		.SetDisplay("Senkou Span B Period", "Period for Senkou Span B", "Ichimoku")
-		
-		.SetOptimize(20, 80, 1);
+			.SetGreaterThanZero()
+			.SetDisplay("Senkou Span B Period", "Period for Senkou Span B", "Ichimoku");
 
 		_smoothingPeriod = Param(nameof(SmoothingPeriod), 7)
-		.SetGreaterThanZero()
-		.SetDisplay("Smoothing Period", "Period for Jurik moving average", "Oscillator")
-		
-		.SetOptimize(3, 20, 1);
+			.SetGreaterThanZero()
+			.SetDisplay("Smoothing Period", "Period for smoothing EMA", "Oscillator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe for calculation", "Main");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for calculation", "Main");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Stop Loss %", "Stop loss in percent", "Risk")
-		
-		.SetOptimize(0.5m, 3m, 0.5m);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss in percent", "Risk");
 
-		_enableStopLoss = Param(nameof(EnableStopLoss), true)
-		.SetDisplay("Enable Stop Loss", "Use stop loss protection", "Risk");
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
+			.SetDisplay("Take Profit %", "Take profit in percent", "Risk");
+	}
 
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
-		.SetGreaterThanZero()
-		.SetDisplay("Take Profit %", "Take profit in percent", "Risk")
-		
-		.SetOptimize(1m, 5m, 1m);
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevValue = null;
+		_prevPrevValue = null;
 	}
 
 	/// <inheritdoc />
@@ -160,63 +83,67 @@ public class IchimokuOscillatorStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ichimoku = new Ichimoku
-		{
-			TenkanSen = TenkanPeriod,
-			KijunSen = KijunPeriod,
-			SenkouSpanB = SenkouSpanBPeriod
-		};
+		var ichimoku = new Ichimoku();
+		ichimoku.Tenkan.Length = TenkanPeriod;
+		ichimoku.Kijun.Length = KijunPeriod;
+		ichimoku.SenkouB.Length = SenkouSpanBPeriod;
 
-		_jma = new JurikMovingAverage { Length = SmoothingPeriod };
+		_ema = new ExponentialMovingAverage { Length = SmoothingPeriod };
 
-		SubscribeCandles(CandleType)
-			.BindEx(_ichimoku, ProcessCandle)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.BindEx(ichimoku, ProcessCandle)
 			.Start();
 
 		StartProtection(
-			takeProfit: new Unit(TakeProfitPercent * 100m, UnitTypes.Percent),
-			stopLoss: EnableStopLoss ? new Unit(StopLossPercent * 100m, UnitTypes.Percent) : null);
+			takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
+			useMarketOrders: true);
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
+
+		if (!ichimokuValue.IsFormed)
+			return;
 
 		var ich = (IchimokuValue)ichimokuValue;
 
-		if (ich.ChinkouSpan is not decimal chikou ||
-			ich.SenkouSpanB is not decimal spanB ||
-			ich.TenkanSen is not decimal tenkan ||
-			ich.KijunSen is not decimal kijun)
-		return;
+		if (ich.Chinkou is not decimal chikou ||
+			ich.SenkouB is not decimal spanB ||
+			ich.Tenkan is not decimal tenkan ||
+			ich.Kijun is not decimal kijun)
+			return;
 
 		var osc = (chikou - spanB) - (tenkan - kijun);
-		var jmaVal = _jma.Process(new DecimalIndicatorValue(_jma, osc));
-		if (!jmaVal.IsFinal)
-		return;
+		var emaVal = _ema.Process(osc, candle.OpenTime, true);
+		if (!emaVal.IsFormed)
+			return;
 
-		var current = jmaVal.ToDecimal();
+		var current = emaVal.ToDecimal();
 
 		if (_prevValue is decimal prev && _prevPrevValue is decimal prevPrev)
 		{
-			var rising = prev < prevPrev;
-			var falling = prev > prevPrev;
+			var rising = prev > prevPrev;
+			var falling = prev < prevPrev;
 
-			if (rising)
+			if (rising && current >= prev && Position <= 0)
 			{
-				if (Position < 0)
-				BuyMarket();
-
-				if (current >= prev && Position <= 0)
+				if (Position < 0) BuyMarket();
 				BuyMarket();
 			}
-			else if (falling)
+			else if (falling && current <= prev && Position >= 0)
 			{
-				if (Position > 0)
-				SellMarket();
-
-				if (current <= prev && Position >= 0)
+				if (Position > 0) SellMarket();
 				SellMarket();
 			}
 		}

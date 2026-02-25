@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -21,70 +18,22 @@ public class EfDistanceStrategy : Strategy
 {
 	private readonly StrategyParam<int> _smaPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrThreshold;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
+	private AverageTrueRange _atr;
+	private decimal? _prev;
+	private decimal? _prev2;
 
-	/// <summary>
-	/// SMA period.
-	/// </summary>
-	public int SmaPeriod
-	{
-		get => _smaPeriod.Value;
-		set => _smaPeriod.Value = value;
-	}
+	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ATR period.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum ATR to allow entries.
-	/// </summary>
-	public decimal AtrThreshold
-	{
-		get => _atrThreshold.Value;
-		set => _atrThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance in price units.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance in price units.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public EfDistanceStrategy()
 	{
 		_smaPeriod = Param(nameof(SmaPeriod), 10)
@@ -95,19 +44,16 @@ public class EfDistanceStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for the volatility filter", "Indicator");
 
-		_atrThreshold = Param(nameof(AtrThreshold), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Threshold", "Minimum ATR value to allow entries", "Indicator");
+		_atrMultiplier = Param(nameof(AtrMultiplier), 0.5m)
+			.SetDisplay("ATR Multiplier", "Minimum ATR relative to price", "Indicator");
 
-		_stopLoss = Param(nameof(StopLoss), 100m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Absolute stop loss distance", "Risk");
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_takeProfit = Param(nameof(TakeProfit), 200m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Absolute take profit distance", "Risk");
+		_takeProfitPct = Param(nameof(TakeProfitPct), 4m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 	}
 
@@ -121,7 +67,8 @@ public class EfDistanceStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = 0m;
+		_prev = null;
+		_prev2 = null;
 	}
 
 	/// <inheritdoc />
@@ -129,76 +76,58 @@ public class EfDistanceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SMA { Length = SmaPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var sma = new SimpleMovingAverage { Length = SmaPeriod };
+		_atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
-		decimal? prev = null;
-		decimal? prev2 = null;
-
-		subscription.Bind(sma, atr, (candle, smaValue, atrValue) =>
+		subscription.Bind(sma, (candle, smaValue) =>
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			if (!IsFormedAndOnlineAndAllowTrading())
+			var atrResult = _atr.Process(candle);
+			if (!atrResult.IsFormed)
 				return;
 
-			if (!prev.HasValue || !prev2.HasValue)
+			var atrVal = atrResult.ToDecimal();
+
+			if (_prev is null || _prev2 is null)
 			{
-				prev2 = prev;
-				prev = smaValue;
+				_prev2 = _prev;
+				_prev = smaValue;
 				return;
 			}
 
-			var atrEnough = atrValue >= AtrThreshold;
+			var atrEnough = atrVal >= AtrMultiplier / 100m * candle.ClosePrice;
 
 			if (atrEnough)
 			{
-				if (prev < prev2 && smaValue > prev)
+				if (_prev < _prev2 && smaValue > _prev && Position <= 0)
 				{
-					if (Position <= 0)
-					{
-						BuyMarket(Volume + Math.Abs(Position));
-						_entryPrice = candle.ClosePrice;
-					}
+					if (Position < 0) BuyMarket();
+					BuyMarket();
 				}
-				else if (prev > prev2 && smaValue < prev)
+				else if (_prev > _prev2 && smaValue < _prev && Position >= 0)
 				{
-					if (Position >= 0)
-					{
-						SellMarket(Volume + Math.Abs(Position));
-						_entryPrice = candle.ClosePrice;
-					}
+					if (Position > 0) SellMarket();
+					SellMarket();
 				}
 			}
 
-			if (Position > 0)
-			{
-				if (StopLoss > 0m && candle.ClosePrice <= _entryPrice - StopLoss)
-					SellMarket(Position);
-				else if (TakeProfit > 0m && candle.ClosePrice >= _entryPrice + TakeProfit)
-					SellMarket(Position);
-			}
-			else if (Position < 0)
-			{
-				if (StopLoss > 0m && candle.ClosePrice >= _entryPrice + StopLoss)
-					BuyMarket(-Position);
-				else if (TakeProfit > 0m && candle.ClosePrice <= _entryPrice - TakeProfit)
-					BuyMarket(-Position);
-			}
-
-			prev2 = prev;
-			prev = smaValue;
+			_prev2 = _prev;
+			_prev = smaValue;
 		}).Start();
+
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, sma);
-			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}

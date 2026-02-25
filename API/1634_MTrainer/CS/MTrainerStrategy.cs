@@ -1,182 +1,149 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Manual trainer strategy with entry, stop, take profit and optional partial close levels.
+/// Training strategy that enters on EMA crossover and manages position with
+/// stop loss and take profit based on ATR distance.
 /// </summary>
 public class MTrainerStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _entryPrice;
-	private readonly StrategyParam<decimal> _takeProfitPrice;
-	private readonly StrategyParam<decimal> _stopLossPrice;
-	private readonly StrategyParam<decimal> _partialClosePrice;
-	private readonly StrategyParam<decimal> _partialClosePercent;
-	private readonly StrategyParam<TimeSpan> _timeFrame;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _slMultiplier;
+	private readonly StrategyParam<decimal> _tpMultiplier;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _partialClosed;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
+	private decimal _entryPrice;
+	private decimal _stopLoss;
+	private decimal _takeProfit;
 
-	/// <summary>
-	/// Price line where the position is opened.
-	/// </summary>
-	public decimal EntryPrice
-	{
-		get => _entryPrice.Value;
-		set => _entryPrice.Value = value;
-	}
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal SlMultiplier { get => _slMultiplier.Value; set => _slMultiplier.Value = value; }
+	public decimal TpMultiplier { get => _tpMultiplier.Value; set => _tpMultiplier.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Price line for full take profit.
-	/// </summary>
-	public decimal TakeProfitPrice
-	{
-		get => _takeProfitPrice.Value;
-		set => _takeProfitPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Price line for stop loss.
-	/// </summary>
-	public decimal StopLossPrice
-	{
-		get => _stopLossPrice.Value;
-		set => _stopLossPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Price line for partial close.
-	/// </summary>
-	public decimal PartialClosePrice
-	{
-		get => _partialClosePrice.Value;
-		set => _partialClosePrice.Value = value;
-	}
-
-	/// <summary>
-	/// Percentage of position to close on partial close.
-	/// </summary>
-	public decimal PartialClosePercent
-	{
-		get => _partialClosePercent.Value;
-		set => _partialClosePercent.Value = value;
-	}
-
-
-	/// <summary>
-	/// Candle time frame used for price monitoring.
-	/// </summary>
-	public TimeSpan TimeFrame
-	{
-		get => _timeFrame.Value;
-		set => _timeFrame.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes <see cref="MTrainerStrategy"/>.
-	/// </summary>
 	public MTrainerStrategy()
 	{
-		_entryPrice = Param(nameof(EntryPrice), 0m)
-			.SetDisplay("Entry Price", "Price line where position is opened", "Trading");
+		_fastPeriod = Param(nameof(FastPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_takeProfitPrice = Param(nameof(TakeProfitPrice), 0m)
-			.SetDisplay("Take Profit", "Price line for full profit taking", "Trading");
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_stopLossPrice = Param(nameof(StopLossPrice), 0m)
-			.SetDisplay("Stop Loss", "Price line for full stop loss", "Trading");
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "ATR period for SL/TP", "Indicators");
 
-		_partialClosePrice = Param(nameof(PartialClosePrice), 0m)
-			.SetDisplay("Partial Close", "Price line for partial position close", "Trading");
+		_slMultiplier = Param(nameof(SlMultiplier), 2m)
+			.SetDisplay("SL Multiplier", "ATR multiplier for stop loss", "Risk");
 
-		_partialClosePercent = Param(nameof(PartialClosePercent), 0m)
-			.SetDisplay("Partial Close %", "Percentage of position to close", "Trading");
+		_tpMultiplier = Param(nameof(TpMultiplier), 3m)
+			.SetDisplay("TP Multiplier", "ATR multiplier for take profit", "Risk");
 
-
-		_timeFrame = Param(nameof(TimeFrame), TimeSpan.FromMinutes(1))
-			.SetDisplay("Time Frame", "Candle time frame", "Data");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+		_entryPrice = 0;
+		_stopLoss = 0;
+		_takeProfit = 0;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(TimeFrame);
-		subscription.Bind(ProcessCandle).Start();
+		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, slowEma, atr, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atrVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (Position == 0)
+		// Check SL/TP for open positions
+		if (Position > 0)
 		{
-			if (EntryPrice <= 0 || TakeProfitPrice <= 0 || StopLossPrice <= 0)
-				return;
-
-			if (TakeProfitPrice > StopLossPrice)
+			if (candle.LowPrice <= _stopLoss || candle.HighPrice >= _takeProfit)
 			{
-				if (candle.HighPrice >= EntryPrice)
-				{
-					BuyMarket(Volume);
-					_partialClosed = false;
-				}
-			}
-			else
-			{
-				if (candle.LowPrice <= EntryPrice)
-				{
-					SellMarket(Volume);
-					_partialClosed = false;
-				}
+				SellMarket();
+				_entryPrice = 0;
 			}
 		}
-		else if (Position > 0)
+		else if (Position < 0)
 		{
-			if (!_partialClosed && PartialClosePercent > 0 && PartialClosePrice > 0 && candle.HighPrice >= PartialClosePrice)
+			if (candle.HighPrice >= _stopLoss || candle.LowPrice <= _takeProfit)
 			{
-				var part = Position * PartialClosePercent / 100m;
-				SellMarket(part);
-				_partialClosed = true;
+				BuyMarket();
+				_entryPrice = 0;
 			}
-
-			if (candle.LowPrice <= StopLossPrice || candle.HighPrice >= TakeProfitPrice)
-				SellMarket(Position);
 		}
-		else
+
+		if (_hasPrev && atrVal > 0)
 		{
-			if (!_partialClosed && PartialClosePercent > 0 && PartialClosePrice > 0 && candle.LowPrice <= PartialClosePrice)
-			{
-				var part = -Position * PartialClosePercent / 100m;
-				BuyMarket(part);
-				_partialClosed = true;
-			}
+			var crossUp = _prevFast <= _prevSlow && fast > slow;
+			var crossDown = _prevFast >= _prevSlow && fast < slow;
 
-			if (candle.HighPrice >= StopLossPrice || candle.LowPrice <= TakeProfitPrice)
-				BuyMarket(-Position);
+			if (crossUp && Position <= 0)
+			{
+				BuyMarket();
+				_entryPrice = candle.ClosePrice;
+				_stopLoss = _entryPrice - atrVal * SlMultiplier;
+				_takeProfit = _entryPrice + atrVal * TpMultiplier;
+			}
+			else if (crossDown && Position >= 0)
+			{
+				SellMarket();
+				_entryPrice = candle.ClosePrice;
+				_stopLoss = _entryPrice + atrVal * SlMultiplier;
+				_takeProfit = _entryPrice - atrVal * TpMultiplier;
+			}
 		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
+		_hasPrev = true;
 	}
 }

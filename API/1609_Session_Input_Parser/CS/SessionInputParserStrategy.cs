@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,78 +11,81 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Utility strategy that parses session strings into components.
+/// Session-based trading strategy that trades during configured hours using EMA crossover.
 /// </summary>
 public class SessionInputParserStrategy : Strategy
 {
-	private readonly StrategyParam<string> _sessionSimple;
-	private readonly StrategyParam<string> _sessionWithWeekdays;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-	public string SessionSimple
-	{
-		get => _sessionSimple.Value;
-		set => _sessionSimple.Value = value;
-	}
+	private decimal _prevDiff;
 
-	public string SessionWithWeekdays
-	{
-		get => _sessionWithWeekdays.Value;
-		set => _sessionWithWeekdays.Value = value;
-	}
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public SessionInputParserStrategy()
 	{
-		_sessionSimple = Param(nameof(SessionSimple), "0800-1530")
-			.SetDisplay("Simple Session", "Session without weekdays", "General");
+		_fastLength = Param(nameof(FastLength), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA length", "General");
 
-		_sessionWithWeekdays = Param(nameof(SessionWithWeekdays), "0800-1530:1234567")
-			.SetDisplay("Session With Weekdays", "Session including weekdays", "General");
+		_slowLength = Param(nameof(SlowLength), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA length", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return Array.Empty<(Security, DataType)>();
+		base.OnReseted();
+		_prevDiff = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var simple = ParseSession(SessionSimple);
-		var withWeekdays = ParseSession(SessionWithWeekdays);
+		var emaFast = new ExponentialMovingAverage { Length = FastLength };
+		var emaSlow = new ExponentialMovingAverage { Length = SlowLength };
 
-		this.LogInfo($"Simple: start {simple.hStart:D2}:{simple.mStart:D2}, end {simple.hEnd:D2}:{simple.mEnd:D2}, weekdays [{string.Join(',', simple.weekdays)}]");
-		this.LogInfo($"With weekdays: start {withWeekdays.hStart:D2}:{withWeekdays.mStart:D2}, end {withWeekdays.hEnd:D2}:{withWeekdays.mEnd:D2}, weekdays [{string.Join(',', withWeekdays.weekdays)}]");
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(emaFast, emaSlow, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private (int hStart, int mStart, int hEnd, int mEnd, int[] weekdays) ParseSession(string session)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
-		string sessionWithoutWeekdays;
-		string weekdaysPart = null;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		if (session.Contains(":"))
-		{
-			var split = session.Split(':');
-			sessionWithoutWeekdays = split[0];
-			weekdaysPart = split[1];
-		}
-		else
-		{
-			sessionWithoutWeekdays = session;
-		}
+		var diff = fast - slow;
+		var crossUp = _prevDiff <= 0 && diff > 0;
+		var crossDown = _prevDiff >= 0 && diff < 0;
+		_prevDiff = diff;
 
-		var startStr = sessionWithoutWeekdays.Substring(0, 4);
-		var endStr = sessionWithoutWeekdays.Substring(5, 4);
-
-		var hStart = int.Parse(startStr.Substring(0, 2));
-		var mStart = int.Parse(startStr.Substring(2, 2));
-		var hEnd = int.Parse(endStr.Substring(0, 2));
-		var mEnd = int.Parse(endStr.Substring(2, 2));
-
-		int[] weekdays = Array.Empty<int>();
-		if (!weekdaysPart.IsEmpty())
-			weekdays = weekdaysPart.Select(c => int.Parse(c.ToString())).ToArray();
-
-		return (hStart, mStart, hEnd, mEnd, weekdays);
+		if (crossUp && Position <= 0)
+			BuyMarket();
+		else if (crossDown && Position >= 0)
+			SellMarket();
 	}
 }

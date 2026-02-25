@@ -22,7 +22,7 @@ public class MartinGaleScalpingStrategy : Strategy
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<string> _tradingMode;
+	private readonly StrategyParam<string> _tradeDirection;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maxPyramids;
 
@@ -72,10 +72,10 @@ public class MartinGaleScalpingStrategy : Strategy
 	/// <summary>
 	/// Trading mode (Long, Short, BiDir).
 	/// </summary>
-	public string TradingMode
+	public string TradeDirection
 	{
-		get => _tradingMode.Value;
-		set => _tradingMode.Value = value;
+		get => _tradeDirection.Value;
+		set => _tradeDirection.Value = value;
 	}
 
 	/// <summary>
@@ -121,8 +121,8 @@ public class MartinGaleScalpingStrategy : Strategy
 			.SetDisplay("Stop Loss Mult", "Stop loss multiplier", "Risk")
 			;
 
-		_tradingMode = Param(nameof(TradingMode), "Long")
-			.SetDisplay("Trading Mode", "Trade direction", "General");
+		_tradeDirection = Param(nameof(TradeDirection), "Long")
+			.SetDisplay("Trade Direction", "Trade direction", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
@@ -253,6 +253,6 @@ public class MartinGaleScalpingStrategy : Strategy
 		_takePrice = 0m;
 	}
 
-	private bool AllowLong() => TradingMode != "Short";
-	private bool AllowShort() => TradingMode != "Long";
+	private bool AllowLong() => TradeDirection != "Short";
+	private bool AllowShort() => TradeDirection != "Long";
 }

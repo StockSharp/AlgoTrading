@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +12,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// VWAP mean reversion with RSI and volume filter.
+/// VWAP mean reversion with RSI filter.
 /// </summary>
 public class VwapMeanMagnetV2VolFilterStrategy : Strategy
 {
@@ -22,36 +20,33 @@ public class VwapMeanMagnetV2VolFilterStrategy : Strategy
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _rsiOverbought;
 	private readonly StrategyParam<int> _rsiOversold;
-	private readonly StrategyParam<bool> _volFilterEnabled;
-	private readonly StrategyParam<int> _volLookback;
-	private readonly StrategyParam<decimal> _volMultiplier;
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private SMA _volSma;
 
 	public int VwapLength { get => _vwapLength.Value; set => _vwapLength.Value = value; }
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
 	public int RsiOverbought { get => _rsiOverbought.Value; set => _rsiOverbought.Value = value; }
 	public int RsiOversold { get => _rsiOversold.Value; set => _rsiOversold.Value = value; }
-	public bool VolFilterEnabled { get => _volFilterEnabled.Value; set => _volFilterEnabled.Value = value; }
-	public int VolLookback { get => _volLookback.Value; set => _volLookback.Value = value; }
-	public decimal VolMultiplier { get => _volMultiplier.Value; set => _volMultiplier.Value = value; }
-	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public VwapMeanMagnetV2VolFilterStrategy()
 	{
-		_vwapLength = Param(nameof(VwapLength), 60).SetDisplay("VWAP Length", "VWAP Length", "General");
-		_rsiLength = Param(nameof(RsiLength), 14).SetDisplay("RSI Length", "RSI Length", "General");
-		_rsiOverbought = Param(nameof(RsiOverbought), 65).SetDisplay("RSI Overbought", "RSI Overbought", "General");
-		_rsiOversold = Param(nameof(RsiOversold), 25).SetDisplay("RSI Oversold", "RSI Oversold", "General");
-		_volFilterEnabled = Param(nameof(VolFilterEnabled), true).SetDisplay("Volume Filter", "Volume Filter", "General");
-		_volLookback = Param(nameof(VolLookback), 20).SetDisplay("Volume Lookback", "Volume Lookback", "General");
-		_volMultiplier = Param(nameof(VolMultiplier), 3m).SetDisplay("Volume Multiplier", "Volume Multiplier", "General");
-		_stopLossPercent = Param(nameof(StopLossPercent), 0.5m).SetDisplay("Stop Loss %", "Stop Loss %", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
+		_vwapLength = Param(nameof(VwapLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("VWAP Length", "VWAP Length", "General");
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI Length", "General");
+		_rsiOverbought = Param(nameof(RsiOverbought), 65)
+			.SetDisplay("RSI Overbought", "RSI Overbought", "General");
+		_rsiOversold = Param(nameof(RsiOversold), 35)
+			.SetDisplay("RSI Oversold", "RSI Oversold", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
@@ -59,20 +54,18 @@ public class VwapMeanMagnetV2VolFilterStrategy : Strategy
 		base.OnStarted2(time);
 
 		var vwap = new VolumeWeightedMovingAverage { Length = VwapLength };
-		var rsi = new RSI { Length = RsiLength };
-		_volSma = new SMA { Length = VolLookback };
-
-		StartProtection(stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(vwap, rsi, ProcessCandle).Start();
+		subscription
+			.Bind(vwap, rsi, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, vwap);
-			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
 	}
@@ -82,17 +75,13 @@ public class VwapMeanMagnetV2VolFilterStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var volAvg = _volSma.Process(candle.TotalVolume);
-		var volOk = !VolFilterEnabled || candle.TotalVolume > volAvg * VolMultiplier;
+		// Mean reversion: buy below VWAP with oversold RSI, sell above VWAP with overbought RSI
+		if (candle.ClosePrice < vwapValue && rsiValue < RsiOversold && Position <= 0)
+			BuyMarket();
+		else if (candle.ClosePrice > vwapValue && rsiValue > RsiOverbought && Position >= 0)
+			SellMarket();
 
-		if (volOk)
-		{
-			if (candle.ClosePrice < vwapValue && rsiValue < RsiOversold && Position <= 0)
-				BuyMarket();
-			else if (candle.ClosePrice > vwapValue && rsiValue > RsiOverbought && Position >= 0)
-				SellMarket();
-		}
-
+		// Exit on VWAP reversion
 		if (Position > 0 && candle.ClosePrice >= vwapValue)
 			SellMarket();
 		else if (Position < 0 && candle.ClosePrice <= vwapValue)

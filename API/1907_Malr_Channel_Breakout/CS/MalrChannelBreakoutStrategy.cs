@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -19,149 +16,124 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MalrChannelBreakoutStrategy : Strategy
 {
-private readonly StrategyParam<int> _maPeriod;
-private readonly StrategyParam<decimal> _channelReversal;
-private readonly StrategyParam<decimal> _channelBreakout;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _channelReversal;
+	private readonly StrategyParam<decimal> _channelBreakout;
+	private readonly StrategyParam<DataType> _candleType;
 
-private SimpleMovingAverage _sma;
-private WeightedMovingAverage _lwma;
-private StandardDeviation _stdDev;
+	private SimpleMovingAverage _sma;
+	private WeightedMovingAverage _lwma;
+	private StandardDeviation _stdDev;
 
-private decimal? _prevUpper;
-private decimal? _prevLower;
-private decimal? _prevClose;
+	private decimal? _prevUpper;
+	private decimal? _prevLower;
+	private decimal? _prevClose;
 
-/// <summary>
-/// Moving average period.
-/// </summary>
-public int MaPeriod
-{
-get => _maPeriod.Value;
-set => _maPeriod.Value = value;
-}
+	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public decimal ChannelReversal { get => _channelReversal.Value; set => _channelReversal.Value = value; }
+	public decimal ChannelBreakout { get => _channelBreakout.Value; set => _channelBreakout.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// Channel reversal width multiplier.
-/// </summary>
-public decimal ChannelReversal
-{
-get => _channelReversal.Value;
-set => _channelReversal.Value = value;
-}
+	public MalrChannelBreakoutStrategy()
+	{
+		_maPeriod = Param(nameof(MaPeriod), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("MA", "Moving average period", "General")
+			.SetOptimize(50, 200, 10);
 
-/// <summary>
-/// Additional breakout width multiplier.
-/// </summary>
-public decimal ChannelBreakout
-{
-get => _channelBreakout.Value;
-set => _channelBreakout.Value = value;
-}
+		_channelReversal = Param(nameof(ChannelReversal), 1.1m)
+			.SetGreaterThanZero()
+			.SetDisplay("Reversal", "Channel reversal width", "General")
+			.SetOptimize(0.5m, 2m, 0.1m);
 
-/// <summary>
-/// Candle type for indicator calculations.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+		_channelBreakout = Param(nameof(ChannelBreakout), 1.1m)
+			.SetGreaterThanZero()
+			.SetDisplay("Breakout", "Channel breakout width", "General")
+			.SetOptimize(0.5m, 2m, 0.1m);
 
-/// <summary>
-/// Initialize strategy parameters.
-/// </summary>
-public MalrChannelBreakoutStrategy()
-{
-_maPeriod = Param(nameof(MaPeriod), 120)
-.SetGreaterThanZero()
-.SetDisplay("MA", "Moving average period", "General")
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle", "Candle type", "General");
+	}
 
-.SetOptimize(50, 200, 10);
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-_channelReversal = Param(nameof(ChannelReversal), 1.1m)
-.SetGreaterThanZero()
-.SetDisplay("Reversal", "Channel reversal width", "General")
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-.SetOptimize(0.5m, 2m, 0.1m);
+		_sma = new SimpleMovingAverage { Length = MaPeriod };
+		_lwma = new WeightedMovingAverage { Length = MaPeriod };
+		_stdDev = new StandardDeviation { Length = MaPeriod };
 
-_channelBreakout = Param(nameof(ChannelBreakout), 1.1m)
-.SetGreaterThanZero()
-.SetDisplay("Breakout", "Channel breakout width", "General")
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 
-.SetOptimize(0.5m, 2m, 0.1m);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _sma);
+			DrawIndicator(area, _lwma);
+			DrawOwnTrades(area);
+		}
+	}
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-.SetDisplay("Candle", "Candle type", "General");
-}
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+		var smaResult = _sma.Process(candle.ClosePrice, candle.OpenTime, true);
+		var lwmaResult = _lwma.Process(candle.ClosePrice, candle.OpenTime, true);
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+		if (!smaResult.IsFormed || !lwmaResult.IsFormed)
+		{
+			_prevClose = candle.ClosePrice;
+			return;
+		}
 
-_sma = new SMA { Length = MaPeriod };
-_lwma = new WeightedMovingAverage { Length = MaPeriod };
-_stdDev = new StandardDeviation { Length = MaPeriod };
+		var smaVal = smaResult.ToDecimal();
+		var lwmaVal = lwmaResult.ToDecimal();
+		var ff = 3m * lwmaVal - 2m * smaVal;
 
-var subscription = SubscribeCandles(CandleType);
-subscription.Bind(ProcessCandle).Start();
+		var deviation = candle.ClosePrice - ff;
+		var stdResult = _stdDev.Process(deviation, candle.OpenTime, true);
 
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, _sma);
-DrawIndicator(area, _lwma);
-DrawOwnTrades(area);
-}
-}
+		if (!stdResult.IsFormed)
+		{
+			_prevClose = candle.ClosePrice;
+			_prevUpper = ff;
+			_prevLower = ff;
+			return;
+		}
 
-private void ProcessCandle(ICandleMessage candle)
-{
-if (candle.State != CandleStates.Finished)
-return;
+		var std = stdResult.ToDecimal();
+		var upper = ff + std * (ChannelReversal + ChannelBreakout);
+		var lower = ff - std * (ChannelReversal + ChannelBreakout);
 
-var smaValue = _sma.Process(candle.ClosePrice);
-var lwmaValue = _lwma.Process(candle.ClosePrice);
+		if (_prevUpper.HasValue && _prevLower.HasValue && _prevClose.HasValue)
+		{
+			// Price breaks above upper channel
+			if (_prevClose.Value <= _prevUpper.Value && candle.ClosePrice > upper && Position <= 0)
+			{
+				if (Position < 0) BuyMarket();
+				BuyMarket();
+			}
+			// Price breaks below lower channel
+			else if (_prevClose.Value >= _prevLower.Value && candle.ClosePrice < lower && Position >= 0)
+			{
+				if (Position > 0) SellMarket();
+				SellMarket();
+			}
+		}
 
-if (!smaValue.IsFinal || !lwmaValue.IsFinal)
-{
-_prevClose = candle.ClosePrice;
-return;
-}
-
-var ff = 3m * lwmaValue.ToDecimal() - 2m * smaValue.ToDecimal();
-var stdValue = _stdDev.Process(candle.ClosePrice - ff);
-
-if (!stdValue.IsFinal)
-{
-_prevClose = candle.ClosePrice;
-_prevUpper = ff;
-_prevLower = ff;
-return;
-}
-
-var std = stdValue.ToDecimal();
-var upper = ff + std * (ChannelReversal + ChannelBreakout);
-var lower = ff - std * (ChannelReversal + ChannelBreakout);
-
-if (_prevUpper.HasValue && _prevLower.HasValue && _prevClose.HasValue)
-{
-if (_prevUpper > _prevClose && upper <= candle.ClosePrice && Position <= 0)
-BuyMarket();
-else if (_prevLower < _prevClose && lower >= candle.ClosePrice && Position >= 0)
-SellMarket();
-}
-
-_prevUpper = upper;
-_prevLower = lower;
-_prevClose = candle.ClosePrice;
-}
+		_prevUpper = upper;
+		_prevLower = lower;
+		_prevClose = candle.ClosePrice;
+	}
 }

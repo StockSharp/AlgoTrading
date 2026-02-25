@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,78 +10,31 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
+/// <summary>
+/// AMMA Trend strategy using Modified Moving Average direction changes.
+/// Buys when MMA turns up, sells when MMA turns down.
+/// </summary>
 public class AmmaTrendStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<bool> _allowLongEntry;
-	private readonly StrategyParam<bool> _allowShortEntry;
-	private readonly StrategyParam<bool> _allowLongExit;
-	private readonly StrategyParam<bool> _allowShortExit;
 
 	private decimal? _mma0;
 	private decimal? _mma1;
 	private decimal? _mma2;
 	private decimal? _mma3;
 
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	public bool AllowLongEntry
-	{
-		get => _allowLongEntry.Value;
-		set => _allowLongEntry.Value = value;
-	}
-
-	public bool AllowShortEntry
-	{
-		get => _allowShortEntry.Value;
-		set => _allowShortEntry.Value = value;
-	}
-
-	public bool AllowLongExit
-	{
-		get => _allowLongExit.Value;
-		set => _allowLongExit.Value = value;
-	}
-
-	public bool AllowShortExit
-	{
-		get => _allowShortExit.Value;
-		set => _allowShortExit.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
 
 	public AmmaTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use for analysis", "General");
 
 		_maPeriod = Param(nameof(MaPeriod), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("AMMA Period", "Period of the modified moving average", "Indicator");
-
-		_allowLongEntry = Param(nameof(AllowLongEntry), true)
-			.SetDisplay("Allow Long Entry", "Enable opening long positions", "Trading");
-
-		_allowShortEntry = Param(nameof(AllowShortEntry), true)
-			.SetDisplay("Allow Short Entry", "Enable opening short positions", "Trading");
-
-		_allowLongExit = Param(nameof(AllowLongExit), true)
-			.SetDisplay("Allow Long Exit", "Enable closing long positions", "Trading");
-
-		_allowShortExit = Param(nameof(AllowShortExit), true)
-			.SetDisplay("Allow Short Exit", "Enable closing short positions", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -103,12 +55,18 @@ public class AmmaTrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var mma = new ModifiedMovingAverage { Length = MaPeriod };
+		var mma = new SmoothedMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(mma, ProcessCandle).Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, mma);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal mmaValue)
@@ -124,26 +82,17 @@ public class AmmaTrendStrategy : Strategy
 		if (_mma1 is null || _mma2 is null || _mma3 is null)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Upward movement detected
-		if (_mma2 < _mma3 && _mma1 > _mma2)
+		// Upward movement detected: MMA turned from falling to rising
+		if (_mma2 < _mma3 && _mma1 > _mma2 && Position <= 0)
 		{
-			if (AllowLongEntry && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-
-			if (AllowShortExit && Position < 0)
-				BuyMarket(Math.Abs(Position));
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		// Downward movement detected
-		else if (_mma2 > _mma3 && _mma1 < _mma2)
+		// Downward movement detected: MMA turned from rising to falling
+		else if (_mma2 > _mma3 && _mma1 < _mma2 && Position >= 0)
 		{
-			if (AllowShortEntry && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-
-			if (AllowLongExit && Position > 0)
-				SellMarket(Math.Abs(Position));
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 	}
 }

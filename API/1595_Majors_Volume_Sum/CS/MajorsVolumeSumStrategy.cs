@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,49 +12,43 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Majors Volume Sum Strategy - trades based on the signed volume sum relative to its historical maximum.
+/// Majors Volume Sum Strategy - trades based on volume momentum using EMA smoothing.
 /// </summary>
 public class MajorsVolumeSumStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _threshold;
+	private readonly StrategyParam<int> _emaLength;
 
-	private SimpleMovingAverage _sma10;
-	private SimpleMovingAverage _sma100;
-	private SimpleMovingAverage _sma200;
+	private decimal _prevClose;
+	private decimal _volumeEma;
+	private decimal _maxAbs;
+	private bool _isReady;
 
-	private decimal _max;
-	private decimal? _prevClose;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
 
-	/// <summary>
-	/// Type of candles for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Fraction of maximum absolute sum required to trigger trades.
-	/// </summary>
-	public decimal Threshold
-	{
-		get => _threshold.Value;
-		set => _threshold.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public MajorsVolumeSumStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for processing", "General");
 
-		_threshold = Param(nameof(Threshold), 0.75m)
-			.SetDisplay("Threshold", "Fraction of max volume sum", "Signals")
-			;
+		_emaLength = Param(nameof(EmaLength), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "Smoothing period for volume", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevClose = 0;
+		_volumeEma = 0;
+		_maxAbs = 0;
+		_isReady = false;
 	}
 
 	/// <inheritdoc />
@@ -64,41 +56,51 @@ public class MajorsVolumeSumStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma10 = new SMA { Length = 10 };
-		_sma100 = new SMA { Length = 100 };
-		_sma200 = new SMA { Length = 200 };
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
-		SubscribeCandles(CandleType)
-			.Bind(ProcessCandle)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ema, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevClose is null)
+		if (!_isReady)
 		{
 			_prevClose = candle.ClosePrice;
+			_isReady = true;
 			return;
 		}
 
-		var signedVol = candle.ClosePrice > _prevClose ? candle.TotalVolume : -candle.TotalVolume;
+		// Volume direction based on price change
+		var direction = candle.ClosePrice > _prevClose ? 1m : -1m;
+		var signedVol = direction * candle.TotalVolume;
 
-		var sum10 = _sma10.Process(signedVol).ToDecimal() * 10m;
-		_sma100.Process(signedVol);
-		_sma200.Process(signedVol);
+		// Simple EMA of signed volume
+		var k = 2m / (EmaLength + 1m);
+		_volumeEma = _volumeEma * (1m - k) + signedVol * k;
 
-		var abs = Math.Abs(sum10);
-		if (abs > _max)
-			_max = abs;
+		var absEma = Math.Abs(_volumeEma);
+		if (absEma > _maxAbs)
+			_maxAbs = absEma;
 
-		var trigger = _max * Threshold;
+		// Trade when volume momentum is strong relative to its history
+		var threshold = _maxAbs * 0.5m;
 
-		if (sum10 > trigger && Position <= 0)
+		if (_volumeEma > threshold && candle.ClosePrice > emaVal && Position <= 0)
 			BuyMarket();
-		else if (sum10 < -trigger && Position >= 0)
+		else if (_volumeEma < -threshold && candle.ClosePrice < emaVal && Position >= 0)
 			SellMarket();
 
 		_prevClose = candle.ClosePrice;

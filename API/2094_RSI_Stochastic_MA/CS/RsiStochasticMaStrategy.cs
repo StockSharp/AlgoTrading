@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,9 +12,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Combined RSI, Stochastic, and Moving Average strategy.
-/// The moving average defines the trend direction.
-/// Entries occur on RSI and Stochastic oversold/overbought signals in the trend direction.
-/// Exits trigger when oscillators leave extreme zones.
+/// The MA defines the trend. Entries on RSI+Stochastic oversold/overbought in trend direction.
 /// </summary>
 public class RsiStochasticMaStrategy : Strategy
 {
@@ -25,210 +20,121 @@ public class RsiStochasticMaStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiUpperLevel;
 	private readonly StrategyParam<decimal> _rsiLowerLevel;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _stochKPeriod;
-	private readonly StrategyParam<int> _stochDPeriod;
 	private readonly StrategyParam<decimal> _stochUpperLevel;
 	private readonly StrategyParam<decimal> _stochLowerLevel;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private RelativeStrengthIndex _rsi;
-	private SimpleMovingAverage _ma;
+
 	private StochasticOscillator _stochastic;
-	
-	/// <summary>
-	/// RSI calculation period.
-	/// </summary>
-	public int RsiPeriod
-	{
-	get => _rsiPeriod.Value;
-	set => _rsiPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// RSI level considered overbought.
-	/// </summary>
-	public decimal RsiUpperLevel
-	{
-	get => _rsiUpperLevel.Value;
-	set => _rsiUpperLevel.Value = value;
-	}
-	
-	/// <summary>
-	/// RSI level considered oversold.
-	/// </summary>
-	public decimal RsiLowerLevel
-	{
-	get => _rsiLowerLevel.Value;
-	set => _rsiLowerLevel.Value = value;
-	}
-	
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int MaPeriod
-	{
-	get => _maPeriod.Value;
-	set => _maPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// Stochastic %K period.
-	/// </summary>
-	public int StochKPeriod
-	{
-	get => _stochKPeriod.Value;
-	set => _stochKPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// Stochastic %D smoothing period.
-	/// </summary>
-	public int StochDPeriod
-	{
-	get => _stochDPeriod.Value;
-	set => _stochDPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// Stochastic overbought level.
-	/// </summary>
-	public decimal StochUpperLevel
-	{
-	get => _stochUpperLevel.Value;
-	set => _stochUpperLevel.Value = value;
-	}
-	
-	/// <summary>
-	/// Stochastic oversold level.
-	/// </summary>
-	public decimal StochLowerLevel
-	{
-	get => _stochLowerLevel.Value;
-	set => _stochLowerLevel.Value = value;
-	}
-	
-	
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-	get => _candleType.Value;
-	set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public decimal RsiUpperLevel { get => _rsiUpperLevel.Value; set => _rsiUpperLevel.Value = value; }
+	public decimal RsiLowerLevel { get => _rsiLowerLevel.Value; set => _rsiLowerLevel.Value = value; }
+	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public decimal StochUpperLevel { get => _stochUpperLevel.Value; set => _stochUpperLevel.Value = value; }
+	public decimal StochLowerLevel { get => _stochLowerLevel.Value; set => _stochLowerLevel.Value = value; }
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public RsiStochasticMaStrategy()
 	{
-	_rsiPeriod = Param(nameof(RsiPeriod), 3)
-	.SetDisplay("RSI Period", "RSI calculation period", "RSI")
-	
-	.SetOptimize(2, 14, 1);
-	
-	_rsiUpperLevel = Param(nameof(RsiUpperLevel), 80m)
-	.SetDisplay("RSI Upper Level", "RSI overbought level", "RSI")
-	
-	.SetOptimize(60m, 90m, 5m);
-	
-	_rsiLowerLevel = Param(nameof(RsiLowerLevel), 20m)
-	.SetDisplay("RSI Lower Level", "RSI oversold level", "RSI")
-	
-	.SetOptimize(10m, 40m, 5m);
-	
-	_maPeriod = Param(nameof(MaPeriod), 150)
-	.SetDisplay("MA Period", "Moving average period", "Trend")
-	
-	.SetOptimize(50, 200, 10);
-	
-	_stochKPeriod = Param(nameof(StochKPeriod), 6)
-	.SetDisplay("Stochastic K", "%K period", "Stochastic")
-	
-	.SetOptimize(5, 20, 1);
-	
-	_stochD = { Length = Param }(nameof(StochDPeriod), 3)
-	.SetDisplay("Stochastic D", "%D smoothing period", "Stochastic")
-	
-	.SetOptimize(2, 10, 1);
-	
-	_stochUpperLevel = Param(nameof(StochUpperLevel), 70m)
-	.SetDisplay("Stochastic Upper", "Stochastic overbought level", "Stochastic")
-	
-	.SetOptimize(60m, 90m, 5m);
-	
-	_stochLowerLevel = Param(nameof(StochLowerLevel), 30m)
-	.SetDisplay("Stochastic Lower", "Stochastic oversold level", "Stochastic")
-	
-	.SetOptimize(10m, 40m, 5m);
-	
-	
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-	.SetDisplay("Candle Type", "Candle type", "General");
+		_rsiPeriod = Param(nameof(RsiPeriod), 3)
+			.SetDisplay("RSI Period", "RSI calculation period", "RSI");
+
+		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 80m)
+			.SetDisplay("RSI Upper Level", "RSI overbought level", "RSI");
+
+		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 20m)
+			.SetDisplay("RSI Lower Level", "RSI oversold level", "RSI");
+
+		_maPeriod = Param(nameof(MaPeriod), 50)
+			.SetDisplay("MA Period", "Moving average period", "Trend");
+
+		_stochUpperLevel = Param(nameof(StochUpperLevel), 70m)
+			.SetDisplay("Stochastic Upper", "Stochastic overbought level", "Stochastic");
+
+		_stochLowerLevel = Param(nameof(StochLowerLevel), 30m)
+			.SetDisplay("Stochastic Lower", "Stochastic oversold level", "Stochastic");
+
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted2(time);
-	
-	_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-	_ma = new SMA { Length = MaPeriod };
-	_stochastic = new StochasticOscillator
-	{
-	K = { Length = StochKPeriod },
-	D = { Length = StochDPeriod }
-	};
-	
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.BindEx(_ma, _rsi, _stochastic, ProcessCandle)
-	.Start();
-	
-	StartProtection(null, null);
+		base.OnStarted2(time);
+
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var ma = new SimpleMovingAverage { Length = MaPeriod };
+		_stochastic = new StochasticOscillator();
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ma, rsi, (candle, maValue, rsiValue) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				var stochResult = _stochastic.Process(candle);
+				if (!stochResult.IsFormed)
+					return;
+
+				var stochVal = (StochasticOscillatorValue)stochResult;
+				if (stochVal.K is not decimal k || stochVal.D is not decimal d)
+					return;
+
+				var price = candle.ClosePrice;
+				var isUpTrend = price > maValue;
+				var isDownTrend = price < maValue;
+
+				if (isUpTrend && rsiValue < RsiLowerLevel && k < StochLowerLevel && Position <= 0)
+				{
+					if (Position < 0) BuyMarket();
+					BuyMarket();
+				}
+				else if (isDownTrend && rsiValue > RsiUpperLevel && k > StochUpperLevel && Position >= 0)
+				{
+					if (Position > 0) SellMarket();
+					SellMarket();
+				}
+				else if (Position > 0 && (k > StochUpperLevel || rsiValue > RsiUpperLevel))
+				{
+					SellMarket();
+				}
+				else if (Position < 0 && (k < StochLowerLevel || rsiValue < RsiLowerLevel))
+				{
+					BuyMarket();
+				}
+			})
+			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			useMarketOrders: true);
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ma);
+			DrawIndicator(area, rsi);
+			DrawOwnTrades(area);
+		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue rsiValue, IIndicatorValue stochValue)
-	{
-	if (candle.State != CandleStates.Finished)
-	return;
-	
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
-	
-	var ma = maValue.ToDecimal();
-	var rsi = rsiValue.ToDecimal();
-	var stochTyped = (StochasticOscillatorValue)stochValue;
-	
-	if (stochTyped.K is not decimal k || stochTyped.D is not decimal d)
-	return;
-	
-	var price = candle.ClosePrice;
-	
-	var isUpTrend = price > ma;
-	var isDownTrend = price < ma;
-	
-	if (isUpTrend && rsi < RsiLowerLevel && k < StochLowerLevel && d < StochLowerLevel && Position <= 0)
-	{
-	BuyMarket(Volume + Math.Abs(Position));
-	}
-	else if (isDownTrend && rsi > RsiUpperLevel && k > StochUpperLevel && d > StochUpperLevel && Position >= 0)
-	{
-	SellMarket(Volume + Math.Abs(Position));
-	}
-	else if (Position > 0 && (k > StochUpperLevel || rsi > RsiUpperLevel))
-	{
-	SellMarket(Math.Abs(Position));
-	}
-	else if (Position < 0 && (k < StochLowerLevel || rsi < RsiLowerLevel))
-	{
-	BuyMarket(Math.Abs(Position));
-	}
-	}
-	}
+}

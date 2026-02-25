@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -21,44 +18,36 @@ public class LinearRegressionSlopeV1Strategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<int> _triggerShift;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfitPct;
 
 	private decimal[] _slopeHistory = Array.Empty<decimal>();
 	private int _filled;
 
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
-	/// <summary>
-	/// Number of bars for linear regression slope.
-	/// </summary>
 	public int Length { get => _length.Value; set => _length.Value = value; }
-
-	/// <summary>
-	/// Bars shift for trigger line.
-	/// </summary>
 	public int TriggerShift { get => _triggerShift.Value; set => _triggerShift.Value = value; }
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="LinearRegressionSlopeV1Strategy"/> class.
-	/// </summary>
 	public LinearRegressionSlopeV1Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_length = Param(nameof(Length), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Length", "Bars for regression", "Parameters")
-			
-			.SetOptimize(5, 50, 5);
+			.SetDisplay("Length", "Bars for regression", "Parameters");
 
 		_triggerShift = Param(nameof(TriggerShift), 1)
 			.SetGreaterThanZero()
-			.SetDisplay("Trigger Shift", "Lag for trigger line", "Parameters")
-			
-			.SetOptimize(1, 3, 1);
+			.SetDisplay("Trigger Shift", "Lag for trigger line", "Parameters");
+
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -83,12 +72,17 @@ public class LinearRegressionSlopeV1Strategy : Strategy
 		_slopeHistory = new decimal[TriggerShift + 3];
 		_filled = 0;
 
-		var slope = new LinearRegSlope { Length = Length };
+		var slope = new LinearReg { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(slope, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -110,12 +104,12 @@ public class LinearRegressionSlopeV1Strategy : Strategy
 			_filled++;
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal slope)
+	private void ProcessCandle(ICandleMessage candle, decimal slopeVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		Shift(slope);
+		Shift(slopeVal);
 
 		if (_filled < _slopeHistory.Length)
 			return;

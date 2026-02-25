@@ -1,149 +1,55 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// ATR-based renko trend reversal strategy with optional shorts and time filters.
+/// ATR-based trend reversal strategy simulating renko brick logic on regular candles.
 /// </summary>
 public class RenkoTrendReversalV2Strategy : Strategy
 {
-	private readonly StrategyParam<int> _renkoAtrLength;
-	private readonly StrategyParam<decimal> _stopLossPct;
-	private readonly StrategyParam<decimal> _takeProfitPct;
-	private readonly StrategyParam<DateTimeOffset> _startDate;
-	private readonly StrategyParam<DateTimeOffset> _endDate;
-	private readonly StrategyParam<bool> _enableShorts;
-	private readonly StrategyParam<bool> _enableSignals;
+	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<decimal> _brickMultiplier;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private DataType _renkoType;
-	private decimal _prevOpen;
-	private decimal _prevClose;
-	private bool _hasPrev;
+	private decimal _brickHigh;
+	private decimal _brickLow;
+	private bool _isUpTrend;
+	private bool _hasBrick;
 
-	private decimal? _stopLoss;
-	private decimal? _takeProfit;
+	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
+	public decimal BrickMultiplier { get => _brickMultiplier.Value; set => _brickMultiplier.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ATR period used to calculate renko brick size.
-	/// </summary>
-	public int RenkoAtrLength
-	{
-		get => _renkoAtrLength.Value;
-		set => _renkoAtrLength.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPct
-	{
-		get => _stopLossPct.Value;
-		set => _stopLossPct.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit percentage.
-	/// </summary>
-	public decimal TakeProfitPct
-	{
-		get => _takeProfitPct.Value;
-		set => _takeProfitPct.Value = value;
-	}
-
-	/// <summary>
-	/// Start date of trading.
-	/// </summary>
-	public DateTimeOffset StartDate
-	{
-		get => _startDate.Value;
-		set => _startDate.Value = value;
-	}
-
-	/// <summary>
-	/// End date of trading.
-	/// </summary>
-	public DateTimeOffset EndDate
-	{
-		get => _endDate.Value;
-		set => _endDate.Value = value;
-	}
-
-	/// <summary>
-	/// Enable short trades.
-	/// </summary>
-	public bool EnableShorts
-	{
-		get => _enableShorts.Value;
-		set => _enableShorts.Value = value;
-	}
-
-	/// <summary>
-	/// Enable trade signals.
-	/// </summary>
-	public bool EnableSignals
-	{
-		get => _enableSignals.Value;
-		set => _enableSignals.Value = value;
-	}
-
-
-	/// <summary>
-	/// Initializes <see cref="RenkoTrendReversalV2Strategy"/>.
-	/// </summary>
 	public RenkoTrendReversalV2Strategy()
 	{
-		_renkoAtrLength = Param(nameof(RenkoAtrLength), 10)
+		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR period for renko brick size", "Renko")
-			;
+			.SetDisplay("ATR Length", "ATR period for brick size", "General");
 
-		_stopLossPct = Param(nameof(StopLossPct), 3m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Trading")
-			;
+		_brickMultiplier = Param(nameof(BrickMultiplier), 1.0m)
+			.SetDisplay("Brick Multiplier", "Multiplier for ATR brick size", "General");
 
-		_takeProfitPct = Param(nameof(TakeProfitPct), 20m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit %", "Take profit percentage", "Trading")
-			;
-
-		_startDate = Param(nameof(StartDate), new DateTimeOffset(new DateTime(2023, 7, 1)))
-			.SetDisplay("Start Date", "Start date", "General");
-
-		_endDate = Param(nameof(EndDate), new DateTimeOffset(new DateTime(2025, 12, 31, 23, 59, 0)))
-			.SetDisplay("End Date", "End date", "General");
-
-		_enableShorts = Param(nameof(EnableShorts), true)
-			.SetDisplay("Enable Shorts", "Allow short trades", "Trading");
-
-		_enableSignals = Param(nameof(EnableSignals), true)
-			.SetDisplay("Enable Signals", "Enable trade signals", "Trading");
-
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		_renkoType ??= DataType.Create(typeof(RenkoCandleMessage), new RenkoCandleArg
-		{
-			BuildFrom = RenkoBuildFrom.Atr,
-			Length = RenkoAtrLength
-		});
+		=> [(Security, CandleType)];
 
-		return [(Security, _renkoType)];
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_hasBrick = false;
 	}
 
 	/// <inheritdoc />
@@ -151,65 +57,67 @@ public class RenkoTrendReversalV2Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(_renkoType);
-		subscription.Bind(ProcessCandle).Start();
+		var atr = new AverageTrueRange { Length = AtrLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(atr, ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (EnableSignals)
-		{
-			var timeOk = candle.OpenTime >= StartDate && candle.OpenTime <= EndDate;
+		if (atrValue <= 0)
+			return;
 
-			if (timeOk)
+		var brickSize = atrValue * BrickMultiplier;
+
+		if (!_hasBrick)
+		{
+			_brickHigh = candle.ClosePrice + brickSize;
+			_brickLow = candle.ClosePrice - brickSize;
+			_isUpTrend = true;
+			_hasBrick = true;
+			return;
+		}
+
+		// Check for trend reversal via brick break
+		if (candle.ClosePrice >= _brickHigh)
+		{
+			// Bullish brick formed
+			if (!_isUpTrend)
 			{
-				var buySignal = _hasPrev && _prevOpen > _prevClose && candle.OpenPrice < candle.ClosePrice;
-				var sellSignal = _hasPrev && _prevOpen < _prevClose && candle.OpenPrice > candle.ClosePrice;
-
-				if (buySignal && Position <= 0)
-				{
-					var volume = Volume + (Position < 0 ? -Position : 0m);
-					BuyMarket(volume);
-
-					_stopLoss = candle.OpenPrice * (1 - StopLossPct / 100m);
-					_takeProfit = candle.OpenPrice * (1 + TakeProfitPct / 100m);
-				}
-				else if (sellSignal && EnableShorts && Position >= 0)
-				{
-					var volume = Volume + (Position > 0 ? Position : 0m);
-					SellMarket(volume);
-
-					_stopLoss = candle.OpenPrice * (1 + StopLossPct / 100m);
-					_takeProfit = candle.OpenPrice * (1 - TakeProfitPct / 100m);
-				}
+				// Reversal from down to up
+				if (Position <= 0)
+					BuyMarket();
 			}
-		}
 
-		if (Position > 0 && _stopLoss != null && _takeProfit != null)
-		{
-			if (candle.LowPrice <= _stopLoss || candle.HighPrice >= _takeProfit)
-				SellMarket(Position);
+			_isUpTrend = true;
+			_brickHigh = candle.ClosePrice + brickSize;
+			_brickLow = candle.ClosePrice - brickSize;
 		}
-		else if (Position < 0 && _stopLoss != null && _takeProfit != null)
+		else if (candle.ClosePrice <= _brickLow)
 		{
-			if (candle.HighPrice >= _stopLoss || candle.LowPrice <= _takeProfit)
-				BuyMarket(-Position);
-		}
+			// Bearish brick formed
+			if (_isUpTrend)
+			{
+				// Reversal from up to down
+				if (Position >= 0)
+					SellMarket();
+			}
 
-		_prevOpen = candle.OpenPrice;
-		_prevClose = candle.ClosePrice;
-		_hasPrev = true;
+			_isUpTrend = false;
+			_brickHigh = candle.ClosePrice + brickSize;
+			_brickLow = candle.ClosePrice - brickSize;
+		}
 	}
 }

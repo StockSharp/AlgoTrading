@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,152 +12,118 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// LSMA Angle based strategy.
-/// Opens long when the LSMA angle rises above a threshold and short when it falls below a negative threshold.
-/// Positions are closed when the angle returns to the neutral zone.
+/// Opens long when the LSMA slope rises above a threshold and short when it falls below.
 /// </summary>
 public class LsmaAngleStrategy : Strategy
 {
 	private readonly StrategyParam<int> _lsmaPeriod;
-	private readonly StrategyParam<decimal> _angleThreshold;
-	private readonly StrategyParam<int> _startShift;
-	private readonly StrategyParam<int> _endShift;
+	private readonly StrategyParam<decimal> _slopeThreshold;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevAngle;
-	private decimal _multiplier;
-	private Shift _shift;
+	private decimal? _prevLsma;
+	private decimal _prevSlope;
 
-	public int LsmaPeriod
-	{
-	get => _lsmaPeriod.Value;
-	set => _lsmaPeriod.Value = value;
-	}
-
-	public decimal AngleThreshold
-	{
-	get => _angleThreshold.Value;
-	set => _angleThreshold.Value = value;
-	}
-
-	public int StartShift
-	{
-	get => _startShift.Value;
-	set => _startShift.Value = value;
-	}
-
-	public int EndShift
-	{
-	get => _endShift.Value;
-	set => _endShift.Value = value;
-	}
-
-	public DataType CandleType
-	{
-	get => _candleType.Value;
-	set => _candleType.Value = value;
-	}
+	public int LsmaPeriod { get => _lsmaPeriod.Value; set => _lsmaPeriod.Value = value; }
+	public decimal SlopeThreshold { get => _slopeThreshold.Value; set => _slopeThreshold.Value = value; }
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public LsmaAngleStrategy()
 	{
-	_lsmaPeriod = Param(nameof(LsmaPeriod), 25)
-		.SetGreaterThanZero()
-		.SetDisplay("LSMA Period", "LSMA calculation length", "Indicator")
-		
-		.SetOptimize(10, 60, 5);
+		_lsmaPeriod = Param(nameof(LsmaPeriod), 25)
+			.SetGreaterThanZero()
+			.SetDisplay("LSMA Period", "LSMA calculation length", "Indicator");
 
-	_angleThreshold = Param(nameof(AngleThreshold), 15m)
-		.SetGreaterThanZero()
-		.SetDisplay("Angle Threshold", "Threshold for LSMA angle", "Indicator")
-		
-		.SetOptimize(5m, 30m, 5m);
+		_slopeThreshold = Param(nameof(SlopeThreshold), 0.05m)
+			.SetDisplay("Slope Threshold", "Percentage slope threshold", "Indicator");
 
-	_startShift = Param(nameof(StartShift), 4)
-		.SetDisplay("Start Shift", "Bar shift for angle start", "Indicator")
-		
-		.SetOptimize(2, 8, 1);
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-	_endShift = Param(nameof(EndShift), 0)
-		.SetDisplay("End Shift", "Bar shift for angle end", "Indicator")
-		
-		.SetOptimize(0, 4, 1);
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
 
 	protected override void OnReseted()
 	{
-	base.OnReseted();
-	_prevAngle = 0m;
-	_shift = null;
+		base.OnReseted();
+		_prevLsma = null;
+		_prevSlope = 0m;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted2(time);
+		base.OnStarted2(time);
 
-	if (StartShift <= EndShift)
-		throw new InvalidOperationException("StartShift must be greater than EndShift.");
+		var lsma = new LinearReg { Length = LsmaPeriod };
 
-	var shiftLength = StartShift - EndShift;
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(lsma, (candle, lsmaValue) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
 
-	var lsma = new LinearRegression { Length = LsmaPeriod };
-	_shift = new Shift { Length = shiftLength };
+				if (_prevLsma is null)
+				{
+					_prevLsma = lsmaValue;
+					return;
+				}
 
-	_multiplier = Security.Code?.Contains("JPY") == true ? 1000m : 100000m;
+				// Calculate slope as percentage change
+				var slope = _prevLsma.Value != 0 ? (lsmaValue - _prevLsma.Value) / _prevLsma.Value * 100m : 0m;
 
-	var subscription = SubscribeCandles(CandleType);
+				var wasUp = _prevSlope > SlopeThreshold;
+				var wasDown = _prevSlope < -SlopeThreshold;
+				var isUp = slope > SlopeThreshold;
+				var isDown = slope < -SlopeThreshold;
 
-	subscription
-		.Bind(lsma, (candle, lsmaValue) =>
+				if (!wasUp && isUp && Position <= 0)
+				{
+					if (Position < 0) BuyMarket();
+					BuyMarket();
+				}
+				else if (!wasDown && isDown && Position >= 0)
+				{
+					if (Position > 0) SellMarket();
+					SellMarket();
+				}
+				else if (wasUp && !isUp && Position > 0)
+				{
+					SellMarket();
+				}
+				else if (wasDown && !isDown && Position < 0)
+				{
+					BuyMarket();
+				}
+
+				_prevSlope = slope;
+				_prevLsma = lsmaValue;
+			})
+			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			useMarketOrders: true);
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var shifted = _shift.Process(lsmaValue);
-
-		if (!shifted.IsFinal || shifted is not DecimalIndicatorValue dv)
-			return;
-
-		var pastLsma = dv.Value;
-		var angle = ((lsmaValue - pastLsma) * _multiplier) / shiftLength;
-
-		var wasUp = _prevAngle > AngleThreshold;
-		var wasDown = _prevAngle < -AngleThreshold;
-
-		if (!wasUp && angle > AngleThreshold && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
+			DrawCandles(area, subscription);
+			DrawIndicator(area, lsma);
+			DrawOwnTrades(area);
 		}
-		else if (wasUp && angle <= AngleThreshold && Position > 0)
-		{
-			SellMarket(Position);
-		}
-
-		if (!wasDown && angle < -AngleThreshold && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-		}
-		else if (wasDown && angle >= -AngleThreshold && Position < 0)
-		{
-			BuyMarket(Math.Abs(Position));
-		}
-
-		_prevAngle = angle;
-		})
-		.Start();
-
-	var area = CreateChartArea();
-	if (area != null)
-	{
-		DrawCandles(area, subscription);
-		DrawIndicator(area, lsma);
-		DrawOwnTrades(area);
-	}
 	}
 }

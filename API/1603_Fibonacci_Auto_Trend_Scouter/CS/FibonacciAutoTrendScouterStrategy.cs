@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +12,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trend detection using Fibonacci periods.
+/// Trend detection using Fibonacci period moving averages.
 /// </summary>
 public class FibonacciAutoTrendScouterStrategy : Strategy
 {
@@ -22,8 +20,9 @@ public class FibonacciAutoTrendScouterStrategy : Strategy
 	private readonly StrategyParam<int> _mediumPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _upTrend;
-	private bool _downTrend;
+	private decimal _prevSmall;
+	private decimal _prevMedium;
+	private bool _isReady;
 
 	public int SmallPeriod { get => _smallPeriod.Value; set => _smallPeriod.Value = value; }
 	public int MediumPeriod { get => _mediumPeriod.Value; set => _mediumPeriod.Value = value; }
@@ -31,9 +30,27 @@ public class FibonacciAutoTrendScouterStrategy : Strategy
 
 	public FibonacciAutoTrendScouterStrategy()
 	{
-		_smallPeriod = Param(nameof(SmallPeriod), 8).SetDisplay("Small Period", "Small Period", "General");
-		_mediumPeriod = Param(nameof(MediumPeriod), 21).SetDisplay("Medium Period", "Medium Period", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
+		_smallPeriod = Param(nameof(SmallPeriod), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Small Period", "Small EMA period", "General");
+		_mediumPeriod = Param(nameof(MediumPeriod), 21)
+			.SetGreaterThanZero()
+			.SetDisplay("Medium Period", "Medium EMA period", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle Type", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevSmall = 0;
+		_prevMedium = 0;
+		_isReady = false;
 	}
 
 	/// <inheritdoc />
@@ -41,40 +58,47 @@ public class FibonacciAutoTrendScouterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var highSmall = new Highest { Length = SmallPeriod };
-		var lowSmall = new Lowest { Length = SmallPeriod };
-		var highMedium = new Highest { Length = MediumPeriod };
-		var lowMedium = new Lowest { Length = MediumPeriod };
+		var emaSmall = new ExponentialMovingAverage { Length = SmallPeriod };
+		var emaMedium = new ExponentialMovingAverage { Length = MediumPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(highSmall, lowSmall, highMedium, lowMedium, ProcessCandle).Start();
+		subscription
+			.Bind(emaSmall, emaMedium, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, highSmall);
-			DrawIndicator(area, lowSmall);
-			DrawIndicator(area, highMedium);
-			DrawIndicator(area, lowMedium);
+			DrawIndicator(area, emaSmall);
+			DrawIndicator(area, emaMedium);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highSmall, decimal lowSmall, decimal highMedium, decimal lowMedium)
+	private void ProcessCandle(ICandleMessage candle, decimal small, decimal medium)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var up = highSmall > highMedium;
-		var down = lowSmall < lowMedium;
+		if (!_isReady)
+		{
+			_prevSmall = small;
+			_prevMedium = medium;
+			_isReady = true;
+			return;
+		}
 
-		if (up && !_upTrend && Position <= 0)
+		// Crossover detection
+		var crossUp = _prevSmall <= _prevMedium && small > medium;
+		var crossDown = _prevSmall >= _prevMedium && small < medium;
+
+		if (crossUp && Position <= 0)
 			BuyMarket();
-		else if (down && !_downTrend && Position >= 0)
+		else if (crossDown && Position >= 0)
 			SellMarket();
 
-		_upTrend = up;
-		_downTrend = down;
+		_prevSmall = small;
+		_prevMedium = medium;
 	}
 }

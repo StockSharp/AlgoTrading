@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,107 +11,46 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Order processing strategy that allows opening positions at predefined price levels
-/// and manages stop-loss, take-profit and trailing stop rules.
+/// Order expert strategy that uses EMA crossover to enter positions
+/// and manages them with stop-loss, take-profit and trailing stop.
 /// </summary>
 public class OrderExpertStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfitPip;
-	private readonly StrategyParam<decimal> _stopLossPip;
-	private readonly StrategyParam<bool> _enableTrailingStop;
+	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _buyLevel;
-	private readonly StrategyParam<decimal> _sellLevel;
 
-	private decimal _entryPrice;
-	private decimal _takeProfitPrice;
-	private decimal _stopLossPrice;
-	private decimal _trailingStopPrice;
-	private bool _isLong;
-	private decimal _pipValue;
+	private ExponentialMovingAverage _slowEma;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _isFirst = true;
 
-	/// <summary>
-	/// Take profit distance in pips.
-	/// </summary>
-	public decimal TakeProfitPip
-	{
-		get => _takeProfitPip.Value;
-		set => _takeProfitPip.Value = value;
-	}
+	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
+	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Stop loss distance in pips.
-	/// </summary>
-	public decimal StopLossPip
-	{
-		get => _stopLossPip.Value;
-		set => _stopLossPip.Value = value;
-	}
-
-	/// <summary>
-	/// Enables trailing stop logic.
-	/// </summary>
-	public bool EnableTrailingStop
-	{
-		get => _enableTrailingStop.Value;
-		set => _enableTrailingStop.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for price tracking.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Price level that triggers a long entry. Set to 0 to disable.
-	/// </summary>
-	public decimal BuyLevel
-	{
-		get => _buyLevel.Value;
-		set => _buyLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Price level that triggers a short entry. Set to 0 to disable.
-	/// </summary>
-	public decimal SellLevel
-	{
-		get => _sellLevel.Value;
-		set => _sellLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="OrderExpertStrategy"/>.
-	/// </summary>
 	public OrderExpertStrategy()
 	{
-		_takeProfitPip = Param(nameof(TakeProfitPip), 100m)
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
+
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit (pips)", "Distance to take profit in pips", "Risk")
-			
-			.SetOptimize(50m, 200m, 10m);
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
-		_stopLossPip = Param(nameof(StopLossPip), 30m)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss (pips)", "Distance to stop loss in pips", "Risk")
-			
-			.SetOptimize(10m, 100m, 10m);
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_enableTrailingStop = Param(nameof(EnableTrailingStop), true)
-			.SetDisplay("Enable Trailing", "Enable trailing stop", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_buyLevel = Param(nameof(BuyLevel), 0m)
-			.SetDisplay("Buy Level", "Price level for long entry", "Trading");
-
-		_sellLevel = Param(nameof(SellLevel), 0m)
-			.SetDisplay("Sell Level", "Price level for short entry", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -127,12 +63,9 @@ public class OrderExpertStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_entryPrice = 0m;
-		_takeProfitPrice = 0m;
-		_stopLossPrice = 0m;
-		_trailingStopPrice = 0m;
-		_isLong = false;
+		_prevFast = 0;
+		_prevSlow = 0;
+		_isFirst = true;
 	}
 
 	/// <inheritdoc />
@@ -140,88 +73,62 @@ public class OrderExpertStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_pipValue = Security.PriceStep ?? 1m;
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fastEma, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent)
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, _slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fast)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var slowResult = _slowEma.Process(candle.ClosePrice, candle.OpenTime, true);
+		if (!slowResult.IsFormed)
 			return;
 
-		var price = candle.ClosePrice;
+		var slow = slowResult.ToDecimal();
 
-		if (Position == 0)
+		if (_isFirst)
 		{
-			TryOpenPosition(price);
+			_prevFast = fast;
+			_prevSlow = slow;
+			_isFirst = false;
+			return;
 		}
-		else if (_isLong)
-		{
-			if (price <= _stopLossPrice || price >= _takeProfitPrice)
-			{
-				SellMarket(Position);
-			}
-			else if (EnableTrailingStop)
-			{
-				var newStop = price - StopLossPip * _pipValue;
-				if (newStop > _trailingStopPrice)
-				{
-					_stopLossPrice = _trailingStopPrice = newStop;
-				}
-			}
-		}
-		else
-		{
-			if (price >= _stopLossPrice || price <= _takeProfitPrice)
-			{
-				BuyMarket(-Position);
-			}
-			else if (EnableTrailingStop)
-			{
-				var newStop = price + StopLossPip * _pipValue;
-				if (newStop < _trailingStopPrice)
-				{
-					_stopLossPrice = _trailingStopPrice = newStop;
-				}
-			}
-		}
-	}
 
-	private void TryOpenPosition(decimal price)
-	{
-		if (BuyLevel > 0 && price >= BuyLevel)
+		// EMA cross up -> buy
+		if (_prevFast <= _prevSlow && fast > slow && Position <= 0)
 		{
-			_isLong = true;
-			_entryPrice = price;
-			_stopLossPrice = price - StopLossPip * _pipValue;
-			_takeProfitPrice = price + TakeProfitPip * _pipValue;
-			_trailingStopPrice = _stopLossPrice;
-			BuyMarket(Volume + Math.Abs(Position));
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (SellLevel > 0 && price <= SellLevel)
+		// EMA cross down -> sell
+		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0)
 		{
-			_isLong = false;
-			_entryPrice = price;
-			_stopLossPrice = price + StopLossPip * _pipValue;
-			_takeProfitPrice = price - TakeProfitPip * _pipValue;
-			_trailingStopPrice = _stopLossPrice;
-			SellMarket(Volume + Math.Abs(Position));
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

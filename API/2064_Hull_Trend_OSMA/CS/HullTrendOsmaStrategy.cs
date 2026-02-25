@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,101 +12,49 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Hull Trend OSMA indicator.
-/// Opens long position when the oscillator rises twice in a row and short position when it falls twice in a row.
-/// Opposite positions are closed on each new signal.
+/// Opens long when oscillator rises twice in a row, short when it falls twice in a row.
 /// </summary>
 public class HullTrendOsmaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _hullPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<decimal> _stopLossPct;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	// Previous oscillator values
+
 	private decimal? _prev1;
 	private decimal? _prev2;
-	
-	/// <summary>
-	/// Period for Hull Moving Average.
-	/// </summary>
-	public int HullPeriod
-	{
-		get => _hullPeriod.Value;
-		set => _hullPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// Period for smoothing applied to the oscillator.
-	/// </summary>
-	public int SignalPeriod
-	{
-		get => _signalPeriod.Value;
-		set => _signalPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// Take profit distance in price units.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-	
-	/// <summary>
-	/// Stop loss distance in price units.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-	
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// Initialize the Hull Trend OSMA strategy.
-	/// </summary>
+
+	public int HullPeriod { get => _hullPeriod.Value; set => _hullPeriod.Value = value; }
+	public int SignalPeriod { get => _signalPeriod.Value; set => _signalPeriod.Value = value; }
+	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public HullTrendOsmaStrategy()
 	{
 		_hullPeriod = Param(nameof(HullPeriod), 20)
-		.SetDisplay("Hull Period", "Period for Hull Moving Average", "Indicators")
-		
-		.SetOptimize(10, 40, 5);
-		
+			.SetDisplay("Hull Period", "Period for Hull Moving Average", "Indicators");
+
 		_signalPeriod = Param(nameof(SignalPeriod), 5)
-		.SetDisplay("Signal Period", "Period for smoothing applied to the oscillator", "Indicators")
-		
-		.SetOptimize(3, 15, 2);
-		
-		_takeProfit = Param(nameof(TakeProfit), 2000m)
-		.SetDisplay("Take Profit", "Take profit distance in price units", "Risk")
-		
-		.SetOptimize(1000m, 3000m, 500m);
-		
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-		.SetDisplay("Stop Loss", "Stop loss distance in price units", "Risk")
-		
-		.SetOptimize(500m, 2000m, 500m);
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Signal Period", "Period for signal SMA", "Indicators");
+
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
+
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
@@ -117,20 +62,25 @@ public class HullTrendOsmaStrategy : Strategy
 		_prev1 = null;
 		_prev2 = null;
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
+
 		var hma = new HullMovingAverage { Length = HullPeriod };
-		var signal = new SMA { Length = SignalPeriod };
-		
+		var signal = new SimpleMovingAverage { Length = SignalPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(hma, signal, ProcessCandle)
-		.Start();
-		
+			.Bind(hma, signal, ProcessCandle)
+			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			useMarketOrders: true);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -139,59 +89,39 @@ public class HullTrendOsmaStrategy : Strategy
 			DrawIndicator(area, signal);
 			DrawOwnTrades(area);
 		}
-		
-		StartProtection(
-		takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
-		stopLoss: new Unit(StopLoss, UnitTypes.Absolute)
-		);
 	}
-	
+
 	private void ProcessCandle(ICandleMessage candle, decimal hmaValue, decimal signalValue)
 	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		// Check trading permission
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
+			return;
+
 		var osma = hmaValue - signalValue;
-		
+
 		if (_prev1 is null || _prev2 is null)
 		{
 			_prev2 = _prev1;
 			_prev1 = osma;
 			return;
 		}
-		
+
 		var prev = _prev1.Value;
 		var prevPrev = _prev2.Value;
-		
+
 		var isRising = prev > prevPrev && osma >= prev;
 		var isFalling = prev < prevPrev && osma <= prev;
-		
-		if (isRising)
+
+		if (isRising && Position <= 0)
 		{
-			// Close short positions
-			if (Position < 0)
-			BuyMarket(Math.Abs(Position));
-			
-			// Open long if flat
-			if (Position == 0)
-			BuyMarket(Volume);
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (isFalling)
+		else if (isFalling && Position >= 0)
 		{
-			// Close long positions
-			if (Position > 0)
-			SellMarket(Position);
-			
-			// Open short if flat
-			if (Position == 0)
-			SellMarket(Volume);
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
-		
+
 		_prev2 = _prev1;
 		_prev1 = osma;
 	}

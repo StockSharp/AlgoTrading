@@ -1,17 +1,12 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -19,13 +14,11 @@ public class XkriHistogramStrategy : Strategy
 {
 	private readonly StrategyParam<int> _kriPeriod;
 	private readonly StrategyParam<int> _smoothPeriod;
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<int> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<decimal> _stopLossPct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _ma;
 	private ExponentialMovingAverage _smooth;
-
 	private decimal _last;
 	private decimal _prev;
 	private decimal _prev2;
@@ -33,8 +26,8 @@ public class XkriHistogramStrategy : Strategy
 
 	public int KriPeriod { get => _kriPeriod.Value; set => _kriPeriod.Value = value; }
 	public int SmoothPeriod { get => _smoothPeriod.Value; set => _smoothPeriod.Value = value; }
-	public int TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public int StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public XkriHistogramStrategy()
@@ -45,14 +38,30 @@ public class XkriHistogramStrategy : Strategy
 		_smoothPeriod = Param(nameof(SmoothPeriod), 7)
 			.SetDisplay("Smooth Period", "EMA smoothing period", "Indicators");
 
-		_takeProfit = Param(nameof(TakeProfit), 2000)
-			.SetDisplay("Take Profit", "Take profit in points", "Protection");
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Protection");
 
-		_stopLoss = Param(nameof(StopLoss), 1000)
-			.SetDisplay("Stop Loss", "Stop loss in points", "Protection");
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Protection");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_last = 0;
+		_prev = 0;
+		_prev2 = 0;
+		_valueCount = 0;
 	}
 
 	/// <inheritdoc />
@@ -60,15 +69,51 @@ public class XkriHistogramStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma = new SMA { Length = KriPeriod };
-		_smooth = new EMA { Length = SmoothPeriod };
+		var ma = new SimpleMovingAverage { Length = KriPeriod };
+		_smooth = new ExponentialMovingAverage { Length = SmoothPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_ma, ProcessCandle).Start();
+		subscription.Bind(ma, (candle, maValue) =>
+		{
+			if (candle.State != CandleStates.Finished)
+				return;
+
+			if (maValue == 0) return;
+
+			var kri = 100m * (candle.ClosePrice - maValue) / maValue;
+			var smoothResult = _smooth.Process(kri, candle.OpenTime, true);
+			if (!smoothResult.IsFormed)
+				return;
+
+			var smooth = smoothResult.ToDecimal();
+
+			_prev2 = _prev;
+			_prev = _last;
+			_last = smooth;
+			_valueCount++;
+
+			if (_valueCount < 3)
+				return;
+
+			var longSignal = _prev < _prev2 && _last > _prev && Position <= 0;
+			var shortSignal = _prev > _prev2 && _last < _prev && Position >= 0;
+
+			if (longSignal)
+			{
+				if (Position < 0) BuyMarket();
+				BuyMarket();
+			}
+			else if (shortSignal)
+			{
+				if (Position > 0) SellMarket();
+				SellMarket();
+			}
+		}).Start();
 
 		StartProtection(
-			new Unit(TakeProfit, UnitTypes.Point),
-			new Unit(StopLoss, UnitTypes.Point));
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -77,36 +122,5 @@ public class XkriHistogramStrategy : Strategy
 			DrawIndicator(area, _smooth);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal maValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_ma.IsFormed)
-			return;
-
-		var kri = 100m * (candle.ClosePrice - maValue) / maValue;
-		var smooth = _smooth.Process(new DecimalIndicatorValue(_smooth, kri, candle.OpenTime)).ToDecimal();
-
-		if (!_smooth.IsFormed)
-			return;
-
-		_prev2 = _prev;
-		_prev = _last;
-		_last = smooth;
-		_valueCount++;
-
-		if (_valueCount < 3)
-			return;
-
-		var longSignal = _prev < _prev2 && _last > _prev && Position <= 0;
-		var shortSignal = _prev > _prev2 && _last < _prev && Position >= 0;
-
-		if (longSignal)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (shortSignal)
-			SellMarket(Volume + Math.Abs(Position));
 	}
 }

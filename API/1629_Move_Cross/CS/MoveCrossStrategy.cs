@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,168 +12,102 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// RAVI based trend strategy.
-/// Buys when daily RAVI rises while hourly RAVI is negative, sells on the opposite condition.
+/// Uses fast and slow SMA to compute RAVI oscillator. Enters on RAVI trending conditions.
 /// </summary>
 public class MoveCrossStrategy : Strategy
 {
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<int> _stopLoss;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<decimal> _threshold;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _fastH1;
-	private SimpleMovingAverage _slowH1;
-	private SimpleMovingAverage _fastD1;
-	private SimpleMovingAverage _slowD1;
+	private decimal _raviPrev1;
+	private decimal _raviPrev2;
+	private decimal _raviPrev3;
+	private bool _hasHistory;
 
-	private decimal _raviH1;
-	private decimal _raviD1;
-	private decimal _raviD1Prev1;
-	private decimal _raviD1Prev2;
-	private decimal _raviD1Prev3;
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public decimal Threshold { get => _threshold.Value; set => _threshold.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
-	public int TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
-	public int StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="MoveCrossStrategy"/> class.
-	/// </summary>
 	public MoveCrossStrategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 50)
+		_fastPeriod = Param(nameof(FastPeriod), 2)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Profit target in points", "General")
-			
-			.SetOptimize(10, 200, 10);
+			.SetDisplay("Fast Period", "Fast SMA period", "Indicators");
 
-		_stopLoss = Param(nameof(StopLoss), 100)
+		_slowPeriod = Param(nameof(SlowPeriod), 24)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Loss limit in points", "General")
-			
-			.SetOptimize(20, 400, 20);
+			.SetDisplay("Slow Period", "Slow SMA period", "Indicators");
+
+		_threshold = Param(nameof(Threshold), 0.5m)
+			.SetDisplay("Threshold", "RAVI threshold", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return new[]
-		{
-			(Security, TimeSpan.FromHours(1).TimeFrame()),
-			(Security, TimeSpan.FromMinutes(5).TimeFrame())
-		};
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_raviH1 = 0m;
-		_raviD1 = 0m;
-		_raviD1Prev1 = 0m;
-		_raviD1Prev2 = 0m;
-		_raviD1Prev3 = 0m;
+		_raviPrev1 = 0;
+		_raviPrev2 = 0;
+		_raviPrev3 = 0;
+		_hasHistory = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_fastH1 = new SMA { Length = 2 };
-		_slowH1 = new SMA { Length = 24 };
-		_fastD1 = new SMA { Length = 2 };
-		_slowD1 = new SMA { Length = 24 };
+		var fastSma = new SimpleMovingAverage { Length = FastPeriod };
+		var slowSma = new SimpleMovingAverage { Length = SlowPeriod };
 
-		var h1 = SubscribeCandles(TimeSpan.FromHours(1).TimeFrame());
-		h1.Bind(_fastH1, _slowH1, ProcessH1).Start();
-
-		var d1 = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
-		d1.Bind(_fastD1, _slowD1, ProcessD1).Start();
-
-		StartProtection(null, null);
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastSma, slowSma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, h1);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastSma);
+			DrawIndicator(area, slowSma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessH1(ICandleMessage candle, decimal fast, decimal slow)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!_fastH1.IsFormed || !_slowH1.IsFormed)
-		return;
+		if (slow == 0)
+			return;
 
-		_raviH1 = slow == 0m ? 0m : (fast - slow) / slow * 100m;
+		var ravi = (fast - slow) / slow * 100m;
 
-		TryTrade(candle);
-	}
-
-	private void ProcessD1(ICandleMessage candle, decimal fast, decimal slow)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!_fastD1.IsFormed || !_slowD1.IsFormed)
-		return;
-
-		var newRavi = slow == 0m ? 0m : (fast - slow) / slow * 100m;
-
-		_raviD1Prev3 = _raviD1Prev2;
-		_raviD1Prev2 = _raviD1Prev1;
-		_raviD1Prev1 = _raviD1;
-		_raviD1 = newRavi;
-	}
-
-	private void TryTrade(ICandleMessage candle)
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		var price = candle.ClosePrice;
-
-		if (_raviH1 < 0m &&
-		_raviD1 > 1m &&
-		_raviD1Prev1 < _raviD1 &&
-		_raviD1Prev2 < _raviD1Prev1 &&
-		_raviD1Prev3 < _raviD1Prev2 &&
-		Position <= 0)
+		if (_hasHistory)
 		{
-		BuyMarket(Volume + Math.Abs(Position));
-		if (TakeProfit > 0)
-		SetTakeProfit(TakeProfit, price, Position + Volume);
-		if (StopLoss > 0)
-		SetStopLoss(StopLoss, price, Position + Volume);
+			// Buy: RAVI rising for 3 bars and above threshold
+			var raviRising = ravi > _raviPrev1 && _raviPrev1 > _raviPrev2 && _raviPrev2 > _raviPrev3;
+			// Sell: RAVI falling for 3 bars and below negative threshold
+			var raviFalling = ravi < _raviPrev1 && _raviPrev1 < _raviPrev2 && _raviPrev2 < _raviPrev3;
+
+			if (raviRising && ravi > Threshold && Position <= 0)
+				BuyMarket();
+			else if (raviFalling && ravi < -Threshold && Position >= 0)
+				SellMarket();
 		}
-		else if (_raviH1 > 0m &&
-		_raviD1 < -1m &&
-		_raviD1Prev1 > _raviD1 &&
-		_raviD1Prev2 > _raviD1Prev1 &&
-		_raviD1Prev3 > _raviD1Prev2 &&
-		Position >= 0)
-		{
-		SellMarket(Volume + Math.Max(Position, 0m));
-		if (TakeProfit > 0)
-		SetTakeProfit(TakeProfit, price, Position - Volume);
-		if (StopLoss > 0)
-		SetStopLoss(StopLoss, price, Position - Volume);
-		}
+
+		_raviPrev3 = _raviPrev2;
+		_raviPrev2 = _raviPrev1;
+		_raviPrev1 = ravi;
+		_hasHistory = true;
 	}
 }

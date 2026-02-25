@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,47 +11,47 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that applies a trailing stop to an existing position.
-/// It does not open new trades and only manages the current position.
+/// Trailing stop strategy with EMA crossover entry.
+/// Opens positions based on fast/slow EMA crossover and manages them with trailing stop protection.
 /// </summary>
 public class TrailingStopEAStrategy : Strategy
 {
-	private readonly StrategyParam<int> _trailingPoints;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<decimal> _trailingPct;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _stopPrice;
-	private decimal _trailDistance;
+	private ExponentialMovingAverage _slowEma;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _isFirst = true;
 
-	/// <summary>
-	/// Trailing stop distance in points.
-	/// </summary>
-	public int TrailingPoints
-	{
-		get => _trailingPoints.Value;
-		set => _trailingPoints.Value = value;
-	}
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public decimal TrailingPct { get => _trailingPct.Value; set => _trailingPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public TrailingStopEAStrategy()
 	{
-		_trailingPoints = Param(nameof(TrailingPoints), 200)
+		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Trailing Points", "Distance for the trailing stop in price steps", "General")
-			
-			.SetOptimize(50, 500, 50);
+			.SetDisplay("Fast EMA", "Fast EMA length", "Indicators");
+
+		_slowLength = Param(nameof(SlowLength), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA length", "Indicators");
+
+		_trailingPct = Param(nameof(TrailingPct), 2m)
+			.SetDisplay("Trailing %", "Trailing stop percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, DataType.Ticks)];
-
-	/// <inheritdoc />
-	protected override void OnReseted()
 	{
-		base.OnReseted();
-		_stopPrice = 0m;
-		_trailDistance = 0m;
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -62,63 +59,65 @@ public class TrailingStopEAStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_trailDistance = TrailingPoints * (Security?.PriceStep ?? 1m);
+		_isFirst = true;
 
-		SubscribeTicks().Bind(ProcessTrade).Start();
+		var fastEma = new ExponentialMovingAverage { Length = FastLength };
+		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fastEma, ProcessCandle)
+			.Start();
+
+		StartProtection(
+			new Unit(TrailingPct * 2, UnitTypes.Percent),
+			new Unit(TrailingPct, UnitTypes.Percent),
+			isStopTrailing: true
+		);
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, _slowEma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
+	private void ProcessCandle(ICandleMessage candle, decimal fast)
 	{
-		var price = trade.Price;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		if (Position > 0)
+		var slowResult = _slowEma.Process(candle.ClosePrice, candle.OpenTime, true);
+		if (!slowResult.IsFormed)
+			return;
+
+		var slow = slowResult.ToDecimal();
+
+		if (_isFirst)
 		{
-			// Initialize trailing stop for long position
-			if (_stopPrice == 0m)
-			{
-				_stopPrice = price - _trailDistance;
-				return;
-			}
-
-			// Move stop when price advances
-			var newStop = price - _trailDistance;
-			if (newStop > _stopPrice)
-				_stopPrice = newStop;
-
-			// Close position if price falls below stop
-			if (price <= _stopPrice)
-			{
-				SellMarket(Position);
-				_stopPrice = 0m;
-				LogInfo($"Trailing stop hit for long position at {price}");
-			}
+			_prevFast = fast;
+			_prevSlow = slow;
+			_isFirst = false;
+			return;
 		}
-		else if (Position < 0)
+
+		// EMA cross up -> buy
+		if (_prevFast <= _prevSlow && fast > slow && Position <= 0)
 		{
-			// Initialize trailing stop for short position
-			if (_stopPrice == 0m)
-			{
-				_stopPrice = price + _trailDistance;
-				return;
-			}
-
-			// Move stop when price declines
-			var newStop = price + _trailDistance;
-			if (newStop < _stopPrice)
-				_stopPrice = newStop;
-
-			// Close position if price rises above stop
-			if (price >= _stopPrice)
-			{
-				BuyMarket(Math.Abs(Position));
-				_stopPrice = 0m;
-				LogInfo($"Trailing stop hit for short position at {price}");
-			}
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else
+		// EMA cross down -> sell
+		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0)
 		{
-			// Reset trailing stop when no position
-			_stopPrice = 0m;
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
+
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }

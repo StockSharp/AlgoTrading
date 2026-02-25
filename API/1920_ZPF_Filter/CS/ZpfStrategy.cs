@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -20,46 +17,23 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ZpfStrategy : Strategy
 {
-	// Strategy parameters
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Indicators
-	private SimpleMovingAverage _fastMa;
-	private SimpleMovingAverage _slowMa;
 	private SimpleMovingAverage _volumeMa;
-
 	private decimal _prevZpf;
+	private bool _isFirst = true;
 
-	/// <summary>
-	/// Base moving average length.
-	/// </summary>
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
+	public int Length { get => _length.Value; set => _length.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="ZpfStrategy"/>.
-	/// </summary>
 	public ZpfStrategy()
 	{
 		_length = Param(nameof(Length), 12)
 			.SetRange(5, 50)
-			.SetDisplay("Length", "Base moving average length", "Indicators")
-			;
+			.SetDisplay("Length", "Base moving average length", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -70,72 +44,64 @@ public class ZpfStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_prevZpf = default;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_fastMa = new() { Length = Length };
-		_slowMa = new() { Length = Length * 2 };
-		_volumeMa = new() { Length = Length };
+		_isFirst = true;
+		_prevZpf = 0;
+
+		var fastMa = new SimpleMovingAverage { Length = Length };
+		var slowMa = new SimpleMovingAverage { Length = Length * 2 };
+		_volumeMa = new SimpleMovingAverage { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastMa, _slowMa, ProcessCandle)
+			.Bind(fastMa, slowMa, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastMa);
-			DrawIndicator(area, _slowMa);
+			DrawIndicator(area, fastMa);
+			DrawIndicator(area, slowMa);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Update volume moving average
-		var volumeAvg = _volumeMa.Process(candle.TotalVolume).ToDecimal();
-
-		// Check readiness of indicators and trading state
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var volResult = _volumeMa.Process(candle.TotalVolume, candle.OpenTime, true);
+		if (!volResult.IsFormed)
 			return;
 
-		if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_volumeMa.IsFormed)
-			return;
+		var volumeAvg = volResult.ToDecimal();
 
 		// Calculate ZPF value
 		var zpf = volumeAvg * (fast - slow) / 2m;
 
-		// Determine order volume
-		var volume = Volume + Math.Abs(Position);
+		if (_isFirst)
+		{
+			_prevZpf = zpf;
+			_isFirst = false;
+			return;
+		}
 
-		// Detect zero line cross and open positions
+		// Detect zero line cross
 		if (_prevZpf <= 0 && zpf > 0 && Position <= 0)
-			BuyMarket(volume);
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
 		else if (_prevZpf >= 0 && zpf < 0 && Position >= 0)
-			SellMarket(volume);
-
-		// Exit positions on opposite signal
-		if (_prevZpf > 0 && zpf <= 0 && Position > 0)
-			SellMarket(Math.Abs(Position));
-		else if (_prevZpf < 0 && zpf >= 0 && Position < 0)
-			BuyMarket(Math.Abs(Position));
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
 
 		_prevZpf = zpf;
 	}

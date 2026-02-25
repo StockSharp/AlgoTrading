@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -18,9 +16,9 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BillWilliamsStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _filterPoints;
-	private readonly StrategyParam<decimal> _gatorDivSlowPoints;
-	private readonly StrategyParam<decimal> _gatorDivFastPoints;
+	private readonly StrategyParam<decimal> _filterPct;
+	private readonly StrategyParam<decimal> _gatorDivSlowPct;
+	private readonly StrategyParam<decimal> _gatorDivFastPct;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SmoothedMovingAverage _jaw;
@@ -32,66 +30,23 @@ public class BillWilliamsStrategy : Strategy
 	private decimal? _fractalUp;
 	private decimal? _fractalDown;
 
-	/// <summary>
-	/// Price filter in points.
-	/// </summary>
-	public decimal FilterPoints
-	{
-		get => _filterPoints.Value;
-		set => _filterPoints.Value = value;
-	}
+	public decimal FilterPct { get => _filterPct.Value; set => _filterPct.Value = value; }
+	public decimal GatorDivSlowPct { get => _gatorDivSlowPct.Value; set => _gatorDivSlowPct.Value = value; }
+	public decimal GatorDivFastPct { get => _gatorDivFastPct.Value; set => _gatorDivFastPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Minimal jaw-teeth distance in points.
-	/// </summary>
-	public decimal GatorDivSlowPoints
-	{
-		get => _gatorDivSlowPoints.Value;
-		set => _gatorDivSlowPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Minimal lips-teeth distance in points.
-	/// </summary>
-	public decimal GatorDivFastPoints
-	{
-		get => _gatorDivFastPoints.Value;
-		set => _gatorDivFastPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="BillWilliamsStrategy"/>.
-	/// </summary>
 	public BillWilliamsStrategy()
 	{
-		_filterPoints = Param(nameof(FilterPoints), 30m)
-			.SetNotNegative()
-			.SetDisplay("Filter", "Minimal price offset in points", "General")
-			
-			.SetOptimize(0m, 100m, 5m);
+		_filterPct = Param(nameof(FilterPct), 0.05m)
+			.SetDisplay("Filter %", "Minimal price offset as percentage", "General");
 
-		_gatorDivSlowPoints = Param(nameof(GatorDivSlowPoints), 250m)
-			.SetNotNegative()
-			.SetDisplay("Jaw-Teeth Points", "Required jaw-teeth distance", "Alligator")
-			
-			.SetOptimize(0m, 500m, 25m);
+		_gatorDivSlowPct = Param(nameof(GatorDivSlowPct), 0.3m)
+			.SetDisplay("Jaw-Teeth %", "Required jaw-teeth distance as % of price", "Alligator");
 
-		_gatorDivFastPoints = Param(nameof(GatorDivFastPoints), 150m)
-			.SetNotNegative()
-			.SetDisplay("Lips-Teeth Points", "Required lips-teeth distance", "Alligator")
-			
-			.SetOptimize(0m, 300m, 25m);
+		_gatorDivFastPct = Param(nameof(GatorDivFastPct), 0.15m)
+			.SetDisplay("Lips-Teeth %", "Required lips-teeth distance as % of price", "Alligator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -105,7 +60,6 @@ public class BillWilliamsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
 		_highs.Clear();
 		_lows.Clear();
 		_fractalUp = null;
@@ -121,20 +75,16 @@ public class BillWilliamsStrategy : Strategy
 		_teeth = new SmoothedMovingAverage { Length = 8 };
 		_lips = new SmoothedMovingAverage { Length = 5 };
 
+		var passthrough = new SimpleMovingAverage { Length = 1 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription.Bind(passthrough, (candle, _) => ProcessCandle(candle)).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _jaw);
-			DrawIndicator(area, _teeth);
-			DrawIndicator(area, _lips);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -145,10 +95,8 @@ public class BillWilliamsStrategy : Strategy
 		_highs.Enqueue(candle.HighPrice);
 		_lows.Enqueue(candle.LowPrice);
 
-		if (_highs.Count > 5)
-			_highs.Dequeue();
-		if (_lows.Count > 5)
-			_lows.Dequeue();
+		if (_highs.Count > 5) _highs.Dequeue();
+		if (_lows.Count > 5) _lows.Dequeue();
 
 		if (_highs.Count == 5)
 		{
@@ -165,10 +113,9 @@ public class BillWilliamsStrategy : Strategy
 		}
 
 		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-		var time = candle.ServerTime;
-		var jawVal = _jaw.Process(new DecimalIndicatorValue(_jaw, median, time));
-		var teethVal = _teeth.Process(new DecimalIndicatorValue(_teeth, median, time));
-		var lipsVal = _lips.Process(new DecimalIndicatorValue(_lips, median, time));
+		var jawVal = _jaw.Process(median, candle.OpenTime, true);
+		var teethVal = _teeth.Process(median, candle.OpenTime, true);
+		var lipsVal = _lips.Process(median, candle.OpenTime, true);
 
 		if (!jawVal.IsFormed || !teethVal.IsFormed || !lipsVal.IsFormed)
 			return;
@@ -177,34 +124,36 @@ public class BillWilliamsStrategy : Strategy
 		var teeth = teethVal.ToDecimal();
 		var lips = lipsVal.ToDecimal();
 
-		var step = Security?.PriceStep ?? 1m;
-		var filter = FilterPoints * step;
-		var slowThreshold = GatorDivSlowPoints * step;
-		var fastThreshold = GatorDivFastPoints * step;
+		var price = candle.ClosePrice;
+		var filter = FilterPct / 100m * price;
+		var slowThreshold = GatorDivSlowPct / 100m * price;
+		var fastThreshold = GatorDivFastPct / 100m * price;
 
 		var slowDiff = Math.Abs(jaw - teeth);
 		var fastDiff = Math.Abs(lips - teeth);
 		var alligatorOpen = slowDiff >= slowThreshold && fastDiff >= fastThreshold;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (Position <= 0 && alligatorOpen && _fractalUp is decimal up && candle.HighPrice >= up + filter && candle.ClosePrice > candle.OpenPrice && up >= teeth)
+		if (Position <= 0 && alligatorOpen && _fractalUp is decimal up &&
+			candle.HighPrice >= up + filter && candle.ClosePrice > candle.OpenPrice && up >= teeth)
 		{
+			if (Position < 0) BuyMarket();
 			BuyMarket();
 		}
-		else if (Position >= 0 && alligatorOpen && _fractalDown is decimal down && candle.LowPrice <= down - filter && candle.ClosePrice < candle.OpenPrice && down <= teeth)
+		else if (Position >= 0 && alligatorOpen && _fractalDown is decimal down &&
+			candle.LowPrice <= down - filter && candle.ClosePrice < candle.OpenPrice && down <= teeth)
 		{
+			if (Position > 0) SellMarket();
 			SellMarket();
 		}
 
+		// Fractal stop
 		if (Position > 0 && _fractalDown is decimal longStop && candle.ClosePrice <= longStop - filter)
 		{
-			SellMarket(Position);
+			SellMarket();
 		}
 		else if (Position < 0 && _fractalUp is decimal shortStop && candle.ClosePrice >= shortStop + filter)
 		{
-			BuyMarket(-Position);
+			BuyMarket();
 		}
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,60 +11,44 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Laguerre filter and FIR crossover.
+/// Strategy based on Laguerre filter and WMA (FIR) crossover.
 /// </summary>
 public class LaguerreFilterStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _gamma;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _prevFir;
 	private decimal? _prevLaguerre;
 
-	/// <summary>
-	/// Laguerre filter gamma parameter.
-	/// </summary>
-	public decimal Gamma
+	public decimal StopLossPct
 	{
-		get => _gamma.Value;
-		set => _gamma.Value = value;
+		get => _stopLossPct.Value;
+		set => _stopLossPct.Value = value;
 	}
 
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
+	public decimal TakeProfitPct
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _takeProfitPct.Value;
+		set => _takeProfitPct.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="LaguerreFilterStrategy"/>.
-	/// </summary>
 	public LaguerreFilterStrategy()
 	{
-		_gamma = Param(nameof(Gamma), 0.7m)
-			.SetRange(0.1m, 0.9m)
-			.SetDisplay("Gamma", "Laguerre filter smoothing factor", "Indicators")
-			;
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetRange(0.5m, 5m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			;
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -89,7 +70,7 @@ public class LaguerreFilterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var laguerre = new AdaptiveLaguerreFilter { Gamma = Gamma };
+		var laguerre = new ExponentialMovingAverage { Length = 10 };
 		var fir = new WeightedMovingAverage { Length = 4 };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -98,8 +79,8 @@ public class LaguerreFilterStrategy : Strategy
 			.Start();
 
 		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
 			useMarketOrders: true);
 
 		var area = CreateChartArea();
@@ -114,15 +95,9 @@ public class LaguerreFilterStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, decimal laguerreValue, decimal firValue)
 	{
-		// Ignore unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Ensure trading is allowed and data is formed
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Initialize previous values
 		if (_prevFir is null || _prevLaguerre is null)
 		{
 			_prevFir = firValue;
@@ -130,30 +105,18 @@ public class LaguerreFilterStrategy : Strategy
 			return;
 		}
 
-		// Determine relation between lines on previous bar
 		var firWasAbove = _prevFir > _prevLaguerre;
 		var firIsAbove = firValue > laguerreValue;
 
-		// Close opposite positions when relation flips
-		if (firWasAbove && Position < 0)
-			BuyMarket(Math.Abs(Position));
-		else if (!firWasAbove && Position > 0)
-			SellMarket(Math.Abs(Position));
-
-		var volume = Volume + Math.Abs(Position);
-
-		// Entry signals based on crossover
-		if (firWasAbove && !firIsAbove && Position <= 0)
+		if (!firWasAbove && firIsAbove && Position <= 0)
 		{
-			// FIR crossed below Laguerre - go long
-			BuyMarket(volume);
-			LogInfo("FIR crossed below Laguerre. Entering long.");
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (!firWasAbove && firIsAbove && Position >= 0)
+		else if (firWasAbove && !firIsAbove && Position >= 0)
 		{
-			// FIR crossed above Laguerre - go short
-			SellMarket(volume);
-			LogInfo("FIR crossed above Laguerre. Entering short.");
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
 		_prevFir = firValue;

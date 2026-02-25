@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,147 +11,57 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on crossing of two smoothed RSI lines that approximate the ColorZerolagJJRSX oscillator.
-/// A downward cross from the fast line to the slow line opens a long position and closes shorts.
-/// An upward cross opens a short position and closes longs.
+/// Strategy based on crossing of two RSI lines (fast and slow).
 /// </summary>
 public class ColorZerolagJjrsxStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<bool> _buyOpen;
-	private readonly StrategyParam<bool> _sellOpen;
-	private readonly StrategyParam<bool> _buyClose;
-	private readonly StrategyParam<bool> _sellClose;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _fastRsi;
-	private RelativeStrengthIndex _slowRsi;
 	private decimal? _prevFast;
 	private decimal? _prevSlow;
 
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public ColorZerolagJjrsxStrategy()
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 8)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast Period", "Fast JJRSX period", "Indicator")
-			;
+			.SetDisplay("Fast Period", "Fast RSI period", "Indicator");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 21)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow Period", "Slow JJRSX period", "Indicator")
-			;
+			.SetDisplay("Slow Period", "Slow RSI period", "Indicator");
 
-		_buyOpen = Param(nameof(BuyOpen), true)
-			.SetDisplay("Allow Long Entry", "Enable opening long positions", "Trading");
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_sellOpen = Param(nameof(SellOpen), true)
-			.SetDisplay("Allow Short Entry", "Enable opening short positions", "Trading");
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_buyClose = Param(nameof(BuyClose), true)
-			.SetDisplay("Close Longs", "Close long positions on opposite signal", "Trading");
-
-		_sellClose = Param(nameof(SellClose), true)
-			.SetDisplay("Close Shorts", "Close short positions on opposite signal", "Trading");
-
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
-			;
-
-		_takeProfit = Param(nameof(TakeProfit), 2000m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit in price units", "Risk")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for indicator", "General");
 	}
 
-	/// <summary>
-	/// Fast oscillator period.
-	/// </summary>
-	public int FastPeriod
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		get => _fastPeriod.Value;
-		set => _fastPeriod.Value = value;
+		return [(Security, CandleType)];
 	}
 
-	/// <summary>
-	/// Slow oscillator period.
-	/// </summary>
-	public int SlowPeriod
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		get => _slowPeriod.Value;
-		set => _slowPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening long positions.
-	/// </summary>
-	public bool BuyOpen
-	{
-		get => _buyOpen.Value;
-		set => _buyOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Allow opening short positions.
-	/// </summary>
-	public bool SellOpen
-	{
-		get => _sellOpen.Value;
-		set => _sellOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Close long positions on opposite signal.
-	/// </summary>
-	public bool BuyClose
-	{
-		get => _buyClose.Value;
-		set => _buyClose.Value = value;
-	}
-
-	/// <summary>
-	/// Close short positions on opposite signal.
-	/// </summary>
-	public bool SellClose
-	{
-		get => _sellClose.Value;
-		set => _sellClose.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in price units.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in price units.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		base.OnReseted();
+		_prevFast = null;
+		_prevSlow = null;
 	}
 
 	/// <inheritdoc />
@@ -162,24 +69,25 @@ public class ColorZerolagJjrsxStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastRsi = new RelativeStrengthIndex { Length = FastPeriod };
-		_slowRsi = new RelativeStrengthIndex { Length = SlowPeriod };
+		var fastRsi = new RelativeStrengthIndex { Length = FastPeriod };
+		var slowRsi = new RelativeStrengthIndex { Length = SlowPeriod };
 
 		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			useMarketOrders: true);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastRsi, _slowRsi, ProcessCandle)
+			.Bind(fastRsi, slowRsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastRsi);
-			DrawIndicator(area, _slowRsi);
+			DrawIndicator(area, fastRsi);
+			DrawIndicator(area, slowRsi);
 			DrawOwnTrades(area);
 		}
 	}
@@ -199,21 +107,15 @@ public class ColorZerolagJjrsxStrategy : Strategy
 		var crossDown = _prevFast > _prevSlow && fast < slow;
 		var crossUp = _prevFast < _prevSlow && fast > slow;
 
-		if (crossDown)
+		if (crossDown && Position <= 0)
 		{
-			if (SellClose && Position < 0)
-				BuyMarket(Math.Abs(Position));
-
-			if (BuyOpen && Position <= 0)
-				BuyMarket(Volume);
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		else if (crossUp)
+		else if (crossUp && Position >= 0)
 		{
-			if (BuyClose && Position > 0)
-				SellMarket(Math.Abs(Position));
-
-			if (SellOpen && Position >= 0)
-				SellMarket(Volume);
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
 		_prevFast = fast;

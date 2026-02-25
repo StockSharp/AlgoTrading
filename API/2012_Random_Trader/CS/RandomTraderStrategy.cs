@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -14,112 +10,91 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Randomly buys or sells when no position is open.
-/// Applies fixed take profit and stop loss.
+/// Randomly buys or sells on each candle when no position is open.
+/// Applies fixed take profit and stop loss via StartProtection.
 /// </summary>
 public class RandomTraderStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<int> _cooldown;
+	private readonly StrategyParam<DataType> _candleType;
 
 	private Random _random;
-	private decimal _entryPrice;
+	private int _candleCount;
 
+	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public int Cooldown { get => _cooldown.Value; set => _cooldown.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Take profit in price units.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in price units.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="RandomTraderStrategy"/>.
-	/// </summary>
 	public RandomTraderStrategy()
 	{
+		_takeProfitPct = Param(nameof(TakeProfitPct), 2m)
+			.SetDisplay("Take Profit %", "Target profit percentage", "Risk");
 
-		_takeProfit = Param(nameof(TakeProfit), 10m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Target profit in price units", "Risk");
+		_stopLossPct = Param(nameof(StopLossPct), 1m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_stopLoss = Param(nameof(StopLoss), 10m)
+		_cooldown = Param(nameof(Cooldown), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
+			.SetDisplay("Cooldown", "Candles between trades", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, DataType.Ticks)];
-
-	/// <inheritdoc />
-	protected override void OnReseted()
 	{
-		base.OnReseted();
-		_entryPrice = 0m;
-		_random = null;
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_random = new Random();
 
-		SubscribeTicks().Bind(ProcessTrade).Start();
+		_random = new Random(42);
+		_candleCount = 0;
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent)
+		);
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		var price = trade.Price;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (Position == 0)
-		{
-			// No position - randomly choose direction
-			if (_random.NextDouble() > 0.5)
-			{
-				BuyMarket(Volume);
-			}
-			else
-			{
-				SellMarket(Volume);
-			}
+		_candleCount++;
 
-			_entryPrice = price;
+		if (Position != 0)
 			return;
-		}
 
-		if (Position > 0)
-		{
-			// Long position exit logic
-			if (price >= _entryPrice + TakeProfit || price <= _entryPrice - StopLoss)
-			{
-				SellMarket(Math.Abs(Position));
-				_entryPrice = 0m;
-			}
-		}
-		else if (Position < 0)
-		{
-			// Short position exit logic
-			if (price <= _entryPrice - TakeProfit || price >= _entryPrice + StopLoss)
-			{
-				BuyMarket(Math.Abs(Position));
-				_entryPrice = 0m;
-			}
-		}
+		if (_candleCount < Cooldown)
+			return;
+
+		_candleCount = 0;
+
+		// Randomly choose direction
+		if (_random.NextDouble() > 0.5)
+			BuyMarket();
+		else
+			SellMarket();
 	}
 }

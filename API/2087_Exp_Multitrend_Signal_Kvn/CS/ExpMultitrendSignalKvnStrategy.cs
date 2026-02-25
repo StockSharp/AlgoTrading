@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,87 +12,79 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on the MultiTrend Signal indicator.
-/// Builds an adaptive channel and trades breakouts.
+/// Builds an adaptive channel using Highest/Lowest and trades breakouts.
+/// ADX adjusts the lookback period dynamically.
 /// </summary>
 public class ExpMultitrendSignalKvnStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _k;
-	private readonly StrategyParam<decimal> _kStop;
 	private readonly StrategyParam<int> _kPeriod;
 	private readonly StrategyParam<int> _adxPeriod;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private AverageDirectionalIndex _adx;
+	private Highest _maxHigh;
+	private Lowest _minLow;
 	private int _trend;
 
-	/// <summary>
-	/// Channel width coefficient.
-	/// </summary>
 	public decimal K
 	{
 		get => _k.Value;
 		set => _k.Value = value;
 	}
 
-	/// <summary>
-	/// Range multiplier used when switching direction.
-	/// </summary>
-	public decimal KStop
-	{
-		get => _kStop.Value;
-		set => _kStop.Value = value;
-	}
-
-	/// <summary>
-	/// Base period for swing calculation.
-	/// </summary>
 	public int KPeriod
 	{
 		get => _kPeriod.Value;
 		set => _kPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// ADX indicator period.
-	/// </summary>
 	public int AdxPeriod
 	{
 		get => _adxPeriod.Value;
 		set => _adxPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Candles type used in calculations.
-	/// </summary>
+	public decimal StopLossPct
+	{
+		get => _stopLossPct.Value;
+		set => _stopLossPct.Value = value;
+	}
+
+	public decimal TakeProfitPct
+	{
+		get => _takeProfitPct.Value;
+		set => _takeProfitPct.Value = value;
+	}
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public ExpMultitrendSignalKvnStrategy()
 	{
-		_k = Param(nameof(K), 48m)
-			.SetDisplay("K", "Percent of swing used for channel width", "Indicator")
-			;
+		_k = Param(nameof(K), 10m)
+			.SetDisplay("K", "Percent of swing used for channel width", "Indicator");
 
-		_kStop = Param(nameof(KStop), 0.5m)
-			.SetDisplay("K Stop", "Multiplier for range added to breakout price", "Indicator")
-			;
-
-		_kPeriod = Param(nameof(KPeriod), 150)
+		_kPeriod = Param(nameof(KPeriod), 20)
 			.SetDisplay("K Period", "Base period for swing calculation", "Indicator")
-			.SetGreaterThanZero()
-			;
+			.SetGreaterThanZero();
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "Period of ADX indicator", "Indicator")
-			.SetGreaterThanZero()
-			;
+			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculation", "General");
 	}
 
@@ -111,42 +100,35 @@ public class ExpMultitrendSignalKvnStrategy : Strategy
 		base.OnReseted();
 		_trend = 0;
 	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		_maxHigh = new Highest { Length = KPeriod };
+		_minLow = new Lowest { Length = KPeriod };
 
-		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-		var maxHigh = new Max { Length = KPeriod };
-		var minLow = new Min { Length = KPeriod };
-		var rangeAvg = new SMA { Length = KPeriod };
-
+		var passthrough = new SimpleMovingAverage { Length = 1 };
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(adx, (candle, adxValue) =>
+			.Bind(passthrough, (candle, _) =>
 			{
 				if (candle.State != CandleStates.Finished)
 					return;
 
-				var ssp = Math.Max(1, (int)Math.Ceiling(KPeriod / (double)adxValue));
+				var adxResult = _adx.Process(candle);
 
-				maxHigh.Length = ssp;
-				minLow.Length = ssp;
-				rangeAvg.Length = ssp;
+				var maxResult = _maxHigh.Process(candle);
+				var minResult = _minLow.Process(candle);
 
-				var maxVal = maxHigh.Process(candle.HighPrice);
-				var minVal = minLow.Process(candle.LowPrice);
-				var rangeVal = rangeAvg.Process(candle.HighPrice - candle.LowPrice);
-
-				if (!maxVal.IsFinal || !minVal.IsFinal || !rangeVal.IsFinal)
+				if (!maxResult.IsFormed || !minResult.IsFormed)
 					return;
 
-				var ssMax = maxVal.GetValue<decimal>();
-				var ssMin = minVal.GetValue<decimal>();
-				var range = rangeVal.GetValue<decimal>();
+				var ssMax = maxResult.ToDecimal();
+				var ssMin = minResult.ToDecimal();
 
 				var swing = (ssMax - ssMin) * K / 100m;
 				var smin = ssMin + swing;
@@ -155,27 +137,34 @@ public class ExpMultitrendSignalKvnStrategy : Strategy
 				if (candle.ClosePrice > smax)
 				{
 					if (_trend <= 0 && Position <= 0)
-						BuyMarket(Volume + Math.Abs(Position));
-
+					{
+						if (Position < 0) BuyMarket();
+						BuyMarket();
+					}
 					_trend = 1;
 				}
 				else if (candle.ClosePrice < smin)
 				{
 					if (_trend >= 0 && Position >= 0)
-						SellMarket(Volume + Math.Abs(Position));
-
+					{
+						if (Position > 0) SellMarket();
+						SellMarket();
+					}
 					_trend = -1;
 				}
 			})
 			.Start();
 
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			useMarketOrders: true);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, adx);
-			DrawIndicator(area, maxHigh);
-			DrawIndicator(area, minLow);
+			DrawOwnTrades(area);
 		}
 	}
 }

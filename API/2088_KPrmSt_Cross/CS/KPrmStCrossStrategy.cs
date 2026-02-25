@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,104 +12,47 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// KPrmSt cross strategy based on the stochastic oscillator.
-/// Opens long when %K crosses below %D.
-/// Opens short when %K crosses above %D.
+/// Opens long when %K crosses above %D from below.
+/// Opens short when %K crosses below %D from above.
 /// </summary>
-public class KPrmStCrossStrategy : Strategy
+public class KprmStCrossStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _kPeriod;
-	private readonly StrategyParam<int> _dPeriod;
-	private readonly StrategyParam<int> _slowing;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfitPct;
 
+	private StochasticOscillator _stochastic;
 	private decimal? _prevK;
 	private decimal? _prevD;
-	private decimal _entryPrice;
-	private bool _isLong;
 
-	/// <summary>
-	/// The type of candles to use for indicator calculation.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Period for the %K line.
-	/// </summary>
-	public int KPeriod
+	public decimal StopLossPct
 	{
-		get => _kPeriod.Value;
-		set => _kPeriod.Value = value;
+		get => _stopLossPct.Value;
+		set => _stopLossPct.Value = value;
 	}
 
-	/// <summary>
-	/// Period for the %D line.
-	/// </summary>
-	public int DPeriod
+	public decimal TakeProfitPct
 	{
-		get => _dPeriod.Value;
-		set => _dPeriod.Value = value;
+		get => _takeProfitPct.Value;
+		set => _takeProfitPct.Value = value;
 	}
 
-	/// <summary>
-	/// Slowing factor applied to %K.
-	/// </summary>
-	public int Slowing
+	public KprmStCrossStrategy()
 	{
-		get => _slowing.Value;
-		set => _slowing.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss in price units. 0 disables the stop.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit in price units. 0 disables the target.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
-	public KPrmStCrossStrategy()
-	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for indicator calculation", "General");
 
-		_kPeriod = Param(nameof(KPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("K Period", "Main line period", "KPrmSt");
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_dPeriod = Param(nameof(DPeriod), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("D Period", "Signal line period", "KPrmSt");
-
-		_slowing = Param(nameof(Slowing), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Slowing", "Smoothing factor for %K", "KPrmSt");
-
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk Management");
-
-		_takeProfit = Param(nameof(TakeProfit), 2000m)
-			.SetNotNegative()
-			.SetDisplay("Take Profit", "Take profit in price units", "Risk Management");
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -127,8 +67,6 @@ public class KPrmStCrossStrategy : Strategy
 		base.OnReseted();
 		_prevK = null;
 		_prevD = null;
-		_entryPrice = 0m;
-		_isLong = false;
 	}
 
 	/// <inheritdoc />
@@ -136,85 +74,57 @@ public class KPrmStCrossStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		_stochastic = new StochasticOscillator();
 
-		var stochastic = new Stochastic
-		{
-			Length = KPeriod,
-			K = Slowing,
-			D = DPeriod
-		};
-
+		var passthrough = new SimpleMovingAverage { Length = 1 };
 		var subscription = SubscribeCandles(CandleType);
 
-		subscription.Bind(stochastic, ProcessCandle).Start();
+		subscription.Bind(passthrough, (candle, _) =>
+		{
+			if (candle.State != CandleStates.Finished)
+				return;
+
+			var stochResult = _stochastic.Process(candle);
+			if (!stochResult.IsFormed)
+				return;
+
+			var stochVal = (StochasticOscillatorValue)stochResult;
+			if (stochVal.K is not decimal k || stochVal.D is not decimal d)
+				return;
+
+			if (_prevK.HasValue && _prevD.HasValue)
+			{
+				var wasBelow = _prevK.Value < _prevD.Value;
+				var isAbove = k > d;
+
+				// K crosses above D -> buy
+				if (wasBelow && isAbove && Position <= 0)
+				{
+					if (Position < 0) BuyMarket();
+					BuyMarket();
+				}
+				// K crosses below D -> sell
+				else if (!wasBelow && !isAbove && _prevK.Value > _prevD.Value && Position >= 0)
+				{
+					if (Position > 0) SellMarket();
+					SellMarket();
+				}
+			}
+
+			_prevK = k;
+			_prevD = d;
+		}).Start();
+
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, stochastic);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal k, decimal d)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_prevK is null || _prevD is null)
-		{
-			_prevK = k;
-			_prevD = d;
-			return;
-		}
-
-		// Crossover from above to below triggers a long entry
-		if (_prevK > _prevD && k <= d)
-		{
-			if (Position <= 0)
-			{
-				_entryPrice = candle.ClosePrice;
-				_isLong = true;
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-		}
-		// Crossover from below to above triggers a short entry
-		else if (_prevK < _prevD && k >= d)
-		{
-			if (Position >= 0)
-			{
-				_entryPrice = candle.ClosePrice;
-				_isLong = false;
-				SellMarket(Volume + Math.Abs(Position));
-			}
-		}
-
-		if (Position != 0 && _entryPrice != 0m)
-		{
-			var diff = candle.ClosePrice - _entryPrice;
-
-			if (_isLong)
-			{
-				if (StopLoss > 0m && diff <= -StopLoss)
-					SellMarket(Math.Abs(Position));
-				if (TakeProfit > 0m && diff >= TakeProfit)
-					SellMarket(Math.Abs(Position));
-			}
-			else
-			{
-				if (StopLoss > 0m && diff >= StopLoss)
-					BuyMarket(Math.Abs(Position));
-				if (TakeProfit > 0m && diff <= -TakeProfit)
-					BuyMarket(Math.Abs(Position));
-			}
-		}
-
-		_prevK = k;
-		_prevD = d;
 	}
 }

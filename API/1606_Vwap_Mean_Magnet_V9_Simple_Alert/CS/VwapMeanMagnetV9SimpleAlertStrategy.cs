@@ -3,9 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -34,13 +31,17 @@ public class VwapMeanMagnetV9SimpleAlertStrategy : Strategy
 
 	public VwapMeanMagnetV9SimpleAlertStrategy()
 	{
-		_vwapLength = Param(nameof(VwapLength), 60).SetDisplay("VWAP Length", "VWAP Length", "General");
+		_vwapLength = Param(nameof(VwapLength), 20).SetDisplay("VWAP Length", "VWAP Length", "General");
 		_rsiLength = Param(nameof(RsiLength), 14).SetDisplay("RSI Length", "RSI Length", "General");
 		_rsiOverbought = Param(nameof(RsiOverbought), 65).SetDisplay("RSI Overbought", "RSI Overbought", "General");
-		_rsiOversold = Param(nameof(RsiOversold), 25).SetDisplay("RSI Oversold", "RSI Oversold", "General");
+		_rsiOversold = Param(nameof(RsiOversold), 35).SetDisplay("RSI Oversold", "RSI Oversold", "General");
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.5m).SetDisplay("Stop Loss %", "Stop Loss %", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
 	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
@@ -49,8 +50,6 @@ public class VwapMeanMagnetV9SimpleAlertStrategy : Strategy
 
 		var vwap = new VolumeWeightedMovingAverage { Length = VwapLength };
 		var rsi = new RSI { Length = RsiLength };
-
-		StartProtection(stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(vwap, rsi, ProcessCandle).Start();

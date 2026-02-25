@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -19,40 +16,64 @@ namespace StockSharp.Samples.Strategies;
 public class TemaCustomSlopeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _temaLength;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private TripleExponentialMovingAverage _tema = null!;
 	private decimal? _prev1;
 	private decimal? _prev2;
 
-	/// <summary>
-	/// TEMA calculation length.
-	/// </summary>
 	public int TemaLength
 	{
 		get => _temaLength.Value;
 		set => _temaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type for analysis.
-	/// </summary>
+	public decimal StopLossPct
+	{
+		get => _stopLossPct.Value;
+		set => _stopLossPct.Value = value;
+	}
+
+	public decimal TakeProfitPct
+	{
+		get => _takeProfitPct.Value;
+		set => _takeProfitPct.Value = value;
+	}
+
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="TemaCustomSlopeStrategy"/>.
-	/// </summary>
 	public TemaCustomSlopeStrategy()
 	{
 		_temaLength = Param(nameof(TemaLength), 12)
 			.SetDisplay("TEMA Length", "Length of the TEMA", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe of candles", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prev1 = null;
+		_prev2 = null;
 	}
 
 	/// <inheritdoc />
@@ -60,18 +81,21 @@ public class TemaCustomSlopeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_tema = new TripleExponentialMovingAverage { Length = TemaLength };
+		var tema = new TripleExponentialMovingAverage { Length = TemaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_tema, ProcessCandle).Start();
+		subscription.Bind(tema, ProcessCandle).Start();
+
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _tema);
+			DrawIndicator(area, tema);
 			DrawOwnTrades(area);
 		}
 	}
@@ -79,9 +103,6 @@ public class TemaCustomSlopeStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal tema)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (_prev1 is null || _prev2 is null)
@@ -101,15 +122,13 @@ public class TemaCustomSlopeStrategy : Strategy
 
 		if (turnedUp && Position <= 0)
 		{
-			CancelActiveOrders();
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
 		else if (turnedDown && Position >= 0)
 		{
-			CancelActiveOrders();
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 	}
 }

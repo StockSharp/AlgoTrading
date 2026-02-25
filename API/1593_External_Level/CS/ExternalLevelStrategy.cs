@@ -1,88 +1,72 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Draws horizontal levels based on external signals.
-/// Creates a resistance line when the previous source value equals 1
-/// and a support line when it equals -1.
+/// Support/resistance level breakout strategy.
+/// Tracks highest high and lowest low over a lookback period.
+/// Buys on breakout above resistance, sells on breakdown below support.
 /// </summary>
 public class ExternalLevelStrategy : Strategy
 {
+	private readonly StrategyParam<int> _lookback;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleMessage _prevCandle;
-	private decimal _prevSource;
+	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="ExternalLevelStrategy"/>.
-	/// </summary>
 	public ExternalLevelStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_lookback = Param(nameof(Lookback), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback", "Support/resistance lookback period", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Source candle timeframe", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
+		var highest = new Highest { Length = Lookback };
+		var lowest = new Lowest { Length = Lookback };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(highest, lowest, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal resistance, decimal support)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevCandle != null)
-		{
-			if (_prevSource == 1m)
-			{
-				DrawLine(_prevCandle.OpenTime, _prevCandle.HighPrice, candle.OpenTime, _prevCandle.HighPrice);
-			}
-			else if (_prevSource == -1m)
-			{
-				DrawLine(_prevCandle.OpenTime, _prevCandle.LowPrice, candle.OpenTime, _prevCandle.LowPrice);
-			}
-		}
-
-		_prevSource = candle.ClosePrice;
-		_prevCandle = candle;
+		if (candle.ClosePrice >= resistance && Position <= 0)
+			BuyMarket();
+		else if (candle.ClosePrice <= support && Position >= 0)
+			SellMarket();
 	}
 }

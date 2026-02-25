@@ -3,9 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -158,15 +155,11 @@ public class ParabolicSarBug5Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal sar)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var priceAbove = candle.ClosePrice > sar;
@@ -178,14 +171,9 @@ public class ParabolicSarBug5Strategy : Strategy
 			if (Reverse)
 				isBuySignal = !isBuySignal;
 
-			if (SarClose && Position != 0)
-				ClosePosition();
-
-			var volume = Volume + Math.Abs(Position);
-
 			if (isBuySignal && Position <= 0)
 			{
-				BuyMarket(volume);
+				BuyMarket();
 				_entryPrice = candle.ClosePrice;
 				_takePrice = _entryPrice + TakeProfitPoints;
 				_stopPrice = _entryPrice - StopLossPoints;
@@ -193,7 +181,7 @@ public class ParabolicSarBug5Strategy : Strategy
 			}
 			else if (!isBuySignal && Position >= 0)
 			{
-				SellMarket(volume);
+				SellMarket();
 				_entryPrice = candle.ClosePrice;
 				_takePrice = _entryPrice - TakeProfitPoints;
 				_stopPrice = _entryPrice + StopLossPoints;
@@ -209,12 +197,12 @@ public class ParabolicSarBug5Strategy : Strategy
 
 			if (_stopPrice is decimal sl && candle.LowPrice <= sl)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetState();
 			}
 			else if (_takePrice is decimal tp && candle.HighPrice >= tp)
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetState();
 			}
 		}
@@ -226,12 +214,12 @@ public class ParabolicSarBug5Strategy : Strategy
 
 			if (_stopPrice is decimal sl && candle.HighPrice >= sl)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetState();
 			}
 			else if (_takePrice is decimal tp && candle.LowPrice <= tp)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetState();
 			}
 		}

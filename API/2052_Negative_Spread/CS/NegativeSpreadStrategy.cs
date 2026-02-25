@@ -1,75 +1,46 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that sells when the spread becomes negative and immediately closes the position.
+/// Strategy that detects price dislocations using Bollinger Bands
+/// and trades mean reversion when price extends beyond bands.
 /// </summary>
 public class NegativeSpreadStrategy : Strategy
 {
-	private readonly StrategyParam<int> _takeProfitPips;
-	private readonly StrategyParam<int> _stopLossPips;
+	private readonly StrategyParam<int> _bbPeriod;
+	private readonly StrategyParam<decimal> _bbWidth;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _isOpening;
-	private bool _isClosing;
+	public int BbPeriod { get => _bbPeriod.Value; set => _bbPeriod.Value = value; }
+	public decimal BbWidth { get => _bbWidth.Value; set => _bbWidth.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-
-	/// <summary>
-	/// Take profit distance in pips.
-	/// </summary>
-	public int TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance in pips.
-	/// </summary>
-	public int StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public NegativeSpreadStrategy()
 	{
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 5000)
+		_bbPeriod = Param(nameof(BbPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Protection");
+			.SetDisplay("BB Period", "Bollinger Bands period", "Indicators");
 
-		_stopLossPips = Param(nameof(StopLossPips), 5000)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Protection");
+		_bbWidth = Param(nameof(BbWidth), 2m)
+			.SetDisplay("BB Width", "Bollinger Bands deviation", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, default(DataType))];
-
-	/// <inheritdoc />
-	protected override void OnReseted()
 	{
-		base.OnReseted();
-		_isOpening = false;
-		_isClosing = false;
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -77,45 +48,51 @@ public class NegativeSpreadStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var tick = Security?.PriceStep ?? 1m;
-		var tp = TakeProfitPips * tick;
-		var sl = StopLossPips * tick;
+		var bb = new BollingerBands { Length = BbPeriod, Width = BbWidth };
 
-		StartProtection(new Unit(tp, UnitTypes.Absolute), new Unit(sl, UnitTypes.Absolute));
-
-		SubscribeOrderBook()
-			.Bind(ProcessOrderBook)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.BindEx(bb, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(1, UnitTypes.Percent),
+			stopLoss: new Unit(0.5m, UnitTypes.Percent)
+		);
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, bb);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessOrderBook(IOrderBookMessage orderBook)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
-		var bestBid = orderBook.Bids != null && orderBook.Bids.Length > 0 ? orderBook.Bids[0].Price : (decimal?)null;
-		var bestAsk = orderBook.Asks != null && orderBook.Asks.Length > 0 ? orderBook.Asks[0].Price : (decimal?)null;
-
-		if (bestBid is null || bestAsk is null)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (bestAsk < bestBid && Position == 0 && !_isOpening)
-		{
-			_isOpening = true;
-			SellMarket(Volume);
+		if (!bbValue.IsFormed)
 			return;
-		}
 
-		if (Position < 0)
-		{
-			_isOpening = false;
+		var bb = (BollingerBandsValue)bbValue;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
+			return;
 
-			if (!_isClosing)
-			{
-				_isClosing = true;
-				ClosePosition();
-			}
-		}
-		else
+		var close = candle.ClosePrice;
+
+		// Mean reversion: sell when above upper band, buy when below lower band
+		if (close > upper && Position >= 0)
 		{
-			_isClosing = false;
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
+		else if (close < lower && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -12,8 +9,11 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
+
 /// <summary>
 /// Escort Trend strategy combining WMA crossover with MACD and CCI confirmation.
+/// Buys when fast WMA above slow WMA, MACD bullish, CCI above threshold.
+/// Sells when opposite conditions met.
 /// </summary>
 public class EscortTrendStrategy : Strategy
 {
@@ -21,151 +21,124 @@ public class EscortTrendStrategy : Strategy
 	private readonly StrategyParam<int> _slowWmaPeriod;
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<decimal> _cciThreshold;
-	private readonly StrategyParam<int> _macdFast;
-	private readonly StrategyParam<int> _macdSlow;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _trailingStop;
-	private readonly StrategyParam<decimal> _trailingStep;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfitPct;
 	private readonly StrategyParam<DataType> _candleType;
-	/// <summary>
-	/// Fast weighted moving average period.
-	/// </summary>
+
+	private WeightedMovingAverage _slowWma;
+	private CommodityChannelIndex _cci;
+	private MovingAverageConvergenceDivergenceSignal _macd;
+
 	public int FastWmaPeriod { get => _fastWmaPeriod.Value; set => _fastWmaPeriod.Value = value; }
-	/// <summary>
-	/// Slow weighted moving average period.
-	/// </summary>
 	public int SlowWmaPeriod { get => _slowWmaPeriod.Value; set => _slowWmaPeriod.Value = value; }
-	/// <summary>
-	/// CCI calculation period.
-	/// </summary>
 	public int CciPeriod { get => _cciPeriod.Value; set => _cciPeriod.Value = value; }
-	/// <summary>
-	/// Threshold value for CCI signals.
-	/// </summary>
 	public decimal CciThreshold { get => _cciThreshold.Value; set => _cciThreshold.Value = value; }
-	/// <summary>
-	/// Fast EMA period for MACD.
-	/// </summary>
-	public int MacdFast { get => _macdFast.Value; set => _macdFast.Value = value; }
-	/// <summary>
-	/// Slow EMA period for MACD.
-	/// </summary>
-	public int MacdSlow { get => _macdSlow.Value; set => _macdSlow.Value = value; }
-	/// <summary>
-	/// Take profit in price points.
-	/// </summary>
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	/// <summary>
-	/// Stop loss in price points.
-	/// </summary>
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-	/// <summary>
-	/// Trailing stop distance.
-	/// </summary>
-	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
-	/// <summary>
-	/// Step for trailing stop adjustment.
-	/// </summary>
-	public decimal TrailingStep { get => _trailingStep.Value; set => _trailingStep.Value = value; }
-	/// <summary>
-	/// Type of candles used for calculations.
-	/// </summary>
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	/// <summary>
-	/// Initializes a new instance of the strategy with default parameters.
-	/// </summary>
+
 	public EscortTrendStrategy()
 	{
 		_fastWmaPeriod = Param(nameof(FastWmaPeriod), 8)
-			.SetDisplay("Fast WMA", "Length of fast weighted MA", "General")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("Fast WMA", "Length of fast weighted MA", "General");
+
 		_slowWmaPeriod = Param(nameof(SlowWmaPeriod), 18)
-			.SetDisplay("Slow WMA", "Length of slow weighted MA", "General")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("Slow WMA", "Length of slow weighted MA", "General");
+
 		_cciPeriod = Param(nameof(CciPeriod), 14)
-			.SetDisplay("CCI Period", "CCI calculation period", "General")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("CCI Period", "CCI calculation period", "General");
+
 		_cciThreshold = Param(nameof(CciThreshold), 100m)
-			.SetDisplay("CCI Threshold", "Threshold for CCI signal", "General")
-			;
-		_macdFast = Param(nameof(MacdFast), 8)
-			.SetDisplay("MACD Fast EMA", "Fast EMA period for MACD", "MACD")
-			;
-		_macdSlow = Param(nameof(MacdSlow), 18)
-			.SetDisplay("MACD Slow EMA", "Slow EMA period for MACD", "MACD")
-			;
-		_takeProfit = Param(nameof(TakeProfit), 200m)
-			.SetDisplay("Take Profit", "Take profit in price points", "Risk");
-		_stopLoss = Param(nameof(StopLoss), 55m)
-			.SetDisplay("Stop Loss", "Stop loss in price points", "Risk");
-		_trailingStop = Param(nameof(TrailingStop), 35m)
-			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk");
-		_trailingStep = Param(nameof(TrailingStep), 3m)
-			.SetDisplay("Trailing Step", "Step for trailing stop", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("CCI Threshold", "Threshold for CCI signal", "General");
+
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
+
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
+
 		var fastWma = new WeightedMovingAverage { Length = FastWmaPeriod };
-		var slowWma = new WeightedMovingAverage { Length = SlowWmaPeriod };
-		var cci = new CommodityChannelIndex { Length = CciPeriod };
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = MacdFast },
-				LongMa = { Length = MacdSlow }
-			},
-			SignalMa = { Length = 9 }
-		};
+		_slowWma = new WeightedMovingAverage { Length = SlowWmaPeriod };
+		_cci = new CommodityChannelIndex { Length = CciPeriod };
+		_macd = new MovingAverageConvergenceDivergenceSignal();
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastWma, slowWma, cci)
-			.BindEx(macd, Process)
+			.Bind(fastWma, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent)
+		);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, fastWma);
-			DrawIndicator(area, slowWma);
-			DrawIndicator(area, cci);
-			DrawIndicator(area, macd);
+			DrawIndicator(area, _slowWma);
 			DrawOwnTrades(area);
 		}
-		StartProtection(
-			takeProfit: TakeProfit > 0 ? new Unit(TakeProfit, UnitTypes.Absolute) : null,
-			stopLoss: StopLoss > 0 ? new Unit(StopLoss, UnitTypes.Absolute) : null,
-			trailingStop: TrailingStop > 0 ? new Unit(TrailingStop, UnitTypes.Absolute) : null,
-			trailingStep: TrailingStep > 0 ? new Unit(TrailingStep, UnitTypes.Absolute) : null
-		);
 	}
-	private void Process(ICandleMessage candle, decimal fast, decimal slow, decimal cciValue, IIndicatorValue macdValue)
+
+	private void ProcessCandle(ICandleMessage candle, decimal fast)
 	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-		// Ensure trading is allowed
-		if (!IsFormedAndOnlineAndAllowTrading())
+
+		var slowResult = _slowWma.Process(candle.ClosePrice, candle.OpenTime, true);
+		if (!slowResult.IsFormed)
 			return;
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+
+		var slow = slowResult.ToDecimal();
+
+		var cciResult = _cci.Process(candle);
+		if (!cciResult.IsFormed)
+			return;
+
+		var cciValue = cciResult.ToDecimal();
+
+		var macdResult = _macd.Process(candle.ClosePrice, candle.OpenTime, true);
+		if (!macdResult.IsFormed)
+			return;
+
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdResult;
 		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal signalLine)
 			return;
-		// Determine signals
+
+		// Buy: fast WMA above slow WMA, MACD bullish, CCI above threshold
 		var buy = fast > slow && macdLine > signalLine && cciValue > CciThreshold;
+		// Sell: fast WMA below slow WMA, MACD bearish, CCI below negative threshold
 		var sell = fast < slow && macdLine < signalLine && cciValue < -CciThreshold;
+
 		if (buy && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
 		else if (sell && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,113 +11,43 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Demonstrates position sizing based on risk and stop-loss percentage.
-/// Places random entries using calculated quantity.
+/// EMA crossover strategy demonstrating risk-based position sizing concepts.
 /// </summary>
 public class CalculationPositionSizeBasedOnRiskStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _riskValue;
-	private readonly StrategyParam<bool> _riskIsPercent;
-	private readonly StrategyParam<int> _longPeriod;
-	private readonly StrategyParam<int> _shortPeriod;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private int _barIndex;
+	private decimal _prevDiff;
 
-	/// <summary>
-	/// Stop-loss percentage from entry price.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Risk value either in percent or absolute currency.
-	/// </summary>
-	public decimal RiskValue
-	{
-		get => _riskValue.Value;
-		set => _riskValue.Value = value;
-	}
-
-	/// <summary>
-	/// Whether risk value is percentage of portfolio equity.
-	/// </summary>
-	public bool RiskIsPercent
-	{
-		get => _riskIsPercent.Value;
-		set => _riskIsPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Period for random long entries.
-	/// </summary>
-	public int LongPeriod
-	{
-		get => _longPeriod.Value;
-		set => _longPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Period for random short entries.
-	/// </summary>
-	public int ShortPeriod
-	{
-		get => _shortPeriod.Value;
-		set => _shortPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for timing.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="CalculationPositionSizeBasedOnRiskStrategy"/>.
-	/// </summary>
 	public CalculationPositionSizeBasedOnRiskStrategy()
 	{
-		_stopLossPercent = Param(nameof(StopLossPercent), 10m)
+		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+			.SetDisplay("Fast EMA", "Fast EMA period", "General");
 
-		_riskValue = Param(nameof(RiskValue), 2m)
+		_slowLength = Param(nameof(SlowLength), 30)
 			.SetGreaterThanZero()
-			.SetDisplay("Risk Value", "Risk amount", "Risk");
+			.SetDisplay("Slow EMA", "Slow EMA period", "General");
 
-		_riskIsPercent = Param(nameof(RiskIsPercent), true)
-			.SetDisplay("Risk Is Percent", "Risk as % of equity", "Risk");
-
-		_longPeriod = Param(nameof(LongPeriod), 333)
-			.SetGreaterThanZero()
-			.SetDisplay("Long Period", "Bars between long entries", "Random");
-
-		_shortPeriod = Param(nameof(ShortPeriod), 444)
-			.SetGreaterThanZero()
-			.SetDisplay("Short Period", "Bars between short entries", "Random");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_barIndex = 0;
+		_prevDiff = 0;
 	}
 
 	/// <inheritdoc />
@@ -128,39 +55,37 @@ public class CalculationPositionSizeBasedOnRiskStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		var emaFast = new ExponentialMovingAverage { Length = FastLength };
+		var emaSlow = new ExponentialMovingAverage { Length = SlowLength };
 
-		StartProtection(stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(emaFast, emaSlow, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, emaFast);
+			DrawIndicator(area, emaSlow);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_barIndex++;
+		var diff = fast - slow;
+		var crossUp = _prevDiff <= 0 && diff > 0;
+		var crossDown = _prevDiff >= 0 && diff < 0;
+		_prevDiff = diff;
 
-		var qty = CalcPositionSize(candle.ClosePrice);
-
-		if (_barIndex % LongPeriod == 0)
-		{
-			BuyMarket(qty);
-		}
-		else if (_barIndex % ShortPeriod == 0)
-		{
-			SellMarket(qty);
-		}
-	}
-
-	private decimal CalcPositionSize(decimal entryPrice)
-	{
-		if (entryPrice <= 0)
-			return 0m;
-
-		var risk = RiskIsPercent ? Portfolio.CurrentValue * RiskValue / 100m : RiskValue;
-		var riskPerUnit = entryPrice * StopLossPercent / 100m;
-
-		return riskPerUnit > 0 ? risk / riskPerUnit : 0m;
+		if (crossUp && Position <= 0)
+			BuyMarket();
+		else if (crossDown && Position >= 0)
+			SellMarket();
 	}
 }

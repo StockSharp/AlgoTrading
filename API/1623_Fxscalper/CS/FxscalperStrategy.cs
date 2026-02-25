@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -20,58 +17,14 @@ public class FxscalperStrategy : Strategy
 {
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Length of Bollinger Bands.
-	/// </summary>
-	public int BollingerPeriod
-	{
-		get => _bollingerPeriod.Value;
-		set => _bollingerPeriod.Value = value;
-	}
+	private decimal _entryPrice;
 
-	/// <summary>
-	/// Width of Bollinger Bands.
-	/// </summary>
-	public decimal BollingerDeviation
-	{
-		get => _bollingerDeviation.Value;
-		set => _bollingerDeviation.Value = value;
-	}
+	public int BollingerPeriod { get => _bollingerPeriod.Value; set => _bollingerPeriod.Value = value; }
+	public decimal BollingerDeviation { get => _bollingerDeviation.Value; set => _bollingerDeviation.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Absolute take profit value.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Absolute stop loss value.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="FxscalperStrategy"/> class.
-	/// </summary>
 	public FxscalperStrategy()
 	{
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
@@ -80,24 +33,21 @@ public class FxscalperStrategy : Strategy
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("BB Deviation", "Bollinger Bands width", "Indicators");
-
-		_takeProfit = Param(nameof(TakeProfit), 150m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Absolute take profit", "Risk");
-
-		_stopLoss = Param(nameof(StopLoss), 200m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Absolute stop loss", "Risk");
+			.SetDisplay("BB Width", "Bollinger Bands width", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
+			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_entryPrice = 0;
 	}
 
 	/// <inheritdoc />
@@ -105,37 +55,46 @@ public class FxscalperStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(
-			stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
-			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute));
-
-		var bollinger = new BollingerBands
-		{
-			Length = BollingerPeriod,
-			Width = BollingerDeviation
-		};
+		var bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerDeviation };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(bollinger, ProcessCandle)
-			.Start();
+		subscription.BindEx(bollinger, ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, bollinger);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var bb = (BollingerBandsValue)bbValue;
+		if (bb.UpBand is not decimal upper ||
+			bb.LowBand is not decimal lower ||
+			bb.MovingAverage is not decimal middle)
 			return;
 
 		if (candle.ClosePrice > upper && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
 		}
 		else if (candle.ClosePrice < lower && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
 		}
+
+		// Mean reversion exit: close when price returns to middle band
+		if (Position > 0 && candle.ClosePrice <= middle)
+			SellMarket();
+		else if (Position < 0 && candle.ClosePrice >= middle)
+			BuyMarket();
 	}
 }

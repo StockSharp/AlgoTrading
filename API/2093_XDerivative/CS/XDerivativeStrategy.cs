@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -21,91 +18,64 @@ public class XDerivativeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rocPeriod;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<decimal> _stopLossPct;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly JurikMovingAverage _jma = new();
-
+	private JurikMovingAverage _jma;
 	private decimal? _prevValue;
 	private decimal? _prevPrevValue;
 
-	/// <summary>
-	/// Rate of Change period.
-	/// </summary>
 	public int RocPeriod
 	{
 		get => _rocPeriod.Value;
 		set => _rocPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Jurik Moving Average length used for smoothing.
-	/// </summary>
 	public int MaLength
 	{
 		get => _maLength.Value;
 		set => _maLength.Value = value;
 	}
 
-	/// <summary>
-	/// Take profit percentage.
-	/// </summary>
-	public decimal TakeProfitPercent
+	public decimal TakeProfitPct
 	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
+		get => _takeProfitPct.Value;
+		set => _takeProfitPct.Value = value;
 	}
 
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
+	public decimal StopLossPct
 	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
+		get => _stopLossPct.Value;
+		set => _stopLossPct.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initialize <see cref="XDerivativeStrategy"/>.
-	/// </summary>
 	public XDerivativeStrategy()
 	{
-		_rocPeriod = Param(nameof(RocPeriod), 34)
+		_rocPeriod = Param(nameof(RocPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ROC Period", "Period for rate of change calculation", "Parameters")
-			
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("ROC Period", "Period for rate of change", "Parameters");
 
 		_maLength = Param(nameof(MaLength), 7)
 			.SetGreaterThanZero()
-			.SetDisplay("JMA Length", "Period for Jurik MA smoothing", "Parameters")
-			
-			.SetOptimize(5, 20, 5);
+			.SetDisplay("JMA Length", "Period for Jurik MA smoothing", "Parameters");
 
-		_takeProfit = Param(nameof(TakeProfitPercent), 2m)
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management")
-			
-			.SetOptimize(1m, 5m, 1m);
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_stopLoss = Param(nameof(StopLossPercent), 1m)
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			
-			.SetOptimize(0.5m, 3m, 0.5m);
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for calculation", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
 
 	/// <inheritdoc />
@@ -118,7 +88,6 @@ public class XDerivativeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_jma.Length = MaLength;
 		_prevValue = null;
 		_prevPrevValue = null;
 	}
@@ -128,65 +97,55 @@ public class XDerivativeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_jma.Length = MaLength;
-
+		_jma = new JurikMovingAverage { Length = MaLength };
 		var roc = new RateOfChange { Length = RocPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(roc, ProcessCandle)
+			.Bind(roc, (candle, rocValue) =>
+			{
+				if (candle.State != CandleStates.Finished)
+					return;
+
+				var jmaResult = _jma.Process(rocValue, candle.OpenTime, true);
+				if (!jmaResult.IsFormed)
+					return;
+
+				var value = jmaResult.ToDecimal();
+
+				if (_prevValue is decimal prev && _prevPrevValue is decimal prev2)
+				{
+					var turnUp = prev < prev2 && value > prev;
+					var turnDown = prev > prev2 && value < prev;
+
+					if (turnUp && Position <= 0)
+					{
+						if (Position < 0) BuyMarket();
+						BuyMarket();
+					}
+					else if (turnDown && Position >= 0)
+					{
+						if (Position > 0) SellMarket();
+						SellMarket();
+					}
+				}
+
+				_prevPrevValue = _prevValue;
+				_prevValue = value;
+			})
 			.Start();
 
 		StartProtection(
-			takeProfit: new Unit(TakeProfitPercent * 100m, UnitTypes.Percent),
-			stopLoss: new Unit(StopLossPercent * 100m, UnitTypes.Percent)
-		);
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, roc);
-			DrawIndicator(area, _jma);
 			DrawOwnTrades(area);
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rocValue)
-	{
-		// Skip unfinished candles
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Ensure trading is allowed
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Smooth the ROC value with JMA
-		var jmaValue = _jma.Process(rocValue);
-		if (!jmaValue.IsFinal)
-			return;
-
-		var value = jmaValue.GetValue<decimal>();
-
-		if (_prevValue is decimal prev && _prevPrevValue is decimal prev2)
-		{
-			var turnUp = prev < prev2 && value > prev;
-			var turnDown = prev > prev2 && value < prev;
-
-			if (turnUp && Position <= 0)
-			{
-				// Flip to long on upward turn
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-			else if (turnDown && Position >= 0)
-			{
-				// Flip to short on downward turn
-				SellMarket(Volume + Math.Abs(Position));
-			}
-		}
-
-		_prevPrevValue = _prevValue;
-		_prevValue = value;
 	}
 }

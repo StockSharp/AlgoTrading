@@ -3,9 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -129,7 +126,7 @@ public class HybridScalpingBotStrategy : Strategy
 	    _useVolumeFilter = Param(nameof(UseVolumeFilter), false)
 	        .SetDisplay("Use Volume Filter", "Require high volume", "General");
 
-	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 	        .SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

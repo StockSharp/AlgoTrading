@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,193 +11,108 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on MACD line crossover with optional fresh signal check.
+/// MACD crossover strategy with signal line.
 /// </summary>
 public class ZeroLagMacdStrategy : Strategy
 {
-private readonly StrategyParam<int> _fastEmaLength;
-private readonly StrategyParam<int> _slowEmaLength;
-private readonly StrategyParam<int> _signalEmaLength;
-private readonly StrategyParam<bool> _useFreshSignal;
-private readonly StrategyParam<int> _startHour;
-private readonly StrategyParam<int> _endHour;
-private readonly StrategyParam<int> _killDay;
-private readonly StrategyParam<int> _killHour;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<int> _signalLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-private decimal _prevMacd;
-private decimal _prevSignal;
-private bool _hasPrev;
+	private decimal _prevMacd;
+	private decimal _prevSignal;
+	private bool _hasPrev;
 
-/// <summary>
-/// Fast EMA length for MACD.
-/// </summary>
-public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public int SignalLength { get => _signalLength.Value; set => _signalLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>
-/// Slow EMA length for MACD.
-/// </summary>
-public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
+	public ZeroLagMacdStrategy()
+	{
+		_fastLength = Param(nameof(FastLength), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "MACD");
 
-/// <summary>
-/// Signal EMA length for MACD.
-/// </summary>
-public int SignalEmaLength { get => _signalEmaLength.Value; set => _signalEmaLength.Value = value; }
+		_slowLength = Param(nameof(SlowLength), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "MACD");
 
-/// <summary>
-/// Require that the MACD crossover happens on the current bar.
-/// </summary>
-public bool UseFreshSignal { get => _useFreshSignal.Value; set => _useFreshSignal.Value = value; }
+		_signalLength = Param(nameof(SignalLength), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal", "Signal EMA period", "MACD");
 
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle Type", "General");
+	}
 
-/// <summary>
-/// Trading start hour.
-/// </summary>
-public int StartHour { get => _startHour.Value; set => _startHour.Value = value; }
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-/// <summary>
-/// Trading end hour.
-/// </summary>
-public int EndHour { get => _endHour.Value; set => _endHour.Value = value; }
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMacd = 0;
+		_prevSignal = 0;
+		_hasPrev = false;
+	}
 
-/// <summary>
-/// Day of week to force closing (0=Sunday).
-/// </summary>
-public int KillDay { get => _killDay.Value; set => _killDay.Value = value; }
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-/// <summary>
-/// Hour to force closing on <see cref="KillDay"/>.
-/// </summary>
-public int KillHour { get => _killHour.Value; set => _killHour.Value = value; }
+		var macd = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd =
+			{
+				ShortMa = { Length = FastLength },
+				LongMa = { Length = SlowLength },
+			},
+			SignalMa = { Length = SignalLength }
+		};
 
-/// <summary>
-/// Candle type used for calculations.
-/// </summary>
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+		var subscription = SubscribeCandles(CandleType);
+		subscription.BindEx(macd, ProcessCandle).Start();
 
-/// <summary>
-/// Initialize <see cref="ZeroLagMacdStrategy"/>.
-/// </summary>
-public ZeroLagMacdStrategy()
-{
-_fastEmaLength = Param(nameof(FastEmaLength), 2).SetGreaterThanZero();
-_slowEmaLength = Param(nameof(SlowEmaLength), 34).SetGreaterThanZero();
-_signalEmaLength = Param(nameof(SignalEmaLength), 2).SetGreaterThanZero();
-_useFreshSignal = Param(nameof(UseFreshSignal), true)
-.SetDisplay("Use Fresh Signal", "Require MACD crossover", "General");
-_startHour = Param(nameof(StartHour), 9)
-.SetDisplay("Start Hour", "Trading start hour", "Time Filter");
-_endHour = Param(nameof(EndHour), 15)
-.SetDisplay("End Hour", "Trading end hour", "Time Filter");
-_killDay = Param(nameof(KillDay), 5)
-.SetDisplay("Kill Day", "Day to close trades (0=Sunday)", "Time Filter");
-_killHour = Param(nameof(KillHour), 21)
-.SetDisplay("Kill Hour", "Hour to close on kill day", "Time Filter");
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-.SetDisplay("Candle Type", "Source candles", "General");
-}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, macd);
+			DrawOwnTrades(area);
+		}
+	}
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-=> [(Security, CandleType)];
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_prevMacd = 0m;
-_prevSignal = 0m;
-_hasPrev = false;
-}
+		if (!macdValue.IsFinal)
+			return;
 
-/// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
-{
-base.OnStarted(time);
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 
-var macd = new MovingAverageConvergenceDivergenceSignal
-{
-Macd =
-{
-ShortMa = { Length = FastEmaLength },
-LongMa = { Length = SlowEmaLength },
-},
-SignalMa = { Length = SignalEmaLength }
-};
+		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal signalLine)
+			return;
 
-var subscription = SubscribeCandles(CandleType);
-subscription.BindEx(macd, ProcessCandle).Start();
-}
+		if (_hasPrev)
+		{
+			var crossUp = _prevMacd <= _prevSignal && macdLine > signalLine;
+			var crossDown = _prevMacd >= _prevSignal && macdLine < signalLine;
 
-private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
-{
-if (candle.State != CandleStates.Finished)
-return;
+			if (crossUp && Position <= 0)
+				BuyMarket();
+			else if (crossDown && Position >= 0)
+				SellMarket();
+		}
 
-var time = candle.OpenTime;
-var hour = time.Hour;
-var day = (int)time.DayOfWeek;
-
-// Close positions outside allowed trading time
-var outside =
-hour < StartHour ||
-hour >= EndHour ||
-(day == KillDay && hour == KillHour);
-
-if (outside)
-{
-if (Position != 0)
-ClosePosition();
-
-_hasPrev = false;
-return;
-}
-
-if (!macdValue.IsFinal)
-return;
-
-var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-
-if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
-return;
-
-var isFresh = true;
-if (UseFreshSignal && _hasPrev)
-{
-isFresh =
-(_prevSignal > _prevMacd && signal < macd) ||
-(_prevSignal < _prevMacd && signal > macd);
-
-if (!isFresh)
-{
-_prevMacd = macd;
-_prevSignal = signal;
-return;
-}
-}
-
-var buySignal = signal < macd;
-var sellSignal = signal > macd;
-
-// Close on opposite signal
-if (Position > 0 && sellSignal)
-{
-ClosePosition();
-}
-else if (Position < 0 && buySignal)
-{
-ClosePosition();
-}
-else if (Position == 0)
-{
-if (buySignal)
-BuyMarket(Volume);
-else if (sellSignal)
-SellMarket(Volume);
-}
-
-_prevMacd = macd;
-_prevSignal = signal;
-_hasPrev = true;
-}
+		_prevMacd = macdLine;
+		_prevSignal = signalLine;
+		_hasPrev = true;
+	}
 }

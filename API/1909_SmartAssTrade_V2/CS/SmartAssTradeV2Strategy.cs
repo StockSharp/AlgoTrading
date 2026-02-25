@@ -1,220 +1,149 @@
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Multi-timeframe strategy based on MACD histogram, moving averages, Williams %R and RSI.
+/// Strategy based on MACD histogram direction, WilliamsR, RSI and MA trend.
+/// Buys when MACD is rising, MA is trending up, WPR and RSI confirm momentum.
 /// </summary>
 public class SmartAssTradeV2Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<bool> _useTrailingStop;
-	private readonly StrategyParam<decimal> _trailingStop;
-	private readonly StrategyParam<decimal> _trailingStopStep;
+	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Dictionary<int, TimeframeState> _states = new();
+	private MovingAverageConvergenceDivergence _macd;
+	private SimpleMovingAverage _ma;
+	private WilliamsR _wpr;
+	private RelativeStrengthIndex _rsi;
+
+	private decimal? _prevMacd;
+	private decimal? _prevMa;
 	private decimal? _prevWpr;
-	private decimal? _currWpr;
 	private decimal? _prevRsi;
-	private decimal? _currRsi;
 
-	private class TimeframeState
-	{
-		public decimal? PrevMacd;
-		public decimal? CurrMacd;
-		public decimal? PrevMa;
-		public decimal? CurrMa;
-	}
+	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
+	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-
-	/// <summary>
-	/// Take profit in price units.
-	/// </summary>
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-
-	/// <summary>
-	/// Stop loss in price units.
-	/// </summary>
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-
-	/// <summary>
-	/// Enable trailing stop.
-	/// </summary>
-	public bool UseTrailingStop { get => _useTrailingStop.Value; set => _useTrailingStop.Value = value; }
-
-	/// <summary>
-	/// Trailing stop distance in price units.
-	/// </summary>
-	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
-
-	/// <summary>
-	/// Trailing step in price units.
-	/// </summary>
-	public decimal TrailingStopStep { get => _trailingStopStep.Value; set => _trailingStopStep.Value = value; }
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="SmartAssTradeV2Strategy"/>.
-	/// </summary>
 	public SmartAssTradeV2Strategy()
 	{
+		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk Management");
 
-		_takeProfit = Param(nameof(TakeProfit), 35m)
-			.SetDisplay("Take Profit", "Take profit in price units", "Risk Management");
+		_stopLossPct = Param(nameof(StopLossPct), 2m)
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
 
-		_stopLoss = Param(nameof(StopLoss), 62m)
-			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk Management");
-
-		_useTrailingStop = Param(nameof(UseTrailingStop), false)
-			.SetDisplay("Use Trailing Stop", "Enable trailing stop", "Risk Management");
-
-		_trailingStop = Param(nameof(TrailingStop), 30m)
-			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk Management");
-
-		_trailingStopStep = Param(nameof(TrailingStopStep), 1m)
-			.SetDisplay("Trailing Step", "Trailing stop step", "Risk Management");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		foreach (var tf in new[] { 1, 5, 15, 30, 60 })
-			yield return (Security, TimeSpan.FromMinutes(tf).TimeFrame());
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnReseted()
 	{
-		base.OnStarted(time);
+		base.OnReseted();
+		_prevMacd = null;
+		_prevMa = null;
+		_prevWpr = null;
+		_prevRsi = null;
+	}
 
-		foreach (var tf in new[] { 1, 5, 15, 30, 60 })
-		{
-			var macd = new MovingAverageConvergenceDivergence
-			{
-				ShortLength = 12,
-				LongLength = 26,
-				SignalLength = 9
-			};
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-			var ma = new SMA
-			{
-				Length = 20
-			};
+		_macd = new MovingAverageConvergenceDivergence();
+		_ma = new SimpleMovingAverage { Length = 20 };
+		_wpr = new WilliamsR { Length = 26 };
+		_rsi = new RelativeStrengthIndex { Length = 14 };
 
-			_states[tf] = new TimeframeState();
-
-			var subscription = SubscribeCandles(TimeSpan.FromMinutes(tf).TimeFrame());
-
-			if (tf == 30)
-			{
-				var wpr = new WilliamsR
-				{
-					Length = 26
-				};
-
-				var rsi = new RelativeStrengthIndex
-				{
-					Length = 14
-				};
-
-				subscription
-				.Bind(macd, ma, wpr, rsi, (candle, macdVal, maVal, wprVal, rsiVal) => Process30(candle, tf, macdVal, maVal, wprVal, rsiVal))
-				.Start();
-			}
-			else
-			{
-				subscription
-				.Bind(macd, ma, (candle, macdVal, maVal) => ProcessTf(candle, tf, macdVal, maVal))
-				.Start();
-			}
-		}
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 
 		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
-			isTrailingStop: UseTrailingStop,
-			trailingStop: new Unit(TrailingStop, UnitTypes.Absolute),
-			trailingStopStep: new Unit(TrailingStopStep, UnitTypes.Absolute));
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent)
+		);
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessTf(ICandleMessage candle, int tf, decimal macdVal, decimal maVal)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		var state = _states[tf];
-		state.PrevMacd = state.CurrMacd;
-		state.CurrMacd = macdVal;
-		state.PrevMa = state.CurrMa;
-		state.CurrMa = maVal;
-	}
-
-	private void Process30(ICandleMessage candle, int tf, decimal macdVal, decimal maVal, decimal wprVal, decimal rsiVal)
-	{
-		ProcessTf(candle, tf, macdVal, maVal);
-
-		_prevWpr = _currWpr;
-		_currWpr = wprVal;
-		_prevRsi = _currRsi;
-		_currRsi = rsiVal;
-
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		TryTrade(candle);
-	}
+		var macdResult = _macd.Process(candle.ClosePrice, candle.OpenTime, true);
+		var maResult = _ma.Process(candle.ClosePrice, candle.OpenTime, true);
+		var wprResult = _wpr.Process(candle);
+		var rsiResult = _rsi.Process(candle.ClosePrice, candle.OpenTime, true);
 
-	private void TryTrade(ICandleMessage candle)
-	{
-		int osb = 0, oss = 0, upm = 0, dnm = 0;
-
-		foreach (var st in _states.Values)
-		{
-			if (st.PrevMacd != null && st.CurrMacd != null)
-			{
-				if (st.CurrMacd > st.PrevMacd)
-					osb++;
-				else if (st.CurrMacd < st.PrevMacd)
-					oss++;
-			}
-
-			if (st.PrevMa != null && st.CurrMa != null)
-			{
-				if (st.CurrMa > st.PrevMa)
-					upm++;
-				else if (st.CurrMa < st.PrevMa)
-					dnm++;
-			}
-		}
-
-		bool upward = osb >= 4 && upm >= 4;
-		bool downward = oss >= 4 && dnm >= 4;
-		int codB = osb == 5 && upm == 5 ? 2 : upward ? 1 : 0;
-		int codS = oss == 5 && dnm == 5 ? 2 : downward ? 1 : 0;
-
-		if (_prevWpr == null || _currWpr == null || _prevRsi == null || _currRsi == null)
+		if (!macdResult.IsFormed || !maResult.IsFormed || !wprResult.IsFormed || !rsiResult.IsFormed)
 			return;
 
-		bool wprmb = _currWpr < 90m && _currWpr > _prevWpr && _currRsi < 77m && _currRsi > _prevRsi;
-		bool wprms = _currWpr > 10m && _currWpr < _prevWpr && _currRsi > 23m && _currRsi < _prevRsi;
+		var currMacd = macdResult.ToDecimal();
+		var currMa = maResult.ToDecimal();
+		var currWpr = wprResult.ToDecimal();
+		var currRsi = rsiResult.ToDecimal();
 
-		if (Position == 0)
+		if (_prevMacd == null || _prevMa == null || _prevWpr == null || _prevRsi == null)
 		{
-			if (upward && codB != 0 && wprmb)
-				BuyMarket(Volume);
-			else if (downward && codS != 0 && wprms)
-				SellMarket(Volume);
+			_prevMacd = currMacd;
+			_prevMa = currMa;
+			_prevWpr = currWpr;
+			_prevRsi = currRsi;
+			return;
 		}
+
+		var macdRising = currMacd > _prevMacd;
+		var macdFalling = currMacd < _prevMacd;
+		var maRising = currMa > _prevMa;
+		var maFalling = currMa < _prevMa;
+
+		// Buy signal: MACD rising, MA rising, WPR recovering, RSI rising below 70
+		var buySignal = macdRising && maRising
+			&& currWpr > _prevWpr && currRsi > _prevRsi
+			&& currRsi < 70m;
+
+		// Sell signal: MACD falling, MA falling, WPR declining, RSI falling above 30
+		var sellSignal = macdFalling && maFalling
+			&& currWpr < _prevWpr && currRsi < _prevRsi
+			&& currRsi > 30m;
+
+		if (Position <= 0 && buySignal)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		else if (Position >= 0 && sellSignal)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
+
+		_prevMacd = currMacd;
+		_prevMa = currMa;
+		_prevWpr = currWpr;
+		_prevRsi = currRsi;
 	}
 }

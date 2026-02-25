@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,15 +11,13 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on RMACD indicator with several reversal entry modes.
+/// Strategy based on MACD signal crossover with several reversal entry modes.
 /// </summary>
 public class RmacdReversalStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastLength;
-	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<DataType> _candleType;
-        private readonly StrategyParam<AlgModes> _mode;
+	private readonly StrategyParam<AlgModes> _mode;
 
 	private decimal _prevMacd;
 	private decimal _prevMacd2;
@@ -30,72 +25,20 @@ public class RmacdReversalStrategy : Strategy
 	private decimal _prevSignal2;
 	private int _initialized;
 
-	/// <summary>
-	/// Fast period for MACD calculation.
-	/// </summary>
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
+	public int SignalLength { get => _signalLength.Value; set => _signalLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public AlgModes Mode { get => _mode.Value; set => _mode.Value = value; }
 
-	/// <summary>
-	/// Slow period for MACD calculation.
-	/// </summary>
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
-
-	/// <summary>
-	/// Signal line period.
-	/// </summary>
-	public int SignalLength
-	{
-		get => _signalLength.Value;
-		set => _signalLength.Value = value;
-	}
-
-	/// <summary>
-	/// Timeframe used for MACD.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Entry mode selection.
-	/// </summary>
-        public AlgModes Mode
-	{
-		get => _mode.Value;
-		set => _mode.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public RmacdReversalStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 12)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast Length", "Fast EMA period", "Indicator");
-
-		_slowLength = Param(nameof(SlowLength), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow Length", "Slow EMA period", "Indicator");
-
 		_signalLength = Param(nameof(SignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "Signal smoothing period", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 
-                _mode = Param(nameof(Mode), AlgModes.MacdDisposition)
+		_mode = Param(nameof(Mode), AlgModes.MacdDisposition)
 			.SetDisplay("Mode", "Entry algorithm", "Trading");
 	}
 
@@ -106,19 +49,23 @@ public class RmacdReversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnReseted()
 	{
-		base.OnStarted(time);
+		base.OnReseted();
+		_prevMacd = 0;
+		_prevMacd2 = 0;
+		_prevSignal = 0;
+		_prevSignal2 = 0;
+		_initialized = 0;
+	}
 
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = FastLength },
-				LongMa = { Length = SlowLength },
-			},
-			SignalMa = { Length = SignalLength }
-		};
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		var macd = new MovingAverageConvergenceDivergenceSignal();
+		macd.SignalMa.Length = SignalLength;
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -137,20 +84,16 @@ public class RmacdReversalStrategy : Strategy
 
 	private void ProcessMacd(ICandleMessage candle, IIndicatorValue macdValue)
 	{
-		if (!macdValue.IsFinal)
-			return;
-
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!macdValue.IsFormed)
 			return;
 
-		var typed = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macd = typed.Macd;
-		var signal = typed.Signal;
+		var typed = (IMovingAverageConvergenceDivergenceSignalValue)macdValue;
+		if (typed.Macd is not decimal macd || typed.Signal is not decimal signal)
+			return;
 
-		// Initialize previous values during first ticks
 		if (_initialized == 0)
 		{
 			_prevMacd = macd;
@@ -171,24 +114,24 @@ public class RmacdReversalStrategy : Strategy
 		var buy = false;
 		var sell = false;
 
-                switch (Mode)
-                {
-                        case AlgModes.Breakdown:
+		switch (Mode)
+		{
+			case AlgModes.Breakdown:
 				buy = _prevMacd > 0m && macd <= 0m;
 				sell = _prevMacd < 0m && macd >= 0m;
 				break;
 
-                        case AlgModes.MacdTwist:
+			case AlgModes.MacdTwist:
 				buy = _prevMacd < _prevMacd2 && macd > _prevMacd;
 				sell = _prevMacd > _prevMacd2 && macd < _prevMacd;
 				break;
 
-                        case AlgModes.SignalTwist:
+			case AlgModes.SignalTwist:
 				buy = _prevSignal < _prevSignal2 && signal > _prevSignal;
 				sell = _prevSignal > _prevSignal2 && signal < _prevSignal;
 				break;
 
-                        case AlgModes.MacdDisposition:
+			case AlgModes.MacdDisposition:
 				buy = _prevMacd > _prevSignal && macd <= signal;
 				sell = _prevMacd < _prevSignal && macd >= signal;
 				break;
@@ -196,13 +139,13 @@ public class RmacdReversalStrategy : Strategy
 
 		if (buy && Position <= 0)
 		{
-			// Enter long position on buy signal
-			BuyMarket(Volume + Math.Abs(Position));
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
 		else if (sell && Position >= 0)
 		{
-			// Enter short position on sell signal
-			SellMarket(Volume + Math.Abs(Position));
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
 
 		_prevMacd2 = _prevMacd;
@@ -214,7 +157,7 @@ public class RmacdReversalStrategy : Strategy
 	/// <summary>
 	/// Entry modes for RMACD strategy.
 	/// </summary>
-        public enum AlgModes
+	public enum AlgModes
 	{
 		/// <summary>
 		/// MACD histogram crossing the zero line.

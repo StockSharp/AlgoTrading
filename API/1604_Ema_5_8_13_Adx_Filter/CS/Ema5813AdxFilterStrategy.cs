@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,31 +12,31 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// EMA crossover strategy with optional ADX filter.
+/// EMA 5/8/13 crossover strategy.
 /// </summary>
 public class Ema5813AdxFilterStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _enableLong;
-	private readonly StrategyParam<bool> _enableShort;
-	private readonly StrategyParam<bool> _useAdxFilter;
-	private readonly StrategyParam<int> _adxThreshold;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevDiff;
 
-	public bool EnableLong { get => _enableLong.Value; set => _enableLong.Value = value; }
-	public bool EnableShort { get => _enableShort.Value; set => _enableShort.Value = value; }
-	public bool UseAdxFilter { get => _useAdxFilter.Value; set => _useAdxFilter.Value = value; }
-	public int AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public Ema5813AdxFilterStrategy()
 	{
-		_enableLong = Param(nameof(EnableLong), true).SetDisplay("Enable Long", "Enable Long", "General");
-		_enableShort = Param(nameof(EnableShort), true).SetDisplay("Enable Short", "Enable Short", "General");
-		_useAdxFilter = Param(nameof(UseAdxFilter), false).SetDisplay("Use ADX Filter", "Use ADX Filter", "General");
-		_adxThreshold = Param(nameof(AdxThreshold), 20).SetDisplay("ADX Threshold", "ADX Threshold", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candle Type", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle Type", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevDiff = 0;
 	}
 
 	/// <inheritdoc />
@@ -46,13 +44,14 @@ public class Ema5813AdxFilterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema5 = new EMA { Length = 5 };
-		var ema8 = new EMA { Length = 8 };
-		var ema13 = new EMA { Length = 13 };
-		var adx = new AverageDirectionalIndex { Length = 14 };
+		var ema5 = new ExponentialMovingAverage { Length = 5 };
+		var ema8 = new ExponentialMovingAverage { Length = 8 };
+		var ema13 = new ExponentialMovingAverage { Length = 13 };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(ema5, ema8, ema13, adx, ProcessCandle).Start();
+		subscription
+			.Bind(ema5, ema8, ema13, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -65,33 +64,25 @@ public class Ema5813AdxFilterStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ema5Value, IIndicatorValue ema8Value, IIndicatorValue ema13Value, IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle, decimal e5, decimal e8, decimal e13)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var ema5 = ema5Value.ToDecimal();
-		var ema8 = ema8Value.ToDecimal();
-		var ema13 = ema13Value.ToDecimal();
-		var adx = ((AverageDirectionalIndexValue)adxValue).MovingAverage;
-		if (adx is not decimal adxVal)
-			return;
-
-		var diff = ema5 - ema8;
+		var diff = e5 - e8;
 		var crossUp = _prevDiff <= 0m && diff > 0m;
 		var crossDown = _prevDiff >= 0m && diff < 0m;
 		_prevDiff = diff;
 
-		var adxOk = !UseAdxFilter || adxVal >= AdxThreshold;
-
-		if (EnableLong && crossUp && adxOk && Position <= 0)
+		if (crossUp && Position <= 0)
 			BuyMarket();
-		else if (EnableShort && crossDown && adxOk && Position >= 0)
+		else if (crossDown && Position >= 0)
 			SellMarket();
 
-		if (Position > 0 && candle.ClosePrice < ema13)
+		// Exit on EMA13 cross
+		if (Position > 0 && candle.ClosePrice < e13)
 			SellMarket();
-		else if (Position < 0 && candle.ClosePrice > ema13)
+		else if (Position < 0 && candle.ClosePrice > e13)
 			BuyMarket();
 	}
 }
