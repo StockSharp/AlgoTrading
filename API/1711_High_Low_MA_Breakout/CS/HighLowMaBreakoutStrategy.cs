@@ -26,8 +26,8 @@ public class HighLowMaBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _maHigh;
-	private SimpleMovingAverage _maLow;
+	private SimpleMovingAverage _maHigh = null!;
+	private SimpleMovingAverage _maLow = null!;
 	private decimal? _prevMaHigh;
 	private decimal? _prevMaLow;
 	private decimal? _prevClose;
@@ -99,7 +99,7 @@ public class HighLowMaBreakoutStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 0m)
 			.SetDisplay("Stop Loss", "Distance from entry for stop loss", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -127,14 +127,12 @@ public class HighLowMaBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_maHigh = new SMA { Length = MaHighPeriod };
-		_maLow = new SMA { Length = MaLowPeriod };
+		_maHigh = new SimpleMovingAverage { Length = MaHighPeriod };
+		_maLow = new SimpleMovingAverage { Length = MaLowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(c => c.HighPrice, _maHigh, c => c.LowPrice, _maLow, ProcessCandle)
+			.Bind(_maHigh, _maLow, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -152,20 +150,17 @@ public class HighLowMaBreakoutStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var close = candle.ClosePrice;
 
 		if (Position > 0)
 		{
 			if ((StopLoss > 0m && close <= _stopPrice) || (TakeProfit > 0m && close >= _takePrice))
-				ClosePosition();
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
 			if ((StopLoss > 0m && close >= _stopPrice) || (TakeProfit > 0m && close <= _takePrice))
-				ClosePosition();
+				BuyMarket();
 		}
 		else
 		{

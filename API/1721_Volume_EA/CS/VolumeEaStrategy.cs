@@ -121,7 +121,7 @@ public class VolumeEaStrategy : Strategy
 		_cciLevel4 = Param(nameof(CciLevel4), -190m)
 			.SetDisplay("CCI Level4", "Lower CCI for sells", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 	}
 
@@ -151,7 +151,6 @@ public class VolumeEaStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal cciValue)
@@ -159,25 +158,25 @@ public class VolumeEaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var currentVolume = candle.TotalVolume ?? 0m;
+		var currentVolume = candle.TotalVolume;
 
-		if (IsFormedAndOnlineAndAllowTrading())
 		{
-			var step = Security?.Step ?? 1m;
-			var trailDist = TrailingStop * step;
+			var trailDist = TrailingStop;
 			var volumeOk = _prevVolume > _prevPrevVolume * Factor;
 
 			if (volumeOk)
 			{
 				if (_prevClose > _prevOpen && cciValue > CciLevel1 && cciValue < CciLevel2 && Position <= 0)
 				{
-					BuyMarket(Volume + Math.Abs(Position));
+					if (Position < 0) BuyMarket();
+					BuyMarket();
 					_longStop = candle.ClosePrice - trailDist;
 					_shortStop = 0m;
 				}
 				else if (_prevClose < _prevOpen && cciValue < CciLevel3 && cciValue > CciLevel4 && Position >= 0)
 				{
-					SellMarket(Volume + Math.Abs(Position));
+					if (Position > 0) SellMarket();
+					SellMarket();
 					_shortStop = candle.ClosePrice + trailDist;
 					_longStop = 0m;
 				}
@@ -191,7 +190,7 @@ public class VolumeEaStrategy : Strategy
 
 				if (candle.ClosePrice <= _longStop)
 				{
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 					_longStop = 0m;
 				}
 			}
@@ -203,20 +202,9 @@ public class VolumeEaStrategy : Strategy
 
 				if (candle.ClosePrice >= _shortStop)
 				{
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 					_shortStop = 0m;
 				}
-			}
-
-			if (candle.OpenTime.Hour == 23 && Position != 0)
-			{
-				if (Position > 0)
-					SellMarket(Math.Abs(Position));
-				else
-					BuyMarket(Math.Abs(Position));
-
-				_longStop = 0m;
-				_shortStop = 0m;
 			}
 		}
 

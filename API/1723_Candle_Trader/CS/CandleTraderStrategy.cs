@@ -34,7 +34,7 @@ public class CandleTraderStrategy : Strategy
 	/// <summary>
 	/// Order volume.
 	/// </summary>
-	public new decimal Volume
+	public decimal TradeVolume
 	{
 		get => _volume.Value;
 		set => _volume.Value = value;
@@ -90,7 +90,7 @@ public class CandleTraderStrategy : Strategy
 	/// </summary>
 	public CandleTraderStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
+		_volume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume", "General");
 
@@ -108,7 +108,7 @@ public class CandleTraderStrategy : Strategy
 		_reverseClose = Param(nameof(ReverseClose), true)
 			.SetDisplay("Reverse Close", "Close opposite position on signal", "Trading Logic");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -141,11 +141,6 @@ public class CandleTraderStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
-
-		var step = Security.PriceStep ?? 1m;
-		StartProtection(
-			takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Point),
-			stopLoss: new Unit(StopLossTicks * step, UnitTypes.Point));
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -174,15 +169,13 @@ public class CandleTraderStrategy : Strategy
 
 		if ((buyDirect || buyCont) && Position <= 0)
 		{
-			CancelActiveOrders();
-			var volume = Volume + (ReverseClose && Position < 0 ? Math.Abs(Position) : 0m);
-			BuyMarket(volume);
+			if (ReverseClose && Position < 0) BuyMarket();
+			BuyMarket();
 		}
 		else if ((sellDirect || sellCont) && Position >= 0)
 		{
-			CancelActiveOrders();
-			var volume = Volume + (ReverseClose && Position > 0 ? Math.Abs(Position) : 0m);
-			SellMarket(volume);
+			if (ReverseClose && Position > 0) SellMarket();
+			SellMarket();
 		}
 	}
 }

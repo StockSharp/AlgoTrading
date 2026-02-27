@@ -76,33 +76,32 @@ public class RampokScalpStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation", "Envelope deviation percent", "General");
 
-		_takeProfit = Param(nameof(TakeProfit), 0.004m)
+		_takeProfit = Param(nameof(TakeProfit), 500m)
 			.SetDisplay("Take Profit", "Target profit in price", "Risk")
-			
-			.SetOptimize(0.001m, 0.01m, 0.001m);
+			.SetOptimize(100m, 2000m, 100m);
 
-		_stopLoss = Param(nameof(StopLoss), 0m)
+		_stopLoss = Param(nameof(StopLoss), 300m)
 			.SetDisplay("Stop Loss", "Stop loss in price", "Risk")
-			
-			.SetOptimize(0m, 0.01m, 0.001m);
+			.SetOptimize(100m, 1000m, 100m);
 
-		_trailingStop = Param(nameof(TrailingStop), 0.0011m)
+		_trailingStop = Param(nameof(TrailingStop), 200m)
 			.SetDisplay("Trailing Stop", "Trailing stop in price", "Risk")
-			
-			.SetOptimize(0m, 0.01m, 0.001m);
+			.SetOptimize(50m, 500m, 50m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "General");
 	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		var sma = new SMA { Length = Period };
+		var sma = new SimpleMovingAverage { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(sma, ProcessCandle).Start();

@@ -31,7 +31,7 @@ public class ExpX2MaStrategy : Strategy
 	private readonly StrategyParam<bool> _sellClose;
 
 	private SimpleMovingAverage _sma = null!;
-	private JurikMovingAverage _jma = null!;
+	private ExponentialMovingAverage _ema2 = null!;
 
 	private decimal? _prevPrevValue;
 	private decimal? _prevValue;
@@ -107,7 +107,7 @@ public class ExpX2MaStrategy : Strategy
 		.SetDisplay("Take Profit Points", "Fixed take profit in price points", "Risk Management")
 		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_buyOpen = Param(nameof(BuyOpen), true)
@@ -142,19 +142,16 @@ public class ExpX2MaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = FirstMaLength };
-		_jma = new JurikMovingAverage { Length = SecondMaLength };
+		_sma = new SimpleMovingAverage { Length = FirstMaLength };
+		_ema2 = new ExponentialMovingAverage { Length = SecondMaLength };
 
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(ProcessCandle).Start();
-
-		StartProtection(null, null);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, sub);
-			DrawIndicator(area, _jma);
 			DrawOwnTrades(area);
 		}
 	}
@@ -162,35 +159,32 @@ public class ExpX2MaStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		var smaValue = _sma.Process(candle);
+		var emaValue = _ema2.Process(smaValue);
 
-		var smaValue = _sma.Process(candle.ClosePrice);
-		var jmaValue = _jma.Process(smaValue);
+		if (!emaValue.IsFinal)
+			return;
 
-		if (!jmaValue.IsFinal)
-		return;
-
-		var current = jmaValue.GetValue<decimal>();
+		var current = emaValue.GetValue<decimal>();
 
 		// Handle stop loss and take profit before new signals
 		if (Position > 0)
 		{
-			if (StopLossPoints > 0m && candle.ClosePrice <= _entryPrice - StopLossPoints ||
-			TakeProfitPoints > 0m && candle.ClosePrice >= _entryPrice + TakeProfitPoints)
+			if ((StopLossPoints > 0m && candle.ClosePrice <= _entryPrice - StopLossPoints) ||
+				(TakeProfitPoints > 0m && candle.ClosePrice >= _entryPrice + TakeProfitPoints))
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_entryPrice = 0m;
 			}
 		}
 		else if (Position < 0)
 		{
-			if (StopLossPoints > 0m && candle.ClosePrice >= _entryPrice + StopLossPoints ||
-			TakeProfitPoints > 0m && candle.ClosePrice <= _entryPrice - TakeProfitPoints)
+			if ((StopLossPoints > 0m && candle.ClosePrice >= _entryPrice + StopLossPoints) ||
+				(TakeProfitPoints > 0m && candle.ClosePrice <= _entryPrice - TakeProfitPoints))
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_entryPrice = 0m;
 			}
 		}
@@ -203,7 +197,7 @@ public class ExpX2MaStrategy : Strategy
 			if (isLocalMin)
 			{
 				if (SellClose && Position < 0)
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 
 				if (BuyOpen && Position <= 0)
 				{
@@ -214,7 +208,7 @@ public class ExpX2MaStrategy : Strategy
 			else if (isLocalMax)
 			{
 				if (BuyClose && Position > 0)
-					SellMarket(Math.Abs(Position));
+					SellMarket();
 
 				if (SellOpen && Position >= 0)
 				{

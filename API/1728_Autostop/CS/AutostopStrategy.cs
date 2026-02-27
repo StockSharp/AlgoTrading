@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,37 +10,65 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
 /// <summary>
-/// Automatically applies take-profit and stop-loss to existing positions.
+/// Strategy with automatic take-profit and stop-loss based on ATR.
+/// Uses EMA crossover for entry signals with ATR-based TP/SL management.
 /// </summary>
 public class AutostopStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _monitorTakeProfit;
-	private readonly StrategyParam<bool> _monitorStopLoss;
-	private readonly StrategyParam<int> _takeProfitTicks;
-	private readonly StrategyParam<int> _stopLossTicks;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<decimal> _tpMultiplier;
+	private readonly StrategyParam<decimal> _slMultiplier;
+	private readonly StrategyParam<DataType> _candleType;
 
-	public bool MonitorTakeProfit { get => _monitorTakeProfit.Value; set => _monitorTakeProfit.Value = value; }
-	public bool MonitorStopLoss { get => _monitorStopLoss.Value; set => _monitorStopLoss.Value = value; }
-	public int TakeProfitTicks { get => _takeProfitTicks.Value; set => _takeProfitTicks.Value = value; }
-	public int StopLossTicks { get => _stopLossTicks.Value; set => _stopLossTicks.Value = value; }
+	private decimal _entryPrice;
+	private decimal _takePrice;
+	private decimal _stopPrice;
+
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
+	public decimal TpMultiplier { get => _tpMultiplier.Value; set => _tpMultiplier.Value = value; }
+	public decimal SlMultiplier { get => _slMultiplier.Value; set => _slMultiplier.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="AutostopStrategy"/>.
 	/// </summary>
 	public AutostopStrategy()
 	{
-		_monitorTakeProfit = Param(nameof(MonitorTakeProfit), true)
-			.SetDisplay("Monitor Take Profit", "Enable automatic take profit", "General");
-		_monitorStopLoss = Param(nameof(MonitorStopLoss), true)
-			.SetDisplay("Monitor Stop Loss", "Enable automatic stop loss", "General");
-		_takeProfitTicks = Param(nameof(TakeProfitTicks), 30)
+		_fastLength = Param(nameof(FastLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit (ticks)", "Take profit distance in ticks", "Risk");
-		_stopLossTicks = Param(nameof(StopLossTicks), 30)
+			.SetDisplay("Fast EMA", "Fast EMA period", "General");
+		_slowLength = Param(nameof(SlowLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss (ticks)", "Stop loss distance in ticks", "Risk");
+			.SetDisplay("Slow EMA", "Slow EMA period", "General");
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Length", "ATR period for TP/SL", "Risk");
+		_tpMultiplier = Param(nameof(TpMultiplier), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("TP Multiplier", "ATR multiplier for take profit", "Risk");
+		_slMultiplier = Param(nameof(SlMultiplier), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("SL Multiplier", "ATR multiplier for stop loss", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_entryPrice = 0m;
+		_takePrice = 0m;
+		_stopPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -49,10 +76,62 @@ public class AutostopStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var step = Security?.PriceStep ?? 1m;
-		var tp = MonitorTakeProfit ? new Unit(TakeProfitTicks * step, UnitTypes.Point) : new Unit();
-		var sl = MonitorStopLoss ? new Unit(StopLossTicks * step, UnitTypes.Point) : new Unit();
+		var fastEma = new ExponentialMovingAverage { Length = FastLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
-		StartProtection(tp, sl);
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fastEma, slowEma, atr, ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atrValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		// Check TP/SL for existing positions
+		if (Position > 0)
+		{
+			if (candle.ClosePrice >= _takePrice || candle.ClosePrice <= _stopPrice)
+			{
+				SellMarket();
+				return;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (candle.ClosePrice <= _takePrice || candle.ClosePrice >= _stopPrice)
+			{
+				BuyMarket();
+				return;
+			}
+		}
+
+		// Entry signals
+		if (fast > slow && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+			_takePrice = _entryPrice + atrValue * TpMultiplier;
+			_stopPrice = _entryPrice - atrValue * SlMultiplier;
+		}
+		else if (fast < slow && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+			_takePrice = _entryPrice - atrValue * TpMultiplier;
+			_stopPrice = _entryPrice + atrValue * SlMultiplier;
+		}
 	}
 }

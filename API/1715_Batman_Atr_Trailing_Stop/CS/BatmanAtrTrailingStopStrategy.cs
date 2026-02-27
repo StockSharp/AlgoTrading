@@ -86,7 +86,7 @@ public class BatmanAtrTrailingStopStrategy : Strategy
 		_useTypicalPrice = Param(nameof(UseTypicalPrice), false)
 			.SetDisplay("Use Typical Price", "Use (H+L+C)/3 instead of close price", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -111,8 +111,6 @@ public class BatmanAtrTrailingStopStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -125,9 +123,6 @@ public class BatmanAtrTrailingStopStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var priceLevel = UseTypicalPrice

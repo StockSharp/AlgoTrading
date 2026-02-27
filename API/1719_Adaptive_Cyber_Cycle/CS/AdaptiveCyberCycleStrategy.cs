@@ -42,7 +42,7 @@ public class AdaptiveCyberCycleStrategy : Strategy
 			
 			.SetOptimize(0.05m, 0.2m, 0.01m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -71,16 +71,11 @@ public class AdaptiveCyberCycleStrategy : Strategy
 			DrawIndicator(area, acc);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal cycle)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (_prevCycle is null)
@@ -90,9 +85,15 @@ public class AdaptiveCyberCycleStrategy : Strategy
 		}
 
 		if (cycle > _prevCycle && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
 		else if (cycle < _prevCycle && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
 
 		_prevCycle = cycle;
 	}

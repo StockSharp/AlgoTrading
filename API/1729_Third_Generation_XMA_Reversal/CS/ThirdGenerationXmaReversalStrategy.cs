@@ -43,7 +43,7 @@ public class ThirdGenerationXmaReversalStrategy : Strategy
 	{
 		_maLength = Param(nameof(MaLength), 50)
 			.SetDisplay("MA Length", "Base length for the moving average", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -64,8 +64,8 @@ public class ThirdGenerationXmaReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ema1 = new EMA { Length = MaLength * 2 };
-		_ema2 = new EMA { Length = MaLength };
+		_ema1 = new ExponentialMovingAverage { Length = MaLength * 2 };
+		_ema2 = new ExponentialMovingAverage { Length = MaLength };
 		_alpha = 2m * (2m * MaLength - 1m) / (2m * MaLength - 2m);
 
 		var subscription = SubscribeCandles(CandleType);
@@ -89,7 +89,7 @@ public class ThirdGenerationXmaReversalStrategy : Strategy
 		if (!ema1Value.IsFinal)
 			return;
 
-		var ema2Value = _ema2.Process(ema1Value.GetValue<decimal>());
+		var ema2Value = _ema2.Process(ema1Value);
 		if (!ema2Value.IsFinal)
 			return;
 
