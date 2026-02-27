@@ -50,15 +50,15 @@ public class TwoMaBunnyCrossStrategy : Strategy
 	/// </summary>
 	public TwoMaBunnyCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
-		_fastLength = Param(nameof(FastLength), 5)
+		_fastLength = Param(nameof(FastLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Length of fast moving average", "Parameters")
 			;
 
-		_slowLength = Param(nameof(SlowLength), 20)
+		_slowLength = Param(nameof(SlowLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Length of slow moving average", "Parameters")
 			;
@@ -101,7 +101,6 @@ public class TwoMaBunnyCrossStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
@@ -109,34 +108,15 @@ public class TwoMaBunnyCrossStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_fastSma.IsFormed || !_slowSma.IsFormed)
-			return;
-
-		if (_isFormed)
+		if (_prevFast != 0m && _prevSlow != 0m)
 		{
-			var buySignal = _prevFast < _prevSlow && fast > slow;
-			var sellSignal = _prevFast > _prevSlow && fast < slow;
+			var buySignal = _prevFast <= _prevSlow && fast > slow;
+			var sellSignal = _prevFast >= _prevSlow && fast < slow;
 
-			if (buySignal)
-			{
-				if (Position < 0)
-					BuyMarket(-Position); // close short position
-
-				if (Position <= 0)
-					BuyMarket(); // open long position
-			}
-			else if (sellSignal)
-			{
-				if (Position > 0)
-					SellMarket(Position); // close long position
-
-				if (Position >= 0)
-					SellMarket(); // open short position
-			}
-		}
-		else
-		{
-			_isFormed = true;
+			if (buySignal && Position <= 0)
+				BuyMarket();
+			else if (sellSignal && Position >= 0)
+				SellMarket();
 		}
 
 		_prevFast = fast;

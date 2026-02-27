@@ -47,6 +47,9 @@ public class BlauErgodicMdiStrategy : Strategy
 	private int _bufferIndex;
 	private int _bufferFilled;
 	private decimal _pointValue = 1m;
+	private decimal _entryPrice;
+	private decimal? _stopPrice;
+	private decimal? _takePrice;
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="BlauErgodicMdiStrategy"/>.
@@ -80,7 +83,7 @@ public class BlauErgodicMdiStrategy : Strategy
 		_entryMode = Param(nameof(Mode), EntryModes.Twist)
 			.SetDisplay("Entry Mode", "Signal interpretation mode", "Strategy");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Indicator Timeframe", "Timeframe used for calculations", "Data");
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethods.Exponential)
@@ -289,6 +292,9 @@ public class BlauErgodicMdiStrategy : Strategy
 		_signalBuffer = Array.Empty<decimal>();
 		_bufferIndex = 0;
 		_bufferFilled = 0;
+		_entryPrice = 0m;
+		_stopPrice = null;
+		_takePrice = null;
 	}
 
 	/// <inheritdoc />
@@ -306,12 +312,6 @@ public class BlauErgodicMdiStrategy : Strategy
 		_signalSmoothing = CreateMovingAverage(SmoothingMethod, SignalLength);
 
 		InitializeBuffers();
-
-		Slippage = SlippagePoints * _pointValue;
-
-		StartProtection(
-			TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * _pointValue) : default,
-			StopLossPoints > 0 ? new Unit(StopLossPoints * _pointValue) : default);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -331,11 +331,13 @@ public class BlauErgodicMdiStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		ApplyRiskManagement(candle);
+
 		var price = SelectPrice(candle);
-		var time = candle.CloseTime ?? candle.OpenTime;
+		var time = candle.CloseTime;
 
 		// Smooth the selected price to match the indicator baseline.
-		var baseValue = _priceAverage.Process(new DecimalIndicatorValue(_priceAverage, price, time));
+		var baseValue = _priceAverage.Process(new DecimalIndicatorValue(_priceAverage, price, time) { IsFinal = true });
 		if (!baseValue.IsFormed)
 			return;
 
@@ -343,21 +345,21 @@ public class BlauErgodicMdiStrategy : Strategy
 		var momentum = _pointValue != 0m ? (price - basePrice) / _pointValue : 0m;
 
 		// Apply the first momentum smoothing stage.
-		var firstValue = _firstSmoothing.Process(new DecimalIndicatorValue(_firstSmoothing, momentum, time));
+		var firstValue = _firstSmoothing.Process(new DecimalIndicatorValue(_firstSmoothing, momentum, time) { IsFinal = true });
 		if (!firstValue.IsFormed)
 			return;
 
 		var first = firstValue.ToDecimal();
 
 		// Build the histogram with the second smoothing stage.
-		var secondValue = _secondSmoothing.Process(new DecimalIndicatorValue(_secondSmoothing, first, time));
+		var secondValue = _secondSmoothing.Process(new DecimalIndicatorValue(_secondSmoothing, first, time) { IsFinal = true });
 		if (!secondValue.IsFormed)
 			return;
 
 		var histogram = secondValue.ToDecimal();
 
 		// Smooth the histogram to generate the signal line.
-		var signalValue = _signalSmoothing.Process(new DecimalIndicatorValue(_signalSmoothing, histogram, time));
+		var signalValue = _signalSmoothing.Process(new DecimalIndicatorValue(_signalSmoothing, histogram, time) { IsFinal = true });
 		if (!signalValue.IsFormed)
 			return;
 
@@ -365,9 +367,6 @@ public class BlauErgodicMdiStrategy : Strategy
 
 		// Store values so that shifted comparisons work like in the MQL version.
 		AddToBuffer(histogram, signal);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (!TryGetHist(SignalBarShift, out var latestHist) || !TryGetHist(SignalBarShift + 1, out var previousHist))
 			return;
@@ -408,15 +407,15 @@ public class BlauErgodicMdiStrategy : Strategy
 
 		if (buySignal)
 		{
-			ExecuteBuy(currentPosition);
+			ExecuteBuy(currentPosition, candle.ClosePrice);
 		}
 		else if (sellSignal)
 		{
-			ExecuteSell(currentPosition);
+			ExecuteSell(currentPosition, candle.ClosePrice);
 		}
 	}
 
-	private void ExecuteBuy(decimal currentPosition)
+	private void ExecuteBuy(decimal currentPosition, decimal price)
 	{
 		var volume = 0m;
 
@@ -427,10 +426,17 @@ public class BlauErgodicMdiStrategy : Strategy
 			volume += Volume;
 
 		if (volume > 0m)
+		{
 			BuyMarket(volume);
+			_entryPrice = price;
+			var slDist = StopLossPoints > 0 ? StopLossPoints * _pointValue : 0m;
+			var tpDist = TakeProfitPoints > 0 ? TakeProfitPoints * _pointValue : 0m;
+			_stopPrice = slDist > 0m ? price - slDist : null;
+			_takePrice = tpDist > 0m ? price + tpDist : null;
+		}
 	}
 
-	private void ExecuteSell(decimal currentPosition)
+	private void ExecuteSell(decimal currentPosition, decimal price)
 	{
 		var volume = 0m;
 
@@ -441,7 +447,53 @@ public class BlauErgodicMdiStrategy : Strategy
 			volume += Volume;
 
 		if (volume > 0m)
+		{
 			SellMarket(volume);
+			_entryPrice = price;
+			var slDist = StopLossPoints > 0 ? StopLossPoints * _pointValue : 0m;
+			var tpDist = TakeProfitPoints > 0 ? TakeProfitPoints * _pointValue : 0m;
+			_stopPrice = slDist > 0m ? price + slDist : null;
+			_takePrice = tpDist > 0m ? price - tpDist : null;
+		}
+	}
+
+	private void ApplyRiskManagement(ICandleMessage candle)
+	{
+		if (Position > 0)
+		{
+			if (_stopPrice.HasValue && candle.LowPrice <= _stopPrice.Value)
+			{
+				SellMarket(Position);
+				ResetTargets();
+				return;
+			}
+			if (_takePrice.HasValue && candle.HighPrice >= _takePrice.Value)
+			{
+				SellMarket(Position);
+				ResetTargets();
+			}
+		}
+		else if (Position < 0)
+		{
+			if (_stopPrice.HasValue && candle.HighPrice >= _stopPrice.Value)
+			{
+				BuyMarket(Math.Abs(Position));
+				ResetTargets();
+				return;
+			}
+			if (_takePrice.HasValue && candle.LowPrice <= _takePrice.Value)
+			{
+				BuyMarket(Math.Abs(Position));
+				ResetTargets();
+			}
+		}
+	}
+
+	private void ResetTargets()
+	{
+		_entryPrice = 0m;
+		_stopPrice = null;
+		_takePrice = null;
 	}
 
 	private void InitializeBuffers()
@@ -512,10 +564,10 @@ public class BlauErgodicMdiStrategy : Strategy
 	{
 		return method switch
 		{
-			SmoothingMethods.Simple => new SMA { Length = length },
+			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
 			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new EMA { Length = length },
+			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
 

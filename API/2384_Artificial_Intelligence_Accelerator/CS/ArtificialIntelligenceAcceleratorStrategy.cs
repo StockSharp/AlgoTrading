@@ -80,7 +80,7 @@ public class ArtificialIntelligenceAcceleratorStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 8355m)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -116,19 +116,20 @@ public class ArtificialIntelligenceAcceleratorStrategy : Strategy
 
 		// Calculate Accelerator Oscillator value.
 		var hl2 = (candle.HighPrice + candle.LowPrice) / 2m;
+		var t = candle.ServerTime;
 
-		var aoFast = _aoFast.Process(hl2);
-		var aoSlow = _aoSlow.Process(hl2);
-		if (!aoFast.IsFinal || !aoSlow.IsFinal)
+		var aoFastResult = _aoFast.Process(hl2, t, true);
+		var aoSlowResult = _aoSlow.Process(hl2, t, true);
+		if (!_aoFast.IsFormed || !_aoSlow.IsFormed)
 			return;
 
-		var ao = aoFast.GetValue<decimal>() - aoSlow.GetValue<decimal>();
+		var ao = aoFastResult.GetValue<decimal>() - aoSlowResult.GetValue<decimal>();
 
-		var acMa = _acMa.Process(ao);
-		if (!acMa.IsFinal)
+		var acMaResult = _acMa.Process(ao, t, true);
+		if (!_acMa.IsFormed)
 			return;
 
-		var ac = ao - acMa.GetValue<decimal>();
+		var ac = ao - acMaResult.GetValue<decimal>();
 
 		for (var i = 21; i > 0; i--)
 			_acBuffer[i] = _acBuffer[i - 1];
@@ -141,38 +142,23 @@ public class ArtificialIntelligenceAcceleratorStrategy : Strategy
 
 		var signal = Perceptron();
 
-		if (Position > 0)
+		if (signal > 0 && Position <= 0)
 		{
-			if (candle.ClosePrice <= _entryPrice - StopLoss)
-				SellMarket(Position);
-			else if (signal < 0)
-			{
-				SellMarket(Position * 2);
-				_entryPrice = candle.ClosePrice;
-			}
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
 		}
-		else if (Position < 0)
+		else if (signal < 0 && Position >= 0)
 		{
-			if (candle.ClosePrice >= _entryPrice + StopLoss)
-				BuyMarket(-Position);
-			else if (signal > 0)
-			{
-				BuyMarket(-Position * 2);
-				_entryPrice = candle.ClosePrice;
-			}
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
 		}
-		else
+		else if (Position > 0 && candle.ClosePrice <= _entryPrice - StopLoss)
 		{
-			if (signal > 0)
-			{
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-			}
-			else if (signal < 0)
-			{
-				SellMarket();
-				_entryPrice = candle.ClosePrice;
-			}
+			SellMarket();
+		}
+		else if (Position < 0 && candle.ClosePrice >= _entryPrice + StopLoss)
+		{
+			BuyMarket();
 		}
 	}
 

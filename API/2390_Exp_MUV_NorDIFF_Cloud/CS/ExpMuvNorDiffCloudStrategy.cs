@@ -90,7 +90,7 @@ public class ExpMuvNorDiffCloudStrategy : Strategy
 	        
 	        .SetOptimize(7, 28, 7);
 
-	    _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 	        .SetDisplay("Candle Type", "Type of candles", "General");
 
 	    _smaMomentum = new Momentum { Length = 1 };
@@ -141,24 +141,23 @@ public class ExpMuvNorDiffCloudStrategy : Strategy
 	    if (candle.State != CandleStates.Finished)
 	        return;
 
-	    if (!IsFormedAndOnlineAndAllowTrading())
-	        return;
+	    var t = candle.OpenTime;
 
-	    var smaMomVal = _smaMomentum.Process(new DecimalIndicatorValue(_smaMomentum, smaValue, candle.OpenTime));
-	    var emaMomVal = _emaMomentum.Process(new DecimalIndicatorValue(_emaMomentum, emaValue, candle.OpenTime));
+	    var smaMomVal = _smaMomentum.Process(smaValue, t, true);
+	    var emaMomVal = _emaMomentum.Process(emaValue, t, true);
 
-	    if (!smaMomVal.IsFinal || !emaMomVal.IsFinal)
+	    if (!_smaMomentum.IsFormed || !_emaMomentum.IsFormed)
 	        return;
 
 	    var smaMom = smaMomVal.ToDecimal();
 	    var emaMom = emaMomVal.ToDecimal();
 
-	    var smaMaxVal = _smaHigh.Process(new DecimalIndicatorValue(_smaHigh, smaMom, candle.OpenTime));
-	    var smaMinVal = _smaLow.Process(new DecimalIndicatorValue(_smaLow, smaMom, candle.OpenTime));
-	    var emaMaxVal = _emaHigh.Process(new DecimalIndicatorValue(_emaHigh, emaMom, candle.OpenTime));
-	    var emaMinVal = _emaLow.Process(new DecimalIndicatorValue(_emaLow, emaMom, candle.OpenTime));
+	    var smaMaxVal = _smaHigh.Process(smaMom, t, true);
+	    var smaMinVal = _smaLow.Process(smaMom, t, true);
+	    var emaMaxVal = _emaHigh.Process(emaMom, t, true);
+	    var emaMinVal = _emaLow.Process(emaMom, t, true);
 
-	    if (!smaMaxVal.IsFinal || !smaMinVal.IsFinal || !emaMaxVal.IsFinal || !emaMinVal.IsFinal)
+	    if (!_smaHigh.IsFormed || !_smaLow.IsFormed || !_emaHigh.IsFormed || !_emaLow.IsFormed)
 	        return;
 
 	    var smaNorm = Normalize(smaMom, smaMaxVal.ToDecimal(), smaMinVal.ToDecimal());
@@ -167,12 +166,12 @@ public class ExpMuvNorDiffCloudStrategy : Strategy
 	    if (smaNorm == 100m || emaNorm == 100m)
 	    {
 	        if (Position <= 0)
-	            BuyMarket(Volume + Math.Abs(Position));
+	            BuyMarket();
 	    }
 	    else if (smaNorm == -100m || emaNorm == -100m)
 	    {
 	        if (Position >= 0)
-	            SellMarket(Volume + Math.Abs(Position));
+	            SellMarket();
 	    }
 	}
 

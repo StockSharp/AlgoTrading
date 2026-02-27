@@ -67,13 +67,13 @@ public class OpeningClosingOnTimeStrategy : Strategy
 	/// </summary>
 	public OpeningClosingOnTimeStrategy()
 	{
-		_openTime = Param(nameof(OpenTime), new TimeSpan(13, 0, 0))
+		_openTime = Param(nameof(OpenTime), new TimeSpan(0, 0, 0))
 		.SetDisplay("Open Time", "Time of day to open position", "General");
-		_closeTime = Param(nameof(CloseTime), new TimeSpan(13, 1, 0))
+		_closeTime = Param(nameof(CloseTime), new TimeSpan(12, 0, 0))
 		.SetDisplay("Close Time", "Time of day to close position", "General");
 		_isBuy = Param(nameof(IsBuy), true)
 		.SetDisplay("Is Buy", "True for buy, false for sell", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 	
@@ -104,27 +104,28 @@ public class OpeningClosingOnTimeStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		var t = candle.OpenTime.TimeOfDay;
-		
-		if (!_positionOpened && t.Hours == OpenTime.Hours && t.Minutes == OpenTime.Minutes)
-		{
-			if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-			
+
+		var t = candle.OpenTime.TimeOfDay;
+
+		if (!_positionOpened && t >= OpenTime && t < CloseTime)
+		{
 			if (IsBuy)
-			BuyMarket(Volume);
+				BuyMarket();
 			else
-			SellMarket(Volume);
-			
+				SellMarket();
+
 			_positionOpened = true;
 			return;
 		}
-		
-		if (_positionOpened && t.Hours == CloseTime.Hours && t.Minutes == CloseTime.Minutes)
+
+		if (_positionOpened && t >= CloseTime)
 		{
-			ClosePosition();
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
+
 			_positionOpened = false;
 		}
 	}

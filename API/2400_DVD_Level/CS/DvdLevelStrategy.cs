@@ -8,40 +8,48 @@ using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// RAVI based level strategy. Opens long when the RAVI goes negative and short when it becomes positive.
+/// RAVI based level strategy. Opens long when the RAVI crosses below zero and short when above.
 /// </summary>
 public class DvdLevelStrategy : Strategy
 {
-
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly ExponentialMovingAverage _emaFast = new() { Length = 2 };
 	private readonly ExponentialMovingAverage _emaSlow = new() { Length = 24 };
 	private decimal _prevRavi;
 	private bool _hasPrev;
 
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes <see cref="DvdLevelStrategy"/>.
-	/// </summary>
 	public DvdLevelStrategy()
 	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(TimeSpan.FromHours(1));
-		subscription.Bind(_emaFast, _emaSlow, ProcessCandle).Start();
+		var sub = SubscribeCandles(CandleType);
+		sub.Bind(_emaFast, _emaSlow, ProcessCandle).Start();
 
-		StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, sub);
+			DrawIndicator(area, _emaFast);
+			DrawIndicator(area, _emaSlow);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaFast, decimal emaSlow)
@@ -62,15 +70,9 @@ public class DvdLevelStrategy : Strategy
 		var crossBelow = _prevRavi >= 0 && ravi < 0;
 
 		if (crossBelow && Position <= 0)
-		{
-			var volume = Volume + (Position < 0 ? -Position : 0m);
-			BuyMarket(volume);
-		}
+			BuyMarket();
 		else if (crossAbove && Position >= 0)
-		{
-			var volume = Volume + (Position > 0 ? Position : 0m);
-			SellMarket(volume);
-		}
+			SellMarket();
 
 		_prevRavi = ravi;
 	}

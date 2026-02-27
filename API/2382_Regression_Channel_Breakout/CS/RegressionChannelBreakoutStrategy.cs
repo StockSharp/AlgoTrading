@@ -25,7 +25,7 @@ public class RegressionChannelBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStart;
 	private readonly StrategyParam<decimal> _trailingStep;
 
-	private LinearRegression _regression;
+	private LinearReg _regression;
 	private StandardDeviation _stdev;
 
 	private decimal _entryPrice;
@@ -51,7 +51,7 @@ public class RegressionChannelBreakoutStrategy : Strategy
 			
 			.SetOptimize(1m, 4m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "Common");
 
 		_useTrailing = Param(nameof(UseTrailing), false)
@@ -69,9 +69,7 @@ public class RegressionChannelBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		_regression = new LinearRegression { Length = Length };
+		_regression = new LinearReg { Length = Length };
 		_stdev = new StandardDeviation { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);

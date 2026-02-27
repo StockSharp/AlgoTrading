@@ -201,8 +201,9 @@ public class TheMasterMind2Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var stochastic =
-			new StochasticOscillator { K = { Length = StochasticPeriod }, KPeriod = StochasticK, D = { Length = StochasticD } };
+		var stochastic = new StochasticOscillator();
+		stochastic.K.Length = StochasticPeriod;
+		stochastic.D.Length = StochasticD;
 
 		var williams = new WilliamsR { Length = WilliamsRPeriod };
 
@@ -260,7 +261,7 @@ public class TheMasterMind2Strategy : Strategy
 			// Check stop or take profit
 			if (candle.LowPrice <= _stopPrice || (_takeProfitPrice > 0m && candle.HighPrice >= _takeProfitPrice))
 			{
-				SellMarket(Position);
+				SellMarket();
 				ResetStops();
 			}
 		}
@@ -279,43 +280,25 @@ public class TheMasterMind2Strategy : Strategy
 
 			if (candle.HighPrice >= _stopPrice || (_takeProfitPrice > 0m && candle.LowPrice <= _takeProfitPrice))
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				ResetStops();
 			}
 		}
 
 		// Generate trade signals
-		if (signal < 3m && wpr < -99.9m)
+		if (signal < 20m && wpr < -80m && Position <= 0)
 		{
-			if (Position >= 0)
-			{
-				if (Position > 0)
-				{
-					SellMarket(Position);
-					ResetStops();
-				}
-
-				BuyMarket(LotSize);
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice - StopLossPoints * step;
-				_takeProfitPrice = _entryPrice + TakeProfitPoints * step;
-			}
+			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopPrice = _entryPrice - StopLossPoints * step;
+			_takeProfitPrice = _entryPrice + TakeProfitPoints * step;
 		}
-		else if (signal > 97m && wpr > -0.1m)
+		else if (signal > 80m && wpr > -20m && Position >= 0)
 		{
-			if (Position <= 0)
-			{
-				if (Position < 0)
-				{
-					BuyMarket(Math.Abs(Position));
-					ResetStops();
-				}
-
-				SellMarket(LotSize);
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice + StopLossPoints * step;
-				_takeProfitPrice = _entryPrice - TakeProfitPoints * step;
-			}
+			SellMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopPrice = _entryPrice + StopLossPoints * step;
+			_takeProfitPrice = _entryPrice - TakeProfitPoints * step;
 		}
 	}
 }

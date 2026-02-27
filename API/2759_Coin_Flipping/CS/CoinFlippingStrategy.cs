@@ -28,6 +28,9 @@ public class CoinFlippingStrategy : Strategy
 	private decimal _priceStep;
 	private decimal _takeProfitDistance;
 	private decimal _stopLossDistance;
+	private decimal _entryPrice;
+	private decimal? _stopPrice;
+	private decimal? _takePrice;
 
 	/// <summary>
 	/// Portfolio share allocated to every trade in percent.
@@ -108,6 +111,9 @@ public class CoinFlippingStrategy : Strategy
 		_priceStep = 0m;
 		_takeProfitDistance = 0m;
 		_stopLossDistance = 0m;
+		_entryPrice = 0m;
+		_stopPrice = null;
+		_takePrice = null;
 	}
 
 	/// <inheritdoc />
@@ -116,7 +122,7 @@ public class CoinFlippingStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Seed the pseudo-random generator similarly to the MQL expert.
-		_random = new Random(Environment.TickCount);
+		_random = new Random(System.Environment.TickCount);
 
 		// Determine price step information for translating pips into price units.
 		_priceStep = Security?.PriceStep ?? 1m;
@@ -125,17 +131,6 @@ public class CoinFlippingStrategy : Strategy
 
 		_takeProfitDistance = TakeProfitPips * _priceStep;
 		_stopLossDistance = StopLossPips * _priceStep;
-
-		var takeProfitUnit = _takeProfitDistance > 0m
-			? new Unit(_takeProfitDistance, UnitTypes.Absolute)
-			: new Unit();
-
-		var stopLossUnit = _stopLossDistance > 0m
-			? new Unit(_stopLossDistance, UnitTypes.Absolute)
-			: new Unit();
-
-		// Attach protective orders so every position has an exit target and stop.
-		StartProtection(takeProfitUnit, stopLossUnit);
 
 		// Subscribe to candle data to trigger decision making once per bar.
 		var subscription = SubscribeCandles(CandleType);
@@ -155,8 +150,33 @@ public class CoinFlippingStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// Check risk management first.
+		if (Position > 0)
+		{
+			if (_stopPrice.HasValue && candle.LowPrice <= _stopPrice.Value)
+			{
+				SellMarket(Position);
+				ResetTargets();
+			}
+			else if (_takePrice.HasValue && candle.HighPrice >= _takePrice.Value)
+			{
+				SellMarket(Position);
+				ResetTargets();
+			}
+		}
+		else if (Position < 0)
+		{
+			if (_stopPrice.HasValue && candle.HighPrice >= _stopPrice.Value)
+			{
+				BuyMarket(Math.Abs(Position));
+				ResetTargets();
+			}
+			else if (_takePrice.HasValue && candle.LowPrice <= _takePrice.Value)
+			{
+				BuyMarket(Math.Abs(Position));
+				ResetTargets();
+			}
+		}
 
 		// The strategy maintains at most one position at a time.
 		if (Position != 0)
@@ -176,13 +196,17 @@ public class CoinFlippingStrategy : Strategy
 		var isBuy = _random.Next(0, 2) == 0;
 		if (isBuy)
 		{
-			LogInfo($"Opening long position at {entryPrice} with volume {volume}.");
 			BuyMarket(volume);
+			_entryPrice = entryPrice;
+			_stopPrice = _stopLossDistance > 0m ? entryPrice - _stopLossDistance : null;
+			_takePrice = _takeProfitDistance > 0m ? entryPrice + _takeProfitDistance : null;
 		}
 		else
 		{
-			LogInfo($"Opening short position at {entryPrice} with volume {volume}.");
 			SellMarket(volume);
+			_entryPrice = entryPrice;
+			_stopPrice = _stopLossDistance > 0m ? entryPrice + _stopLossDistance : null;
+			_takePrice = _takeProfitDistance > 0m ? entryPrice - _takeProfitDistance : null;
 		}
 	}
 
@@ -223,21 +247,19 @@ public class CoinFlippingStrategy : Strategy
 		if (volume <= 0m)
 			return 0m;
 
-		if (Security?.VolumeStep is decimal step && step > 0m)
+		var step = Security?.VolumeStep;
+		if (step.HasValue && step.Value > 0m)
 		{
-			volume = Math.Floor(volume / step) * step;
+			volume = Math.Floor(volume / step.Value) * step.Value;
 		}
 
-		if (Security?.MinVolume is decimal minVolume && minVolume > 0m && volume < minVolume)
-		{
-			volume = minVolume;
-		}
+		return volume > 0m ? volume : 1m;
+	}
 
-		if (Security?.MaxVolume is decimal maxVolume && maxVolume > 0m && volume > maxVolume)
-		{
-			volume = maxVolume;
-		}
-
-		return volume;
+	private void ResetTargets()
+	{
+		_entryPrice = 0m;
+		_stopPrice = null;
+		_takePrice = null;
 	}
 }

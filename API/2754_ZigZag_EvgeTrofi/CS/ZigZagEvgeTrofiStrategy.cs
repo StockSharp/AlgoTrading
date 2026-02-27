@@ -278,11 +278,8 @@ public class ZigZagEvgeTrofiStrategy : Strategy
 	// Determine the effective price step for translating point-based parameters.
 	private decimal GetEffectivePriceStep()
 	{
-		if (Security.PriceStep.HasValue && Security.PriceStep.Value > 0m)
+		if (Security?.PriceStep is > 0m)
 			return Security.PriceStep.Value;
-
-		if (Security.MinPriceStep > 0m)
-			return Security.MinPriceStep;
 
 		return 1m;
 	}

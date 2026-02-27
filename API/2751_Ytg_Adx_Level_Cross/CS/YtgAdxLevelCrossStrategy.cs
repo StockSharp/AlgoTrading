@@ -120,7 +120,7 @@ public class YtgAdxLevelCrossStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Base volume for market orders", "Orders");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for the strategy", "General");
 	}
 

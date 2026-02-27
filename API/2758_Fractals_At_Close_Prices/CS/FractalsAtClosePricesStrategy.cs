@@ -130,7 +130,7 @@ public class FractalsAtClosePricesStrategy : Strategy
 		.SetDisplay("Order Volume", "Volume used for entries", "General")
 		;
 
-		_startHour = Param(nameof(StartHour), 10)
+		_startHour = Param(nameof(StartHour), 0)
 		.SetRange(0, 23)
 		.SetDisplay("Start Hour", "Hour when trading can start (0-23)", "Trading Hours");
 
@@ -158,7 +158,7 @@ public class FractalsAtClosePricesStrategy : Strategy
 		.SetDisplay("Trailing Step (pips)", "Additional move required before trailing", "Risk Management")
 		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles processed by the strategy", "General");
 	}
 
@@ -239,10 +239,7 @@ public class FractalsAtClosePricesStrategy : Strategy
 
 		ApplyRiskManagement(candle);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			return;
-		}
+		// no bound indicators, skip IsFormedAndOnlineAndAllowTrading()
 
 		ExecuteEntries(candle);
 	}

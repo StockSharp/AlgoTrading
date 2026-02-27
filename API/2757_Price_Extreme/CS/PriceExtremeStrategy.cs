@@ -34,6 +34,9 @@ public class PriceExtremeStrategy : Strategy
 	private decimal? _stopPrice;
 	private decimal? _takePrice;
 	private decimal _prevPosition;
+	private decimal _entryPrice;
+	private decimal _prevUpper;
+	private decimal _prevLower;
 
 	/// <summary>
 	/// Number of candles used to build extreme levels.
@@ -184,12 +187,12 @@ public class PriceExtremeStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, subscription, _upperBand);
-			DrawIndicator(area, subscription, _lowerBand);
+			DrawIndicator(area, _upperBand);
+			DrawIndicator(area, _lowerBand);
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
+		// no protection needed
 	}
 
 	private bool CanOpenLong => EnableLong && OrderVolume > 0m;
@@ -214,8 +217,11 @@ public class PriceExtremeStrategy : Strategy
 
 		var signalCandle = _history[_history.Count - SignalShift];
 
-		var breakoutUp = signalCandle.ClosePrice > upper;
-		var breakoutDown = signalCandle.ClosePrice < lower;
+		var breakoutUp = candle.ClosePrice > _prevUpper && _prevUpper > 0;
+		var breakoutDown = candle.ClosePrice < _prevLower && _prevLower > 0;
+
+		_prevUpper = upper;
+		_prevLower = lower;
 
 		var wantLong = ReverseSignals ? breakoutDown : breakoutUp;
 		var wantShort = ReverseSignals ? breakoutUp : breakoutDown;
@@ -224,7 +230,7 @@ public class PriceExtremeStrategy : Strategy
 		{
 			if (Position < 0)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
 				ResetTargets();
 			}
 
@@ -234,7 +240,7 @@ public class PriceExtremeStrategy : Strategy
 		{
 			if (Position > 0)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
 				ResetTargets();
 			}
 
@@ -250,6 +256,16 @@ public class PriceExtremeStrategy : Strategy
 		ApplyRiskManagement(candle);
 	}
 
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade == null) return;
+		if (Position != 0 && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+		if (Position == 0)
+			_entryPrice = 0m;
+	}
+
 	private void UpdateTargets()
 	{
 		_stopPrice = null;
@@ -262,18 +278,18 @@ public class PriceExtremeStrategy : Strategy
 		if (Position > 0m)
 		{
 			if (StopLossPoints > 0)
-				_stopPrice = PositionPrice - StopLossPoints * step;
+				_stopPrice = _entryPrice - StopLossPoints * step;
 
 			if (TakeProfitPoints > 0)
-				_takePrice = PositionPrice + TakeProfitPoints * step;
+				_takePrice = _entryPrice + TakeProfitPoints * step;
 		}
 		else if (Position < 0m)
 		{
 			if (StopLossPoints > 0)
-				_stopPrice = PositionPrice + StopLossPoints * step;
+				_stopPrice = _entryPrice + StopLossPoints * step;
 
 			if (TakeProfitPoints > 0)
-				_takePrice = PositionPrice - TakeProfitPoints * step;
+				_takePrice = _entryPrice - TakeProfitPoints * step;
 		}
 	}
 
@@ -283,14 +299,14 @@ public class PriceExtremeStrategy : Strategy
 		{
 			if (_stopPrice.HasValue && candle.LowPrice <= _stopPrice.Value)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
 				ResetTargets();
 				return;
 			}
 
 			if (_takePrice.HasValue && candle.HighPrice >= _takePrice.Value)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
 				ResetTargets();
 			}
 		}
@@ -298,14 +314,14 @@ public class PriceExtremeStrategy : Strategy
 		{
 			if (_stopPrice.HasValue && candle.HighPrice >= _stopPrice.Value)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
 				ResetTargets();
 				return;
 			}
 
 			if (_takePrice.HasValue && candle.LowPrice <= _takePrice.Value)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
 				ResetTargets();
 			}
 		}

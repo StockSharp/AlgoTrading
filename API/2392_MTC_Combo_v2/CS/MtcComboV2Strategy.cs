@@ -64,7 +64,7 @@ public class MtcComboV2Strategy : Strategy
 		_tp2 = Param(nameof(Tp2), 50m);
 		_sl3 = Param(nameof(Sl3), 50m);
 		_tp3 = Param(nameof(Tp3), 50m);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 		Volume = 1m;
 	}
 
@@ -85,7 +85,6 @@ public class MtcComboV2Strategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		StartProtection(null, null);
 		_ma = new SMA { Length = MaPeriod };
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(_ma, ProcessCandle).Start();
@@ -136,12 +135,12 @@ public class MtcComboV2Strategy : Strategy
 		var dir = Supervisor(slope);
 		if (dir > 0m)
 		{
-			BuyMarket(Volume);
+			BuyMarket();
 			_entry = candle.ClosePrice;
 		}
 		else if (dir < 0m)
 		{
-			SellMarket(Volume);
+			SellMarket();
 			_entry = candle.ClosePrice;
 		}
 	}
@@ -149,9 +148,9 @@ public class MtcComboV2Strategy : Strategy
 	private void ClosePos()
 	{
 		if (Position > 0)
-			SellMarket(Position);
+			SellMarket();
 		else if (Position < 0)
-			BuyMarket(-Position);
+			BuyMarket();
 	}
 
 	private decimal Supervisor(decimal slope)
@@ -182,10 +181,11 @@ public class MtcComboV2Strategy : Strategy
 			return 0m;
 
 		var arr = _opens.ToArray();
-		var a1 = arr[^1] - arr[^1 - p];
-		var a2 = arr[^1 - p] - arr[^1 - p * 2];
-		var a3 = arr[^1 - p * 2] - arr[^1 - p * 3];
-		var a4 = arr[^1 - p * 3] - arr[^1 - p * 4];
+		var len = arr.Length;
+		var a1 = arr[len - 1] - arr[len - 1 - p];
+		var a2 = arr[len - 1 - p] - arr[len - 1 - p * 2];
+		var a3 = arr[len - 1 - p * 2] - arr[len - 1 - p * 3];
+		var a4 = arr[len - 1 - p * 3] - arr[len - 1 - p * 4];
 
 		return a1 + a2 + a3 + a4;
 	}

@@ -66,10 +66,10 @@ public class PercentageCrossoverChannelStrategy : Strategy
 
 	public PercentageCrossoverChannelStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for processing", "General");
 
-		_percent = Param(nameof(Percent), 50m)
+		_percent = Param(nameof(Percent), 1m)
 			.SetDisplay("Percent", "Channel width percent", "Channel")
 			
 			.SetGreaterThanZero();
@@ -212,9 +212,6 @@ public class PercentageCrossoverChannelStrategy : Strategy
 
 	private void TryEnterPositions(ICandleMessage candle)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		// Wait until the channel has valid values for two completed candles.
 		if (!_prevLower.HasValue || !_prevPrevLower.HasValue)
 			return;

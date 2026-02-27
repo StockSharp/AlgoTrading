@@ -23,8 +23,8 @@ public class DiffTfMaStrategy : Strategy
 	private readonly StrategyParam<DataType> _higherCandleType;
 	private readonly StrategyParam<bool> _reverseSignals;
 
-	private SMA _baseMa;
-	private SMA _higherMa;
+	private SimpleMovingAverage _baseMa;
+	private SimpleMovingAverage _higherMa;
 
 	private decimal? _higherMaLast;
 	private decimal? _higherMaPrev;
@@ -63,10 +63,10 @@ public class DiffTfMaStrategy : Strategy
 			
 			.SetOptimize(5, 30, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Base Candle", "Trading timeframe", "General");
 
-		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(4).TimeFrame())
+		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Higher Candle", "Higher timeframe for confirmation", "General");
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
@@ -103,8 +103,8 @@ public class DiffTfMaStrategy : Strategy
 		var ratio = higherSpan.TotalMinutes / baseSpan.TotalMinutes;
 		var baseLength = Math.Max(1, (int)(MaPeriod * ratio));
 
-		_baseMa = new SMA { Length = baseLength };
-		_higherMa = new SMA { Length = MaPeriod };
+		_baseMa = new SimpleMovingAverage { Length = baseLength };
+		_higherMa = new SimpleMovingAverage { Length = MaPeriod };
 
 		var higherSubscription = SubscribeCandles(HigherCandleType);
 		higherSubscription.Bind(_higherMa, ProcessHigher).Start();
@@ -136,9 +136,6 @@ public class DiffTfMaStrategy : Strategy
 	private void ProcessBase(ICandleMessage candle, decimal baseMaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (!_baseMa.IsFormed)

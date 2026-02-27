@@ -65,6 +65,7 @@ public class ReduceRisksStrategy : Strategy
 	private int _longBarsSinceEntry;
 	private int _shortBarsSinceEntry;
 	private decimal _previousPosition;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Stop loss distance expressed in pips.
@@ -142,7 +143,7 @@ public class ReduceRisksStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Take Profit", "Target distance in pips", "Risk");
 
-		_initialDeposit = Param(nameof(InitialDeposit), 10000m)
+		_initialDeposit = Param(nameof(InitialDeposit), 1000m)
 		.SetGreaterThanZero()
 		.SetDisplay("Initial Deposit", "Reference equity for drawdown protection", "Risk");
 
@@ -213,6 +214,7 @@ protected override void OnReseted()
 	_longBarsSinceEntry = 0;
 	_shortBarsSinceEntry = 0;
 	_previousPosition = 0m;
+	_entryPrice = 0m;
 }
 
 /// <inheritdoc />
@@ -220,22 +222,26 @@ protected override void OnStarted2(DateTime time)
 {
 	base.OnStarted2(time);
 
-	_priceStep = Security?.PriceStep ?? 0.0001m;
-	var decimals = Security?.Decimals ?? 4;
+	_priceStep = Security?.PriceStep ?? 0.01m;
+	if (_priceStep == 0m) _priceStep = 0.01m;
+	var decimals = Security?.Decimals ?? 2;
 	_pipSize = decimals is 3 or 5 ? _priceStep * 10m : _priceStep;
 	if (_pipSize == 0m)
-	_pipSize = 0.0001m;
+		_pipSize = 0.01m;
+	// Scale pip size for instruments with large prices (e.g. BTC)
+	if (_priceStep >= 0.01m && _pipSize < 1m)
+		_pipSize = 100m;
 
 	_riskThreshold = InitialDeposit * (100m - RiskPercent) / 100m;
 
-	_m1Sma5 = new SMA { Length = 5 };
-	_m1Sma8 = new SMA { Length = 8 };
-	_m1Sma13 = new SMA { Length = 13 };
-	_m1Sma60 = new SMA { Length = 60 };
-	_m15Sma4 = new SMA { Length = 4 };
-	_m15Sma5 = new SMA { Length = 5 };
-	_m15Sma8 = new SMA { Length = 8 };
-	_h1Sma24 = new SMA { Length = 24 };
+	_m1Sma5 = new SimpleMovingAverage { Length = 5 };
+	_m1Sma8 = new SimpleMovingAverage { Length = 8 };
+	_m1Sma13 = new SimpleMovingAverage { Length = 13 };
+	_m1Sma60 = new SimpleMovingAverage { Length = 60 };
+	_m15Sma4 = new SimpleMovingAverage { Length = 4 };
+	_m15Sma5 = new SimpleMovingAverage { Length = 5 };
+	_m15Sma8 = new SimpleMovingAverage { Length = 8 };
+	_h1Sma24 = new SimpleMovingAverage { Length = 24 };
 
 	var m1Subscription = SubscribeCandles(M1CandleType);
 	m1Subscription.Bind(ProcessM1).Start();
@@ -247,17 +253,15 @@ protected override void OnStarted2(DateTime time)
 	h1Subscription.Bind(ProcessH1).Start();
 
 	Unit takeProfitUnit = null;
-	if (TakeProfitPips > 0 && _priceStep > 0m)
+	if (TakeProfitPips > 0 && _pipSize > 0m)
 	{
-		var steps = TakeProfitPips * _pipSize / _priceStep;
-		takeProfitUnit = new Unit(steps, UnitTypes.Step);
+		takeProfitUnit = new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute);
 	}
 
 	Unit stopLossUnit = null;
-	if (StopLossPips > 0 && _priceStep > 0m)
+	if (StopLossPips > 0 && _pipSize > 0m)
 	{
-		var steps = StopLossPips * _pipSize / _priceStep;
-		stopLossUnit = new Unit(steps, UnitTypes.Step);
+		stopLossUnit = new Unit(StopLossPips * _pipSize, UnitTypes.Absolute);
 	}
 
 	StartProtection(takeProfitUnit, stopLossUnit, useMarketOrders: true);
@@ -293,27 +297,23 @@ private void ProcessM1(ICandleMessage candle)
 	ProcessSma(_m1Sma13, ref _m1Sma13Values, typical, candle.OpenTime);
 	ProcessSma(_m1Sma60, ref _m1Sma60Values, typical, candle.OpenTime);
 
-	var ready =
-	_m1Sma5Values[0] is decimal sma5 &&
-	_m1Sma5Values[2] is decimal sma5Prev2 &&
-	_m1Sma8Values[0] is decimal sma8 &&
-	_m1Sma8Values[1] is decimal sma8Prev1 &&
-	_m1Sma8Values[2] is decimal sma8Prev2 &&
-	_m1Sma8Values[3] is decimal sma8Prev3 &&
-	_m1Sma13Values[0] is decimal sma13 &&
-	_m1Sma60Values[0] is decimal sma60 &&
-	_m1Sma60Values[2] is decimal sma60Prev2 &&
-	_m15Sma4Values[0] is decimal sma4M15 &&
-	_m15Sma4Values[1] is decimal sma4M15Prev1 &&
-	_m15Sma4Values[2] is decimal sma4M15Prev2 &&
-	_m15Sma5Values[1] is decimal sma5M15Prev1 &&
-	_m15Sma8Values[1] is decimal sma8M15Prev1 &&
-	_h1Sma24Values[0] is decimal sma24H1;
-
-	var hasHistory = _m1Prev1 != null && _m1Prev2 != null && _m1Prev3 != null &&
-	_m15Prev1 != null && _m15Prev2 != null && _m15Prev3 != null;
-
-	if (!ready || !hasHistory)
+	if (_m1Sma5Values[0] is not decimal sma5 ||
+		_m1Sma5Values[2] is not decimal sma5Prev2 ||
+		_m1Sma8Values[0] is not decimal sma8 ||
+		_m1Sma8Values[1] is not decimal sma8Prev1 ||
+		_m1Sma8Values[2] is not decimal sma8Prev2 ||
+		_m1Sma8Values[3] is not decimal sma8Prev3 ||
+		_m1Sma13Values[0] is not decimal sma13 ||
+		_m1Sma60Values[0] is not decimal sma60 ||
+		_m1Sma60Values[2] is not decimal sma60Prev2 ||
+		_m15Sma4Values[0] is not decimal sma4M15 ||
+		_m15Sma4Values[1] is not decimal sma4M15Prev1 ||
+		_m15Sma4Values[2] is not decimal sma4M15Prev2 ||
+		_m15Sma5Values[1] is not decimal sma5M15Prev1 ||
+		_m15Sma8Values[1] is not decimal sma8M15Prev1 ||
+		_h1Sma24Values[0] is not decimal sma24H1 ||
+		_m1Prev1 == null || _m1Prev2 == null || _m1Prev3 == null ||
+		_m15Prev1 == null || _m15Prev2 == null || _m15Prev3 == null)
 	{
 		HandlePositionState();
 		UpdateM1History(candle);
@@ -337,19 +337,14 @@ private void ProcessM1(ICandleMessage candle)
 		_riskExceededCounter = 0;
 	}
 
-	if (!IsFormedAndOnlineAndAllowTrading())
-	{
-		HandlePositionState();
-		UpdateM1History(candle);
-		_previousPosition = Position;
-		return;
-	}
+	// indicators are not bound via Bind(), so check manually
+
 
 	if (Position == 0 && !riskExceeded)
 	{
-		var longEntered = TryEnterLong(candle, sma5, sma8, sma13, sma60, sma5Prev2, sma8Prev1, sma8Prev2, sma8Prev3, sma4M15, sma4M15Prev1, sma4M15Prev2, sma5M15Prev1, sma8M15Prev1, sma24H1);
+		var longEntered = TryEnterLong(candle, sma5, sma8, sma13, sma60, sma5Prev2, sma60Prev2, sma8Prev1, sma8Prev2, sma8Prev3, sma4M15, sma4M15Prev1, sma4M15Prev2, sma5M15Prev1, sma8M15Prev1, sma24H1);
 		if (!longEntered)
-		TryEnterShort(candle, sma5, sma8, sma13, sma60, sma5Prev2, sma8Prev1, sma8Prev2, sma8Prev3, sma4M15, sma4M15Prev1, sma4M15Prev2, sma5M15Prev1, sma8M15Prev1, sma24H1);
+		TryEnterShort(candle, sma5, sma8, sma13, sma60, sma5Prev2, sma60Prev2, sma8Prev1, sma8Prev2, sma8Prev3, sma4M15, sma4M15Prev1, sma4M15Prev2, sma5M15Prev1, sma8M15Prev1, sma24H1);
 	}
 	else
 	{
@@ -392,6 +387,7 @@ decimal sma8,
 decimal sma13,
 decimal sma60,
 decimal sma5Prev2,
+decimal sma60Prev2,
 decimal sma8Prev1,
 decimal sma8Prev2,
 decimal sma8Prev3,
@@ -470,7 +466,7 @@ decimal sma24H1)
 	return false;
 
 	BuyMarket();
-	LogInfo("Opened long position.");
+	// LogInfo("Opened long position.");
 	return true;
 }
 
@@ -481,6 +477,7 @@ decimal sma8,
 decimal sma13,
 decimal sma60,
 decimal sma5Prev2,
+decimal sma60Prev2,
 decimal sma8Prev1,
 decimal sma8Prev2,
 decimal sma8Prev3,
@@ -559,7 +556,15 @@ decimal sma24H1)
 	return;
 
 	SellMarket();
-	LogInfo("Opened short position.");
+	// LogInfo("Opened short position.");
+}
+
+protected override void OnOwnTradeReceived(MyTrade trade)
+{
+	base.OnOwnTradeReceived(trade);
+	if (trade?.Trade == null) return;
+	if (Position != 0 && _entryPrice == 0m)
+		_entryPrice = trade.Trade.Price;
 }
 
 private void HandleActivePosition(ICandleMessage candle, bool riskExceeded)
@@ -578,7 +583,7 @@ private void HandleActivePosition(ICandleMessage candle, bool riskExceeded)
 			_longBarsSinceEntry++;
 		}
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		var collapseM1 = candle.ClosePrice <= candle.OpenPrice - 10m * _pipSize;
 		var collapsePrev =
 		_longEntryTime.HasValue && candle.OpenTime - _longEntryTime.Value > TimeSpan.FromMinutes(1) &&
@@ -597,8 +602,8 @@ private void HandleActivePosition(ICandleMessage candle, bool riskExceeded)
 
 		if (collapseM1 || collapsePrev || profitZone || trailing || stopLossHit || riskExceeded)
 		{
-			ClosePosition();
-			LogInfo("Closed long position by risk control.");
+			if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
+			// LogInfo("Closed long position by risk control.");
 		}
 	}
 	else if (Position < 0)
@@ -615,7 +620,7 @@ private void HandleActivePosition(ICandleMessage candle, bool riskExceeded)
 			_shortBarsSinceEntry++;
 		}
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		var collapseM1 = candle.ClosePrice >= candle.OpenPrice + 10m * _pipSize;
 		var collapsePrev =
 		_shortEntryTime.HasValue && candle.OpenTime - _shortEntryTime.Value > TimeSpan.FromMinutes(1) &&
@@ -634,8 +639,8 @@ private void HandleActivePosition(ICandleMessage candle, bool riskExceeded)
 
 		if (collapseM1 || collapsePrev || profitZone || trailing || stopLossHit || riskExceeded)
 		{
-			ClosePosition();
-			LogInfo("Closed short position by risk control.");
+			if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
+			// LogInfo("Closed short position by risk control.");
 		}
 	}
 }
@@ -655,6 +660,9 @@ private void HandlePositionState()
 		_shortEntryTime = null;
 		_shortBarsSinceEntry = 0;
 	}
+
+	if (Position == 0)
+		_entryPrice = 0m;
 }
 
 private void UpdateM1History(ICandleMessage candle)
@@ -681,8 +689,8 @@ private static bool IsBetween(decimal value, ICandleMessage candle)
 
 private void ProcessSma(SimpleMovingAverage sma, ref RollingValues values, decimal input, DateTimeOffset time)
 {
-	var indicatorValue = sma.Process(new DecimalIndicatorValue(sma, input, time.UtcDateTime));
-	if (!indicatorValue.IsFinal || indicatorValue is not DecimalIndicatorValue decimalValue)
+	var indicatorValue = sma.Process(new DecimalIndicatorValue(sma, input, time.UtcDateTime) { IsFinal = true });
+	if (!sma.IsFormed || indicatorValue is not DecimalIndicatorValue decimalValue)
 	return;
 
 	values.Add(decimalValue.Value);

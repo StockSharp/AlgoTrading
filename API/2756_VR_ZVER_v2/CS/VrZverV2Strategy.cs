@@ -103,14 +103,14 @@ public class VrZverV2Strategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Very Slow EMA", "Length of the very slow EMA", "Indicators");
 
-		_useStochastic = Param(nameof(UseStochastic), true)
+		_useStochastic = Param(nameof(UseStochastic), false)
 		.SetDisplay("Use Stochastic", "Enable stochastic confirmation", "Indicators");
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 42)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %K", "Number of periods for %K", "Indicators");
 
-		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 5)
+		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %D", "Smoothing period for %D", "Indicators");
 
@@ -124,7 +124,7 @@ public class VrZverV2Strategy : Strategy
 		_stochasticLowerLevel = Param(nameof(StochasticLowerLevel), 40m)
 		.SetDisplay("Stochastic Lower", "Lower threshold for long signals", "Indicators");
 
-		_useRsi = Param(nameof(UseRsi), true)
+		_useRsi = Param(nameof(UseRsi), false)
 		.SetDisplay("Use RSI", "Enable RSI filter", "Indicators");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -297,21 +297,18 @@ public class VrZverV2Strategy : Strategy
 		ResetTradeState();
 
 		// Instantiate indicators with the configured lengths.
-		_fastMa = new EMA { Length = FastMaPeriod };
-		_slowMa = new EMA { Length = SlowMaPeriod };
-		_verySlowMa = new EMA { Length = VerySlowMaPeriod };
-		_stochastic = new StochasticOscillator
-		{
-			KPeriod = StochasticKPeriod,
-			D = {  K = { Length = StochasticDPeriod } },
-			Smooth = StochasticSmooth,
-		};
+		_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
+		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
+		_verySlowMa = new ExponentialMovingAverage { Length = VerySlowMaPeriod };
+		_stochastic = new StochasticOscillator();
+		_stochastic.K.Length = StochasticKPeriod;
+		_stochastic.D.Length = StochasticDPeriod;
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-		// Subscribe to candle updates and bind indicators to a single handler.
+		// Subscribe to candle updates and bind the three EMAs.
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(_fastMa, _slowMa, _verySlowMa, _stochastic, _rsi, ProcessCandle)
+		.Bind(_fastMa, _slowMa, _verySlowMa, ProcessCandle)
 		.Start();
 
 		// Draw indicators and trades when a chart area is available.
@@ -328,14 +325,15 @@ public class VrZverV2Strategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastMaValue, decimal slowMaValue, decimal verySlowMaValue, IIndicatorValue stochasticValue, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fastMaValue, decimal slowMaValue, decimal verySlowMaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		// Skip processing when the strategy is not ready to trade.
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// Process stochastic and RSI manually
+		var stochasticValue = _stochastic.Process(candle);
+		var rsiResult = _rsi.Process(new DecimalIndicatorValue(_rsi, candle.ClosePrice, candle.CloseTime) { IsFinal = true });
+		var rsiValue = rsiResult.IsFormed ? rsiResult.ToDecimal() : 50m;
 
 		if (UseMovingAverageFilter && (!_fastMa.IsFormed || !_slowMa.IsFormed || !_verySlowMa.IsFormed))
 		return;
@@ -366,7 +364,8 @@ public class VrZverV2Strategy : Strategy
 
 		if (UseStochastic)
 		{
-			var stoch = (StochasticOscillatorValue)stochasticValue;
+			if (stochasticValue is not IStochasticOscillatorValue stoch)
+			return;
 			if (stoch.K is not decimal stochK || stoch.D is not decimal stochD)
 			return;
 
@@ -641,27 +640,17 @@ public class VrZverV2Strategy : Strategy
 		return volume;
 
 		var step = security.VolumeStep ?? 0m;
-		var min = security.VolumeMin ?? step;
-		var max = security.VolumeMax ?? decimal.MaxValue;
 
 		if (step > 0m)
 		{
 			var steps = Math.Floor(volume / step);
 			var adjusted = steps * step;
-
-			if (min <= 0m)
-			min = step;
-
-			if (adjusted < min)
-			return 0m;
-
-			return Math.Min(adjusted, max);
+			if (adjusted <= 0m)
+				adjusted = step;
+			return adjusted;
 		}
 
-		if (min > 0m && volume < min)
-		return 0m;
-
-		return Math.Min(volume, max);
+		return volume > 0m ? volume : 0m;
 	}
 
 	// Mimic the MetaTrader pip conversion used in the original script.

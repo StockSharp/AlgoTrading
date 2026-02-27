@@ -44,15 +44,11 @@ public class Ntk07RangeTraderStrategy : Strategy
 	private Highest _rangeHighIndicator;
 	private Lowest _rangeLowIndicator;
 
-	private Order _entryBuyStop;
-	private Order _entrySellStop;
-	private Order _longStopOrder;
-	private Order _longTakeProfitOrder;
-	private Order _shortStopOrder;
-	private Order _shortTakeProfitOrder;
-
 	private ICandleMessage _previousCandle;
 	private decimal _priceStep;
+	private decimal _entryPrice;
+	private decimal? _stopPrice;
+	private decimal? _takePrice;
 
 	/// <summary>
 	/// Base volume used for each entry order.
@@ -219,7 +215,7 @@ public class Ntk07RangeTraderStrategy : Strategy
 		.SetDisplay("Trailing Stop", "Distance used for trailing calculations in price steps", "Risk");
 
 		_lotMultiplier = Param(nameof(LotMultiplier), 1.7m)
-		.SetGreaterOrEqual(1m)
+		.SetGreaterThanZero()
 		.SetDisplay("Lot Multiplier", "Volume multiplier when pyramiding", "Risk");
 
 		_trailHighLow = Param(nameof(UseTrailingAtHighLow), true)
@@ -260,16 +256,13 @@ public class Ntk07RangeTraderStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_entryBuyStop = null;
-		_entrySellStop = null;
-		_longStopOrder = null;
-		_longTakeProfitOrder = null;
-		_shortStopOrder = null;
-		_shortTakeProfitOrder = null;
 		_previousCandle = null;
 		_movingAverage = null;
 		_rangeHighIndicator = null;
 		_rangeLowIndicator = null;
+		_entryPrice = 0m;
+		_stopPrice = null;
+		_takePrice = null;
 	}
 
 	/// <inheritdoc />
@@ -290,7 +283,7 @@ public class Ntk07RangeTraderStrategy : Strategy
 		throw new InvalidOperationException("Only one trailing mode can be enabled at a time.");
 
 		_priceStep = Security?.PriceStep ?? 1m;
-		_movingAverage = new SMA { Length = MovingAveragePeriod };
+		_movingAverage = new SimpleMovingAverage { Length = MovingAveragePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -338,17 +331,7 @@ public class Ntk07RangeTraderStrategy : Strategy
 	private void ProcessCandleInternal(ICandleMessage candle, decimal maValue, decimal? rangeHigh, decimal? rangeLow)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-			_previousCandle = candle;
-			return;
-		}
-
-		if (candle.CloseTime.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
-		{
-			_previousCandle = candle;
 			return;
 		}
 
@@ -359,345 +342,186 @@ public class Ntk07RangeTraderStrategy : Strategy
 			return;
 		}
 
-		var netOffset = ToPrice(NetStepPoints);
-		if (netOffset <= 0m)
-		{
-			_previousCandle = candle;
-			return;
-		}
+		// Check SL/TP first.
+		CheckProtection(candle);
 
-		if (Position == 0)
+		var netOffset = ToPrice(NetStepPoints);
+
+		if (Position == 0 && netOffset > 0m)
 		{
-			HandleFlatState(candle, netOffset, rangeHigh, rangeLow);
+			// Flat - check if candle broke through entry levels.
+			var allowEntries = true;
+
+			if (rangeHigh.HasValue && rangeLow.HasValue && rangeHigh.Value > rangeLow.Value)
+			{
+				allowEntries = TradeMode switch
+				{
+					TradeModeOptions.EdgesOfRange => candle.ClosePrice >= rangeHigh.Value || candle.ClosePrice <= rangeLow.Value,
+					TradeModeOptions.CenterOfRange => Math.Abs(candle.ClosePrice - ((rangeHigh.Value + rangeLow.Value) / 2m)) <= _priceStep,
+					_ => true,
+				};
+			}
+
+			if (allowEntries && _previousCandle != null)
+			{
+				var buyLevel = _previousCandle.ClosePrice + netOffset;
+				var sellLevel = _previousCandle.ClosePrice - netOffset;
+
+				if (candle.HighPrice >= buyLevel)
+				{
+					BuyMarket(EntryVolume);
+					_entryPrice = candle.ClosePrice;
+					SetProtectionLevels(true, candle, maValue);
+				}
+				else if (candle.LowPrice <= sellLevel)
+				{
+					SellMarket(EntryVolume);
+					_entryPrice = candle.ClosePrice;
+					SetProtectionLevels(false, candle, maValue);
+				}
+			}
 		}
 		else if (Position > 0)
 		{
-			HandleLongState(candle, maValue, netOffset);
+			// Update trailing stop for longs.
+			UpdateLongTrailing(candle, maValue);
 		}
-		else
+		else if (Position < 0)
 		{
-			HandleShortState(candle, maValue, netOffset);
+			// Update trailing stop for shorts.
+			UpdateShortTrailing(candle, maValue);
 		}
 
 		_previousCandle = candle;
 	}
 
-	private void HandleFlatState(ICandleMessage candle, decimal netOffset, decimal? rangeHigh, decimal? rangeLow)
+	private void SetProtectionLevels(bool isLong, ICandleMessage candle, decimal maValue)
 	{
-		CancelAndReset(ref _longStopOrder);
-		CancelAndReset(ref _longTakeProfitOrder);
-		CancelAndReset(ref _shortStopOrder);
-		CancelAndReset(ref _shortTakeProfitOrder);
-
-		var allowEntries = true;
-
-		if (rangeHigh.HasValue && rangeLow.HasValue && rangeHigh.Value > rangeLow.Value)
-		{
-			allowEntries = TradeMode switch
-			{
-				TradeModeOptions.EdgesOfRange => candle.ClosePrice >= rangeHigh.Value || candle.ClosePrice <= rangeLow.Value,
-				TradeModeOptions.CenterOfRange => Math.Abs(candle.ClosePrice - ((rangeHigh.Value + rangeLow.Value) / 2m)) <= _priceStep,
-				_ => true,
-			};
-		}
-
-		if (!allowEntries)
-		{
-			CancelAndReset(ref _entryBuyStop);
-			CancelAndReset(ref _entrySellStop);
-			return;
-		}
-
-		var volume = EntryVolume;
-		if (volume <= 0m)
-		{
-			CancelAndReset(ref _entryBuyStop);
-			CancelAndReset(ref _entrySellStop);
-			return;
-		}
-
-		var limit = TotalVolumeLimit;
-		if (limit > 0m)
-		{
-			var cap = limit / 2m;
-			if (cap <= 0m)
-			{
-				CancelAndReset(ref _entryBuyStop);
-				CancelAndReset(ref _entrySellStop);
-				return;
-			}
-
-			volume = Math.Min(volume, cap);
-		}
-
-		var buyPrice = RoundPrice(candle.ClosePrice + netOffset);
-		var sellPrice = RoundPrice(candle.ClosePrice - netOffset);
-
-		if (buyPrice <= 0m || sellPrice <= 0m)
-		{
-			CancelAndReset(ref _entryBuyStop);
-			CancelAndReset(ref _entrySellStop);
-			return;
-		}
-
-		UpdateEntryOrder(ref _entryBuyStop, volume, buyPrice, true);
-		UpdateEntryOrder(ref _entrySellStop, volume, sellPrice, false);
-	}
-
-	private void HandleLongState(ICandleMessage candle, decimal maValue, decimal netOffset)
-	{
-		CancelAndReset(ref _entrySellStop);
-
-		var currentVolume = Math.Abs(Position);
-		if (currentVolume <= 0m)
-		return;
-
 		var stopLossOffset = ToPrice(StopLossPoints);
 		var takeProfitOffset = ToPrice(TakeProfitPoints);
-		var trailingOffset = ToPrice(TrailingStopPoints);
 
-		var stopPrice = CalculateLongStop(candle, maValue, stopLossOffset, trailingOffset);
-		var takePrice = CalculateLongTakeProfit(takeProfitOffset);
-
-		UpdateExitOrder(ref _longStopOrder, true, currentVolume, stopPrice, true);
-		UpdateExitOrder(ref _longTakeProfitOrder, true, currentVolume, takePrice, false);
-
-		HandlePyramiding(ref _entryBuyStop, true, candle.ClosePrice + netOffset, currentVolume);
-	}
-
-	private void HandleShortState(ICandleMessage candle, decimal maValue, decimal netOffset)
-	{
-		CancelAndReset(ref _entryBuyStop);
-
-		var currentVolume = Math.Abs(Position);
-		if (currentVolume <= 0m)
-		return;
-
-		var stopLossOffset = ToPrice(StopLossPoints);
-		var takeProfitOffset = ToPrice(TakeProfitPoints);
-		var trailingOffset = ToPrice(TrailingStopPoints);
-
-		var stopPrice = CalculateShortStop(candle, maValue, stopLossOffset, trailingOffset);
-		var takePrice = CalculateShortTakeProfit(takeProfitOffset);
-
-		UpdateExitOrder(ref _shortStopOrder, false, currentVolume, stopPrice, true);
-		UpdateExitOrder(ref _shortTakeProfitOrder, false, currentVolume, takePrice, false);
-
-		HandlePyramiding(ref _entrySellStop, false, candle.ClosePrice - netOffset, currentVolume);
-	}
-
-	private void HandlePyramiding(ref Order entryOrder, bool isLong, decimal rawPrice, decimal currentVolume)
-	{
-		if (LotMultiplier <= 1m)
+		if (isLong)
 		{
-			CancelAndReset(ref entryOrder);
-			return;
-		}
-
-		var limit = TotalVolumeLimit;
-		decimal remaining;
-
-		if (limit > 0m)
-		{
-			remaining = limit - currentVolume;
-			if (remaining <= 0m)
-			{
-				CancelAndReset(ref entryOrder);
-				return;
-			}
+			_stopPrice = stopLossOffset > 0m ? _entryPrice - stopLossOffset : null;
+			_takePrice = takeProfitOffset > 0m ? _entryPrice + takeProfitOffset : null;
 		}
 		else
 		{
-			remaining = EntryVolume * LotMultiplier;
+			_stopPrice = stopLossOffset > 0m ? _entryPrice + stopLossOffset : null;
+			_takePrice = takeProfitOffset > 0m ? _entryPrice - takeProfitOffset : null;
 		}
-
-		var additionalVolume = Math.Min(EntryVolume * LotMultiplier, remaining);
-		if (additionalVolume <= 0m)
-		{
-			CancelAndReset(ref entryOrder);
-			return;
-		}
-
-		var price = RoundPrice(rawPrice);
-		if (price <= 0m)
-		{
-			CancelAndReset(ref entryOrder);
-			return;
-		}
-
-		UpdateEntryOrder(ref entryOrder, additionalVolume, price, isLong);
 	}
 
-	private decimal? CalculateLongStop(ICandleMessage candle, decimal maValue, decimal stopLossOffset, decimal trailingOffset)
+	private void CheckProtection(ICandleMessage candle)
 	{
-		decimal? stopPrice = null;
+		if (Position > 0)
+		{
+			if (_stopPrice.HasValue && candle.LowPrice <= _stopPrice.Value)
+			{
+				SellMarket(Position);
+				ResetProtection();
+				return;
+			}
+			if (_takePrice.HasValue && candle.HighPrice >= _takePrice.Value)
+			{
+				SellMarket(Position);
+				ResetProtection();
+			}
+		}
+		else if (Position < 0)
+		{
+			if (_stopPrice.HasValue && candle.HighPrice >= _stopPrice.Value)
+			{
+				BuyMarket(Math.Abs(Position));
+				ResetProtection();
+				return;
+			}
+			if (_takePrice.HasValue && candle.LowPrice <= _takePrice.Value)
+			{
+				BuyMarket(Math.Abs(Position));
+				ResetProtection();
+			}
+		}
+	}
 
-		if (stopLossOffset > 0m && PositionPrice != 0m)
-		stopPrice = PositionPrice - stopLossOffset;
+	private void UpdateLongTrailing(ICandleMessage candle, decimal maValue)
+	{
+		var trailingOffset = ToPrice(TrailingStopPoints);
+		decimal? newStop = _stopPrice;
 
 		if (UseTrailingAtHighLow && _previousCandle != null)
 		{
 			var candidate = _previousCandle.LowPrice;
-			if (candidate > 0m)
-			stopPrice = stopPrice is null ? candidate : Math.Max(stopPrice.Value, candidate);
+			if (candidate > 0m && (newStop == null || candidate > newStop.Value))
+				newStop = candidate;
 		}
 		else if (UseTrailingMa && maValue > 0m)
 		{
-			stopPrice = stopPrice is null ? maValue : Math.Max(stopPrice.Value, maValue);
+			if (newStop == null || maValue > newStop.Value)
+				newStop = maValue;
 		}
-		else if (TrailingStopPoints > 0m && trailingOffset > 0m)
+		else if (trailingOffset > 0m)
 		{
 			var candidate = candle.ClosePrice - trailingOffset;
-			stopPrice = stopPrice is null ? candidate : Math.Max(stopPrice.Value, candidate);
+			if (newStop == null || candidate > newStop.Value)
+				newStop = candidate;
 		}
 
-		if (stopPrice is decimal value)
+		if (newStop.HasValue)
 		{
 			var maxStop = candle.ClosePrice - _priceStep;
-			stopPrice = Math.Min(value, maxStop);
-			stopPrice = Math.Max(stopPrice.Value, 0m);
+			newStop = Math.Min(newStop.Value, maxStop);
+			newStop = Math.Max(newStop.Value, 0m);
 		}
 
-		return stopPrice;
+		_stopPrice = newStop;
 	}
 
-	private decimal? CalculateShortStop(ICandleMessage candle, decimal maValue, decimal stopLossOffset, decimal trailingOffset)
+	private void UpdateShortTrailing(ICandleMessage candle, decimal maValue)
 	{
-		decimal? stopPrice = null;
-
-		if (stopLossOffset > 0m && PositionPrice != 0m)
-		stopPrice = PositionPrice + stopLossOffset;
+		var trailingOffset = ToPrice(TrailingStopPoints);
+		decimal? newStop = _stopPrice;
 
 		if (UseTrailingAtHighLow && _previousCandle != null)
 		{
 			var candidate = _previousCandle.HighPrice;
-			if (candidate > 0m)
-			stopPrice = stopPrice is null ? candidate : Math.Min(stopPrice.Value, candidate);
+			if (candidate > 0m && (newStop == null || candidate < newStop.Value))
+				newStop = candidate;
 		}
 		else if (UseTrailingMa && maValue > 0m)
 		{
-			stopPrice = stopPrice is null ? maValue : Math.Min(stopPrice.Value, maValue);
+			if (newStop == null || maValue < newStop.Value)
+				newStop = maValue;
 		}
-		else if (TrailingStopPoints > 0m && trailingOffset > 0m)
+		else if (trailingOffset > 0m)
 		{
 			var candidate = candle.ClosePrice + trailingOffset;
-			stopPrice = stopPrice is null ? candidate : Math.Min(stopPrice.Value, candidate);
+			if (newStop == null || candidate < newStop.Value)
+				newStop = candidate;
 		}
 
-		if (stopPrice is decimal value)
+		if (newStop.HasValue)
 		{
 			var minStop = candle.ClosePrice + _priceStep;
-			stopPrice = Math.Max(value, minStop);
+			newStop = Math.Max(newStop.Value, minStop);
 		}
 
-		return stopPrice;
+		_stopPrice = newStop;
 	}
 
-	private decimal? CalculateLongTakeProfit(decimal takeOffset)
+	private void ResetProtection()
 	{
-		if (takeOffset <= 0m || PositionPrice == 0m)
-		return null;
-
-		return PositionPrice + takeOffset;
-	}
-
-	private decimal? CalculateShortTakeProfit(decimal takeOffset)
-	{
-		if (takeOffset <= 0m || PositionPrice == 0m)
-		return null;
-
-		return PositionPrice - takeOffset;
-	}
-
-	private void UpdateEntryOrder(ref Order order, decimal volume, decimal price, bool isBuy)
-	{
-		if (volume <= 0m)
-		{
-			CancelAndReset(ref order);
-			return;
-		}
-
-		if (order != null)
-		{
-			if (order.State == OrderStates.Active && order.Volume == volume && order.Price == price)
-			return;
-
-			CancelAndReset(ref order);
-		}
-
-		order = isBuy
-		? BuyStop(volume, price)
-		: SellStop(volume, price);
-	}
-
-	private void UpdateExitOrder(ref Order order, bool isLong, decimal volume, decimal? price, bool isStop)
-	{
-		if (volume <= 0m || price is not decimal target || target <= 0m)
-		{
-			CancelAndReset(ref order);
-			return;
-		}
-
-		if (order != null)
-		{
-			if (order.State == OrderStates.Active && order.Volume == volume && order.Price == target)
-			return;
-
-			CancelAndReset(ref order);
-		}
-
-		order = isStop
-		? (isLong ? SellStop(volume, target) : BuyStop(volume, target))
-		: (isLong ? SellLimit(volume, target) : BuyLimit(volume, target));
-	}
-
-	private void CancelAndReset(ref Order order)
-	{
-		if (order == null)
-		return;
-
-		if (order.State == OrderStates.Active)
-		CancelOrder(order);
-
-		order = null;
+		_entryPrice = 0m;
+		_stopPrice = null;
+		_takePrice = null;
 	}
 
 	private decimal ToPrice(decimal points)
 	{
 		if (points <= 0m)
-		return 0m;
+			return 0m;
 
 		var step = _priceStep > 0m ? _priceStep : 1m;
 		return points * step;
-	}
-
-	private decimal RoundPrice(decimal price)
-	{
-		var step = _priceStep > 0m ? _priceStep : 1m;
-		return Math.Round(price / step, MidpointRounding.AwayFromZero) * step;
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position > 0)
-		{
-			CancelAndReset(ref _entrySellStop);
-		}
-		else if (Position < 0)
-		{
-			CancelAndReset(ref _entryBuyStop);
-		}
-		else
-		{
-			CancelAndReset(ref _entryBuyStop);
-			CancelAndReset(ref _entrySellStop);
-			CancelAndReset(ref _longStopOrder);
-			CancelAndReset(ref _longTakeProfitOrder);
-			CancelAndReset(ref _shortStopOrder);
-			CancelAndReset(ref _shortTakeProfitOrder);
-		}
 	}
 }

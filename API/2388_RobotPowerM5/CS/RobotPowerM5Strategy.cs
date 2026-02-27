@@ -118,8 +118,6 @@ public class RobotPowerM5Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		var bulls = new BullPower { Length = BullBearPeriod };
 		var bears = new BearPower { Length = BullBearPeriod };
 
@@ -141,9 +139,6 @@ public class RobotPowerM5Strategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal bullsValue, decimal bearsValue)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var sum = bullsValue + bearsValue;
@@ -169,7 +164,7 @@ public class RobotPowerM5Strategy : Strategy
 		{
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				_stopPrice = 0m;
 				_takePrice = 0m;
 				return;
@@ -182,7 +177,7 @@ public class RobotPowerM5Strategy : Strategy
 		{
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_stopPrice = 0m;
 				_takePrice = 0m;
 				return;

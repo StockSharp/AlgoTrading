@@ -139,8 +139,6 @@ public class PivotHeikenStrategy : Strategy
 		var dailySubscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
 		dailySubscription.Bind(ProcessDailyCandle).Start();
 
-		StartProtection(null, null);
-
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -170,9 +168,6 @@ public class PivotHeikenStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (_pivot == 0m)
 			return;
 
@@ -195,8 +190,7 @@ public class PivotHeikenStrategy : Strategy
 
 		if (isBullish && candle.ClosePrice > _pivot && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice - StopLossPips * _step;
 			_takePrice = _entryPrice + TakeProfitPips * _step;
@@ -204,8 +198,7 @@ public class PivotHeikenStrategy : Strategy
 		}
 		else if (isBearish && candle.ClosePrice < _pivot && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket();
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice + StopLossPips * _step;
 			_takePrice = _entryPrice - TakeProfitPips * _step;
@@ -215,27 +208,27 @@ public class PivotHeikenStrategy : Strategy
 		if (Position > 0)
 		{
 			if (candle.LowPrice <= _stopPrice || candle.LowPrice <= _trailingStop)
-			SellMarket(Math.Abs(Position));
+				SellMarket();
 			else if (candle.HighPrice >= _takePrice)
-			SellMarket(Math.Abs(Position));
+				SellMarket();
 			else if (TrailingStopPips > 0)
 			{
-			var newStop = candle.ClosePrice - _trailingDistance;
-			if (newStop > _trailingStop)
-			_trailingStop = newStop;
+				var newStop = candle.ClosePrice - _trailingDistance;
+				if (newStop > _trailingStop)
+					_trailingStop = newStop;
 			}
 		}
 		else if (Position < 0)
 		{
 			if (candle.HighPrice >= _stopPrice || candle.HighPrice >= _trailingStop)
-			BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			else if (candle.LowPrice <= _takePrice)
-			BuyMarket(Math.Abs(Position));
+				BuyMarket();
 			else if (TrailingStopPips > 0)
 			{
-			var newStop = candle.ClosePrice + _trailingDistance;
-			if (newStop < _trailingStop)
-			_trailingStop = newStop;
+				var newStop = candle.ClosePrice + _trailingDistance;
+				if (newStop < _trailingStop)
+					_trailingStop = newStop;
 			}
 		}
 	}

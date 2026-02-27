@@ -243,9 +243,15 @@ public class Exp3StoStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_stoch1 = new StochasticOscillator { KPeriod = KPeriod, D = {  K = { Length = DPeriod } }, Smooth = Slowing };
-		_stoch2 = new StochasticOscillator { KPeriod = KPeriod, D = {  K = { Length = DPeriod } }, Smooth = Slowing };
-		_stoch3 = new StochasticOscillator { KPeriod = KPeriod, D = {  K = { Length = DPeriod } }, Smooth = Slowing };
+		_stoch1 = new StochasticOscillator();
+		_stoch1.K.Length = KPeriod;
+		_stoch1.D.Length = DPeriod;
+		_stoch2 = new StochasticOscillator();
+		_stoch2.K.Length = KPeriod;
+		_stoch2.D.Length = DPeriod;
+		_stoch3 = new StochasticOscillator();
+		_stoch3.K.Length = KPeriod;
+		_stoch3.D.Length = DPeriod;
 
 		var sub1 = SubscribeCandles(CandleType1);
 		sub1.BindEx(_stoch1, ProcessTf1).Start();
@@ -360,29 +366,26 @@ public class Exp3StoStrategy : Strategy
 
 	private void ExecuteTrades()
 	{
-		if (_buyCloseSignal && Position > 0)
+		if (_buyOpenSignal && Position <= 0)
 		{
-			SellMarket(Position);
+			BuyMarket();
+			_buyOpenSignal = false;
 		}
-
-		if (_sellCloseSignal && Position < 0)
+		else if (_sellOpenSignal && Position >= 0)
 		{
-			BuyMarket(-Position);
+			SellMarket();
+			_sellOpenSignal = false;
+		}
+		else if (_buyCloseSignal && Position > 0)
+		{
+			SellMarket();
+		}
+		else if (_sellCloseSignal && Position < 0)
+		{
+			BuyMarket();
 		}
 
 		_buyCloseSignal = false;
 		_sellCloseSignal = false;
-
-		if (_buyOpenSignal && Position <= 0)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_buyOpenSignal = false;
-		}
-
-		if (_sellOpenSignal && Position >= 0)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_sellOpenSignal = false;
-		}
 	}
 }
