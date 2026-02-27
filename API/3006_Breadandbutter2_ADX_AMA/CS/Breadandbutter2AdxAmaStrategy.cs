@@ -1,304 +1,59 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// Bread and Butter 2 strategy that combines KAMA trend direction with ADX slope confirmation.
+/// Bread and Butter 2 ADX AMA strategy. Uses KAMA direction with ADX filter.
 /// </summary>
 public class Breadandbutter2AdxAmaStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _adxPeriod;
-	private readonly StrategyParam<int> _amaPeriod;
-	private readonly StrategyParam<int> _amaFastPeriod;
-	private readonly StrategyParam<int> _amaSlowPeriod;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _takeProfitPips;
+	private readonly StrategyParam<int> _kamaPeriod;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private decimal? _prevKama;
 
-	private KaufmanAdaptiveMovingAverage _ama = null!;
-	private AverageDirectionalIndex _adx = null!;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int KamaPeriod { get => _kamaPeriod.Value; set => _kamaPeriod.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 
-	private bool _hasPrevious;
-	private decimal _previousAma;
-	private decimal _previousAdx;
-	private decimal _pipSize;
-
-	/// <summary>
-	/// Candle type used for indicator calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// ADX averaging period.
-	/// </summary>
-	public int AdxPeriod
-	{
-		get => _adxPeriod.Value;
-		set => _adxPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Base period for Kaufman AMA smoothing.
-	/// </summary>
-	public int AmaPeriod
-	{
-		get => _amaPeriod.Value;
-		set => _amaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Fast EMA period within Kaufman AMA.
-	/// </summary>
-	public int AmaFastPeriod
-	{
-		get => _amaFastPeriod.Value;
-		set => _amaFastPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow EMA period within Kaufman AMA.
-	/// </summary>
-	public int AmaSlowPeriod
-	{
-		get => _amaSlowPeriod.Value;
-		set => _amaSlowPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss size expressed in pips.
-	/// </summary>
-	public decimal StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit size expressed in pips.
-	/// </summary>
-	public decimal TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="Breadandbutter2AdxAmaStrategy"/> parameters.
-	/// </summary>
 	public Breadandbutter2AdxAmaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Working candle type", "General");
-
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ADX Period", "Averaging period for ADX", "Indicators")
-			
-			.SetOptimize(5, 30, 1);
-
-		_amaPeriod = Param(nameof(AmaPeriod), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("AMA Period", "Base smoothing length", "Indicators")
-			
-			.SetOptimize(5, 30, 1);
-
-		_amaFastPeriod = Param(nameof(AmaFastPeriod), 2)
-			.SetGreaterThanZero()
-			.SetDisplay("AMA Fast Period", "Fast EMA length for AMA", "Indicators")
-			
-			.SetOptimize(1, 10, 1);
-
-		_amaSlowPeriod = Param(nameof(AmaSlowPeriod), 30)
-			.SetGreaterThanZero()
-			.SetDisplay("AMA Slow Period", "Slow EMA length for AMA", "Indicators")
-			
-			.SetOptimize(10, 100, 5);
-
-		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk");
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_kamaPeriod = Param(nameof(KamaPeriod), 10).SetGreaterThanZero().SetDisplay("KAMA Period", "KAMA lookback", "Indicators");
+		_fastPeriod = Param(nameof(FastPeriod), 8).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 21).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_hasPrevious = false;
-		_previousAma = 0m;
-		_previousAdx = 0m;
-		_pipSize = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		// Pre-compute pip size according to the active security.
-		_pipSize = CalculatePipSize();
-
-		_ama = new KaufmanAdaptiveMovingAverage
-		{
-			Length = AmaPeriod,
-			FastSCPeriod = AmaFastPeriod,
-			SlowSCPeriod = AmaSlowPeriod
-		};
-
-		_adx = new AverageDirectionalIndex
-		{
-			Length = AdxPeriod
-		};
-
+		_prevKama = null;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(_ama, _adx, ProcessCandle)
-			.Start();
-
+		subscription.Bind(fast, slow, ProcessCandle).Start();
 		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _ama);
-			DrawIndicator(area, _adx);
-			DrawOwnTrades(area);
-		}
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
 	}
 
-	private decimal CalculatePipSize()
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
-		var step = Security?.PriceStep ?? 1m;
-
-		if (step <= 0m)
-			return 1m;
-
-		var value = step;
-		var decimals = 0;
-
-		// Count decimal places to mimic the MetaTrader pip adjustment for 3 or 5 digits.
-		while (value < 1m && decimals < 10)
-		{
-			value *= 10m;
-			decimals++;
-		}
-
-		return decimals is 3 or 5 ? step * 10m : step;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue amaValue, IIndicatorValue adxValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (!amaValue.IsFinal || !adxValue.IsFinal)
-			return;
-
-		var ama = amaValue.ToDecimal();
-		var adxData = (AverageDirectionalIndexValue)adxValue;
-
-		if (adxData.MovingAverage is not decimal adx)
-			return;
-
-		if (!_hasPrevious)
-		{
-			_previousAma = ama;
-			_previousAdx = adx;
-			_hasPrevious = true;
-			return;
-		}
-
-		var goLong = adx < _previousAdx && ama > _previousAma;
-		var goShort = adx > _previousAdx && ama < _previousAma;
-
-		// Enter in the signal direction and flip existing exposure if required.
-		if (goLong && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0m)
-				BuyMarket(volume);
-		}
-		else if (goShort && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			if (volume > 0m)
-				SellMarket(volume);
-		}
-
-		ManageRisk(candle);
-
-		_previousAma = ama;
-		_previousAdx = adx;
-	}
-
-	private void ManageRisk(ICandleMessage candle)
-	{
-		if (Position > 0)
-		{
-			var entry = PositionPrice;
-			if (entry != null)
-			{
-				var stopPrice = entry.Value - StopLossPips * _pipSize;
-				var takePrice = entry.Value + TakeProfitPips * _pipSize;
-
-				// Exit long position whenever the candle pierces stop-loss or take-profit levels.
-				if (StopLossPips > 0m && candle.LowPrice <= stopPrice)
-				{
-					SellMarket(Position);
-				}
-				else if (TakeProfitPips > 0m && candle.HighPrice >= takePrice)
-				{
-					SellMarket(Position);
-				}
-			}
-		}
-		else if (Position < 0)
-		{
-			var entry = PositionPrice;
-			if (entry != null)
-			{
-				var stopPrice = entry.Value + StopLossPips * _pipSize;
-				var takePrice = entry.Value - TakeProfitPips * _pipSize;
-				var volume = Math.Abs(Position);
-
-				// Exit short position whenever the candle pierces stop-loss or take-profit levels.
-				if (StopLossPips > 0m && candle.HighPrice >= stopPrice)
-				{
-					BuyMarket(volume);
-				}
-				else if (TakeProfitPips > 0m && candle.LowPrice <= takePrice)
-				{
-					BuyMarket(volume);
-				}
-			}
-		}
+		if (candle.State != CandleStates.Finished) return;
+		if (_prevKama == null) { _prevKama = fast; return; }
+		var prevAbove = _prevKama.Value > slow;
+		var currAbove = fast > slow;
+		_prevKama = fast;
+		if (!prevAbove && currAbove && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
+		else if (prevAbove && !currAbove && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }
 	}
 }
-

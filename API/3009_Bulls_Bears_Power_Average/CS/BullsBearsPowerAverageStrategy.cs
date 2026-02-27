@@ -1,194 +1,53 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that compares averaged Bulls Power and Bears Power values to detect momentum shifts.
+/// Bulls Bears Power Average strategy. Uses EMA with bulls/bears power crossover.
 /// </summary>
 public class BullsBearsPowerAverageStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<int> _stopLossPips;
-	private readonly StrategyParam<int> _takeProfitPips;
-	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _emaPeriod;
+	private decimal? _prevPower;
 
-	private ExponentialMovingAverage _ema;
-	private decimal? _previousAverage;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
 
-	/// <summary>
-	/// Order size used for entries.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance expressed in pips.
-	/// </summary>
-	public int StopLossPips
-	{
-		get => _stopLossPips.Value;
-		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance expressed in pips.
-	/// </summary>
-	public int TakeProfitPips
-	{
-		get => _takeProfitPips.Value;
-		set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// EMA period used by Bulls/Bears power calculations.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for indicator calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="BullsBearsPowerAverageStrategy"/> class.
-	/// </summary>
 	public BullsBearsPowerAverageStrategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Order size for entries", "Trading");
-
-		_stopLossPips = Param(nameof(StopLossPips), 15)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk");
-
-		_takeProfitPips = Param(nameof(TakeProfitPips), 95)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
-
-		_maPeriod = Param(nameof(MaPeriod), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "Period for EMA used by Bulls/Bears Power", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type used for calculations", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_emaPeriod = Param(nameof(EmaPeriod), 13).SetGreaterThanZero().SetDisplay("EMA Period", "EMA lookback for power calc", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		// Reset internal state to prepare for the next backtest or live run.
-		_previousAverage = null;
-		_ema = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		// Create EMA indicator that replicates the smoothing from Bulls/Bears Power.
-		_ema = new EMA
-		{
-			Length = MaPeriod
-		};
-
-		// Subscribe to candle updates and process them together with the EMA output.
+		_prevPower = null;
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_ema, ProcessCandle)
-			.Start();
-
-		// Use configured order volume for all entries.
-		Volume = OrderVolume;
-
-		// Configure risk management in absolute price units derived from instrument tick size.
-		var step = Security?.PriceStep ?? 1m;
-		Unit stopLoss = StopLossPips > 0 ? new Unit(StopLossPips * step, UnitTypes.Absolute) : null;
-		Unit takeProfit = TakeProfitPips > 0 ? new Unit(TakeProfitPips * step, UnitTypes.Absolute) : null;
-
-		if (stopLoss != null || takeProfit != null)
-		{
-			StartProtection(
-				stopLoss: stopLoss,
-				takeProfit: takeProfit,
-				useMarketOrders: true);
-		}
+		subscription.Bind(ema, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, ema); DrawOwnTrades(area); }
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Ensure that the strategy is ready for trading.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Skip calculations until the EMA is fully formed.
-		if (_ema is null || !_ema.IsFormed)
-			return;
-
-		// Compute Bulls and Bears Power values using candle extremes.
-		var bullsPower = candle.HighPrice - emaValue;
-		var bearsPower = candle.LowPrice - emaValue;
-
-		// Average both forces to reproduce the original indicator combination.
-		var averagePower = (bullsPower + bearsPower) / 2m;
-
-		if (_previousAverage is decimal prevAverage)
-		{
-			var hasLongSignal = prevAverage < averagePower && averagePower < 0m;
-			var hasShortSignal = prevAverage > averagePower && averagePower > 0m;
-
-			// Open long position when bearish pressure fades while still below zero.
-			if (hasLongSignal && Position == 0)
-			{
-				BuyMarket(Volume);
-			}
-			// Open short position when bullish pressure fades while still above zero.
-			else if (hasShortSignal && Position == 0)
-			{
-				SellMarket(Volume);
-			}
-		}
-
-		// Store the most recent average for next candle comparison.
-		_previousAverage = averagePower;
+		if (candle.State != CandleStates.Finished) return;
+		var bullsPower = candle.HighPrice - emaVal;
+		var bearsPower = candle.LowPrice - emaVal;
+		var avgPower = (bullsPower + bearsPower) / 2m;
+		if (_prevPower == null) { _prevPower = avgPower; return; }
+		if (_prevPower.Value < 0m && avgPower >= 0m && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
+		else if (_prevPower.Value > 0m && avgPower <= 0m && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }
+		_prevPower = avgPower;
 	}
 }
-
