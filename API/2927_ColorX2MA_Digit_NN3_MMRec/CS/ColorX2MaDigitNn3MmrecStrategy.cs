@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-using Ecng.Common;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -12,7 +10,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Double-smoothed moving average slope strategy.
-/// Uses a SMA then a JMA. Trades on slope direction changes.
+/// Uses two SMAs (fast and slow). Trades on slope direction changes.
 /// </summary>
 public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 {
@@ -20,9 +18,8 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
 
-	private SimpleMovingAverage _sma;
-	private JurikMovingAverage _jma;
-	private decimal? _prevValue;
+	private decimal? _prevFast;
+	private decimal? _prevSlow;
 	private int _prevSignal;
 
 	public DataType CandleType
@@ -48,13 +45,13 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_fastLength = Param(nameof(FastLength), 12)
+		_fastLength = Param(nameof(FastLength), 8)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast Length", "SMA period", "Indicators");
+			.SetDisplay("Fast Length", "Fast SMA period", "Indicators");
 
-		_slowLength = Param(nameof(SlowLength), 5)
+		_slowLength = Param(nameof(SlowLength), 21)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow Length", "JMA period", "Indicators");
+			.SetDisplay("Slow Length", "Slow SMA period", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -62,68 +59,49 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_sma = null;
-		_jma = null;
-		_prevValue = null;
-		_prevSignal = 0;
-	}
-
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = FastLength };
-		_jma = new JurikMovingAverage { Length = SlowLength };
+		_prevFast = null;
+		_prevSlow = null;
+		_prevSignal = 0;
+
+		var fastSma = new SimpleMovingAverage { Length = FastLength };
+		var slowSma = new SimpleMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fastSma, slowSma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, fastSma);
+			DrawIndicator(area, slowSma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var price = candle.ClosePrice;
-
-		// First smoothing: SMA
-		var smaResult = _sma.Process(new DecimalIndicatorValue(_sma, price, candle.OpenTime));
-		if (!_sma.IsFormed)
-			return;
-
-		var smaVal = smaResult.ToDecimal();
-
-		// Second smoothing: JMA
-		var jmaResult = _jma.Process(new DecimalIndicatorValue(_jma, smaVal, candle.OpenTime));
-		if (!_jma.IsFormed)
+		if (_prevFast == null || _prevSlow == null)
 		{
-			_prevValue = jmaResult.ToDecimal();
+			_prevFast = fastVal;
+			_prevSlow = slowVal;
 			return;
 		}
 
-		var current = jmaResult.ToDecimal();
+		// Determine signal based on fast vs slow crossover
+		var signal = fastVal > slowVal ? 1 : fastVal < slowVal ? -1 : _prevSignal;
 
-		if (_prevValue == null)
-		{
-			_prevValue = current;
-			return;
-		}
-
-		var diff = current - _prevValue.Value;
-		var signal = diff > 0 ? 1 : diff < 0 ? -1 : _prevSignal;
-		_prevValue = current;
+		_prevFast = fastVal;
+		_prevSlow = slowVal;
 
 		if (signal == _prevSignal)
 			return;
@@ -131,14 +109,14 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 		var oldSignal = _prevSignal;
 		_prevSignal = signal;
 
-		if (signal == 1 && oldSignal == -1)
+		if (signal == 1 && oldSignal <= 0)
 		{
 			if (Position < 0)
 				BuyMarket();
 			if (Position <= 0)
 				BuyMarket();
 		}
-		else if (signal == -1 && oldSignal == 1)
+		else if (signal == -1 && oldSignal >= 0)
 		{
 			if (Position > 0)
 				SellMarket();
