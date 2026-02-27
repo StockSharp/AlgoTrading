@@ -1,284 +1,97 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Port of the MetaTrader expert advisor Basic ATR stop_take expert adviser.
-/// Opens a single directional position and protects it with ATR-based stop-loss and take-profit levels.
+/// Basic ATR Stop Take strategy: EMA trend with ATR-based stop/take levels.
+/// Enters on EMA direction, manages position with ATR-distance stops.
 /// </summary>
 public class BasicAtrStopTakeStrategy : Strategy
 {
-	private readonly StrategyParam<TradeDirections> _tradeDirection;
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _stopLossFactor;
-	private readonly StrategyParam<decimal> _takeProfitFactor;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private AverageTrueRange _atr = null!;
+	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _stopFactor;
+	private readonly StrategyParam<decimal> _takeFactor;
 
 	private decimal _entryPrice;
 	private decimal _stopPrice;
-	private decimal _targetPrice;
-	private bool _hasStopLevel;
-	private bool _hasTakeLevel;
+	private decimal _takePrice;
 
-	/// <summary>
-	/// Trading direction copied from the original expert advisor.
-	/// </summary>
-	public enum TradeDirections
-	{
-		/// <summary>
-		/// Do not open new positions.
-		/// </summary>
-		None,
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal StopFactor { get => _stopFactor.Value; set => _stopFactor.Value = value; }
+	public decimal TakeFactor { get => _takeFactor.Value; set => _takeFactor.Value = value; }
 
-		/// <summary>
-		/// Long-only mode.
-		/// </summary>
-		Buy,
-
-		/// <summary>
-		/// Short-only mode.
-		/// </summary>
-		Sell,
-	}
-
-	/// <summary>
-	/// Selected market side for the ATR-protected trade.
-	/// </summary>
-	public TradeDirections Direction
-	{
-		get => _tradeDirection.Value;
-		set => _tradeDirection.Value = value;
-	}
-
-	/// <summary>
-	/// Order volume sent to the market when conditions allow a new trade.
-	/// </summary>
-	public decimal TradeVolume
-	{
-		get => _tradeVolume.Value;
-		set => _tradeVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback period of the Average True Range indicator.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier applied to ATR to determine the protective stop distance.
-	/// </summary>
-	public decimal StopLossFactor
-	{
-		get => _stopLossFactor.Value;
-		set => _stopLossFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Multiplier applied to ATR to determine the profit target distance.
-	/// </summary>
-	public decimal TakeProfitFactor
-	{
-		get => _takeProfitFactor.Value;
-		set => _takeProfitFactor.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type that drives ATR calculation and trade management.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes the ATR stop/take strategy parameters.
-	/// </summary>
 	public BasicAtrStopTakeStrategy()
 	{
-		_tradeDirection = Param(nameof(Direction), TradeDirections.Buy)
-			.SetDisplay("Trade Direction", "Market side used for the ATR trade", "Trading");
-
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Trade Volume", "Order volume for the single entry", "Trading");
-
+			.SetDisplay("EMA Period", "EMA trend period", "Indicators");
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Lookback period for the Average True Range", "Indicators")
-			
-			.SetOptimize(7, 28, 1);
-
-		_stopLossFactor = Param(nameof(StopLossFactor), 1.5m)
-			.SetNotNegative()
-			.SetDisplay("Stop Factor", "ATR multiplier applied to the stop-loss", "Risk")
-			
-			.SetOptimize(0.5m, 3.0m, 0.5m);
-
-		_takeProfitFactor = Param(nameof(TakeProfitFactor), 2.0m)
-			.SetNotNegative()
-			.SetDisplay("Take Factor", "ATR multiplier applied to the take-profit", "Risk")
-			
-			.SetOptimize(0.5m, 4.0m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe used for ATR and trade management", "General");
+			.SetDisplay("ATR Period", "ATR period", "Indicators");
+		_stopFactor = Param(nameof(StopFactor), 1.5m)
+			.SetDisplay("Stop Factor", "ATR multiplier for stop loss", "Risk");
+		_takeFactor = Param(nameof(TakeFactor), 2.0m)
+			.SetDisplay("Take Factor", "ATR multiplier for take profit", "Risk");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		ResetTradeLevels();
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_atr = new AverageTrueRange
-		{
-			Length = AtrPeriod,
-		};
-
+		_entryPrice = 0;
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_atr, ProcessCandle)
-			.Start();
-
-		StartProtection(null, null);
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _atr);
-			DrawOwnTrades(area);
-		}
+		subscription.Bind(ema, atr, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal atr)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
+		var close = candle.ClosePrice;
 
-		if (!_atr.IsFormed)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (Position > 0m)
+		if (Position > 0 && _entryPrice > 0)
 		{
-			if (_hasStopLevel && candle.LowPrice <= _stopPrice)
+			if (close <= _stopPrice || close >= _takePrice)
 			{
-				SellMarket(Position);
-				ResetTradeLevels();
-				return;
-			}
-
-			if (_hasTakeLevel && candle.HighPrice >= _targetPrice)
-			{
-				SellMarket(Position);
-				ResetTradeLevels();
-				return;
+				SellMarket();
+				_entryPrice = 0;
 			}
 		}
-		else if (Position < 0m)
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			var volume = Math.Abs(Position);
-
-			if (_hasStopLevel && candle.HighPrice >= _stopPrice)
+			if (close >= _stopPrice || close <= _takePrice)
 			{
-				BuyMarket(volume);
-				ResetTradeLevels();
-				return;
-			}
-
-			if (_hasTakeLevel && candle.LowPrice <= _targetPrice)
-			{
-				BuyMarket(volume);
-				ResetTradeLevels();
-				return;
+				BuyMarket();
+				_entryPrice = 0;
 			}
 		}
-		else
+
+		if (Position == 0 && atr > 0)
 		{
-			ResetTradeLevels();
-
-			if (Direction == TradeDirections.None)
-				return;
-
-			if (atrValue <= 0m)
-				return;
-
-			var volume = TradeVolume;
-			if (volume <= 0m)
-				return;
-
-			switch (Direction)
+			if (close > ema)
 			{
-				case TradeDirections.Buy:
-				{
-					BuyMarket(volume);
-					_entryPrice = candle.ClosePrice;
-					_stopPrice = _entryPrice - atrValue * StopLossFactor;
-					_targetPrice = _entryPrice + atrValue * TakeProfitFactor;
-					break;
-				}
-
-				case TradeDirections.Sell:
-				{
-					SellMarket(volume);
-					_entryPrice = candle.ClosePrice;
-					_stopPrice = _entryPrice + atrValue * StopLossFactor;
-					_targetPrice = _entryPrice - atrValue * TakeProfitFactor;
-					break;
-				}
+				BuyMarket();
+				_entryPrice = close;
+				_stopPrice = close - atr * StopFactor;
+				_takePrice = close + atr * TakeFactor;
 			}
-
-			_hasStopLevel = StopLossFactor > 0m;
-			_hasTakeLevel = TakeProfitFactor > 0m;
-
-			if (!_hasStopLevel && !_hasTakeLevel)
+			else if (close < ema)
 			{
-				ResetTradeLevels();
+				SellMarket();
+				_entryPrice = close;
+				_stopPrice = close + atr * StopFactor;
+				_takePrice = close - atr * TakeFactor;
 			}
 		}
-	}
-
-	private void ResetTradeLevels()
-	{
-		_entryPrice = 0m;
-		_stopPrice = 0m;
-		_targetPrice = 0m;
-		_hasStopLevel = false;
-		_hasTakeLevel = false;
 	}
 }
-
