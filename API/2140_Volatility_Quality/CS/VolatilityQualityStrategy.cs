@@ -54,7 +54,7 @@ public class VolatilityQualityStrategy : Strategy
 			
 			.SetOptimize(5, 30, 5);
 
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "Common");
 	}
 
@@ -80,7 +80,7 @@ public class VolatilityQualityStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Create indicator for smoothed median price
-		_sma = new SMA { Length = Length };
+		_sma = new SimpleMovingAverage { Length = Length };
 
 		// Subscribe to candle series and bind indicator
 		var subscription = SubscribeCandles(CandleType);
@@ -97,18 +97,15 @@ public class VolatilityQualityStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		// Basic position protection with fixed stop loss and take profit
+		// Basic position protection
 		StartProtection(
-			takeProfit: new Unit(2m, UnitTypes.Absolute),
-			stopLoss: new Unit(1m, UnitTypes.Absolute));
+			takeProfit: new Unit(2m, UnitTypes.Percent),
+			stopLoss: new Unit(1m, UnitTypes.Percent));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		// Determine indicator color based on slope
@@ -129,15 +126,19 @@ public class VolatilityQualityStrategy : Strategy
 			color = _prevColor; // unchanged
 
 		// Check for color change and trade accordingly
-		if (_prevColor == 0 && color == 1 && Position <= 0)
+		if (_prevColor == 1 && color == 0 && Position <= 0)
 		{
-			// Slope turned down - buy
-			BuyMarket(Volume + Math.Abs(Position));
+			// Slope turned up - buy
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-		else if (_prevColor == 1 && color == 0 && Position >= 0)
+		else if (_prevColor == 0 && color == 1 && Position >= 0)
 		{
-			// Slope turned up - sell
-			SellMarket(Volume + Math.Abs(Position));
+			// Slope turned down - sell
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 
 		_prevSma = smaValue;

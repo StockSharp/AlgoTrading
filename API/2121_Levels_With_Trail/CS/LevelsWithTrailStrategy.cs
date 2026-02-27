@@ -1,9 +1,5 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,45 +7,21 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Strategy trading price level breakouts with optional trailing stop loss.
+/// Strategy trading price level breakouts with trailing stop loss.
+/// Uses SMA as dynamic level, enters on breakout, trails stop on winning positions.
 /// </summary>
 public class LevelsWithTrailStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _levelPrice;
-	private readonly StrategyParam<TrailModes> _trail;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _trailPct;
 
 	private decimal _entryPrice;
-	private decimal _currentStop;
-
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	public decimal LevelPrice
-	{
-		get => _levelPrice.Value;
-		set => _levelPrice.Value = value;
-	}
-
-	public TrailModes Trail
-	{
-		get => _trail.Value;
-		set => _trail.Value = value;
-	}
+	private decimal _bestPrice;
+	private decimal _prevPrice;
+	private decimal _prevMa;
+	private bool _hasPrev;
 
 	public DataType CandleType
 	{
@@ -57,37 +29,28 @@ public class LevelsWithTrailStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	public int MaPeriod
+	{
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
+	}
+
+	public decimal TrailPct
+	{
+		get => _trailPct.Value;
+		set => _trailPct.Value = value;
+	}
+
 	public LevelsWithTrailStrategy()
 	{
-		_stopLoss = Param(nameof(StopLoss), 300m)
-			.SetDisplay("Stop Loss", "Stop loss size in price units", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 
-		_takeProfit = Param(nameof(TakeProfit), 900m)
-			.SetDisplay("Take Profit", "Take profit size in price units", "Risk");
+		_maPeriod = Param(nameof(MaPeriod), 50)
+			.SetDisplay("MA Period", "Moving average period for level", "Parameters");
 
-		_levelPrice = Param(nameof(LevelPrice), 0m)
-			.SetDisplay("Level Price", "Price level for breakout", "Parameters");
-
-		_trail = Param(nameof(Trail), TrailModes.Off)
-			.SetDisplay("Trail Stop", "Enable trailing stop", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_entryPrice = default;
-		_currentStop = default;
+		_trailPct = Param(nameof(TrailPct), 1m)
+			.SetDisplay("Trail %", "Trailing stop percent", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -95,68 +58,89 @@ public class LevelsWithTrailStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		_entryPrice = 0;
+		_bestPrice = 0;
+		_prevPrice = 0;
+		_prevMa = 0;
+		_hasPrev = false;
+
+		var ma = new SimpleMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(ma, ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal maValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var price = candle.ClosePrice;
 
-		var close = candle.ClosePrice;
-
+		// Trailing stop management
 		if (Position > 0)
 		{
-			if (Trail == TrailModes.On)
-			{
-				var newStop = close - StopLoss;
-				if (newStop > _currentStop)
-					_currentStop = newStop;
-			}
+			if (price > _bestPrice)
+				_bestPrice = price;
 
-			if (close <= _currentStop || close >= _entryPrice + TakeProfit)
-				ClosePosition();
+			var stopLevel = _bestPrice * (1 - TrailPct / 100m);
+			if (price <= stopLevel)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
 		}
 		else if (Position < 0)
 		{
-			if (Trail == TrailModes.On)
-			{
-				var newStop = close + StopLoss;
-				if (newStop < _currentStop)
-					_currentStop = newStop;
-			}
+			if (price < _bestPrice)
+				_bestPrice = price;
 
-			if (close >= _currentStop || close <= _entryPrice - TakeProfit)
-				ClosePosition();
-		}
-		else
-		{
-			if (close > LevelPrice)
+			var stopLevel = _bestPrice * (1 + TrailPct / 100m);
+			if (price >= stopLevel)
 			{
 				BuyMarket();
-				_entryPrice = close;
-				_currentStop = close - StopLoss;
-			}
-			else if (close < LevelPrice)
-			{
-				SellMarket();
-				_entryPrice = close;
-				_currentStop = close + StopLoss;
+				_entryPrice = 0;
 			}
 		}
-	}
 
-	public enum TrailModes
-	{
-		On,
-		Off
+		if (!_hasPrev)
+		{
+			_prevPrice = price;
+			_prevMa = maValue;
+			_hasPrev = true;
+			return;
+		}
+
+		// Entry: price crosses above MA
+		if (_prevPrice < _prevMa && price >= maValue && Position <= 0)
+		{
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+			_entryPrice = price;
+			_bestPrice = price;
+		}
+		// Entry: price crosses below MA
+		else if (_prevPrice > _prevMa && price <= maValue && Position >= 0)
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+			_entryPrice = price;
+			_bestPrice = price;
+		}
+
+		_prevPrice = price;
+		_prevMa = maValue;
 	}
 }

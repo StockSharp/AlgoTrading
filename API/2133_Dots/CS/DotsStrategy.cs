@@ -77,7 +77,7 @@ public class DotsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Coefficient", "Weighting coefficient inside the filter", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -124,9 +124,6 @@ public class DotsStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var curr = color;
 
 		if (_prevColor is null)
@@ -137,13 +134,11 @@ public class DotsStrategy : Strategy
 
 		if (_prevColor == 0m && curr == 1m && Position <= 0)
 		{
-			// Trend switched from up to down, open long position.
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		else if (_prevColor == 1m && curr == 0m && Position >= 0)
 		{
-			// Trend switched from down to up, open short position.
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 
 		_prevColor = curr;
@@ -159,14 +154,15 @@ public class DotsStrategy : Strategy
 		private decimal? _prevMa;
 		private decimal _prevColor;
 
+		protected override bool CalcIsFormed() => _prices.Count >= Len;
+
 		private int Len => (int)(Length * 4 + (Length - 1));
 		private double Res1 => 1.0 / Math.Max(1.0, Length - 2);
 		private double Res2 => (2.0 * 4 - 1.0) / (4 * Length - 1.0);
-	
+
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
-			var candle = input.GetValue<ICandleMessage>();
-			var price = candle.ClosePrice;
+			var price = input.ToDecimal();
 
 			_prices.Insert(0, price);
 			if (_prices.Count > Len)

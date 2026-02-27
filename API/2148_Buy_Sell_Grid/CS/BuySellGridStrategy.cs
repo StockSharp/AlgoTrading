@@ -14,59 +14,35 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Grid strategy opening simultaneous buy and sell orders.
-/// Each time take profit is reached on one side the remaining position is closed
-/// and the next grid level is opened with increased volume.
+/// Grid strategy using EMA mean-reversion.
+/// Buys when price drops below EMA by a threshold, sells when it rises above.
 /// </summary>
 public class BuySellGridStrategy : Strategy
 {
-	private readonly StrategyParam<int> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _initialVolume;
-	private readonly StrategyParam<decimal> _volumeMultiplier;
-	private readonly StrategyParam<int> _maxTrades;
+	private readonly StrategyParam<decimal> _gridStepPct;
+	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private decimal _buyEntryPrice;
-	private decimal _sellEntryPrice;
-	private int _gridLevel;
-	private bool _hasPositions;
-	
+
+	private decimal _entryPrice;
+
 	/// <summary>
-	/// Take profit in price steps.
+	/// Grid step as percentage from EMA.
 	/// </summary>
-	public int TakeProfitPoints
+	public decimal GridStepPct
 	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
+		get => _gridStepPct.Value;
+		set => _gridStepPct.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Initial order volume.
+	/// EMA period for mean reference.
 	/// </summary>
-	public decimal InitialVolume
+	public int EmaPeriod
 	{
-		get => _initialVolume.Value;
-		set => _initialVolume.Value = value;
+		get => _emaPeriod.Value;
+		set => _emaPeriod.Value = value;
 	}
-	
-	/// <summary>
-	/// Multiplier for volume on each new grid level.
-	/// </summary>
-	public decimal VolumeMultiplier
-	{
-		get => _volumeMultiplier.Value;
-		set => _volumeMultiplier.Value = value;
-	}
-	
-	/// <summary>
-	/// Maximum number of grid levels.
-	/// </summary>
-	public int MaxTrades
-	{
-		get => _maxTrades.Value;
-		set => _maxTrades.Value = value;
-	}
-	
+
 	/// <summary>
 	/// Candle type used to trigger strategy logic.
 	/// </summary>
@@ -75,95 +51,99 @@ public class BuySellGridStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
+
 	/// <summary>
 	/// Initializes a new instance of <see cref="BuySellGridStrategy"/>.
 	/// </summary>
 	public BuySellGridStrategy()
 	{
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100)
-		.SetDisplay("Take Profit", "Take profit in price steps", "General")
-		.SetGreaterThanZero();
-		
-		_initialVolume = Param(nameof(InitialVolume), 0.1m)
-		.SetDisplay("Initial Volume", "Volume of first orders", "Trading")
-		.SetGreaterThanZero();
-		
-		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2m)
-		.SetDisplay("Volume Multiplier", "Multiplier for next grid level", "Trading")
-		.SetGreaterThanZero();
-		
-		_maxTrades = Param(nameof(MaxTrades), 20)
-		.SetDisplay("Max Trades", "Maximum number of grid levels", "Trading")
-		.SetGreaterThanZero();
-		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Candle type for processing", "General");
+		_gridStepPct = Param(nameof(GridStepPct), 0.3m)
+			.SetDisplay("Grid Step %", "Distance from EMA for grid entry", "General")
+			.SetGreaterThanZero();
+
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
+			.SetDisplay("EMA Period", "EMA period for grid center", "Indicators")
+			.SetGreaterThanZero();
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type for processing", "General");
 	}
-	
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		StartProtection(null, null);
-		
+
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(ProcessCandle)
-		.Start();
+			.Bind(ema, ProcessCandle)
+			.Start();
 	}
-	
-	private void ProcessCandle(ICandleMessage candle)
+
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (!_hasPositions)
-		{
-			OpenGridLevel(candle.ClosePrice);
 			return;
-		}
-		
-		var step = Security.PriceStep * TakeProfitPoints;
-		
-		// Check buy position take profit
-		if (Position > 0 && candle.ClosePrice - _buyEntryPrice >= step)
+
+		var close = candle.ClosePrice;
+		var lowerGrid = emaValue * (1m - GridStepPct / 100m);
+		var upperGrid = emaValue * (1m + GridStepPct / 100m);
+
+		if (Position == 0)
 		{
-			SellMarket(Math.Abs(Position));
-			CloseGrid();
-			return;
+			if (close <= lowerGrid)
+			{
+				BuyMarket();
+				_entryPrice = close;
+			}
+			else if (close >= upperGrid)
+			{
+				SellMarket();
+				_entryPrice = close;
+			}
 		}
-		
-		// Check sell position take profit
-		if (Position < 0 && _sellEntryPrice - candle.ClosePrice >= step)
+		else if (Position > 0)
 		{
-			BuyMarket(Math.Abs(Position));
-			CloseGrid();
+			// Take profit at EMA or above
+			if (close >= emaValue)
+			{
+				SellMarket();
+			}
+			// Add on further dip
+			else if (close <= _entryPrice * (1m - GridStepPct / 100m))
+			{
+				BuyMarket();
+				_entryPrice = close;
+			}
+		}
+		else if (Position < 0)
+		{
+			// Take profit at EMA or below
+			if (close <= emaValue)
+			{
+				BuyMarket();
+			}
+			// Add on further rally
+			else if (close >= _entryPrice * (1m + GridStepPct / 100m))
+			{
+				SellMarket();
+				_entryPrice = close;
+			}
 		}
 	}
-	
-	private void OpenGridLevel(decimal price)
+
+	/// <inheritdoc />
+	protected override void OnReseted()
 	{
-		if (_gridLevel >= MaxTrades)
-		return;
-		
-		var volume = InitialVolume * (decimal)Math.Pow((double)VolumeMultiplier, _gridLevel);
-		BuyMarket(volume);
-		SellMarket(volume);
-		
-		_buyEntryPrice = price;
-		_sellEntryPrice = price;
-		_hasPositions = true;
-		_gridLevel++;
-	}
-	
-	private void CloseGrid()
-	{
-		_buyEntryPrice = 0m;
-		_sellEntryPrice = 0m;
-		_hasPositions = false;
-		
-		OpenGridLevel(LastTick?.Price ?? 0m);
+		base.OnReseted();
+		_entryPrice = 0m;
 	}
 }

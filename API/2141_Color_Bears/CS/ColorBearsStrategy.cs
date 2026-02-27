@@ -11,8 +11,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Strategy based on a double-smoothed Bears Power indicator.
 /// Opens a long position when the indicator turns down after rising,
@@ -24,8 +22,8 @@ public class ColorBearsStrategy : Strategy
 	private readonly StrategyParam<int> _ma2Period;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _ma1 = null!;
-	private ExponentialMovingAverage _ma2 = null!;
+	private ExponentialMovingAverage _ma1;
+	private ExponentialMovingAverage _ma2;
 	private decimal? _prevValue;
 	private int? _prevColor;
 
@@ -64,16 +62,14 @@ public class ColorBearsStrategy : Strategy
 		_ma1Period = Param(nameof(Ma1Period), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1", "First MA length", "Parameters")
-			
 			.SetOptimize(5, 30, 1);
 
 		_ma2Period = Param(nameof(Ma2Period), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("MA2", "Second MA length", "Parameters")
-			
 			.SetOptimize(2, 20, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(12).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "Parameters");
 	}
 
@@ -88,8 +84,8 @@ public class ColorBearsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma1 = new EMA { Length = Ma1Period };
-		_ma2 = new EMA { Length = Ma2Period };
+		_ma1 = new ExponentialMovingAverage { Length = Ma1Period };
+		_ma2 = new ExponentialMovingAverage { Length = Ma2Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -98,7 +94,6 @@ public class ColorBearsStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma2);
 			DrawOwnTrades(area);
 		}
 	}
@@ -108,13 +103,15 @@ public class ColorBearsStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var ma1Value = _ma1.Process(candle.ClosePrice);
-		if (!ma1Value.IsFinal)
+		var ma1Input = new DecimalIndicatorValue(_ma1, candle.ClosePrice, candle.OpenTime) { IsFinal = true };
+		var ma1Value = _ma1.Process(ma1Input);
+		if (!_ma1.IsFormed)
 			return;
 
 		var bears = candle.LowPrice - ma1Value.ToDecimal();
-		var ma2Value = _ma2.Process(bears);
-		if (!ma2Value.IsFinal)
+		var ma2Input = new DecimalIndicatorValue(_ma2, bears, candle.OpenTime) { IsFinal = true };
+		var ma2Value = _ma2.Process(ma2Input);
+		if (!_ma2.IsFormed)
 			return;
 
 		var current = ma2Value.ToDecimal();
@@ -129,14 +126,14 @@ public class ColorBearsStrategy : Strategy
 			if (_prevColor == 0 && color == 2)
 			{
 				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
+					BuyMarket();
 				if (Position <= 0)
 					BuyMarket();
 			}
 			else if (_prevColor == 2 && color == 0)
 			{
 				if (Position > 0)
-					SellMarket(Position);
+					SellMarket();
 				if (Position >= 0)
 					SellMarket();
 			}
@@ -144,5 +141,13 @@ public class ColorBearsStrategy : Strategy
 
 		_prevColor = color;
 		_prevValue = current;
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevValue = null;
+		_prevColor = null;
 	}
 }

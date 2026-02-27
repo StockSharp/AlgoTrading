@@ -88,12 +88,9 @@ public class XmaRangeChannelStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		// Update moving averages with high and low prices.
-		var upper = _highMa.Process(new DecimalIndicatorValue(_highMa, candle.HighPrice, candle.ServerTime)).ToDecimal();
-		var lower = _lowMa.Process(new DecimalIndicatorValue(_lowMa, candle.LowPrice, candle.ServerTime)).ToDecimal();
+		var upper = _highMa.Process(new DecimalIndicatorValue(_highMa, candle.HighPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var lower = _lowMa.Process(new DecimalIndicatorValue(_lowMa, candle.LowPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		// Wait until both indicators have enough data.
 		if (!_highMa.IsFormed || !_lowMa.IsFormed)
@@ -102,12 +99,12 @@ public class XmaRangeChannelStrategy : Strategy
 		// Breakout above the upper band - go long.
 		if (candle.ClosePrice > upper && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		// Breakout below the lower band - go short.
 		else if (candle.ClosePrice < lower && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 	}
 }

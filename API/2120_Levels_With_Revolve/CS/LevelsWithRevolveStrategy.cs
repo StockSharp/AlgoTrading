@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,188 +8,145 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that opens a position when price crosses a user defined level.
-/// Optionally reverses the position when price crosses in the opposite direction.
-/// Supports optional stop loss and take profit levels.
+/// Strategy that opens a position when price crosses a moving average level.
+/// Reverses the position when price crosses in the opposite direction.
 /// </summary>
 public class LevelsWithRevolveStrategy : Strategy
 {
-    private readonly StrategyParam<decimal> _levelPrice;
-    private readonly StrategyParam<decimal> _stopLoss;
-    private readonly StrategyParam<decimal> _takeProfit;
-    private readonly StrategyParam<bool> _enableReversal;
-    private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _stopPct;
+	private readonly StrategyParam<decimal> _takePct;
 
-    private decimal? _entryPrice;
-    private decimal? _lastPrice;
+	private decimal _prevPrice;
+	private decimal _prevMa;
+	private bool _hasPrev;
+	private decimal _entryPrice;
 
-    /// <summary>
-    /// Price level to watch for crossovers.
-    /// </summary>
-    public decimal LevelPrice
-    {
-        get => _levelPrice.Value;
-        set => _levelPrice.Value = value;
-    }
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
-    /// <summary>
-    /// Stop loss distance in price units. Zero disables stop loss.
-    /// </summary>
-    public decimal StopLoss
-    {
-        get => _stopLoss.Value;
-        set => _stopLoss.Value = value;
-    }
+	public int MaPeriod
+	{
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
+	}
 
-    /// <summary>
-    /// Take profit distance in price units. Zero disables take profit.
-    /// </summary>
-    public decimal TakeProfit
-    {
-        get => _takeProfit.Value;
-        set => _takeProfit.Value = value;
-    }
+	public decimal StopPct
+	{
+		get => _stopPct.Value;
+		set => _stopPct.Value = value;
+	}
 
-    /// <summary>
-    /// Enable reversing an existing position when opposite signal appears.
-    /// </summary>
-    public bool EnableReversal
-    {
-        get => _enableReversal.Value;
-        set => _enableReversal.Value = value;
-    }
+	public decimal TakePct
+	{
+		get => _takePct.Value;
+		set => _takePct.Value = value;
+	}
 
-    /// <summary>
-    /// Type of candles used for price data.
-    /// </summary>
-    public DataType CandleType
-    {
-        get => _candleType.Value;
-        set => _candleType.Value = value;
-    }
+	public LevelsWithRevolveStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type", "General");
 
-    /// <summary>
-    /// Initializes strategy parameters.
-    /// </summary>
-    public LevelsWithRevolveStrategy()
-    {
-        _levelPrice = Param(nameof(LevelPrice), 100m)
-            .SetGreaterThanZero()
-            .SetDisplay("Level Price", "Price level where trades are triggered", "General");
+		_maPeriod = Param(nameof(MaPeriod), 50)
+			.SetDisplay("MA Period", "Moving average period for the level", "Parameters");
 
-        _stopLoss = Param(nameof(StopLoss), 0m)
-            .SetDisplay("Stop Loss", "Price distance for stop loss", "Risk")
-            
-            .SetOptimize(0m, 100m, 10m);
+		_stopPct = Param(nameof(StopPct), 1.5m)
+			.SetDisplay("Stop %", "Stop loss percent from entry", "Risk");
 
-        _takeProfit = Param(nameof(TakeProfit), 0m)
-            .SetDisplay("Take Profit", "Price distance for take profit", "Risk")
-            
-            .SetOptimize(0m, 200m, 10m);
+		_takePct = Param(nameof(TakePct), 3m)
+			.SetDisplay("Take %", "Take profit percent from entry", "Risk");
+	}
 
-        _enableReversal = Param(nameof(EnableReversal), false)
-            .SetDisplay("Enable Reversal", "Reverse position on opposite signal", "General");
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-        _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-            .SetDisplay("Candle Type", "Type of candles used for calculations", "General");
-    }
+		_prevPrice = 0;
+		_prevMa = 0;
+		_hasPrev = false;
+		_entryPrice = 0;
 
-    /// <inheritdoc />
-    public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-    {
-        return [(Security, CandleType)];
-    }
+		var ma = new SimpleMovingAverage { Length = MaPeriod };
 
-    /// <inheritdoc />
-    protected override void OnReseted()
-    {
-        base.OnReseted();
-        _entryPrice = null;
-        _lastPrice = null;
-    }
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ma, ProcessCandle)
+			.Start();
 
-    /// <inheritdoc />
-    protected override void OnStarted2(DateTime time)
-    {
-        base.OnStarted2(time);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ma);
+			DrawOwnTrades(area);
+		}
+	}
 
-        var subscription = SubscribeCandles(CandleType);
-        subscription
-            .Bind(OnCandle)
-            .Start();
-    }
+	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-    private void OnCandle(ICandleMessage candle)
-    {
-        if (candle.State != CandleStates.Finished)
-            return;
+		var price = candle.ClosePrice;
 
-        if (!IsFormedAndOnlineAndAllowTrading())
-            return;
+		// Check stop/take
+		if (Position > 0 && _entryPrice > 0)
+		{
+			var pnlPct = (price - _entryPrice) / _entryPrice * 100m;
+			if (pnlPct >= TakePct || pnlPct <= -StopPct)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			var pnlPct = (_entryPrice - price) / _entryPrice * 100m;
+			if (pnlPct >= TakePct || pnlPct <= -StopPct)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
+		}
 
-        var price = candle.ClosePrice;
+		if (!_hasPrev)
+		{
+			_prevPrice = price;
+			_prevMa = maValue;
+			_hasPrev = true;
+			return;
+		}
 
-        if (_lastPrice != null)
-        {
-            ProcessSignal(price);
-            CheckStops(price);
-        }
+		// Cross above MA - buy (or reverse short)
+		if (_prevPrice < _prevMa && price >= maValue)
+		{
+			if (Position < 0)
+				BuyMarket();
+			if (Position <= 0)
+			{
+				BuyMarket();
+				_entryPrice = price;
+			}
+		}
+		// Cross below MA - sell (or reverse long)
+		else if (_prevPrice > _prevMa && price <= maValue)
+		{
+			if (Position > 0)
+				SellMarket();
+			if (Position >= 0)
+			{
+				SellMarket();
+				_entryPrice = price;
+			}
+		}
 
-        _lastPrice = price;
-    }
-
-    private void ProcessSignal(decimal price)
-    {
-        var lastPrice = _lastPrice!.Value;
-
-        if (Position == 0)
-        {
-            if (lastPrice < LevelPrice && price >= LevelPrice)
-            {
-                _entryPrice = price;
-                BuyMarket();
-            }
-            else if (lastPrice > LevelPrice && price <= LevelPrice)
-            {
-                _entryPrice = price;
-                SellMarket();
-            }
-        }
-        else if (EnableReversal)
-        {
-            if (Position > 0 && lastPrice > LevelPrice && price <= LevelPrice)
-            {
-                _entryPrice = price;
-                SellMarket(Volume + Math.Abs(Position));
-            }
-            else if (Position < 0 && lastPrice < LevelPrice && price >= LevelPrice)
-            {
-                _entryPrice = price;
-                BuyMarket(Volume + Math.Abs(Position));
-            }
-        }
-    }
-
-    private void CheckStops(decimal price)
-    {
-        if (_entryPrice == null)
-            return;
-
-        var entry = _entryPrice.Value;
-
-        if (Position > 0)
-        {
-            if (StopLoss > 0 && price <= entry - StopLoss)
-                SellMarket(Math.Abs(Position));
-            else if (TakeProfit > 0 && price >= entry + TakeProfit)
-                SellMarket(Math.Abs(Position));
-        }
-        else if (Position < 0)
-        {
-            if (StopLoss > 0 && price >= entry + StopLoss)
-                BuyMarket(Math.Abs(Position));
-            else if (TakeProfit > 0 && price <= entry - TakeProfit)
-                BuyMarket(Math.Abs(Position));
-        }
-    }
+		_prevPrice = price;
+		_prevMa = maValue;
+	}
 }

@@ -134,13 +134,11 @@ public class DivergenceExpertStrategy : Strategy
 		if (!inRange)
 		{
 			if (Position != 0)
-				ClosePosition();
+				if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var close = candle.ClosePrice;
 
@@ -150,7 +148,7 @@ public class DivergenceExpertStrategy : Strategy
 			if (_lastPriceHigh != 0m && rsi < _lastRsiHigh && Position >= 0)
 			{
 				if (Position > 0)
-					ClosePosition();
+					if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 
 				SellMarket();
 				_entryPrice = close;
@@ -167,7 +165,7 @@ public class DivergenceExpertStrategy : Strategy
 			if (_lastPriceLow != 0m && rsi > _lastRsiLow && Position <= 0)
 			{
 				if (Position < 0)
-					ClosePosition();
+					if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 
 				BuyMarket();
 				_entryPrice = close;
@@ -179,8 +177,8 @@ public class DivergenceExpertStrategy : Strategy
 		}
 
 		if (Position > 0 && candle.LowPrice <= _stopPrice)
-			ClosePosition();
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 		else if (Position < 0 && candle.HighPrice >= _stopPrice)
-			ClosePosition();
+			if (Position > 0) SellMarket(); else if (Position < 0) BuyMarket();
 	}
 }

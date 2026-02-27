@@ -95,21 +95,18 @@ public class ExpSuperTrendStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (stValue is not SuperTrendIndicatorValue st || !stValue.IsFinal)
+		if (stValue is not SuperTrendIndicatorValue st)
 			return;
 
 		var isUpTrend = st.IsUpTrend;
 
 		if (isUpTrend && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		else if (!isUpTrend && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 	}
 }

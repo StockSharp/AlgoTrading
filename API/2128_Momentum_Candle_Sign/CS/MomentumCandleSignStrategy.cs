@@ -22,8 +22,8 @@ public class MomentumCandleSignStrategy : Strategy
 	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Momentum _openMomentum;
-	private readonly Momentum _closeMomentum;
+	private Momentum _openMomentum;
+	private Momentum _closeMomentum;
 
 	private decimal _prevOpenMomentum;
 	private decimal _prevCloseMomentum;
@@ -56,11 +56,8 @@ public class MomentumCandleSignStrategy : Strategy
 			.SetDisplay("Momentum Period", "Indicator period", "General")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(12).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame of candles", "General");
-
-		_openMomentum = new Momentum { Length = MomentumPeriod };
-		_closeMomentum = new Momentum { Length = MomentumPeriod };
 	}
 
 	/// <inheritdoc />
@@ -74,8 +71,9 @@ public class MomentumCandleSignStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_openMomentum.Length = MomentumPeriod;
-		_closeMomentum.Length = MomentumPeriod;
+		_openMomentum = new Momentum { Length = MomentumPeriod };
+		_closeMomentum = new Momentum { Length = MomentumPeriod };
+		_isFormed = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -97,8 +95,8 @@ public class MomentumCandleSignStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var openMom = _openMomentum.Process(new DecimalIndicatorValue(_openMomentum, candle.OpenPrice, candle.OpenTime)).ToDecimal();
-		var closeMom = _closeMomentum.Process(new DecimalIndicatorValue(_closeMomentum, candle.ClosePrice, candle.OpenTime)).ToDecimal();
+		var openMom = _openMomentum.Process(new DecimalIndicatorValue(_openMomentum, candle.OpenPrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var closeMom = _closeMomentum.Process(new DecimalIndicatorValue(_closeMomentum, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
 		if (!_isFormed)
 		{
@@ -112,9 +110,9 @@ public class MomentumCandleSignStrategy : Strategy
 		var sellSignal = _prevOpenMomentum <= _prevCloseMomentum && openMom > closeMom;
 
 		if (buySignal && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		else if (sellSignal && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 
 		_prevOpenMomentum = openMom;
 		_prevCloseMomentum = closeMom;

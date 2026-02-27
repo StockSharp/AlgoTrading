@@ -15,13 +15,16 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy that moves stop-loss to breakeven and then trails it as price advances.
+/// Uses EMA crossover for entry signals with breakeven + trailing stop management.
 /// </summary>
 public class BreakevenTrailingStopStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _breakevenPlus;
-	private readonly StrategyParam<decimal> _breakevenStep;
-	private readonly StrategyParam<decimal> _trailingPlus;
-	private readonly StrategyParam<decimal> _trailingStep;
+	private readonly StrategyParam<decimal> _breakevenPercent;
+	private readonly StrategyParam<decimal> _breakevenOffset;
+	private readonly StrategyParam<decimal> _trailingActivation;
+	private readonly StrategyParam<decimal> _trailingDistance;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
@@ -29,39 +32,57 @@ public class BreakevenTrailingStopStrategy : Strategy
 	private bool _breakevenReached;
 
 	/// <summary>
-	/// Profit distance in points before moving stop to breakeven.
+	/// Profit percent before moving stop to breakeven.
 	/// </summary>
-	public decimal BreakevenPlus
+	public decimal BreakevenPercent
 	{
-		get => _breakevenPlus.Value;
-		set => _breakevenPlus.Value = value;
+		get => _breakevenPercent.Value;
+		set => _breakevenPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Stop offset after breakeven activation.
+	/// Stop offset percent above entry after breakeven activation.
 	/// </summary>
-	public decimal BreakevenStep
+	public decimal BreakevenOffset
 	{
-		get => _breakevenStep.Value;
-		set => _breakevenStep.Value = value;
+		get => _breakevenOffset.Value;
+		set => _breakevenOffset.Value = value;
 	}
 
 	/// <summary>
-	/// Profit distance in points required before trailing.
+	/// Profit percent above breakeven stop required before trailing starts.
 	/// </summary>
-	public decimal TrailingPlus
+	public decimal TrailingActivation
 	{
-		get => _trailingPlus.Value;
-		set => _trailingPlus.Value = value;
+		get => _trailingActivation.Value;
+		set => _trailingActivation.Value = value;
 	}
 
 	/// <summary>
-	/// Distance between current price and trailing stop.
+	/// Distance percent between current price and trailing stop.
 	/// </summary>
-	public decimal TrailingStep
+	public decimal TrailingDistance
 	{
-		get => _trailingStep.Value;
-		set => _trailingStep.Value = value;
+		get => _trailingDistance.Value;
+		set => _trailingDistance.Value = value;
+	}
+
+	/// <summary>
+	/// Fast EMA period for entry signals.
+	/// </summary>
+	public int FastEmaPeriod
+	{
+		get => _fastEmaPeriod.Value;
+		set => _fastEmaPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Slow EMA period for entry signals.
+	/// </summary>
+	public int SlowEmaPeriod
+	{
+		get => _slowEmaPeriod.Value;
+		set => _slowEmaPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -78,23 +99,31 @@ public class BreakevenTrailingStopStrategy : Strategy
 	/// </summary>
 	public BreakevenTrailingStopStrategy()
 	{
-		_breakevenPlus = Param(nameof(BreakevenPlus), 5m)
+		_breakevenPercent = Param(nameof(BreakevenPercent), 0.5m)
 			.SetGreaterThanZero()
-			.SetDisplay("Breakeven Plus", "Profit in points before breakeven", "Trading");
+			.SetDisplay("Breakeven %", "Profit percent before breakeven", "Trading");
 
-		_breakevenStep = Param(nameof(BreakevenStep), 2m)
+		_breakevenOffset = Param(nameof(BreakevenOffset), 0.1m)
 			.SetGreaterThanZero()
-			.SetDisplay("Breakeven Step", "Stop offset after breakeven", "Trading");
+			.SetDisplay("Breakeven Offset", "Stop offset percent after breakeven", "Trading");
 
-		_trailingPlus = Param(nameof(TrailingPlus), 3m)
+		_trailingActivation = Param(nameof(TrailingActivation), 0.3m)
 			.SetGreaterThanZero()
-			.SetDisplay("Trailing Plus", "Profit above stop before trailing", "Trading");
+			.SetDisplay("Trailing Activation", "Profit percent above stop before trailing", "Trading");
 
-		_trailingStep = Param(nameof(TrailingStep), 1m)
+		_trailingDistance = Param(nameof(TrailingDistance), 0.3m)
 			.SetGreaterThanZero()
-			.SetDisplay("Trailing Step", "Distance from price to stop", "Trading");
+			.SetDisplay("Trailing Distance", "Percent from price to trailing stop", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 21)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for updates", "General");
 	}
 
@@ -109,31 +138,40 @@ public class BreakevenTrailingStopStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(fastEma, slowEma, ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal fastEma, decimal slowEma)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var step = Security.PriceStep ?? 1m;
+		var close = candle.ClosePrice;
 
 		if (Position == 0)
 		{
-			_entryPrice = candle.ClosePrice;
-			_stopPrice = _entryPrice;
 			_breakevenReached = false;
-			BuyMarket();
+
+			if (fastEma > slowEma)
+			{
+				_entryPrice = close;
+				_stopPrice = close * (1m - 1m / 100m);
+				BuyMarket();
+			}
+			else if (fastEma < slowEma)
+			{
+				_entryPrice = close;
+				_stopPrice = close * (1m + 1m / 100m);
+				SellMarket();
+			}
+
 			return;
 		}
 
@@ -141,23 +179,26 @@ public class BreakevenTrailingStopStrategy : Strategy
 		{
 			if (!_breakevenReached)
 			{
-				if (candle.ClosePrice >= _entryPrice + BreakevenPlus * step)
+				if (close >= _entryPrice * (1m + BreakevenPercent / 100m))
 				{
-					_stopPrice = _entryPrice + BreakevenStep * step;
+					_stopPrice = _entryPrice * (1m + BreakevenOffset / 100m);
 					_breakevenReached = true;
 				}
 			}
 			else
 			{
-				if (candle.ClosePrice >= _stopPrice + TrailingPlus * step)
+				var trailingStop = close * (1m - TrailingDistance / 100m);
+				if (close >= _stopPrice * (1m + TrailingActivation / 100m) && trailingStop > _stopPrice)
 				{
-					var newStop = candle.ClosePrice - TrailingStep * step;
-					if (newStop > _stopPrice)
-						_stopPrice = newStop;
+					_stopPrice = trailingStop;
 				}
 			}
 
 			if (candle.LowPrice <= _stopPrice)
+			{
+				SellMarket();
+			}
+			else if (fastEma < slowEma)
 			{
 				SellMarket();
 			}
@@ -166,25 +207,28 @@ public class BreakevenTrailingStopStrategy : Strategy
 		{
 			if (!_breakevenReached)
 			{
-				if (candle.ClosePrice <= _entryPrice - BreakevenPlus * step)
+				if (close <= _entryPrice * (1m - BreakevenPercent / 100m))
 				{
-					_stopPrice = _entryPrice - BreakevenStep * step;
+					_stopPrice = _entryPrice * (1m - BreakevenOffset / 100m);
 					_breakevenReached = true;
 				}
 			}
 			else
 			{
-				if (candle.ClosePrice <= _stopPrice - TrailingPlus * step)
+				var trailingStop = close * (1m + TrailingDistance / 100m);
+				if (close <= _stopPrice * (1m - TrailingActivation / 100m) && trailingStop < _stopPrice)
 				{
-					var newStop = candle.ClosePrice + TrailingStep * step;
-					if (newStop < _stopPrice)
-						_stopPrice = newStop;
+					_stopPrice = trailingStop;
 				}
 			}
 
 			if (candle.HighPrice >= _stopPrice)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
+			}
+			else if (fastEma > slowEma)
+			{
+				BuyMarket();
 			}
 		}
 	}

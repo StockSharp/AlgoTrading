@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,76 +9,39 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy using Jurik moving averages of open and close prices.
-/// Goes long when the JMA of open crosses above the JMA of close.
-/// Goes short when the JMA of open crosses below the JMA of close.
-/// Applies take profit and stop loss in points.
+/// Goes long when JMA(close) crosses above JMA(open).
+/// Goes short when JMA(close) crosses below JMA(open).
 /// </summary>
 public class JmaCandleSignStrategy : Strategy
 {
 	private readonly StrategyParam<int> _jmaLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _stopLoss;
 
-	private decimal? _prevOpenJma;
-	private decimal? _prevCloseJma;
+	private JurikMovingAverage _jmaOpen;
+	private JurikMovingAverage _jmaClose;
+	private decimal _prevOpenJma;
+	private decimal _prevCloseJma;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// JMA period length.
-	/// </summary>
 	public int JmaLength
 	{
 		get => _jmaLength.Value;
 		set => _jmaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type for strategy timeframe.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Take profit in points.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in points.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
 	public JmaCandleSignStrategy()
 	{
 		_jmaLength = Param(nameof(JmaLength), 7)
-			.SetGreaterThanZero()
-			.SetDisplay("JMA Length", "Period for Jurik moving averages", "Parameters")
-			
-			.SetOptimize(5, 20, 1);
+			.SetDisplay("JMA Length", "Period for Jurik moving averages", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "Parameters");
-
-		_takeProfit = Param(nameof(TakeProfit), 2000m)
-			.SetDisplay("Take Profit", "Profit target in points", "Risk Management")
-			
-			.SetOptimize(500m, 5000m, 500m);
-
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetDisplay("Stop Loss", "Maximum loss in points", "Risk Management")
-			
-			.SetOptimize(500m, 5000m, 500m);
 	}
 
 	/// <inheritdoc />
@@ -92,42 +49,59 @@ public class JmaCandleSignStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var jmaOpen = new JurikMovingAverage
-		{
-			Length = JmaLength
-		};
+		_jmaOpen = new JurikMovingAverage { Length = JmaLength };
+		_jmaClose = new JurikMovingAverage { Length = JmaLength };
+		_prevOpenJma = 0;
+		_prevCloseJma = 0;
+		_hasPrev = false;
 
-		var jmaClose = new JurikMovingAverage
-		{
-			Length = JmaLength
-		};
-
-		SubscribeCandles(CandleType)
-			.Bind(jmaOpen, jmaClose, ProcessCandle)
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Point),
-			stopLoss: new Unit(StopLoss, UnitTypes.Point));
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal jmaOpen, decimal jmaClose)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevOpenJma is decimal prevOpen && _prevCloseJma is decimal prevClose)
-		{
-			var crossUp = prevOpen >= prevClose && jmaOpen < jmaClose;
-			var crossDown = prevOpen <= prevClose && jmaOpen > jmaClose;
+		var openResult = _jmaOpen.Process(new DecimalIndicatorValue(_jmaOpen, candle.OpenPrice, candle.OpenTime) { IsFinal = true });
+		var closeResult = _jmaClose.Process(new DecimalIndicatorValue(_jmaClose, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
 
-			if (crossUp && Position <= 0)
-				BuyMarket();
-			else if (crossDown && Position >= 0)
-				SellMarket();
+		if (!openResult.IsFormed || !closeResult.IsFormed)
+			return;
+
+		var openJma = openResult.ToDecimal();
+		var closeJma = closeResult.ToDecimal();
+
+		if (!_hasPrev)
+		{
+			_prevOpenJma = openJma;
+			_prevCloseJma = closeJma;
+			_hasPrev = true;
+			return;
 		}
 
-		_prevOpenJma = jmaOpen;
-		_prevCloseJma = jmaClose;
+		// JMA(close) crosses above JMA(open) - bullish
+		if (_prevCloseJma <= _prevOpenJma && closeJma > openJma && Position <= 0)
+		{
+			BuyMarket();
+		}
+		// JMA(close) crosses below JMA(open) - bearish
+		else if (_prevCloseJma >= _prevOpenJma && closeJma < openJma && Position >= 0)
+		{
+			SellMarket();
+		}
+
+		_prevOpenJma = openJma;
+		_prevCloseJma = closeJma;
 	}
 }

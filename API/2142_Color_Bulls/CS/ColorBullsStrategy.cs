@@ -62,16 +62,14 @@ public class ColorBullsStrategy : Strategy
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Period of high price moving average", "Indicator")
-			
 			.SetOptimize(5, 20, 1);
 
 		_smoothLength = Param(nameof(SmoothLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth Length", "Period of smoothing moving average", "Indicator")
-			
 			.SetOptimize(3, 15, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -94,44 +92,45 @@ public class ColorBullsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var highMa = new SMA { Length = FastLength };
-		var bullsMa = new SMA { Length = SmoothLength };
+		var highMa = new SimpleMovingAverage { Length = FastLength };
+		var bullsMa = new SimpleMovingAverage { Length = SmoothLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
-
 		void ProcessCandle(ICandleMessage candle)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			var maValue = highMa.Process(candle.HighPrice).ToDecimal();
+			var highInput = new DecimalIndicatorValue(highMa, candle.HighPrice, candle.OpenTime) { IsFinal = true };
+			var maValue = highMa.Process(highInput);
 			if (!highMa.IsFormed)
 				return;
 
-			var bulls = candle.HighPrice - maValue;
-			var smooth = bullsMa.Process(bulls).ToDecimal();
+			var bulls = candle.HighPrice - maValue.ToDecimal();
+			var bullsInput = new DecimalIndicatorValue(bullsMa, bulls, candle.OpenTime) { IsFinal = true };
+			var smooth = bullsMa.Process(bullsInput).ToDecimal();
 			if (!bullsMa.IsFormed)
-				return;
-
-			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
 			var color = smooth > _prevValue ? 0 : smooth < _prevValue ? 2 : 1;
 
 			if (_prevColor == 0 && color == 2)
 			{
+				if (Position < 0)
+					BuyMarket();
 				if (Position <= 0)
-					BuyMarket(Volume + Math.Abs(Position));
+					BuyMarket();
 			}
 			else if (_prevColor == 2 && color == 0)
 			{
+				if (Position > 0)
+					SellMarket();
 				if (Position >= 0)
-					SellMarket(Volume + Math.Abs(Position));
+					SellMarket();
 			}
 
 			_prevColor = color;

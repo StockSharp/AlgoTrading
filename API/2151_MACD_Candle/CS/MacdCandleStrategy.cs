@@ -15,8 +15,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on the MACD Candle indicator.
-/// Opens long positions when the MACD computed on candle closes exceeds the MACD on opens.
-/// Opens short positions when the MACD on opens exceeds the MACD on closes.
+/// Compares MACD computed on opens vs closes.
 /// </summary>
 public class MacdCandleStrategy : Strategy
 {
@@ -25,61 +24,53 @@ public class MacdCandleStrategy : Strategy
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergenceSignal _macdOpen = null!;
-	private MovingAverageConvergenceDivergenceSignal _macdClose = null!;
+	private MovingAverageConvergenceDivergenceSignal _macdOpen;
+	private MovingAverageConvergenceDivergenceSignal _macdClose;
 	private decimal? _previousColor;
 
-	/// <summary>
-	/// Fast EMA period for MACD calculation.
-	/// </summary>
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
-
-	/// <summary>
-	/// Slow EMA period for MACD calculation.
-	/// </summary>
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-
-	/// <summary>
-	/// Signal line period for MACD calculation.
-	/// </summary>
 	public int SignalLength { get => _signalLength.Value; set => _signalLength.Value = value; }
-
-	/// <summary>
-	/// Candle type used for processing.
-	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
 	public MacdCandleStrategy()
 	{
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicator")
-			
 			.SetOptimize(8, 16, 2);
 
 		_slowLength = Param(nameof(SlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicator")
-			
 			.SetOptimize(20, 40, 2);
 
 		_signalLength = Param(nameof(SignalLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal", "Signal period", "Indicator")
-			
 			.SetOptimize(5, 15, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for indicators", "General");
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		base.OnStarted(time);
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousColor = null;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		_macdOpen = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -112,14 +103,20 @@ public class MacdCandleStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var openValue = _macdOpen.Process(new CandleIndicatorValue(candle, candle.OpenPrice));
-		var closeValue = _macdClose.Process(new CandleIndicatorValue(candle, candle.ClosePrice));
+		var openInput = new DecimalIndicatorValue(_macdOpen, candle.OpenPrice, candle.OpenTime) { IsFinal = true };
+		var closeInput = new DecimalIndicatorValue(_macdClose, candle.ClosePrice, candle.OpenTime) { IsFinal = true };
 
-		if (!openValue.IsFinal || !closeValue.IsFinal)
+		var openValue = _macdOpen.Process(openInput);
+		var closeValue = _macdClose.Process(closeInput);
+
+		if (!_macdOpen.IsFormed || !_macdClose.IsFormed)
 			return;
 
-		var openMacd = ((MovingAverageConvergenceDivergenceSignalValue)openValue).Macd;
-		var closeMacd = ((MovingAverageConvergenceDivergenceSignalValue)closeValue).Macd;
+		var openMacd = ((IMovingAverageConvergenceDivergenceSignalValue)openValue).Macd;
+		var closeMacd = ((IMovingAverageConvergenceDivergenceSignalValue)closeValue).Macd;
+
+		if (openMacd == null || closeMacd == null)
+			return;
 
 		var color = openMacd < closeMacd ? 2m : openMacd > closeMacd ? 0m : 1m;
 
@@ -131,11 +128,15 @@ public class MacdCandleStrategy : Strategy
 
 		if (color == 2m && _previousColor < 2m)
 		{
+			if (Position < 0)
+				BuyMarket();
 			if (Position <= 0)
 				BuyMarket();
 		}
 		else if (color == 0m && _previousColor > 0m)
 		{
+			if (Position > 0)
+				SellMarket();
 			if (Position >= 0)
 				SellMarket();
 		}

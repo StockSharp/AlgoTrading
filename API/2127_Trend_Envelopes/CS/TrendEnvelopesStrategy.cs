@@ -272,15 +272,15 @@ public class TrendEnvelopesStrategy : Strategy
 		_prevTrend = trend;
 
 		if (BuyExit && downTrend && Position > 0)
-		SellMarket(Position);
+			SellMarket();
 
 		if (SellExit && upTrend && Position < 0)
-		BuyMarket(-Position);
+			BuyMarket();
 
 		if (BuyEntry && upSignal.HasValue && Position <= 0)
-		BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 
 		if (SellEntry && downSignal.HasValue && Position >= 0)
-		SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 	}
 }

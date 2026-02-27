@@ -21,10 +21,6 @@ public class PaOscillatorStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<bool> _buyPosOpen;
-	private readonly StrategyParam<bool> _sellPosOpen;
-	private readonly StrategyParam<bool> _buyPosClose;
-	private readonly StrategyParam<bool> _sellPosClose;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _prevMacd;
@@ -50,42 +46,6 @@ public class PaOscillatorStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Enable opening long positions.
-	/// </summary>
-	public bool BuyPosOpen
-	{
-		get => _buyPosOpen.Value;
-		set => _buyPosOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Enable opening short positions.
-	/// </summary>
-	public bool SellPosOpen
-	{
-		get => _sellPosOpen.Value;
-		set => _sellPosOpen.Value = value;
-	}
-
-	/// <summary>
-	/// Enable closing long positions.
-	/// </summary>
-	public bool BuyPosClose
-	{
-		get => _buyPosClose.Value;
-		set => _buyPosClose.Value = value;
-	}
-
-	/// <summary>
-	/// Enable closing short positions.
-	/// </summary>
-	public bool SellPosClose
-	{
-		get => _sellPosClose.Value;
-		set => _sellPosClose.Value = value;
-	}
-
-	/// <summary>
 	/// Candle type for calculations.
 	/// </summary>
 	public DataType CandleType
@@ -107,19 +67,7 @@ public class PaOscillatorStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length", "Slow EMA period", "Indicators");
 
-		_buyPosOpen = Param(nameof(BuyPosOpen), true)
-			.SetDisplay("Enable Buy Open", "Allow opening long positions", "Trading");
-
-		_sellPosOpen = Param(nameof(SellPosOpen), true)
-			.SetDisplay("Enable Sell Open", "Allow opening short positions", "Trading");
-
-		_buyPosClose = Param(nameof(BuyPosClose), true)
-			.SetDisplay("Enable Buy Close", "Allow closing long positions", "Trading");
-
-		_sellPosClose = Param(nameof(SellPosClose), true)
-			.SetDisplay("Enable Sell Close", "Allow closing short positions", "Trading");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 	}
 
@@ -130,14 +78,21 @@ public class PaOscillatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevMacd = null;
+		_prevColor = null;
+		_prevPrevColor = null;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
-		var fastEma = new EMA { Length = FastLength };
-		var slowEma = new EMA { Length = SlowLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -160,9 +115,6 @@ public class PaOscillatorStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var macd = fast - slow;
 
 		if (_prevMacd is null)
@@ -176,36 +128,20 @@ public class PaOscillatorStrategy : Strategy
 		var osc = macd - _prevMacd.Value;
 		var color = osc > 0 ? 0 : osc < 0 ? 2 : 1;
 
-		var buyOpen = false;
-		var sellOpen = false;
-		var buyClose = false;
-		var sellClose = false;
-
-		if (_prevPrevColor == 0)
+		if (_prevPrevColor == 0 && _prevColor > 0)
 		{
-			if (BuyPosOpen && _prevColor > 0)
-				buyOpen = true;
-			if (SellPosClose)
-				sellClose = true;
+			if (Position < 0)
+				BuyMarket();
+			if (Position <= 0)
+				BuyMarket();
 		}
-
-		if (_prevPrevColor == 2)
+		else if (_prevPrevColor == 2 && _prevColor < 2)
 		{
-			if (SellPosOpen && _prevColor < 2)
-				sellOpen = true;
-			if (BuyPosClose)
-				buyClose = true;
+			if (Position > 0)
+				SellMarket();
+			if (Position >= 0)
+				SellMarket();
 		}
-
-		if (sellClose && Position < 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		if (buyClose && Position > 0)
-			SellMarket(Volume + Math.Abs(Position));
-
-		if (buyOpen && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (sellOpen && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
 
 		_prevMacd = macd;
 		_prevPrevColor = _prevColor;

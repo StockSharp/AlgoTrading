@@ -21,14 +21,13 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 	private readonly StrategyParam<int> _fastEmaPeriod;
 	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<RiskBenefitRatios> _riskBenefit;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _rrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private bool _shouldBuy;
 	private bool _hasPrev;
 	private decimal _prevSignal;
-	private decimal _takeProfit;
 
 	/// <summary>
 	/// Fast EMA period for MACD.
@@ -58,22 +57,21 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss distance in absolute price units.
+	/// Stop loss percentage.
 	/// </summary>
-	public decimal StopLoss
+	public decimal StopLossPct
 	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
+		get => _stopLossPct.Value;
+		set => _stopLossPct.Value = value;
 	}
 
-
 	/// <summary>
-	/// Risk to reward ratio preset.
+	/// Risk reward multiplier.
 	/// </summary>
-	public RiskBenefitRatios RiskBenefit
+	public decimal RRMultiplier
 	{
-		get => _riskBenefit.Value;
-		set => _riskBenefit.Value = value;
+		get => _rrMultiplier.Value;
+		set => _rrMultiplier.Value = value;
 	}
 
 	/// <summary>
@@ -83,18 +81,6 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Available risk to reward ratios.
-	/// </summary>
-	public enum RiskBenefitRatios
-	{
-		OneFive,
-		OneFour,
-		OneThree,
-		OneTwo,
-		One
 	}
 
 	/// <summary>
@@ -108,11 +94,13 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetDisplay("Signal", "Signal line period", "Indicators");
-		_stopLoss = Param(nameof(StopLoss), 0.003m)
-			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
-		_riskBenefit = Param(nameof(RiskBenefit), RiskBenefitRatios.OneTwo)
-			.SetDisplay("RR", "Risk benefit ratio", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_stopLossPct = Param(nameof(StopLossPct), 1m)
+			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk")
+			.SetGreaterThanZero();
+		_rrMultiplier = Param(nameof(RRMultiplier), 2m)
+			.SetDisplay("RR Multiplier", "Risk reward multiplier", "Risk")
+			.SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle", "Candle time frame", "General");
 	}
 
@@ -131,23 +119,13 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
-
-		var multiplier = RiskBenefit switch
-		{
-			RiskBenefitRatios.OneFive => 5m,
-			RiskBenefitRatios.OneFour => 4m,
-			RiskBenefitRatios.OneThree => 3m,
-			RiskBenefitRatios.OneTwo => 2m,
-			_ => 1m
-		};
-		_takeProfit = StopLoss * multiplier;
+		base.OnStarted2(time);
 
 		StartProtection(
-			takeProfit: new Unit(_takeProfit, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLoss, UnitTypes.Absolute)
+			takeProfit: new Unit(StopLossPct * RRMultiplier, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent)
 		);
 
 		var macd = new MovingAverageConvergenceDivergenceSignal
@@ -179,37 +157,42 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!macdValue.IsFinal || !macdValue.IsFormed)
 			return;
 
-		var typed = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		var typed = (IMovingAverageConvergenceDivergenceSignalValue)macdValue;
 		var signal = typed.Signal;
+
+		if (signal == null)
+			return;
+
+		var signalVal = signal.Value;
 
 		if (!_hasPrev)
 		{
-			_prevSignal = signal;
+			_prevSignal = signalVal;
 			_hasPrev = true;
 			return;
 		}
 
-		var crossedAbove = _prevSignal < 0 && signal > 0;
-		var crossedBelow = _prevSignal > 0 && signal < 0;
+		var crossedAbove = _prevSignal < 0 && signalVal > 0;
+		var crossedBelow = _prevSignal > 0 && signalVal < 0;
 
 		if (crossedAbove && _shouldBuy)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 			_shouldBuy = false;
-			LogInfo($"Buy signal at {signal:F5}");
 		}
 		else if (crossedBelow && !_shouldBuy)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 			_shouldBuy = true;
-			LogInfo($"Sell signal at {signal:F5}");
 		}
 
-		_prevSignal = signal;
+		_prevSignal = signalVal;
 	}
 }

@@ -1,175 +1,110 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that places limit orders when last trade price moves away
-/// from best bid or ask by a configurable interval.
+/// Strategy that enters when price moves away from a moving average by
+/// a configurable distance, expecting mean reversion.
 /// </summary>
 public class LastPriceStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _interval;
-	private readonly StrategyParam<decimal> _minVolume;
-	private readonly StrategyParam<decimal> _maxVolume;
-	private readonly StrategyParam<decimal> _spread;
-	private readonly StrategyParam<decimal> _stopLossPips;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _distancePct;
 
-	private decimal _bestAsk;
-	private decimal _bestBid;
-	private decimal _lastPrice;
-	private decimal _lastVolume;
-	private decimal _tradePrice;
-	private decimal _intervalPrice;
-	private decimal _stopLossPrice;
+	private decimal _entryPrice;
 
-	public decimal Interval { get => _interval.Value; set => _interval.Value = value; }
-	public decimal MinVolume { get => _minVolume.Value; set => _minVolume.Value = value; }
-	public decimal MaxVolume { get => _maxVolume.Value; set => _maxVolume.Value = value; }
-	public decimal Spread { get => _spread.Value; set => _spread.Value = value; }
-	public decimal StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	public int MaPeriod
+	{
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
+	}
+
+	public decimal DistancePct
+	{
+		get => _distancePct.Value;
+		set => _distancePct.Value = value;
+	}
 
 	public LastPriceStrategy()
 	{
-		_interval = Param(nameof(Interval), 400m)
-			.SetGreaterThanZero()
-			.SetDisplay("Interval", "Distance from bid/ask to trigger order in points", "General")
-			;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_minVolume = Param(nameof(MinVolume), 1m)
-			.SetDisplay("Min Volume", "Minimum trade volume", "General")
-			;
+		_maPeriod = Param(nameof(MaPeriod), 20)
+			.SetDisplay("MA Period", "Moving average period", "Parameters");
 
-		_maxVolume = Param(nameof(MaxVolume), 900000m)
-			.SetDisplay("Max Volume", "Maximum trade volume", "General")
-			;
-
-		_spread = Param(nameof(Spread), 200m)
-			.SetGreaterThanZero()
-			.SetDisplay("Spread", "Maximum allowed spread", "General")
-			;
-
-
-		_stopLossPips = Param(nameof(StopLossPips), 400m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss distance in points", "Protection");
+		_distancePct = Param(nameof(DistancePct), 0.5m)
+			.SetDisplay("Distance %", "Percent distance from MA to trigger entry", "Parameters");
 	}
 
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return
-		[
-			(Security, DataType.Level1),
-			(Security, DataType.Ticks)
-		];
-	}
-
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_bestAsk = _bestBid = _lastPrice = _lastVolume = _tradePrice = 0m;
-	}
-
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var step = Security.PriceStep ?? 1m;
-		_intervalPrice = Interval * step;
-		_stopLossPrice = StopLossPips * step;
+		_entryPrice = 0;
 
-		StartProtection(stopLoss: new Unit(_stopLossPrice, UnitTypes.Absolute));
+		var ma = new SimpleMovingAverage { Length = MaPeriod };
 
-		SubscribeLevel1().Bind(ProcessLevel1).Start();
-		SubscribeTicks().Bind(ProcessTrade).Start();
-	}
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ma, ProcessCandle)
+			.Start();
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
-	{
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var ask))
-			_bestAsk = (decimal)ask;
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bid))
-			_bestBid = (decimal)bid;
-	}
-
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		_lastPrice = trade.Price;
-		_lastVolume = trade.Volume ?? 0m;
-
-		Evaluate(trade.ServerTime);
-	}
-
-	private void Evaluate(DateTimeOffset time)
-	{
-		if (!CheckTradingTime(time))
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			if (Position > 0)
-				SellMarket(Volume);
-			else if (Position < 0)
-				BuyMarket(Volume);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ma);
+			DrawOwnTrades(area);
+		}
+	}
 
+	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	{
+		if (candle.State != CandleStates.Finished)
 			return;
+
+		var price = candle.ClosePrice;
+		var threshold = maValue * DistancePct / 100m;
+
+		// Exit: price returned to MA
+		if (Position > 0 && price >= maValue)
+		{
+			SellMarket();
+			_entryPrice = 0;
+		}
+		else if (Position < 0 && price <= maValue)
+		{
+			BuyMarket();
+			_entryPrice = 0;
 		}
 
+		// Entry: price moved away from MA
 		if (Position == 0)
 		{
-			var spread = _bestAsk - _bestBid;
-			if (_lastVolume >= MinVolume && _lastVolume <= MaxVolume && spread <= Spread)
+			if (price < maValue - threshold)
 			{
-				if (_lastPrice >= _bestAsk + _intervalPrice)
-				{
-					BuyLimit(_bestAsk, Volume);
-					_tradePrice = _bestAsk;
-				}
-				else if (_lastPrice <= _bestBid - _intervalPrice)
-				{
-					SellLimit(_bestBid, Volume);
-					_tradePrice = _bestBid;
-				}
+				BuyMarket();
+				_entryPrice = price;
+			}
+			else if (price > maValue + threshold)
+			{
+				SellMarket();
+				_entryPrice = price;
 			}
 		}
-		else if (Position > 0)
-		{
-			if (_lastPrice <= _bestBid)
-				SellMarket(Volume);
-		}
-		else
-		{
-			if (_lastPrice >= _bestAsk)
-				BuyMarket(Volume);
-		}
-	}
-
-	private static bool InRange(int value, int start, int end) => value >= start && value < end;
-
-	private bool CheckTradingTime(DateTimeOffset time)
-	{
-		var day = time.DayOfWeek;
-		if (day == DayOfWeek.Saturday || day == DayOfWeek.Sunday)
-			return false;
-
-		var seconds = time.Hour * 3600 + time.Minute * 60 + time.Second;
-		if (seconds < 10 * 3600)
-			return false;
-
-		return
-			InRange(seconds, 10 * 3600 + 5 * 60 + 40, 13 * 3600 + 54 * 60 + 30) ||
-			InRange(seconds, 14 * 3600 + 8 * 60 + 30, 15 * 3600 + 44 * 60 + 30) ||
-			InRange(seconds, 16 * 3600 + 5 * 60 + 30, 18 * 3600 + 39 * 60 + 30) ||
-			InRange(seconds, 19 * 3600 + 15 * 60 + 10, 23 * 3600 + 44 * 60 + 30);
 	}
 }

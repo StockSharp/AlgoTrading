@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -25,83 +19,48 @@ public class ColorXccxCandleStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 
-	private decimal? _prevDiff;
+	private SimpleMovingAverage _openSma;
+	private SimpleMovingAverage _closeSma;
+	private decimal _prevDiff;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Length of the simple moving averages.
-	/// </summary>
 	public int SmaLength
 	{
 		get => _smaLength.Value;
 		set => _smaLength.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Stop-loss percentage.
-	/// </summary>
 	public decimal StopLossPercent
 	{
 		get => _stopLossPercent.Value;
 		set => _stopLossPercent.Value = value;
 	}
 
-	/// <summary>
-	/// Take-profit percentage.
-	/// </summary>
 	public decimal TakeProfitPercent
 	{
 		get => _takeProfitPercent.Value;
 		set => _takeProfitPercent.Value = value;
 	}
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public ColorXccxCandleStrategy()
 	{
-		_smaLength = Param(nameof(SmaLength), 15)
-			.SetGreaterThanZero()
-			.SetDisplay("SMA Length", "Length of the moving averages", "Indicators")
-			
-			.SetOptimize(10, 30, 1);
+		_smaLength = Param(nameof(SmaLength), 5)
+			.SetDisplay("SMA Length", "Length of the moving averages", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for the strategy", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss as percent of entry price", "Risk Management")
-			
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetDisplay("Stop Loss %", "Stop loss as percent of entry price", "Risk Management");
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit %", "Take profit as percent of entry price", "Risk Management")
-			
-			.SetOptimize(2m, 6m, 1m);
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_prevDiff = null;
+			.SetDisplay("Take Profit %", "Take profit as percent of entry price", "Risk Management");
 	}
 
 	/// <inheritdoc />
@@ -109,8 +68,10 @@ public class ColorXccxCandleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var openSma = new SMA { Length = SmaLength };
-		var closeSma = new SMA { Length = SmaLength };
+		_openSma = new SimpleMovingAverage { Length = SmaLength };
+		_closeSma = new SimpleMovingAverage { Length = SmaLength };
+		_prevDiff = 0;
+		_hasPrev = false;
 
 		StartProtection(
 			takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
@@ -118,39 +79,46 @@ public class ColorXccxCandleStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(openSma, closeSma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, openSma);
-			DrawIndicator(area, closeSma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal openSma, decimal closeSma)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var openResult = _openSma.Process(new DecimalIndicatorValue(_openSma, candle.OpenPrice, candle.OpenTime) { IsFinal = true });
+		var closeResult = _closeSma.Process(new DecimalIndicatorValue(_closeSma, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+
+		if (!openResult.IsFormed || !closeResult.IsFormed)
 			return;
 
-		var diff = closeSma - openSma;
+		var openVal = openResult.ToDecimal();
+		var closeVal = closeResult.ToDecimal();
+		var diff = closeVal - openVal;
 
-		if (_prevDiff is decimal prev)
+		if (!_hasPrev)
 		{
-			if (prev <= 0 && diff > 0 && Position <= 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-			else if (prev >= 0 && diff < 0 && Position >= 0)
-			{
-				SellMarket(Volume + Math.Abs(Position));
-			}
+			_prevDiff = diff;
+			_hasPrev = true;
+			return;
+		}
+
+		if (_prevDiff <= 0 && diff > 0 && Position <= 0)
+		{
+			BuyMarket();
+		}
+		else if (_prevDiff >= 0 && diff < 0 && Position >= 0)
+		{
+			SellMarket();
 		}
 
 		_prevDiff = diff;

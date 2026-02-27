@@ -11,8 +11,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Leman Trend strategy using high/low differences smoothed by EMA.
 /// Opens long when bullish pressure exceeds bearish, short otherwise.
@@ -23,18 +21,16 @@ public class LeManTrendStrategy : Strategy
 	private readonly StrategyParam<int> _midle;
 	private readonly StrategyParam<int> _max;
 	private readonly StrategyParam<int> _periodEma;
-	private readonly StrategyParam<bool> _useLong;
-	private readonly StrategyParam<bool> _useShort;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highMin = null!;
-	private Highest _highMidle = null!;
-	private Highest _highMax = null!;
-	private Lowest _lowMin = null!;
-	private Lowest _lowMidle = null!;
-	private Lowest _lowMax = null!;
-	private ExponentialMovingAverage _bulls = null!;
-	private ExponentialMovingAverage _bears = null!;
+	private Highest _highMin;
+	private Highest _highMidle;
+	private Highest _highMax;
+	private Lowest _lowMin;
+	private Lowest _lowMidle;
+	private Lowest _lowMax;
+	private ExponentialMovingAverage _bullsEma;
+	private ExponentialMovingAverage _bearsEma;
 
 	private decimal _prevBulls;
 	private decimal _prevBears;
@@ -63,18 +59,6 @@ public class LeManTrendStrategy : Strategy
 		set => _periodEma.Value = value;
 	}
 
-	public bool UseLong
-	{
-		get => _useLong.Value;
-		set => _useLong.Value = value;
-	}
-
-	public bool UseShort
-	{
-		get => _useShort.Value;
-		set => _useShort.Value = value;
-	}
-
 	public DataType CandleType
 	{
 		get => _candleType.Value;
@@ -86,34 +70,24 @@ public class LeManTrendStrategy : Strategy
 		_min = Param(nameof(Min), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Period", "Minimum lookback for highs/lows", "Indicator")
-			
 			.SetOptimize(5, 25, 1);
 
 		_midle = Param(nameof(Midle), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Middle Period", "Middle lookback for highs/lows", "Indicator")
-			
 			.SetOptimize(10, 40, 1);
 
 		_max = Param(nameof(Max), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Period", "Maximum lookback for highs/lows", "Indicator")
-			
 			.SetOptimize(20, 60, 1);
 
 		_periodEma = Param(nameof(PeriodEma), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Smoothing period for bulls/bears", "Indicator")
-			
 			.SetOptimize(2, 10, 1);
 
-		_useLong = Param(nameof(UseLong), true)
-			.SetDisplay("Use Long", "Enable long trades", "Trading");
-
-		_useShort = Param(nameof(UseShort), true)
-			.SetDisplay("Use Short", "Enable short trades", "Trading");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for calculations", "General");
 	}
 
@@ -139,49 +113,53 @@ public class LeManTrendStrategy : Strategy
 		_lowMin = new Lowest { Length = Min };
 		_lowMidle = new Lowest { Length = Midle };
 		_lowMax = new Lowest { Length = Max };
-		_bulls = new EMA { Length = PeriodEma };
-		_bears = new EMA { Length = PeriodEma };
+		_bullsEma = new ExponentialMovingAverage { Length = PeriodEma };
+		_bearsEma = new ExponentialMovingAverage { Length = PeriodEma };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_highMin, _highMidle, _highMax, _lowMin, _lowMidle, _lowMax, ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _bulls);
-			DrawIndicator(area, _bears);
-			DrawOwnTrades(area);
-		}
+		subscription.Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highMin, decimal highMidle, decimal highMax,
-		decimal lowMin, decimal lowMidle, decimal lowMax)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var hh = (candle.HighPrice - highMin) + (candle.HighPrice - highMidle) + (candle.HighPrice - highMax);
-		var ll = (lowMin - candle.LowPrice) + (lowMidle - candle.LowPrice) + (lowMax - candle.LowPrice);
+		var closeInput = new DecimalIndicatorValue(_highMin, candle.ClosePrice, candle.OpenTime) { IsFinal = true };
 
-		var bulls = _bulls.Process(hh).ToDecimal();
-		var bears = _bears.Process(ll).ToDecimal();
+		var highMinVal = _highMin.Process(closeInput).ToDecimal();
+		var highMidleVal = _highMidle.Process(new DecimalIndicatorValue(_highMidle, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var highMaxVal = _highMax.Process(new DecimalIndicatorValue(_highMax, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var lowMinVal = _lowMin.Process(new DecimalIndicatorValue(_lowMin, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var lowMidleVal = _lowMidle.Process(new DecimalIndicatorValue(_lowMidle, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var lowMaxVal = _lowMax.Process(new DecimalIndicatorValue(_lowMax, candle.ClosePrice, candle.OpenTime) { IsFinal = true }).ToDecimal();
 
-		if (!_bulls.IsFormed || !_bears.IsFormed)
+		if (!_highMax.IsFormed || !_lowMax.IsFormed)
 			return;
 
-		if (UseLong && _prevBulls <= _prevBears && bulls > bears && Position <= 0)
+		var hh = (candle.HighPrice - highMinVal) + (candle.HighPrice - highMidleVal) + (candle.HighPrice - highMaxVal);
+		var ll = (lowMinVal - candle.LowPrice) + (lowMidleVal - candle.LowPrice) + (lowMaxVal - candle.LowPrice);
+
+		var bullsVal = _bullsEma.Process(new DecimalIndicatorValue(_bullsEma, hh, candle.OpenTime) { IsFinal = true }).ToDecimal();
+		var bearsVal = _bearsEma.Process(new DecimalIndicatorValue(_bearsEma, ll, candle.OpenTime) { IsFinal = true }).ToDecimal();
+
+		if (!_bullsEma.IsFormed || !_bearsEma.IsFormed)
+			return;
+
+		if (_prevBulls <= _prevBears && bullsVal > bearsVal && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
 		}
-		else if (UseShort && _prevBulls >= _prevBears && bulls < bears && Position >= 0)
+		else if (_prevBulls >= _prevBears && bullsVal < bearsVal && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
 		}
 
-		_prevBulls = bulls;
-		_prevBears = bears;
+		_prevBulls = bullsVal;
+		_prevBears = bearsVal;
 	}
 }

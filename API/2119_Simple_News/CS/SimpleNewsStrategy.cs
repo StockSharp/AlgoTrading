@@ -1,10 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,75 +8,50 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Places symmetric pending orders around scheduled news time and manages trailing stop.
+/// News-style volatility breakout strategy.
+/// Monitors ATR for volatility expansion and trades breakouts
+/// when price moves beyond recent range.
 /// </summary>
 public class SimpleNewsStrategy : Strategy
 {
-	private readonly StrategyParam<DateTimeOffset> _newsTime;
-	private readonly StrategyParam<int> _deals;
-	private readonly StrategyParam<decimal> _delta;
-	private readonly StrategyParam<decimal> _distance;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _trail;
-	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
 
-	private bool _ordersPlaced;
-	private DateTimeOffset _cancelTime;
-	private decimal? _bestBid;
-	private decimal? _bestAsk;
-	private decimal? _longEntryPrice;
-	private decimal? _shortEntryPrice;
-	private decimal? _highest;
-	private decimal? _lowest;
+	private decimal _prevAtr;
+	private decimal _prevHigh;
+	private decimal _prevLow;
+	private decimal _entryPrice;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Scheduled news time.
-	/// </summary>
-	public DateTimeOffset NewsTime { get => _newsTime.Value; set => _newsTime.Value = value; }
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
-	/// <summary>
-	/// Number of buy/sell stop pairs.
-	/// </summary>
-	public int Deals { get => _deals.Value; set => _deals.Value = value; }
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
 
-	/// <summary>
-	/// Step between orders in pips.
-	/// </summary>
-	public decimal Delta { get => _delta.Value; set => _delta.Value = value; }
+	public decimal AtrMultiplier
+	{
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
+	}
 
-	/// <summary>
-	/// Distance from current price for the first pair in pips.
-	/// </summary>
-	public decimal Distance { get => _distance.Value; set => _distance.Value = value; }
-
-	/// <summary>
-	/// Initial stop loss in pips.
-	/// </summary>
-	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-
-	/// <summary>
-	/// Trailing stop in pips.
-	/// </summary>
-	public decimal Trail { get => _trail.Value; set => _trail.Value = value; }
-
-	/// <summary>
-	/// Take profit in pips.
-	/// </summary>
-	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-
-
-	/// <summary>
-	/// Initialize <see cref="SimpleNewsStrategy"/>.
-	/// </summary>
 	public SimpleNewsStrategy()
 	{
-		_newsTime = Param(nameof(NewsTime), DateTimeOffset.Now).SetDisplay("News Time", "Release time of news", "General");
-		_deals = Param(nameof(Deals), 3).SetDisplay("Deals", "Number of order pairs", "Orders");
-		_delta = Param(nameof(Delta), 50m).SetDisplay("Delta", "Step between orders (pips)", "Orders");
-		_distance = Param(nameof(Distance), 300m).SetDisplay("Distance", "Distance from price (pips)", "Orders");
-		_stopLoss = Param(nameof(StopLoss), 150m).SetDisplay("Stop Loss", "Initial stop loss (pips)", "Risk");
-		_trail = Param(nameof(Trail), 200m).SetDisplay("Trail", "Trailing stop (pips)", "Risk");
-		_takeProfit = Param(nameof(TakeProfit), 900m).SetDisplay("Take Profit", "Take profit (pips)", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetDisplay("ATR Period", "ATR period for volatility", "Parameters");
+
+		_atrMultiplier = Param(nameof(AtrMultiplier), 1.0m)
+			.SetDisplay("ATR Multiplier", "Multiplier for breakout distance", "Parameters");
 	}
 
 	/// <inheritdoc />
@@ -90,97 +59,80 @@ public class SimpleNewsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(
-			takeProfit: new Unit(TakeProfit * Security.PriceStep, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLoss * Security.PriceStep, UnitTypes.Absolute));
+		_prevAtr = 0;
+		_prevHigh = 0;
+		_prevLow = 0;
+		_entryPrice = 0;
+		_hasPrev = false;
 
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, ProcessCandle)
 			.Start();
-	}
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
-	{
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bid))
-			_bestBid = (decimal)bid;
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var ask))
-			_bestAsk = (decimal)ask;
-
-		var now = CurrentTime;
-		if (!_ordersPlaced && now >= NewsTime - TimeSpan.FromMinutes(5) && now < NewsTime &&
-			_bestBid is not null && _bestAsk is not null)
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			PlacePendingOrders();
-			_cancelTime = NewsTime + TimeSpan.FromMinutes(10);
-			_ordersPlaced = true;
-		}
-
-		if (_ordersPlaced && now > _cancelTime)
-		{
-			CancelActiveOrders();
-			_ordersPlaced = false;
-		}
-
-		ManagePosition();
-	}
-
-	private void PlacePendingOrders()
-	{
-		var step = Delta * Security.PriceStep;
-		for (var i = 0; i < Deals; i++)
-		{
-			var buyPrice = _bestAsk.Value + Distance * Security.PriceStep + step * i;
-			var sellPrice = _bestBid.Value - Distance * Security.PriceStep - step * i;
-
-			BuyStop(Volume, buyPrice);
-			SellStop(Volume, sellPrice);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, atr);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ManagePosition()
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
-		var step = Security.PriceStep;
-		if (Position > 0 && _bestBid is decimal bid && _longEntryPrice is decimal entry)
-		{
-			_highest = _highest is decimal h ? Math.Max(h, bid) : bid;
-			var trailStop = _highest.Value - Trail * step;
-			if (bid <= entry - StopLoss * step || bid >= entry + TakeProfit * step || bid <= trailStop)
-				ClosePosition();
-		}
-		else if (Position < 0 && _bestAsk is decimal ask && _shortEntryPrice is decimal entry2)
-		{
-			_lowest = _lowest is decimal l ? Math.Min(l, ask) : ask;
-			var trailStop = _lowest.Value + Trail * step;
-			if (ask >= entry2 + StopLoss * step || ask <= entry2 - TakeProfit * step || ask >= trailStop)
-				ClosePosition();
-		}
-	}
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
+		var price = candle.ClosePrice;
 
-		if (Position > 0 && delta > 0)
+		// Exit logic
+		if (Position > 0 && _entryPrice > 0)
 		{
-			_longEntryPrice = _bestAsk;
-			_highest = _bestBid;
-			_shortEntryPrice = null;
-			_lowest = null;
+			if (price <= _entryPrice - atrValue * 2m || price >= _entryPrice + atrValue * 3m)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
 		}
-		else if (Position < 0 && delta < 0)
+		else if (Position < 0 && _entryPrice > 0)
 		{
-			_shortEntryPrice = _bestBid;
-			_lowest = _bestAsk;
-			_longEntryPrice = null;
-			_highest = null;
+			if (price >= _entryPrice + atrValue * 2m || price <= _entryPrice - atrValue * 3m)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
 		}
-		else if (Position == 0)
+
+		if (!_hasPrev)
 		{
-			_longEntryPrice = null;
-			_shortEntryPrice = null;
-			_highest = null;
-			_lowest = null;
+			_prevHigh = candle.HighPrice;
+			_prevLow = candle.LowPrice;
+			_prevAtr = atrValue;
+			_hasPrev = true;
+			return;
 		}
+
+		// Entry: breakout above previous high or below previous low
+		if (Position == 0)
+		{
+			var breakoutDist = atrValue * AtrMultiplier;
+			if (price > _prevHigh + breakoutDist)
+			{
+				BuyMarket();
+				_entryPrice = price;
+			}
+			else if (price < _prevLow - breakoutDist)
+			{
+				SellMarket();
+				_entryPrice = price;
+			}
+		}
+
+		_prevHigh = candle.HighPrice;
+		_prevLow = candle.LowPrice;
+		_prevAtr = atrValue;
 	}
 }

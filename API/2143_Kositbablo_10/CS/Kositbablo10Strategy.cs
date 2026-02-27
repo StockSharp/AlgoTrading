@@ -11,60 +11,97 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Multi-timeframe strategy based on RSI and EMA signals.
+/// Strategy based on RSI and EMA signals.
+/// Buys when RSI is oversold and EMA cross is bearish (mean-reversion).
+/// Sells when RSI is overbought and EMA cross is bearish.
 /// </summary>
 public class Kositbablo10Strategy : Strategy
 {
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<int> _stopLoss;
-	private readonly StrategyParam<bool> _turbo;
-	private readonly StrategyParam<DataType> _hourlyCandleType;
-	private readonly StrategyParam<DataType> _dailyCandleType;
+	private readonly StrategyParam<int> _rsiBuyPeriod;
+	private readonly StrategyParam<int> _rsiSellPeriod;
+	private readonly StrategyParam<int> _emaLongPeriod;
+	private readonly StrategyParam<int> _emaShortPeriod;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _rsiDailyBuy;
-	private decimal _rsiDailySell;
-	private decimal _rsiHourlyBuy;
-	private decimal _rsiHourlySell;
-	private decimal _emaBuyLong;
-	private decimal _emaBuyShort;
-	private decimal _emaSellLong;
-	private decimal _emaSellShort;
+	/// <summary>
+	/// RSI period for buy signals.
+	/// </summary>
+	public int RsiBuyPeriod
+	{
+		get => _rsiBuyPeriod.Value;
+		set => _rsiBuyPeriod.Value = value;
+	}
 
-	public int TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public int StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
-	public bool Turbo { get => _turbo.Value; set => _turbo.Value = value; }
-	public DataType HourlyCandleType { get => _hourlyCandleType.Value; set => _hourlyCandleType.Value = value; }
-	public DataType DailyCandleType { get => _dailyCandleType.Value; set => _dailyCandleType.Value = value; }
+	/// <summary>
+	/// RSI period for sell signals.
+	/// </summary>
+	public int RsiSellPeriod
+	{
+		get => _rsiSellPeriod.Value;
+		set => _rsiSellPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Long EMA period.
+	/// </summary>
+	public int EmaLongPeriod
+	{
+		get => _emaLongPeriod.Value;
+		set => _emaLongPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Short EMA period.
+	/// </summary>
+	public int EmaShortPeriod
+	{
+		get => _emaShortPeriod.Value;
+		set => _emaShortPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLossPct
+	{
+		get => _stopLossPct.Value;
+		set => _stopLossPct.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
 	public Kositbablo10Strategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 1400)
-		.SetDisplay("Take Profit", "Take profit in points", "General");
-		_stopLoss = Param(nameof(StopLoss), 500)
-		.SetDisplay("Stop Loss", "Stop loss in points", "General");
-		_turbo = Param(nameof(Turbo), false)
-		.SetDisplay("Turbo Mode", "Allow trading even if position exists", "General");
-		_hourlyCandleType = Param(nameof(HourlyCandleType), TimeSpan.FromHours(1).TimeFrame())
-		.SetDisplay("Hourly Candle Type", "Type of hourly candles", "General");
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Daily Candle Type", "Type of daily candles", "General");
+		_rsiBuyPeriod = Param(nameof(RsiBuyPeriod), 5)
+			.SetDisplay("RSI Buy Period", "RSI period for buy signals", "Indicators");
+		_rsiSellPeriod = Param(nameof(RsiSellPeriod), 20)
+			.SetDisplay("RSI Sell Period", "RSI period for sell signals", "Indicators");
+		_emaLongPeriod = Param(nameof(EmaLongPeriod), 20)
+			.SetDisplay("EMA Long", "Long EMA period", "Indicators");
+		_emaShortPeriod = Param(nameof(EmaShortPeriod), 5)
+			.SetDisplay("EMA Short", "Short EMA period", "Indicators");
+		_stopLossPct = Param(nameof(StopLossPct), 1m)
+			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk")
+			.SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	=> [(Security, HourlyCandleType), (Security, DailyCandleType)];
-
-	/// <inheritdoc />
-	protected override void OnReseted()
 	{
-		base.OnReseted();
-		_rsiDailyBuy = _rsiDailySell = _rsiHourlyBuy = _rsiHourlySell = 0m;
-		_emaBuyLong = _emaBuyShort = _emaSellLong = _emaSellShort = 0m;
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -72,58 +109,40 @@ public class Kositbablo10Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var rsiDailyBuy = new RelativeStrengthIndex { Length = 11 };
-		var rsiDailySell = new RelativeStrengthIndex { Length = 22 };
+		var rsiBuy = new RelativeStrengthIndex { Length = RsiBuyPeriod };
+		var rsiSell = new RelativeStrengthIndex { Length = RsiSellPeriod };
+		var emaLong = new ExponentialMovingAverage { Length = EmaLongPeriod };
+		var emaShort = new ExponentialMovingAverage { Length = EmaShortPeriod };
 
-		var dailySubscription = SubscribeCandles(DailyCandleType);
-		dailySubscription.Bind(rsiDailyBuy, rsiDailySell, OnDailyProcess).Start();
+		StartProtection(
+			takeProfit: new Unit(2m, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPct, UnitTypes.Percent));
 
-		var rsiHourlyBuy = new RelativeStrengthIndex { Length = 5 };
-		var rsiHourlySell = new RelativeStrengthIndex { Length = 20 };
-		var emaBuyLong = new EMA { Length = 20 };
-		var emaBuyShort = new EMA { Length = 2 };
-		var emaSellLong = new EMA { Length = 23 };
-		var emaSellShort = new EMA { Length = 12 };
-
-		var hourlySubscription = SubscribeCandles(HourlyCandleType);
-		hourlySubscription.Bind(rsiHourlyBuy, rsiHourlySell, emaBuyLong, emaBuyShort, emaSellLong, emaSellShort, OnHourlyProcess).Start();
-
-		StartProtection(new Unit(TakeProfit, UnitTypes.Point), new Unit(StopLoss, UnitTypes.Point));
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(rsiBuy, rsiSell, emaLong, emaShort, ProcessCandle)
+			.Start();
 	}
 
-	private void OnDailyProcess(ICandleMessage candle, decimal rsiBuy, decimal rsiSell)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiBuy, decimal rsiSell, decimal emaLong, decimal emaShort)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		_rsiDailyBuy = rsiBuy;
-		_rsiDailySell = rsiSell;
-	}
-
-	private void OnHourlyProcess(ICandleMessage candle, decimal rsiBuy, decimal rsiSell, decimal emaBuyLong, decimal emaBuyShort, decimal emaSellLong, decimal emaSellShort)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-
-		_rsiHourlyBuy = rsiBuy;
-		_rsiHourlySell = rsiSell;
-		_emaBuyLong = emaBuyLong;
-		_emaBuyShort = emaBuyShort;
-		_emaSellLong = emaSellLong;
-		_emaSellShort = emaSellShort;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (!Turbo && Position != 0)
-		return;
-
-		var buyCond = _rsiDailyBuy < 60 && _rsiHourlyBuy < 48 && _emaBuyLong > _emaBuyShort;
-		var sellCond = _rsiDailySell > 38 && _rsiHourlySell > 60 && _emaSellLong > _emaSellShort;
+		var buyCond = rsiBuy < 48 && emaLong > emaShort;
+		var sellCond = rsiSell > 60 && emaLong > emaShort;
 
 		if (buyCond && Position <= 0)
-		BuyMarket();
+		{
+			if (Position < 0)
+				BuyMarket();
+			BuyMarket();
+		}
 		else if (sellCond && Position >= 0)
-		SellMarket();
+		{
+			if (Position > 0)
+				SellMarket();
+			SellMarket();
+		}
 	}
 }

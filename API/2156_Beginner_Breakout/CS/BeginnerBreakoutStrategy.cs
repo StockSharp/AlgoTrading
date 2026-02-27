@@ -91,16 +91,16 @@ public class BeginnerBreakoutStrategy : Strategy
 		.SetGreaterThanZero()
 		;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 
 
-		_stopLoss = Param(nameof(StopLoss), 1000m)
-		.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
+		_stopLoss = Param(nameof(StopLoss), 2m)
+		.SetDisplay("Stop Loss", "Stop loss in percent", "Risk")
 		.SetGreaterThanZero();
 
-		_takeProfit = Param(nameof(TakeProfit), 2000m)
-		.SetDisplay("Take Profit", "Take profit in price units", "Risk")
+		_takeProfit = Param(nameof(TakeProfit), 4m)
+		.SetDisplay("Take Profit", "Take profit in percent", "Risk")
 		.SetGreaterThanZero();
 	}
 
@@ -125,7 +125,7 @@ public class BeginnerBreakoutStrategy : Strategy
 		_highest = new Highest { Length = Period };
 		_lowest = new Lowest { Length = Period };
 
-		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));
+		StartProtection(new Unit(TakeProfit, UnitTypes.Percent), new Unit(StopLoss, UnitTypes.Percent));
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_highest, _lowest, ProcessCandle).Start();
@@ -134,8 +134,8 @@ public class BeginnerBreakoutStrategy : Strategy
 		if (area != null)
 		{
 		DrawCandles(area, subscription);
-		DrawIndicator(area, _highest, "Highest");
-		DrawIndicator(area, _lowest, "Lowest");
+		DrawIndicator(area, _highest);
+		DrawIndicator(area, _lowest);
 		DrawOwnTrades(area);
 		}
 	}
@@ -143,37 +143,33 @@ public class BeginnerBreakoutStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal highValue, decimal lowValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		if (!_highest.IsFormed || !_lowest.IsFormed)
+			return;
 
 		var range = (highValue - lowValue) * ShiftPercent / 100m;
 		var close = candle.ClosePrice;
 
 		if (_trend != TrendDirections.Down && close <= lowValue + range)
 		{
-		// Close long and open short if allowed
-		if (Position > 0)
-		SellMarket(Position);
-
-		if (Position >= 0)
-		{
-		SellMarket(Volume);
-		_trend = TrendDirections.Down;
-		}
+			if (Position > 0)
+				SellMarket();
+			if (Position >= 0)
+			{
+				SellMarket();
+				_trend = TrendDirections.Down;
+			}
 		}
 		else if (_trend != TrendDirections.Up && close >= highValue - range)
 		{
-		// Close short and open long if allowed
-		if (Position < 0)
-		BuyMarket(-Position);
-
-		if (Position <= 0)
-		{
-		BuyMarket(Volume);
-		_trend = TrendDirections.Up;
-		}
+			if (Position < 0)
+				BuyMarket();
+			if (Position <= 0)
+			{
+				BuyMarket();
+				_trend = TrendDirections.Up;
+			}
 		}
 	}
 

@@ -132,7 +132,7 @@ public class CoinFlipStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing distance in steps", "Risk");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for analysis", "General");
 	}
 	
@@ -176,44 +176,41 @@ public class CoinFlipStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
-		var step = Security.MinPriceStep ?? 1m;
-		
 		if (Position != 0)
 		{
-			// Manage open position
-			var priceDiff = _isLong ? candle.ClosePrice - _entryPrice : _entryPrice - candle.ClosePrice;
-			
+			// Manage open position using percent of entry
+			var profitPct = _isLong
+				? (candle.ClosePrice - _entryPrice) / _entryPrice * 100m
+				: (_entryPrice - candle.ClosePrice) / _entryPrice * 100m;
+
 			// Update trailing stop if in profit
-			if (TrailingStart > 0 && priceDiff >= TrailingStart * step)
+			if (TrailingStart > 0 && profitPct >= TrailingStart * 0.1m)
 			{
 				var newLevel = _isLong
-				? candle.ClosePrice - TrailingStop * step
-				: candle.ClosePrice + TrailingStop * step;
-				
+					? candle.ClosePrice * (1m - TrailingStop * 0.1m / 100m)
+					: candle.ClosePrice * (1m + TrailingStop * 0.1m / 100m);
+
 				if (_trailingLevel == 0m)
-				_trailingLevel = newLevel;
+					_trailingLevel = newLevel;
 				else if (_isLong && newLevel > _trailingLevel)
-				_trailingLevel = newLevel;
+					_trailingLevel = newLevel;
 				else if (!_isLong && newLevel < _trailingLevel)
-				_trailingLevel = newLevel;
+					_trailingLevel = newLevel;
 			}
-			
-			// Check exits
-			if (priceDiff >= TakeProfit * step)
+
+			// Check exits - TP/SL as percentage (TakeProfit/10 %)
+			if (profitPct >= TakeProfit * 0.1m)
 			{
 				ExitPosition(candle.ClosePrice, false);
 				return;
 			}
-			
-			if (priceDiff <= -StopLoss * step)
+
+			if (profitPct <= -StopLoss * 0.1m)
 			{
 				ExitPosition(candle.ClosePrice, true);
 				return;
 			}
-			
+
 			if (_trailingLevel != 0m)
 			{
 				if ((_isLong && candle.ClosePrice <= _trailingLevel) ||
@@ -222,7 +219,7 @@ public class CoinFlipStrategy : Strategy
 					ExitPosition(candle.ClosePrice, candle.ClosePrice < _entryPrice);
 				}
 			}
-			
+
 			return;
 		}
 		
@@ -238,20 +235,20 @@ public class CoinFlipStrategy : Strategy
 		_trailingLevel = 0m;
 		
 		if (_isLong)
-		BuyMarket(_currentVolume);
+		BuyMarket();
 		else
-		SellMarket(_currentVolume);
+		SellMarket();
 	}
 	
 	private void ExitPosition(decimal closePrice, bool isLoss)
 	{
 		if (_isLong)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		}
 		else
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 		
 		_lastTradeLoss = isLoss;

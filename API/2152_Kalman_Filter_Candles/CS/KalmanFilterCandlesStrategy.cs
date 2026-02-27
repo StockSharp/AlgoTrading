@@ -11,8 +11,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Strategy based on Kalman filtered candle colors.
 /// </summary>
@@ -23,38 +21,18 @@ public class KalmanFilterCandlesStrategy : Strategy
 
 	private KalmanFilter _openFilter;
 	private KalmanFilter _closeFilter;
-
 	private int _prevColor;
 	private bool _hasPrev;
 
-	/// <summary>
-	/// Kalman filter process noise coefficient.
-	/// </summary>
-	public decimal ProcessNoise
-	{
-		get => _processNoise.Value;
-		set => _processNoise.Value = value;
-	}
+	public decimal ProcessNoise { get => _processNoise.Value; set => _processNoise.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="KalmanFilterCandlesStrategy"/> class.
-	/// </summary>
 	public KalmanFilterCandlesStrategy()
 	{
 		_processNoise = Param(nameof(ProcessNoise), 1m)
-			.SetDisplay("Process Noise", "Kalman filter smoothing factor", "Parameters")
-			;
+			.SetDisplay("Process Noise", "Kalman filter smoothing factor", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "Common");
 	}
 
@@ -66,9 +44,6 @@ public class KalmanFilterCandlesStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_openFilter = null;
-		_closeFilter = null;
 		_prevColor = 1;
 		_hasPrev = false;
 	}
@@ -78,62 +53,53 @@ public class KalmanFilterCandlesStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_openFilter = new KalmanFilter
-		{
-			ProcessNoise = ProcessNoise,
-			MeasurementNoise = ProcessNoise
-		};
-
-		_closeFilter = new KalmanFilter
-		{
-			ProcessNoise = ProcessNoise,
-			MeasurementNoise = ProcessNoise
-		};
+		_openFilter = new KalmanFilter { ProcessNoise = ProcessNoise, MeasurementNoise = ProcessNoise };
+		_closeFilter = new KalmanFilter { ProcessNoise = ProcessNoise, MeasurementNoise = ProcessNoise };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_closeFilter, ProcessCandle)
-			.Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _closeFilter);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal closeValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var openInput = new DecimalIndicatorValue(_openFilter, candle.OpenPrice, candle.OpenTime) { IsFinal = true };
+		var closeInput = new DecimalIndicatorValue(_closeFilter, candle.ClosePrice, candle.OpenTime) { IsFinal = true };
+
+		var openRes = _openFilter.Process(openInput);
+		var closeRes = _closeFilter.Process(closeInput);
+
+		if (!_openFilter.IsFormed || !_closeFilter.IsFormed)
 			return;
 
-		var openRes = _openFilter.Process(new DecimalIndicatorValue(_openFilter, candle.OpenPrice));
-		if (!openRes.IsFinal || openRes is not DecimalIndicatorValue openVal)
-			return;
+		var openVal = openRes.ToDecimal();
+		var closeVal = closeRes.ToDecimal();
 
-		var color = openVal.Value < closeValue ? 2 : openVal.Value > closeValue ? 0 : 1;
+		var color = openVal < closeVal ? 2 : openVal > closeVal ? 0 : 1;
 
 		if (_hasPrev)
 		{
 			if (color == 2 && _prevColor != 2)
 			{
 				if (Position < 0)
-					BuyMarket(Volume + Math.Abs(Position));
-				else if (Position == 0)
+					BuyMarket();
+				if (Position <= 0)
 					BuyMarket();
 			}
 			else if (color == 0 && _prevColor != 0)
 			{
 				if (Position > 0)
-					SellMarket(Volume + Math.Abs(Position));
-				else if (Position == 0)
+					SellMarket();
+				if (Position >= 0)
 					SellMarket();
 			}
 		}

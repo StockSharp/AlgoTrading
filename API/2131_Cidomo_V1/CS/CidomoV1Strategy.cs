@@ -208,11 +208,9 @@ public class CidomoV1Strategy : Strategy
 			_longLevel = highest + Delta * step;
 			_shortLevel = lowest - Delta * step;
 			_lastTradeDay = candle.OpenTime.Date;
-			LogInfo($"Levels updated: high {_longLevel}, low {_shortLevel}");
+			// Levels updated
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (Position == 0)
 		{
@@ -233,13 +231,13 @@ public class CidomoV1Strategy : Strategy
 		{
 			if (candle.LowPrice <= _stopPrice)
 			{
-				SellMarket(Position);
+				SellMarket();
 				return;
 			}
 
 			if (TakeProfit > 0 && candle.HighPrice >= _entryPrice + TakeProfit * step)
 			{
-				SellMarket(Position);
+				SellMarket();
 				return;
 			}
 
@@ -257,13 +255,13 @@ public class CidomoV1Strategy : Strategy
 		{
 			if (candle.HighPrice >= _stopPrice)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				return;
 			}
 
 			if (TakeProfit > 0 && candle.LowPrice <= _entryPrice - TakeProfit * step)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				return;
 			}
 

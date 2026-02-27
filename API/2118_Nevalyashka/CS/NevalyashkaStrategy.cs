@@ -1,9 +1,5 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,70 +7,58 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Alternating long/short strategy with martingale sizing.
+/// Alternating long/short strategy (Nevalyashka / Tumbler).
+/// Enters on RSI overbought/oversold, exits on TP/SL, then reverses.
 /// </summary>
 public class NevalyashkaStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _lotMultiplier;
-	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<decimal> _overbought;
+	private readonly StrategyParam<decimal> _oversold;
 
-	private decimal _currentVolume;
-	private decimal _lastPnL;
-	private Sides _nextSide;
+	private decimal _entryPrice;
+	private decimal _prevRsi;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Initializes a new instance of <see cref="NevalyashkaStrategy"/>.
-	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	public int RsiPeriod
+	{
+		get => _rsiPeriod.Value;
+		set => _rsiPeriod.Value = value;
+	}
+
+	public decimal Overbought
+	{
+		get => _overbought.Value;
+		set => _overbought.Value = value;
+	}
+
+	public decimal Oversold
+	{
+		get => _oversold.Value;
+		set => _oversold.Value = value;
+	}
+
 	public NevalyashkaStrategy()
 	{
-		_lotMultiplier = Param(nameof(LotMultiplier), 1.5m)
-			.SetDisplay("Lot Multiplier", "Volume multiplier after losing trade", "Trading");
-		_stopLoss = Param(nameof(StopLoss), 10m)
-			.SetDisplay("Stop Loss", "Stop loss in price points", "Risk");
-		_takeProfit = Param(nameof(TakeProfit), 20m)
-			.SetDisplay("Take Profit", "Take profit in price points", "Risk");
-	}
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetDisplay("RSI Period", "RSI period", "Parameters");
 
-	/// <summary>
-	/// Multiplier applied to volume after a losing trade.
-	/// </summary>
-	public decimal LotMultiplier
-	{
-		get => _lotMultiplier.Value;
-		set => _lotMultiplier.Value = value;
-	}
+		_overbought = Param(nameof(Overbought), 65m)
+			.SetDisplay("Overbought", "Overbought level", "Parameters");
 
-	/// <summary>
-	/// Stop loss distance in price points.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance in price points.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_currentVolume = 0m;
-		_lastPnL = 0m;
-		_nextSide = Sides.Sell;
+		_oversold = Param(nameof(Oversold), 35m)
+			.SetDisplay("Oversold", "Oversold level", "Parameters");
 	}
 
 	/// <inheritdoc />
@@ -82,33 +66,75 @@ public class NevalyashkaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));
+		_entryPrice = 0;
+		_prevRsi = 50;
+		_hasPrev = false;
 
-		_currentVolume = Volume;
-		SellMarket(_currentVolume);
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(rsi, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, rsi);
+			DrawOwnTrades(area);
+		}
 	}
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
-		base.OnPositionReceived(position);
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		if (Position != 0)
-		return;
+		var price = candle.ClosePrice;
 
-		var tradePnL = PnL - _lastPnL;
-		_lastPnL = PnL;
+		if (!_hasPrev)
+		{
+			_prevRsi = rsiValue;
+			_hasPrev = true;
+			return;
+		}
 
-		if (tradePnL < 0)
-		_currentVolume *= LotMultiplier;
-		else
-		_currentVolume = Volume;
+		// Exit on TP/SL
+		if (Position > 0 && _entryPrice > 0)
+		{
+			var pnlPct = (price - _entryPrice) / _entryPrice * 100m;
+			if (pnlPct >= 2m || pnlPct <= -1m || rsiValue > Overbought)
+			{
+				SellMarket();
+				_entryPrice = 0;
+			}
+		}
+		else if (Position < 0 && _entryPrice > 0)
+		{
+			var pnlPct = (_entryPrice - price) / _entryPrice * 100m;
+			if (pnlPct >= 2m || pnlPct <= -1m || rsiValue < Oversold)
+			{
+				BuyMarket();
+				_entryPrice = 0;
+			}
+		}
 
-		_nextSide = _nextSide == Sides.Buy ? Sides.Sell : Sides.Buy;
+		// Entry signals
+		if (Position == 0)
+		{
+			if (_prevRsi <= Oversold && rsiValue > Oversold)
+			{
+				BuyMarket();
+				_entryPrice = price;
+			}
+			else if (_prevRsi >= Overbought && rsiValue < Overbought)
+			{
+				SellMarket();
+				_entryPrice = price;
+			}
+		}
 
-		if (_nextSide == Sides.Buy)
-		BuyMarket(_currentVolume);
-		else
-		SellMarket(_currentVolume);
+		_prevRsi = rsiValue;
 	}
 }
