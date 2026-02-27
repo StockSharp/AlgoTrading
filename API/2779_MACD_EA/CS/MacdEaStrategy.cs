@@ -31,6 +31,7 @@ public class MacdEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _baseVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private MovingAverageConvergenceDivergenceSignal _macd;
 	private readonly List<decimal> _macdDiffs = new();
 
 	private decimal? _entryPrice;
@@ -202,7 +203,7 @@ public class MacdEaStrategy : Strategy
 			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 	}
 
@@ -228,42 +229,46 @@ public class MacdEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		Volume = BaseVolume;
 
-		var macd = new MovingAverageConvergenceDivergence
+		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortMa = { Length = FastPeriod },
-			LongMa = { Length = SlowPeriod },
-			SignalPeriod = SignalPeriod
+			Macd = { ShortMa = { Length = FastPeriod }, LongMa = { Length = SlowPeriod } },
+			SignalMa = { Length = SignalPeriod }
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(macd, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
-
-		StartProtection();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, macd);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal signalLine, decimal histogram)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		var result = _macd.Process(candle);
+		if (!_macd.IsFormed)
+			return;
+
+		var macdValue = result as MovingAverageConvergenceDivergenceSignalValue;
+		if (macdValue == null)
+			return;
+
+		var macdLine = macdValue.Macd ?? 0m;
+		var signalLine = macdValue.Signal ?? 0m;
 
 		var diff = macdLine - signalLine;
 		_macdDiffs.Add(diff);
@@ -500,13 +505,8 @@ public class MacdEaStrategy : Strategy
 		var steps = Math.Floor(volume / step);
 		volume = steps * step;
 
-		var min = sec.VolumeMin ?? step;
-		if (volume < min)
+		if (volume < step)
 		return 0m;
-
-		var max = sec.VolumeMax;
-		if (max != null && volume > max.Value)
-		volume = max.Value;
 
 		return volume;
 	}

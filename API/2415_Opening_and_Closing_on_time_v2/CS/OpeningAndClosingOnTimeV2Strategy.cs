@@ -22,33 +22,29 @@ public class OpeningAndClosingOnTimeV2Strategy : Strategy
 		BuyAndSell
 	}
 
-	private readonly StrategyParam<TimeSpan> _openTime;
-	private readonly StrategyParam<TimeSpan> _closeTime;
+	private readonly StrategyParam<int> _openHour;
+	private readonly StrategyParam<int> _closeHour;
 	private readonly StrategyParam<TradeModeses> _tradeMode;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _fastPeriod;
-	private readonly StrategyParam<int> _stopLossTicks;
-	private readonly StrategyParam<int> _takeProfitTicks;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private ExponentialMovingAverage _slowMa;
-	private ExponentialMovingAverage _fastMa;
 
 	private decimal _prevSlow;
 	private decimal _prevFast;
-	private bool _hasPrev;
 	private bool _opened;
 
-	public TimeSpan OpenTime
+	public int OpenHour
 	{
-		get => _openTime.Value;
-		set => _openTime.Value = value;
+		get => _openHour.Value;
+		set => _openHour.Value = value;
 	}
 
-	public TimeSpan CloseTime
+	public int CloseHour
 	{
-		get => _closeTime.Value;
-		set => _closeTime.Value = value;
+		get => _closeHour.Value;
+		set => _closeHour.Value = value;
 	}
 
 	public TradeModeses TradeMode
@@ -69,16 +65,16 @@ public class OpeningAndClosingOnTimeV2Strategy : Strategy
 		set => _fastPeriod.Value = value;
 	}
 
-	public int StopLossTicks
+	public decimal StopLoss
 	{
-		get => _stopLossTicks.Value;
-		set => _stopLossTicks.Value = value;
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
 	}
 
-	public int TakeProfitTicks
+	public decimal TakeProfit
 	{
-		get => _takeProfitTicks.Value;
-		set => _takeProfitTicks.Value = value;
+		get => _takeProfit.Value;
+		set => _takeProfit.Value = value;
 	}
 
 	public DataType CandleType
@@ -89,32 +85,30 @@ public class OpeningAndClosingOnTimeV2Strategy : Strategy
 
 	public OpeningAndClosingOnTimeV2Strategy()
 	{
-		_openTime = Param(nameof(OpenTime), new TimeSpan(5, 0, 0))
-			.SetDisplay("Open Time", "Time of day to open trades", "General");
+		_openHour = Param(nameof(OpenHour), 2)
+			.SetDisplay("Open Hour", "Hour of day to open trades (UTC)", "General");
 
-		_closeTime = Param(nameof(CloseTime), new TimeSpan(21, 1, 0))
-			.SetDisplay("Close Time", "Time of day to close trades", "General");
+		_closeHour = Param(nameof(CloseHour), 14)
+			.SetDisplay("Close Hour", "Hour of day to close trades (UTC)", "General");
 
 		_tradeMode = Param(nameof(TradeMode), TradeModeses.BuyAndSell)
 			.SetDisplay("Trade Mode", "Allowed trade directions", "General");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 200)
+		_slowPeriod = Param(nameof(SlowPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow EMA period", "Indicators");
 
-		_fastPeriod = Param(nameof(FastPeriod), 50)
+		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast EMA period", "Indicators");
 
-		_stopLossTicks = Param(nameof(StopLossTicks), 30)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss", "Stop loss in ticks", "Protection");
+		_stopLoss = Param(nameof(StopLoss), 1000m)
+			.SetDisplay("Stop Loss", "Stop loss in price units", "Protection");
 
-		_takeProfitTicks = Param(nameof(TakeProfitTicks), 50)
-			.SetNotNegative()
-			.SetDisplay("Take Profit", "Take profit in ticks", "Protection");
+		_takeProfit = Param(nameof(TakeProfit), 2000m)
+			.SetDisplay("Take Profit", "Take profit in price units", "Protection");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
 	}
 
@@ -128,7 +122,6 @@ public class OpeningAndClosingOnTimeV2Strategy : Strategy
 		base.OnReseted();
 		_prevSlow = 0m;
 		_prevFast = 0m;
-		_hasPrev = false;
 		_opened = false;
 	}
 
@@ -136,28 +129,26 @@ public class OpeningAndClosingOnTimeV2Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_slowMa = new EMA { Length = SlowPeriod };
-		_fastMa = new EMA { Length = FastPeriod };
+		var slowMa = new ExponentialMovingAverage { Length = SlowPeriod };
+		var fastMa = new ExponentialMovingAverage { Length = FastPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_slowMa, _fastMa, ProcessCandle)
+			.Bind(slowMa, fastMa, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			new Unit(TakeProfit, UnitTypes.Absolute),
+			new Unit(StopLoss, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _slowMa);
-			DrawIndicator(area, _fastMa);
+			DrawIndicator(area, slowMa);
+			DrawIndicator(area, fastMa);
 			DrawOwnTrades(area);
 		}
-
-		var step = Security.PriceStep ?? 1m;
-		StartProtection(
-			takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Point),
-			stopLoss: new Unit(StopLossTicks * step, UnitTypes.Point),
-			useMarketOrders: true);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal slow, decimal fast)
@@ -165,28 +156,37 @@ public class OpeningAndClosingOnTimeV2Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var time = candle.OpenTime.TimeOfDay;
+		var hour = candle.OpenTime.Hour;
 
-		if (!_opened && time == OpenTime)
+		if (!_opened && hour >= OpenHour && hour < CloseHour)
 		{
-			if (_hasPrev)
+			if (_prevSlow != 0m && _prevFast != 0m)
 			{
-				if ((TradeMode == TradeModeses.Buy || TradeMode == TradeModeses.BuyAndSell) && _prevFast > _prevSlow && Position <= 0)
+				var buySignal = _prevFast <= _prevSlow && fast > slow;
+				var sellSignal = _prevFast >= _prevSlow && fast < slow;
+
+				if (buySignal && (TradeMode == TradeModeses.Buy || TradeMode == TradeModeses.BuyAndSell) && Position <= 0)
+				{
 					BuyMarket();
-				if ((TradeMode == TradeModeses.Sell || TradeMode == TradeModeses.BuyAndSell) && _prevFast < _prevSlow && Position >= 0)
+					_opened = true;
+				}
+				else if (sellSignal && (TradeMode == TradeModeses.Sell || TradeMode == TradeModeses.BuyAndSell) && Position >= 0)
+				{
 					SellMarket();
+					_opened = true;
+				}
 			}
-			_opened = true;
 		}
-		else if (_opened && time == CloseTime)
+		else if (_opened && hour >= CloseHour)
 		{
-			if (Position != 0)
-				ClosePosition();
+			if (Position > 0)
+				SellMarket();
+			else if (Position < 0)
+				BuyMarket();
 			_opened = false;
 		}
 
 		_prevSlow = slow;
 		_prevFast = fast;
-		_hasPrev = true;
 	}
 }

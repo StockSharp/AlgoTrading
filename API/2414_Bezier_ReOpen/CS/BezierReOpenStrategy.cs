@@ -14,27 +14,15 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bezier re-open strategy based on a custom Bezier curve indicator.
-/// Opens positions when the indicator changes direction and re-enters
+/// Bezier re-open strategy based on a custom Bezier curve calculation.
+/// Opens positions when the Bezier value changes direction and re-enters
 /// after price moves by a specified step.
 /// </summary>
 public class BezierReOpenStrategy : Strategy
 {
-	public enum AppliedPrices
-	{
-		Close,
-		Open,
-		High,
-		Low,
-		Median,
-		Typical,
-		Weighted
-	}
-
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bPeriod;
 	private readonly StrategyParam<decimal> _t;
-	private readonly StrategyParam<AppliedPrices> _priceType;
 	private readonly StrategyParam<decimal> _priceStep;
 	private readonly StrategyParam<int> _posTotal;
 	private readonly StrategyParam<bool> _buyPosOpen;
@@ -44,6 +32,7 @@ public class BezierReOpenStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 
+	private readonly List<decimal> _prices = new();
 	private decimal _prev1;
 	private decimal _prev2;
 	private int _orderCount;
@@ -74,15 +63,6 @@ public class BezierReOpenStrategy : Strategy
 	{
 		get => _t.Value;
 		set => _t.Value = value;
-	}
-
-	/// <summary>
-	/// Price type used by the indicator.
-	/// </summary>
-	public AppliedPrices PriceType
-	{
-		get => _priceType.Value;
-		set => _priceType.Value = value;
 	}
 
 	/// <summary>
@@ -162,7 +142,7 @@ public class BezierReOpenStrategy : Strategy
 	/// </summary>
 	public BezierReOpenStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_bPeriod = Param(nameof(BPeriod), 8)
@@ -171,9 +151,6 @@ public class BezierReOpenStrategy : Strategy
 
 		_t = Param(nameof(T), 0.5m)
 			.SetDisplay("T", "Bezier curve tension", "Indicator");
-
-		_priceType = Param(nameof(PriceType), AppliedPrices.Weighted)
-			.SetDisplay("Price Type", "Price source for indicator", "Indicator");
 
 		_priceStep = Param(nameof(PriceStep), 300m)
 			.SetGreaterThanZero()
@@ -213,6 +190,7 @@ public class BezierReOpenStrategy : Strategy
 	{
 		base.OnReseted();
 
+		_prices.Clear();
 		_prev1 = 0m;
 		_prev2 = 0m;
 		_orderCount = 0;
@@ -224,52 +202,79 @@ public class BezierReOpenStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var bezier = new BezierIndicator
-		{
-			Length = BPeriod,
-			T = (double)T,
-			PriceType = PriceType
-		};
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(bezier, ProcessCandle)
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal bezierValue)
+	private decimal ComputeBezier()
+	{
+		var n = BPeriod;
+		if (_prices.Count < n + 1)
+			return 0m;
+
+		var t = (double)T;
+		double result = 0;
+		for (var i = 0; i <= n; i++)
+		{
+			var priceVal = (double)_prices[_prices.Count - n - 1 + i];
+			result += priceVal * Binomial(n, i) * Math.Pow(t, i) * Math.Pow(1 - t, n - i);
+		}
+
+		return (decimal)result;
+	}
+
+	private static double Binomial(int n, int k)
+	{
+		return Factorial(n) / (Factorial(k) * Factorial(n - k));
+	}
+
+	private static double Factorial(int value)
+	{
+		var res = 1d;
+		for (var j = 2; j <= value; j++)
+			res *= j;
+		return res;
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var price = (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m;
+		_prices.Add(price);
+		if (_prices.Count > BPeriod + 2)
+			_prices.RemoveAt(0);
+
+		var bezierValue = ComputeBezier();
+		if (bezierValue == 0m)
 			return;
 
-		// store previous indicator values
 		_prev2 = _prev1;
 		_prev1 = bezierValue;
+
+		if (_prev2 == 0m)
+			return;
 
 		var openLong = false;
 		var openShort = false;
 		var closeLong = false;
 		var closeShort = false;
 
-		if (_prev2 != 0m)
+		if (_prev1 > _prev2)
 		{
-			if (_prev1 > _prev2)
-			{
-				if (BuyPosOpen && bezierValue > _prev1)
-					openLong = true;
-				if (SellPosClose && Position < 0)
-					closeShort = true;
-			}
-			else if (_prev1 < _prev2)
-			{
-				if (SellPosOpen && bezierValue < _prev1)
-					openShort = true;
-				if (BuyPosClose && Position > 0)
-					closeLong = true;
-			}
+			if (BuyPosOpen)
+				openLong = true;
+			if (SellPosClose && Position < 0)
+				closeShort = true;
+		}
+		else if (_prev1 < _prev2)
+		{
+			if (SellPosOpen)
+				openShort = true;
+			if (BuyPosClose && Position > 0)
+				closeLong = true;
 		}
 
 		if (closeLong)
@@ -332,71 +337,5 @@ public class BezierReOpenStrategy : Strategy
 			if (TakeProfit > 0 && price <= _lastEntryPrice - TakeProfit)
 				BuyMarket();
 		}
-	}
-}
-
-/// <summary>
-/// Custom Bezier indicator using binomial coefficients.
-/// </summary>
-public class BezierIndicator : DecimalLengthIndicator
-{
-	/// <summary>
-	/// Bezier curve tension parameter.
-	/// </summary>
-	public double T { get; set; } = 0.5;
-
-	/// <summary>
-	/// Price type used in calculation.
-	/// </summary>
-	public AppliedPrice PriceType { get; set; } = AppliedPrice.Weighted;
-
-	private readonly List<decimal> _prices = new();
-
-	/// <inheritdoc />
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
-	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-			return new DecimalIndicatorValue(this, default, input.Time);
-
-		var price = PriceType switch
-		{
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			AppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			_ => candle.ClosePrice,
-		};
-
-		_prices.Add(price);
-		if (_prices.Count > Length + 1)
-			_prices.RemoveAt(0);
-
-		if (_prices.Count < Length + 1)
-			return new DecimalIndicatorValue(this, default, input.Time);
-
-		double result = 0;
-		var n = Length;
-		for (var i = 0; i <= n; i++)
-		{
-			var priceVal = (double)_prices[_prices.Count - n - 1 + i];
-			result += priceVal * Binomial(n, i) * Math.Pow(T, i) * Math.Pow(1 - T, n - i);
-		}
-
-		return new DecimalIndicatorValue(this, (decimal)result, input.Time);
-	}
-
-	private static double Binomial(int n, int k)
-	{
-		return Factorial(n) / (Factorial(k) * Factorial(n - k));
-	}
-
-	private static double Factorial(int value)
-	{
-		var res = 1d;
-		for (var j = 2; j <= value; j++)
-			res *= j;
-		return res;
 	}
 }

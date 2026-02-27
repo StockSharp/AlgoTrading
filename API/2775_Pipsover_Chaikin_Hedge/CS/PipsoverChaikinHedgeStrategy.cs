@@ -173,11 +173,11 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 	/// </summary>
 	public PipsoverChaikinHedgeStrategy()
 	{
-		_openLevel = Param(nameof(OpenLevel), 100m)
+		_openLevel = Param(nameof(OpenLevel), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Open Level", "Chaikin level for entries", "Chaikin");
 
-		_closeLevel = Param(nameof(CloseLevel), 125m)
+		_closeLevel = Param(nameof(CloseLevel), 0.02m)
 		.SetGreaterThanZero()
 		.SetDisplay("Close Level", "Chaikin level for hedging", "Chaikin");
 
@@ -214,7 +214,7 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 		_chaikinMaType = Param(nameof(ChaikinMaType), MovingAverageTypeOptions.Exponential)
 		.SetDisplay("Chaikin MA Type", "Chaikin moving average type", "Chaikin");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for analysis", "Data");
 	}
 
@@ -274,8 +274,8 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 		var hasPrevCandle = _hasPrevCandle;
 		var hasPrevChaikin = _hasPrevChaikin;
 
-		var fastValue = _chaikinFast.Process(new DecimalIndicatorValue(_chaikinFast, adValue, candle.ServerTime));
-		var slowValue = _chaikinSlow.Process(new DecimalIndicatorValue(_chaikinSlow, adValue, candle.ServerTime));
+		var fastValue = _chaikinFast.Process(new DecimalIndicatorValue(_chaikinFast, adValue, candle.OpenTime) { IsFinal = true });
+		var slowValue = _chaikinSlow.Process(new DecimalIndicatorValue(_chaikinSlow, adValue, candle.OpenTime) { IsFinal = true });
 
 		if (!fastValue.IsFinal || !slowValue.IsFinal)
 		{
@@ -289,14 +289,6 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 		var shiftedMa = UpdateShiftedMa(maValue);
 
 		if (shiftedMa is null)
-		{
-			_prevChaikin = chaikin;
-			_hasPrevChaikin = true;
-			StorePreviousCandle(candle);
-			return;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 		{
 			_prevChaikin = chaikin;
 			_hasPrevChaikin = true;
@@ -534,11 +526,11 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypeOptions.Simple => new SMA { Length = length },
-			MovingAverageTypeOptions.Exponential => new EMA { Length = length },
+			MovingAverageTypeOptions.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypeOptions.Exponential => new ExponentialMovingAverage { Length = length },
 			MovingAverageTypeOptions.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypeOptions.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length }
+			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
 

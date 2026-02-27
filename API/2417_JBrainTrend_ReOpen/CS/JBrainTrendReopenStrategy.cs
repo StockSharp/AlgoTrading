@@ -15,14 +15,13 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on the Stochastic oscillator with position re-opening capability.
-/// Derived from the MQL5 example "JBrainTrend1Stop_ReOpen".
 /// Opens a position when the market enters oversold/overbought zones and
 /// re-enters in the same direction after price moves by a defined step.
 /// </summary>
 public class JBrainTrendReopenStrategy : Strategy
 {
 	private readonly StrategyParam<int> _stochPeriod;
-	private readonly StrategyParam<int> _kPeriod;
+	private readonly StrategyParam<int> _kSmoothing;
 	private readonly StrategyParam<int> _dPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopLoss;
@@ -36,145 +35,49 @@ public class JBrainTrendReopenStrategy : Strategy
 	private int _entriesCount;
 	private bool _isLong;
 
-	/// <summary>
-	/// Main period for the Stochastic oscillator.
-	/// </summary>
-	public int StochPeriod
-	{
-		get => _stochPeriod.Value;
-		set => _stochPeriod.Value = value;
-	}
+	public int StochPeriod { get => _stochPeriod.Value; set => _stochPeriod.Value = value; }
+	public int KSmoothing { get => _kSmoothing.Value; set => _kSmoothing.Value = value; }
+	public int DPeriod { get => _dPeriod.Value; set => _dPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal PriceStep { get => _priceStep.Value; set => _priceStep.Value = value; }
+	public int MaxPositions { get => _maxPositions.Value; set => _maxPositions.Value = value; }
+	public bool BuyEnabled { get => _buyEnabled.Value; set => _buyEnabled.Value = value; }
+	public bool SellEnabled { get => _sellEnabled.Value; set => _sellEnabled.Value = value; }
 
-	/// <summary>
-	/// Smoothing period for the %K line.
-	/// </summary>
-	public int KPeriod
-	{
-		get => _kPeriod.Value;
-		set => _kPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Smoothing period for the %D line.
-	/// </summary>
-	public int DPeriod
-	{
-		get => _dPeriod.Value;
-		set => _dPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type and timeframe used by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in absolute price units.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit in absolute price units.
-	/// </summary>
-	public decimal TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Price movement required to add to the position.
-	/// </summary>
-	public decimal PriceStep
-	{
-		get => _priceStep.Value;
-		set => _priceStep.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum number of entries in one direction.
-	/// </summary>
-	public int MaxPositions
-	{
-		get => _maxPositions.Value;
-		set => _maxPositions.Value = value;
-	}
-
-	/// <summary>
-	/// Enable opening long positions.
-	/// </summary>
-	public bool BuyEnabled
-	{
-		get => _buyEnabled.Value;
-		set => _buyEnabled.Value = value;
-	}
-
-	/// <summary>
-	/// Enable opening short positions.
-	/// </summary>
-	public bool SellEnabled
-	{
-		get => _sellEnabled.Value;
-		set => _sellEnabled.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public JBrainTrendReopenStrategy()
 	{
 		_stochPeriod = Param(nameof(StochPeriod), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Period", "Main period for Stochastic oscillator", "Indicators")
-			
-			.SetOptimize(5, 30, 1);
+			.SetDisplay("Stochastic Period", "Main period for Stochastic oscillator", "Indicators");
 
-		_kPeriod = Param(nameof(KPeriod), 3)
+		_kSmoothing = Param(nameof(KSmoothing), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("K Period", "Smoothing for %K line", "Indicators")
-			
-			.SetOptimize(1, 10, 1);
+			.SetDisplay("K Smoothing", "Smoothing for %K line", "Indicators");
 
 		_dPeriod = Param(nameof(DPeriod), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("D Period", "Smoothing for %D line", "Indicators")
-			
-			.SetOptimize(1, 10, 1);
+			.SetDisplay("D Period", "Smoothing for %D line", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Timeframe", "Timeframe for calculations", "General");
 
-		_stopLoss = Param(nameof(StopLoss), 100m)
+		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
-			
-			.SetOptimize(50m, 500m, 50m);
+			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
 
-		_takeProfit = Param(nameof(TakeProfit), 200m)
+		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit", "Take profit in price units", "Risk")
-			
-			.SetOptimize(100m, 1000m, 100m);
+			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
 
 		_priceStep = Param(nameof(PriceStep), 300m)
 			.SetGreaterThanZero()
-			.SetDisplay("Re-entry Step", "Price move to add position", "Risk")
-			
-			.SetOptimize(100m, 1000m, 100m);
+			.SetDisplay("Re-entry Step", "Price move to add position", "Risk");
 
 		_maxPositions = Param(nameof(MaxPositions), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Max Positions", "Maximum entries in one direction", "Risk")
-			
-			.SetOptimize(1, 20, 1);
+			.SetDisplay("Max Positions", "Maximum entries in one direction", "Risk");
 
 		_buyEnabled = Param(nameof(BuyEnabled), true)
 			.SetDisplay("Allow Long", "Enable long trades", "General");
@@ -184,15 +87,26 @@ public class JBrainTrendReopenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_lastEntryPrice = 0m;
+		_entriesCount = 0;
+		_isLong = false;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var stochastic = new StochasticOscillator
-		{ K = { Length = StochPeriod },
-			K = { Length = KPeriod },
-			D = { Length = DPeriod }
-		};
+		var stochastic = new StochasticOscillator();
+		stochastic.K.Length = StochPeriod;
+		stochastic.D.Length = DPeriod;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -200,8 +114,8 @@ public class JBrainTrendReopenStrategy : Strategy
 			.Start();
 
 		StartProtection(
-			stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
-			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute));
+			new Unit(TakeProfit, UnitTypes.Absolute),
+			new Unit(StopLoss, UnitTypes.Absolute));
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -217,59 +131,59 @@ public class JBrainTrendReopenStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var stoch = (StochasticOscillatorValue)stochValue;
 		var k = stoch.K;
 		var price = candle.ClosePrice;
 
 		if (Position == 0)
-		{
 			_entriesCount = 0;
-		}
 
+		// Buy signal: oversold
 		if (k < 20 && Position <= 0 && BuyEnabled)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			_isLong = true;
 			_lastEntryPrice = price;
 			_entriesCount = 1;
 			return;
 		}
 
+		// Sell signal: overbought
 		if (k > 80 && Position >= 0 && SellEnabled)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 			_isLong = false;
 			_lastEntryPrice = price;
 			_entriesCount = 1;
 			return;
 		}
 
+		// Exit long on overbought
 		if (Position > 0 && k > 80)
 		{
-			SellMarket(Position);
+			SellMarket();
 			return;
 		}
 
+		// Exit short on oversold
 		if (Position < 0 && k < 20)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			return;
 		}
 
+		// Re-entry logic
 		if (_entriesCount > 0 && _entriesCount < MaxPositions)
 		{
 			if (_isLong && Position > 0 && price - _lastEntryPrice >= PriceStep)
 			{
-				BuyMarket(Volume);
+				BuyMarket();
 				_lastEntryPrice = price;
 				_entriesCount++;
 			}
 			else if (!_isLong && Position < 0 && _lastEntryPrice - price >= PriceStep)
 			{
-				SellMarket(Volume);
+				SellMarket();
 				_lastEntryPrice = price;
 				_entriesCount++;
 			}

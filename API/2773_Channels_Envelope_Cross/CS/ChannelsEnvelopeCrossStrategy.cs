@@ -8,8 +8,6 @@ using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 
@@ -37,9 +35,9 @@ public class ChannelsEnvelopeCrossStrategy : Strategy
 	private readonly StrategyParam<int> _trailingStepPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA _emaFastClose;
-	private EMA _emaFastOpen;
-	private EMA _emaSlow;
+	private ExponentialMovingAverage _emaFastClose;
+	private ExponentialMovingAverage _emaFastOpen;
+	private ExponentialMovingAverage _emaSlow;
 
 	private bool _hasPreviousValues;
 	private decimal _prevFastClose;
@@ -242,7 +240,7 @@ public class ChannelsEnvelopeCrossStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Envelope 1.0%", "Width of the 1.0% envelope", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for calculations", "General");
 	}
 
@@ -282,16 +280,14 @@ public class ChannelsEnvelopeCrossStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_emaFastClose = new EMA { Length = 2 };
-		_emaFastOpen = new EMA { Length = 2 };
-		_emaSlow = new EMA { Length = 220 };
+		_emaFastClose = new ExponentialMovingAverage { Length = 2 };
+		_emaFastOpen = new ExponentialMovingAverage { Length = 2 };
+		_emaSlow = new ExponentialMovingAverage { Length = 220 };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 		.Bind(ProcessCandle)
 		.Start();
-
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -302,9 +298,9 @@ public class ChannelsEnvelopeCrossStrategy : Strategy
 	if (candle.State != CandleStates.Finished)
 	return;
 
-	var fastCloseValue = _emaFastClose.Process(new CandleIndicatorValue(candle, candle.ClosePrice));
-	var fastOpenValue = _emaFastOpen.Process(new CandleIndicatorValue(candle, candle.OpenPrice));
-	var slowValue = _emaSlow.Process(new CandleIndicatorValue(candle, candle.ClosePrice));
+	var fastCloseValue = _emaFastClose.Process(new DecimalIndicatorValue(_emaFastClose, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
+	var fastOpenValue = _emaFastOpen.Process(new DecimalIndicatorValue(_emaFastOpen, candle.OpenPrice, candle.OpenTime) { IsFinal = true });
+	var slowValue = _emaSlow.Process(new DecimalIndicatorValue(_emaSlow, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
 
 	var fastClose = fastCloseValue.GetValue<decimal>();
 	var fastOpen = fastOpenValue.GetValue<decimal>();

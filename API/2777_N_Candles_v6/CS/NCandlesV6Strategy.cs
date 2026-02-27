@@ -102,7 +102,7 @@ public class NCandlesV6Strategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Max Position Volume", "Maximum absolute net position", "Risk");
 
-		_useTradingHours = Param(nameof(UseTradingHours), true)
+		_useTradingHours = Param(nameof(UseTradingHours), false)
 		.SetDisplay("Use Trading Hours", "Enable trading window", "Timing");
 
 		_startHour = Param(nameof(StartHour), 11)
@@ -114,7 +114,7 @@ public class NCandlesV6Strategy : Strategy
 		_blackSheepMode = Param(nameof(ClosingMode), BlackSheepCloseModes.All)
 		.SetDisplay("Closing Mode", "Reaction to a black sheep candle", "Pattern");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe", "Pattern");
 	}
 
@@ -140,16 +140,11 @@ public class NCandlesV6Strategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
-
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
 		UpdateTrailingLevels(candle);

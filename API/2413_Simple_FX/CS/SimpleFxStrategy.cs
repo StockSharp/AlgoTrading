@@ -97,7 +97,7 @@ public class SimpleFxStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 50)
 			.SetDisplay("Take Profit", "Take profit in price steps", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 
@@ -120,8 +120,8 @@ public class SimpleFxStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var longMa = new EMA { Length = LongMaPeriod };
-		var shortMa = new EMA { Length = ShortMaPeriod };
+		var longMa = new ExponentialMovingAverage { Length = LongMaPeriod };
+		var shortMa = new ExponentialMovingAverage { Length = ShortMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(longMa, shortMa, ProcessCandle).Start();
@@ -142,10 +142,6 @@ public class SimpleFxStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Ensure indicators are formed and trading is allowed
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var trend = 0;
 		if (shortValue > longValue)
 			trend = 1;
@@ -160,13 +156,13 @@ public class SimpleFxStrategy : Strategy
 			if (trend == 1)
 			{
 				// Bullish trend - open long
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 				_entryPrice = candle.ClosePrice;
 			}
 			else
 			{
 				// Bearish trend - open short
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 				_entryPrice = candle.ClosePrice;
 			}
 
@@ -177,15 +173,16 @@ public class SimpleFxStrategy : Strategy
 		if (Position == 0 || _entryPrice == 0m)
 			return;
 
-		var stopDelta = StopLoss * Security.PriceStep;
-		var takeDelta = TakeProfit * Security.PriceStep;
+		var step = Security?.PriceStep ?? 1m;
+		var stopDelta = StopLoss * step;
+		var takeDelta = TakeProfit * step;
 
 		if (Position > 0)
 		{
 			// Manage long position
 			if (StopLoss > 0 && candle.ClosePrice <= _entryPrice - stopDelta)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_lastTrend = 0;
 				_entryPrice = 0m;
 				return;
@@ -193,7 +190,7 @@ public class SimpleFxStrategy : Strategy
 
 			if (TakeProfit > 0 && candle.ClosePrice >= _entryPrice + takeDelta)
 			{
-				SellMarket(Math.Abs(Position));
+				SellMarket();
 				_lastTrend = 0;
 				_entryPrice = 0m;
 			}
@@ -203,7 +200,7 @@ public class SimpleFxStrategy : Strategy
 			// Manage short position
 			if (StopLoss > 0 && candle.ClosePrice >= _entryPrice + stopDelta)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_lastTrend = 0;
 				_entryPrice = 0m;
 				return;
@@ -211,7 +208,7 @@ public class SimpleFxStrategy : Strategy
 
 			if (TakeProfit > 0 && candle.ClosePrice <= _entryPrice - takeDelta)
 			{
-				BuyMarket(Math.Abs(Position));
+				BuyMarket();
 				_lastTrend = 0;
 				_entryPrice = 0m;
 			}

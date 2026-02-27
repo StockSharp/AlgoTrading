@@ -23,7 +23,7 @@ public class MacdSimpleReshetovStrategy : Strategy
 	private readonly StrategyParam<int> _signalPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MACD _macd;
+	private MovingAverageConvergenceDivergenceSignal _macd;
 
 	public int Df { get => _df.Value; set => _df.Value = value; }
 	public int Ds { get => _ds.Value; set => _ds.Value = value; }
@@ -45,7 +45,7 @@ public class MacdSimpleReshetovStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Period", "Signal line period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -62,24 +62,31 @@ public class MacdSimpleReshetovStrategy : Strategy
 		var fastPeriod = SignalPeriod + Df;
 		var slowPeriod = SignalPeriod + Ds + Df;
 
-		_macd = new MACD
+		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortMa = { Length = fastPeriod },
-			LongMa = { Length = slowPeriod },
-			SignalPeriod = SignalPeriod
+			Macd = { ShortMa = { Length = fastPeriod }, LongMa = { Length = slowPeriod } },
+			SignalMa = { Length = SignalPeriod }
 		};
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_macd, ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdLine, decimal signalLine)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var result = _macd.Process(candle);
 		if (!_macd.IsFormed)
 			return;
+
+		var macdValue = result as MovingAverageConvergenceDivergenceSignalValue;
+		if (macdValue == null)
+			return;
+
+		var macdLine = macdValue.Macd ?? 0m;
+		var signalLine = macdValue.Signal ?? 0m;
 
 		// Manage existing positions before evaluating new signals.
 		if (Position > 0)
@@ -97,9 +104,6 @@ public class MacdSimpleReshetovStrategy : Strategy
 
 			return;
 		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		// Enter only when MACD and signal lines share the same sign.
 		if (macdLine * signalLine <= 0m)

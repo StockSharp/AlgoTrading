@@ -49,6 +49,7 @@ public class SerialMASwingStrategy : Strategy
 	private decimal? _previousMovingAverage;
 	private decimal? _previousClose;
 	private bool _previousValuesReady;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Defines how many concurrent swing trades are allowed.
@@ -182,7 +183,7 @@ public class SerialMASwingStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_serialMa, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -193,18 +194,15 @@ public class SerialMASwingStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indicatorValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var serialValue = (SerialMaValue)indicatorValue;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			UpdateState(serialValue, candle);
+		var result = _serialMa.Process(candle);
+		var serialValue = result as SerialMaValue;
+		if (serialValue == null)
 			return;
-		}
 
 		if (!_previousValuesReady)
 		{
@@ -279,9 +277,20 @@ public class SerialMASwingStrategy : Strategy
 		}
 	}
 
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade == null) return;
+		if (Position != 0m && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+		if (Position == 0m)
+			_entryPrice = 0m;
+	}
+
 	private void HandleProtectiveLevels(ICandleMessage candle)
 	{
-		var step = Security.PriceStep ?? 0m;
+		var step = Security?.PriceStep ?? 1m;
 		if (step <= 0m)
 			return;
 
@@ -289,7 +298,7 @@ public class SerialMASwingStrategy : Strategy
 		{
 			if (StopLossPoints > 0m)
 			{
-				var stopPrice = PositionPrice - StopLossPoints * step;
+				var stopPrice = _entryPrice - StopLossPoints * step;
 				// Exit on stop loss for a long position.
 				if (candle.LowPrice <= stopPrice)
 				{
@@ -300,7 +309,7 @@ public class SerialMASwingStrategy : Strategy
 
 			if (TakeProfitPoints > 0m)
 			{
-				var targetPrice = PositionPrice + TakeProfitPoints * step;
+				var targetPrice = _entryPrice + TakeProfitPoints * step;
 				// Lock in profit once the target is reached.
 				if (candle.HighPrice >= targetPrice)
 				{
@@ -314,7 +323,7 @@ public class SerialMASwingStrategy : Strategy
 
 			if (StopLossPoints > 0m)
 			{
-				var stopPrice = PositionPrice + StopLossPoints * step;
+				var stopPrice = _entryPrice + StopLossPoints * step;
 				// Exit on stop loss for a short position.
 				if (candle.HighPrice >= stopPrice)
 				{
@@ -325,7 +334,7 @@ public class SerialMASwingStrategy : Strategy
 
 			if (TakeProfitPoints > 0m)
 			{
-				var targetPrice = PositionPrice - TakeProfitPoints * step;
+				var targetPrice = _entryPrice - TakeProfitPoints * step;
 				// Capture profit when the downside target is achieved.
 				if (candle.LowPrice <= targetPrice)
 				{
@@ -371,7 +380,7 @@ public class SerialMovingAverageIndicator : BaseIndicator
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
 	{
 		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-			return new SerialMaValue(this, input, 0m, false);
+			return new SerialMaValue(this, input.Time, 0m, false);
 
 		var close = candle.ClosePrice;
 		_history++;
@@ -382,7 +391,7 @@ public class SerialMovingAverageIndicator : BaseIndicator
 			_count = 1;
 			_previousDiff = 0m;
 			IsFormed = _history > 1;
-			return new SerialMaValue(this, input, close, false);
+			return new SerialMaValue(this, input.Time, close, false);
 		}
 
 		_sum += close;
@@ -404,7 +413,7 @@ public class SerialMovingAverageIndicator : BaseIndicator
 		_previousDiff = diff;
 		IsFormed = _history > 1;
 
-		return new SerialMaValue(this, input, movingAverage, isCross);
+		return new SerialMaValue(this, input.Time, movingAverage, isCross);
 	}
 
 	/// <inheritdoc />
@@ -422,20 +431,23 @@ public class SerialMovingAverageIndicator : BaseIndicator
 /// <summary>
 /// Indicator value containing the moving average and cross flag.
 /// </summary>
-public class SerialMaValue : ComplexIndicatorValue
+public class SerialMaValue : DecimalIndicatorValue
 {
-	public SerialMaValue(IIndicator indicator, IIndicatorValue input, decimal movingAverage, bool isCross)
-		: base(indicator, input, (nameof(MovingAverage), movingAverage), (nameof(IsCross), isCross))
+	public SerialMaValue(IIndicator indicator, DateTime time, decimal movingAverage, bool isCross)
+		: base(indicator, movingAverage, time)
 	{
+		MovingAverage = movingAverage;
+		IsCross = isCross;
+		IsFinal = true;
 	}
 
 	/// <summary>
 	/// Latest serial moving average value.
 	/// </summary>
-	public decimal MovingAverage => (decimal)GetValue(nameof(MovingAverage));
+	public decimal MovingAverage { get; }
 
 	/// <summary>
 	/// Indicates that the price crossed the moving average on the previous bar.
 	/// </summary>
-	public bool IsCross => (bool)GetValue(nameof(IsCross));
+	public bool IsCross { get; }
 }

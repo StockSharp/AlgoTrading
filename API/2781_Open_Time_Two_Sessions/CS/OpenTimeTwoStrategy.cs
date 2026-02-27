@@ -305,15 +305,15 @@ public class OpenTimeTwoStrategy : Strategy
 			.SetRange(0m, 200m)
 			;
 
-		_tradeOnMonday = Param(nameof(TradeOnMonday), false)
+		_tradeOnMonday = Param(nameof(TradeOnMonday), true)
 			.SetDisplay("Trade Monday", "Allow trading on Monday", "Schedule")
 			;
 
-		_tradeOnTuesday = Param(nameof(TradeOnTuesday), false)
+		_tradeOnTuesday = Param(nameof(TradeOnTuesday), true)
 			.SetDisplay("Trade Tuesday", "Allow trading on Tuesday", "Schedule")
 			;
 
-		_tradeOnWednesday = Param(nameof(TradeOnWednesday), false)
+		_tradeOnWednesday = Param(nameof(TradeOnWednesday), true)
 			.SetDisplay("Trade Wednesday", "Allow trading on Wednesday", "Schedule")
 			;
 
@@ -321,7 +321,7 @@ public class OpenTimeTwoStrategy : Strategy
 			.SetDisplay("Trade Thursday", "Allow trading on Thursday", "Schedule")
 			;
 
-		_tradeOnFriday = Param(nameof(TradeOnFriday), false)
+		_tradeOnFriday = Param(nameof(TradeOnFriday), true)
 			.SetDisplay("Trade Friday", "Allow trading on Friday", "Schedule")
 			;
 
@@ -378,7 +378,7 @@ public class OpenTimeTwoStrategy : Strategy
 			.SetRange(0m, 2000m)
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Base candle type driving decisions", "General");
 	}
 
@@ -421,11 +421,6 @@ public class OpenTimeTwoStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		{
-			return;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 		{
 			return;
 		}
@@ -668,7 +663,7 @@ public class OpenTimeTwoStrategy : Strategy
 		}
 	}
 
-	private decimal GetTargetPosition()
+	private new decimal GetTargetPosition()
 	{
 		var target = 0m;
 
@@ -694,7 +689,7 @@ public class OpenTimeTwoStrategy : Strategy
 			DayOfWeek.Wednesday => TradeOnWednesday,
 			DayOfWeek.Thursday => TradeOnThursday,
 			DayOfWeek.Friday => TradeOnFriday,
-			_ => false,
+			_ => true,
 		};
 	}
 
@@ -735,7 +730,7 @@ public class OpenTimeTwoStrategy : Strategy
 		return currentSec >= startSec || currentSec < endSec;
 	}
 
-	private static int ToSeconds(TimeSpan time)
+	private int ToSeconds(TimeSpan time)
 	{
 		var value = time.TotalSeconds;
 

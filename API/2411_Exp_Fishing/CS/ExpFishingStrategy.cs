@@ -54,7 +54,7 @@ public class ExpFishingStrategy : Strategy
 			.SetDisplay("Take Profit", "Take profit distance in price units", "Parameters")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for analysis", "Parameters");
 	}
 
