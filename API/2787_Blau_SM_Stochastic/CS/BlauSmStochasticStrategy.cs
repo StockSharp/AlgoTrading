@@ -150,6 +150,8 @@ public class BlauSmStochasticStrategy : Strategy
 
 	private readonly List<decimal> _mainHistory = new();
 	private readonly List<decimal> _signalHistory = new();
+	private BlauSmStochasticIndicator _indicator;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="BlauSmStochasticStrategy"/> class.
@@ -226,7 +228,7 @@ public class BlauSmStochasticStrategy : Strategy
 			
 			.SetOptimize(0, 4000, 500);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for indicator calculations", "General");
 	}
 
@@ -394,9 +396,10 @@ public class BlauSmStochasticStrategy : Strategy
 	{
 		base.OnReseted();
 
-		// Clear stored indicator values.
 		_mainHistory.Clear();
 		_signalHistory.Clear();
+		_indicator = null;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -404,7 +407,7 @@ public class BlauSmStochasticStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var indicator = new BlauSmStochasticIndicator
+		_indicator = new BlauSmStochasticIndicator
 		{
 			LookbackLength = LookbackLength,
 			FirstSmoothingLength = FirstSmoothingLength,
@@ -418,44 +421,77 @@ public class BlauSmStochasticStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(indicator, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, indicator);
 			DrawOwnTrades(area);
 		}
-
-		var step = Security.PriceStep ?? 1m;
-		Unit takeProfit = null;
-		Unit stopLoss = null;
-
-		if (TakeProfitPoints > 0)
-			takeProfit = new Unit(TakeProfitPoints * step, UnitTypes.Point);
-
-		if (StopLossPoints > 0)
-			stopLoss = new Unit(StopLossPoints * step, UnitTypes.Point);
-
-		if (takeProfit != null || stopLoss != null)
-			StartProtection(takeProfit, stopLoss);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indicatorValue)
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade == null) return;
+		if (Position != 0m && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+		if (Position == 0m)
+			_entryPrice = 0m;
+	}
+
+	private void HandleProtectiveLevels(ICandleMessage candle)
+	{
+		var step = Security?.PriceStep ?? 1m;
+
+		if (Position > 0m)
+		{
+			if (StopLossPoints > 0 && candle.LowPrice <= _entryPrice - StopLossPoints * step)
+			{
+				SellMarket(Position);
+				return;
+			}
+			if (TakeProfitPoints > 0 && candle.HighPrice >= _entryPrice + TakeProfitPoints * step)
+			{
+				SellMarket(Position);
+				return;
+			}
+		}
+		else if (Position < 0m)
+		{
+			var abs = Math.Abs(Position);
+			if (StopLossPoints > 0 && candle.HighPrice >= _entryPrice + StopLossPoints * step)
+			{
+				BuyMarket(abs);
+				return;
+			}
+			if (TakeProfitPoints > 0 && candle.LowPrice <= _entryPrice - TakeProfitPoints * step)
+			{
+				BuyMarket(abs);
+				return;
+			}
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (indicatorValue is not BlauSmStochasticValue value)
+		HandleProtectiveLevels(candle);
+
+		var indicatorValue = _indicator.Process(candle);
+
+		if (!_indicator.IsFormed)
 			return;
 
-		// Store the latest indicator values for shifted access.
-		UpdateHistory(value.Main, value.Signal);
+		var main = indicatorValue.ToDecimal();
+		// Get signal from indicator's stored value
+		var signal = _indicator.LastSignal;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		UpdateHistory(main, signal);
 
 		var hasCurrent = TryGetMain(SignalBar, out var currentMain);
 		var hasPrevious = TryGetMain(SignalBar + 1, out var previousMain);
@@ -593,13 +629,12 @@ public class BlauSmStochasticStrategy : Strategy
 		value = _signalHistory[index];
 		return true;
 	}
-}
 
-/// <summary>
-/// Custom indicator implementing the Blau SM Stochastic oscillator.
-/// </summary>
-public class BlauSmStochasticIndicator : BaseIndicator
-{
+	/// <summary>
+	/// Custom indicator implementing the Blau SM Stochastic oscillator.
+	/// </summary>
+	public class BlauSmStochasticIndicator : BaseIndicator
+	{
 	private readonly List<decimal> _highs = new();
 	private readonly List<decimal> _lows = new();
 
@@ -651,12 +686,21 @@ public class BlauSmStochasticIndicator : BaseIndicator
 	/// </summary>
 	public BlauSmAppliedPrices PriceType { get; set; } = BlauSmAppliedPrices.Close;
 
+	/// <summary>
+	/// Last computed signal line value.
+	/// </summary>
+	public decimal LastSignal { get; private set; }
+
 	/// <inheritdoc />
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
 	{
 		IsFormed = false;
 
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
+		if (!input.IsFinal)
+			return new DecimalIndicatorValue(this, default, input.Time);
+
+		var candle = input.GetValue<ICandleMessage>();
+		if (candle == null)
 			return new DecimalIndicatorValue(this, default, input.Time);
 
 		_highs.Add(candle.HighPrice);
@@ -669,6 +713,7 @@ public class BlauSmStochasticIndicator : BaseIndicator
 			_lows.RemoveAt(0);
 
 		EnsureIndicators();
+		_lastInputTime = input.Time;
 
 		if (_highs.Count < LookbackLength || _lows.Count < LookbackLength)
 			return new DecimalIndicatorValue(this, default, input.Time);
@@ -680,40 +725,40 @@ public class BlauSmStochasticIndicator : BaseIndicator
 		var sm = price - 0.5m * (lowest + highest);
 		var half = 0.5m * (highest - lowest);
 
-		var sm1 = ProcessStage(_smooth1, sm, input.Time);
+		var sm1 = ProcessStage(_smooth1, sm);
 		if (sm1 is null)
 			return new DecimalIndicatorValue(this, default, input.Time);
 
-		var sm2 = ProcessStage(_smooth2, sm1.Value, input.Time);
+		var sm2 = ProcessStage(_smooth2, sm1.Value);
 		if (sm2 is null)
 			return new DecimalIndicatorValue(this, default, input.Time);
 
-		var sm3 = ProcessStage(_smooth3, sm2.Value, input.Time);
+		var sm3 = ProcessStage(_smooth3, sm2.Value);
 		if (sm3 is null)
 			return new DecimalIndicatorValue(this, default, input.Time);
 
-		var half1 = ProcessStage(_halfSmooth1, half, input.Time);
+		var half1 = ProcessStage(_halfSmooth1, half);
 		if (half1 is null)
 			return new DecimalIndicatorValue(this, default, input.Time);
 
-		var half2 = ProcessStage(_halfSmooth2, half1.Value, input.Time);
+		var half2 = ProcessStage(_halfSmooth2, half1.Value);
 		if (half2 is null)
 			return new DecimalIndicatorValue(this, default, input.Time);
 
-		var half3 = ProcessStage(_halfSmooth3, half2.Value, input.Time);
+		var half3 = ProcessStage(_halfSmooth3, half2.Value);
 		if (half3 is null || half3.Value == 0m)
 			return new DecimalIndicatorValue(this, default, input.Time);
 
 		var main = 100m * sm3.Value / half3.Value;
 
-		var signal = ProcessStage(_signalSmooth, main, input.Time);
+		var signal = ProcessStage(_signalSmooth, main);
 		if (signal is null)
 			return new DecimalIndicatorValue(this, default, input.Time);
 
 		IsFormed = true;
+		LastSignal = signal.Value;
 
-		var histogram = main - signal.Value;
-		return new BlauSmStochasticValue(this, input, main, signal.Value, histogram);
+		return new DecimalIndicatorValue(this, main, input.Time) { IsFinal = input.IsFinal };
 	}
 
 	private void EnsureIndicators()
@@ -790,17 +835,19 @@ public class BlauSmStochasticIndicator : BaseIndicator
 	{
 		return SmoothMethod switch
 		{
-			BlauSmSmoothMethods.Sma => new SMA { Length = length },
-			BlauSmSmoothMethods.Ema => new EMA { Length = length },
+			BlauSmSmoothMethods.Sma => new SimpleMovingAverage { Length = length },
+			BlauSmSmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
 			BlauSmSmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
 			BlauSmSmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
-			_ => new EMA { Length = length },
+			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
 
-	private static decimal? ProcessStage(IIndicator indicator, decimal value, DateTimeOffset time)
+	private DateTime _lastInputTime;
+
+	private decimal? ProcessStage(IIndicator indicator, decimal value)
 	{
-		var result = indicator.Process(new DecimalIndicatorValue(indicator, value, time.UtcDateTime));
+		var result = indicator.Process(new DecimalIndicatorValue(indicator, value, _lastInputTime) { IsFinal = true });
 		return indicator.IsFormed ? result.ToDecimal() : null;
 	}
 
@@ -818,30 +865,8 @@ public class BlauSmStochasticIndicator : BaseIndicator
 		_halfSmooth2 = null;
 		_halfSmooth3 = null;
 		_signalSmooth = null;
+		LastSignal = 0m;
 		IsFormed = false;
 	}
-}
-
-
-public class BlauSmStochasticValue : ComplexIndicatorValue
-{
-	public BlauSmStochasticValue(IIndicator indicator, IIndicatorValue input, decimal main, decimal signal, decimal histogram)
-		: base(indicator, input, (nameof(Main), main), (nameof(Signal), signal), (nameof(Histogram), histogram))
-	{
 	}
-
-	/// <summary>
-	/// Main oscillator value.
-	/// </summary>
-	public decimal Main => (decimal)GetValue(nameof(Main));
-
-	/// <summary>
-	/// Smoothed signal line.
-	/// </summary>
-	public decimal Signal => (decimal)GetValue(nameof(Signal));
-
-	/// <summary>
-	/// Histogram value (main minus signal).
-	/// </summary>
-	public decimal Histogram => (decimal)GetValue(nameof(Histogram));
 }

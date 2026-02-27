@@ -61,10 +61,10 @@ public class TwoMaRsiStrategy : Strategy
 			
 			.SetOptimize(5, 30, 1);
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
+		_rsiOverbought = Param(nameof(RsiOverbought), 55m)
 			.SetDisplay("RSI Overbought", "Upper RSI threshold for short entries", "Signals");
 
-		_rsiOversold = Param(nameof(RsiOversold), 30m)
+		_rsiOversold = Param(nameof(RsiOversold), 45m)
 			.SetDisplay("RSI Oversold", "Lower RSI threshold for long entries", "Signals");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
@@ -195,12 +195,12 @@ public class TwoMaRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastEma = new EMA
+		_fastEma = new ExponentialMovingAverage
 		{
 			Length = FastLength
 		};
 
-		_slowEma = new EMA
+		_slowEma = new ExponentialMovingAverage
 		{
 			Length = SlowLength
 		};
@@ -212,7 +212,7 @@ public class TwoMaRsiStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastEma, _slowEma, _rsi, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -220,13 +220,10 @@ public class TwoMaRsiStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
-			DrawIndicator(area, _fastEma);
-			DrawIndicator(area, _slowEma);
-			DrawIndicator(area, _rsi);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -239,23 +236,25 @@ public class TwoMaRsiStrategy : Strategy
 			_takeProfitPrice = default;
 		}
 
-		if (_fastEma == null || _slowEma == null || _rsi == null)
+		var fastResult = _fastEma.Process(candle);
+		var slowResult = _slowEma.Process(candle);
+		var rsiResult = _rsi.Process(candle);
+
+		if (fastResult.IsEmpty || slowResult.IsEmpty || rsiResult.IsEmpty)
+		{
 			return;
+		}
 
 		if (!_fastEma.IsFormed || !_slowEma.IsFormed || !_rsi.IsFormed)
 		{
-			_previousFast = fast;
-			_previousSlow = slow;
+			_previousFast = fastResult.GetValue<decimal>();
+			_previousSlow = slowResult.GetValue<decimal>();
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousFast = fast;
-			_previousSlow = slow;
-			return;
-		}
-
+		var fast = fastResult.GetValue<decimal>();
+		var slow = slowResult.GetValue<decimal>();
+		var rsi = rsiResult.GetValue<decimal>();
 		var point = GetPoint();
 
 		if (Position > 0)
@@ -384,6 +383,14 @@ public class TwoMaRsiStrategy : Strategy
 	private void RegisterWin()
 	{
 		_martingaleStage = 0;
+	}
+
+	private void ClosePosition()
+	{
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(-Position);
 	}
 
 	private void RegisterLoss()

@@ -195,7 +195,7 @@ public class IchimokuBarabashkakvnStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Senkou Span B Period", "Senkou Span B periods", "Ichimoku");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles for processing", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
@@ -275,22 +275,23 @@ public class IchimokuBarabashkakvnStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_ichimoku, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ichimoku);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var ichimokuValue = _ichimoku.Process(candle);
 
 		if (!ichimokuValue.IsFinal)
 			return;
@@ -330,18 +331,13 @@ public class IchimokuBarabashkakvnStrategy : Strategy
 		if (UseTradeHours)
 		{
 			var hour = candle.OpenTime.Hour;
-			if (!(StartHour >= hour && hour <= EndHour))
+			if (!(hour >= StartHour && hour <= EndHour))
 			{
 				_prevTenkan = tenkan;
 				return;
 			}
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevTenkan = tenkan;
-			return;
-		}
 
 		var buySignal = _prevTenkan < kijun && tenkan >= kijun && candle.ClosePrice > senkouB;
 		var sellSignal = _prevTenkan > kijun && tenkan <= kijun && candle.ClosePrice < senkouA;

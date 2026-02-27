@@ -136,7 +136,7 @@ public class BssTripleEmaSeparationStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum simultaneous entries per direction", "Risk");
 
-		_minimumDistance = Param(nameof(MinimumDistance), 0.0005m)
+		_minimumDistance = Param(nameof(MinimumDistance), 50m)
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Distance", "Minimum price gap between moving averages", "Signals");
 
@@ -165,7 +165,7 @@ public class BssTripleEmaSeparationStrategy : Strategy
 		_thirdMaMethod = Param(nameof(ThirdMaMethod), MaMethods.Exponential)
 			.SetDisplay("Third MA Method", "Smoothing method for the slowest moving average", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
 	}
 
@@ -200,17 +200,16 @@ public class BssTripleEmaSeparationStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_firstMa, _secondMa, _thirdMa, ProcessCandle).Start();
 
-		StartProtection(null, null);
 	}
 
 	private static IIndicator CreateMovingAverage(MaMethods method, int period)
 	{
 		return method switch
 		{
-			MaMethods.Simple => new SMA { Length = period },
+			MaMethods.Simple => new SimpleMovingAverage { Length = period },
 			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
-			_ => new EMA { Length = period },
+			_ => new ExponentialMovingAverage { Length = period },
 		};
 	}
 
@@ -256,8 +255,6 @@ public class BssTripleEmaSeparationStrategy : Strategy
 	private bool CanEnterPosition(DateTimeOffset time, bool isLong)
 	{
 		// Trading is allowed only when the strategy is ready, the pause elapsed, and exposure stays within bounds.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return false;
 
 		if (!IsPauseElapsed(time))
 			return false;
@@ -304,14 +301,4 @@ public class BssTripleEmaSeparationStrategy : Strategy
 		return false;
 	}
 
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		var previousPosition = Position - delta;
-
-		// Record the fill time whenever the absolute exposure increases (new entry or scale in).
-		if (Math.Abs(Position) > Math.Abs(previousPosition) + VolumeTolerance)
-			_lastEntryTime = CurrentTime;
-	}
 }

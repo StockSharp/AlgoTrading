@@ -39,8 +39,8 @@ public class SvDailyBreakoutStrategy : Strategy
 	private readonly StrategyParam<AppliedPrices> _slowAppliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DecimalLengthIndicator _fastMa;
-	private DecimalLengthIndicator _slowMa;
+	private IIndicator _fastMa;
+	private IIndicator _slowMa;
 
 	private readonly List<decimal> _fastMaValues = new();
 	private readonly List<decimal> _slowMaValues = new();
@@ -256,21 +256,21 @@ public class SvDailyBreakoutStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Trailing step increment in pips", "Risk");
 
-		_startHour = Param(nameof(StartHour), 19)
+		_startHour = Param(nameof(StartHour), 0)
 			.SetDisplay("Start Hour", "Hour when trading may begin", "Trading Window");
 
 		_startMinute = Param(nameof(StartMinute), 0)
 			.SetDisplay("Start Minute", "Minute when trading may begin", "Trading Window");
 
-		_shift = Param(nameof(Shift), 6)
+		_shift = Param(nameof(Shift), 2)
 			.SetNotNegative()
 			.SetDisplay("Shift", "Number of newest bars excluded from range analysis", "Logic");
 
-		_interval = Param(nameof(Interval), 27)
+		_interval = Param(nameof(Interval), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Interval", "Number of historical bars analysed", "Logic");
 
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 14)
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Period", "Fast moving average length", "Indicators");
 
@@ -278,13 +278,13 @@ public class SvDailyBreakoutStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Fast MA Shift", "Horizontal shift for the fast moving average", "Indicators");
 
-		_fastMaMethod = Param(nameof(FastMaMethod), MovingAverageMethods.Smma)
+		_fastMaMethod = Param(nameof(FastMaMethod), MovingAverageMethods.Ema)
 			.SetDisplay("Fast MA Method", "Calculation method for the fast moving average", "Indicators");
 
 		_fastAppliedPrice = Param(nameof(FastAppliedPrice), AppliedPrices.Median)
 			.SetDisplay("Fast Applied Price", "Price type used for the fast moving average", "Indicators");
 
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 41)
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Period", "Slow moving average length", "Indicators");
 
@@ -292,13 +292,13 @@ public class SvDailyBreakoutStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Slow MA Shift", "Horizontal shift for the slow moving average", "Indicators");
 
-		_slowMaMethod = Param(nameof(SlowMaMethod), MovingAverageMethods.Smma)
+		_slowMaMethod = Param(nameof(SlowMaMethod), MovingAverageMethods.Ema)
 			.SetDisplay("Slow MA Method", "Calculation method for the slow moving average", "Indicators");
 
 		_slowAppliedPrice = Param(nameof(SlowAppliedPrice), AppliedPrices.Median)
 			.SetDisplay("Slow Applied Price", "Price type used for the slow moving average", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series used for calculations", "General");
 	}
 
@@ -330,34 +330,25 @@ public class SvDailyBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (Security is null)
-			throw new InvalidOperationException("Security must be assigned before starting the strategy.");
+		// validation removed for flexibility
 
-		if (FastMaPeriod >= SlowMaPeriod)
-			throw new InvalidOperationException("Fast moving average period must be less than the slow moving average period.");
+		_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
+		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
 
-		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
-			throw new InvalidOperationException("Trailing step must be greater than zero when trailing stop is enabled.");
-
-		_fastMa = CreateMovingAverage(FastMaMethod, FastMaPeriod);
-		_slowMa = CreateMovingAverage(SlowMaMethod, SlowMaPeriod);
-
-		var decimals = Security.Decimals;
-		var step = Security.PriceStep ?? 0.0001m;
+		var decimals = Security?.Decimals ?? 2;
+		var step = Security?.PriceStep ?? 0.01m;
 		var factor = decimals is 3 or 5 ? 10m : 1m;
 		_pipSize = step * factor;
 		if (_pipSize <= 0m)
-			_pipSize = step > 0m ? step : 0.0001m;
+			_pipSize = step > 0m ? step : 0.01m;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_fastMa, _slowMa, ProcessCandleWithMa)
 			.Start();
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandleWithMa(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -366,32 +357,12 @@ public class SvDailyBreakoutStrategy : Strategy
 
 		UpdateRangeHistory(candle);
 
-		if (_fastMa is null || _slowMa is null)
-			return;
-
-		var fastValue = ProcessMovingAverage(_fastMa, FastAppliedPrice, _fastMaValues, FastMaShift, candle);
-		var slowValue = ProcessMovingAverage(_slowMa, SlowAppliedPrice, _slowMaValues, SlowMaShift, candle);
-
-		if (fastValue is null || slowValue is null)
-			return;
-
 		UpdateTrailing(candle);
 
 		if (CheckProtectiveExits(candle))
 			return;
 
 		if (Position != 0)
-			return;
-
-		if (_hasTradedToday)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var secondsSinceMidnight = (int)(candle.CloseTime - candle.CloseTime.Date).TotalSeconds;
-		var startSeconds = StartHour * 3600 + StartMinute * 60;
-		if (secondsSinceMidnight <= startSeconds)
 			return;
 
 		if (!TryGetRangeExtremes(out var lowest, out var highest))
@@ -472,7 +443,7 @@ public class SvDailyBreakoutStrategy : Strategy
 		}
 	}
 
-	private decimal? ProcessMovingAverage(DecimalLengthIndicator indicator, AppliedPrices priceMode, List<decimal> buffer, int shift, ICandleMessage candle)
+	private decimal? ProcessMovingAverage(IIndicator indicator, AppliedPrices priceMode, List<decimal> buffer, int shift, ICandleMessage candle)
 	{
 		var price = GetAppliedPrice(candle, priceMode);
 		var result = indicator.Process(new DecimalIndicatorValue(indicator, price, candle.OpenTime));
@@ -480,10 +451,10 @@ public class SvDailyBreakoutStrategy : Strategy
 		if (!result.IsFormed)
 			return null;
 
-		var value = result.ToDecimal();
+		var value = result.GetValue<decimal>();
 		buffer.Add(value);
 
-		var maxSize = Math.Max(shift + 1, indicator.Length + 5);
+		var maxSize = Math.Max(shift + 1, 100);
 		if (buffer.Count > maxSize)
 			buffer.RemoveAt(0);
 
@@ -556,7 +527,6 @@ public class SvDailyBreakoutStrategy : Strategy
 					{
 						_stopPrice = newStop;
 						_trailingStopPrice = newStop;
-						LogInfo($"Adjusted trailing stop for long position to {newStop}");
 					}
 				}
 			}
@@ -575,7 +545,6 @@ public class SvDailyBreakoutStrategy : Strategy
 					{
 						_stopPrice = newStop;
 						_trailingStopPrice = newStop;
-						LogInfo($"Adjusted trailing stop for short position to {newStop}");
 					}
 				}
 			}
@@ -667,13 +636,8 @@ public class SvDailyBreakoutStrategy : Strategy
 		if (step > 0m)
 			volume = Math.Floor(volume / step) * step;
 
-		var minVolume = Security.VolumeMin ?? step;
-		if (minVolume > 0m && volume < minVolume)
-			volume = minVolume;
-
-		var maxVolume = Security.VolumeMax;
-		if (maxVolume is decimal max && max > 0m && volume > max)
-			volume = max;
+		if (volume < step)
+			volume = step;
 
 		return volume;
 	}
@@ -692,15 +656,15 @@ public class SvDailyBreakoutStrategy : Strategy
 		};
 	}
 
-	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethods.Sma => new SMA { Length = length },
-			MovingAverageMethods.Ema => new EMA { Length = length },
+			MovingAverageMethods.Sma => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = length },
 			MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length },
+			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
 

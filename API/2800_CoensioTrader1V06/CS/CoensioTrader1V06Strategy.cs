@@ -51,17 +51,17 @@ public class CoensioTrader1V06Strategy : Strategy
 	/// </summary>
 	public CoensioTrader1V06Strategy()
 	{
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 30)
+		_bollingerPeriod = Param(nameof(BollingerPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Length of Bollinger Bands", "Indicators")
 			;
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 1.5m)
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 1.0m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier", "Indicators")
 			;
 
-		_demaPeriod = Param(nameof(DemaPeriod), 20)
+		_demaPeriod = Param(nameof(DemaPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("DEMA Period", "Length of double exponential moving average", "Indicators")
 			;
@@ -75,8 +75,10 @@ public class CoensioTrader1V06Strategy : Strategy
 		_closeOnSignal = Param(nameof(CloseOnSignal), false)
 			.SetDisplay("Close On Opposite Signal", "Close current trades when opposite setup appears", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for signal calculations", "General");
+
+		Volume = 0.01m;
 	}
 
 	/// <summary>
@@ -171,77 +173,90 @@ public class CoensioTrader1V06Strategy : Strategy
 	}
 
 	/// <inheritdoc />
+	private BollingerBands _bollinger;
+	private DoubleExponentialMovingAverage _dema;
+	private decimal _entryPrice;
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(
-			stopLoss: StopLossDistance,
-			takeProfit: TakeProfitDistance,
-			isStopTrailing: false,
-			useMarketOrders: true);
-
-		var bollinger = new BollingerBands
+		_bollinger = new BollingerBands
 		{
 			Length = BollingerPeriod,
 			Width = BollingerDeviation
 		};
 
-		var dema = new DoubleExponentialMovingAverage
+		_dema = new DoubleExponentialMovingAverage
 		{
 			Length = DemaPeriod
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bollinger, dema, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bollinger);
-			DrawIndicator(area, dema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower, decimal demaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var bollingerResult = _bollinger.Process(candle);
+		var demaResult = _dema.Process(candle);
+
+		if (bollingerResult.IsEmpty || demaResult.IsEmpty || !_bollinger.IsFormed || !_dema.IsFormed)
+		{
+			_prevOpen = candle.OpenPrice;
+			_prevClose = candle.ClosePrice;
+			_prevLow = candle.LowPrice;
+			_prevHigh = candle.HighPrice;
 			return;
+		}
+
+		var bollingerValue = (BollingerBandsValue)bollingerResult;
+		var upper = bollingerValue.UpBand ?? 0m;
+		var lower = bollingerValue.LowBand ?? 0m;
+		var demaValue = demaResult.GetValue<decimal>();
 
 		if (_prevOpen.HasValue && _prevClose.HasValue && _prevLow.HasValue && _prevHigh.HasValue &&
-			_prev2Low.HasValue && _prev3Low.HasValue && _prev2High.HasValue && _prev3High.HasValue &&
-			_prevLowerBand.HasValue && _prevUpperBand.HasValue && _prevDema.HasValue && _prev2Dema.HasValue)
+			_prevLowerBand.HasValue && _prevUpperBand.HasValue && _prevDema.HasValue)
 		{
-			// Long setup: lower band rejection with higher low sequence and rising DEMA.
-			var crossedLowerBand = _prevOpen.Value < _prevLowerBand.Value && _prevClose.Value > _prevLowerBand.Value;
-			var higherLowPattern = _prevLow.Value > _prev2Low.Value && _prev2Low.Value < _prev3Low.Value;
-			var bullishTrend = demaValue > _prevDema.Value && _prevDema.Value > _prev2Dema.Value;
+			// Long setup: lower band rejection with rising DEMA.
+			var crossedLowerBand = _prevLow.Value <= _prevLowerBand.Value && _prevClose.Value > _prevLowerBand.Value;
+			var bullishTrend = demaValue > _prevDema.Value;
 
-			if (crossedLowerBand && higherLowPattern && bullishTrend)
+			if (crossedLowerBand && bullishTrend)
 			{
 				if (CloseOnSignal && Position < 0)
-					ClosePosition();
+					{
+					if (Position > 0) SellMarket(Position);
+					else if (Position < 0) BuyMarket(-Position);
+				}
 
 				if (Position <= 0)
 					BuyMarket();
 			}
 
-			// Short setup: upper band rejection with lower high sequence and falling DEMA.
-			var crossedUpperBand = _prevOpen.Value > _prevUpperBand.Value && _prevClose.Value < _prevUpperBand.Value;
-			var lowerHighPattern = _prevHigh.Value < _prev2High.Value && _prev2High.Value > _prev3High.Value;
-			var bearishTrend = demaValue < _prevDema.Value && _prevDema.Value < _prev2Dema.Value;
+			// Short setup: upper band rejection with falling DEMA.
+			var crossedUpperBand = _prevHigh.Value >= _prevUpperBand.Value && _prevClose.Value < _prevUpperBand.Value;
+			var bearishTrend = demaValue < _prevDema.Value;
 
-			if (crossedUpperBand && lowerHighPattern && bearishTrend)
+			if (crossedUpperBand && bearishTrend)
 			{
 				if (CloseOnSignal && Position > 0)
-					ClosePosition();
+					{
+					if (Position > 0) SellMarket(Position);
+					else if (Position < 0) BuyMarket(-Position);
+				}
 
 				if (Position >= 0)
 					SellMarket();

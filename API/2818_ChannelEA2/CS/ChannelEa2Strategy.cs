@@ -24,19 +24,11 @@ public class ChannelEa2Strategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopBufferMultiplier;
 
-	private DateTimeOffset? _sessionStart;
 	private decimal? _sessionHigh;
 	private decimal? _sessionLow;
-	private decimal? _entryHigh;
-	private decimal? _entryLow;
-	private bool _ordersPlaced;
-	private DateTimeOffset? _prevCandleTime;
-	private DateTimeOffset? _prevPrevCandleTime;
-	private Order _longEntryOrder;
-	private Order _shortEntryOrder;
-	private Order _protectiveOrder;
-	private decimal? _longStopLevel;
-	private decimal? _shortStopLevel;
+	private bool _channelReady;
+	private decimal? _entryPrice;
+	private decimal? _stopLossPrice;
 
 	/// <summary>
 	/// Trading session start hour.
@@ -102,7 +94,7 @@ public class ChannelEa2Strategy : Strategy
 			.SetDisplay("Volume", "Order volume", "Trading")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for the channel", "General");
 
 		_stopBufferMultiplier = Param(nameof(StopBufferMultiplier), 2m)
@@ -121,27 +113,17 @@ public class ChannelEa2Strategy : Strategy
 	{
 		base.OnReseted();
 
-		_sessionStart = null;
 		_sessionHigh = null;
 		_sessionLow = null;
-		_entryHigh = null;
-		_entryLow = null;
-		_ordersPlaced = false;
-		_prevCandleTime = null;
-		_prevPrevCandleTime = null;
-		_longEntryOrder = null;
-		_shortEntryOrder = null;
-		_protectiveOrder = null;
-		_longStopLevel = null;
-		_shortStopLevel = null;
+		_channelReady = false;
+		_entryPrice = null;
+		_stopLossPrice = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -161,188 +143,70 @@ public class ChannelEa2Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var openTime = candle.OpenTime;
-		var sessionCandidate = GetPotentialSessionStart(openTime);
+		var hour = candle.OpenTime.Hour;
 
-		if ((_sessionStart is null || sessionCandidate > _sessionStart) &&
-			(_prevCandleTime is null || _prevCandleTime < sessionCandidate) &&
-			openTime >= sessionCandidate)
+		// During channel-building hours, accumulate the range.
+		if (hour >= BeginHour && hour < EndHour)
 		{
-			StartNewSession(sessionCandidate, candle);
+			if (_sessionHigh is null || candle.HighPrice > _sessionHigh)
+				_sessionHigh = candle.HighPrice;
+			if (_sessionLow is null || candle.LowPrice < _sessionLow)
+				_sessionLow = candle.LowPrice;
+			_channelReady = true;
+			return;
 		}
 
-		if (_sessionStart.HasValue)
-		{
-			var sessionEnd = GetSessionEnd(_sessionStart.Value);
+		// Outside the channel window, attempt breakout entries.
+		if (!_channelReady || _sessionHigh is not decimal high || _sessionLow is not decimal low || high <= low)
+			return;
 
-			var shouldPlaceOrders = !_ordersPlaced &&
-				_prevCandleTime.HasValue &&
-				_prevPrevCandleTime.HasValue &&
-				_prevCandleTime.Value >= sessionEnd &&
-				_prevPrevCandleTime.Value < sessionEnd;
+		var buffer = GetPriceBuffer();
 
-			if (shouldPlaceOrders && IsFormedAndOnlineAndAllowTrading())
-				PlaceBreakoutOrders();
-
-			if (!_ordersPlaced && openTime >= _sessionStart.Value)
-				UpdateSessionRange(candle);
-		}
-
-		_prevPrevCandleTime = _prevCandleTime;
-		_prevCandleTime = openTime;
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
+		// Manage existing positions.
 		if (Position > 0)
 		{
-			if (_shortEntryOrder?.State == OrderStates.Active)
-				CancelOrder(_shortEntryOrder);
-
-			RegisterProtectiveOrder(true);
+			if (_stopLossPrice.HasValue && candle.LowPrice <= _stopLossPrice.Value)
+			{
+				SellMarket(Position);
+				_entryPrice = null;
+				_stopLossPrice = null;
+			}
+			return;
 		}
 		else if (Position < 0)
 		{
-			if (_longEntryOrder?.State == OrderStates.Active)
-				CancelOrder(_longEntryOrder);
-
-			RegisterProtectiveOrder(false);
-		}
-		else
-		{
-			CancelOrderIfActive(ref _protectiveOrder);
-			_longEntryOrder = null;
-			_shortEntryOrder = null;
-		}
-	}
-
-	private void StartNewSession(DateTimeOffset sessionStart, ICandleMessage candle)
-	{
-		CancelActiveOrders();
-
-		if (Position != 0)
-			ClosePosition();
-
-		CancelOrderIfActive(ref _protectiveOrder);
-
-		_sessionStart = sessionStart;
-		_sessionHigh = candle.HighPrice;
-		_sessionLow = candle.LowPrice;
-		_entryHigh = null;
-		_entryLow = null;
-		_ordersPlaced = false;
-		_longEntryOrder = null;
-		_shortEntryOrder = null;
-		_longStopLevel = null;
-		_shortStopLevel = null;
-	}
-
-	private void UpdateSessionRange(ICandleMessage candle)
-	{
-		if (_sessionHigh is null || candle.HighPrice > _sessionHigh)
-			_sessionHigh = candle.HighPrice;
-
-		if (_sessionLow is null || candle.LowPrice < _sessionLow)
-			_sessionLow = candle.LowPrice;
-	}
-
-	private void PlaceBreakoutOrders()
-	{
-		if (_sessionHigh is not decimal high ||
-			_sessionLow is not decimal low ||
-			high <= low ||
-			TradeVolume <= 0m)
-		{
-			_ordersPlaced = true;
+			if (_stopLossPrice.HasValue && candle.HighPrice >= _stopLossPrice.Value)
+			{
+				BuyMarket(Math.Abs(Position));
+				_entryPrice = null;
+				_stopLossPrice = null;
+			}
 			return;
 		}
 
-		CancelActiveOrders();
-
-		_entryHigh = high;
-		_entryLow = low;
-		_longStopLevel = low;
-		_shortStopLevel = high;
-
-		var buyPrice = AdjustActivationPrice(high, true);
-		var sellPrice = AdjustActivationPrice(low, false);
-
-		_longEntryOrder = BuyStop(TradeVolume, buyPrice);
-		_shortEntryOrder = SellStop(TradeVolume, sellPrice);
-
-		_ordersPlaced = true;
-	}
-
-	private void RegisterProtectiveOrder(bool isLong)
-	{
-		var stopLevel = isLong ? _longStopLevel : _shortStopLevel;
-		if (stopLevel is not decimal baseStop)
-			return;
-
-		var volume = Math.Abs(Position);
-		if (volume <= 0m)
-			return;
-
-		var stopPrice = AdjustStopPrice(baseStop, isLong);
-		if (stopPrice <= 0m)
-			return;
-
-		CancelOrderIfActive(ref _protectiveOrder);
-
-		_protectiveOrder = isLong
-			? SellStop(volume, stopPrice)
-			: BuyStop(volume, stopPrice);
-	}
-
-	private void CancelOrderIfActive(ref Order order)
-	{
-		if (order?.State == OrderStates.Active)
-			CancelOrder(order);
-
-		order = null;
-	}
-
-	private DateTimeOffset GetPotentialSessionStart(DateTimeOffset time)
-	{
-		var candidate = new DateTimeOffset(time.Year, time.Month, time.Day, BeginHour, 0, 0, time.Offset);
-
-		if (BeginHour <= EndHour)
+		// Long breakout: price exceeds channel high.
+		if (candle.HighPrice > high + buffer)
 		{
-			if (time < candidate)
-				candidate = candidate.AddDays(-1);
-		}
-		else
-		{
-			if (time.Hour < BeginHour)
-				candidate = candidate.AddDays(-1);
+			BuyMarket(TradeVolume > 0 ? TradeVolume : Volume);
+			_entryPrice = candle.ClosePrice;
+			_stopLossPrice = low - buffer;
+			// Reset channel for next session.
+			_sessionHigh = null;
+			_sessionLow = null;
+			_channelReady = false;
+			return;
 		}
 
-		return candidate;
-	}
-
-	private DateTimeOffset GetSessionEnd(DateTimeOffset sessionStart)
-	{
-		var endDate = sessionStart.Date;
-		if (BeginHour > EndHour)
-			endDate = endDate.AddDays(1);
-
-		return new DateTimeOffset(endDate.Year, endDate.Month, endDate.Day, EndHour, 0, 0, sessionStart.Offset);
-	}
-
-	private decimal AdjustActivationPrice(decimal price, bool isBuy)
-	{
-		var buffer = GetPriceBuffer();
-		return isBuy ? price + buffer : Math.Max(price - buffer, 0m);
-	}
-
-	private decimal AdjustStopPrice(decimal price, bool isLong)
-	{
-		var buffer = GetPriceBuffer();
-		var adjusted = isLong ? price - buffer : price + buffer;
-		return adjusted > 0m ? adjusted : 0m;
+		// Short breakout: price drops below channel low.
+		if (candle.LowPrice < low - buffer)
+		{
+			SellMarket(TradeVolume > 0 ? TradeVolume : Volume);
+			_entryPrice = candle.ClosePrice;
+			_stopLossPrice = high + buffer;
+			_sessionHigh = null;
+			_sessionLow = null;
+			_channelReady = false;
+		}
 	}
 
 	private decimal GetPriceBuffer()

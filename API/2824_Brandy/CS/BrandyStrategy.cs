@@ -322,7 +322,7 @@ public class BrandyStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("MA Open Signal Bar", "Reference bar index for open MA", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame of input candles", "General");
 
 		Volume = _tradeVolume.Value;
@@ -373,10 +373,6 @@ public class BrandyStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			if (_maOpenIndicator != null)
-			DrawIndicator(area, _maOpenIndicator);
-			if (_maCloseIndicator != null)
-			DrawIndicator(area, _maCloseIndicator);
 			DrawOwnTrades(area);
 		}
 	}
@@ -386,14 +382,20 @@ public class BrandyStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_maOpenIndicator == null || _maCloseIndicator == null)
 		return;
 
 		var openSource = GetAppliedPrice(candle, MaOpenAppliedPrice);
 		var closeSource = GetAppliedPrice(candle, MaCloseAppliedPrice);
 
-		var maOpen = _maOpenIndicator!.Process(new DecimalIndicatorValue(_maOpenIndicator, openSource, candle.OpenTime)).ToDecimal();
-		var maClose = _maCloseIndicator!.Process(new DecimalIndicatorValue(_maCloseIndicator, closeSource, candle.OpenTime)).ToDecimal();
+		var maOpenResult = _maOpenIndicator!.Process(new DecimalIndicatorValue(_maOpenIndicator, openSource, candle.OpenTime) { IsFinal = true });
+		var maCloseResult = _maCloseIndicator!.Process(new DecimalIndicatorValue(_maCloseIndicator, closeSource, candle.OpenTime) { IsFinal = true });
+
+		if (maOpenResult.IsEmpty || maCloseResult.IsEmpty || !_maOpenIndicator.IsFormed || !_maCloseIndicator.IsFormed)
+			return;
+
+		var maOpen = maOpenResult.ToDecimal();
+		var maClose = maCloseResult.ToDecimal();
 
 		EnqueueValue(_maOpenValues, maOpen, _maxOpenQueueSize);
 		EnqueueValue(_maCloseValues, maClose, _maxCloseQueueSize);
@@ -574,11 +576,6 @@ public class BrandyStrategy : Strategy
 	private void UpdatePipSize()
 	{
 		var step = Security?.PriceStep ?? 1m;
-		var decimals = Security?.Decimals;
-
-		if (decimals == 3 || decimals == 5)
-		_pipSize = step * 10m;
-		else
 		_pipSize = step;
 	}
 
@@ -628,11 +625,11 @@ public class BrandyStrategy : Strategy
 	{
 		return method switch
 		{
-		MovingAverageMethods.Sma => new SMA { Length = length },
-		MovingAverageMethods.Ema => new EMA { Length = length },
+		MovingAverageMethods.Sma => new SimpleMovingAverage { Length = length },
+		MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = length },
 		MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = length },
 		MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = length },
-		_ => new EMA { Length = length }
+		_ => new ExponentialMovingAverage { Length = length }
 		};
 	}
 

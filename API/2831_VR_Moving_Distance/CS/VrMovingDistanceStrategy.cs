@@ -11,8 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -137,7 +135,7 @@ public class VrMovingDistanceStrategy : Strategy
 	/// </summary>
 	public VrMovingDistanceStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
 
 		_maLength = Param(nameof(MaLength), 60)
@@ -159,7 +157,7 @@ public class VrMovingDistanceStrategy : Strategy
 			.SetOptimize(10m, 150m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetRange(0.000001m, 0.999999m)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Exit distance when only one position is open", "Trading")
 			
 			.SetOptimize(10m, 150m, 10m);
@@ -203,7 +201,6 @@ public class VrMovingDistanceStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
@@ -214,8 +211,6 @@ public class VrMovingDistanceStrategy : Strategy
 		if (!_movingAverage.IsFormed)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var distance = DistancePips * _pipSize;
 		var takeProfit = TakeProfitPips * _pipSize;
@@ -349,35 +344,14 @@ public class VrMovingDistanceStrategy : Strategy
 	{
 		DecimalLengthIndicator indicator = type switch
 		{
-			MovingAverageTypes.Simple => new SMA(),
-			MovingAverageTypes.Exponential => new EMA(),
+			MovingAverageTypes.Simple => new SimpleMovingAverage(),
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage(),
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage(),
 			MovingAverageTypes.Weighted => new WeightedMovingAverage(),
-			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage(),
-			_ => new SMA(),
+			_ => new SimpleMovingAverage(),
 		};
 
 		indicator.Length = length;
-
-		switch (indicator)
-		{
-			case SimpleMovingAverage sma:
-				sma.CandlePrice = priceSource;
-				break;
-			case ExponentialMovingAverage ema:
-				ema.CandlePrice = priceSource;
-				break;
-			case SmoothedMovingAverage smoothed:
-				smoothed.CandlePrice = priceSource;
-				break;
-			case WeightedMovingAverage wma:
-				wma.CandlePrice = priceSource;
-				break;
-			case VolumeWeightedMovingAverage vwma:
-				vwma.CandlePrice = priceSource;
-				break;
-		}
-
 		return indicator;
 	}
 }

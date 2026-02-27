@@ -31,8 +31,6 @@ public class AdxExpertStrategy : Strategy
 	private decimal _previousPlusDi;
 	private decimal _previousMinusDi;
 	private bool _hasPreviousDi;
-	private decimal? _bestBidPrice;
-	private decimal? _bestAskPrice;
 
 	/// <summary>
 	/// Trading volume for every market order.
@@ -138,7 +136,7 @@ public class AdxExpertStrategy : Strategy
 			
 			.SetOptimize(200m, 600m, 100m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Type of candles used for ADX", "General");
 	}
 
@@ -156,63 +154,45 @@ public class AdxExpertStrategy : Strategy
 		_previousPlusDi = 0m;
 		_previousMinusDi = 0m;
 		_hasPreviousDi = false;
-		_bestBidPrice = null;
-		_bestAskPrice = null;
+		_entryPrice = 0m;
 	}
+
+	private decimal _entryPrice;
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Initialize ADX indicator with the selected period.
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
-		// Subscribe to candles and bind the ADX indicator to them.
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_adx, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
-		// Track best bid and ask prices to evaluate the current spread.
-		SubscribeOrderBook()
-			.Bind(depth =>
-			{
-				_bestBidPrice = depth.GetBestBid()?.Price ?? _bestBidPrice;
-				_bestAskPrice = depth.GetBestAsk()?.Price ?? _bestAskPrice;
-			})
-			.Start();
-
-		// Configure automatic stop-loss and take-profit handling.
-		var step = Security?.PriceStep ?? 1m;
-		StartProtection(
-			takeProfit: TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null,
-			stopLoss: StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Point) : null);
-
-		// Visualize candles and indicator if charting is available.
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _adx);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Process only finished candles to match the original expert behavior.
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (adxValue is not AverageDirectionalIndexValue adxData)
+		var adxResult = _adx.Process(candle);
+		if (adxResult.IsEmpty || !_adx.IsFormed)
 			return;
 
-		if (!adxValue.IsFinal)
+		if (adxResult is not AverageDirectionalIndexValue adxData)
 			return;
 
-		var plusDi = adxData.Dx.Plus;
-		var minusDi = adxData.Dx.Minus;
+		var plusDi = adxData.Dx.Plus ?? 0m;
+		var minusDi = adxData.Dx.Minus ?? 0m;
 
 		if (adxData.MovingAverage is not decimal currentAdx)
 		{
@@ -230,56 +210,57 @@ public class AdxExpertStrategy : Strategy
 			return;
 		}
 
-		// Respect the maximum spread filter if it is enabled.
-		if (MaxSpreadPoints > 0m)
+		// Manage open position SL/TP
+		if (Position != 0)
 		{
 			var step = Security?.PriceStep ?? 1m;
-
-			if (_bestBidPrice is not decimal bid || _bestAskPrice is not decimal ask)
+			if (Position > 0)
 			{
-				_previousPlusDi = plusDi;
-				_previousMinusDi = minusDi;
-				return;
+				if (StopLossPoints > 0m && candle.LowPrice <= _entryPrice - StopLossPoints * step)
+				{
+					SellMarket(Position);
+					goto updateDi;
+				}
+				if (TakeProfitPoints > 0m && candle.HighPrice >= _entryPrice + TakeProfitPoints * step)
+				{
+					SellMarket(Position);
+					goto updateDi;
+				}
 			}
-
-			var spread = ask - bid;
-			var maxAllowedSpread = MaxSpreadPoints * step;
-
-			if (spread > maxAllowedSpread)
+			else
 			{
-				LogInfo($"Spread {spread:F5} is above the allowed {maxAllowedSpread:F5}. Waiting for tighter market.");
-				_previousPlusDi = plusDi;
-				_previousMinusDi = minusDi;
-				return;
+				var vol = Math.Abs(Position);
+				if (StopLossPoints > 0m && candle.HighPrice >= _entryPrice + StopLossPoints * step)
+				{
+					BuyMarket(vol);
+					goto updateDi;
+				}
+				if (TakeProfitPoints > 0m && candle.LowPrice <= _entryPrice - TakeProfitPoints * step)
+				{
+					BuyMarket(vol);
+					goto updateDi;
+				}
 			}
-		}
-
-		// Make sure the strategy is ready for trading and connection is healthy.
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousPlusDi = plusDi;
-			_previousMinusDi = minusDi;
-			return;
 		}
 
 		var bullishCross = _previousPlusDi <= _previousMinusDi && plusDi > minusDi;
 		var bearishCross = _previousPlusDi >= _previousMinusDi && plusDi < minusDi;
 
-		// Trade only when ADX indicates a ranging market.
 		if (currentAdx < AdxThreshold && Position == 0)
 		{
 			if (bullishCross)
 			{
-				LogInfo($"Opening long position at {candle.ClosePrice} because +DI crossed above -DI.");
 				BuyMarket(TradeVolume);
+				_entryPrice = candle.ClosePrice;
 			}
 			else if (bearishCross)
 			{
-				LogInfo($"Opening short position at {candle.ClosePrice} because +DI crossed below -DI.");
 				SellMarket(TradeVolume);
+				_entryPrice = candle.ClosePrice;
 			}
 		}
 
+		updateDi:
 		_previousPlusDi = plusDi;
 		_previousMinusDi = minusDi;
 	}

@@ -14,7 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Price impulse strategy that trades on rapid bid/ask moves.
+/// Price impulse strategy that trades on rapid price moves using candle close prices.
 /// </summary>
 public class PriceImpulseStrategy : Strategy
 {
@@ -25,12 +25,15 @@ public class PriceImpulseStrategy : Strategy
 	private readonly StrategyParam<int> _historyGap;
 	private readonly StrategyParam<int> _extraHistory;
 	private readonly StrategyParam<int> _cooldownSeconds;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _askHistory = [];
-	private readonly List<decimal> _bidHistory = [];
+	private readonly List<decimal> _priceHistory = [];
 
 	private decimal _tickSize;
 	private DateTimeOffset? _lastTradeTime;
+	private decimal? _entryPrice;
+	private decimal? _stopLossPrice;
+	private decimal? _takeProfitPrice;
 
 	/// <summary>
 	/// Volume used for each market order.
@@ -69,7 +72,7 @@ public class PriceImpulseStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Number of Level1 updates between price comparisons.
+	/// Number of candles between price comparisons.
 	/// </summary>
 	public int HistoryGap
 	{
@@ -78,7 +81,7 @@ public class PriceImpulseStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Additional Level1 samples kept in the rolling buffer.
+	/// Additional samples kept in the rolling buffer.
 	/// </summary>
 	public int ExtraHistory
 	{
@@ -95,6 +98,15 @@ public class PriceImpulseStrategy : Strategy
 		set => _cooldownSeconds.Value = value;
 	}
 
+	/// <summary>
+	/// Candle type used for price monitoring.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
 	private int HistoryCapacity => Math.Max(HistoryGap + ExtraHistory + 1, HistoryGap + 1);
 
 	/// <summary>
@@ -105,50 +117,46 @@ public class PriceImpulseStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetDisplay("Order Volume", "Volume used for each market order", "Trading")
 			.SetGreaterThanZero()
-			
 			.SetOptimize(0.1m, 2m, 0.1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150)
 			.SetDisplay("Stop Loss Points", "Stop loss distance expressed in price points", "Risk")
 			.SetNotNegative()
-			
 			.SetOptimize(50, 300, 50);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
 			.SetDisplay("Take Profit Points", "Take profit distance expressed in price points", "Risk")
 			.SetNotNegative()
-			
 			.SetOptimize(10, 200, 10);
 
 		_impulsePoints = Param(nameof(ImpulsePoints), 15)
-			.SetDisplay("Impulse Points", "Minimum ask/bid impulse required to trade", "Signals")
+			.SetDisplay("Impulse Points", "Minimum price impulse required to trade", "Signals")
 			.SetGreaterThanZero()
-			
 			.SetOptimize(5, 40, 5);
 
 		_historyGap = Param(nameof(HistoryGap), 15)
-			.SetDisplay("Gap Ticks", "Number of Level1 updates between comparison points", "Signals")
+			.SetDisplay("Gap Candles", "Number of candles between comparison points", "Signals")
 			.SetNotNegative()
-			
 			.SetOptimize(5, 40, 5);
 
 		_extraHistory = Param(nameof(ExtraHistory), 15)
-			.SetDisplay("Extra History", "Additional Level1 samples kept to absorb bursts", "Signals")
+			.SetDisplay("Extra History", "Additional samples kept to absorb bursts", "Signals")
 			.SetNotNegative()
-			
 			.SetOptimize(0, 30, 5);
 
 		_cooldownSeconds = Param(nameof(CooldownSeconds), 100)
 			.SetDisplay("Cooldown Seconds", "Minimum number of seconds between trades", "Risk")
 			.SetNotNegative()
-			
 			.SetOptimize(0, 300, 20);
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type for price tracking", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, DataType.Level1)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -156,9 +164,11 @@ public class PriceImpulseStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_askHistory.Clear();
-		_bidHistory.Clear();
+		_priceHistory.Clear();
 		_lastTradeTime = null;
+		_entryPrice = null;
+		_stopLossPrice = null;
+		_takeProfitPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -166,117 +176,81 @@ public class PriceImpulseStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Derive point value from the security metadata.
-		_tickSize = Security?.PriceStep ?? Security?.MinPriceStep ?? 1m;
+		_tickSize = Security?.PriceStep ?? 1m;
 		if (_tickSize <= 0)
 			_tickSize = 1m;
 
-		var takeProfit = TakeProfitPoints > 0
-			? new Unit(TakeProfitPoints * _tickSize, UnitTypes.Absolute)
-			: null;
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 
-		var stopLoss = StopLossPoints > 0
-			? new Unit(StopLossPoints * _tickSize, UnitTypes.Absolute)
-			: null;
-
-		StartProtection(
-			takeProfit: takeProfit,
-			stopLoss: stopLoss);
-
-		// Subscribe to Level1 data to monitor best bid/ask changes.
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
-			.Start();
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		var askUpdated = false;
-		var bidUpdated = false;
-
-		if (level1.TryGetDecimal(Level1Fields.BestAskPrice) is decimal askPrice && askPrice > 0)
-		{
-			UpdateHistory(_askHistory, askPrice);
-			askUpdated = true;
-		}
-
-		if (level1.TryGetDecimal(Level1Fields.BestBidPrice) is decimal bidPrice && bidPrice > 0)
-		{
-			UpdateHistory(_bidHistory, bidPrice);
-			bidUpdated = true;
-		}
-
-		// Skip processing if nothing new arrived.
-		if (!askUpdated && !bidUpdated)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Ensure the strategy is allowed to submit orders.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var time = level1.ServerTime != default ? level1.ServerTime : CurrentTime;
-		var impulseThreshold = ImpulsePoints * _tickSize;
-		var traded = false;
-
-		// Check for bullish impulse when the ask jumps upward.
-		if (askUpdated && _askHistory.Count > HistoryGap)
-		{
-			var lastIndex = _askHistory.Count - 1;
-			var compareIndex = lastIndex - HistoryGap;
-
-			if (compareIndex >= 0)
-			{
-				var currentAsk = _askHistory[lastIndex];
-				var comparisonAsk = _askHistory[compareIndex];
-				var askImpulse = currentAsk - comparisonAsk;
-
-				if (askImpulse > impulseThreshold && Position <= 0 && IsCooldownPassed(time))
-				{
-					BuyMarket(OrderVolume);
-					LogInfo($"Buy signal: ask impulse {askImpulse}, ask={currentAsk}, baseline={comparisonAsk}");
-					traded = true;
-				}
-			}
-		}
-
-		if (traded)
-		{
-			_lastTradeTime = time;
-			return;
-		}
-
-		// Check for bearish impulse when the bid collapses downward.
-		if (bidUpdated && _bidHistory.Count > HistoryGap)
-		{
-			var lastIndex = _bidHistory.Count - 1;
-			var compareIndex = lastIndex - HistoryGap;
-
-			if (compareIndex >= 0)
-			{
-				var currentBid = _bidHistory[lastIndex];
-				var comparisonBid = _bidHistory[compareIndex];
-				var bidImpulse = comparisonBid - currentBid;
-
-				if (bidImpulse > impulseThreshold && Position >= 0 && IsCooldownPassed(time))
-				{
-					SellMarket(OrderVolume);
-					LogInfo($"Sell signal: bid impulse {bidImpulse}, bid={currentBid}, baseline={comparisonBid}");
-					traded = true;
-				}
-			}
-		}
-
-		if (traded)
-			_lastTradeTime = time;
-	}
-
-	private void UpdateHistory(List<decimal> history, decimal value)
-	{
-		history.Add(value);
+		var currentPrice = candle.ClosePrice;
+		_priceHistory.Add(currentPrice);
 
 		var capacity = HistoryCapacity;
-		while (history.Count > capacity)
-			history.RemoveAt(0);
+		while (_priceHistory.Count > capacity)
+			_priceHistory.RemoveAt(0);
+
+		var candleTime = candle.CloseTime;
+
+		// Check SL/TP for existing positions.
+		if (Position > 0)
+		{
+			if (_stopLossPrice.HasValue && candle.LowPrice <= _stopLossPrice.Value)
+			{ SellMarket(Position); _entryPrice = null; _stopLossPrice = null; _takeProfitPrice = null; return; }
+			if (_takeProfitPrice.HasValue && candle.HighPrice >= _takeProfitPrice.Value)
+			{ SellMarket(Position); _entryPrice = null; _stopLossPrice = null; _takeProfitPrice = null; return; }
+		}
+		else if (Position < 0)
+		{
+			if (_stopLossPrice.HasValue && candle.HighPrice >= _stopLossPrice.Value)
+			{ BuyMarket(Math.Abs(Position)); _entryPrice = null; _stopLossPrice = null; _takeProfitPrice = null; return; }
+			if (_takeProfitPrice.HasValue && candle.LowPrice <= _takeProfitPrice.Value)
+			{ BuyMarket(Math.Abs(Position)); _entryPrice = null; _stopLossPrice = null; _takeProfitPrice = null; return; }
+		}
+
+		if (_priceHistory.Count <= HistoryGap)
+			return;
+
+		var impulseThreshold = ImpulsePoints * _tickSize;
+		var lastIndex = _priceHistory.Count - 1;
+		var compareIndex = lastIndex - HistoryGap;
+		if (compareIndex < 0) return;
+
+		var comparisonPrice = _priceHistory[compareIndex];
+		var upImpulse = currentPrice - comparisonPrice;
+		var downImpulse = comparisonPrice - currentPrice;
+
+		if (upImpulse > impulseThreshold && Position <= 0 && IsCooldownPassed(candleTime))
+		{
+			BuyMarket(OrderVolume);
+			_entryPrice = currentPrice;
+			_stopLossPrice = StopLossPoints > 0 ? currentPrice - StopLossPoints * _tickSize : null;
+			_takeProfitPrice = TakeProfitPoints > 0 ? currentPrice + TakeProfitPoints * _tickSize : null;
+			_lastTradeTime = candleTime;
+			return;
+		}
+
+		if (downImpulse > impulseThreshold && Position >= 0 && IsCooldownPassed(candleTime))
+		{
+			SellMarket(OrderVolume);
+			_entryPrice = currentPrice;
+			_stopLossPrice = StopLossPoints > 0 ? currentPrice + StopLossPoints * _tickSize : null;
+			_takeProfitPrice = TakeProfitPoints > 0 ? currentPrice - TakeProfitPoints * _tickSize : null;
+			_lastTradeTime = candleTime;
+		}
 	}
 
 	private bool IsCooldownPassed(DateTimeOffset time)

@@ -49,7 +49,7 @@ public class ChannelEaLimitsStrategy : Strategy
 			.SetDisplay("Order Volume", "Volume for each limit order", "Trading")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to build the session channel", "General");
 	}
 
@@ -143,11 +143,13 @@ public class ChannelEaLimitsStrategy : Strategy
 			ResetSessionState();
 		}
 
-		var tradingReady = IsFormedAndOnlineAndAllowTrading();
-
-		if (_needsSessionReset && tradingReady)
+		if (_needsSessionReset)
 		{
-			ClearForNewSession();
+			// Close any open position at session reset
+			if (Position > 0)
+				SellMarket(Position);
+			else if (Position < 0)
+				BuyMarket(-Position);
 			_needsSessionReset = false;
 		}
 
@@ -165,7 +167,20 @@ public class ChannelEaLimitsStrategy : Strategy
 			_barsInSession++;
 		}
 
-		if (!_ordersPlaced && tradingReady && _prevCandleClose.HasValue)
+		// After session ends, trade breakouts of the channel
+		if (_ordersPlaced && _barsInSession >= 2 && _sessionLow < _sessionHigh)
+		{
+			if (Position == 0)
+			{
+				// Buy when price touches session low, sell when it touches session high
+				if (candle.LowPrice <= _sessionLow)
+					BuyMarket(OrderVolume);
+				else if (candle.HighPrice >= _sessionHigh)
+					SellMarket(OrderVolume);
+			}
+		}
+
+		if (!_ordersPlaced && _prevCandleClose.HasValue)
 		{
 			var previousClose = _prevCandleClose.Value;
 
@@ -173,8 +188,6 @@ public class ChannelEaLimitsStrategy : Strategy
 			{
 				if (_barsInSession >= 2 && _sessionLow < _sessionHigh)
 				{
-					BuyLimit(OrderVolume, _sessionLow);
-					SellLimit(OrderVolume, _sessionHigh);
 					_ordersPlaced = true;
 				}
 			}
@@ -190,14 +203,6 @@ public class ChannelEaLimitsStrategy : Strategy
 		_barsInSession = 0;
 		_ordersPlaced = false;
 		_needsSessionReset = true;
-	}
-
-	private void ClearForNewSession()
-	{
-		CancelActiveOrders();
-
-		if (Position != 0)
-			ClosePosition();
 	}
 
 	private DateTimeOffset CalculateSessionStart(DateTimeOffset time)

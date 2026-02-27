@@ -241,7 +241,7 @@ public class ExpSarTmPlusStrategy : Strategy
 			.SetOptimize(60, 720, 60)
 			.SetNotNegative();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for Parabolic SAR", "Data");
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
@@ -281,7 +281,6 @@ public class ExpSarTmPlusStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
 		InitializeBuffers();
 
 		var parabolicSar = new ParabolicSar
@@ -309,9 +308,6 @@ public class ExpSarTmPlusStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		EnsureBufferSize();
 		UpdateBuffers(candle.ClosePrice, sarValue);
 
@@ -326,9 +322,6 @@ public class ExpSarTmPlusStrategy : Strategy
 		var wasPriceAbovePreviousSar = previousClose.Value > previousSar.Value;
 
 		HandleExits(candle, isPriceAboveCurrentSar);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var crossedUp = !wasPriceAbovePreviousSar && isPriceAboveCurrentSar;
 		var crossedDown = wasPriceAbovePreviousSar && !isPriceAboveCurrentSar;
@@ -525,7 +518,7 @@ public class ExpSarTmPlusStrategy : Strategy
 
 	private decimal GetOrderVolume()
 	{
-		var step = Security?.VolumeStep ?? 1m;
+		var step = 1m;
 		if (step <= 0)
 			step = 1m;
 

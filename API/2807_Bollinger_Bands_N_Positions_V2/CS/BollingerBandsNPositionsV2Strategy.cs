@@ -37,6 +37,7 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 	private decimal _shortEntryPrice;
 	private int _longEntryCount;
 	private int _shortEntryCount;
+	private BollingerBands _bollinger = null!;
 	private decimal? _longStopPrice;
 	private decimal? _longTakeProfitPrice;
 	private decimal? _shortStopPrice;
@@ -182,7 +183,7 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 		_pipValue = CalculatePipValue();
 		UpdateRiskDistances();
 
-		var bollinger = new BollingerBands
+		_bollinger = new BollingerBands
 		{
 			Length = BollingerPeriod,
 			Width = BollingerDeviation
@@ -190,24 +191,24 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(bollinger, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bollinger);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indicatorValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var indicatorValue = _bollinger.Process(candle);
+		if (indicatorValue.IsEmpty || !_bollinger.IsFormed)
 			return;
 
 		UpdateRiskDistances();
@@ -402,7 +403,7 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 		if (security == null)
 			return 1m;
 
-		var step = security.PriceStep ?? security.MinPriceStep ?? 0m;
+		var step = security.PriceStep ?? 0m;
 		if (step <= 0m)
 			return 1m;
 

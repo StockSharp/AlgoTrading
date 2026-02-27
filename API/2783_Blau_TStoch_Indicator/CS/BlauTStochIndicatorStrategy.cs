@@ -296,7 +296,7 @@ public class BlauTStochIndicatorStrategy : Strategy
 	/// </summary>
 	public BlauTStochIndicatorStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for indicator calculation", "General");
 
 		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.Ema)
@@ -365,6 +365,7 @@ public class BlauTStochIndicatorStrategy : Strategy
 
 		_indicatorValues.Clear();
 		_indicator = null;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -383,11 +384,7 @@ public class BlauTStochIndicatorStrategy : Strategy
 		};
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(_indicator, ProcessIndicator).Start();
-
-		StartProtection(
-		takeProfit: TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Step) : null,
-		stopLoss: StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Step) : null);
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -398,10 +395,61 @@ public class BlauTStochIndicatorStrategy : Strategy
 		}
 	}
 
-	private void ProcessIndicator(ICandleMessage candle, IIndicatorValue indicatorValue)
+	private decimal _entryPrice;
+
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade == null) return;
+		if (Position != 0m && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+		if (Position == 0m)
+			_entryPrice = 0m;
+	}
+
+	private void HandleProtectiveLevels(ICandleMessage candle)
+	{
+		var step = Security?.PriceStep ?? 1m;
+		if (step <= 0m) return;
+
+		if (Position > 0m)
+		{
+			if (StopLossPoints > 0 && candle.LowPrice <= _entryPrice - StopLossPoints * step)
+			{
+				SellMarket(Position);
+				return;
+			}
+			if (TakeProfitPoints > 0 && candle.HighPrice >= _entryPrice + TakeProfitPoints * step)
+			{
+				SellMarket(Position);
+				return;
+			}
+		}
+		else if (Position < 0m)
+		{
+			var abs = Math.Abs(Position);
+			if (StopLossPoints > 0 && candle.HighPrice >= _entryPrice + StopLossPoints * step)
+			{
+				BuyMarket(abs);
+				return;
+			}
+			if (TakeProfitPoints > 0 && candle.LowPrice <= _entryPrice - TakeProfitPoints * step)
+			{
+				BuyMarket(abs);
+				return;
+			}
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
+
+		HandleProtectiveLevels(candle);
+
+		var indicatorValue = _indicator.Process(candle);
 
 		if (_indicator is null || !_indicator.IsFormed)
 		{
@@ -414,9 +462,6 @@ public class BlauTStochIndicatorStrategy : Strategy
 		var currentValue = indicatorValue.ToDecimal();
 		_indicatorValues.Add(currentValue);
 		TrimHistory();
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
 
 		var maxOffset = Mode == BlauEntryModes.Twist ? 2 : 1;
 		if (_indicatorValues.Count < SignalBar + maxOffset)
@@ -536,12 +581,13 @@ public class BlauTStochIndicatorStrategy : Strategy
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
 			EnsureInitialized();
+			_lastInputTime = input.Time;
 
 			var candle = input.GetValue<ICandleMessage>();
 			var price = GetPrice(candle);
 
-			var highestValue = _highest!.Process(candle.HighPrice).ToDecimal();
-			var lowestValue = _lowest!.Process(candle.LowPrice).ToDecimal();
+			var highestValue = _highest!.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, input.Time) { IsFinal = input.IsFinal }).ToDecimal();
+			var lowestValue = _lowest!.Process(new DecimalIndicatorValue(_lowest, candle.LowPrice, input.Time) { IsFinal = input.IsFinal }).ToDecimal();
 
 			if (!_highest.IsFormed || !_lowest.IsFormed)
 			{
@@ -611,9 +657,11 @@ public class BlauTStochIndicatorStrategy : Strategy
 			_range3 = CreateSmoother(Smooth3);
 		}
 
+		private DateTime _lastInputTime;
+
 		private decimal ProcessStage(IIndicator indicator, decimal value)
 		{
-			return indicator.Process(value).ToDecimal();
+			return indicator.Process(new DecimalIndicatorValue(indicator, value, _lastInputTime) { IsFinal = true }).ToDecimal();
 		}
 
 		private IIndicator CreateSmoother(int length)
@@ -622,10 +670,10 @@ public class BlauTStochIndicatorStrategy : Strategy
 
 			return Method switch
 			{
-				SmoothingMethods.Sma => new SMA { Length = len },
+				SmoothingMethods.Sma => new SimpleMovingAverage { Length = len },
 				SmoothingMethods.Smma => new SmoothedMovingAverage { Length = len },
 				SmoothingMethods.Lwma => new WeightedMovingAverage { Length = len },
-				_ => new EMA { Length = len },
+				_ => new ExponentialMovingAverage { Length = len },
 			};
 		}
 

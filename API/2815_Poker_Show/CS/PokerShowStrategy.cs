@@ -142,7 +142,7 @@ public class PokerShowStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
 	private readonly StrategyParam<MovingAverageMethods> _maMethod;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
+	private readonly StrategyParam<AppliedPriceses> _appliedPrice;
 	private readonly StrategyParam<bool> _reverseSignal;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -314,7 +314,7 @@ public class PokerShowStrategy : Strategy
 		_reverseSignal = Param(nameof(ReverseSignal), false)
 		.SetDisplay("Reverse Signals", "Invert MA and price relationship", "Signals");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for market data", "General");
 	}
 
@@ -354,7 +354,6 @@ public class PokerShowStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -362,11 +361,13 @@ public class PokerShowStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 		var price = GetPrice(candle);
-		var maValue = _ma!.Process(new DecimalIndicatorValue(_ma, price, candle.OpenTime)).ToDecimal();
+		var maResult = _ma!.Process(new DecimalIndicatorValue(_ma, price, candle.OpenTime) { IsFinal = true });
+
+		if (maResult.IsEmpty || !_ma.IsFormed)
+			return;
+
+		var maValue = maResult.ToDecimal();
 
 		_maHistory.Add(maValue);
 
@@ -460,12 +461,12 @@ public class PokerShowStrategy : Strategy
 
 		if (_stopLossPrice.HasValue && candle.LowPrice <= _stopLossPrice.Value)
 		{
-			ClosePosition();
+			if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 			closed = true;
 		}
 		else if (_takeProfitPrice.HasValue && candle.HighPrice >= _takeProfitPrice.Value)
 		{
-			ClosePosition();
+			if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 			closed = true;
 		}
 
@@ -478,12 +479,12 @@ public class PokerShowStrategy : Strategy
 
 		if (_stopLossPrice.HasValue && candle.HighPrice >= _stopLossPrice.Value)
 		{
-			ClosePosition();
+			if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 			closed = true;
 		}
 		else if (_takeProfitPrice.HasValue && candle.LowPrice <= _takeProfitPrice.Value)
 		{
-			ClosePosition();
+			if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 			closed = true;
 		}
 
@@ -515,11 +516,11 @@ public class PokerShowStrategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Sma => new SMA { Length = period },
-			MovingAverageMethods.Ema => new EMA { Length = period },
+			MovingAverageMethods.Sma => new SimpleMovingAverage { Length = period },
+			MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = period },
 			MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = period },
 			MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = period },
-			_ => new SMA { Length = period }
+			_ => new SimpleMovingAverage { Length = period }
 		};
 	}
 }

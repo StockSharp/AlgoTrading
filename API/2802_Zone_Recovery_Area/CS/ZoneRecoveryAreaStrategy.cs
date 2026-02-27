@@ -60,10 +60,10 @@ public class ZoneRecoveryAreaStrategy : Strategy
 	/// </summary>
 	public ZoneRecoveryAreaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Entry Candle", "Timeframe used for entries", "General");
 
-		_monthlyCandleType = Param(nameof(MonthlyCandleType), TimeSpan.FromDays(30).TimeFrame())
+		_monthlyCandleType = Param(nameof(MonthlyCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Monthly Candle", "Timeframe used for MACD filter", "General");
 
 		_fastMaLength = Param(nameof(FastMaLength), 20)
@@ -322,8 +322,8 @@ public class ZoneRecoveryAreaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastMa = new SMA { Length = FastMaLength };
-		_slowMa = new SMA { Length = SlowMaLength };
+		_fastMa = new SimpleMovingAverage { Length = FastMaLength };
+		_slowMa = new SimpleMovingAverage { Length = SlowMaLength };
 		_monthlyMacd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
@@ -339,9 +339,9 @@ public class ZoneRecoveryAreaStrategy : Strategy
 			.Bind(_fastMa, _slowMa, ProcessMainCandle)
 			.Start();
 
-		var monthlySubscription = SubscribeCandles(MonthlyCandleType, allowBuildFromSmallerTimeFrame: true);
+		var monthlySubscription = SubscribeCandles(MonthlyCandleType);
 		monthlySubscription
-			.BindEx(_monthlyMacd, ProcessMonthlyCandle)
+			.Bind(ProcessMonthlyCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -352,23 +352,20 @@ public class ZoneRecoveryAreaStrategy : Strategy
 			DrawIndicator(area, _slowMa);
 			DrawOwnTrades(area);
 
-			var macdArea = CreateChartArea();
-			if (macdArea != null)
-			{
-				DrawIndicator(macdArea, _monthlyMacd);
-			}
+			// MACD is manually processed so cannot be drawn via DrawIndicator
 		}
 	}
 
-	private void ProcessMonthlyCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	private void ProcessMonthlyCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!macdValue.IsFinal)
+		var macdResult = _monthlyMacd.Process(candle);
+		if (macdResult.IsEmpty || !_monthlyMacd.IsFormed)
 			return;
 
-		var macd = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		var macd = (MovingAverageConvergenceDivergenceSignalValue)macdResult;
 		if (macd.Macd is not decimal macdLine || macd.Signal is not decimal signalLine)
 			return;
 
@@ -412,9 +409,6 @@ public class ZoneRecoveryAreaStrategy : Strategy
 
 	private void TryStartCycle(decimal price)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var macdBullish = _macdMain > _macdSignal;
 		var macdBearish = _macdMain < _macdSignal;
 
@@ -447,9 +441,6 @@ public class ZoneRecoveryAreaStrategy : Strategy
 
 	private void HandleExistingCycle(decimal price)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var takeProfitOffset = GetPriceOffset(TakeProfitPips);
 		if (takeProfitOffset > 0m)
 		{
@@ -568,7 +559,7 @@ public class ZoneRecoveryAreaStrategy : Strategy
 			return 0m;
 
 		var priceStep = Security.PriceStep ?? 0m;
-		var stepPrice = Security.StepPrice ?? 0m;
+		var stepPrice = Security.PriceStep ?? 0m;
 
 		if (priceStep <= 0m || stepPrice <= 0m)
 			return 0m;
@@ -636,7 +627,6 @@ public class ZoneRecoveryAreaStrategy : Strategy
 			BuyMarket(Math.Abs(Position));
 		}
 
-		CancelActiveOrders();
 		_steps.Clear();
 		_nextStepIndex = 0;
 		_cycleBasePrice = 0m;

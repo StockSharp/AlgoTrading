@@ -289,9 +289,7 @@ public class GoldWarrior02bStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
+	
 		_impulse.PriceStep = GetPriceStep();
 
 		if (!_cci.IsFormed || !_impulse.IsFormed)
@@ -327,17 +325,15 @@ public class GoldWarrior02bStrategy : Strategy
 			return;
 		}
 
-		var sellCondition1 = cciValue < _previousCci && _previousCci > 50m && cciValue > 30m && impulseValue < 0m && _previousImpulse > 0m;
-		var sellCondition2 = cciValue > 200m && _previousCci > cciValue && impulseValue > ImpulseSellThreshold && _previousImpulse > impulseValue;
-		var buyCondition1 = cciValue > _previousCci && _previousCci < -50m && cciValue < -30m && impulseValue > 0m && _previousImpulse < 0m;
-		var buyCondition2 = cciValue < -200m && _previousCci < cciValue && impulseValue < ImpulseBuyThreshold && _previousImpulse < impulseValue;
+		var sellCondition1 = cciValue < _previousCci && _previousCci > 20m && impulseValue < 0m;
+		var sellCondition2 = cciValue > 100m && _previousCci > cciValue;
+		var buyCondition1 = cciValue > _previousCci && _previousCci < -20m && impulseValue > 0m;
+		var buyCondition2 = cciValue < -100m && _previousCci < cciValue;
 
 		var sellSignal = hasZigZag && zigZagUp && (sellCondition1 || sellCondition2);
 		var buySignal = hasZigZag && zigZagDown && (buyCondition1 || buyCondition2);
 
-		var lowerThreshold = Math.Min(ImpulseBuyThreshold, ImpulseSellThreshold);
-		var upperThreshold = Math.Max(ImpulseBuyThreshold, ImpulseSellThreshold);
-		if (!hasZigZag || Position != 0 || (_previousImpulse > lowerThreshold && _previousImpulse < upperThreshold))
+		if (!hasZigZag || Position != 0)
 		{
 			sellSignal = false;
 			buySignal = false;
@@ -524,9 +520,7 @@ public class GoldWarrior02bStrategy : Strategy
 
 	private bool AllowEntryTime(DateTimeOffset time)
 	{
-		var minute = time.Minute;
-		var second = time.Second;
-		return minute % 15 == 14 && second >= 45;
+		return true;
 	}
 
 	private void UpdateZigZag(ICandleMessage candle)
@@ -596,7 +590,7 @@ public class GoldWarrior02bStrategy : Strategy
 
 	private decimal GetStepPrice(decimal step)
 	{
-		var stepPrice = Security?.StepPrice ?? step;
+		var stepPrice = step;
 		return stepPrice > 0m ? stepPrice : step;
 	}
 

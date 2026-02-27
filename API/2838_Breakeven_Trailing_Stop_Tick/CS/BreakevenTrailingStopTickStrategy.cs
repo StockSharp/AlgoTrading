@@ -23,10 +23,12 @@ public class BreakevenTrailingStopTickStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<bool> _enableDemoEntries;
 
+	private readonly StrategyParam<DataType> _candleType;
 	private decimal _pointValue;
 	private decimal? _longStopPrice;
 	private decimal? _shortStopPrice;
 	private bool _exitOrderPending;
+	private decimal _entryPrice;
 	private DateTimeOffset? _lastDemoEntryTime;
 	private readonly Random _random = new();
 
@@ -74,14 +76,23 @@ public BreakevenTrailingStopTickStrategy()
 			
 			.SetOptimize(0.5m, 5m, 0.5m);
 
-		_enableDemoEntries = Param(nameof(EnableDemoEntries), false)
+		_enableDemoEntries = Param(nameof(EnableDemoEntries), true)
 			.SetDisplay("Enable Demo Entries", "Automatically open random trades in testing", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for candles", "General");
+	}
+
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, DataType.Ticks)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -106,22 +117,28 @@ public BreakevenTrailingStopTickStrategy()
 
 		_pointValue = CalculateAdjustedPoint();
 
-		SubscribeTicks()
-			.Bind(ProcessTrade)
+		SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
 			.Start();
 	}
 
-		private void ProcessTrade(ITickTradeMessage trade)
-		{
-			var price = trade.Price;
-
-			if (!IsFormedAndOnlineAndAllowTrading())
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (EnableDemoEntries)
-			TryCreateDemoEntry(trade, price);
+		var price = candle.ClosePrice;
 
-		if (TrailingStopPips <= 0m || _pointValue <= 0m || Position == 0)
+		if (EnableDemoEntries)
+			TryCreateDemoEntry(candle, price);
+
+		if (Position == 0)
+		{
+			ResetTrailingState();
+			return;
+		}
+
+		if (TrailingStopPips <= 0m || _pointValue <= 0m)
 			return;
 
 		if (Position > 0)
@@ -130,13 +147,13 @@ public BreakevenTrailingStopTickStrategy()
 			UpdateShortTrailing(price);
 	}
 
-	private void TryCreateDemoEntry(ITickTradeMessage trade, decimal price)
+	private void TryCreateDemoEntry(ICandleMessage candle, decimal price)
 	{
 		if (Position != 0 || _exitOrderPending)
 			return;
 
-		var serverTime = trade.ServerTime;
-		if (_lastDemoEntryTime.HasValue && serverTime <= _lastDemoEntryTime.Value)
+		var serverTime = candle.CloseTime;
+		if (_lastDemoEntryTime.HasValue && (serverTime - _lastDemoEntryTime.Value).TotalMinutes < 30)
 			return;
 
 		var volume = Volume;
@@ -146,12 +163,12 @@ public BreakevenTrailingStopTickStrategy()
 		if (_random.NextDouble() < 0.5)
 		{
 			BuyMarket(volume);
-			LogInfo($"Demo long entry opened at {price}.");
+			_entryPrice = price;
 		}
 		else
 		{
 			SellMarket(volume);
-			LogInfo($"Demo short entry opened at {price}.");
+			_entryPrice = price;
 		}
 
 		_lastDemoEntryTime = serverTime;
@@ -159,7 +176,7 @@ public BreakevenTrailingStopTickStrategy()
 
 	private void UpdateLongTrailing(decimal currentPrice)
 	{
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -179,7 +196,7 @@ public BreakevenTrailingStopTickStrategy()
 			if (newStop > 0m)
 			{
 				_longStopPrice = newStop;
-				LogInfo($"Long trailing stop moved to {newStop}.");
+				// log($"Long trailing stop moved to {newStop}.");
 			}
 		}
 
@@ -189,7 +206,7 @@ public BreakevenTrailingStopTickStrategy()
 
 	private void UpdateShortTrailing(decimal currentPrice)
 	{
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -207,7 +224,7 @@ public BreakevenTrailingStopTickStrategy()
 		{
 			var newStop = currentPrice + stopOffset;
 			_shortStopPrice = newStop;
-			LogInfo($"Short trailing stop moved to {newStop}.");
+			// log($"Short trailing stop moved to {newStop}.");
 		}
 
 		if (_shortStopPrice.HasValue && currentPrice >= _shortStopPrice.Value)
@@ -225,7 +242,7 @@ public BreakevenTrailingStopTickStrategy()
 
 		SellMarket(volume);
 		_exitOrderPending = true;
-		LogInfo("Long position closed by trailing stop.");
+		// log("Long position closed by trailing stop.");
 	}
 
 	private void ExitShortPosition()
@@ -239,35 +256,16 @@ public BreakevenTrailingStopTickStrategy()
 
 		BuyMarket(volume);
 		_exitOrderPending = true;
-		LogInfo("Short position closed by trailing stop.");
+		// log("Short position closed by trailing stop.");
 	}
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position == 0)
-		{
-			ResetTrailingState();
-			return;
-		}
-
-		if ((Position > 0 && delta > 0m) || (Position < 0 && delta < 0m))
-		{
-			_exitOrderPending = false;
-			if (Position > 0)
-				_shortStopPrice = null;
-			else
-				_longStopPrice = null;
-		}
-	}
 
 	private void ResetTrailingState()
 	{
 		_longStopPrice = null;
 		_shortStopPrice = null;
 		_exitOrderPending = false;
+		_entryPrice = 0m;
 	}
 
 	private decimal CalculateAdjustedPoint()

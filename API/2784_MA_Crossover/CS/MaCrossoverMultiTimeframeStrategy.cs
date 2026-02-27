@@ -34,8 +34,8 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 	private readonly StrategyParam<bool> _closeOnMinEquity;
 	private readonly StrategyParam<decimal> _minimumEquityPercent;
 
-	private DecimalLengthIndicator _currentMaIndicator;
-	private DecimalLengthIndicator _previousMaIndicator;
+	private IIndicator _currentMaIndicator;
+	private IIndicator _previousMaIndicator;
 
 	private readonly Queue<decimal> _currentShiftBuffer = new();
 	private readonly Queue<decimal> _previousShiftBuffer = new();
@@ -403,8 +403,6 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 		if (_currentMaValue == null || _previousMaValue == null)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (!IsWithinTradingWindow(candle.OpenTime))
 			return;
@@ -454,7 +452,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 		}
 
 		BuyMarket(volume);
-		LogInfo($"Bullish crossover detected at {candle.ClosePrice:0.#####}. Fast MA = {_currentMaValue:0.#####}, Slow MA = {_previousMaValue:0.#####}.");
+
 	}
 
 	private void HandleBearishCross(ICandleMessage candle)
@@ -479,7 +477,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 		}
 
 		SellMarket(volume);
-		LogInfo($"Bearish crossover detected at {candle.ClosePrice:0.#####}. Fast MA = {_currentMaValue:0.#####}, Slow MA = {_previousMaValue:0.#####}.");
+
 	}
 
 	private void ManagePosition(ICandleMessage candle)
@@ -504,7 +502,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 				if (closePrice <= stopPrice)
 				{
 					SellMarket(Math.Abs(Position));
-					LogInfo($"Long stop-loss triggered at {closePrice:0.#####}. Entry {_entryPrice:0.#####}, stop {stopPrice:0.#####}.");
+	
 					return;
 				}
 			}
@@ -515,7 +513,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 				if (closePrice >= targetPrice)
 				{
 					SellMarket(Math.Abs(Position));
-					LogInfo($"Long take-profit triggered at {closePrice:0.#####}. Entry {_entryPrice:0.#####}, target {targetPrice:0.#####}.");
+	
 					return;
 				}
 			}
@@ -526,7 +524,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 				if (closePrice <= trailingPrice)
 				{
 					SellMarket(Math.Abs(Position));
-					LogInfo($"Long trailing stop triggered at {closePrice:0.#####}. Trail {trailingPrice:0.#####}.");
+	
 					return;
 				}
 			}
@@ -542,7 +540,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 				if (closePrice >= stopPrice)
 				{
 					BuyMarket(Math.Abs(Position));
-					LogInfo($"Short stop-loss triggered at {closePrice:0.#####}. Entry {_entryPrice:0.#####}, stop {stopPrice:0.#####}.");
+	
 					return;
 				}
 			}
@@ -553,7 +551,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 				if (closePrice <= targetPrice)
 				{
 					BuyMarket(Math.Abs(Position));
-					LogInfo($"Short take-profit triggered at {closePrice:0.#####}. Entry {_entryPrice:0.#####}, target {targetPrice:0.#####}.");
+	
 					return;
 				}
 			}
@@ -564,7 +562,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 				if (closePrice >= trailingPrice)
 				{
 					BuyMarket(Math.Abs(Position));
-					LogInfo($"Short trailing stop triggered at {closePrice:0.#####}. Trail {trailingPrice:0.#####}.");
+	
 					return;
 				}
 			}
@@ -589,7 +587,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 		if (currentValue.Value > minimumEquity)
 			return true;
 
-		LogInfo($"Equity guard triggered. Current value {currentValue.Value:0.##}, minimum allowed {minimumEquity:0.##}.");
+
 
 		if (ClosePositionsOnMinEquity && Position != 0)
 		{
@@ -647,15 +645,15 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 		return buffer.Count == shift + 1 ? buffer.Peek() : null;
 	}
 
-	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageTypeOptions type, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageTypeOptions type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeOptions.Simple => new SMA { Length = length },
-			MovingAverageTypeOptions.Exponential => new EMA { Length = length },
+			MovingAverageTypeOptions.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypeOptions.Exponential => new ExponentialMovingAverage { Length = length },
 			MovingAverageTypeOptions.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageTypeOptions.Weighted => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length },
+			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
 

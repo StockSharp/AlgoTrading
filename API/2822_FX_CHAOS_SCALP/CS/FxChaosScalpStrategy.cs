@@ -24,6 +24,8 @@ public class FxChaosScalpStrategy : Strategy
 	private readonly StrategyParam<DataType> _tradingCandleType;
 	private readonly StrategyParam<DataType> _dailyCandleType;
 
+	private readonly StrategyParam<int> _zigZagWindowSize;
+
 	private AwesomeOscillator _awesomeOscillator;
 	private FractalZigZagTracker _hourlyTracker;
 	private FractalZigZagTracker _dailyTracker;
@@ -90,7 +92,7 @@ public class FxChaosScalpStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 			.SetDisplay("Take Profit (pts)", "Take profit distance in points", "Risk");
 
-		_tradingCandleType = Param(nameof(TradingCandleType), TimeSpan.FromHours(1).TimeFrame())
+		_tradingCandleType = Param(nameof(TradingCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Trading Candle", "Primary trading timeframe", "General");
 
 		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -146,13 +148,12 @@ public class FxChaosScalpStrategy : Strategy
 		dailySubscription.Bind(ProcessDailyCandle).Start();
 
 		var tradingSubscription = SubscribeCandles(TradingCandleType);
-		tradingSubscription.BindEx(_awesomeOscillator, ProcessTradingCandle).Start();
+		tradingSubscription.Bind(ProcessTradingCandleRaw).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, tradingSubscription);
-			DrawIndicator(area, _awesomeOscillator);
 			DrawOwnTrades(area);
 		}
 	}
@@ -166,13 +167,15 @@ public class FxChaosScalpStrategy : Strategy
 		_dailyTracker.Update(candle);
 	}
 
-	private void ProcessTradingCandle(ICandleMessage candle, IIndicatorValue aoValue)
+	private void ProcessTradingCandleRaw(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		// Track ZigZag swings for the trading timeframe.
 		_hourlyTracker.Update(candle);
+
+		var aoValue = _awesomeOscillator.Process(candle);
 
 		if (ManageRisk(candle))
 		{
@@ -186,7 +189,7 @@ public class FxChaosScalpStrategy : Strategy
 			return;
 		}
 
-		if (!aoValue.IsFinal)
+		if (aoValue.IsEmpty || !_awesomeOscillator.IsFormed)
 		{
 			UpdatePreviousLevels(candle);
 			return;
@@ -199,7 +202,7 @@ public class FxChaosScalpStrategy : Strategy
 			return;
 		}
 
-		var ao = aoValue.GetValue<decimal>();
+		var ao = aoValue.ToDecimal();
 		var open = candle.OpenPrice;
 		var close = candle.ClosePrice;
 
@@ -211,7 +214,7 @@ public class FxChaosScalpStrategy : Strategy
 		{
 			if (Position < 0)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				_hasEntry = false;
 				_entryPrice = 0m;
 			}
@@ -227,7 +230,7 @@ public class FxChaosScalpStrategy : Strategy
 		{
 			if (Position > 0)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				_hasEntry = false;
 				_entryPrice = 0m;
 			}
@@ -277,7 +280,7 @@ public class FxChaosScalpStrategy : Strategy
 
 			if (stop is decimal stopPrice && candle.LowPrice <= stopPrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				_hasEntry = false;
 				_entryPrice = 0m;
 				return true;
@@ -285,7 +288,7 @@ public class FxChaosScalpStrategy : Strategy
 
 			if (take is decimal takePrice && candle.HighPrice >= takePrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				_hasEntry = false;
 				_entryPrice = 0m;
 				return true;
@@ -298,7 +301,7 @@ public class FxChaosScalpStrategy : Strategy
 
 			if (stop is decimal stopPrice && candle.HighPrice >= stopPrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				_hasEntry = false;
 				_entryPrice = 0m;
 				return true;
@@ -306,7 +309,7 @@ public class FxChaosScalpStrategy : Strategy
 
 			if (take is decimal takePrice && candle.LowPrice <= takePrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				_hasEntry = false;
 				_entryPrice = 0m;
 				return true;
@@ -393,18 +396,18 @@ public class FxChaosScalpStrategy : Strategy
 
 				if (i < centerIndex)
 				{
-					if (center.High <= candle.HighPrice)
+					if (center.High <= candle.High)
 						isUp = false;
 
-					if (center.Low >= candle.LowPrice)
+					if (center.Low >= candle.Low)
 						isDown = false;
 				}
 				else
 				{
-					if (center.High < candle.HighPrice)
+					if (center.High < candle.High)
 						isUp = false;
 
-					if (center.Low > candle.LowPrice)
+					if (center.Low > candle.Low)
 						isDown = false;
 				}
 

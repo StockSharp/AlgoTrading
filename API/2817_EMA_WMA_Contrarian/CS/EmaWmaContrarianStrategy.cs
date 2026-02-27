@@ -167,7 +167,7 @@ public class EmaWmaContrarianStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Fallback volume when risk sizing is unavailable", "Position Sizing");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle type used for indicators", "General");
 	}
 
@@ -198,12 +198,11 @@ public class EmaWmaContrarianStrategy : Strategy
 		// Validate trailing configuration to match original expert advisor behaviour.
 		if (TrailingStopPoints > 0 && TrailingStepPoints <= 0)
 		{
-			LogError("Trailing Step must be positive when Trailing Stop is enabled.");
 			Stop();
 			return;
 		}
 
-		_ema = new EMA { Length = EmaPeriod };
+		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		_wma = new WeightedMovingAverage { Length = WmaPeriod };
 
 		// Subscribe to candles and connect indicators.
@@ -215,8 +214,6 @@ public class EmaWmaContrarianStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
-			DrawIndicator(area, _wma);
 			DrawOwnTrades(area);
 		}
 	}
@@ -233,19 +230,15 @@ public class EmaWmaContrarianStrategy : Strategy
 		// Evaluate protective logic before generating new signals.
 		ManageActivePosition(candle);
 
-		var emaValue = _ema.Process(new CandleIndicatorValue(candle, candle.OpenPrice));
-		var wmaValue = _wma.Process(new CandleIndicatorValue(candle, candle.OpenPrice));
+		var emaValue = _ema.Process(new DecimalIndicatorValue(_ema, candle.OpenPrice, candle.OpenTime) { IsFinal = true });
+		var wmaValue = _wma.Process(new DecimalIndicatorValue(_wma, candle.OpenPrice, candle.OpenTime) { IsFinal = true });
 
-		// Ensure indicators produced final values for this candle.
-		if (!emaValue.IsFinal || !wmaValue.IsFinal)
+		// Ensure indicators produced valid values.
+		if (emaValue.IsEmpty || wmaValue.IsEmpty || !_ema.IsFormed || !_wma.IsFormed)
 			return;
 
-		// Abort if the strategy is not ready to trade.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var ema = emaValue.GetValue<decimal>();
-		var wma = wmaValue.GetValue<decimal>();
+		var ema = emaValue.ToDecimal();
+		var wma = wmaValue.ToDecimal();
 
 		if (!_hasPrevious)
 		{

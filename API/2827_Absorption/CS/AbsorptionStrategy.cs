@@ -148,7 +148,7 @@ set => _breakevenProfit.Value = value;
 /// </summary>
 public AbsorptionStrategy()
 {
-_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles to process", "General");
 
 _maxSearch = Param(nameof(MaxSearch), 10)
@@ -242,34 +242,44 @@ _lowest = new Lowest { Length = MaxSearch };
 
 var subscription = SubscribeCandles(CandleType);
 subscription
-.Bind(_highest, _lowest, ProcessCandle)
+.Bind(ProcessCandleRaw)
 .Start();
-
-StartProtection(null, null);
 }
 
-private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue)
+private void ProcessCandleRaw(ICandleMessage candle)
 {
 if (candle.State != CandleStates.Finished)
 return;
 
-HandlePositionChange();
-ManageActivePosition(candle);
+var highResult = _highest.Process(candle);
+var lowResult = _lowest.Process(candle);
 
-if (_hasActiveOrders && _ordersExpiry.HasValue && candle.CloseTime >= _ordersExpiry.Value)
-{
-CancelActiveOrders();
-ClearPendingOrders();
-}
-
-if (!IsFormedAndOnlineAndAllowTrading())
+if (highResult.IsEmpty || lowResult.IsEmpty || !_highest.IsFormed || !_lowest.IsFormed)
 {
 UpdatePreviousCandles(candle);
 _prevPosition = Position;
 return;
 }
 
-if (Position == 0 && !_hasActiveOrders && _prev1 != null && _prev2 != null && _highest.IsFormed && _lowest.IsFormed)
+var highestValue = highResult.ToDecimal();
+var lowestValue = lowResult.ToDecimal();
+
+ManageActivePosition(candle);
+
+// Check if pending breakout orders should be triggered
+if (_hasActiveOrders)
+{
+if (_ordersExpiry.HasValue && candle.CloseTime >= _ordersExpiry.Value)
+{
+ClearPendingOrders();
+}
+else
+{
+TryTriggerPendingOrders(candle);
+}
+}
+
+if (Position == 0 && !_hasActiveOrders && _prev1 != null && _prev2 != null)
 {
 TryPlaceOrders(candle, highestValue, lowestValue);
 }
@@ -278,11 +288,39 @@ UpdatePreviousCandles(candle);
 
 if (Position != 0 && _hasActiveOrders)
 {
-CancelActiveOrders();
 ClearPendingOrders();
 }
 
 _prevPosition = Position;
+}
+
+private void TryTriggerPendingOrders(ICandleMessage candle)
+{
+if (Position != 0)
+return;
+
+// Check if price has broken above the pending buy level
+if (_pendingBuyPrice > 0 && candle.HighPrice >= _pendingBuyPrice)
+{
+BuyMarket(Volume);
+_entryPrice = _pendingBuyPrice;
+_stopLoss = _pendingBuyStopLoss;
+_takeProfit = _pendingBuyTakeProfit;
+_exitRequestActive = false;
+ClearPendingOrders();
+return;
+}
+
+// Check if price has broken below the pending sell level
+if (_pendingSellPrice > 0 && candle.LowPrice <= _pendingSellPrice)
+{
+SellMarket(Volume);
+_entryPrice = _pendingSellPrice;
+_stopLoss = _pendingSellStopLoss;
+_takeProfit = _pendingSellTakeProfit;
+_exitRequestActive = false;
+ClearPendingOrders();
+}
 }
 
 private void TryPlaceOrders(ICandleMessage candle, decimal highestValue, decimal lowestValue)
@@ -328,10 +366,7 @@ var sellTakeOffset = GetPriceOffset(TakeProfitSell);
 var buyTakeProfit = buyTakeOffset > 0m ? buyPrice + buyTakeOffset : 0m;
 var sellTakeProfit = sellTakeOffset > 0m ? sellPrice - sellTakeOffset : 0m;
 
-CancelActiveOrders();
-
-BuyStop(volume, buyPrice);
-SellStop(volume, sellPrice);
+// Store pending breakout levels (will be triggered on next candle)
 
 _hasActiveOrders = true;
 _pendingHigh = patternCandle.HighPrice;
@@ -349,42 +384,6 @@ _ordersExpiry = OrderExpirationHours > 0
 : null;
 }
 
-private void HandlePositionChange()
-{
-if (Position > 0 && _prevPosition <= 0)
-{
-if (_hasActiveOrders)
-{
-CancelActiveOrders();
-ClearPendingOrders();
-}
-
-_entryPrice = PositionPrice;
-_stopLoss = _pendingBuyStopLoss;
-_takeProfit = _pendingBuyTakeProfit;
-_exitRequestActive = false;
-}
-else if (Position < 0 && _prevPosition >= 0)
-{
-if (_hasActiveOrders)
-{
-CancelActiveOrders();
-ClearPendingOrders();
-}
-
-_entryPrice = PositionPrice;
-_stopLoss = _pendingSellStopLoss;
-_takeProfit = _pendingSellTakeProfit;
-_exitRequestActive = false;
-}
-else if (Position == 0 && _prevPosition != 0)
-{
-_entryPrice = 0m;
-_stopLoss = 0m;
-_takeProfit = 0m;
-_exitRequestActive = false;
-}
-}
 
 private void ManageActivePosition(ICandleMessage candle)
 {

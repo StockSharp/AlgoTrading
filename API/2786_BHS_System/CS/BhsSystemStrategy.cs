@@ -33,12 +33,13 @@ public class BhsSystemStrategy : Strategy
 
 	private decimal _previousAma;
 	private bool _hasPreviousAma;
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
-	private Order _protectionOrder;
+	private decimal? _buyStopLevel;
+	private decimal? _sellStopLevel;
 	private DateTimeOffset? _buyOrderTime;
 	private DateTimeOffset? _sellOrderTime;
-	private decimal? _lastTrailingStopPrice;
+	private decimal _entryPrice;
+	private decimal _highestSinceEntry;
+	private decimal _lowestSinceEntry;
 
 	/// <summary>
 	/// Trade volume used for both entry and protective orders.
@@ -197,7 +198,7 @@ public class BhsSystemStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("AMA Slow Period", "Slow smoothing constant for AMA", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for analysis", "General");
 	}
 
@@ -214,12 +215,13 @@ public class BhsSystemStrategy : Strategy
 
 		_previousAma = 0m;
 		_hasPreviousAma = false;
-		_buyStopOrder = null;
-		_sellStopOrder = null;
-		_protectionOrder = null;
+		_buyStopLevel = null;
+		_sellStopLevel = null;
 		_buyOrderTime = null;
 		_sellOrderTime = null;
-		_lastTrailingStopPrice = null;
+		_entryPrice = 0m;
+		_highestSinceEntry = 0m;
+		_lowestSinceEntry = 0m;
 	}
 
 	/// <inheritdoc />
@@ -251,16 +253,13 @@ public class BhsSystemStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal amaValue)
 	{
-		// Work only with finished candles.
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the first AMA value for future comparisons.
 		if (!_hasPreviousAma)
 		{
 			_previousAma = amaValue;
@@ -268,76 +267,173 @@ public class BhsSystemStrategy : Strategy
 			return;
 		}
 
-		// Skip trading logic until the strategy is synchronized with the market.
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousAma = amaValue;
-			return;
-		}
+		// Check protective stops
+		CheckStopLoss(candle);
+		CheckTrailingStop(candle);
 
-		// Remove stale references and expire old orders before making decisions.
-		CleanupInactiveOrders();
-		CancelExpiredOrders();
+		// Expire old pending levels
+		CancelExpiredLevels();
+
+		// Check if pending levels are triggered
+		CheckPendingTriggers(candle);
 
 		var price = candle.ClosePrice;
 		var (_, priceCeil, priceFloor) = CalculateRoundLevels(price);
 
-		var hasPendingOrders = IsOrderActive(_buyStopOrder) || IsOrderActive(_sellStopOrder);
-		var hasPosition = Position != 0;
+		// Track extremes for trailing
+		if (Position > 0 && price > _highestSinceEntry)
+			_highestSinceEntry = price;
+		if (Position < 0 && (_lowestSinceEntry == 0 || price < _lowestSinceEntry))
+			_lowestSinceEntry = price;
 
-		// Place a new pending order only when there are no open trades or working orders.
-		if (!hasPosition && !hasPendingOrders)
+		var hasPendingLevels = _buyStopLevel.HasValue || _sellStopLevel.HasValue;
+
+		if (Position == 0 && !hasPendingLevels)
 		{
 			if (price > _previousAma)
 			{
-				PlaceBuyStop(priceCeil);
+				_buyStopLevel = priceCeil;
+				_buyOrderTime = candle.OpenTime;
 			}
 			else if (price < _previousAma)
 			{
-				PlaceSellStop(priceFloor);
+				_sellStopLevel = priceFloor;
+				_sellOrderTime = candle.OpenTime;
 			}
 		}
-
-		// Update trailing protection for active positions.
-		UpdateTrailing(candle);
 
 		_previousAma = amaValue;
 	}
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnPositionReceived(position);
-
-		if (Position == 0)
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade == null) return;
+		if (Position != 0m && _entryPrice == 0m)
 		{
-			// Reset protection when the position is flat.
-			CancelOrderIfActive(ref _protectionOrder);
-			_lastTrailingStopPrice = null;
+			_entryPrice = trade.Trade.Price;
+			_highestSinceEntry = trade.Trade.Price;
+			_lowestSinceEntry = trade.Trade.Price;
+		}
+		if (Position == 0m)
+		{
+			_entryPrice = 0m;
+			_highestSinceEntry = 0m;
+			_lowestSinceEntry = 0m;
+		}
+	}
+
+	private void CheckStopLoss(ICandleMessage candle)
+	{
+		var step = Security?.PriceStep ?? 1m;
+
+		if (Position > 0 && StopLossBuyPoints > 0)
+		{
+			var stopPrice = _entryPrice - StopLossBuyPoints * step;
+			if (candle.LowPrice <= stopPrice)
+			{
+				SellMarket(Math.Abs(Position));
+				return;
+			}
+		}
+
+		if (Position < 0 && StopLossSellPoints > 0)
+		{
+			var stopPrice = _entryPrice + StopLossSellPoints * step;
+			if (candle.HighPrice >= stopPrice)
+			{
+				BuyMarket(Math.Abs(Position));
+			}
+		}
+	}
+
+	private void CheckTrailingStop(ICandleMessage candle)
+	{
+		var step = Security?.PriceStep ?? 1m;
+
+		if (Position > 0 && TrailingStopBuyPoints > 0)
+		{
+			var trailingDist = TrailingStopBuyPoints * step;
+			var trailingStep = TrailingStepPoints * step;
+			var profit = _highestSinceEntry - _entryPrice;
+			if (profit > trailingDist + trailingStep)
+			{
+				var trailStop = _highestSinceEntry - trailingDist;
+				if (candle.LowPrice <= trailStop)
+				{
+					SellMarket(Math.Abs(Position));
+					return;
+				}
+			}
+		}
+
+		if (Position < 0 && TrailingStopSellPoints > 0 && _lowestSinceEntry > 0)
+		{
+			var trailingDist = TrailingStopSellPoints * step;
+			var trailingStep = TrailingStepPoints * step;
+			var profit = _entryPrice - _lowestSinceEntry;
+			if (profit > trailingDist + trailingStep)
+			{
+				var trailStop = _lowestSinceEntry + trailingDist;
+				if (candle.HighPrice >= trailStop)
+				{
+					BuyMarket(Math.Abs(Position));
+				}
+			}
+		}
+	}
+
+	private void CheckPendingTriggers(ICandleMessage candle)
+	{
+		if (_buyStopLevel.HasValue && Position <= 0 && candle.HighPrice >= _buyStopLevel.Value)
+		{
+			if (Position < 0)
+				BuyMarket(Math.Abs(Position));
+			BuyMarket(OrderVolume);
+			_buyStopLevel = null;
+			_buyOrderTime = null;
+			_sellStopLevel = null;
+			_sellOrderTime = null;
+		}
+
+		if (_sellStopLevel.HasValue && Position >= 0 && candle.LowPrice <= _sellStopLevel.Value)
+		{
+			if (Position > 0)
+				SellMarket(Math.Abs(Position));
+			SellMarket(OrderVolume);
+			_sellStopLevel = null;
+			_sellOrderTime = null;
+			_buyStopLevel = null;
+			_buyOrderTime = null;
+		}
+	}
+
+	private void CancelExpiredLevels()
+	{
+		if (ExpirationHours <= 0m)
 			return;
+
+		var expiration = TimeSpan.FromHours((double)ExpirationHours);
+		var now = CurrentTime;
+
+		if (_buyOrderTime.HasValue && now - _buyOrderTime.Value >= expiration)
+		{
+			_buyStopLevel = null;
+			_buyOrderTime = null;
 		}
 
-		// A non-zero delta with a zero previous position means a brand-new trade.
-		if (Position > 0 && Position - delta == 0)
+		if (_sellOrderTime.HasValue && now - _sellOrderTime.Value >= expiration)
 		{
-			CancelOrderIfActive(ref _buyStopOrder, ref _buyOrderTime);
-			CancelOrderIfActive(ref _sellStopOrder, ref _sellOrderTime);
-			CreateInitialStop(true);
-		}
-		else if (Position < 0 && Position - delta == 0)
-		{
-			CancelOrderIfActive(ref _buyStopOrder, ref _buyOrderTime);
-			CancelOrderIfActive(ref _sellStopOrder, ref _sellOrderTime);
-			CreateInitialStop(false);
+			_sellStopLevel = null;
+			_sellOrderTime = null;
 		}
 	}
 
 	private (decimal rounded, decimal ceil, decimal floor) CalculateRoundLevels(decimal price)
 	{
-		var point = Security?.PriceStep ?? 0m;
+		var point = Security?.PriceStep ?? 1m;
 		var stepPoints = RoundStepPoints;
 
-		// If step settings are not available, return the original price.
 		if (point <= 0m || stepPoints <= 0)
 			return (price, price, price);
 
@@ -356,192 +452,5 @@ public class BhsSystemStrategy : Strategy
 		var priceFloor = floorIndex * step;
 
 		return (priceRound, priceCeil, priceFloor);
-	}
-
-	private void PlaceBuyStop(decimal price)
-	{
-		if (OrderVolume <= 0m)
-			return;
-
-		// Ensure only one buy stop order exists at a time.
-		CancelOrderIfActive(ref _buyStopOrder, ref _buyOrderTime);
-
-		_buyStopOrder = BuyStop(OrderVolume, price);
-		_buyOrderTime = CurrentTime;
-	}
-
-	private void PlaceSellStop(decimal price)
-	{
-		if (OrderVolume <= 0m)
-			return;
-
-		// Ensure only one sell stop order exists at a time.
-		CancelOrderIfActive(ref _sellStopOrder, ref _sellOrderTime);
-
-		_sellStopOrder = SellStop(OrderVolume, price);
-		_sellOrderTime = CurrentTime;
-	}
-
-	private void CreateInitialStop(bool isLong)
-	{
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-			return;
-
-		var distancePoints = isLong ? StopLossBuyPoints : StopLossSellPoints;
-		if (distancePoints <= 0)
-		{
-			CancelOrderIfActive(ref _protectionOrder);
-			_lastTrailingStopPrice = null;
-			return;
-		}
-
-		var distance = distancePoints * step;
-		var volume = Math.Abs(Position);
-		if (volume <= 0m)
-			return;
-
-		var stopPrice = isLong
-			? PositionPrice - distance
-			: PositionPrice + distance;
-
-		CancelOrderIfActive(ref _protectionOrder);
-
-		_protectionOrder = isLong
-			? SellStop(volume, stopPrice)
-			: BuyStop(volume, stopPrice);
-
-		_lastTrailingStopPrice = stopPrice;
-	}
-
-	private void UpdateTrailing(ICandleMessage candle)
-	{
-		if (Position > 0)
-		{
-			ApplyTrailing(candle.ClosePrice, true);
-		}
-		else if (Position < 0)
-		{
-			ApplyTrailing(candle.ClosePrice, false);
-		}
-	}
-
-	private void ApplyTrailing(decimal currentPrice, bool isLong)
-	{
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-			return;
-
-		var trailingPoints = isLong ? TrailingStopBuyPoints : TrailingStopSellPoints;
-		if (trailingPoints <= 0)
-			return;
-
-		var trailingDistance = trailingPoints * step;
-		var trailingStep = TrailingStepPoints * step;
-		var entryPrice = PositionPrice;
-
-		if (entryPrice <= 0m)
-			return;
-
-		var volume = Math.Abs(Position);
-		if (volume <= 0m)
-			return;
-
-		if (isLong)
-		{
-			var profit = currentPrice - entryPrice;
-			if (profit <= trailingDistance + trailingStep)
-				return;
-
-			var newStop = currentPrice - trailingDistance;
-
-			if (_lastTrailingStopPrice is decimal lastStop && newStop <= lastStop + trailingStep)
-				return;
-
-			CancelOrderIfActive(ref _protectionOrder);
-
-			_protectionOrder = SellStop(volume, newStop);
-			_lastTrailingStopPrice = newStop;
-		}
-		else
-		{
-			var profit = entryPrice - currentPrice;
-			if (profit <= trailingDistance + trailingStep)
-				return;
-
-			var newStop = currentPrice + trailingDistance;
-
-			if (_lastTrailingStopPrice is decimal lastStop && newStop >= lastStop - trailingStep)
-				return;
-
-			CancelOrderIfActive(ref _protectionOrder);
-
-			_protectionOrder = BuyStop(volume, newStop);
-			_lastTrailingStopPrice = newStop;
-		}
-	}
-
-	private void CancelExpiredOrders()
-	{
-		if (ExpirationHours <= 0m)
-			return;
-
-		var expiration = TimeSpan.FromHours((double)ExpirationHours);
-		var now = CurrentTime;
-
-		if (_buyOrderTime != null && now - _buyOrderTime >= expiration)
-			CancelOrderIfActive(ref _buyStopOrder, ref _buyOrderTime);
-
-		if (_sellOrderTime != null && now - _sellOrderTime >= expiration)
-			CancelOrderIfActive(ref _sellStopOrder, ref _sellOrderTime);
-	}
-
-	private void CleanupInactiveOrders()
-	{
-		if (_buyStopOrder != null && !IsOrderActive(_buyStopOrder))
-		{
-			_buyStopOrder = null;
-			_buyOrderTime = null;
-		}
-
-		if (_sellStopOrder != null && !IsOrderActive(_sellStopOrder))
-		{
-			_sellStopOrder = null;
-			_sellOrderTime = null;
-		}
-
-		if (_protectionOrder != null && !IsOrderActive(_protectionOrder))
-		{
-			_protectionOrder = null;
-			_lastTrailingStopPrice = null;
-		}
-	}
-
-	private void CancelOrderIfActive(ref Order order)
-	{
-		if (order == null)
-			return;
-
-		if (IsOrderActive(order))
-			CancelOrder(order);
-
-		order = null;
-	}
-
-	private void CancelOrderIfActive(ref Order order, ref DateTimeOffset? time)
-	{
-		if (order == null)
-			return;
-
-		if (IsOrderActive(order))
-			CancelOrder(order);
-
-		order = null;
-		time = null;
-	}
-
-	private static bool IsOrderActive(Order order)
-	{
-		return order != null && (order.State == OrderStates.Active || order.State == OrderStates.Pending);
 	}
 }

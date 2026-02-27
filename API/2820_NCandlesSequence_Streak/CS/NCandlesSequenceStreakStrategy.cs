@@ -103,7 +103,7 @@ public class NCandlesSequenceStreakStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Max Position Volume", "Maximum volume allowed for an open position", "Risk");
 
-		_useTradeHours = Param(nameof(UseTradeHours), true)
+		_useTradeHours = Param(nameof(UseTradeHours), false)
 		.SetDisplay("Use Trade Hours", "Enable intraday trading window", "Timing");
 
 		_startHour = Param(nameof(StartHour), 11)
@@ -287,8 +287,6 @@ public class NCandlesSequenceStreakStrategy : Strategy
 		if (UseTradeHours && StartHour >= EndHour)
 		throw new InvalidOperationException("Start hour must be less than end hour when the trading window is enabled.");
 
-		StartProtection(null, null);
-
 		_pipSize = CalculatePipSize();
 
 		var subscription = SubscribeCandles(CandleType);
@@ -300,8 +298,7 @@ public class NCandlesSequenceStreakStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		// no indicators to check formation
 
 		UpdateTrailingStops(candle);
 		ManageFloatingProfit(candle);

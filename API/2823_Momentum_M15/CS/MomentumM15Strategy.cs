@@ -91,7 +91,7 @@ public class MomentumM15Strategy : Strategy
 			
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for calculations", "Common");
 
 		_maPeriodParam = Param(nameof(MaPeriod), 26)
@@ -319,8 +319,6 @@ public class MomentumM15Strategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
-			DrawIndicator(area, _momentum);
 			DrawOwnTrades(area);
 		}
 	}
@@ -370,9 +368,9 @@ public class MomentumM15Strategy : Strategy
 	private decimal? ProcessMovingAverage(ICandleMessage candle)
 	{
 		var price = GetPrice(candle, MaPrice);
-		var value = _ma.Process(new DecimalIndicatorValue(_ma, price, candle.OpenTime));
+		var value = _ma.Process(new DecimalIndicatorValue(_ma, price, candle.OpenTime) { IsFinal = true });
 
-		if (!value.IsFinal)
+		if (value.IsEmpty || !_ma.IsFormed)
 		return null;
 
 		var ma = value.ToDecimal();
@@ -392,9 +390,9 @@ public class MomentumM15Strategy : Strategy
 	private decimal? ProcessMomentum(ICandleMessage candle)
 	{
 		var price = GetPrice(candle, MomentumPrice);
-		var value = _momentum.Process(new DecimalIndicatorValue(_momentum, price, candle.OpenTime));
+		var value = _momentum.Process(new DecimalIndicatorValue(_momentum, price, candle.OpenTime) { IsFinal = true });
 
-		if (!value.IsFinal)
+		if (value.IsEmpty || !_momentum.IsFormed)
 		return null;
 
 		var momentum = value.ToDecimal();
@@ -582,11 +580,11 @@ public class MomentumM15Strategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SMA { Length = period },
-			MovingAverageMethods.Exponential => new EMA { Length = period },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = period },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = period },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = period },
-			_ => new SMA { Length = period },
+			_ => new SimpleMovingAverage { Length = period },
 		};
 	}
 }

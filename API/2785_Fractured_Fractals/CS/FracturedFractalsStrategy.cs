@@ -36,19 +36,17 @@ public class FracturedFractalsStrategy : Strategy
 	private decimal? _downMiddle;
 	private decimal? _downOld;
 
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
-	private Order _longStopOrder;
-	private Order _shortStopOrder;
+	private decimal? _buyStopLevel;
+	private decimal? _sellStopLevel;
+	private decimal? _longStopLevel;
+	private decimal? _shortStopLevel;
 	private DateTimeOffset? _buyStopExpiry;
 	private DateTimeOffset? _sellStopExpiry;
+	private decimal _buyStopVolume;
+	private decimal _sellStopVolume;
 
-	private Sides? _openSide;
-	private decimal _openVolume;
-	private decimal _averageEntryPrice;
-	private decimal _pendingTradePnl;
+	private decimal _entryPrice;
 	private int _consecutiveLosses;
-	private DateTimeOffset? _lastProfitTime;
 
 	/// <summary>
 	/// Maximum risk per trade expressed as percentage of portfolio value.
@@ -103,7 +101,7 @@ public class FracturedFractalsStrategy : Strategy
 		.SetRange(0, 240)
 		.SetDisplay("Expiration", "Pending order lifetime (hours)", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe", "General");
 	}
 
@@ -130,19 +128,17 @@ public class FracturedFractalsStrategy : Strategy
 		_downMiddle = null;
 		_downOld = null;
 
-		_buyStopOrder = null;
-		_sellStopOrder = null;
-		_longStopOrder = null;
-		_shortStopOrder = null;
+		_buyStopLevel = null;
+		_sellStopLevel = null;
+		_longStopLevel = null;
+		_shortStopLevel = null;
 		_buyStopExpiry = null;
 		_sellStopExpiry = null;
+		_buyStopVolume = 0m;
+		_sellStopVolume = 0m;
 
-		_openSide = null;
-		_openVolume = 0m;
-		_averageEntryPrice = 0m;
-		_pendingTradePnl = 0m;
+		_entryPrice = 0m;
 		_consecutiveLosses = 0;
-		_lastProfitTime = null;
 	}
 
 	/// <inheritdoc />
@@ -163,44 +159,44 @@ public class FracturedFractalsStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Main candle handler translated from the MT5 tick routine.
 		if (candle.State != CandleStates.Finished)
-		// Only act on completed bars to mimic MT5 new-bar trigger.
-		return;
-
-		// Clean up references to entry and stop orders that changed their state.
-		CleanupInactiveOrders();
+			return;
 
 		_highBuffer.Enqueue(candle.HighPrice);
 		_lowBuffer.Enqueue(candle.LowPrice);
 
 		if (_highBuffer.Count > 5)
-		_highBuffer.Dequeue();
+			_highBuffer.Dequeue();
 		if (_lowBuffer.Count > 5)
-		_lowBuffer.Dequeue();
-		// Maintain a rolling five-bar window required for fractal confirmation.
+			_lowBuffer.Dequeue();
 
 		if (_highBuffer.Count < 5 || _lowBuffer.Count < 5)
-		return;
+			return;
 
 		DetectFractals();
-		// Refresh protective stops with the latest opposite fractal level.
+
+		// Check protective stop levels
+		CheckProtectiveStops(candle);
+
+		// Validate pending levels
+		ValidatePendingLevels(candle.CloseTime);
+
+		// Check if pending buy/sell stop levels are triggered
+		CheckPendingTriggers(candle);
+
+		// Update trailing stops
 		UpdateTrailingStops();
-		// Cancel pending entries if the structure or time invalidates them.
-		ValidatePendingOrders(candle.CloseTime);
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (TryPlaceBuyStop(candle.CloseTime))
-		return;
-
-		TryPlaceSellStop(candle.CloseTime);
+		// Try to set new pending levels
+		if (Position == 0)
+		{
+			if (!TrySetBuyStopLevel(candle.CloseTime))
+				TrySetSellStopLevel(candle.CloseTime);
+		}
 	}
 
 	private void DetectFractals()
 	{
-		// Evaluate the five-bar pattern that defines Williams fractals.
 		var highs = _highBuffer.ToArray();
 		var lows = _lowBuffer.ToArray();
 
@@ -208,10 +204,10 @@ public class FracturedFractalsStrategy : Strategy
 		decimal? downFractal = null;
 
 		if (highs[2] > highs[0] && highs[2] > highs[1] && highs[2] > highs[3] && highs[2] > highs[4])
-		upFractal = highs[2];
+			upFractal = highs[2];
 
 		if (lows[2] < lows[0] && lows[2] < lows[1] && lows[2] < lows[3] && lows[2] < lows[4])
-		downFractal = lows[2];
+			downFractal = lows[2];
 
 		if (upFractal is decimal up && !AreEqual(_lastUpFractal, up))
 		{
@@ -230,316 +226,211 @@ public class FracturedFractalsStrategy : Strategy
 		}
 	}
 
-	private void UpdateTrailingStops()
+	private void CheckProtectiveStops(ICandleMessage candle)
 	{
-		// Rebuild protective stop orders using the newest confirmed opposite fractal.
-		if (Position > 0 && _downYoungest is decimal longStopPrice)
+		if (Position > 0 && _longStopLevel.HasValue)
 		{
-			var shouldUpdate = _longStopOrder == null ||
-			(_longStopOrder.State == OrderStates.Active && longStopPrice > _longStopOrder.Price) ||
-			(_longStopOrder.State != OrderStates.Active);
-
-			if (shouldUpdate)
+			if (candle.LowPrice <= _longStopLevel.Value)
 			{
-				ReplaceStopOrder(ref _longStopOrder, Sides.Sell, longStopPrice, Math.Abs(Position));
+				SellMarket(Math.Abs(Position));
+				_longStopLevel = null;
+				_consecutiveLosses++;
+				return;
 			}
 		}
-		else if (Position <= 0 && _longStopOrder != null)
-		{
-			CancelStop(ref _longStopOrder);
-		}
 
-		if (Position < 0 && _upYoungest is decimal shortStopPrice)
+		if (Position < 0 && _shortStopLevel.HasValue)
 		{
-			var shouldUpdate = _shortStopOrder == null ||
-			(_shortStopOrder.State == OrderStates.Active && shortStopPrice < _shortStopOrder.Price) ||
-			(_shortStopOrder.State != OrderStates.Active);
-
-			if (shouldUpdate)
+			if (candle.HighPrice >= _shortStopLevel.Value)
 			{
-				ReplaceStopOrder(ref _shortStopOrder, Sides.Buy, shortStopPrice, Math.Abs(Position));
+				BuyMarket(Math.Abs(Position));
+				_shortStopLevel = null;
+				_consecutiveLosses++;
+				return;
 			}
-		}
-		else if (Position >= 0 && _shortStopOrder != null)
-		{
-			CancelStop(ref _shortStopOrder);
 		}
 	}
 
-	private void ValidatePendingOrders(DateTimeOffset currentTime)
+	private void UpdateTrailingStops()
 	{
-		// Remove stale pending orders when price structure changes or expiration is reached.
-		if (IsOrderActive(_buyStopOrder) && _upYoungest is decimal latestUp)
+		if (Position > 0 && _downYoungest.HasValue)
 		{
-			if (latestUp < _buyStopOrder.Price && !AreEqual(latestUp, _buyStopOrder.Price))
+			if (!_longStopLevel.HasValue || _downYoungest.Value > _longStopLevel.Value)
+				_longStopLevel = _downYoungest.Value;
+		}
+		else if (Position <= 0)
+		{
+			_longStopLevel = null;
+		}
+
+		if (Position < 0 && _upYoungest.HasValue)
+		{
+			if (!_shortStopLevel.HasValue || _upYoungest.Value < _shortStopLevel.Value)
+				_shortStopLevel = _upYoungest.Value;
+		}
+		else if (Position >= 0)
+		{
+			_shortStopLevel = null;
+		}
+	}
+
+	private void ValidatePendingLevels(DateTimeOffset currentTime)
+	{
+		if (_buyStopLevel.HasValue && _upYoungest.HasValue)
+		{
+			if (_upYoungest.Value < _buyStopLevel.Value && !AreEqual(_upYoungest, _buyStopLevel.Value))
 			{
-				CancelOrder(_buyStopOrder);
-				_buyStopOrder = null;
+				_buyStopLevel = null;
 				_buyStopExpiry = null;
 			}
 		}
 
-		if (IsOrderActive(_sellStopOrder) && _downYoungest is decimal latestDown)
+		if (_sellStopLevel.HasValue && _downYoungest.HasValue)
 		{
-			if (latestDown > _sellStopOrder.Price && !AreEqual(latestDown, _sellStopOrder.Price))
+			if (_downYoungest.Value > _sellStopLevel.Value && !AreEqual(_downYoungest, _sellStopLevel.Value))
 			{
-				CancelOrder(_sellStopOrder);
-				_sellStopOrder = null;
+				_sellStopLevel = null;
 				_sellStopExpiry = null;
 			}
 		}
 
-		if (IsOrderActive(_buyStopOrder) && _buyStopExpiry is DateTimeOffset buyExpiry && currentTime >= buyExpiry)
+		if (_buyStopLevel.HasValue && _buyStopExpiry.HasValue && currentTime >= _buyStopExpiry.Value)
 		{
-			CancelOrder(_buyStopOrder);
-			_buyStopOrder = null;
+			_buyStopLevel = null;
 			_buyStopExpiry = null;
 		}
 
-		if (IsOrderActive(_sellStopOrder) && _sellStopExpiry is DateTimeOffset sellExpiry && currentTime >= sellExpiry)
+		if (_sellStopLevel.HasValue && _sellStopExpiry.HasValue && currentTime >= _sellStopExpiry.Value)
 		{
-			CancelOrder(_sellStopOrder);
-			_sellStopOrder = null;
+			_sellStopLevel = null;
 			_sellStopExpiry = null;
 		}
 
 		if (Position != 0)
 		{
-			if (IsOrderActive(_buyStopOrder))
-			CancelOrder(_buyStopOrder);
-			if (IsOrderActive(_sellStopOrder))
-			CancelOrder(_sellStopOrder);
-
-			_buyStopOrder = null;
-			_sellStopOrder = null;
+			_buyStopLevel = null;
+			_sellStopLevel = null;
 			_buyStopExpiry = null;
 			_sellStopExpiry = null;
 		}
 	}
 
-	private bool TryPlaceBuyStop(DateTimeOffset time)
+	private void CheckPendingTriggers(ICandleMessage candle)
 	{
-		// Deploy a buy stop once the latest upper fractal breaks above the previous one.
-		if (Position > 0 || IsOrderActive(_buyStopOrder))
-		return false;
+		if (_buyStopLevel.HasValue && candle.HighPrice >= _buyStopLevel.Value && Position <= 0)
+		{
+			var vol = _buyStopVolume > 0m ? _buyStopVolume : Volume;
+			if (vol > 0m)
+			{
+				if (Position < 0)
+					BuyMarket(Math.Abs(Position));
+				BuyMarket(vol);
+				_entryPrice = _buyStopLevel.Value;
+				_longStopLevel = _downYoungest;
+			}
+			_buyStopLevel = null;
+			_buyStopExpiry = null;
+		}
+
+		if (_sellStopLevel.HasValue && candle.LowPrice <= _sellStopLevel.Value && Position >= 0)
+		{
+			var vol = _sellStopVolume > 0m ? _sellStopVolume : Volume;
+			if (vol > 0m)
+			{
+				if (Position > 0)
+					SellMarket(Math.Abs(Position));
+				SellMarket(vol);
+				_entryPrice = _sellStopLevel.Value;
+				_shortStopLevel = _upYoungest;
+			}
+			_sellStopLevel = null;
+			_sellStopExpiry = null;
+		}
+	}
+
+	private bool TrySetBuyStopLevel(DateTimeOffset time)
+	{
+		if (Position > 0 || _buyStopLevel.HasValue)
+			return false;
 
 		if (_upYoungest is not decimal up || _upMiddle is not decimal middle || _downYoungest is not decimal stop)
-		return false;
+			return false;
 
 		if (up <= middle || stop >= up)
-		return false;
+			return false;
 
 		var volume = CalculateOrderVolume(up, stop, Sides.Buy);
 		if (volume <= 0m)
-		return false;
+			return false;
 
-		var order = BuyStop(volume, up);
-		if (order == null)
-		return false;
-
-		_buyStopOrder = order;
+		_buyStopLevel = up;
+		_buyStopVolume = volume;
 		_buyStopExpiry = ExpirationHours > 0 ? time + TimeSpan.FromHours(ExpirationHours) : null;
 		return true;
 	}
 
-	private void TryPlaceSellStop(DateTimeOffset time)
+	private void TrySetSellStopLevel(DateTimeOffset time)
 	{
-		// Deploy a sell stop once the latest lower fractal confirms a breakdown.
-		if (Position < 0 || IsOrderActive(_sellStopOrder))
-		return;
+		if (Position < 0 || _sellStopLevel.HasValue)
+			return;
 
 		if (_downYoungest is not decimal down || _downMiddle is not decimal middle || _upYoungest is not decimal stop)
-		return;
+			return;
 
 		if (down >= middle || stop <= down)
-		return;
+			return;
 
 		var volume = CalculateOrderVolume(down, stop, Sides.Sell);
 		if (volume <= 0m)
-		return;
+			return;
 
-		var order = SellStop(volume, down);
-		if (order == null)
-		return;
-
-		_sellStopOrder = order;
+		_sellStopLevel = down;
+		_sellStopVolume = volume;
 		_sellStopExpiry = ExpirationHours > 0 ? time + TimeSpan.FromHours(ExpirationHours) : null;
-	}
-
-	private void ReplaceStopOrder(ref Order target, Sides side, decimal price, decimal volume)
-	{
-		// Cancel the previous protective order and register an updated one.
-		if (volume <= 0m)
-		return;
-
-		if (target != null && target.State == OrderStates.Active)
-		CancelOrder(target);
-
-		target = side == Sides.Sell
-		? SellStop(volume, price)
-		: BuyStop(volume, price);
-	}
-
-	private void CancelStop(ref Order order)
-	{
-		if (order == null)
-		return;
-
-		if (order.State == OrderStates.Active)
-		CancelOrder(order);
-
-		order = null;
-	}
-
-	private void CleanupInactiveOrders()
-	{
-		if (_buyStopOrder != null && _buyStopOrder.State is OrderStates.Done or OrderStates.Failed or OrderStates.Cancelled)
-		{
-			_buyStopOrder = null;
-			_buyStopExpiry = null;
-		}
-
-		if (_sellStopOrder != null && _sellStopOrder.State is OrderStates.Done or OrderStates.Failed or OrderStates.Cancelled)
-		{
-			_sellStopOrder = null;
-			_sellStopExpiry = null;
-		}
-
-		if (_longStopOrder != null && _longStopOrder.State is OrderStates.Done or OrderStates.Failed or OrderStates.Cancelled)
-		_longStopOrder = null;
-
-		if (_shortStopOrder != null && _shortStopOrder.State is OrderStates.Done or OrderStates.Failed or OrderStates.Cancelled)
-		_shortStopOrder = null;
-	}
-
-	private bool IsOrderActive(Order order)
-	{
-		return order != null && order.State == OrderStates.Active;
 	}
 
 	private decimal CalculateOrderVolume(decimal entryPrice, decimal stopPrice, Sides direction)
 	{
-		// Risk-based position sizing similar to the original MT5 implementation.
-		var security = Security;
-		if (security == null)
-		return 0m;
-
 		var riskPerUnit = direction == Sides.Buy ? entryPrice - stopPrice : stopPrice - entryPrice;
 		if (riskPerUnit <= 0m)
-		return 0m;
+			return 0m;
 
 		var portfolioValue = Portfolio?.CurrentValue ?? 0m;
 		if (portfolioValue <= 0m)
-		portfolioValue = Volume > 0m ? Volume * entryPrice : 0m;
+			portfolioValue = Volume > 0m ? Volume * entryPrice : 0m;
 
 		var riskAmount = portfolioValue * (MaximumRiskPercent / 100m);
 		if (riskAmount <= 0m)
-		return 0m;
+			return 0m;
 
 		var volume = riskAmount / riskPerUnit;
 
 		if (DecreaseFactor > 0m && _consecutiveLosses > 1)
-		volume -= volume * (_consecutiveLosses / DecreaseFactor);
+			volume -= volume * (_consecutiveLosses / DecreaseFactor);
 
 		if (volume <= 0m)
-		return 0m;
+			return 0m;
 
-		var lotSize = security.LotSize ?? 1m;
-		if (lotSize > 0m)
-		volume /= lotSize;
-
-		var step = security.VolumeStep ?? 0m;
-		if (step > 0m)
-		volume = Math.Floor(volume / step) * step;
-
-		var minVolume = security.MinVolume ?? 0m;
-		if (minVolume > 0m && volume < minVolume)
-		return 0m;
-
-		var maxVolume = security.MaxVolume;
-		if (maxVolume.HasValue && volume > maxVolume.Value)
-		volume = maxVolume.Value;
-
-		return volume;
+		return Math.Max(volume, Volume > 0 ? Volume : 1m);
 	}
 
 	private bool AreEqual(decimal? first, decimal second)
 	{
 		if (first is not decimal value)
-		return false;
+			return false;
 
 		var step = Security?.PriceStep ?? 0.00000001m;
 		return Math.Abs(value - second) <= step / 2m;
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position == 0)
-		{
-			CancelStop(ref _longStopOrder);
-			CancelStop(ref _shortStopOrder);
-		}
-	}
-
-	/// <inheritdoc />
 	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		// Track fills to determine whether the latest cycle ended in profit or loss.
 		base.OnOwnTradeReceived(trade);
-
-		if (trade?.Order == null)
-		return;
-
-		var tradeSide = trade.Order.Side;
-		var tradeVolume = trade.Trade.Volume;
-		var tradePrice = trade.Trade.Price;
-		var tradeTime = trade.Trade.ServerTime;
-
-		if (_openSide == null)
-		{
-			_openSide = tradeSide;
-			_averageEntryPrice = tradePrice;
-			_openVolume = tradeVolume;
-			_pendingTradePnl = 0m;
-			return;
-		}
-
-		if (tradeSide == _openSide)
-		{
-			var newVolume = _openVolume + tradeVolume;
-			if (newVolume > 0m)
-			_averageEntryPrice = (_averageEntryPrice * _openVolume + tradePrice * tradeVolume) / newVolume;
-			_openVolume = newVolume;
-			return;
-		}
-
-		var direction = _openSide == Sides.Buy ? 1m : -1m;
-		_pendingTradePnl += (tradePrice - _averageEntryPrice) * tradeVolume * direction;
-		_openVolume -= tradeVolume;
-
-		if (_openVolume <= 0m)
-		{
-			if (_pendingTradePnl > 0m)
-			{
-				_consecutiveLosses = 0;
-				_lastProfitTime = tradeTime;
-			}
-			else if (_pendingTradePnl < 0m)
-			{
-				_consecutiveLosses++;
-			}
-			else
-			{
-				_consecutiveLosses = 0;
-			}
-
-			_openSide = null;
-			_openVolume = 0m;
-			_averageEntryPrice = 0m;
-			_pendingTradePnl = 0m;
-		}
+		if (trade?.Trade == null) return;
+		if (Position != 0m && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+		if (Position == 0m)
+			_entryPrice = 0m;
 	}
 }

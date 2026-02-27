@@ -199,43 +199,37 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		_macdFiveMinute = CreateMacd();
 		_macdFifteenMinute = CreateMacd();
 		_macdHour = CreateMacd();
 		_macdFourHour = CreateMacd();
 
-		// Subscribe to level one quotes so we can enforce the spread filter.
-		SubscribeLevel1()
-			.Bind(OnLevel1)
-			.Start();
-
 		// Bind the execution timeframe to the MACD handler.
 		var fiveMinuteSubscription = SubscribeCandles(FiveMinuteCandleType);
 		fiveMinuteSubscription
-			.BindEx(_macdFiveMinute, ProcessFiveMinuteCandle)
+			.Bind(ProcessFiveMinuteCandleRaw)
 			.Start();
 
 		SubscribeCandles(FifteenMinuteCandleType)
-			.BindEx(_macdFifteenMinute, ProcessFifteenMinuteCandle)
+			.Bind(ProcessFifteenMinuteCandleRaw)
 			.Start();
 
 		SubscribeCandles(HourCandleType)
-			.BindEx(_macdHour, ProcessHourCandle)
+			.Bind(ProcessHourCandleRaw)
 			.Start();
 
 		SubscribeCandles(FourHourCandleType)
-			.BindEx(_macdFourHour, ProcessFourHourCandle)
+			.Bind(ProcessFourHourCandleRaw)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, fiveMinuteSubscription);
-			DrawIndicator(area, _macdFiveMinute);
 			DrawOwnTrades(area);
 		}
 	}
@@ -259,87 +253,70 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 	_bestAskPrice = message.TryGetDecimal(Level1Fields.BestAskPrice) ?? _bestAskPrice;
 	}
 
-	private void ProcessFiveMinuteCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	private void ProcessFiveMinuteCandleRaw(ICandleMessage candle)
 	{
-	// Trade decisions are made only after a candle closes.
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	if (!TryUpdateRelation(macdValue, out var relation))
-	return;
+		var macdValue = _macdFiveMinute.Process(candle);
+		if (!TryUpdateRelation(macdValue, out var relation))
+			return;
 
-	_relationFiveMinute = relation;
+		_relationFiveMinute = relation;
 
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
+		if (!HasAllRelations())
+			return;
 
-	if (!HasAllRelations())
-	return;
+		// Manage protective exits whenever a position is open.
+		if (Position != 0)
+		{
+			ManageOpenPosition(candle);
+			return;
+		}
 
-	// Validate the real-time spread before submitting a new order.
-	if (MaxSpreadPoints > 0)
-	{
-	if (!TryGetSpread(out var spreadPoints))
-	return;
+		if (OrderVolume <= 0)
+			return;
 
-	if (spreadPoints > MaxSpreadPoints)
-	{
-	LogInfo($"Spread {spreadPoints:0.###} exceeds maximum {MaxSpreadPoints} points.");
-	return;
-	}
-	}
-
-	// Manage protective exits whenever a position is open.
-	if (Position != 0)
-	{
-	ManageOpenPosition(candle);
-	return;
-	}
-
-	if (OrderVolume <= 0)
-	return;
-
-	if (AllRelationsEqual(1))
-	{
-	// All MACD signals are bullish, align with the uptrend.
-	BuyMarket(OrderVolume);
-	_entryPrice = candle.ClosePrice;
-	LogInfo($"Entered long at {candle.ClosePrice}.");
-	}
-	else if (AllRelationsEqual(-1))
-	{
-	// All MACD signals are bearish, align with the downtrend.
-	SellMarket(OrderVolume);
-	_entryPrice = candle.ClosePrice;
-	LogInfo($"Entered short at {candle.ClosePrice}.");
-	}
+		if (AllRelationsEqual(1))
+		{
+			BuyMarket(OrderVolume);
+			_entryPrice = candle.ClosePrice;
+		}
+		else if (AllRelationsEqual(-1))
+		{
+			SellMarket(OrderVolume);
+			_entryPrice = candle.ClosePrice;
+		}
 	}
 
-	private void ProcessFifteenMinuteCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	private void ProcessFifteenMinuteCandleRaw(ICandleMessage candle)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	if (TryUpdateRelation(macdValue, out var relation))
-	_relationFifteenMinute = relation;
+		var macdValue = _macdFifteenMinute.Process(candle);
+		if (TryUpdateRelation(macdValue, out var relation))
+			_relationFifteenMinute = relation;
 	}
 
-	private void ProcessHourCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	private void ProcessHourCandleRaw(ICandleMessage candle)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	if (TryUpdateRelation(macdValue, out var relation))
-	_relationHour = relation;
+		var macdValue = _macdHour.Process(candle);
+		if (TryUpdateRelation(macdValue, out var relation))
+			_relationHour = relation;
 	}
 
-	private void ProcessFourHourCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	private void ProcessFourHourCandleRaw(ICandleMessage candle)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	if (TryUpdateRelation(macdValue, out var relation))
-	_relationFourHour = relation;
+		var macdValue = _macdFourHour.Process(candle);
+		if (TryUpdateRelation(macdValue, out var relation))
+			_relationFourHour = relation;
 	}
 
 	private bool TryUpdateRelation(IIndicatorValue macdValue, out int relation)
@@ -413,7 +390,6 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 	{
 	SellMarket(Position);
 	_entryPrice = 0m;
-	LogInfo($"Long take-profit hit at {candle.HighPrice}.");
 	return;
 	}
 
@@ -421,7 +397,6 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 	{
 	SellMarket(Position);
 	_entryPrice = 0m;
-	LogInfo($"Long stop-loss hit at {candle.LowPrice}.");
 	}
 	}
 	else if (Position < 0)
@@ -432,7 +407,6 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 	{
 	BuyMarket(volume);
 	_entryPrice = 0m;
-	LogInfo($"Short take-profit hit at {candle.LowPrice}.");
 	return;
 	}
 
@@ -440,7 +414,6 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 	{
 	BuyMarket(volume);
 	_entryPrice = 0m;
-	LogInfo($"Short stop-loss hit at {candle.HighPrice}.");
 	}
 	}
 	else

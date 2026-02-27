@@ -98,7 +98,7 @@ public class DojiArrowsStrategy : Strategy
 			.SetDisplay("Doji Body Points", "Maximum difference between open and close to treat the candle as a doji.", "Pattern")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for signal generation.", "General");
 	}
 

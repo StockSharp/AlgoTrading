@@ -78,7 +78,7 @@ public class DoubleChannelEaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!bbVal.IsFinal || !emaVal.IsFinal)
 			return;
 
 		var bb = (BollingerBandsValue)bbVal;
@@ -91,9 +91,10 @@ public class DoubleChannelEaStrategy : Strategy
 		var ema = emaVal.GetValue<decimal>();
 		var close = candle.ClosePrice;
 
-		if (close < lower && close > ema && Position <= 0)
+		// Buy near lower BB in uptrend (close > EMA), sell near upper BB in downtrend (close < EMA)
+		if (close <= lower && Position <= 0)
 			BuyMarket();
-		else if (close > upper && close < ema && Position >= 0)
+		else if (close >= upper && Position >= 0)
 			SellMarket();
 	}
 }

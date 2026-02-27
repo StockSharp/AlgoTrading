@@ -53,10 +53,10 @@ public class DonchainCounterStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Buffer Steps", "Minimum price steps before trailing stop activates", "Risk");
 
-		_tradeCooldown = Param(nameof(TradeCooldown), TimeSpan.FromDays(1))
+		_tradeCooldown = Param(nameof(TradeCooldown), TimeSpan.FromMinutes(30))
 			.SetDisplay("Trade Cooldown", "Minimum waiting time between new entries", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series used for Donchian evaluation", "General");
 	}
 
@@ -142,37 +142,30 @@ public class DonchainCounterStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_donchian, ProcessDonchian)
+			.Bind(ProcessDonchianRaw)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _donchian);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessDonchian(ICandleMessage candle, IIndicatorValue donchianValue)
+	private void ProcessDonchianRaw(ICandleMessage candle)
 	{
-		// Only process completed candles to avoid premature signals.
 		if (candle.State != CandleStates.Finished)
-		{
 			return;
-		}
 
-		if (!donchianValue.IsFinal)
-		{
+		var donchianValue = _donchian.Process(candle);
+		if (donchianValue.IsEmpty || !_donchian.IsFormed)
 			return;
-		}
 
 		var value = (DonchianChannelsValue)donchianValue;
 
 		if (value.UpperBand is not decimal upperBand || value.LowerBand is not decimal lowerBand)
-		{
 			return;
-		}
 
 		_currentUpper = upperBand;
 		_currentLower = lowerBand;
@@ -202,7 +195,7 @@ public class DonchainCounterStrategy : Strategy
 				if (!_longStopLevel.HasValue || _longStopLevel.Value < _currentLower - _tolerance)
 				{
 					_longStopLevel = _currentLower;
-					LogInfo($"Updated long stop to {_longStopLevel.Value}");
+					// Log: $"Updated long stop to {_longStopLevel.Value}");
 				}
 			}
 
@@ -210,7 +203,7 @@ public class DonchainCounterStrategy : Strategy
 			if (_longStopLevel.HasValue && candle.LowPrice <= _longStopLevel.Value + _tolerance)
 			{
 				SellMarket(Position);
-				LogInfo($"Long exit triggered at {_longStopLevel.Value}");
+				// Log: $"Long exit triggered at {_longStopLevel.Value}");
 				_longStopLevel = null;
 			}
 		}
@@ -222,7 +215,7 @@ public class DonchainCounterStrategy : Strategy
 				if (!_shortStopLevel.HasValue || _shortStopLevel.Value > _currentUpper + _tolerance)
 				{
 					_shortStopLevel = _currentUpper;
-					LogInfo($"Updated short stop to {_shortStopLevel.Value}");
+					// Log: $"Updated short stop to {_shortStopLevel.Value}");
 				}
 			}
 
@@ -230,7 +223,7 @@ public class DonchainCounterStrategy : Strategy
 			if (_shortStopLevel.HasValue && candle.HighPrice >= _shortStopLevel.Value - _tolerance)
 			{
 				BuyMarket(Math.Abs(Position));
-				LogInfo($"Short exit triggered at {_shortStopLevel.Value}");
+				// Log: $"Short exit triggered at {_shortStopLevel.Value}");
 				_shortStopLevel = null;
 			}
 		}
@@ -243,11 +236,6 @@ public class DonchainCounterStrategy : Strategy
 
 	private void TryOpenPosition(ICandleMessage candle)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			return;
-		}
-
 		// Require at least two completed Donchian samples for breakout comparisons.
 		if (_previousUpper == 0m || _earlierUpper == 0m || _previousLower == 0m || _earlierLower == 0m)
 		{
@@ -266,7 +254,7 @@ public class DonchainCounterStrategy : Strategy
 			BuyMarket(Volume);
 			_longStopLevel = _currentLower;
 			_lastTradeTime = now;
-			LogInfo($"Long entry at {candle.ClosePrice} with stop {_currentLower}");
+			// Log: $"Long entry at {candle.ClosePrice} with stop {_currentLower}");
 			return;
 		}
 
@@ -276,7 +264,7 @@ public class DonchainCounterStrategy : Strategy
 			SellMarket(Volume);
 			_shortStopLevel = _currentUpper;
 			_lastTradeTime = now;
-			LogInfo($"Short entry at {candle.ClosePrice} with stop {_currentUpper}");
+			// Log: $"Short entry at {candle.ClosePrice} with stop {_currentUpper}");
 		}
 	}
 

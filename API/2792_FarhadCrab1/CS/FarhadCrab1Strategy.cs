@@ -32,7 +32,7 @@ public class FarhadCrab1Strategy : Strategy
 
 	private readonly Queue<decimal> _maValues = new();
 
-	private readonly DataType _dailyCandleType = TimeSpan.FromMinutes(5).TimeFrame();
+	private readonly DataType _dailyCandleType = TimeSpan.FromHours(1).TimeFrame();
 
 	private decimal? _stopLossPrice;
 	private decimal? _takeProfitPrice;
@@ -43,6 +43,7 @@ public class FarhadCrab1Strategy : Strategy
 	private decimal? _prevPrevDailyMa;
 
 	private ICandleMessage _previousCandle;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Working candle type for the execution timeframe.
@@ -130,7 +131,7 @@ public class FarhadCrab1Strategy : Strategy
 	/// </summary>
 	public FarhadCrab1Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Execution timeframe", "General");
 
 		_maLength = Param(nameof(MaLength), 15)
@@ -185,6 +186,7 @@ public class FarhadCrab1Strategy : Strategy
 		_prevPrevDailyClose = null;
 		_prevPrevDailyMa = null;
 		_previousCandle = null;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -196,14 +198,14 @@ public class FarhadCrab1Strategy : Strategy
 		base.Volume = OrderVolume;
 
 		// Subscribe to the working timeframe candles with an EMA for entry decisions.
-		var ema = new EMA { Length = MaLength };
+		var ema = new ExponentialMovingAverage { Length = MaLength };
 		var candleSubscription = SubscribeCandles(CandleType);
 		candleSubscription
 			.Bind(ema, ProcessWorkingCandle)
 			.Start();
 
 		// Subscribe to daily candles with another EMA for exit filtering.
-		var dailyEma = new EMA { Length = DailyMaLength };
+		var dailyEma = new ExponentialMovingAverage { Length = DailyMaLength };
 		var dailySubscription = SubscribeCandles(_dailyCandleType);
 		dailySubscription
 			.Bind(dailyEma, ProcessDailyCandle)
@@ -215,7 +217,7 @@ public class FarhadCrab1Strategy : Strategy
 		{
 			DrawCandles(area, candleSubscription);
 			DrawOwnTrades(area);
-			DrawIndicator(area, candleSubscription, ema);
+			DrawIndicator(area, ema);
 		}
 	}
 
@@ -236,13 +238,6 @@ public class FarhadCrab1Strategy : Strategy
 		// Use only completed candles for decision making.
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		// Skip processing when the environment is not ready for trading.
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_previousCandle = candle;
-			return;
-		}
 
 		// Store EMA values so we can apply the configured shift.
 		UpdateMaBuffer(emaValue);
@@ -386,7 +381,7 @@ public class FarhadCrab1Strategy : Strategy
 		if (TrailingStopPips <= 0m)
 			return;
 
-		var entryPrice = PositionPrice ?? 0m;
+		var entryPrice = _entryPrice;
 		var threshold = (TrailingStopPips + TrailingStepPips) * pipSize;
 
 		if (Position > 0)
@@ -415,6 +410,7 @@ public class FarhadCrab1Strategy : Strategy
 
 	private void SetRiskLevels(decimal executionPrice, decimal pipSize, bool isLong)
 	{
+		_entryPrice = executionPrice;
 		if (StopLossPips > 0m && pipSize > 0m)
 			_stopLossPrice = isLong
 				? executionPrice - StopLossPips * pipSize

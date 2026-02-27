@@ -132,7 +132,7 @@ public class AlexavSpeedUpM1Strategy : Strategy
 		
 		.SetOptimize(50, 200, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles for analysis", "General");
 	}
 
@@ -184,8 +184,6 @@ public class AlexavSpeedUpM1Strategy : Strategy
 				return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var pipSize = GetPipSize();
 		var minimumBody = MinimumBodySizePips <= 0 ? 0m : MinimumBodySizePips * pipSize;

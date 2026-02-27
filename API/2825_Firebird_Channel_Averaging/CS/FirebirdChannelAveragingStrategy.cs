@@ -11,8 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -231,7 +229,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 			
 			.SetOptimize(0m, 2m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe", "Data");
 	}
 
@@ -259,7 +257,6 @@ public class FirebirdChannelAveragingStrategy : Strategy
 
 		_ma = CreateMovingAverage(MaType);
 		_ma.Length = MaPeriod;
-		_ma.CandlePrice = PriceSource;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -274,7 +271,6 @@ public class FirebirdChannelAveragingStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
@@ -305,7 +301,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 
 		var allowEntry = TradeOnFriday || candle.OpenTime.DayOfWeek != DayOfWeek.Friday;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsOnline)
 		{
 			allowEntry = false;
 		}
@@ -538,10 +534,10 @@ public class FirebirdChannelAveragingStrategy : Strategy
 	{
 		return type switch
 		{
-			MovingAverageTypes.Simple => new SMA(),
+			MovingAverageTypes.Simple => new SimpleMovingAverage(),
 			MovingAverageTypes.Smoothed => new SmoothedMovingAverage(),
 			MovingAverageTypes.Weighted => new WeightedMovingAverage(),
-			_ => new EMA()
+			_ => new ExponentialMovingAverage()
 		};
 	}
 
@@ -568,14 +564,9 @@ public class FirebirdChannelAveragingStrategy : Strategy
 			return 0.0001m;
 		}
 
-		if (security.PriceStep > 0)
+		if (security.PriceStep is > 0)
 		{
-			return security.PriceStep;
-		}
-
-		if (security.MinStep > 0)
-		{
-			return security.MinStep;
+			return security.PriceStep.Value;
 		}
 
 		return 0.0001m;

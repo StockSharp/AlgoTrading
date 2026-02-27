@@ -10,6 +10,7 @@ using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using Ecng.Logging;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -174,7 +175,7 @@ public class EaMovingAverageStrategy : Strategy
 		_considerPriceLastOut = Param(nameof(ConsiderPriceLastOut), true)
 			.SetDisplay("Consider Last Exit Price", "Require price improvement before re-entry", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles processed by the strategy", "General");
 	}
 
@@ -418,10 +419,6 @@ public class EaMovingAverageStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _buyOpenMa);
-			DrawIndicator(area, _buyCloseMa);
-			DrawIndicator(area, _sellOpenMa);
-			DrawIndicator(area, _sellCloseMa);
 			DrawOwnTrades(area);
 		}
 	}
@@ -444,8 +441,6 @@ public class EaMovingAverageStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (Position != 0)
 		{
@@ -468,7 +463,7 @@ public class EaMovingAverageStrategy : Strategy
 			if (volume > 0)
 			{
 				BuyMarket(volume);
-				LogInfo($"Buy signal. Close={closePrice}, MA={buyMa}, Volume={volume}");
+				this.AddInfoLog($"Buy signal. Close={closePrice}, MA={buyMa}, Volume={volume}");
 			}
 		}
 		else if (UseSell && openPrice > sellMa && closePrice < sellMa && CanReEnter(Sides.Sell, closePrice))
@@ -477,7 +472,7 @@ public class EaMovingAverageStrategy : Strategy
 			if (volume > 0)
 			{
 				SellMarket(volume);
-				LogInfo($"Sell signal. Close={closePrice}, MA={sellMa}, Volume={volume}");
+				this.AddInfoLog($"Sell signal. Close={closePrice}, MA={sellMa}, Volume={volume}");
 			}
 		}
 	}
@@ -489,13 +484,13 @@ public class EaMovingAverageStrategy : Strategy
 
 		if (Position > 0 && openPrice > buyMa && closePrice < buyMa)
 		{
-			ClosePosition();
-			LogInfo($"Close long. Close={closePrice}, MA={buyMa}");
+			if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
+			this.AddInfoLog($"Close long. Close={closePrice}, MA={buyMa}");
 		}
 		else if (Position < 0 && openPrice < sellMa && closePrice > sellMa)
 		{
-			ClosePosition();
-			LogInfo($"Close short. Close={closePrice}, MA={sellMa}");
+			if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
+			this.AddInfoLog($"Close short. Close={closePrice}, MA={sellMa}");
 		}
 	}
 
@@ -517,7 +512,7 @@ public class EaMovingAverageStrategy : Strategy
 		if (indicator == null)
 			return null;
 
-		var value = indicator.Process(new DecimalIndicatorValue(indicator, price, candle.OpenTime));
+		var value = indicator.Process(new DecimalIndicatorValue(indicator, price, candle.OpenTime) { IsFinal = true });
 
 		if (!indicator.IsFormed)
 			return null;
@@ -542,7 +537,7 @@ public class EaMovingAverageStrategy : Strategy
 		if (price <= 0)
 			return NormalizeVolume(baseVolume);
 
-		var equity = Portfolio?.CurrentValue ?? 0m;
+		var equity = Portfolio?.BeginValue ?? 0m;
 		if (equity <= 0)
 			return NormalizeVolume(baseVolume);
 
@@ -604,11 +599,11 @@ public class EaMovingAverageStrategy : Strategy
 	{
 		return method switch
 		{
-			MaMethods.Simple => new SMA { Length = length },
-			MaMethods.Exponential => new EMA { Length = length },
+			MaMethods.Simple => new SimpleMovingAverage { Length = length },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = length },
 			MaMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length }
+			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
 

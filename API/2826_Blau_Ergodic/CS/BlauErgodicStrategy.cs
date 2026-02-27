@@ -34,13 +34,13 @@ public class BlauErgodicStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private EMA _momEma1 = null!;
-	private EMA _momEma2 = null!;
-	private EMA _momEma3 = null!;
-	private EMA _absMomEma1 = null!;
-	private EMA _absMomEma2 = null!;
-	private EMA _absMomEma3 = null!;
-	private EMA _signal = null!;
+	private ExponentialMovingAverage _momEma1 = null!;
+	private ExponentialMovingAverage _momEma2 = null!;
+	private ExponentialMovingAverage _momEma3 = null!;
+	private ExponentialMovingAverage _absMomEma1 = null!;
+	private ExponentialMovingAverage _absMomEma2 = null!;
+	private ExponentialMovingAverage _absMomEma3 = null!;
+	private ExponentialMovingAverage _signal = null!;
 
 	private readonly List<decimal> _priceHistory = new();
 	private readonly List<decimal> _mainHistory = new();
@@ -188,7 +188,7 @@ public class BlauErgodicStrategy : Strategy
 	/// </summary>
 	public BlauErgodicStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_mode = Param(nameof(Mode), BlauErgodicModes.Twist)
@@ -263,15 +263,15 @@ public class BlauErgodicStrategy : Strategy
 		base.OnStarted2(time);
 
 		// Initialize EMA cascades for momentum and absolute momentum streams.
-		_momEma1 = new EMA { Length = FirstSmoothingLength };
-		_momEma2 = new EMA { Length = SecondSmoothingLength };
-		_momEma3 = new EMA { Length = ThirdSmoothingLength };
+		_momEma1 = new ExponentialMovingAverage { Length = FirstSmoothingLength };
+		_momEma2 = new ExponentialMovingAverage { Length = SecondSmoothingLength };
+		_momEma3 = new ExponentialMovingAverage { Length = ThirdSmoothingLength };
 
-		_absMomEma1 = new EMA { Length = FirstSmoothingLength };
-		_absMomEma2 = new EMA { Length = SecondSmoothingLength };
-		_absMomEma3 = new EMA { Length = ThirdSmoothingLength };
+		_absMomEma1 = new ExponentialMovingAverage { Length = FirstSmoothingLength };
+		_absMomEma2 = new ExponentialMovingAverage { Length = SecondSmoothingLength };
+		_absMomEma3 = new ExponentialMovingAverage { Length = ThirdSmoothingLength };
 
-		_signal = new EMA { Length = SignalSmoothingLength };
+		_signal = new ExponentialMovingAverage { Length = SignalSmoothingLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -304,22 +304,22 @@ public class BlauErgodicStrategy : Strategy
 		// Process cascaded EMA filters for momentum and absolute momentum.
 		var time = candle.ServerTime;
 
-		var mom1 = _momEma1.Process(momentum, time);
-		var abs1 = _absMomEma1.Process(absMomentum, time);
+		var mom1 = _momEma1.Process(new DecimalIndicatorValue(_momEma1, momentum, time) { IsFinal = true });
+		var abs1 = _absMomEma1.Process(new DecimalIndicatorValue(_absMomEma1, absMomentum, time) { IsFinal = true });
 
-		if (!mom1.IsFormed || !abs1.IsFormed)
+		if (mom1.IsEmpty || abs1.IsEmpty)
 			return;
 
-		var mom2 = _momEma2.Process(mom1.ToDecimal(), time);
-		var abs2 = _absMomEma2.Process(abs1.ToDecimal(), time);
+		var mom2 = _momEma2.Process(new DecimalIndicatorValue(_momEma2, mom1.ToDecimal(), time) { IsFinal = true });
+		var abs2 = _absMomEma2.Process(new DecimalIndicatorValue(_absMomEma2, abs1.ToDecimal(), time) { IsFinal = true });
 
-		if (!mom2.IsFormed || !abs2.IsFormed)
+		if (mom2.IsEmpty || abs2.IsEmpty)
 			return;
 
-		var mom3 = _momEma3.Process(mom2.ToDecimal(), time);
-		var abs3 = _absMomEma3.Process(abs2.ToDecimal(), time);
+		var mom3 = _momEma3.Process(new DecimalIndicatorValue(_momEma3, mom2.ToDecimal(), time) { IsFinal = true });
+		var abs3 = _absMomEma3.Process(new DecimalIndicatorValue(_absMomEma3, abs2.ToDecimal(), time) { IsFinal = true });
 
-		if (!mom3.IsFormed || !abs3.IsFormed)
+		if (mom3.IsEmpty || abs3.IsEmpty)
 			return;
 
 		var smoothedMomentum = mom3.ToDecimal();
@@ -327,9 +327,9 @@ public class BlauErgodicStrategy : Strategy
 
 		var main = smoothedAbsMomentum == 0m ? 0m : 100m * smoothedMomentum / smoothedAbsMomentum;
 
-		var signalValue = _signal.Process(main, time);
+		var signalValue = _signal.Process(new DecimalIndicatorValue(_signal, main, time) { IsFinal = true });
 		decimal? signal = null;
-		if (signalValue.IsFormed)
+		if (!signalValue.IsEmpty)
 			signal = signalValue.ToDecimal();
 
 		AppendIndicatorHistory(main, signal);
@@ -339,8 +339,6 @@ public class BlauErgodicStrategy : Strategy
 
 	private void EvaluateSignals(ICandleMessage candle)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var currentIndex = SignalBar - 1;
 		if (currentIndex < 0)

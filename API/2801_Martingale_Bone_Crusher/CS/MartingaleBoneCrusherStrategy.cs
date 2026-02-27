@@ -40,8 +40,8 @@ public class MartingaleBoneCrusherStrategy : Strategy
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SMA _fastMa;
-	private SMA _slowMa;
+	private SimpleMovingAverage _fastMa;
+	private SimpleMovingAverage _slowMa;
 	private decimal _averagePrice;
 	private decimal _positionVolume;
 	private decimal _currentVolume;
@@ -134,7 +134,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow moving average length", "Signals");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
 	}
 
@@ -362,8 +362,8 @@ public class MartingaleBoneCrusherStrategy : Strategy
 
 		_initialCapital = Portfolio?.BeginValue ?? Portfolio?.CurrentValue ?? 0m;
 
-		_fastMa = new SMA { Length = FastPeriod };
-		_slowMa = new SMA { Length = SlowPeriod };
+		_fastMa = new SimpleMovingAverage { Length = FastPeriod };
+		_slowMa = new SimpleMovingAverage { Length = SlowPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_fastMa, _slowMa, ProcessCandle).Start();
@@ -572,7 +572,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 			return 0m;
 
 		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = Security?.StepPrice ?? 0m;
+		var stepPrice = Security?.PriceStep ?? 0m;
 
 		if (priceStep <= 0m || stepPrice <= 0m)
 			return 0m;
@@ -605,7 +605,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 		}
 
 		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = Security?.StepPrice ?? 0m;
+		var stepPrice = Security?.PriceStep ?? 0m;
 
 		if (priceStep <= 0m || stepPrice <= 0m)
 		{
@@ -678,8 +678,6 @@ public class MartingaleBoneCrusherStrategy : Strategy
 			return volume;
 
 		var step = Security.VolumeStep ?? 0m;
-		var min = Security.VolumeMin ?? 0m;
-		var max = Security.VolumeMax ?? decimal.MaxValue;
 
 		if (step > 0m)
 		{
@@ -689,11 +687,8 @@ public class MartingaleBoneCrusherStrategy : Strategy
 			volume = ratio * step;
 		}
 
-		if (min > 0m && volume < min)
-			volume = min;
-
-		if (volume > max)
-			volume = max;
+		if (volume <= 0m)
+			volume = InitialVolume;
 
 		return volume;
 	}

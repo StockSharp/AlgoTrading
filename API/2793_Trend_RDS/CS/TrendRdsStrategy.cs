@@ -126,7 +126,7 @@ public class TrendRdsStrategy : Strategy
 	/// </summary>
 	public TrendRdsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 30)
@@ -149,10 +149,10 @@ public class TrendRdsStrategy : Strategy
 			.SetDisplay("Risk %", "Percent of equity to risk", "Risk")
 			.SetRange(0m, 100m);
 
-		_startTime = Param(nameof(StartTime), new TimeSpan(9, 0, 0))
+		_startTime = Param(nameof(StartTime), new TimeSpan(0, 0, 0))
 			.SetDisplay("Session Start", "Trading session start time", "Session");
 
-		_endTime = Param(nameof(EndTime), new TimeSpan(12, 0, 0))
+		_endTime = Param(nameof(EndTime), new TimeSpan(23, 59, 0))
 			.SetDisplay("Session End", "Trading session end time", "Session");
 
 		_reverse = Param(nameof(Reverse), false)
@@ -214,10 +214,6 @@ public class TrendRdsStrategy : Strategy
 	{
 		// Skip unfinished candles to work on closed bars only.
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Ensure that the trading environment is ready.
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var pip = GetPipSize();
@@ -401,7 +397,7 @@ public class TrendRdsStrategy : Strategy
 		if (stopOffset <= 0m || equity <= 0m)
 			return baseVolume;
 
-		var step = Security?.PriceStep ?? Security?.Step ?? 0m;
+		var step = Security?.PriceStep ?? 0m;
 		var stepPrice = Security?.StepPrice ?? 1m;
 
 		if (step <= 0m)
@@ -451,7 +447,7 @@ public class TrendRdsStrategy : Strategy
 
 	private decimal GetPipSize()
 	{
-		var step = Security?.PriceStep ?? Security?.Step ?? 0m;
+		var step = Security?.PriceStep ?? 0m;
 		if (step <= 0m)
 			return 1m;
 

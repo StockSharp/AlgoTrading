@@ -78,9 +78,6 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 		_sma = new SimpleMovingAverage { Length = FastLength };
 		_jma = new JurikMovingAverage { Length = SlowLength };
 
-		// Chain: SMA -> JMA
-		_jma.InnerIndicators.Clear();
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)

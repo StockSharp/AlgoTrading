@@ -330,7 +330,7 @@ public class UniversalMaCrossStrategy : Strategy
 			.SetDisplay("End Hour", "Trading window end hour", "Session");
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle subscription", "General");
 	}
 
@@ -373,12 +373,9 @@ public class UniversalMaCrossStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastMa);
-			DrawIndicator(area, _slowMa);
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -394,8 +391,14 @@ public class UniversalMaCrossStrategy : Strategy
 		var fastPrice = GetPrice(candle, FastPriceType);
 		var slowPrice = GetPrice(candle, SlowPriceType);
 
-		var fastValue = _fastMa.Process(new DecimalIndicatorValue(_fastMa, fastPrice, candle.OpenTime)).ToDecimal();
-		var slowValue = _slowMa.Process(new DecimalIndicatorValue(_slowMa, slowPrice, candle.OpenTime)).ToDecimal();
+		var fastResult = _fastMa.Process(new DecimalIndicatorValue(_fastMa, fastPrice, candle.OpenTime) { IsFinal = true });
+		var slowResult = _slowMa.Process(new DecimalIndicatorValue(_slowMa, slowPrice, candle.OpenTime) { IsFinal = true });
+
+		if (fastResult.IsEmpty || slowResult.IsEmpty)
+			return;
+
+		var fastValue = fastResult.ToDecimal();
+		var slowValue = slowResult.ToDecimal();
 
 		var prevFast = _fastPrev;
 		var prevSlow = _slowPrev;
@@ -407,8 +410,6 @@ public class UniversalMaCrossStrategy : Strategy
 		_fastPrev = fastValue;
 		_slowPrev = slowValue;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		bool crossUp = false;
 		bool crossDown = false;
@@ -463,7 +464,7 @@ public class UniversalMaCrossStrategy : Strategy
 		{
 			if ((_lastTrade == TradeDirections.Long && sellSignal) || (_lastTrade == TradeDirections.Short && buySignal))
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
 				ResetProtection();
 			}
 		}
@@ -506,14 +507,14 @@ public class UniversalMaCrossStrategy : Strategy
 		{
 			if (_stopPrice.HasValue && candle.LowPrice <= _stopPrice.Value)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
 				ResetProtection();
 				return;
 			}
 
 			if (_takeProfitPrice.HasValue && candle.HighPrice >= _takeProfitPrice.Value)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
 				ResetProtection();
 			}
 		}
@@ -521,14 +522,14 @@ public class UniversalMaCrossStrategy : Strategy
 		{
 			if (_stopPrice.HasValue && candle.HighPrice >= _stopPrice.Value)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
 				ResetProtection();
 				return;
 			}
 
 			if (_takeProfitPrice.HasValue && candle.LowPrice <= _takeProfitPrice.Value)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(-Position);
 				ResetProtection();
 			}
 		}
@@ -586,11 +587,11 @@ public class UniversalMaCrossStrategy : Strategy
 	{
 		return method switch
 		{
-			MovingAverageMethods.Simple => new SMA { Length = length },
-			MovingAverageMethods.Exponential => new EMA { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			_ => new SMA { Length = length }
+			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
 

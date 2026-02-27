@@ -11,8 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -30,6 +28,7 @@ public class AmstellGridStrategy : Strategy
 
 		public decimal Price { get; set; }
 
+		public decimal Volume { get; set; }
 
 		public bool IsClosing { get; set; }
 	}
@@ -92,7 +91,7 @@ public class AmstellGridStrategy : Strategy
 			
 			.SetOptimize(5, 60, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for signal candles", "General");
 	}
 
@@ -134,7 +133,6 @@ public class AmstellGridStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -143,8 +141,6 @@ public class AmstellGridStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		var price = candle.ClosePrice;
 		var stepDistance = GetStepDistance();
@@ -351,9 +347,6 @@ public class AmstellGridStrategy : Strategy
 		if (step <= 0)
 			step = 1m;
 
-		var decimals = Security?.Decimals ?? 0;
-
-		// Replicate MT5 digit adjustment so that 1 pip equals 0.0001 on five-digit symbols.
-		return (decimals == 3 || decimals == 5) ? step * 10m : step;
+		return step;
 	}
 }

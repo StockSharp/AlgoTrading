@@ -179,7 +179,7 @@ public class CrossLineTraderStrategy : Strategy
 	/// </summary>
 	public CrossLineTraderStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for intersections", "Data");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -196,7 +196,7 @@ public class CrossLineTraderStrategy : Strategy
 			.SetDisplay("Sell Label", "Text that marks sell lines when mode uses labels", "Trading");
 
 		_lineDefinitions = Param(nameof(LineDefinitions),
-			"TrendLine|Trend|Buy|1.1000|0.0005|8|false;HorizontalSell|Horizontal|Sell|1.1050|0|0|true;VerticalImpulse|Vertical|Buy|0|0|1|false")
+			"TrendLine|Trend|Buy|64000|50|20|false;HorizontalSell|Horizontal|Sell|68000|0|0|true;HorizontalBuy|Horizontal|Buy|62000|0|0|true")
 			.SetDisplay("Line Definitions", "Encoded collection of synthetic lines", "Lines")
 			;
 
@@ -355,7 +355,7 @@ public class CrossLineTraderStrategy : Strategy
 
 			BuyMarket(TradeVolume);
 			_entryPrice = candle.OpenPrice;
-			LogInfo($"Line '{line.Name}' triggered BUY at {candle.OpenPrice:0.#####}.");
+			// BUY triggered
 		}
 		else
 		{
@@ -364,7 +364,7 @@ public class CrossLineTraderStrategy : Strategy
 
 			SellMarket(TradeVolume);
 			_entryPrice = candle.OpenPrice;
-			LogInfo($"Line '{line.Name}' triggered SELL at {candle.OpenPrice:0.#####}.");
+			// SELL triggered
 		}
 
 		return true;

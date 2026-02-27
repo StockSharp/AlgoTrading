@@ -32,12 +32,10 @@ public class Hans123TraderStrategy : Strategy
 
 	private Highest _highest = null!;
 	private Lowest _lowest = null!;
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
-	private Order _protectionStopOrder;
-	private Order _protectionTakeOrder;
-	private decimal? _entryPrice;
+	private decimal _entryPrice;
 	private decimal _pipSize;
+	private decimal _highestSinceEntry;
+	private decimal _lowestSinceEntry;
 
 	/// <summary>
 	/// Volume used for breakout orders.
@@ -156,17 +154,17 @@ public class Hans123TraderStrategy : Strategy
 			
 			.SetOptimize(0, 50, 5);
 
-		_startHour = Param(nameof(StartHour), 6)
+		_startHour = Param(nameof(StartHour), 0)
 			.SetDisplay("Start Hour", "Hour (UTC) when orders can be placed", "Schedule")
 			
 			.SetOptimize(0, 23, 1);
 
-		_endHour = Param(nameof(EndHour), 10)
+		_endHour = Param(nameof(EndHour), 24)
 			.SetDisplay("End Hour", "Hour (UTC) when orders stop", "Schedule")
 			
 			.SetOptimize(1, 24, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 	}
 
@@ -181,11 +179,9 @@ public class Hans123TraderStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_buyStopOrder = null;
-		_sellStopOrder = null;
-		_protectionStopOrder = null;
-		_protectionTakeOrder = null;
-		_entryPrice = null;
+		_entryPrice = 0m;
+		_highestSinceEntry = 0m;
+		_lowestSinceEntry = 0m;
 	}
 
 	/// <inheritdoc />
@@ -193,17 +189,6 @@ public class Hans123TraderStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (StartHour < 0 || StartHour > 23)
-			throw new ArgumentOutOfRangeException(nameof(StartHour), "Start hour must be between 0 and 23.");
-		if (EndHour < 0 || EndHour > 24)
-			throw new ArgumentOutOfRangeException(nameof(EndHour), "End hour must be between 0 and 24.");
-		if (StartHour >= EndHour)
-			throw new ArgumentException("Start hour must be strictly less than end hour.");
-		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
-			throw new ArgumentException("Trailing step must be positive when trailing stop is enabled.");
-
-		if (Security == null)
-			throw new InvalidOperationException("Security must be set before starting the strategy.");
 
 		_pipSize = CalculatePipSize();
 
@@ -216,7 +201,6 @@ public class Hans123TraderStrategy : Strategy
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			// Visualize candles, indicator bands, and executed trades for easier debugging.
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _highest);
 			DrawIndicator(area, _lowest);
@@ -229,193 +213,123 @@ public class Hans123TraderStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Trailing is evaluated on every completed candle.
-		ManageTrailing(candle);
+		// Check protective levels
+		CheckProtection(candle);
 
 		if (!_highest.IsFormed || !_lowest.IsFormed)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsWithinTradingWindow(candle.OpenTime))
 			return;
 
-		var inWindow = IsWithinTradingWindow(candle.OpenTime);
-		if (!inWindow)
+		if (OrderVolume <= 0m || highest <= lowest)
+			return;
+
+		// Track extremes for trailing
+		if (Position > 0 && candle.HighPrice > _highestSinceEntry)
+			_highestSinceEntry = candle.HighPrice;
+		if (Position < 0 && (_lowestSinceEntry == 0 || candle.LowPrice < _lowestSinceEntry))
+			_lowestSinceEntry = candle.LowPrice;
+
+		// Breakout entry logic
+		if (Position == 0)
 		{
-			// Do not keep pending orders outside the trading window.
-			CancelEntryOrders();
-			return;
+			if (candle.HighPrice >= highest)
+			{
+				BuyMarket(OrderVolume);
+			}
+			else if (candle.LowPrice <= lowest)
+			{
+				SellMarket(OrderVolume);
+			}
 		}
-
-		if (OrderVolume <= 0m)
-			return;
-
-		if (highest <= lowest)
-		{
-			CancelEntryOrders();
-			return;
-		}
-
-		// Refresh breakout orders each bar to follow the current range extremes.
-		CancelEntryOrders();
-
-		_buyStopOrder = BuyStop(OrderVolume, highest);
-		_sellStopOrder = SellStop(OrderVolume, lowest);
 	}
 
-	/// <inheritdoc />
 	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
 		base.OnOwnTradeReceived(trade);
-
-		if (trade.Order.Security != Security)
-			return;
-
-		if (Position > 0)
+		if (trade?.Trade == null) return;
+		if (Position != 0m && _entryPrice == 0m)
 		{
-			// Long position opened or increased: update protection orders.
-			SetupProtection(isLong: true);
-			CancelEntryOrders();
+			_entryPrice = trade.Trade.Price;
+			_highestSinceEntry = trade.Trade.Price;
+			_lowestSinceEntry = trade.Trade.Price;
 		}
-		else if (Position < 0)
+		if (Position == 0m)
 		{
-			// Short position opened or increased: update protection orders.
-			SetupProtection(isLong: false);
-			CancelEntryOrders();
+			_entryPrice = 0m;
+			_highestSinceEntry = 0m;
+			_lowestSinceEntry = 0m;
 		}
 	}
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	private void CheckProtection(ICandleMessage candle)
 	{
-		base.OnPositionReceived(position);
+		if (Position == 0 || _entryPrice == 0m)
+			return;
 
-		if (Position == 0)
+		var stopDist = StopLossPips > 0 ? StopLossPips * _pipSize : 0m;
+		var takeDist = TakeProfitPips > 0 ? TakeProfitPips * _pipSize : 0m;
+		var trailDist = TrailingStopPips > 0 ? TrailingStopPips * _pipSize : 0m;
+		var activation = (TrailingStopPips + TrailingStepPips) * _pipSize;
+
+		if (Position > 0)
 		{
-			_entryPrice = null;
-			CancelProtectionOrders();
+			// Stop loss
+			if (stopDist > 0m && candle.LowPrice <= _entryPrice - stopDist)
+			{
+				SellMarket(Math.Abs(Position));
+				return;
+			}
+			// Take profit
+			if (takeDist > 0m && candle.HighPrice >= _entryPrice + takeDist)
+			{
+				SellMarket(Math.Abs(Position));
+				return;
+			}
+			// Trailing stop
+			if (trailDist > 0m && _highestSinceEntry - _entryPrice > activation)
+			{
+				var trailStop = _highestSinceEntry - trailDist;
+				if (candle.LowPrice <= trailStop)
+				{
+					SellMarket(Math.Abs(Position));
+					return;
+				}
+			}
+		}
+		else if (Position < 0)
+		{
+			if (stopDist > 0m && candle.HighPrice >= _entryPrice + stopDist)
+			{
+				BuyMarket(Math.Abs(Position));
+				return;
+			}
+			if (takeDist > 0m && candle.LowPrice <= _entryPrice - takeDist)
+			{
+				BuyMarket(Math.Abs(Position));
+				return;
+			}
+			if (trailDist > 0m && _lowestSinceEntry > 0m && _entryPrice - _lowestSinceEntry > activation)
+			{
+				var trailStop = _lowestSinceEntry + trailDist;
+				if (candle.HighPrice >= trailStop)
+				{
+					BuyMarket(Math.Abs(Position));
+					return;
+				}
+			}
 		}
 	}
 
 	private decimal CalculatePipSize()
 	{
-		var step = Security?.PriceStep ?? 0.0001m;
-		var decimals = Security?.Decimals;
-
-		if (decimals == 3 || decimals == 5)
-			return step * 10m;
-
+		var step = Security?.PriceStep ?? 1m;
 		return step;
 	}
 
 	private bool IsWithinTradingWindow(DateTimeOffset time)
 	{
 		return time.Hour >= StartHour && time.Hour < EndHour;
-	}
-
-	private void SetupProtection(bool isLong)
-	{
-		_entryPrice = PositionPrice;
-
-		CancelProtectionOrders();
-
-		var volume = Math.Abs(Position);
-		if (volume <= 0m || _entryPrice == null)
-			return;
-
-		var stopOffset = StopLossPips > 0 ? StopLossPips * _pipSize : 0m;
-		var takeOffset = TakeProfitPips > 0 ? TakeProfitPips * _pipSize : 0m;
-
-		if (stopOffset > 0m)
-		{
-			var stopPrice = isLong
-				? _entryPrice.Value - stopOffset
-				: _entryPrice.Value + stopOffset;
-
-			if (stopPrice > 0m)
-			{
-				_protectionStopOrder = isLong
-					? SellStop(volume, stopPrice)
-					: BuyStop(volume, stopPrice);
-			}
-		}
-
-		if (takeOffset > 0m)
-		{
-			var takePrice = isLong
-				? _entryPrice.Value + takeOffset
-				: _entryPrice.Value - takeOffset;
-
-			_protectionTakeOrder = isLong
-				? SellLimit(volume, takePrice)
-				: BuyLimit(volume, takePrice);
-		}
-	}
-
-	private void ManageTrailing(ICandleMessage candle)
-	{
-		if (TrailingStopPips <= 0 || TrailingStepPips <= 0 || Position == 0 || _entryPrice == null)
-			return;
-
-		var trailingDistance = TrailingStopPips * _pipSize;
-		var activation = (TrailingStopPips + TrailingStepPips) * _pipSize;
-		var tick = Security?.PriceStep ?? 0.0001m;
-
-		if (Position > 0)
-		{
-			var move = candle.ClosePrice - _entryPrice.Value;
-			if (move <= activation)
-				return;
-
-			var newStop = candle.ClosePrice - trailingDistance;
-			if (_protectionStopOrder == null || newStop > _protectionStopOrder.Price + tick / 2m)
-				UpdateTrailingStop(newStop);
-		}
-		else if (Position < 0)
-		{
-			var move = _entryPrice.Value - candle.ClosePrice;
-			if (move <= activation)
-				return;
-
-			var newStop = candle.ClosePrice + trailingDistance;
-			if (_protectionStopOrder == null || newStop < _protectionStopOrder.Price - tick / 2m)
-				UpdateTrailingStop(newStop);
-		}
-	}
-
-	private void UpdateTrailingStop(decimal price)
-	{
-		var volume = Math.Abs(Position);
-		if (volume <= 0m || price <= 0m)
-			return;
-
-		if (_protectionStopOrder != null && _protectionStopOrder.State == OrderStates.Active)
-			CancelOrder(_protectionStopOrder);
-
-		// Register a refreshed stop order reflecting the trailing level.
-		_protectionStopOrder = Position > 0
-			? SellStop(volume, price)
-			: BuyStop(volume, price);
-	}
-
-	private void CancelEntryOrders()
-	{
-		if (_buyStopOrder != null && _buyStopOrder.State == OrderStates.Active)
-			CancelOrder(_buyStopOrder);
-		if (_sellStopOrder != null && _sellStopOrder.State == OrderStates.Active)
-			CancelOrder(_sellStopOrder);
-
-		_buyStopOrder = null;
-		_sellStopOrder = null;
-	}
-
-	private void CancelProtectionOrders()
-	{
-		if (_protectionStopOrder != null && _protectionStopOrder.State == OrderStates.Active)
-			CancelOrder(_protectionStopOrder);
-		if (_protectionTakeOrder != null && _protectionTakeOrder.State == OrderStates.Active)
-			CancelOrder(_protectionTakeOrder);
-
-		_protectionStopOrder = null;
-		_protectionTakeOrder = null;
 	}
 }

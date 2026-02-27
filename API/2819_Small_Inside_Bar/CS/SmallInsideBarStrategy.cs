@@ -110,7 +110,7 @@ public class SmallInsideBarStrategy : Strategy
 	/// </summary>
 	public SmallInsideBarStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for pattern detection", "General");
 
 		_rangeRatioThreshold = Param(nameof(RangeRatioThreshold), 2m)
@@ -152,8 +152,6 @@ public class SmallInsideBarStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
@@ -171,9 +169,6 @@ public class SmallInsideBarStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (_previousCandle == null)

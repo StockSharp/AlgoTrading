@@ -32,11 +32,11 @@ public class TrueSortTrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopDistance;
 	private readonly StrategyParam<decimal> _trailingStepDistance;
 
-	private EMA _fastEma;
-	private EMA _secondEma;
-	private EMA _thirdEma;
-	private EMA _fourthEma;
-	private EMA _slowEma;
+	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _secondEma;
+	private ExponentialMovingAverage _thirdEma;
+	private ExponentialMovingAverage _fourthEma;
+	private ExponentialMovingAverage _slowEma;
 	private AverageDirectionalIndex _adx;
 
 	private decimal? _prevFast;
@@ -163,7 +163,7 @@ public class TrueSortTrendStrategy : Strategy
 	/// </summary>
 	public TrueSortTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for calculations", "General");
 
 		_fastEmaLength = Param(nameof(FastEmaLength), 10)
@@ -178,19 +178,19 @@ public class TrueSortTrendStrategy : Strategy
 			
 			.SetOptimize(10, 40, 2);
 
-		_thirdEmaLength = Param(nameof(ThirdEmaLength), 50)
+		_thirdEmaLength = Param(nameof(ThirdEmaLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Third EMA Length", "Period of the third EMA", "Moving Averages")
 			
 			.SetOptimize(30, 80, 5);
 
-		_fourthEmaLength = Param(nameof(FourthEmaLength), 100)
+		_fourthEmaLength = Param(nameof(FourthEmaLength), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Fourth EMA Length", "Period of the fourth EMA", "Moving Averages")
 			
 			.SetOptimize(60, 140, 5);
 
-		_slowEmaLength = Param(nameof(SlowEmaLength), 200)
+		_slowEmaLength = Param(nameof(SlowEmaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length", "Period of the slowest EMA", "Moving Averages")
 			
@@ -202,31 +202,31 @@ public class TrueSortTrendStrategy : Strategy
 			
 			.SetOptimize(14, 40, 2);
 
-		_adxThreshold = Param(nameof(AdxThreshold), 20m)
+		_adxThreshold = Param(nameof(AdxThreshold), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Threshold", "Minimum ADX value to confirm trend strength", "Indicators")
 			
 			.SetOptimize(15m, 35m, 5m);
 
-		_stopLossDistance = Param(nameof(StopLossDistance), 0.005m)
+		_stopLossDistance = Param(nameof(StopLossDistance), 500m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Stop Loss Distance", "Absolute distance for stop loss", "Risk")
 			
 			.SetOptimize(0.001m, 0.01m, 0.001m);
 
-		_takeProfitDistance = Param(nameof(TakeProfitDistance), 0.015m)
+		_takeProfitDistance = Param(nameof(TakeProfitDistance), 1500m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Take Profit Distance", "Absolute distance for take profit", "Risk")
 			
 			.SetOptimize(0.002m, 0.03m, 0.002m);
 
-		_trailingStopDistance = Param(nameof(TrailingStopDistance), 0.0005m)
+		_trailingStopDistance = Param(nameof(TrailingStopDistance), 300m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Trailing Stop Distance", "Trailing stop distance in price units", "Risk")
 			
 			.SetOptimize(0.0002m, 0.002m, 0.0002m);
 
-		_trailingStepDistance = Param(nameof(TrailingStepDistance), 0.0001m)
+		_trailingStepDistance = Param(nameof(TrailingStepDistance), 100m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Trailing Step Distance", "Additional advance before trailing stop adjustment", "Risk")
 			
@@ -258,58 +258,54 @@ public class TrueSortTrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastEma = new EMA { Length = FastEmaLength };
-		_secondEma = new EMA { Length = SecondEmaLength };
-		_thirdEma = new EMA { Length = ThirdEmaLength };
-		_fourthEma = new EMA { Length = FourthEmaLength };
-		_slowEma = new EMA { Length = SlowEmaLength };
+		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		_secondEma = new ExponentialMovingAverage { Length = SecondEmaLength };
+		_thirdEma = new ExponentialMovingAverage { Length = ThirdEmaLength };
+		_fourthEma = new ExponentialMovingAverage { Length = FourthEmaLength };
+		_slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastEma, _secondEma, _thirdEma, _fourthEma, _slowEma, _adx, ProcessCandle)
+			.Bind(ProcessCandleRaw)
 			.Start();
 
 		var priceArea = CreateChartArea();
 		if (priceArea != null)
 		{
 			DrawCandles(priceArea, subscription);
-			DrawIndicator(priceArea, _fastEma);
-			DrawIndicator(priceArea, _secondEma);
-			DrawIndicator(priceArea, _thirdEma);
-			DrawIndicator(priceArea, _fourthEma);
-			DrawIndicator(priceArea, _slowEma);
 			DrawOwnTrades(priceArea);
-
-			var adxArea = CreateChartArea();
-			if (adxArea != null)
-			{
-				DrawIndicator(adxArea, _adx);
-			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal second, decimal third, decimal fourth, decimal slow, decimal adxValue)
+	private void ProcessCandleRaw(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_slowEma is null || _adx is null)
-			return;
+		var fastResult = _fastEma.Process(candle);
+		var secondResult = _secondEma.Process(candle);
+		var thirdResult = _thirdEma.Process(candle);
+		var fourthResult = _fourthEma.Process(candle);
+		var slowResult = _slowEma.Process(candle);
+		var adxResult = _adx.Process(candle);
 
 		if (!_slowEma.IsFormed || !_adx.IsFormed)
-		{
-			UpdatePreviousValues(fast, second, third, fourth, slow);
 			return;
-		}
+
+		if (fastResult.IsEmpty || secondResult.IsEmpty || thirdResult.IsEmpty || fourthResult.IsEmpty || slowResult.IsEmpty || adxResult.IsEmpty)
+			return;
+
+		var fast = fastResult.ToDecimal();
+		var second = secondResult.ToDecimal();
+		var third = thirdResult.ToDecimal();
+		var fourth = fourthResult.ToDecimal();
+		var slow = slowResult.ToDecimal();
+
+		var adxData = (AverageDirectionalIndexValue)adxResult;
+		var adxValue = adxData.MovingAverage ?? 0m;
 
 		if (_prevFast is null || _prevSecond is null || _prevThird is null || _prevFourth is null || _prevSlow is null)
-		{
-			UpdatePreviousValues(fast, second, third, fourth, slow);
-			return;
-		}
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 		{
 			UpdatePreviousValues(fast, second, third, fourth, slow);
 			return;

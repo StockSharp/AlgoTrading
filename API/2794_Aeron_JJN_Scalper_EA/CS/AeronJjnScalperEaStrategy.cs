@@ -145,7 +145,7 @@ public class AeronJjnScalperEaStrategy : Strategy
 		_dojiDiff2Pips = Param(nameof(DojiDiff2Pips), 4m)
 		.SetDisplay("Doji Diff 2 (pips)", "Doji Diff 2 (pips)", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candle Type", "General");
 
 		_atrLength = Param(nameof(AtrLength), 8)
@@ -237,12 +237,6 @@ public class AeronJjnScalperEaStrategy : Strategy
 
 		var closeTime = candle.CloseTime;
 		CancelExpiredPendings(closeTime);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			UpdateHistory(candle);
-			return;
-		}
 
 		ManageActivePosition(candle);
 		TriggerPendings(candle);

@@ -267,12 +267,12 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		.SetDisplay("First MA Period", "Period of the first moving average", "First Moving Average")
 		;
 
-		_firstShift = Param(nameof(FirstShift), 3)
+		_firstShift = Param(nameof(FirstShift), 0)
 		.SetNotNegative()
 		.SetDisplay("First MA Shift", "Shift (in bars) applied to the first moving average", "First Moving Average")
 		;
 
-		_firstMethod = Param(nameof(FirstMethod), MaMethods.Smoothed)
+		_firstMethod = Param(nameof(FirstMethod), MaMethods.Simple)
 		.SetDisplay("First MA Method", "Smoothing method for the first moving average", "First Moving Average")
 		;
 
@@ -284,19 +284,19 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		.SetDisplay("Second MA Period", "Period of the second moving average", "Second Moving Average")
 		;
 
-		_secondShift = Param(nameof(SecondShift), 5)
+		_secondShift = Param(nameof(SecondShift), 0)
 		.SetNotNegative()
 		.SetDisplay("Second MA Shift", "Shift (in bars) applied to the second moving average", "Second Moving Average")
 		;
 
-		_secondMethod = Param(nameof(SecondMethod), MaMethods.Smoothed)
+		_secondMethod = Param(nameof(SecondMethod), MaMethods.Simple)
 		.SetDisplay("Second MA Method", "Smoothing method for the second moving average", "Second Moving Average")
 		;
 
 		_secondPrice = Param(nameof(SecondAppliedPrice), AppliedPriceTypes.Close)
 		.SetDisplay("Second MA Price", "Price source for the second moving average", "Second Moving Average");
 
-		_useFilter = Param(nameof(UseFilter), true)
+		_useFilter = Param(nameof(UseFilter), false)
 		.SetDisplay("Enable Filter", "Use the third moving average as a directional filter", "Filter");
 
 		_thirdPeriod = Param(nameof(ThirdPeriod), 13)
@@ -304,12 +304,12 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		.SetDisplay("Third MA Period", "Period of the third moving average filter", "Filter")
 		;
 
-		_thirdShift = Param(nameof(ThirdShift), 8)
+		_thirdShift = Param(nameof(ThirdShift), 0)
 		.SetNotNegative()
 		.SetDisplay("Third MA Shift", "Shift (in bars) applied to the third moving average filter", "Filter")
 		;
 
-		_thirdMethod = Param(nameof(ThirdMethod), MaMethods.Smoothed)
+		_thirdMethod = Param(nameof(ThirdMethod), MaMethods.Simple)
 		.SetDisplay("Third MA Method", "Smoothing method for the third moving average filter", "Filter")
 		;
 
@@ -348,7 +348,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Minimum trailing stop adjustment in pips", "Protection");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type used for analysis", "General");
 
 		_barsSinceLastEntry = int.MaxValue;
@@ -397,21 +397,6 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			if (_firstMa != null)
-			{
-				DrawIndicator(area, _firstMa);
-			}
-
-			if (_secondMa != null)
-			{
-				DrawIndicator(area, _secondMa);
-			}
-
-			if (UseFilter && _thirdMa != null)
-			{
-				DrawIndicator(area, _thirdMa);
-			}
-
 			DrawOwnTrades(area);
 		}
 	}
@@ -475,7 +460,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 
 		if (UseFilter)
 		{
-			if (!_thirdSeries.IsNullOrEmpty() && HasSeriesValue(_thirdSeries, ThirdShift, 0))
+			if (_thirdSeries.Length > 0 && HasSeriesValue(_thirdSeries, ThirdShift, 0))
 			{
 				var filterValue = GetSeriesValue(_thirdSeries, ThirdShift, 0)!.Value;
 				if (buySignal && filterValue >= first0)
@@ -488,10 +473,6 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 				return;
 			}
 		}
-
-		// Check trading permissions before submitting orders.
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
 
 		if (buySignal && Position <= 0)
 		{
@@ -540,7 +521,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		if (!UseRiskPercent)
 		return FixedVolume;
 
-		var equity = Portfolio?.CurrentValue ?? Portfolio?.CurrentBalance ?? 0m;
+		var equity = Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? 0m;
 		if (equity <= 0m)
 		return FixedVolume;
 
@@ -722,11 +703,11 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 	{
 		return method switch
 		{
-			MaMethods.Simple => new SMA { Length = period },
-			MaMethods.Exponential => new EMA { Length = period },
+			MaMethods.Simple => new SimpleMovingAverage { Length = period },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
 			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			MaMethods.Weighted => new WeightedMovingAverage { Length = period },
-			_ => new SMA { Length = period }
+			_ => new SimpleMovingAverage { Length = period }
 		};
 	}
 

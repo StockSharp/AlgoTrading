@@ -196,7 +196,7 @@ public class BlauTsStochasticStrategy : Strategy
 	/// </summary>
 	public BlauTsStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for signal calculations", "General");
 
 		_mode = Param(nameof(Mode), BlauSignalModes.Twist)
@@ -214,7 +214,7 @@ public class BlauTsStochasticStrategy : Strategy
 		
 		.SetOptimize(3, 20, 1);
 
-		_smoothLength1 = Param(nameof(SmoothLength1), 20)
+		_smoothLength1 = Param(nameof(SmoothLength1), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Smoothing #1", "First smoothing length", "Indicator")
 		
@@ -295,57 +295,76 @@ public class BlauTsStochasticStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(_highest, _lowest, ProcessCandle)
+		.Bind(ProcessCandle)
 		.Start();
-
-		if (StopLossPoints > 0 || TakeProfitPoints > 0)
-		{
-			var step = Security.PriceStep ?? 1m;
-			var stop = StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Absolute) : new Unit(0m, UnitTypes.Absolute);
-			var take = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : new Unit(0m, UnitTypes.Absolute);
-
-			StartProtection(stopLoss: stop, takeProfit: take, isStopTrailing: false, useMarketOrders: true);
-		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue highValue, IIndicatorValue lowValue)
+	private decimal _entryPrice;
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!_highest.IsFormed || !_lowest.IsFormed)
+		var highResult = _highest.Process(candle);
+		var lowResult = _lowest.Process(candle);
+
+		if (highResult.IsEmpty || lowResult.IsEmpty || !_highest.IsFormed || !_lowest.IsFormed)
 		return;
 
-		var high = highValue.ToDecimal();
-		var low = lowValue.ToDecimal();
+		// Manage SL/TP
+		if (Position != 0)
+		{
+			var step = Security?.PriceStep ?? 1m;
+			if (Position > 0)
+			{
+				if (StopLossPoints > 0 && candle.LowPrice <= _entryPrice - StopLossPoints * step)
+				{ SellMarket(Position); return; }
+				if (TakeProfitPoints > 0 && candle.HighPrice >= _entryPrice + TakeProfitPoints * step)
+				{ SellMarket(Position); return; }
+			}
+			else
+			{
+				var vol = Math.Abs(Position);
+				if (StopLossPoints > 0 && candle.HighPrice >= _entryPrice + StopLossPoints * step)
+				{ BuyMarket(vol); return; }
+				if (TakeProfitPoints > 0 && candle.LowPrice <= _entryPrice - TakeProfitPoints * step)
+				{ BuyMarket(vol); return; }
+			}
+		}
+
+		var t = candle.OpenTime;
+		var high = highResult.ToDecimal();
+		var low = lowResult.ToDecimal();
 		var price = GetAppliedPrice(candle, AppliedPrice);
 		var stochRaw = price - low;
 		var rangeRaw = high - low;
 
-		var stoch1 = _stochSmooth1.Process(new DecimalIndicatorValue(_stochSmooth1, stochRaw));
-		if (!stoch1.IsFinal)
+		var stoch1 = _stochSmooth1.Process(new DecimalIndicatorValue(_stochSmooth1, stochRaw, t) { IsFinal = true });
+		if (stoch1.IsEmpty)
 		return;
-		var stoch2 = _stochSmooth2.Process(new DecimalIndicatorValue(_stochSmooth2, stoch1.ToDecimal()));
-		if (!stoch2.IsFinal)
+		var stoch2 = _stochSmooth2.Process(new DecimalIndicatorValue(_stochSmooth2, stoch1.ToDecimal(), t) { IsFinal = true });
+		if (stoch2.IsEmpty)
 		return;
-		var stoch3 = _stochSmooth3.Process(new DecimalIndicatorValue(_stochSmooth3, stoch2.ToDecimal()));
-		if (!stoch3.IsFinal)
+		var stoch3 = _stochSmooth3.Process(new DecimalIndicatorValue(_stochSmooth3, stoch2.ToDecimal(), t) { IsFinal = true });
+		if (stoch3.IsEmpty)
 		return;
 
-		var range1 = _rangeSmooth1.Process(new DecimalIndicatorValue(_rangeSmooth1, rangeRaw));
-		if (!range1.IsFinal)
+		var range1 = _rangeSmooth1.Process(new DecimalIndicatorValue(_rangeSmooth1, rangeRaw, t) { IsFinal = true });
+		if (range1.IsEmpty)
 		return;
-		var range2 = _rangeSmooth2.Process(new DecimalIndicatorValue(_rangeSmooth2, range1.ToDecimal()));
-		if (!range2.IsFinal)
+		var range2 = _rangeSmooth2.Process(new DecimalIndicatorValue(_rangeSmooth2, range1.ToDecimal(), t) { IsFinal = true });
+		if (range2.IsEmpty)
 		return;
-		var range3 = _rangeSmooth3.Process(new DecimalIndicatorValue(_rangeSmooth3, range2.ToDecimal()));
-		if (!range3.IsFinal)
+		var range3 = _rangeSmooth3.Process(new DecimalIndicatorValue(_rangeSmooth3, range2.ToDecimal(), t) { IsFinal = true });
+		if (range3.IsEmpty)
 		return;
 
 		var denom = range3.ToDecimal();
@@ -353,8 +372,8 @@ public class BlauTsStochasticStrategy : Strategy
 		return;
 
 		var hist = 200m * stoch3.ToDecimal() / denom - 100m;
-		var signalValue = _signalSmooth.Process(new DecimalIndicatorValue(_signalSmooth, hist));
-		if (!signalValue.IsFinal)
+		var signalValue = _signalSmooth.Process(new DecimalIndicatorValue(_signalSmooth, hist, t) { IsFinal = true });
+		if (signalValue.IsEmpty)
 		return;
 		var signal = signalValue.ToDecimal();
 
@@ -448,21 +467,24 @@ public class BlauTsStochasticStrategy : Strategy
 			}
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 		if (closeLong && Position > 0)
-		ClosePosition();
+		SellMarket(Position);
 
 		if (closeShort && Position < 0)
-		ClosePosition();
+		BuyMarket(-Position);
 
 		var volume = Volume + Math.Abs(Position);
 
 		if (openLong && Position <= 0)
-		BuyMarket(volume);
+		{
+			BuyMarket(volume);
+			_entryPrice = candle.ClosePrice;
+		}
 		else if (openShort && Position >= 0)
-		SellMarket(volume);
+		{
+			SellMarket(volume);
+			_entryPrice = candle.ClosePrice;
+		}
 	}
 
 	private void UpdateHistory(List<decimal> buffer, decimal value)
@@ -512,8 +534,8 @@ public class BlauTsStochasticStrategy : Strategy
 	{
 		return type switch
 		{
-			BlauSmoothingTypes.Simple => new SMA { Length = length },
-			BlauSmoothingTypes.Exponential => new EMA { Length = length },
+			BlauSmoothingTypes.Simple => new SimpleMovingAverage { Length = length },
+			BlauSmoothingTypes.Exponential => new ExponentialMovingAverage { Length = length },
 			BlauSmoothingTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			BlauSmoothingTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type), type, null),

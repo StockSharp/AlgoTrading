@@ -44,7 +44,10 @@ public class SerialMASwingStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SerialMovingAverageIndicator _serialMa;
+	private decimal _serialMaSum;
+	private int _serialMaCount;
+	private decimal? _serialMaPrevDiff;
+	private int _serialMaHistory;
 	private bool _previousBarHadCross;
 	private decimal? _previousMovingAverage;
 	private decimal? _previousClose;
@@ -140,7 +143,7 @@ public class SerialMASwingStrategy : Strategy
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse Signals", "Invert the generated direction", "Trading");
 
-		_tradeVolume = Param(nameof(TradeVolume), 1m)
+		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Default order volume", "Trading");
 
@@ -171,7 +174,10 @@ public class SerialMASwingStrategy : Strategy
 		_previousMovingAverage = null;
 		_previousClose = null;
 		_previousValuesReady = false;
-		_serialMa?.Reset();
+		_serialMaSum = 0m;
+		_serialMaCount = 0;
+		_serialMaPrevDiff = null;
+		_serialMaHistory = 0;
 	}
 
 	/// <inheritdoc />
@@ -179,7 +185,7 @@ public class SerialMASwingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_serialMa = new SerialMovingAverageIndicator();
+		Volume = TradeVolume;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -199,15 +205,43 @@ public class SerialMASwingStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var result = _serialMa.Process(candle);
-		var serialValue = result as SerialMaValue;
-		if (serialValue == null)
+		// Process serial MA inline
+		var close = candle.ClosePrice;
+		_serialMaHistory++;
+
+		if (_serialMaCount == 0)
+		{
+			_serialMaSum = close;
+			_serialMaCount = 1;
+			_serialMaPrevDiff = 0m;
+			_previousClose = close;
+			_previousValuesReady = _serialMaHistory > 2;
 			return;
+		}
+
+		_serialMaSum += close;
+		_serialMaCount++;
+		var movingAverage = _serialMaSum / _serialMaCount;
+		var diff = movingAverage - close;
+		var isCross = false;
+
+		if (_serialMaPrevDiff.HasValue && diff * _serialMaPrevDiff.Value < 0m)
+		{
+			isCross = true;
+			movingAverage = close;
+			diff = 0m;
+			_serialMaSum = close;
+			_serialMaCount = 1;
+		}
+
+		_serialMaPrevDiff = diff;
 
 		if (!_previousValuesReady)
 		{
-			UpdateState(serialValue, candle);
-			_previousValuesReady = _serialMa.IsFormed;
+			_previousBarHadCross = isCross;
+			_previousMovingAverage = movingAverage;
+			_previousClose = close;
+			_previousValuesReady = _serialMaHistory > 2;
 			return;
 		}
 
@@ -237,8 +271,9 @@ public class SerialMASwingStrategy : Strategy
 				ExecuteShortEntry();
 		}
 
-		UpdateState(serialValue, candle);
-		_previousValuesReady = _serialMa.IsFormed;
+		_previousBarHadCross = isCross;
+		_previousMovingAverage = movingAverage;
+		_previousClose = close;
 	}
 
 	private void ExecuteLongEntry()
@@ -358,96 +393,4 @@ public class SerialMASwingStrategy : Strategy
 		return 0;
 	}
 
-	private void UpdateState(SerialMaValue value, ICandleMessage candle)
-	{
-		_previousBarHadCross = value.IsCross;
-		_previousMovingAverage = value.MovingAverage;
-		_previousClose = candle.ClosePrice;
-	}
-}
-
-/// <summary>
-/// Serial moving average indicator replicating the original MQL logic.
-/// </summary>
-public class SerialMovingAverageIndicator : BaseIndicator
-{
-	private decimal _sum;
-	private int _count;
-	private decimal? _previousDiff;
-	private int _history;
-
-	/// <inheritdoc />
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
-	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-			return new SerialMaValue(this, input.Time, 0m, false);
-
-		var close = candle.ClosePrice;
-		_history++;
-
-		if (_count == 0)
-		{
-			_sum = close;
-			_count = 1;
-			_previousDiff = 0m;
-			IsFormed = _history > 1;
-			return new SerialMaValue(this, input.Time, close, false);
-		}
-
-		_sum += close;
-		_count++;
-
-		var movingAverage = _sum / _count;
-		var diff = movingAverage - close;
-		var isCross = false;
-
-		if (_previousDiff.HasValue && diff * _previousDiff < 0m)
-		{
-			isCross = true;
-			movingAverage = close;
-			diff = 0m;
-			_sum = close;
-			_count = 1;
-		}
-
-		_previousDiff = diff;
-		IsFormed = _history > 1;
-
-		return new SerialMaValue(this, input.Time, movingAverage, isCross);
-	}
-
-	/// <inheritdoc />
-	public override void Reset()
-	{
-		base.Reset();
-
-		_sum = 0m;
-		_count = 0;
-		_previousDiff = null;
-		_history = 0;
-	}
-}
-
-/// <summary>
-/// Indicator value containing the moving average and cross flag.
-/// </summary>
-public class SerialMaValue : DecimalIndicatorValue
-{
-	public SerialMaValue(IIndicator indicator, DateTime time, decimal movingAverage, bool isCross)
-		: base(indicator, movingAverage, time)
-	{
-		MovingAverage = movingAverage;
-		IsCross = isCross;
-		IsFinal = true;
-	}
-
-	/// <summary>
-	/// Latest serial moving average value.
-	/// </summary>
-	public decimal MovingAverage { get; }
-
-	/// <summary>
-	/// Indicates that the price crossed the moving average on the previous bar.
-	/// </summary>
-	public bool IsCross { get; }
 }
