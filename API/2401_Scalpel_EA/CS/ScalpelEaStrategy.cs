@@ -102,7 +102,7 @@ public class ScalpelEaStrategy : Strategy
 			
 			.SetOptimize(10m, 100m, 10m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 	}
 
@@ -196,9 +196,6 @@ public class ScalpelEaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 		var cciBuy = cciValue > 0m && cciValue < CciLimit;
 		var cciSell = cciValue < 0m && -cciValue < CciLimit;
 
@@ -212,8 +209,7 @@ public class ScalpelEaStrategy : Strategy
 		breakoutHigh &&
 		Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
-			LogInfo($"Buy signal: CCI={cciValue}");
+			BuyMarket();
 		}
 		else if (cciSell &&
 		_currHighH4 < _prevHighH4 &&
@@ -222,8 +218,7 @@ public class ScalpelEaStrategy : Strategy
 		breakoutLow &&
 		Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Sell signal: CCI={cciValue}");
+			SellMarket();
 		}
 
 		_prevHighMain = candle.HighPrice;

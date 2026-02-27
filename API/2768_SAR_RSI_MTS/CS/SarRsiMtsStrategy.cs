@@ -34,6 +34,7 @@ public class SarRsiMtsStrategy : Strategy
 	private decimal? _longTrailingStop;
 	private decimal? _shortTrailingStop;
 	private decimal _pipSize;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Stop loss distance expressed in pips.
@@ -161,7 +162,7 @@ public class SarRsiMtsStrategy : Strategy
 		_rsiNeutralLevel = Param(nameof(RsiNeutralLevel), 50m)
 			.SetDisplay("RSI Neutral", "Neutral RSI threshold separating bullish and bearish bias", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for indicator calculations", "General");
 
 		_maxPosition = Param(nameof(MaxPosition), 5m)
@@ -285,7 +286,6 @@ public class SarRsiMtsStrategy : Strategy
 		BuyMarket(required);
 		_longTrailingStop = null;
 		_shortTrailingStop = null;
-		LogInfo($"Buy signal at {candle.ClosePrice}, SAR {_previousSar}, RSI {_previousRsi}");
 	}
 
 	private void EnterShort(ICandleMessage candle)
@@ -307,14 +307,13 @@ public class SarRsiMtsStrategy : Strategy
 		SellMarket(required);
 		_longTrailingStop = null;
 		_shortTrailingStop = null;
-		LogInfo($"Sell signal at {candle.ClosePrice}, SAR {_previousSar}, RSI {_previousRsi}");
 	}
 
 	private bool ManageRisk(ICandleMessage candle)
 	{
 		if (Position > 0m)
 		{
-			var entryPrice = Position.AveragePrice;
+			var entryPrice = _entryPrice;
 			if (entryPrice <= 0m)
 				return false;
 
@@ -348,7 +347,7 @@ public class SarRsiMtsStrategy : Strategy
 		}
 		else if (Position < 0m)
 		{
-			var entryPrice = Position.AveragePrice;
+			var entryPrice = _entryPrice;
 			if (entryPrice <= 0m)
 				return false;
 
@@ -474,6 +473,17 @@ public class SarRsiMtsStrategy : Strategy
 	{
 		_longTrailingStop = null;
 		_shortTrailingStop = null;
+	}
+
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade == null) return;
+		if (Position != 0 && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+		if (Position == 0)
+			_entryPrice = 0m;
 	}
 
 	private bool AreClose(decimal value1, decimal value2)

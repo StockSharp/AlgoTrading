@@ -62,8 +62,6 @@ public class RndTradeStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		// Ensure position protection is initialized (no stop/target by default).
-		StartProtection(null, null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -72,13 +70,11 @@ public class RndTradeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Skip trading until the strategy is fully ready.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		// Always close the existing position before selecting a new random direction.
-		if (Position != 0)
-			ClosePosition();
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(Math.Abs(Position));
 
 		// Determine the next position direction using the RNG.
 		if (_random.Next(0, 2) == 0)

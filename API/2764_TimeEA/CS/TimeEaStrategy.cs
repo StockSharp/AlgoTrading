@@ -173,9 +173,6 @@ public class TimeEaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var candleDate = candle.CloseTime.Date;
 
 		if (ContainsTime(candle, OpenTime) && _lastEntryDate != candleDate)
@@ -190,7 +187,7 @@ public class TimeEaStrategy : Strategy
 
 			if (Position != 0)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				ResetRiskLevels();
 			}
 			return;
@@ -206,7 +203,7 @@ public class TimeEaStrategy : Strategy
 		{
 			if (Position < 0)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				ResetRiskLevels();
 			}
 
@@ -220,7 +217,7 @@ public class TimeEaStrategy : Strategy
 		{
 			if (Position > 0)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				ResetRiskLevels();
 			}
 
@@ -239,14 +236,14 @@ public class TimeEaStrategy : Strategy
 		{
 			if (_stopPrice > 0m && candle.LowPrice <= _stopPrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				ResetRiskLevels();
 				return;
 			}
 
 			if (_takeProfitPrice > 0m && candle.HighPrice >= _takeProfitPrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				ResetRiskLevels();
 			}
 		}
@@ -254,14 +251,14 @@ public class TimeEaStrategy : Strategy
 		{
 			if (_stopPrice > 0m && candle.HighPrice >= _stopPrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				ResetRiskLevels();
 				return;
 			}
 
 			if (_takeProfitPrice > 0m && candle.LowPrice <= _takeProfitPrice)
 			{
-				ClosePosition();
+				if (Position > 0) SellMarket(Position); else if (Position < 0) BuyMarket(Math.Abs(Position));
 				ResetRiskLevels();
 			}
 		}

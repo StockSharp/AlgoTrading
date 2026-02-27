@@ -241,7 +241,7 @@ public class EmaCrossContestHedgedStrategy : Strategy
 		_tradeBar = Param(nameof(TradeBar), TradeBarOptions.Previous)
 			.SetDisplay("Trade Bar", "Use current or previous bar for signals", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
@@ -271,17 +271,17 @@ public class EmaCrossContestHedgedStrategy : Strategy
 		_pendingOrders.Clear();
 	}
 
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
 		if (ShortMaPeriod >= LongMaPeriod)
 			throw new InvalidOperationException("Short EMA period must be less than long EMA period.");
 
 		Volume = OrderVolume;
 
-		var shortEma = new EMA { Length = ShortMaPeriod };
-		var longEma = new EMA { Length = LongMaPeriod };
+		var shortEma = new ExponentialMovingAverage { Length = ShortMaPeriod };
+		var longEma = new ExponentialMovingAverage { Length = LongMaPeriod };
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
@@ -296,8 +296,6 @@ public class EmaCrossContestHedgedStrategy : Strategy
 		subscription
 			.BindEx(shortEma, longEma, macd, ProcessCandle)
 			.Start();
-
-		StartProtection();
 
 		var area = CreateChartArea();
 		if (area != null)

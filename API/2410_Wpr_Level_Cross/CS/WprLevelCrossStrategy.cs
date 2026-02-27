@@ -168,7 +168,7 @@ public class WprLevelCrossStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 
@@ -212,8 +212,7 @@ public class WprLevelCrossStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Ensure strategy is ready for trading
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_prevWr == 0m)
 		{
 			_prevWr = wr;
 			return;
@@ -224,43 +223,19 @@ public class WprLevelCrossStrategy : Strategy
 
 		if (Trend == TrendModes.Direct)
 		{
-			if (crossedBelowLow)
-			{
-				if (EnableBuyEntry && Position <= 0)
-					BuyMarket(Volume + (Position < 0 ? -Position : 0m));
+			if (crossedBelowLow && EnableBuyEntry && Position <= 0)
+				BuyMarket();
 
-				if (EnableSellExit && Position < 0)
-					BuyMarket(-Position);
-			}
-
-			if (crossedAboveHigh)
-			{
-				if (EnableSellEntry && Position >= 0)
-					SellMarket(Volume + (Position > 0 ? Position : 0m));
-
-				if (EnableBuyExit && Position > 0)
-					SellMarket(Position);
-			}
+			if (crossedAboveHigh && EnableSellEntry && Position >= 0)
+				SellMarket();
 		}
 		else
 		{
-			if (crossedBelowLow)
-			{
-				if (EnableSellEntry && Position >= 0)
-					SellMarket(Volume + (Position > 0 ? Position : 0m));
+			if (crossedBelowLow && EnableSellEntry && Position >= 0)
+				SellMarket();
 
-				if (EnableBuyExit && Position > 0)
-					SellMarket(Position);
-			}
-
-			if (crossedAboveHigh)
-			{
-				if (EnableBuyEntry && Position <= 0)
-					BuyMarket(Volume + (Position < 0 ? -Position : 0m));
-
-				if (EnableSellExit && Position < 0)
-					BuyMarket(-Position);
-			}
+			if (crossedAboveHigh && EnableBuyEntry && Position <= 0)
+				BuyMarket();
 		}
 
 		_prevWr = wr;

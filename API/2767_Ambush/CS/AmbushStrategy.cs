@@ -14,27 +14,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Pending stop order breakout strategy converted from the Ambush MQL5 expert.
-/// Places symmetric buy stop and sell stop orders around the market and trails them.
+/// Breakout strategy converted from the Ambush MQL5 expert.
+/// Enters on breakouts above/below previous candle range with trailing stop management.
 /// </summary>
 public class AmbushStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _indentationPoints;
-	private readonly StrategyParam<decimal> _maxSpreadPoints;
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 	private readonly StrategyParam<decimal> _trailingStepPoints;
-	private readonly StrategyParam<TimeSpan> _pause;
 	private readonly StrategyParam<decimal> _equityTakeProfit;
 	private readonly StrategyParam<decimal> _equityStopLoss;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _bestBid;
-	private decimal _bestAsk;
-	private DateTimeOffset _lastTrailTime;
-	private Order _buyStopOrder;
-	private Order _sellStopOrder;
+	private ICandleMessage _previousCandle;
+	private decimal _entryPrice;
+	private decimal? _stopPrice;
+	private decimal _priceStep;
 
 	/// <summary>
-	/// Distance from the market price to the pending stop orders, in points.
+	/// Distance from the market price for breakout detection, in points.
 	/// </summary>
 	public decimal IndentationPoints
 	{
@@ -43,16 +41,7 @@ public class AmbushStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Maximum allowed spread, in points.
-	/// </summary>
-	public decimal MaxSpreadPoints
-	{
-		get => _maxSpreadPoints.Value;
-		set => _maxSpreadPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing distance for pending orders, in points.
+	/// Trailing distance for stop orders, in points.
 	/// </summary>
 	public decimal TrailingStopPoints
 	{
@@ -67,15 +56,6 @@ public class AmbushStrategy : Strategy
 	{
 		get => _trailingStepPoints.Value;
 		set => _trailingStepPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Pause between trailing recalculations.
-	/// </summary>
-	public TimeSpan Pause
-	{
-		get => _pause.Value;
-		set => _pause.Value = value;
 	}
 
 	/// <summary>
@@ -97,17 +77,22 @@ public class AmbushStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Candle type used for breakout detection.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="AmbushStrategy"/> class.
 	/// </summary>
 	public AmbushStrategy()
 	{
 		_indentationPoints = Param(nameof(IndentationPoints), 10m)
 			.SetNotNegative()
-			.SetDisplay("Indentation (points)", "Distance from price for pending stops", "Orders");
-
-		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 5m)
-			.SetNotNegative()
-			.SetDisplay("Max Spread (points)", "Maximum allowed spread", "Orders");
+			.SetDisplay("Indentation (points)", "Distance from price for breakout", "Orders");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 10m)
 			.SetNotNegative()
@@ -117,9 +102,6 @@ public class AmbushStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (points)", "Additional trailing offset", "Orders");
 
-		_pause = Param(nameof(Pause), TimeSpan.FromSeconds(1))
-			.SetDisplay("Pause", "Pause between trailing recalculations", "Orders");
-
 		_equityTakeProfit = Param(nameof(EquityTakeProfit), 15m)
 			.SetNotNegative()
 			.SetDisplay("Equity Take Profit", "Flatten positions once this profit is reached", "Risk");
@@ -127,12 +109,17 @@ public class AmbushStrategy : Strategy
 		_equityStopLoss = Param(nameof(EquityStopLoss), 5m)
 			.SetNotNegative()
 			.SetDisplay("Equity Stop Loss", "Flatten positions after this loss", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for breakout detection", "General");
+
+		Volume = 1;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, DataType.Level1)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -140,11 +127,10 @@ public class AmbushStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_bestBid = 0m;
-		_bestAsk = 0m;
-		_lastTrailTime = DateTimeOffset.MinValue;
-		_buyStopOrder = null;
-		_sellStopOrder = null;
+		_previousCandle = null;
+		_entryPrice = 0m;
+		_stopPrice = null;
+		_priceStep = 0m;
 	}
 
 	/// <inheritdoc />
@@ -152,115 +138,103 @@ public class AmbushStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
+		_priceStep = Security?.PriceStep ?? 1m;
+		if (_priceStep <= 0m) _priceStep = 1m;
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage level1)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bid))
-			_bestBid = (decimal)bid;
-
-		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var ask))
-			_bestAsk = (decimal)ask;
-
-		if (_bestBid == 0m || _bestAsk == 0m)
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		EnforceEquityTargets();
-		ManageStopOrders();
-		UpdateTrailingOrders();
-	}
-
-	private void EnforceEquityTargets()
-	{
-		var totalProfit = CalculateEquityPnL();
-
-		if (EquityTakeProfit > 0m && totalProfit >= EquityTakeProfit)
+		// Check equity targets.
+		var pnl = PnL;
+		if (EquityTakeProfit > 0m && pnl >= EquityTakeProfit)
 		{
 			FlattenPosition();
+			_previousCandle = candle;
 			return;
 		}
-
-		if (EquityStopLoss > 0m && totalProfit <= -EquityStopLoss)
+		if (EquityStopLoss > 0m && pnl <= -EquityStopLoss)
+		{
 			FlattenPosition();
-	}
-
-	private void ManageStopOrders()
-	{
-		CleanupOrder(ref _buyStopOrder);
-		CleanupOrder(ref _sellStopOrder);
-
-		var spread = _bestAsk - _bestBid;
-		if (spread <= 0m)
+			_previousCandle = candle;
 			return;
-
-		var step = Security.PriceStep ?? 1m;
-		var maxSpread = MaxSpreadPoints <= 0m ? decimal.MaxValue : MaxSpreadPoints * step;
-
-		if (spread > maxSpread)
-			return;
-
-		var indentation = Math.Max(GetPriceOffset(IndentationPoints), spread * 3m);
-
-		if (!IsOrderActive(_buyStopOrder))
-		{
-			var price = NormalizePrice(_bestAsk + indentation);
-			_buyStopOrder = BuyStop(Volume, price);
 		}
 
-		if (!IsOrderActive(_sellStopOrder))
+		// Check trailing stop.
+		if (Position > 0 && _stopPrice.HasValue && candle.LowPrice <= _stopPrice.Value)
 		{
-			var price = NormalizePrice(_bestBid - indentation);
-			_sellStopOrder = SellStop(Volume, price);
+			SellMarket(Position);
+			ResetTargets();
 		}
+		else if (Position < 0 && _stopPrice.HasValue && candle.HighPrice >= _stopPrice.Value)
+		{
+			BuyMarket(Math.Abs(Position));
+			ResetTargets();
+		}
+
+		// Update trailing stop.
+		UpdateTrailing(candle);
+
+		// Entry logic - breakout above/below previous candle range.
+		if (Position == 0 && _previousCandle != null)
+		{
+			var indentation = IndentationPoints * _priceStep;
+			var buyLevel = _previousCandle.HighPrice + indentation;
+			var sellLevel = _previousCandle.LowPrice - indentation;
+
+			if (candle.HighPrice >= buyLevel)
+			{
+				BuyMarket(Volume);
+				_entryPrice = candle.ClosePrice;
+				var trailDist = (TrailingStopPoints + TrailingStepPoints) * _priceStep;
+				_stopPrice = trailDist > 0m ? _entryPrice - trailDist : null;
+			}
+			else if (candle.LowPrice <= sellLevel)
+			{
+				SellMarket(Volume);
+				_entryPrice = candle.ClosePrice;
+				var trailDist = (TrailingStopPoints + TrailingStepPoints) * _priceStep;
+				_stopPrice = trailDist > 0m ? _entryPrice + trailDist : null;
+			}
+		}
+
+		_previousCandle = candle;
 	}
 
-	private void UpdateTrailingOrders()
+	private void UpdateTrailing(ICandleMessage candle)
 	{
 		if (TrailingStopPoints <= 0m)
 			return;
 
-		if (!IsOrderActive(_buyStopOrder) && !IsOrderActive(_sellStopOrder))
+		var trailDist = (TrailingStopPoints + TrailingStepPoints) * _priceStep;
+		if (trailDist <= 0m)
 			return;
 
-		var now = CurrentTime;
-		if (_lastTrailTime != DateTimeOffset.MinValue && Pause > TimeSpan.Zero && now - _lastTrailTime < Pause)
-			return;
-
-		_lastTrailTime = now;
-
-		var spread = _bestAsk - _bestBid;
-		if (spread <= 0m)
-			return;
-
-		var trailingBase = GetPriceOffset(TrailingStopPoints) + GetPriceOffset(TrailingStepPoints);
-		var trailingDistance = Math.Max(trailingBase, spread * 3m);
-
-		if (IsOrderActive(_buyStopOrder))
+		if (Position > 0)
 		{
-			var newPrice = NormalizePrice(_bestAsk + trailingDistance);
-			if (NeedReRegister(_buyStopOrder, newPrice))
-			{
-				var volume = _buyStopOrder.Volume ?? Volume;
-				CancelOrder(_buyStopOrder);
-				_buyStopOrder = BuyStop(volume, newPrice);
-			}
+			var newStop = candle.ClosePrice - trailDist;
+			if (!_stopPrice.HasValue || newStop > _stopPrice.Value)
+				_stopPrice = newStop;
 		}
-
-		if (IsOrderActive(_sellStopOrder))
+		else if (Position < 0)
 		{
-			var newPrice = NormalizePrice(_bestBid - trailingDistance);
-			if (NeedReRegister(_sellStopOrder, newPrice))
-			{
-				var volume = _sellStopOrder.Volume ?? Volume;
-				CancelOrder(_sellStopOrder);
-				_sellStopOrder = SellStop(volume, newPrice);
-			}
+			var newStop = candle.ClosePrice + trailDist;
+			if (!_stopPrice.HasValue || newStop < _stopPrice.Value)
+				_stopPrice = newStop;
 		}
 	}
 
@@ -269,75 +243,13 @@ public class AmbushStrategy : Strategy
 		if (Position > 0)
 			SellMarket(Position);
 		else if (Position < 0)
-			BuyMarket(-Position);
+			BuyMarket(Math.Abs(Position));
+		ResetTargets();
 	}
 
-	private decimal CalculateEquityPnL()
+	private void ResetTargets()
 	{
-		var result = PnL;
-
-		if (Position == 0)
-			return result;
-
-		if (_bestBid == 0m || _bestAsk == 0m)
-			return result;
-
-		var exitPrice = Position > 0 ? _bestBid : _bestAsk;
-		var entryPrice = PositionPrice;
-		result += (exitPrice - entryPrice) * Position;
-
-		return result;
-	}
-
-	private static void CleanupOrder(ref Order order)
-	{
-		if (order == null)
-			return;
-
-		switch (order.State)
-		{
-			case OrderStates.Done:
-			case OrderStates.Failed:
-			case OrderStates.Canceled:
-				order = null;
-				break;
-		}
-	}
-
-	private bool NeedReRegister(Order order, decimal newPrice)
-	{
-		if (order.Price is not decimal existingPrice)
-			return true;
-
-		var diff = Math.Abs(existingPrice - newPrice);
-		if (diff == 0m)
-			return false;
-
-		var step = Security.PriceStep;
-		if (step is null || step == 0m)
-			return true;
-
-		return diff >= step / 2m;
-	}
-
-	private decimal GetPriceOffset(decimal points)
-	{
-		if (points <= 0m)
-			return 0m;
-
-		var step = Security.PriceStep ?? 1m;
-		return points * step;
-	}
-
-	private decimal NormalizePrice(decimal price)
-	{
-		var step = Security.PriceStep;
-		if (step is { } s && s > 0m)
-		{
-			var steps = Math.Round(price / s, MidpointRounding.AwayFromZero);
-			return steps * s;
-		}
-
-		return price;
+		_entryPrice = 0m;
+		_stopPrice = null;
 	}
 }

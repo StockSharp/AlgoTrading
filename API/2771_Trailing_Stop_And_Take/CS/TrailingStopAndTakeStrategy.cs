@@ -45,6 +45,7 @@ public class TrailingStopAndTakeStrategy : Strategy
 	private decimal? _longTake;
 	private decimal? _shortStop;
 	private decimal? _shortTake;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="TrailingStopAndTakeStrategy"/>.
@@ -209,8 +210,6 @@ public class TrailingStopAndTakeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		_priceStep = Security?.PriceStep ?? 1m;
 		if (_priceStep <= 0m)
 			_priceStep = 1m;
@@ -310,7 +309,7 @@ public class TrailingStopAndTakeStrategy : Strategy
 		if (Position <= 0m)
 			return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -350,7 +349,7 @@ public class TrailingStopAndTakeStrategy : Strategy
 		if (Position >= 0m)
 			return;
 
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -387,7 +386,7 @@ public class TrailingStopAndTakeStrategy : Strategy
 
 	private void UpdateLongTrailing(ICandleMessage candle)
 	{
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -427,7 +426,7 @@ public class TrailingStopAndTakeStrategy : Strategy
 
 	private void UpdateShortTrailing(ICandleMessage candle)
 	{
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -519,5 +518,16 @@ public class TrailingStopAndTakeStrategy : Strategy
 	{
 		_shortStop = null;
 		_shortTake = null;
+	}
+
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade == null) return;
+		if (Position != 0 && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+		if (Position == 0)
+			_entryPrice = 0m;
 	}
 }

@@ -101,7 +101,7 @@ public class RsiThresholdStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit", "Take profit in price units", "Risk Management");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 	

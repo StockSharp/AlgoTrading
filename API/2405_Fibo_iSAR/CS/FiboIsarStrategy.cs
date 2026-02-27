@@ -173,8 +173,6 @@ public class FiboIsarStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		_fastSar = new ParabolicSar { Acceleration = StepFast, AccelerationMax = MaximumFast };
 		_slowSar = new ParabolicSar { Acceleration = StepSlow, AccelerationMax = MaximumSlow };
 		_highest = new Highest { Length = CountBarSearch };
@@ -195,21 +193,19 @@ public class FiboIsarStrategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var price = candle.ClosePrice;
+		var step = Security?.PriceStep ?? 1m;
 
 		// Manage open position exits
 		if (Position > 0)
 		{
 			if (price <= _stopPrice || price >= _takeProfitPrice)
-				ClosePosition();
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
 			if (price >= _stopPrice || price <= _takeProfitPrice)
-				ClosePosition();
+				BuyMarket();
 		}
 
 		// Remove pending order if opposite trend detected
@@ -230,27 +226,25 @@ public class FiboIsarStrategy : Strategy
 		var rangeLow = lowest;
 		var range = rangeHigh - rangeLow;
 
-		var volume = Volume + Math.Abs(Position);
-
 		if (slowSar < fastSar && fastSar < price)
 		{
 			var entry = rangeLow + range * (FiboEntranceLevel / 100m);
 			var profit = rangeLow + range * (FiboProfitLevel / 100m);
-			var stop = rangeLow - IndentStopLoss * Security.Step;
+			var stop = rangeLow - IndentStopLoss * step;
 
 			_stopPrice = stop;
 			_takeProfitPrice = profit;
-			_pendingOrder = BuyLimit(volume, entry);
+			_pendingOrder = BuyLimit(entry);
 		}
 		else if (slowSar > fastSar && fastSar > price)
 		{
 			var entry = rangeHigh - range * (FiboEntranceLevel / 100m);
 			var profit = rangeHigh - range * (FiboProfitLevel / 100m);
-			var stop = rangeHigh + IndentStopLoss * Security.Step;
+			var stop = rangeHigh + IndentStopLoss * step;
 
 			_stopPrice = stop;
 			_takeProfitPrice = profit;
-			_pendingOrder = SellLimit(volume, entry);
+			_pendingOrder = SellLimit(entry);
 		}
 	}
 	/// <inheritdoc />

@@ -114,6 +114,12 @@ public class CandelsHighOpenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
@@ -149,18 +155,15 @@ public class CandelsHighOpenStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		// Exit conditions based on Parabolic SAR reversal
 		if (Position > 0 && candle.ClosePrice < psarValue)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 			return;
 		}
 		if (Position < 0 && candle.ClosePrice > psarValue)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 			return;
 		}
 
@@ -174,15 +177,13 @@ public class CandelsHighOpenStrategy : Strategy
 			openAtLow = tmp;
 		}
 
-		var volume = Volume + Math.Abs(Position);
-
 		if (openAtLow && Position <= 0)
 		{
-			BuyMarket(volume);
+			BuyMarket();
 		}
 		else if (openAtHigh && Position >= 0)
 		{
-			SellMarket(volume);
+			SellMarket();
 		}
 	}
 }

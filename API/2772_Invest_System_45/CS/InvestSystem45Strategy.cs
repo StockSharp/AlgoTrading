@@ -11,8 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Localization;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
@@ -48,9 +46,13 @@ public class InvestSystem45Strategy : Strategy
 	private decimal _lastTradePnL;
 
 	private int _trendDirection;
-	private DateTimeOffset? _entryWindowStart;
-	private DateTimeOffset? _entryWindowEnd;
+	private DateTime? _entryWindowStart;
+	private DateTime? _entryWindowEnd;
 	private bool _entryWindowActive;
+
+	private decimal _entryPrice;
+	private decimal _stopPrice;
+	private decimal _takePrice;
 
 	/// <summary>
 	/// Stop loss distance expressed in pips.
@@ -129,10 +131,10 @@ public class InvestSystem45Strategy : Strategy
 			
 			.SetOptimize(5, 30, 5);
 
-		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Signal Candles", "Candles used to time entries", "Timing");
 
-		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(4).TimeFrame())
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Trend Candles", "Higher timeframe candles for direction", "Timing");
 
 		_baseLot = Param(nameof(BaseLot), 0.1m)
@@ -170,11 +172,6 @@ public class InvestSystem45Strategy : Strategy
 		_pipSize = CalculatePipSize();
 		// Recreate lot options according to current stage and plan mode.
 		RecalculateLotOptions();
-
-		// Configure default protective orders matching pip distances.
-		StartProtection(
-			takeProfit: new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLossPips * _pipSize, UnitTypes.Absolute));
 
 		var trendSubscription = SubscribeCandles(TrendCandleType);
 		trendSubscription.Bind(ProcessTrendCandle).Start();
@@ -215,7 +212,6 @@ public class InvestSystem45Strategy : Strategy
 		_hasOpenPosition = false;
 		_lastTradePnL = PnL - _pnlAtEntry;
 		// Mirror MetaTrader profit calculation for Plan B rules.
-		LogInfo($"Position closed with PnL {_lastTradePnL:F2}");
 
 		HandlePostTradeAdjustment();
 	}
@@ -229,12 +225,10 @@ public class InvestSystem45Strategy : Strategy
 		if (candle.ClosePrice > candle.OpenPrice)
 		{
 			_trendDirection = 1;
-			LogInfo("Latest 4H candle bullish. Next trade will look for buys.");
 		}
 		else if (candle.ClosePrice < candle.OpenPrice)
 		{
 			_trendDirection = -1;
-			LogInfo("Latest 4H candle bearish. Next trade will look for sells.");
 		}
 
 		_entryWindowStart = candle.CloseTime;
@@ -247,6 +241,38 @@ public class InvestSystem45Strategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		// Check SL/TP for open positions.
+		if (Position > 0m && _entryPrice > 0m)
+		{
+			if (_stopPrice > 0m && candle.LowPrice <= _stopPrice)
+			{
+				SellMarket(Position);
+				ResetTargets();
+				return;
+			}
+			if (_takePrice > 0m && candle.HighPrice >= _takePrice)
+			{
+				SellMarket(Position);
+				ResetTargets();
+				return;
+			}
+		}
+		else if (Position < 0m && _entryPrice > 0m)
+		{
+			if (_stopPrice > 0m && candle.HighPrice >= _stopPrice)
+			{
+				BuyMarket(Math.Abs(Position));
+				ResetTargets();
+				return;
+			}
+			if (_takePrice > 0m && candle.LowPrice <= _takePrice)
+			{
+				BuyMarket(Math.Abs(Position));
+				ResetTargets();
+				return;
+			}
+		}
 
 		// Update balance-dependent scaling before evaluating signals.
 		UpdateBalanceState();
@@ -264,9 +290,6 @@ public class InvestSystem45Strategy : Strategy
 			return;
 		}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (_trendDirection == 0)
 			return;
 
@@ -282,12 +305,10 @@ public class InvestSystem45Strategy : Strategy
 
 		if (_trendDirection > 0)
 		{
-			LogInfo($"Opening long position with volume {_currentVolume} at {candle.CloseTime:O}.");
 			BuyMarket(_currentVolume);
 		}
 		else
 		{
-			LogInfo($"Opening short position with volume {_currentVolume} at {candle.CloseTime:O}.");
 			SellMarket(_currentVolume);
 		}
 
@@ -311,23 +332,19 @@ public class InvestSystem45Strategy : Strategy
 			{
 				_planBActive = true;
 				RecalculateLotOptions();
-				LogInfo("Plan B activated after loss with aggressive lot size.");
 			}
 			else if (_currentVolume == _lotOption1)
 			{
 				_currentVolume = _lotOption2;
-				LogInfo($"Switching to larger lot {_currentVolume} after loss.");
 			}
 			else
 			{
 				_currentVolume = _lotOption2;
-				LogInfo($"Adjusting lot to {_currentVolume} after loss.");
 			}
 		}
 		else if (_lastTradePnL > 0m)
 		{
 			_currentVolume = _lotOption1;
-			LogInfo($"Resetting lot to {_currentVolume} after profit.");
 		}
 	}
 
@@ -350,7 +367,6 @@ public class InvestSystem45Strategy : Strategy
 			{
 				_planBActive = false;
 				RecalculateLotOptions();
-				LogInfo("Plan B disabled after reaching new balance high.");
 			}
 		}
 
@@ -372,7 +388,6 @@ public class InvestSystem45Strategy : Strategy
 		{
 			_lotStage = newStage;
 			RecalculateLotOptions();
-			LogInfo($"Lot stage updated to {_lotStage} for balance {balance.Value:F2}.");
 		}
 	}
 
@@ -385,6 +400,41 @@ public class InvestSystem45Strategy : Strategy
 			step *= 10m;
 
 		return step;
+	}
+
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade == null) return;
+
+		if (Position != 0m && _entryPrice == 0m)
+		{
+			_entryPrice = trade.Trade.Price;
+			var slDist = StopLossPips * _pipSize;
+			var tpDist = TakeProfitPips * _pipSize;
+
+			if (Position > 0m)
+			{
+				_stopPrice = slDist > 0m ? _entryPrice - slDist : 0m;
+				_takePrice = tpDist > 0m ? _entryPrice + tpDist : 0m;
+			}
+			else
+			{
+				_stopPrice = slDist > 0m ? _entryPrice + slDist : 0m;
+				_takePrice = tpDist > 0m ? _entryPrice - tpDist : 0m;
+			}
+		}
+
+		if (Position == 0m)
+			ResetTargets();
+	}
+
+	private void ResetTargets()
+	{
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_takePrice = 0m;
 	}
 
 	private void ResetState()
@@ -409,6 +459,9 @@ public class InvestSystem45Strategy : Strategy
 		_entryWindowStart = null;
 		_entryWindowEnd = null;
 		_entryWindowActive = false;
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_takePrice = 0m;
 	}
 
 	private void RecalculateLotOptions()

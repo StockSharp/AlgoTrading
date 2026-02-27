@@ -92,7 +92,7 @@ public class EmaCrossStrategy : Strategy
 		_reverse = Param(nameof(Reverse), true)
 		.SetDisplay("Reverse", "Swap EMA lines", "General");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 	
@@ -133,32 +133,28 @@ public class EmaCrossStrategy : Strategy
 		.Bind(fastEma, slowEma, ProcessCandle)
 		.Start();
 		
-		StartProtection(null, null);
 	}
-	
+
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
-		
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
+
 		var cross = Reverse ? GetCross(fast, slow) : GetCross(slow, fast);
-		
+
 		if (Position <= 0 && cross == 1)
 		{
 			_entryPrice = candle.ClosePrice;
 			_trailPrice = 0m;
 			_isLong = true;
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		else if (Position >= 0 && cross == 2)
 		{
 			_entryPrice = candle.ClosePrice;
 			_trailPrice = 0m;
 			_isLong = false;
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 		
 		if (Position != 0)
@@ -188,52 +184,50 @@ public class EmaCrossStrategy : Strategy
 	{
 		if (_isLong)
 		{
-			// calculate take profit and stop loss
 			if (TakeProfit > 0m && candle.ClosePrice >= _entryPrice + TakeProfit)
 			{
-				SellMarket(Position);
+				SellMarket();
 				return;
 			}
-			
+
 			if (StopLoss > 0m && candle.ClosePrice <= _entryPrice - StopLoss)
 			{
-				SellMarket(Position);
+				SellMarket();
 				return;
 			}
-			
+
 			if (TrailingStop > 0m)
 			{
 				var newStop = candle.ClosePrice - TrailingStop;
 				if (_trailPrice < newStop)
 				_trailPrice = newStop;
-				
+
 				if (_trailPrice > 0m && candle.ClosePrice <= _trailPrice)
-				SellMarket(Position);
+				SellMarket();
 			}
 		}
 		else
 		{
-			// short position management
 			if (TakeProfit > 0m && candle.ClosePrice <= _entryPrice - TakeProfit)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				return;
 			}
-			
+
 			if (StopLoss > 0m && candle.ClosePrice >= _entryPrice + StopLoss)
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				return;
 			}
-			
+
 			if (TrailingStop > 0m)
 			{
 				var newStop = candle.ClosePrice + TrailingStop;
 				if (_trailPrice == 0m || _trailPrice > newStop)
 				_trailPrice = newStop;
-				
+
 				if (candle.ClosePrice >= _trailPrice)
-				BuyMarket(-Position);
+				BuyMarket();
 			}
 		}
 	}

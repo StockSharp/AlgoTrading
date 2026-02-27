@@ -74,7 +74,7 @@ public class MfiLevelCrossStrategy : Strategy
 	/// </summary>
 	public MfiLevelCrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe of candles used", "General");
 
 		_mfiPeriod = Param(nameof(MfiPeriod), 14)
@@ -147,9 +147,6 @@ public class MfiLevelCrossStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (_isFirst)
 		{
 			_prevMfi = mfiValue;
@@ -163,16 +160,16 @@ public class MfiLevelCrossStrategy : Strategy
 		if (Trend == TrendModes.Direct)
 		{
 			if (crossBelowLow && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 			else if (crossAboveHigh && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 		}
 		else
 		{
 			if (crossBelowLow && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 			else if (crossAboveHigh && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 		}
 
 		_prevMfi = mfiValue;

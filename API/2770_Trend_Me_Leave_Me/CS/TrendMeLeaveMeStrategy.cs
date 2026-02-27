@@ -43,6 +43,7 @@ public class TrendMeLeaveMeStrategy : Strategy
 	private decimal _pipSize;
 	private int _positionDirection;
 	private bool _exitOrderPending;
+	private decimal _entryPrice;
 
 	/// <summary>
 	/// Stop loss distance expressed in pips.
@@ -161,7 +162,7 @@ public class TrendMeLeaveMeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Max", "Maximum acceleration for Parabolic SAR", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 	}
 
@@ -181,6 +182,7 @@ public class TrendMeLeaveMeStrategy : Strategy
 		_pipSize = 0m;
 		_positionDirection = 0;
 		_exitOrderPending = false;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -296,7 +298,7 @@ public class TrendMeLeaveMeStrategy : Strategy
 
 	private void ManageOpenPosition(ICandleMessage candle)
 	{
-		var entryPrice = PositionPrice;
+		var entryPrice = _entryPrice;
 		if (entryPrice <= 0m)
 			return;
 
@@ -376,6 +378,17 @@ public class TrendMeLeaveMeStrategy : Strategy
 			return step * 10m;
 
 		return step;
+	}
+
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade == null) return;
+		if (Position != 0 && _entryPrice == 0m)
+			_entryPrice = trade.Trade.Price;
+		if (Position == 0)
+			_entryPrice = 0m;
 	}
 
 	private static int GetDecimalPlaces(decimal value)

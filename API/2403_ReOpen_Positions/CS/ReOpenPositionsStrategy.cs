@@ -73,7 +73,7 @@ public class ReOpenPositionsStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetDisplay("Take Profit (pts)", "Take profit distance in points", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -124,7 +124,7 @@ public class ReOpenPositionsStrategy : Strategy
 			// Check for stop loss or take profit.
 			if (close <= _currentStop || close >= _currentTake)
 			{
-				ClosePosition();
+				SellMarket();
 				_openedCount = 0;
 			}
 			else if (_openedCount < MaxPositions && close - _lastEntryPrice >= ProfitThreshold)
@@ -141,7 +141,7 @@ public class ReOpenPositionsStrategy : Strategy
 			// Check for stop loss or take profit for short position.
 			if (close >= _currentStop || close <= _currentTake)
 			{
-				ClosePosition();
+				BuyMarket();
 				_openedCount = 0;
 			}
 			else if (_openedCount < MaxPositions && _lastEntryPrice - close >= ProfitThreshold)

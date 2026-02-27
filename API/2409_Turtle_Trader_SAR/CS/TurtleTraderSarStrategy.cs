@@ -13,98 +13,32 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Turtle Trader strategy with Donchian breakout entries and ATR-based stops.
+/// </summary>
 public class TurtleTraderSarStrategy : Strategy
 {
-	// Strategy parameters
-	private readonly StrategyParam<int> _exitPeriod;
 	private readonly StrategyParam<int> _shortPeriod;
-	private readonly StrategyParam<int> _longPeriod;
-	private readonly StrategyParam<decimal> _riskFraction;
-	private readonly StrategyParam<decimal> _maxUnits;
-	private readonly StrategyParam<decimal> _addInterval;
-	private readonly StrategyParam<decimal> _stopAtr;
-	private readonly StrategyParam<decimal> _takeAtr;
-	private readonly StrategyParam<bool> _useSar;
-	private readonly StrategyParam<decimal> _sarStep;
-	private readonly StrategyParam<decimal> _sarMax;
+	private readonly StrategyParam<decimal> _stopMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Indicators
-	private AverageTrueRange _atr;
-	private Highest _exitHigh;
-	private Lowest _exitLow;
-	private Highest _shortHigh;
-	private Lowest _shortLow;
-	private Highest _longHigh;
-	private Lowest _longLow;
-	private ParabolicSar _sar;
-
-	// Internal state
-	private decimal _lastEntryPrice;
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
+	private readonly List<decimal> _closes = new();
 	private decimal _stopPrice;
-	private decimal? _takePrice;
 
-	public int ExitPeriod { get => _exitPeriod.Value; set => _exitPeriod.Value = value; }
 	public int ShortPeriod { get => _shortPeriod.Value; set => _shortPeriod.Value = value; }
-	public int LongPeriod { get => _longPeriod.Value; set => _longPeriod.Value = value; }
-	public decimal RiskFraction { get => _riskFraction.Value; set => _riskFraction.Value = value; }
-	public decimal MaxUnits { get => _maxUnits.Value; set => _maxUnits.Value = value; }
-	public decimal AddInterval { get => _addInterval.Value; set => _addInterval.Value = value; }
-	public decimal StopAtr { get => _stopAtr.Value; set => _stopAtr.Value = value; }
-	public decimal TakeAtr { get => _takeAtr.Value; set => _takeAtr.Value = value; }
-	public bool UseSar { get => _useSar.Value; set => _useSar.Value = value; }
-	public decimal SarStep { get => _sarStep.Value; set => _sarStep.Value = value; }
-	public decimal SarMax { get => _sarMax.Value; set => _sarMax.Value = value; }
+	public decimal StopMultiplier { get => _stopMultiplier.Value; set => _stopMultiplier.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public TurtleTraderSarStrategy()
 	{
-		// Initialize parameters
-		_exitPeriod = Param(nameof(ExitPeriod), 10)
-			.SetDisplay("Exit Period", "Donchian exit period", "General")
-			.SetGreaterThanZero()
-			;
-
 		_shortPeriod = Param(nameof(ShortPeriod), 20)
-			.SetDisplay("Short Period", "Short breakout period", "General")
 			.SetGreaterThanZero()
-			;
+			.SetDisplay("Short Period", "Donchian breakout period", "General");
 
-		_longPeriod = Param(nameof(LongPeriod), 55)
-			.SetDisplay("Long Period", "Long breakout period", "General")
-			.SetGreaterThanZero()
-			;
-
-		_riskFraction = Param(nameof(RiskFraction), 0.01m)
-			.SetDisplay("Risk Fraction", "Account fraction risked per trade", "Money")
-			;
-
-		_maxUnits = Param(nameof(MaxUnits), 4m)
-			.SetDisplay("Max Units", "Maximum number of units", "Money")
-			;
-
-		_addInterval = Param(nameof(AddInterval), 1m)
-			.SetDisplay("Add Interval", "ATR move to add units", "Money")
-			;
-
-		_stopAtr = Param(nameof(StopAtr), 1m)
-			.SetDisplay("Stop ATR", "ATR multiplier for stop", "Money")
-			;
-
-		_takeAtr = Param(nameof(TakeAtr), 1m)
-			.SetDisplay("Take ATR", "ATR multiplier for take profit", "Money")
-			;
-
-		_useSar = Param(nameof(UseSar), false)
-			.SetDisplay("Use SAR", "Enable Parabolic SAR trailing", "Money");
-
-		_sarStep = Param(nameof(SarStep), 0.02m)
-			.SetDisplay("SAR Step", "Parabolic SAR step", "Money")
-			;
-
-		_sarMax = Param(nameof(SarMax), 0.2m)
-			.SetDisplay("SAR Max", "Parabolic SAR maximum", "Money")
-			;
+		_stopMultiplier = Param(nameof(StopMultiplier), 2m)
+			.SetDisplay("Stop Multiplier", "ATR multiplier for stop", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -112,145 +46,92 @@ public class TurtleTraderSarStrategy : Strategy
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		yield return (Security, CandleType);
+		return [(Security, CandleType)];
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Enable built-in position protection
-		StartProtection(null, null);
+		_highs.Clear();
+		_lows.Clear();
+		_closes.Clear();
+		_stopPrice = 0m;
 
-		// Create indicators
-		_atr = new AverageTrueRange { Length = 20 };
-		_exitHigh = new Highest { Length = ExitPeriod };
-		_exitLow = new Lowest { Length = ExitPeriod };
-		_shortHigh = new Highest { Length = ShortPeriod };
-		_shortLow = new Lowest { Length = ShortPeriod };
-		_longHigh = new Highest { Length = LongPeriod };
-		_longLow = new Lowest { Length = LongPeriod };
-		_sar = new ParabolicSar { Step = SarStep, Max = SarMax };
+		var sub = SubscribeCandles(CandleType);
+		sub.Bind(ProcessCandle).Start();
 
-		// Subscribe to candles and bind indicators
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_atr, _exitHigh, _exitLow, _shortHigh, _shortLow, _longHigh, _longLow, _sar, ProcessCandle)
-			.Start();
-
-		// Create chart for visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _exitHigh);
-			DrawIndicator(area, _exitLow);
-			DrawIndicator(area, _shortHigh);
-			DrawIndicator(area, _shortLow);
-			DrawIndicator(area, _longHigh);
-			DrawIndicator(area, _longLow);
-			if (UseSar)
-				DrawIndicator(area, _sar);
+			DrawCandles(area, sub);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atr, decimal exitHigh, decimal exitLow,
-		decimal shortHigh, decimal shortLow, decimal longHigh, decimal longLow, decimal sar)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Ignore unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Skip if trading not allowed or data incomplete
-		if (!IsFormedAndOnlineAndAllowTrading())
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+		_closes.Add(candle.ClosePrice);
+
+		if (_highs.Count < ShortPeriod + 1)
 			return;
 
-		if (atr <= 0)
-			return;
+		// Trim to keep memory bounded
+		while (_highs.Count > ShortPeriod + 10)
+		{
+			_highs.RemoveAt(0);
+			_lows.RemoveAt(0);
+			_closes.RemoveAt(0);
+		}
 
-		// Calculate account risk and unit size
-		var account = Portfolio.CurrentValue ?? 0m;
-		if (account <= 0)
-			return;
+		// Compute Donchian channel (excluding current candle)
+		var len = _highs.Count;
+		decimal highest = 0, lowest = decimal.MaxValue;
+		for (int i = len - 1 - ShortPeriod; i < len - 1; i++)
+		{
+			if (_highs[i] > highest) highest = _highs[i];
+			if (_lows[i] < lowest) lowest = _lows[i];
+		}
 
-		var unit = Math.Min(MaxUnits, RiskFraction * account / atr);
-		if (unit <= 0)
-			return;
+		// Simple ATR approximation: average of (high-low) over last 20 candles
+		var atrPeriod = Math.Min(20, len);
+		decimal sumRange = 0;
+		for (int i = len - atrPeriod; i < len; i++)
+			sumRange += _highs[i] - _lows[i];
+		var atr = sumRange / atrPeriod;
 
 		var price = candle.ClosePrice;
 
 		// Manage existing position
+		if (Position > 0 && _stopPrice > 0 && price <= _stopPrice)
+		{
+			SellMarket();
+			return;
+		}
+		else if (Position < 0 && _stopPrice > 0 && price >= _stopPrice)
+		{
+			BuyMarket();
+			return;
+		}
+
 		if (Position != 0)
-		{
-			// Add to position on favorable move
-			if ((price - _lastEntryPrice) * Math.Sign(Position) >= AddInterval * atr &&
-				Math.Abs(Position) + unit <= MaxUnits)
-			{
-				if (Position > 0)
-					BuyMarket(unit);
-				else
-					SellMarket(unit);
-
-				_lastEntryPrice = price;
-			}
-
-			if (Position > 0)
-			{
-				// Check exit conditions for long position
-				var exit = Math.Min(exitLow, _stopPrice);
-				if (price <= exit || (UseSar && price <= sar))
-				{
-					SellMarket(Position);
-					return;
-				}
-
-				if (_takePrice != null && price >= _takePrice)
-				{
-					SellMarket(Position);
-					return;
-				}
-			}
-			else
-			{
-				// Check exit conditions for short position
-				var exit = Math.Max(exitHigh, _stopPrice);
-				if (price >= exit || (UseSar && price >= sar))
-				{
-					BuyMarket(-Position);
-					return;
-				}
-
-				if (_takePrice != null && price <= _takePrice)
-				{
-					BuyMarket(-Position);
-					return;
-				}
-			}
-
-			return;
-		}
-
-		// No position, check for breakout entry
-		var breakout = price > shortHigh ? 1 : price < shortLow ? -1 : 0;
-		if (breakout == 0)
 			return;
 
-		_lastEntryPrice = price;
-
-		// Enter long or short with ATR based stops
-		if (breakout > 0)
+		// Breakout entry
+		if (price > highest && atr > 0)
 		{
-			_stopPrice = price - StopAtr * atr;
-			_takePrice = TakeAtr > 0 ? price + TakeAtr * atr : null;
-			BuyMarket(unit);
+			_stopPrice = price - StopMultiplier * atr;
+			BuyMarket();
 		}
-		else
+		else if (price < lowest && atr > 0)
 		{
-			_stopPrice = price + StopAtr * atr;
-			_takePrice = TakeAtr > 0 ? price - TakeAtr * atr : null;
-			SellMarket(unit);
+			_stopPrice = price + StopMultiplier * atr;
+			SellMarket();
 		}
 	}
 }
