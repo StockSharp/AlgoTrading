@@ -1,382 +1,104 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using System.Collections.Generic;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Morning and Evening Star pattern strategy confirmed by the Stochastic oscillator.
-/// Ported from the MetaTrader Expert Advisor "Expert_AMS_ES_Stoch" to the StockSharp high level API.
+/// Morning/Evening Star pattern strategy with Stochastic confirmation.
+/// Buys on morning star + oversold stochastic, sells on evening star + overbought stochastic.
 /// </summary>
 public class MorningEveningStochasticStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _stochasticKPeriod;
-	private readonly StrategyParam<int> _stochasticDPeriod;
-	private readonly StrategyParam<int> _stochasticSlowing;
-	private readonly StrategyParam<decimal> _stochasticOverbought;
-	private readonly StrategyParam<decimal> _stochasticOversold;
-	private readonly StrategyParam<int> _patternAveragePeriod;
-	private readonly StrategyParam<decimal> _shortExitLevel;
-	private readonly StrategyParam<decimal> _longExitLevel;
+	private readonly StrategyParam<int> _stochPeriod;
+	private readonly StrategyParam<decimal> _oversold;
+	private readonly StrategyParam<decimal> _overbought;
 
-	private StochasticOscillator _stochastic;
-	private SimpleMovingAverage _bodyAverage;
+	private readonly List<ICandleMessage> _candles = new();
+	private decimal _prevK;
+	private bool _hasPrevK;
 
-	private ICandleMessage _previousCandle;
-	private ICandleMessage _previousPreviousCandle;
-	private decimal? _previousStochSignal;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int StochPeriod { get => _stochPeriod.Value; set => _stochPeriod.Value = value; }
+	public decimal Oversold { get => _oversold.Value; set => _oversold.Value = value; }
+	public decimal Overbought { get => _overbought.Value; set => _overbought.Value = value; }
 
-	/// <summary>
-	/// Candle type used for pattern detection and indicator calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic %K period.
-	/// </summary>
-	public int StochasticKPeriod
-	{
-		get => _stochasticKPeriod.Value;
-		set => _stochasticKPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic %D period.
-	/// </summary>
-	public int StochasticDPeriod
-	{
-		get => _stochasticDPeriod.Value;
-		set => _stochasticDPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic slowing parameter.
-	/// </summary>
-	public int StochasticSlowing
-	{
-		get => _stochasticSlowing.Value;
-		set => _stochasticSlowing.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic overbought level for short entries.
-	/// </summary>
-	public decimal StochasticOverbought
-	{
-		get => _stochasticOverbought.Value;
-		set => _stochasticOverbought.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic oversold level for long entries.
-	/// </summary>
-	public decimal StochasticOversold
-	{
-		get => _stochasticOversold.Value;
-		set => _stochasticOversold.Value = value;
-	}
-
-	/// <summary>
-	/// Number of candles used to average the candlestick body length.
-	/// </summary>
-	public int PatternAveragePeriod
-	{
-		get => _patternAveragePeriod.Value;
-		set => _patternAveragePeriod.Value = value;
-	}
-
-	/// <summary>
-	/// %D level that forces short positions to exit when crossed from below.
-	/// </summary>
-	public decimal ShortExitLevel
-	{
-		get => _shortExitLevel.Value;
-		set => _shortExitLevel.Value = value;
-	}
-
-	/// <summary>
-	/// %D level that forces long positions to exit when crossed from above.
-	/// </summary>
-	public decimal LongExitLevel
-	{
-		get => _longExitLevel.Value;
-		set => _longExitLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes parameters with defaults matching the original expert advisor.
-	/// </summary>
 	public MorningEveningStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for candles and indicators", "General");
-
-		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 12)
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("%K Period", "Stochastic %K lookback period", "Stochastic")
-			
-			.SetOptimize(6, 36, 2);
-
-		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 8)
-			.SetGreaterThanZero()
-			.SetDisplay("%D Period", "Stochastic %D smoothing period", "Stochastic")
-			
-			.SetOptimize(3, 18, 1);
-
-		_stochasticSlowing = Param(nameof(StochasticSlowing), 29)
-			.SetGreaterThanZero()
-			.SetDisplay("Slowing", "Stochastic slowing value", "Stochastic")
-			
-			.SetOptimize(1, 40, 2);
-
-		_stochasticOverbought = Param(nameof(StochasticOverbought), 70m)
-			.SetDisplay("Overbought", "Stochastic %D threshold for short entries", "Stochastic")
-			
-			.SetOptimize(60m, 90m, 5m);
-
-		_stochasticOversold = Param(nameof(StochasticOversold), 30m)
-			.SetDisplay("Oversold", "Stochastic %D threshold for long entries", "Stochastic")
-			
-			.SetOptimize(10m, 40m, 5m);
-
-		_patternAveragePeriod = Param(nameof(PatternAveragePeriod), 4)
-			.SetGreaterThanZero()
-			.SetDisplay("Body Average", "Number of candles used for body average", "Candlestick Pattern")
-			
-			.SetOptimize(3, 12, 1);
-
-		_shortExitLevel = Param(nameof(ShortExitLevel), 20m)
-			.SetDisplay("Short Exit %D", "Level that closes shorts when crossed upward", "Risk Management")
-			
-			.SetOptimize(10m, 40m, 5m);
-
-		_longExitLevel = Param(nameof(LongExitLevel), 80m)
-			.SetDisplay("Long Exit %D", "Level that closes longs when crossed downward", "Risk Management")
-			
-			.SetOptimize(60m, 90m, 5m);
+			.SetDisplay("Stoch Period", "Stochastic K period", "Indicators");
+		_oversold = Param(nameof(Oversold), 30m)
+			.SetDisplay("Oversold", "Stochastic oversold level", "Signals");
+		_overbought = Param(nameof(Overbought), 70m)
+			.SetDisplay("Overbought", "Stochastic overbought level", "Signals");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_stochastic = null;
-		_bodyAverage = null;
-		_previousCandle = null;
-		_previousPreviousCandle = null;
-		_previousStochSignal = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_stochastic = new StochasticOscillator
-		{
-			KPeriod = StochasticKPeriod,
-			D = {  K = { Length = StochasticDPeriod } },
-			Smooth = StochasticSlowing,
-		};
-
-		_bodyAverage = new SMA
-		{
-			Length = PatternAveragePeriod,
-		};
-
+		_candles.Clear();
+		_hasPrevK = false;
+		var stoch = new StochasticOscillator { K = { Length = StochPeriod }, D = { Length = 3 } };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(_stochastic, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _stochastic);
-			DrawOwnTrades(area);
-		}
+		subscription.BindEx(stoch, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indicatorValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		if (_stochastic == null || _bodyAverage == null)
-			return;
+		var stochTyped = stochValue as StochasticOscillatorValue;
+		if (stochTyped?.K is not decimal kValue) return;
 
-		if (!indicatorValue.IsFinal)
-			return;
+		_candles.Add(candle);
+		if (_candles.Count > 5)
+			_candles.RemoveAt(0);
 
-		if (indicatorValue is not StochasticOscillatorValue stoch)
-			return;
-
-		if (stoch.D is not decimal stochSignal)
-			return;
-
-		var previousSignal = _previousStochSignal;
-
-		var bodySize = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var avgValue = _bodyAverage.Process(new DecimalIndicatorValue(_bodyAverage, bodySize, candle.OpenTime));
-		if (avgValue is not DecimalIndicatorValue { IsFinal: true, Value: var averageBody })
+		if (_candles.Count >= 3)
 		{
-			UpdateState(candle, stochSignal);
-			return;
+			var c3 = _candles[^1]; // current
+			var c2 = _candles[^2]; // middle (star)
+			var c1 = _candles[^3]; // first
+
+			var body1 = Math.Abs(c1.ClosePrice - c1.OpenPrice);
+			var body2 = Math.Abs(c2.ClosePrice - c2.OpenPrice);
+			var body3 = Math.Abs(c3.ClosePrice - c3.OpenPrice);
+
+			// Morning Star: bearish + small body + bullish, close above midpoint of first
+			var isMorningStar = c1.OpenPrice > c1.ClosePrice  // first bearish
+				&& body2 < body1 * 0.5m                       // small middle body
+				&& c3.ClosePrice > c3.OpenPrice                // third bullish
+				&& c3.ClosePrice > (c1.OpenPrice + c1.ClosePrice) / 2m;
+
+			// Evening Star: bullish + small body + bearish, close below midpoint of first
+			var isEveningStar = c1.ClosePrice > c1.OpenPrice   // first bullish
+				&& body2 < body1 * 0.5m                        // small middle body
+				&& c3.OpenPrice > c3.ClosePrice                // third bearish
+				&& c3.ClosePrice < (c1.OpenPrice + c1.ClosePrice) / 2m;
+
+			if (isMorningStar && kValue < Oversold && Position <= 0)
+				BuyMarket();
+			else if (isEveningStar && kValue > Overbought && Position >= 0)
+				SellMarket();
 		}
 
-		var hasPatternHistory = _previousCandle != null && _previousPreviousCandle != null;
-		var isMorningStar = hasPatternHistory && IsMorningStar(_previousPreviousCandle!, _previousCandle!, candle, averageBody);
-		var isEveningStar = hasPatternHistory && IsEveningStar(_previousPreviousCandle!, _previousCandle!, candle, averageBody);
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// Exit on stochastic cross
+		if (_hasPrevK)
 		{
-			UpdateState(candle, stochSignal);
-			return;
+			if (Position > 0 && _prevK >= Overbought && kValue < Overbought)
+				SellMarket();
+			else if (Position < 0 && _prevK <= Oversold && kValue > Oversold)
+				BuyMarket();
 		}
 
-		if (previousSignal.HasValue)
-		{
-			var shouldCloseShort = Position < 0m && (
-				(stochSignal > ShortExitLevel && previousSignal.Value < ShortExitLevel) ||
-				(stochSignal > LongExitLevel && previousSignal.Value < LongExitLevel));
-
-			if (shouldCloseShort)
-			{
-				var coverVolume = Math.Abs(Position);
-				if (coverVolume > 0m)
-				{
-					BuyMarket(coverVolume);
-					LogInfo($"Closing short position because %D crossed above exit levels: {previousSignal.Value:F2} -> {stochSignal:F2}.");
-				}
-			}
-
-			var shouldCloseLong = Position > 0m && (
-				(stochSignal < LongExitLevel && previousSignal.Value > LongExitLevel) ||
-				(stochSignal < ShortExitLevel && previousSignal.Value > ShortExitLevel));
-
-			if (shouldCloseLong)
-			{
-				var exitVolume = Math.Abs(Position);
-				if (exitVolume > 0m)
-				{
-					SellMarket(exitVolume);
-					LogInfo($"Closing long position because %D crossed below exit levels: {previousSignal.Value:F2} -> {stochSignal:F2}.");
-				}
-			}
-		}
-
-		if (isMorningStar && stochSignal < StochasticOversold && Position <= 0m)
-		{
-			if (Position < 0m)
-			{
-				var coverVolume = Math.Abs(Position);
-				if (coverVolume > 0m)
-				{
-					BuyMarket(coverVolume);
-					LogInfo("Morning Star signal detected. Closing existing short exposure before entering long.");
-				}
-			}
-
-			if (Volume > 0m)
-			{
-				BuyMarket(Volume);
-				LogInfo($"Morning Star + Stochastic confirmation. Buying {Volume} at {candle.ClosePrice}.");
-			}
-		}
-		else if (isEveningStar && stochSignal > StochasticOverbought && Position >= 0m)
-		{
-			if (Position > 0m)
-			{
-				var exitVolume = Math.Abs(Position);
-				if (exitVolume > 0m)
-				{
-					SellMarket(exitVolume);
-					LogInfo("Evening Star signal detected. Closing existing long exposure before entering short.");
-				}
-			}
-
-			if (Volume > 0m)
-			{
-				SellMarket(Volume);
-				LogInfo($"Evening Star + Stochastic confirmation. Selling {Volume} at {candle.ClosePrice}.");
-			}
-		}
-
-		UpdateState(candle, stochSignal);
-	}
-
-	private void UpdateState(ICandleMessage candle, decimal stochSignal)
-	{
-		_previousPreviousCandle = _previousCandle;
-		_previousCandle = candle;
-		_previousStochSignal = stochSignal;
-	}
-
-	private static bool IsMorningStar(ICandleMessage first, ICandleMessage second, ICandleMessage third, decimal averageBody)
-	{
-		if (averageBody <= 0m)
-			return false;
-
-		var firstBody = first.OpenPrice - first.ClosePrice;
-		if (firstBody <= averageBody)
-			return false;
-
-		var secondBody = Math.Abs(second.ClosePrice - second.OpenPrice);
-		if (secondBody >= averageBody * 0.5m)
-			return false;
-
-		if (second.ClosePrice >= first.ClosePrice || second.OpenPrice >= first.OpenPrice)
-			return false;
-
-		if (third.ClosePrice <= third.OpenPrice)
-			return false;
-
-		var midpoint = (first.OpenPrice + first.ClosePrice) / 2m;
-		return third.ClosePrice > midpoint;
-	}
-
-	private static bool IsEveningStar(ICandleMessage first, ICandleMessage second, ICandleMessage third, decimal averageBody)
-	{
-		if (averageBody <= 0m)
-			return false;
-
-		var firstBody = first.ClosePrice - first.OpenPrice;
-		if (firstBody <= averageBody)
-			return false;
-
-		var secondBody = Math.Abs(second.ClosePrice - second.OpenPrice);
-		if (secondBody >= averageBody * 0.5m)
-			return false;
-
-		if (second.ClosePrice <= first.ClosePrice || second.OpenPrice <= first.OpenPrice)
-			return false;
-
-		if (third.ClosePrice >= third.OpenPrice)
-			return false;
-
-		var midpoint = (first.OpenPrice + first.ClosePrice) / 2m;
-		return third.ClosePrice < midpoint;
+		_prevK = kValue;
+		_hasPrevK = true;
 	}
 }

@@ -1,484 +1,98 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Trailing stop manager driven by a moving average similar to the my_ts15.mq5 expert.
+/// My TS15 strategy: WMA trend following with trailing stop management.
+/// Enters on price crossing WMA, exits with trailing stop logic.
 /// </summary>
 public class MyTs15Strategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethods> _maMethod;
-	private readonly StrategyParam<CandlePrices> _maPrice;
-	private readonly StrategyParam<int> _maBarsTrail;
-	private readonly StrategyParam<decimal> _trailBehindMaPoints;
-	private readonly StrategyParam<decimal> _trailBehindPricePoints;
-	private readonly StrategyParam<decimal> _trailBehindNegativePoints;
-	private readonly StrategyParam<decimal> _trailStepPoints;
-	private readonly StrategyParam<bool> _enforceMaxStopLoss;
-	private readonly StrategyParam<decimal> _maxStopLossPoints;
-	private readonly StrategyParam<bool> _showIndicator;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _trailMultiplier;
 
-	private readonly List<decimal> _maHistory = new();
+	private decimal _entryPrice;
+	private decimal _bestPrice;
 
-	private DecimalLengthIndicator _maIndicator;
-	private Order _activeStopOrder;
-	private decimal? _longStop;
-	private decimal? _shortStop;
-	private decimal _pipSize;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal TrailMultiplier { get => _trailMultiplier.Value; set => _trailMultiplier.Value = value; }
 
 	public MyTs15Strategy()
 	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_maPeriod = Param(nameof(MaPeriod), 50)
-		.SetDisplay("MA Period", "Length of the trailing moving average.", "Moving Average")
-		.SetGreaterThanZero();
-
-		_maShift = Param(nameof(MaShift), 0)
-		.SetDisplay("MA Shift", "Additional bar shift applied when requesting MA values.", "Moving Average")
-		.SetNotNegative();
-
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.LinearWeighted)
-		.SetDisplay("MA Method", "Moving average smoothing method.", "Moving Average");
-
-		_maPrice = Param(nameof(MaPrice), CandlePrices.Weighted)
-		.SetDisplay("MA Price", "Candle price used by the moving average.", "Moving Average");
-
-		_maBarsTrail = Param(nameof(MaBarsTrail), 1)
-		.SetDisplay("MA Bars Trail", "Number of completed bars between the current candle and the MA sample.", "Trailing")
-		.SetNotNegative();
-
-		_trailBehindMaPoints = Param(nameof(TrailBehindMaPoints), 5m)
-		.SetDisplay("Trail Behind MA", "Distance in points kept between stop loss and MA.", "Trailing")
-		.SetNotNegative();
-
-		_trailBehindPricePoints = Param(nameof(TrailBehindPricePoints), 30m)
-		.SetDisplay("Trail Behind Price", "Distance in points kept behind the price when in profit.", "Trailing")
-		.SetNotNegative();
-
-		_trailBehindNegativePoints = Param(nameof(TrailBehindNegativePoints), 60m)
-		.SetDisplay("Trail Behind Negative", "Distance in points kept behind the price when in loss.", "Trailing")
-		.SetNotNegative();
-
-		_trailStepPoints = Param(nameof(TrailStepPoints), 0m)
-		.SetDisplay("Trail Step", "Minimum improvement in points required to move the stop.", "Trailing")
-		.SetNotNegative();
-
-		_enforceMaxStopLoss = Param(nameof(EnforceMaxStopLoss), false)
-		.SetDisplay("Enforce Max Stop", "Close or clamp positions exceeding the maximum stop distance.", "Protection");
-
-		_maxStopLossPoints = Param(nameof(MaxStopLossPoints), 100m)
-		.SetDisplay("Max Stop Loss", "Maximum allowed loss distance in points.", "Protection")
-		.SetNotNegative();
-
-		_showIndicator = Param(nameof(ShowIndicator), true)
-		.SetDisplay("Show Indicator", "Draw the moving average on the chart area if available.", "Visualization");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle Type", "Primary candle series used for trailing logic.", "General");
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "WMA period", "Indicators");
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "ATR period for trailing", "Indicators");
+		_trailMultiplier = Param(nameof(TrailMultiplier), 2m)
+			.SetDisplay("Trail Multiplier", "ATR multiplier for trailing stop", "Risk");
 	}
 
-	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
-	public int MaShift { get => _maShift.Value; set => _maShift.Value = value; }
-	public MovingAverageMethods MaMethod { get => _maMethod.Value; set => _maMethod.Value = value; }
-	public CandlePrices MaPrice { get => _maPrice.Value; set => _maPrice.Value = value; }
-	public int MaBarsTrail { get => _maBarsTrail.Value; set => _maBarsTrail.Value = value; }
-	public decimal TrailBehindMaPoints { get => _trailBehindMaPoints.Value; set => _trailBehindMaPoints.Value = value; }
-	public decimal TrailBehindPricePoints { get => _trailBehindPricePoints.Value; set => _trailBehindPricePoints.Value = value; }
-	public decimal TrailBehindNegativePoints { get => _trailBehindNegativePoints.Value; set => _trailBehindNegativePoints.Value = value; }
-	public decimal TrailStepPoints { get => _trailStepPoints.Value; set => _trailStepPoints.Value = value; }
-	public bool EnforceMaxStopLoss { get => _enforceMaxStopLoss.Value; set => _enforceMaxStopLoss.Value = value; }
-	public decimal MaxStopLossPoints { get => _maxStopLossPoints.Value; set => _maxStopLossPoints.Value = value; }
-	public bool ShowIndicator { get => _showIndicator.Value; set => _showIndicator.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_maHistory.Clear();
-		_maIndicator = null;
-		_activeStopOrder = null;
-		_longStop = null;
-		_shortStop = null;
-		_pipSize = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_pipSize = CalculatePipSize();
-
-		_maIndicator = CreateMovingAverage(MaMethod, MaPeriod, MaPrice);
-
+		_entryPrice = 0;
+		_bestPrice = 0;
+		var wma = new WeightedMovingAverage { Length = MaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-		.BindEx(_maIndicator, ProcessCandle)
-		.Start();
+		subscription.Bind(wma, atr, ProcessCandle).Start();
+	}
 
-		if (ShowIndicator)
+	private void ProcessCandle(ICandleMessage candle, decimal wmaValue, decimal atrValue)
+	{
+		if (candle.State != CandleStates.Finished) return;
+
+		var close = candle.ClosePrice;
+		var trailDist = atrValue * TrailMultiplier;
+
+		// Trailing stop check
+		if (Position > 0)
+		{
+			if (close > _bestPrice) _bestPrice = close;
+			if (_bestPrice - close > trailDist)
 			{
-			var area = CreateChartArea();
-			if (area != null)
-				{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, _maIndicator);
-				DrawOwnTrades(area);
+				SellMarket();
+				_entryPrice = 0;
+				_bestPrice = 0;
+				return;
 			}
 		}
-	}
-
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!maValue.IsFinal)
-			return;
-
-		var ma = maValue.ToDecimal();
-		_maHistory.Add(ma);
-
-		var requiredShift = MaBarsTrail + MaShift;
-		if (requiredShift < 0)
-			requiredShift = 0;
-
-		var maxHistory = requiredShift + 10;
-		if (maxHistory < 10)
-			maxHistory = 10;
-
-		if (_maHistory.Count > maxHistory)
-			_maHistory.RemoveRange(0, _maHistory.Count - maxHistory);
-
-		var index = _maHistory.Count - 1 - requiredShift;
-		if (index < 0)
-			return;
-
-		var referenceMa = _maHistory[index];
-		var price = GetPrice(candle, MaPrice);
-
-		if (Position > 0)
-			{
-			ManageLongPosition(price, referenceMa);
-		}
 		else if (Position < 0)
-			{
-			ManageShortPosition(price, referenceMa);
-		}
-		else
-			{
-			ResetStops();
-		}
-	}
-
-	private void ManageLongPosition(decimal price, decimal ma)
-	{
-		var volume = Math.Abs(Position);
-		if (volume <= 0m)
-			return;
-
-		var positionPrice = PositionPrice ?? price;
-		var pip = GetPipSize();
-		if (pip <= 0m)
-			return;
-
-		var maOffset = TrailBehindMaPoints * pip;
-		var pricePositiveOffset = TrailBehindPricePoints * pip;
-		var priceNegativeOffset = TrailBehindNegativePoints * pip;
-		var stepDistance = TrailStepPoints * pip;
-		var maxLossDistance = MaxStopLossPoints * pip;
-
-		if (EnforceMaxStopLoss && maxLossDistance > 0m && price <= positionPrice - maxLossDistance)
-			{
-			ClosePosition();
-			return;
-		}
-
-		var trailCandidate = Math.Min(ma - maOffset, price - pricePositiveOffset);
-		if (price <= positionPrice + pricePositiveOffset)
-			{
-			var negativeCandidate = price - priceNegativeOffset;
-			if (trailCandidate > negativeCandidate)
-				trailCandidate = negativeCandidate;
-		}
-		else if (trailCandidate > price - pricePositiveOffset)
-			{
-			trailCandidate = price - pricePositiveOffset;
-		}
-
-		if (EnforceMaxStopLoss && maxLossDistance > 0m && trailCandidate <= positionPrice - maxLossDistance)
-			trailCandidate = positionPrice - maxLossDistance;
-
-		if (trailCandidate <= 0m)
-			return;
-
-		var shouldUpdate = !_longStop.HasValue;
-		if (!shouldUpdate && trailCandidate > _longStop.Value)
-			{
-			if (stepDistance <= 0m || trailCandidate - _longStop.Value >= stepDistance)
-				shouldUpdate = true;
-		}
-
-		if (!shouldUpdate)
-			return;
-
-		if (MoveStop(true, trailCandidate, volume))
-			{
-			_longStop = trailCandidate;
-			_shortStop = null;
-		}
-	}
-
-	private void ManageShortPosition(decimal price, decimal ma)
-	{
-		var volume = Math.Abs(Position);
-		if (volume <= 0m)
-			return;
-
-		var positionPrice = PositionPrice ?? price;
-		var pip = GetPipSize();
-		if (pip <= 0m)
-			return;
-
-		var maOffset = TrailBehindMaPoints * pip;
-		var pricePositiveOffset = TrailBehindPricePoints * pip;
-		var priceNegativeOffset = TrailBehindNegativePoints * pip;
-		var stepDistance = TrailStepPoints * pip;
-		var maxLossDistance = MaxStopLossPoints * pip;
-
-		if (EnforceMaxStopLoss && maxLossDistance > 0m && price >= positionPrice + maxLossDistance)
-			{
-			ClosePosition();
-			return;
-		}
-
-		var trailCandidate = Math.Max(ma + maOffset, price + pricePositiveOffset);
-		if (price >= positionPrice - pricePositiveOffset)
-			{
-			var negativeCandidate = price + priceNegativeOffset;
-			if (trailCandidate < negativeCandidate)
-				trailCandidate = negativeCandidate;
-		}
-		else if (trailCandidate < price + pricePositiveOffset)
-			{
-			trailCandidate = price + pricePositiveOffset;
-		}
-
-		if (EnforceMaxStopLoss && maxLossDistance > 0m && trailCandidate >= positionPrice + maxLossDistance)
-			trailCandidate = positionPrice + maxLossDistance;
-
-		if (trailCandidate <= 0m)
-			return;
-
-		var shouldUpdate = !_shortStop.HasValue;
-		if (!shouldUpdate && trailCandidate < _shortStop.Value)
-			{
-			if (stepDistance <= 0m || _shortStop.Value - trailCandidate >= stepDistance)
-				shouldUpdate = true;
-		}
-
-		if (!shouldUpdate)
-			return;
-
-		if (MoveStop(false, trailCandidate, volume))
-			{
-			_shortStop = trailCandidate;
-			_longStop = null;
-		}
-	}
-
-	private bool MoveStop(bool isLong, decimal price, decimal volume)
-	{
-		if (volume <= 0m)
-			return false;
-
-		if (_activeStopOrder != null && _activeStopOrder.State == OrderStates.Active)
-			CancelOrder(_activeStopOrder);
-
-		_activeStopOrder = isLong
-		? SellStop(volume, price)
-		: BuyStop(volume, price);
-
-		return _activeStopOrder != null;
-	}
-
-	private void ResetStops()
-	{
-		_longStop = null;
-		_shortStop = null;
-
-		if (_activeStopOrder != null && _activeStopOrder.State == OrderStates.Active)
-			CancelOrder(_activeStopOrder);
-
-		_activeStopOrder = null;
-	}
-
-	private decimal GetPipSize()
-	{
-		if (_pipSize > 0m)
-			return _pipSize;
-
-		_pipSize = CalculatePipSize();
-		return _pipSize;
-	}
-
-	private decimal CalculatePipSize()
-	{
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-			return 0m;
-
-		var digits = GetDecimalDigits(step);
-		if (digits == 3 || digits == 5)
-			return step * 10m;
-
-		return step;
-	}
-
-	private static int GetDecimalDigits(decimal value)
-	{
-		value = Math.Abs(value);
-		var digits = 0;
-
-		while (value != Math.Floor(value) && digits < 10)
-			{
-			value *= 10m;
-			digits++;
-		}
-
-		return digits;
-	}
-
-	private static decimal GetPrice(ICandleMessage candle, CandlePrices priceType)
-	{
-		return priceType switch
 		{
-			CandlePrices.Open => candle.OpenPrice,
-			CandlePrices.High => candle.HighPrice,
-			CandlePrices.Low => candle.LowPrice,
-			CandlePrices.Close => candle.ClosePrice,
-			CandlePrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			CandlePrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			CandlePrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-			_ => candle.ClosePrice,
-		};
-	}
-
-	private static DecimalLengthIndicator CreateMovingAverage(MovingAverageMethods method, int length, CandlePrices price)
-	{
-		DecimalLengthIndicator indicator = method switch
-		{
-			MovingAverageMethods.Simple => new SMA(),
-			MovingAverageMethods.Exponential => new EMA(),
-			MovingAverageMethods.Smoothed => new SmoothedMovingAverage(),
-			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage(),
-			_ => new SMA(),
-		};
-
-		indicator.Length = length;
-
-		switch (indicator)
+			if (close < _bestPrice) _bestPrice = close;
+			if (close - _bestPrice > trailDist)
 			{
-			case SimpleMovingAverage sma:
-			sma.CandlePrice = price;
-			break;
-			case ExponentialMovingAverage ema:
-			ema.CandlePrice = price;
-			break;
-			case SmoothedMovingAverage smoothed:
-			smoothed.CandlePrice = price;
-			break;
-			case WeightedMovingAverage wma:
-			wma.CandlePrice = price;
-			break;
+				BuyMarket();
+				_entryPrice = 0;
+				_bestPrice = 0;
+				return;
+			}
 		}
 
-		return indicator;
-	}
-
-	/// <summary>
-	/// Moving average smoothing methods supported by the strategy.
-	/// </summary>
-	public enum MovingAverageMethods
-	{
-		/// <summary>
-		/// Simple moving average.
-		/// </summary>
-		Simple,
-		/// <summary>
-		/// Exponential moving average.
-		/// </summary>
-		Exponential,
-		/// <summary>
-		/// Smoothed moving average.
-		/// </summary>
-		Smoothed,
-		/// <summary>
-		/// Linear weighted moving average.
-		/// </summary>
-		LinearWeighted
-	}
-
-	public enum CandlePrices
-	{
-		/// <summary>
-		/// Open price.
-		/// </summary>
-		Open,
-		/// <summary>
-		/// High price.
-		/// </summary>
-		High,
-		/// <summary>
-		/// Low price.
-		/// </summary>
-		Low,
-		/// <summary>
-		/// Close price.
-		/// </summary>
-		Close,
-		/// <summary>
-		/// Median price (HL/2).
-		/// </summary>
-		Median,
-		/// <summary>
-		/// Typical price (HLC/3).
-		/// </summary>
-		Typical,
-		/// <summary>
-		/// Weighted price (HLCC/4).
-		/// </summary>
-		Weighted
-	}
-
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-
-		if (Position == 0m)
-			ResetStops();
+		// Entry signals
+		if (close > wmaValue && Position <= 0)
+		{
+			BuyMarket();
+			_entryPrice = close;
+			_bestPrice = close;
+		}
+		else if (close < wmaValue && Position >= 0)
+		{
+			SellMarket();
+			_entryPrice = close;
+			_bestPrice = close;
+		}
 	}
 }
-

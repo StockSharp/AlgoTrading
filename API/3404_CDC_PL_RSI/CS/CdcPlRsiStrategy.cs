@@ -1,286 +1,93 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using System.Collections.Generic;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Strategy that combines candlestick reversal patterns with RSI confirmation.
-/// Long trades rely on the Piercing Line pattern with oversold RSI readings,
-/// while short trades use the Dark Cloud Cover pattern confirmed by an overbought RSI.
+/// CDC PL RSI strategy: Dark Cloud Cover and Piercing Line candlestick patterns
+/// confirmed by RSI levels.
 /// </summary>
 public class CdcPlRsiStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<int> _bodyAveragePeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<decimal> _oversoldLevel;
+	private readonly StrategyParam<decimal> _overboughtLevel;
 
-	private RelativeStrengthIndex _rsi;
-	private SimpleMovingAverage _bodyAverage;
-	private SimpleMovingAverage _closeAverage;
+	private readonly List<ICandleMessage> _candles = new();
+	private decimal _prevRsi;
+	private bool _hasPrevRsi;
 
-	private CandleSnapshot _previous;
-	private CandleSnapshot _previous2;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public decimal OversoldLevel { get => _oversoldLevel.Value; set => _oversoldLevel.Value = value; }
+	public decimal OverboughtLevel { get => _overboughtLevel.Value; set => _overboughtLevel.Value = value; }
 
-	private decimal _rsiPrevious;
-	private decimal _rsiPrevious2;
-	private bool _hasRsiPrevious;
-	private bool _hasRsiPrevious2;
-
-	/// <summary>
-	/// RSI look-back period.
-	/// </summary>
-	public int RsiPeriod
-	{
-	        get => _rsiPeriod.Value;
-	        set => _rsiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Number of bars used to smooth candle body size and close price trend.
-	/// </summary>
-	public int BodyAveragePeriod
-	{
-	        get => _bodyAveragePeriod.Value;
-	        set => _bodyAveragePeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for all calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-	        get => _candleType.Value;
-	        set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="CdcPlRsiStrategy"/> class.
-	/// </summary>
 	public CdcPlRsiStrategy()
 	{
-	        _rsiPeriod = Param(nameof(RsiPeriod), 20)
-	                .SetGreaterThanZero()
-	                .SetDisplay("RSI Period", "Number of bars for RSI calculation", "Indicators")
-	                
-	                .SetOptimize(10, 40, 5);
-
-	        _bodyAveragePeriod = Param(nameof(BodyAveragePeriod), 14)
-	                .SetGreaterThanZero()
-	                .SetDisplay("Body Average", "Period for candle body average and close trend", "Indicators")
-	                
-	                .SetOptimize(10, 30, 5);
-
-	        _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-	                .SetDisplay("Candle Type", "Type of candles used by the strategy", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "RSI period", "Indicators");
+		_oversoldLevel = Param(nameof(OversoldLevel), 40m)
+			.SetDisplay("Oversold Level", "RSI below this for long entry", "Signals");
+		_overboughtLevel = Param(nameof(OverboughtLevel), 60m)
+			.SetDisplay("Overbought Level", "RSI above this for short entry", "Signals");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	        => [(Security, CandleType)];
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-	        base.OnReseted();
-
-	        _previous = null;
-	        _previous2 = null;
-	        _rsiPrevious = 0m;
-	        _rsiPrevious2 = 0m;
-	        _hasRsiPrevious = false;
-	        _hasRsiPrevious2 = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-	        base.OnStarted2(time);
-
-	        _rsi = new RelativeStrengthIndex
-	        {
-	                Length = RsiPeriod
-	        };
-
-	        _bodyAverage = new SMA
-	        {
-	                Length = BodyAveragePeriod
-	        };
-
-	        _closeAverage = new SMA
-	        {
-	                Length = BodyAveragePeriod
-	        };
-
-	        var subscription = SubscribeCandles(CandleType);
-	        subscription
-	                .Bind(_rsi, ProcessCandle)
-	                .Start();
-
-	        var area = CreateChartArea();
-	        if (area != null)
-	        {
-	                DrawCandles(area, subscription);
-	                DrawIndicator(area, _rsi);
-	                DrawIndicator(area, _closeAverage);
-	                DrawOwnTrades(area);
-	        }
-
-	        StartProtection(null, null);
+		base.OnStarted2(time);
+		_candles.Clear();
+		_hasPrevRsi = false;
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(rsi, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal currentRsi)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
-	        // Skip any incomplete candles to avoid double counting partially formed bars.
-	        if (candle.State != CandleStates.Finished)
-	                return;
+		if (candle.State != CandleStates.Finished) return;
 
-	        var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-	        var bodyValue = _bodyAverage.Process(new DecimalIndicatorValue(_bodyAverage, body, candle.OpenTime));
+		_candles.Add(candle);
+		if (_candles.Count > 5)
+			_candles.RemoveAt(0);
 
-	        if (bodyValue is not DecimalIndicatorValue { IsFinal: true, Value: var bodyAverage })
-	        {
-	                // Store RSI history even when the body average is still warming up.
-	                ShiftRsi(currentRsi);
-	                return;
-	        }
+		if (_candles.Count >= 2 && _hasPrevRsi)
+		{
+			var curr = _candles[^1];
+			var prev = _candles[^2];
 
-	        var closeValue = _closeAverage.Process(new DecimalIndicatorValue(_closeAverage, candle.ClosePrice, candle.OpenTime));
+			// Piercing Line
+			var isPiercing = prev.OpenPrice > prev.ClosePrice
+				&& curr.ClosePrice > curr.OpenPrice
+				&& curr.OpenPrice < prev.LowPrice
+				&& curr.ClosePrice > (prev.OpenPrice + prev.ClosePrice) / 2m;
 
-	        if (closeValue is not DecimalIndicatorValue { IsFinal: true, Value: var closeAverage })
-	        {
-	                // Wait for the close average to provide a stable trend reference.
-	                ShiftRsi(currentRsi);
-	                return;
-	        }
+			// Dark Cloud Cover
+			var isDarkCloud = prev.ClosePrice > prev.OpenPrice
+				&& curr.OpenPrice > curr.ClosePrice
+				&& curr.OpenPrice > prev.HighPrice
+				&& curr.ClosePrice < (prev.OpenPrice + prev.ClosePrice) / 2m;
 
-	        var currentSnapshot = new CandleSnapshot
-	        {
-	                Open = candle.OpenPrice,
-	                High = candle.HighPrice,
-	                Low = candle.LowPrice,
-	                Close = candle.ClosePrice,
-	                BodyAverage = bodyAverage,
-	                CloseAverage = closeAverage,
-	        };
+			if (isPiercing && rsiValue < OversoldLevel && Position <= 0)
+				BuyMarket();
+			else if (isDarkCloud && rsiValue > OverboughtLevel && Position >= 0)
+				SellMarket();
 
-	        if (IsFormedAndOnlineAndAllowTrading())
-	        {
-	                ProcessSignals();
-	        }
+			// Exit on RSI crossing
+			if (Position > 0 && _prevRsi >= OverboughtLevel && rsiValue < OverboughtLevel)
+				SellMarket();
+			else if (Position < 0 && _prevRsi <= OversoldLevel && rsiValue > OversoldLevel)
+				BuyMarket();
+		}
 
-	        ShiftCandles(currentSnapshot);
-	        ShiftRsi(currentRsi);
-	}
-
-	private void ProcessSignals()
-	{
-	        if (_previous == null || _previous2 == null || !_hasRsiPrevious)
-	                return;
-
-	        var rsi1 = _rsiPrevious;
-	        var hasRsi2 = _hasRsiPrevious2;
-	        var rsi2 = _rsiPrevious2;
-
-	        var longSignal = IsPiercingPattern(_previous, _previous2) && rsi1 < 40m;
-	        var shortSignal = IsDarkCloudCoverPattern(_previous, _previous2) && rsi1 > 60m;
-
-	        // Exit a long when RSI falls back from an overbought zone or recovers from oversold levels.
-	        var exitLong = Position > 0 && hasRsi2 &&
-	                ((rsi1 < 70m && rsi2 > 70m) || (rsi1 < 30m && rsi2 > 30m));
-	        // Exit a short when RSI rises above oversold levels or drops below overbought levels.
-	        var exitShort = Position < 0 && hasRsi2 &&
-	                ((rsi1 > 30m && rsi2 < 30m) || (rsi1 > 70m && rsi2 < 70m));
-
-	        if (exitLong || exitShort)
-	        {
-	                ClosePosition();
-	                return;
-	        }
-
-	        var volume = Volume ?? 1m;
-
-	        if (longSignal)
-	        {
-	                if (Position < 0)
-	                {
-	                        BuyMarket(volume + Math.Abs(Position));
-	                }
-	                else if (Position == 0)
-	                {
-	                        BuyMarket(volume);
-	                }
-	        }
-	        else if (shortSignal)
-	        {
-	                if (Position > 0)
-	                {
-	                        SellMarket(volume + Math.Abs(Position));
-	                }
-	                else if (Position == 0)
-	                {
-	                        SellMarket(volume);
-	                }
-	        }
-	}
-
-	private void ShiftCandles(CandleSnapshot snapshot)
-	{
-	        _previous2 = _previous;
-	        _previous = snapshot;
-	}
-
-	private void ShiftRsi(decimal currentRsi)
-	{
-	        if (_hasRsiPrevious)
-	        {
-	                _rsiPrevious2 = _rsiPrevious;
-	                _hasRsiPrevious2 = true;
-	        }
-
-	        _rsiPrevious = currentRsi;
-	        _hasRsiPrevious = true;
-	}
-
-	private static bool IsPiercingPattern(CandleSnapshot latest, CandleSnapshot older)
-	{
-	        var latestBody = latest.Close - latest.Open;
-	        var olderBody = older.Open - older.Close;
-	        var longWhite = latestBody > latest.BodyAverage;
-	        var longBlack = olderBody > latest.BodyAverage;
-	        var closeInside = older.Close > latest.Close && latest.Close < older.Open;
-	        var downTrend = ((older.Open + older.Close) / 2m) < older.CloseAverage;
-	        var gapOpen = latest.Open < older.Low;
-	        return longWhite && longBlack && closeInside && downTrend && gapOpen;
-	}
-
-	private static bool IsDarkCloudCoverPattern(CandleSnapshot latest, CandleSnapshot older)
-	{
-	        var olderBody = older.Close - older.Open;
-	        var longWhite = olderBody > latest.BodyAverage;
-	        var closeWithin = latest.Close < older.Close && latest.Close > older.Open;
-	        var upTrend = ((older.Open + older.Close) / 2m) > latest.CloseAverage;
-	        var gapOpen = latest.Open > older.High;
-	        return longWhite && closeWithin && upTrend && gapOpen;
-	}
-
-	private sealed class CandleSnapshot
-	{
-	        public decimal Open { get; init; }
-	        public decimal High { get; init; }
-	        public decimal Low { get; init; }
-	        public decimal Close { get; init; }
-	        public decimal BodyAverage { get; init; }
-	        public decimal CloseAverage { get; init; }
+		_prevRsi = rsiValue;
+		_hasPrevRsi = true;
 	}
 }
-
