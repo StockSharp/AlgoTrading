@@ -89,7 +89,7 @@ public class RockTraderNeuroStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(bb, ProcessCandle)
+			.BindEx(bb, ProcessCandleEx)
 			.Start();
 
 		var area = CreateChartArea();
@@ -100,9 +100,15 @@ public class RockTraderNeuroStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessCandleEx(ICandleMessage candle, IIndicatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		var bb = (BollingerBandsValue)value;
+		if (bb.UpBand is not decimal upper ||
+			bb.LowBand is not decimal lower ||
+			bb.MovingAverage is not decimal middle)
 			return;
 
 		// Calculate current Bollinger Band width
@@ -149,12 +155,12 @@ public class RockTraderNeuroStrategy : Strategy
 		if (Position > 0)
 		{
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
-				ClosePosition();
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
 			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
-				ClosePosition();
+				BuyMarket();
 		}
 		else
 		{

@@ -240,7 +240,7 @@ public class StarterV6ModStrategy : Strategy
 	/// </summary>
 	public StarterV6ModStrategy()
 	{
-		_useManualVolume = Param(nameof(UseManualVolume), false)
+		_useManualVolume = Param(nameof(UseManualVolume), true)
 		.SetDisplay("Manual Volume", "Use manual volume instead of risk-based sizing", "Money Management");
 
 		_manualVolume = Param(nameof(ManualVolume), 1m)
@@ -716,11 +716,11 @@ public class StarterV6ModStrategy : Strategy
 		if (step > 0)
 			volume = step * Math.Floor(volume / step);
 
-		var minVolume = security.VolumeMin ?? step;
+		var minVolume = security.MinVolume ?? step;
 		if (volume < minVolume)
 			return 0m;
 
-		var maxVolume = security.VolumeMax;
+		var maxVolume = security.MaxVolume;
 		if (maxVolume != null && volume > maxVolume.Value)
 			volume = maxVolume.Value;
 

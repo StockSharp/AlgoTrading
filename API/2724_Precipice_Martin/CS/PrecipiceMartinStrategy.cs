@@ -148,10 +148,6 @@ public class PrecipiceMartinStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Skip processing when the strategy is not ready to trade yet.
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		// Manage exits before looking for new entries.
 		var closedLong = TryCloseLong(candle);
 		var closedShort = TryCloseShort(candle);

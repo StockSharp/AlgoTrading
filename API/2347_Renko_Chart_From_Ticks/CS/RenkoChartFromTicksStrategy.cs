@@ -1,62 +1,46 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Builds renko candles from tick data and trades on direction changes.
+/// Strategy that trades on candle direction changes, inspired by Renko-style logic.
+/// Buys when candle direction flips from down to up, sells when it flips from up to down.
+/// Uses ATR-based filter to only trade on significant candles.
 /// </summary>
 public class RenkoChartFromTicksStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _brickSize;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _atrPeriod;
 
-	private DataType _renkoType;
 	private bool? _prevUp;
 
-	/// <summary>
-	/// Renko brick size in price units.
-	/// </summary>
-	public decimal BrickSize
+	public DataType CandleType
 	{
-		get => _brickSize.Value;
-		set => _brickSize.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
 
-	/// <summary>
-	/// Initializes <see cref="RenkoChartFromTicksStrategy"/>.
-	/// </summary>
 	public RenkoChartFromTicksStrategy()
 	{
-		_brickSize = Param(nameof(BrickSize), 10m)
-			.SetGreaterThanZero()
-			.SetDisplay("Brick Size", "Renko brick size", "General")
-			;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		_renkoType ??= DataType.Create(typeof(RenkoCandleMessage), new RenkoCandleArg
-		{
-			BoxSize = BrickSize,
-			BuildFrom = RenkoBuildFrom.Ticks
-		});
-
-		return [(Security, _renkoType)];
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetDisplay("ATR Period", "ATR period for significance filter", "General");
 	}
 
 	/// <inheritdoc />
@@ -64,38 +48,44 @@ public class RenkoChartFromTicksStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var subscription = SubscribeCandles(_renkoType);
-		subscription.Bind(ProcessCandle).Start();
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(atr, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(null, null);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var isUp = candle.OpenPrice < candle.ClosePrice;
+		if (atrValue <= 0)
+			return;
 
-		if (_prevUp != null && _prevUp != isUp)
+		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
+
+		// Only consider candles with meaningful body (at least 0.3 * ATR)
+		if (body < atrValue * 0.3m)
+			return;
+
+		var isUp = candle.ClosePrice > candle.OpenPrice;
+
+		if (_prevUp.HasValue && _prevUp.Value != isUp)
 		{
 			if (isUp && Position <= 0)
-			{
-				var volume = Volume + (Position < 0 ? -Position : 0m);
-				BuyMarket(volume);
-			}
+				BuyMarket();
 			else if (!isUp && Position >= 0)
-			{
-				var volume = Volume + (Position > 0 ? Position : 0m);
-				SellMarket(volume);
-			}
+				SellMarket();
 		}
 
 		_prevUp = isUp;

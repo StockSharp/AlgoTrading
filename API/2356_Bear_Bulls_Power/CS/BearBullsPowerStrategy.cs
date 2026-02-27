@@ -89,8 +89,8 @@ public class BearBullsPowerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_priceMa = new SMA { Length = FirstLength };
-		_signalMa = new SMA { Length = SecondLength };
+		_priceMa = new SimpleMovingAverage { Length = FirstLength };
+		_signalMa = new SimpleMovingAverage { Length = SecondLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

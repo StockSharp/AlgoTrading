@@ -85,7 +85,7 @@ public class ColorXvaMaDigitStDevStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema = new EMA { Length = MaLength };
+		var ema = new ExponentialMovingAverage { Length = MaLength };
 		var std = new StandardDeviation { Length = StdLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -95,7 +95,7 @@ public class ColorXvaMaDigitStDevStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ema, "EMA");
+			DrawIndicator(area, ema);
 		}
 	}
 
@@ -117,22 +117,22 @@ public class ColorXvaMaDigitStDevStrategy : Strategy
 		// Open long when price exceeds the upper band
 		if (Position <= 0 && deviation > filter2)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		// Open short when price falls below the lower band
 		else if (Position >= 0 && deviation < -filter2)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 		// Close long when price returns inside inner band
 		else if (Position > 0 && deviation < filter1)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		}
 		// Close short when price returns inside inner band
 		else if (Position < 0 && deviation > -filter1)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 	}
 }

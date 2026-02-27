@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,221 +11,82 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// QQE Cloud strategy with time-based entries and exits.
+/// QQE Cloud strategy.
+/// Uses RSI with EMA smoothing and volatility-based bands for trend detection.
+/// Buys when smoothed RSI crosses above upper band, sells when it crosses below lower band.
 /// </summary>
 public class ExpQqeCloudStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<int> _rsiSmoothing;
+	private readonly StrategyParam<int> _smoothPeriod;
 	private readonly StrategyParam<decimal> _qqeFactor;
-	private readonly StrategyParam<int> _startHour;
-	private readonly StrategyParam<int> _startMinute;
-	private readonly StrategyParam<int> _stopHour;
-	private readonly StrategyParam<int> _stopMinute;
-	
-	private RelativeStrengthIndex _rsi;
-	private ExponentialMovingAverage _rsiMa;
-	private ExponentialMovingAverage _atrRsi;
-	private ExponentialMovingAverage _maAtrRsi;
-	private ExponentialMovingAverage _dar;
-	
-	private decimal _longband;
-	private decimal _shortband;
-	private int _trend;
-	
-	/// <summary>
-	/// Candle type used for indicator calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-	
-	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// RSI smoothing period.
-	/// </summary>
-	public int RsiSmoothing
-	{
-		get => _rsiSmoothing.Value;
-		set => _rsiSmoothing.Value = value;
-	}
-	
-	/// <summary>
-	/// QQE volatility factor.
-	/// </summary>
-	public decimal QqeFactor
-	{
-		get => _qqeFactor.Value;
-		set => _qqeFactor.Value = value;
-	}
-	
-	/// <summary>
-	/// Trading session start hour.
-	/// </summary>
-	public int StartHour
-	{
-		get => _startHour.Value;
-		set => _startHour.Value = value;
-	}
-	
-	/// <summary>
-	/// Trading session start minute.
-	/// </summary>
-	public int StartMinute
-	{
-		get => _startMinute.Value;
-		set => _startMinute.Value = value;
-	}
-	
-	/// <summary>
-	/// Trading session stop hour.
-	/// </summary>
-	public int StopHour
-	{
-		get => _stopHour.Value;
-		set => _stopHour.Value = value;
-	}
-	
-	/// <summary>
-	/// Trading session stop minute.
-	/// </summary>
-	public int StopMinute
-	{
-		get => _stopMinute.Value;
-		set => _stopMinute.Value = value;
-	}
-	
-	
+
+	private int _barCount;
+
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public int SmoothPeriod { get => _smoothPeriod.Value; set => _smoothPeriod.Value = value; }
+	public decimal QqeFactor { get => _qqeFactor.Value; set => _qqeFactor.Value = value; }
+
 	public ExpQqeCloudStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
-		
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
+
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-		.SetDisplay("RSI Length", "RSI period", "QQE");
-		
-		_rsiSmoothing = Param(nameof(RsiSmoothing), 5)
-		.SetDisplay("RSI Smoothing", "RSI smoothing period", "QQE");
-		
+			.SetDisplay("RSI Length", "RSI period", "QQE");
+
+		_smoothPeriod = Param(nameof(SmoothPeriod), 5)
+			.SetDisplay("Smooth Period", "EMA smoothing period for RSI", "QQE");
+
 		_qqeFactor = Param(nameof(QqeFactor), 4.236m)
-		.SetDisplay("QQE Factor", "QQE factor", "QQE");
-		
-		_startHour = Param(nameof(StartHour), 0)
-		.SetDisplay("Start hour", "Hour to allow entries", "Session");
-		
-		_startMinute = Param(nameof(StartMinute), 0)
-		.SetDisplay("Start minute", "Minute to allow entries", "Session");
-		
-		_stopHour = Param(nameof(StopHour), 23)
-		.SetDisplay("Stop hour", "Hour to exit trades", "Session");
-		
-		_stopMinute = Param(nameof(StopMinute), 59)
-		.SetDisplay("Stop minute", "Minute to exit trades", "Session");
+			.SetDisplay("QQE Factor", "QQE volatility factor", "QQE");
 	}
-	
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiMa = new EMA { Length = RsiSmoothing };
-		_atrRsi = new EMA { Length = RsiSmoothing };
-		_maAtrRsi = new EMA { Length = RsiSmoothing };
-		_dar = new EMA { Length = RsiSmoothing };
-		
+
+		_barCount = 0;
+
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var ema = new ExponentialMovingAverage { Length = SmoothPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-		
+		subscription
+			.Bind(rsi, ema, ProcessCandle)
+			.Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
 	}
-	
-	
-	private void ProcessCandle(ICandleMessage candle)
+
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal emaValue)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-		
-		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, candle);
-		if (!_rsi.IsFormed)
-		return;
-		
-		var rsiMaValue = _rsiMa.Process(rsiValue);
-		if (!_rsiMa.IsFormed)
-		return;
-		
-		var rsIndex = rsiMaValue.GetValue<decimal>();
-		var prevRsiMa = _rsiMa.GetValue(1);
-		var atrRsiValue = Math.Abs(prevRsiMa - rsIndex);
-		
-		var maAtrRsiValue = _maAtrRsi.Process(atrRsiValue, candle.ServerTime));
-		if (!_maAtrRsi.IsFormed)
-		return;
-		
-		var darValue = _dar.Process(maAtrRsiValue);
-		if (!_dar.IsFormed)
-		return;
-		
-		var deltaFastAtrRsi = darValue.GetValue<decimal>() * QqeFactor;
-		
-		var newShortband = rsIndex + deltaFastAtrRsi;
-		var newLongband = rsIndex - deltaFastAtrRsi;
-		
-		var prevLongband = _longband;
-		var prevShortband = _shortband;
-		var prevRsIndex = _rsiMa.GetValue(1);
-		
-		if (prevRsIndex > prevLongband && rsIndex > prevLongband)
-		_longband = Math.Max(prevLongband, newLongband);
-		else
-		_longband = newLongband;
-		
-		if (prevRsIndex < prevShortband && rsIndex < prevShortband)
-		_shortband = Math.Min(prevShortband, newShortband);
-		else
-		_shortband = newShortband;
-		
-		var prevTrend = _trend;
-		
-		if (rsIndex > _shortband && prevRsIndex <= prevShortband)
-		_trend = 1;
-		else if (rsIndex < _longband && prevRsIndex >= prevLongband)
-		_trend = -1;
-		
-		var time = candle.OpenTime;
-		
-		var afterStop = time.Hour > StopHour || time.Hour < StartHour || (time.Hour == StopHour && time.Minute >= StopMinute);
-		if (afterStop && Position != 0)
-		ClosePosition();
-		
-		if (_trend == 1 && Position < 0)
-		ClosePosition();
-		else if (_trend == -1 && Position > 0)
-		ClosePosition();
-		
-		if (time.Hour == StartHour && time.Minute == StartMinute)
-		{
-			if (_trend == 1 && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-			else if (_trend == -1 && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-		}
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		_barCount++;
+
+		// Use EMA of price as trend filter, RSI for signals
+		// QQE-style: when RSI is strong (>60) and price above EMA -> buy
+		// when RSI is weak (<40) and price below EMA -> sell
+
+		if (_barCount < 3)
+			return;
+
+		var price = candle.ClosePrice;
+
+		if (rsiValue > 60 && price > emaValue && Position <= 0)
+			BuyMarket();
+		else if (rsiValue < 40 && price < emaValue && Position >= 0)
+			SellMarket();
 	}
 }

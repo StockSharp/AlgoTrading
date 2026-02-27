@@ -193,7 +193,7 @@ color = DownState;
 if (_prevColor == UpState && color != UpState)
 {
 if (SellPosClose && Position < 0)
-ClosePosition();
+BuyMarket();
 
 if (BuyPosOpen && Position <= 0)
 BuyMarket();
@@ -201,7 +201,7 @@ BuyMarket();
 else if (_prevColor == DownState && color != DownState)
 {
 if (BuyPosClose && Position > 0)
-ClosePosition();
+SellMarket();
 
 if (SellPosOpen && Position >= 0)
 SellMarket();

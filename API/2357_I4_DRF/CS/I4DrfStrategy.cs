@@ -154,19 +154,13 @@ public class I4DrfStrategy : Strategy
 		}
 
 		if (buyClose && Position > 0)
-		SellMarket(Position);
+		SellMarket();
 		if (sellClose && Position < 0)
-		BuyMarket(-Position);
+		BuyMarket();
 		if (buyOpen && Position <= 0)
-		{
-			var vol = Volume + (Position < 0 ? Math.Abs(Position) : 0m);
-			BuyMarket(vol);
-		}
+			BuyMarket();
 		if (sellOpen && Position >= 0)
-		{
-			var vol = Volume + (Position > 0 ? Position : 0m);
-			SellMarket(vol);
-		}
+			SellMarket();
 
 		_prevPrevColor = _prevColor;
 		_prevColor = color;
@@ -184,34 +178,26 @@ public class I4DrfStrategy : Strategy
 
 		private readonly Queue<int> _diffs = new();
 		private int _sum;
-		private decimal? _prevHigh;
-		private decimal? _prevLow;
+		private decimal? _prevPrice;
 
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
-			var candle = input.GetValue<ICandleMessage>();
+			var price = input.GetValue<decimal>();
 
-			if (_prevHigh is null || _prevLow is null)
+			if (_prevPrice is null)
 			{
-				_prevHigh = candle.HighPrice;
-				_prevLow = candle.LowPrice;
+				_prevPrice = price;
 				IsFormed = false;
 				return new DecimalIndicatorValue(this, 0m, input.Time);
 			}
 
-			var diff = 0;
-			if (candle.HighPrice - _prevHigh.Value > 0m)
-			diff++;
-			if (candle.LowPrice - _prevLow.Value < 0m)
-			diff--;
-
-			_prevHigh = candle.HighPrice;
-			_prevLow = candle.LowPrice;
+			var diff = price > _prevPrice.Value ? 1 : (price < _prevPrice.Value ? -1 : 0);
+			_prevPrice = price;
 
 			_sum += diff;
 			_diffs.Enqueue(diff);
 			if (_diffs.Count > Length)
-			_sum -= _diffs.Dequeue();
+				_sum -= _diffs.Dequeue();
 
 			if (_diffs.Count < Length)
 			{
@@ -229,7 +215,7 @@ public class I4DrfStrategy : Strategy
 			base.Reset();
 			_diffs.Clear();
 			_sum = 0;
-			_prevHigh = _prevLow = null;
+			_prevPrice = null;
 		}
 	}
 }

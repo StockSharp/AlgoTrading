@@ -49,7 +49,7 @@ public class WaddahAttarTrendStrategy : Strategy
 	private int _bufferIndex;
 
 	/// <summary>
-	/// Fast EMA length for MACD.
+	/// Fast ExponentialMovingAverage length for MACD.
 	/// </summary>
 	public int FastLength
 	{
@@ -58,7 +58,7 @@ public class WaddahAttarTrendStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Slow EMA length for MACD.
+	/// Slow ExponentialMovingAverage length for MACD.
 	/// </summary>
 	public int SlowLength
 	{
@@ -127,13 +127,13 @@ public class WaddahAttarTrendStrategy : Strategy
 	{
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA Length", "Fast EMA period for MACD", "Indicator")
+			.SetDisplay("Fast ExponentialMovingAverage Length", "Fast ExponentialMovingAverage period for MACD", "Indicator")
 			
 			.SetOptimize(5, 20, 1);
 
 		_slowLength = Param(nameof(SlowLength), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA Length", "Slow EMA period for MACD", "Indicator")
+			.SetDisplay("Slow ExponentialMovingAverage Length", "Slow ExponentialMovingAverage period for MACD", "Indicator")
 			
 			.SetOptimize(20, 40, 1);
 
@@ -189,9 +189,9 @@ public class WaddahAttarTrendStrategy : Strategy
 		_colors = new decimal[SignalBar + 2];
 		_bufferIndex = 0;
 
-		var fastEma = new EMA { Length = FastLength };
-		var slowEma = new EMA { Length = SlowLength };
-		var ma = new SMA { Length = MaLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		var ma = new SimpleMovingAverage { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -231,21 +231,19 @@ public class WaddahAttarTrendStrategy : Strategy
 		var signalColor = _colors[signalIndex];
 		var prevSignalColor = _colors[prevSignalIndex];
 
-		var volume = Volume + Math.Abs(Position);
-
 		if (TrendMode == TrendModes.Direct)
 		{
-			if (prevSignalColor == 0m && signalColor > 0m)
-				BuyMarket(volume);
-			else if (prevSignalColor == 1m && signalColor < 1m)
-				SellMarket(volume);
+			if (prevSignalColor == 0m && signalColor > 0m && Position <= 0)
+				BuyMarket();
+			else if (prevSignalColor == 1m && signalColor < 1m && Position >= 0)
+				SellMarket();
 		}
 		else
 		{
-			if (prevSignalColor == 1m && signalColor < 1m)
-				BuyMarket(volume);
-			else if (prevSignalColor == 0m && signalColor > 0m)
-				SellMarket(volume);
+			if (prevSignalColor == 1m && signalColor < 1m && Position <= 0)
+				BuyMarket();
+			else if (prevSignalColor == 0m && signalColor > 0m && Position >= 0)
+				SellMarket();
 		}
 
 		_prevTrend = trend;

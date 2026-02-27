@@ -141,15 +141,15 @@ public class DailyBreakPointStrategy : Strategy
 		_closeBySignal = Param(nameof(CloseBySignal), true)
 		.SetDisplay("Close By Signal", "Reverse existing position on opposite signal", "General");
 
-		_breakPointPips = Param(nameof(BreakPointPips), 20m)
+		_breakPointPips = Param(nameof(BreakPointPips), 10m)
 		.SetGreaterThanZero()
 		.SetDisplay("Break Point (pips)", "Distance from the daily open", "Signals");
 
-		_lastBarSizeMinPips = Param(nameof(LastBarSizeMinPips), 5m)
+		_lastBarSizeMinPips = Param(nameof(LastBarSizeMinPips), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Last Bar Min (pips)", "Minimum body size of the previous bar", "Signals");
 
-		_lastBarSizeMaxPips = Param(nameof(LastBarSizeMaxPips), 50m)
+		_lastBarSizeMaxPips = Param(nameof(LastBarSizeMaxPips), 5000m)
 		.SetGreaterThanZero()
 		.SetDisplay("Last Bar Max (pips)", "Maximum body size of the previous bar", "Signals");
 
@@ -249,8 +249,6 @@ public class DailyBreakPointStrategy : Strategy
 
 		Volume = OrderVolume;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
 
 		if (_pipSize <= 0m)
 		_pipSize = CalculatePipSize();
@@ -283,16 +281,12 @@ public class DailyBreakPointStrategy : Strategy
 		var bullishSignal = bullishBody && breakOffset > 0m &&
 		candle.ClosePrice - dayOpen.Value >= breakOffset &&
 		bodySize >= minBody &&
-		(maxBody <= 0m || bodySize <= maxBody) &&
-		breakBuy >= minPrice &&
-		breakBuy <= maxPrice;
+		(maxBody <= 0m || bodySize <= maxBody);
 
 		var bearishSignal = bearishBody && breakOffset > 0m &&
 		dayOpen.Value - candle.ClosePrice >= breakOffset &&
 		bodySize >= minBody &&
-		(maxBody <= 0m || bodySize <= maxBody) &&
-		breakSell <= maxPrice &&
-		breakSell >= minPrice;
+		(maxBody <= 0m || bodySize <= maxBody);
 
 		if (bullishSignal)
 		{

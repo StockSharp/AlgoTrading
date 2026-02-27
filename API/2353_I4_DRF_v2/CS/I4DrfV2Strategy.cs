@@ -220,7 +220,7 @@ public class I4DrfV2Strategy : Strategy
 		{
 			if ((StopLoss > 0 && candle.ClosePrice <= _stopPrice) || (TakeProfit > 0 && candle.ClosePrice >= _takePrice))
 			{
-				SellMarket(Position);
+				SellMarket();
 				_prevColor = currentColor;
 				return;
 			}
@@ -229,7 +229,7 @@ public class I4DrfV2Strategy : Strategy
 		{
 			if ((StopLoss > 0 && candle.ClosePrice >= _stopPrice) || (TakeProfit > 0 && candle.ClosePrice <= _takePrice))
 			{
-				BuyMarket(-Position);
+				BuyMarket();
 				_prevColor = currentColor;
 				return;
 			}
@@ -246,7 +246,7 @@ public class I4DrfV2Strategy : Strategy
 			if (_prevColor == 1 && currentColor == 0)
 			{
 				if (SellPosClose && Position < 0)
-					BuyMarket(-Position);
+					BuyMarket();
 				if (BuyPosOpen && Position <= 0)
 				{
 					BuyMarket();
@@ -258,7 +258,7 @@ public class I4DrfV2Strategy : Strategy
 			else if (_prevColor == 0 && currentColor == 1)
 			{
 				if (BuyPosClose && Position > 0)
-					SellMarket(Position);
+					SellMarket();
 				if (SellPosOpen && Position >= 0)
 				{
 					SellMarket();
@@ -273,7 +273,7 @@ public class I4DrfV2Strategy : Strategy
 			if (_prevColor == 0 && currentColor == 1)
 			{
 				if (SellPosClose && Position < 0)
-					BuyMarket(-Position);
+					BuyMarket();
 				if (BuyPosOpen && Position <= 0)
 				{
 					BuyMarket();
@@ -285,7 +285,7 @@ public class I4DrfV2Strategy : Strategy
 			else if (_prevColor == 1 && currentColor == 0)
 			{
 				if (BuyPosClose && Position > 0)
-					SellMarket(Position);
+					SellMarket();
 				if (SellPosOpen && Position >= 0)
 				{
 					SellMarket();

@@ -101,7 +101,7 @@ public TrixCrossoverStrategy()
 	.SetNotNegative()
 	.SetDisplay("Stop Loss", "Stop loss in absolute price units", "Risk Management");
 
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 	.SetDisplay("Candle Type", "Type of candles to use", "General");
 }
 
@@ -156,8 +156,6 @@ private void ProcessCandle(ICandleMessage candle, decimal fastTemaValue, decimal
 	if (candle.State != CandleStates.Finished)
 	return;
 
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
 
 	if (_prevFastTema == 0m || _prevSlowTema == 0m)
 	{
@@ -184,15 +182,15 @@ _slowTrixPrev = slowTrix;
 if (_fastTrixPrev2 == 0m || slowTrixPrev == 0m)
 return;
 
-// Detect long signal
-if (fastTrix > _fastTrixPrev1 && _fastTrixPrev1 < _fastTrixPrev2 && slowTrix > slowTrixPrev && Position <= 0)
+// Detect long signal: fast TRIX positive and rising, slow TRIX positive
+if (fastTrix > 0 && slowTrix > 0 && Position <= 0)
 {
-	BuyMarket(Volume + Math.Abs(Position));
+	BuyMarket();
 }
-// Detect short signal
-else if (fastTrix < _fastTrixPrev1 && _fastTrixPrev1 > _fastTrixPrev2 && slowTrix < slowTrixPrev && Position >= 0)
+// Detect short signal: fast TRIX negative and falling, slow TRIX negative
+else if (fastTrix < 0 && slowTrix < 0 && Position >= 0)
 {
-	SellMarket(Volume + Math.Abs(Position));
+	SellMarket();
 }
 }
 }

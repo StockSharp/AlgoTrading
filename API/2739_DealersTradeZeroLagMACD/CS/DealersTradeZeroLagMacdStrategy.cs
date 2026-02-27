@@ -370,11 +370,11 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 		.SetGreaterThanZero()
 		;
 
-		_minimumBalance = Param(nameof(MinimumBalance), 1000m)
+		_minimumBalance = Param(nameof(MinimumBalance), 0m)
 		.SetDisplay("Minimum Balance", "Stop trading below this balance", "Risk")
 		.SetNotNegative();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
@@ -431,9 +431,6 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
 		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var balance = Portfolio?.CurrentValue;

@@ -287,17 +287,16 @@ public class MaShiftPuriaMethodStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_fastEma = new EMA { Length = FastLength };
-		_slowEma = new EMA { Length = SlowLength };
+		_fastEma = new ExponentialMovingAverage { Length = FastLength };
+		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
 		_macd = new MovingAverageConvergenceDivergence
 		{
-			Fast = MacdFast,
-			Slow = MacdSlow,
-			Signal = 9
+			ShortMa = { Length = MacdFast },
+			LongMa = { Length = MacdSlow },
 		};
 
 		Volume = ManualVolume;
@@ -306,8 +305,6 @@ public class MaShiftPuriaMethodStrategy : Strategy
 		subscription
 		.Bind(_fastEma, _slowEma, _macd, ProcessCandle)
 		.Start();
-
-		StartProtection();
 
 		var priceArea = CreateChartArea();
 		if (priceArea != null)
@@ -327,14 +324,10 @@ public class MaShiftPuriaMethodStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal macdMain, decimal macdSignal, decimal macdHistogram)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal macdMain)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		// Silence unused parameters from MACD binding.
-		_ = macdSignal;
-		_ = macdHistogram;
 
 		var pip = GetPipSize();
 

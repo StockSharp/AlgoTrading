@@ -191,15 +191,16 @@ public class DualLotStepHedgeStrategy : Strategy
 		_currentVolume = ScalingMode == LotScalingModes.HighToLow ? _maxVolume : _volumeStep;
 		_pipValue = CalculatePipValue();
 
-		SubscribeTicks().Bind(ProcessTrade).Start();
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
+		subscription.Bind(ProcessCandle).Start();
 	}
 
-		private void ProcessTrade(ITickTradeMessage trade)
+		private void ProcessCandle(ICandleMessage candle)
 		{
-			var price = trade.Price;
-
-			if (!IsFormedAndOnlineAndAllowTrading())
+			if (candle.State != CandleStates.Finished)
 				return;
+
+			var price = candle.ClosePrice;
 
 			if (_volumeStep <= 0m)
 				return;
@@ -587,7 +588,7 @@ public class DualLotStepHedgeStrategy : Strategy
 		if (trade.Order.Security != Security)
 		return;
 
-		var volume = trade.Trade.Volume ?? 0m;
+		var volume = trade.Trade.Volume;
 		if (volume <= 0m)
 		return;
 

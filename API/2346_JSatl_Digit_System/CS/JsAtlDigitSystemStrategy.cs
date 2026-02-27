@@ -85,13 +85,13 @@ public class JsAtlDigitSystemStrategy : Strategy
 		{
 			// JMA rising and price above average -> open long or close short
 			if (Position <= 0m)
-				BuyMarket(Volume + Math.Abs(Position));
+				BuyMarket();
 		}
 		else if (slope < 0m && price < jmaValue)
 		{
 			// JMA falling and price below average -> open short or close long
 			if (Position >= 0m)
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket();
 		}
 
 		_prevJma = jmaValue;

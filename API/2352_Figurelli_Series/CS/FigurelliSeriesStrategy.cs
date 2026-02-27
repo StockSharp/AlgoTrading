@@ -128,28 +128,11 @@ public class FigurelliSeriesStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var time = candle.OpenTime;
-
-		// Close positions outside trading window
-		if (time.Hour > StopHour ||
-			(time.Hour == StopHour && time.Minute >= StopMinute) ||
-			time.Hour < StartHour)
-		{
-			if (Position > 0)
-				SellMarket(Position);
-			else if (Position < 0)
-				BuyMarket(-Position);
-			return;
-		}
-
-		// Open positions at start time based on indicator sign
-		if (time.Hour == StartHour && time.Minute == StartMinute)
-		{
-			if (value > 0 && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
-			else if (value < 0 && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
-		}
+		// Open positions based on indicator sign
+		if (value > 0 && Position <= 0)
+			BuyMarket();
+		else if (value < 0 && Position >= 0)
+			SellMarket();
 	}
 
 	private class FigurelliSeriesIndicator : BaseIndicator
@@ -158,7 +141,7 @@ public class FigurelliSeriesStrategy : Strategy
 		public int Step { get; set; }
 		public int Total { get; set; }
 
-		private readonly List<EMA> _averages = new();
+		private readonly List<ExponentialMovingAverage> _averages = new();
 
 		public override void Reset()
 		{
@@ -174,7 +157,7 @@ public class FigurelliSeriesStrategy : Strategy
 			if (_averages.Count == 0)
 			{
 				for (var i = 0; i < Total; i++)
-					_averages.Add(new EMA { Length = StartPeriod + Step * i });
+					_averages.Add(new ExponentialMovingAverage { Length = StartPeriod + Step * i });
 			}
 
 			var bids = 0;
@@ -191,6 +174,10 @@ public class FigurelliSeriesStrategy : Strategy
 				else if (price < maValue)
 					asks++;
 			}
+
+			var allFormed = _averages.Count > 0 && _averages.All(m => m.IsFormed);
+			if (allFormed)
+				IsFormed = true;
 
 			var result = bids - asks;
 			return new DecimalIndicatorValue(this, result, input.Time);

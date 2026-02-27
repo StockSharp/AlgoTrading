@@ -248,7 +248,7 @@ public class VrZverStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Stoch %K", "Stochastic %K period", "Signals");
 
-		_stochasticD = { Length = Param }(nameof(StochasticDPeriod), 5)
+		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Stoch %D", "Stochastic %D period", "Signals");
 
@@ -308,13 +308,13 @@ public class VrZverStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastMa = new EMA { Length = FastMaPeriod };
-		_slowMa = new EMA { Length = SlowMaPeriod };
-		_verySlowMa = new EMA { Length = VerySlowMaPeriod };
+		_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
+		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
+		_verySlowMa = new ExponentialMovingAverage { Length = VerySlowMaPeriod };
 
 		_stochastic = new StochasticOscillator
-		{ K = { Length = StochasticKPeriod },
-			K = { Length = StochasticSlowing },
+		{
+			K = { Length = StochasticKPeriod },
 			D = { Length = StochasticDPeriod },
 		};
 

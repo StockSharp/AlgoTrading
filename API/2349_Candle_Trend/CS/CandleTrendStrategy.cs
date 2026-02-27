@@ -195,18 +195,18 @@ public class CandleTrendStrategy : Strategy
 	    if (_upCount >= TrendCandles)
 	    {
 	        if (Position < 0 && EnableLongExit)
-	            BuyMarket(Math.Abs(Position));
+	            BuyMarket();
 
 	        if (Position <= 0 && EnableLongEntry)
-	            BuyMarket(Volume + Math.Abs(Position));
+	            BuyMarket();
 	    }
 	    else if (_downCount >= TrendCandles)
 	    {
 	        if (Position > 0 && EnableShortExit)
-	            SellMarket(Math.Abs(Position));
+	            SellMarket();
 
 	        if (Position >= 0 && EnableShortEntry)
-	            SellMarket(Volume + Math.Abs(Position));
+	            SellMarket();
 	    }
 	}
 }

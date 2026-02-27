@@ -121,35 +121,16 @@ public class BeerGodEmaTimingStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
 	{
-		if (candle.OpenTime != _currentCandleOpenTime)
-		{
-			if (_currentCandleOpenTime != DateTimeOffset.MinValue)
-			{
-				_previousEma = _currentEma;
-				_previousClose = _currentClose;
-				_hasPreviousBar = true;
-			}
+		if (candle.State != CandleStates.Finished)
+			return;
 
-			_currentCandleOpenTime = candle.OpenTime;
-			_signalProcessed = false;
-		}
+		_previousEma = _currentEma;
+		_previousClose = _currentClose;
 
 		_currentEma = emaValue;
 		_currentClose = candle.ClosePrice;
 
-		if (!_ema.IsFormed || !_hasPreviousBar)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var currentTime = candle.CloseTime == default ? candle.OpenTime : candle.CloseTime;
-		var minutesFromOpen = (int)Math.Floor((currentTime - candle.OpenTime).TotalMinutes);
-
-		if (minutesFromOpen != TriggerMinutesFromOpen)
-			return;
-
-		if (_signalProcessed)
+		if (!_ema.IsFormed || _previousEma == 0m)
 			return;
 
 		var price = candle.ClosePrice;
@@ -171,7 +152,6 @@ public class BeerGodEmaTimingStrategy : Strategy
 				volume += Math.Abs(Position);
 
 			BuyMarket(volume);
-			_signalProcessed = true;
 		}
 		else if (newSell && Position >= 0)
 		{
@@ -181,7 +161,6 @@ public class BeerGodEmaTimingStrategy : Strategy
 				volume += Position;
 
 			SellMarket(volume);
-			_signalProcessed = true;
 		}
 	}
 }

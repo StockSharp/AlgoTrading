@@ -33,8 +33,8 @@ public class MomoTradesStrategy : Strategy
 	private readonly StrategyParam<bool> _closeEndDay;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SMA _sma;
-	private MACD _macd;
+	private SimpleMovingAverage _sma;
+	private MovingAverageConvergenceDivergence _macd;
 	// Indicators follow the same configuration as in the MQL script.
 
 	private readonly decimal[] _macdHistory = new decimal[64];
@@ -192,15 +192,19 @@ public class MomoTradesStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma = new SMA { Length = SmaPeriod };
-		_macd = new MACD { ShortMa = { Length = MacdFast }, LongMa = { Length = MacdSlow }, SignalPeriod = MacdSignal };
+		_sma = new SimpleMovingAverage { Length = SmaPeriod };
+		_macd = new MovingAverageConvergenceDivergence
+		{
+			ShortMa = { Length = MacdFast },
+			LongMa = { Length = MacdSlow },
+		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_sma, _macd, ProcessCandle).Start();
 	}
 
 	// Process each finished candle to evaluate entries with indicator filters.
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal macdValue, decimal macdSignal)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;

@@ -224,7 +224,7 @@ public class ExpBlauCsiStrategy : Strategy
 		_allowShortExits = Param(nameof(AllowShortExits), true)
 			.SetDisplay("Allow Short Exits", "Enable closing short positions", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for indicator calculations", "General");
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(2018, 1, 1, 0, 0, 0, TimeSpan.Zero))
@@ -233,9 +233,7 @@ public class ExpBlauCsiStrategy : Strategy
 		_endDate = Param(nameof(EndDate), new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero))
 			.SetDisplay("End Date", "Backtest end date", "General");
 
-		Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Volume sent with market orders", "Trading");
+		Volume = 1m;
 	}
 
 	/// <summary>
@@ -304,7 +302,7 @@ public class ExpBlauCsiStrategy : Strategy
 	/// <summary>
 	/// Price constant for the leading momentum value.
 	/// </summary>
-	public BlauCsiAppliedPrices FirstPrice
+	public ExpBlauCsiStrategy.BlauCsiAppliedPrices FirstPrice
 	{
 		get => _firstPrice.Value;
 		set => _firstPrice.Value = value;
@@ -313,7 +311,7 @@ public class ExpBlauCsiStrategy : Strategy
 	/// <summary>
 	/// Price constant for the lagging momentum value.
 	/// </summary>
-	public BlauCsiAppliedPrices SecondPrice
+	public ExpBlauCsiStrategy.BlauCsiAppliedPrices SecondPrice
 	{
 		get => _secondPrice.Value;
 		set => _secondPrice.Value = value;
@@ -443,7 +441,7 @@ public class ExpBlauCsiStrategy : Strategy
 		};
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_blauCsi, ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		StartProtection(null, null);
 
@@ -451,15 +449,17 @@ public class ExpBlauCsiStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _blauCsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal indicatorValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var result = _blauCsi.Process(new CandleIndicatorValue(_blauCsi, candle));
+		var indicatorValue = result.IsEmpty ? 0m : result.GetValue<decimal>();
 
 		if (HandleStops(candle))
 			return;
@@ -469,9 +469,14 @@ public class ExpBlauCsiStrategy : Strategy
 
 		if (!inRange)
 		{
-			if (Position != 0)
+			if (Position > 0)
 			{
-				ClosePosition();
+				SellMarket(Position);
+				ResetTargets();
+			}
+			else if (Position < 0)
+			{
+				BuyMarket(-Position);
 				ResetTargets();
 			}
 
@@ -676,7 +681,7 @@ public class BlauCsiIndicator : BaseIndicator
 	/// <summary>
 	/// Selected smoothing method.
 	/// </summary>
-	public BlauCsiSmoothMethods SmoothMethod { get; set; } = BlauCsiSmoothMethods.Exponential;
+	public ExpBlauCsiStrategy.BlauCsiSmoothMethods SmoothMethod { get; set; } = ExpBlauCsiStrategy.BlauCsiSmoothMethods.Exponential;
 
 	/// <summary>
 	/// Momentum length.
@@ -706,17 +711,20 @@ public class BlauCsiIndicator : BaseIndicator
 	/// <summary>
 	/// Price constant used for the leading price.
 	/// </summary>
-	public BlauCsiAppliedPrices FirstPrice { get; set; } = BlauCsiAppliedPrices.Close;
+	public ExpBlauCsiStrategy.BlauCsiAppliedPrices FirstPrice { get; set; } = ExpBlauCsiStrategy.BlauCsiAppliedPrices.Close;
 
 	/// <summary>
 	/// Price constant used for the lagging price.
 	/// </summary>
-	public BlauCsiAppliedPrices SecondPrice { get; set; } = BlauCsiAppliedPrices.Open;
+	public ExpBlauCsiStrategy.BlauCsiAppliedPrices SecondPrice { get; set; } = ExpBlauCsiStrategy.BlauCsiAppliedPrices.Open;
 
 	/// <inheritdoc />
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
 	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
+		ICandleMessage candle = null;
+		if (input is CandleIndicatorValue civ)
+			candle = civ.GetValue<ICandleMessage>(default);
+		if (candle == null || candle.State != CandleStates.Finished)
 			return new DecimalIndicatorValue(this, default, input.Time);
 
 		if (_momentumStage1 == null)
@@ -786,38 +794,38 @@ public class BlauCsiIndicator : BaseIndicator
 	{
 		return SmoothMethod switch
 		{
-			BlauCsiSmoothMethods.Simple => new SMA { Length = length },
-			BlauCsiSmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-			BlauCsiSmoothMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-			BlauCsiSmoothMethods.Jurik => new JurikMovingAverage { Length = length, Phase = Phase },
-			_ => new EMA { Length = length }
+			ExpBlauCsiStrategy.BlauCsiSmoothMethods.Simple => new SimpleMovingAverage { Length = length },
+			ExpBlauCsiStrategy.BlauCsiSmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			ExpBlauCsiStrategy.BlauCsiSmoothMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
+			ExpBlauCsiStrategy.BlauCsiSmoothMethods.Jurik => new JurikMovingAverage { Length = length, Phase = Phase },
+			_ => new ExponentialMovingAverage { Length = length }
 		};
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, BlauCsiAppliedPrices price)
+	private static decimal GetPrice(ICandleMessage candle, ExpBlauCsiStrategy.BlauCsiAppliedPrices price)
 	{
 		return price switch
 		{
-			BlauCsiAppliedPrices.Close => candle.ClosePrice,
-			BlauCsiAppliedPrices.Open => candle.OpenPrice,
-			BlauCsiAppliedPrices.High => candle.HighPrice,
-			BlauCsiAppliedPrices.Low => candle.LowPrice,
-			BlauCsiAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			BlauCsiAppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			BlauCsiAppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			BlauCsiAppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			BlauCsiAppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			BlauCsiAppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+			ExpBlauCsiStrategy.BlauCsiAppliedPrices.Close => candle.ClosePrice,
+			ExpBlauCsiStrategy.BlauCsiAppliedPrices.Open => candle.OpenPrice,
+			ExpBlauCsiStrategy.BlauCsiAppliedPrices.High => candle.HighPrice,
+			ExpBlauCsiStrategy.BlauCsiAppliedPrices.Low => candle.LowPrice,
+			ExpBlauCsiStrategy.BlauCsiAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			ExpBlauCsiStrategy.BlauCsiAppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			ExpBlauCsiStrategy.BlauCsiAppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			ExpBlauCsiStrategy.BlauCsiAppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			ExpBlauCsiStrategy.BlauCsiAppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			ExpBlauCsiStrategy.BlauCsiAppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
 				? candle.HighPrice
 				: candle.ClosePrice < candle.OpenPrice
 					? candle.LowPrice
 					: candle.ClosePrice,
-			BlauCsiAppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+			ExpBlauCsiStrategy.BlauCsiAppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
 				? (candle.HighPrice + candle.ClosePrice) / 2m
 				: candle.ClosePrice < candle.OpenPrice
 					? (candle.LowPrice + candle.ClosePrice) / 2m
 					: candle.ClosePrice,
-			BlauCsiAppliedPrices.Demark => GetDemarkPrice(candle),
+			ExpBlauCsiStrategy.BlauCsiAppliedPrices.Demark => GetDemarkPrice(candle),
 			_ => candle.ClosePrice
 		};
 	}

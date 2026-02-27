@@ -287,26 +287,22 @@ public class DealersTradeMacdStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 
-		_macd = new MovingAverageConvergenceDivergence
-		{
-			Fast = MacdFastPeriod,
-			Slow = MacdSlowPeriod,
-			Signal = MacdSignalPeriod
-		};
+		_macd = new MovingAverageConvergenceDivergence(
+			new ExponentialMovingAverage { Length = MacdSlowPeriod },
+			new ExponentialMovingAverage { Length = MacdFastPeriod }
+		);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(_macd, ProcessCandle)
 			.Start();
-
-		StartProtection();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal macdValue, decimal _, decimal __)
+	private void ProcessCandle(ICandleMessage candle, decimal macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -500,7 +496,7 @@ public class DealersTradeMacdStrategy : Strategy
 		if (Portfolio is null)
 			return 0m;
 
-		var equity = Portfolio.CurrentValue;
+		var equity = Portfolio.CurrentValue ?? 0m;
 		if (equity <= 0)
 			return 0m;
 
