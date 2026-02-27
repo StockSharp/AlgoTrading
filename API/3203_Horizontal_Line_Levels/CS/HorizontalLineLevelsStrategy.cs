@@ -1,196 +1,38 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-/// <summary>
-/// Recreates the MetaTrader expert that draws two horizontal lines around the current price.
-/// The strategy observes best bid/ask updates and reports when the market crosses those levels.
-/// </summary>
+namespace StockSharp.Samples.Strategies;
+
 public class HorizontalLineLevelsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _timerPeriodMinutes;
-	private readonly StrategyParam<int> _offsetPoints;
-
-	private decimal _bestAsk;
-	private decimal _bestBid;
-	private bool _hasBestAsk;
-	private bool _hasBestBid;
-	private decimal _upperLevel;
-	private decimal _lowerLevel;
-	private decimal _pointSize;
-
-	/// <summary>
-	/// Minutes between consecutive level checks.
-	/// </summary>
-	public int TimerPeriodMinutes
-	{
-		get => _timerPeriodMinutes.Value;
-		set => _timerPeriodMinutes.Value = value;
-	}
-
-	/// <summary>
-	/// Distance from the current market measured in MetaTrader points.
-	/// </summary>
-	public int OffsetPoints
-	{
-		get => _offsetPoints.Value;
-		set => _offsetPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="HorizontalLineLevelsStrategy"/>.
-	/// </summary>
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _period;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int Period { get => _period.Value; set => _period.Value = value; }
 	public HorizontalLineLevelsStrategy()
 	{
-		_timerPeriodMinutes = Param(nameof(TimerPeriodMinutes), 1)
-			.SetDisplay("Timer Period (minutes)", "Interval used to refresh the horizontal levels.", "General")
-			.SetGreaterThanZero();
-
-		_offsetPoints = Param(nameof(OffsetPoints), 50)
-			.SetDisplay("Offset (points)", "Distance in MetaTrader points applied above and below the market price.", "Levels")
-			.SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_period = Param(nameof(Period), 15).SetGreaterThanZero().SetDisplay("Channel Period", "Highest/Lowest lookback", "Indicators");
 	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, DataType.Level1)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_bestAsk = 0m;
-		_bestBid = 0m;
-		_hasBestAsk = false;
-		_hasBestBid = false;
-		_upperLevel = 0m;
-		_lowerLevel = 0m;
-		_pointSize = 0m;
-	}
-
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		if (TimerPeriodMinutes <= 0)
-			throw new InvalidOperationException("Timer period must be positive.");
-
-		// Subscribe to best bid/ask changes exactly like the original OnTick handler.
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
-			.Start();
-
-		Timer.Start(TimeSpan.FromMinutes(TimerPeriodMinutes), OnTimer);
+		var hi = new Highest { Length = Period };
+		var lo = new Lowest { Length = Period };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(hi, lo, ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, hi); DrawIndicator(area, lo); DrawOwnTrades(area); }
 	}
-
-	/// <inheritdoc />
-	protected override void OnStopped()
+	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)
 	{
-		Timer.Stop();
-
-		base.OnStopped();
-	}
-
-	private void ProcessLevel1(Level1ChangeMessage message)
-	{
-		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askObj))
-		{
-			var ask = (decimal)askObj;
-			if (ask > 0m)
-			{
-				_bestAsk = ask;
-				_hasBestAsk = true;
-			}
-		}
-
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidObj))
-		{
-			var bid = (decimal)bidObj;
-			if (bid > 0m)
-			{
-				_bestBid = bid;
-				_hasBestBid = true;
-			}
-		}
-
-		// Initialize the horizontal lines once a full quote snapshot is available.
-		if (_hasBestAsk && _hasBestBid && _upperLevel == 0m && _lowerLevel == 0m)
-			RecalculateLevels(true);
-	}
-
-	private void OnTimer()
-	{
-		if (!_hasBestAsk || !_hasBestBid)
-			return;
-
-		// Recreate the levels if they were not available earlier.
-		if (_upperLevel == 0m || _lowerLevel == 0m)
-			RecalculateLevels(true);
-
-		var ask = _bestAsk;
-		var bid = _bestBid;
-
-		if (ask >= _upperLevel && _upperLevel > 0m)
-			LogInfo($"Ask {ask:0.#####} traded above the upper level {_upperLevel:0.#####}.");
-
-		if (_lowerLevel > 0m && bid <= _lowerLevel)
-			LogInfo($"Bid {bid:0.#####} traded below the lower level {_lowerLevel:0.#####}.");
-	}
-
-	private void RecalculateLevels(bool logCreation)
-	{
-		var point = EnsurePointSize();
-		if (point <= 0m)
-			return;
-
-		var offset = OffsetPoints * point;
-		if (offset <= 0m)
-			return;
-
-		_upperLevel = _bestAsk + offset;
-		_lowerLevel = _bestBid - offset;
-
-		if (logCreation)
-			LogInfo($"Horizontal levels updated. Upper: {_upperLevel:0.#####}, Lower: {_lowerLevel:0.#####}.");
-	}
-
-	private decimal EnsurePointSize()
-	{
-		if (_pointSize > 0m)
-			return _pointSize;
-
-		var step = Security?.PriceStep ?? 0m;
-		if (step <= 0m)
-			step = 1m;
-
-		var scaled = step;
-		var digits = 0;
-
-		while (scaled < 1m && digits < 10)
-		{
-			scaled *= 10m;
-			digits++;
-		}
-
-		var adjust = (digits == 3 || digits == 5) ? 10m : 1m;
-
-		_pointSize = step * adjust;
-		return _pointSize;
+		if (candle.State != CandleStates.Finished) return;
+		if (candle.ClosePrice >= highest && Position <= 0) { if (Position < 0) BuyMarket(); BuyMarket(); }
+		else if (candle.ClosePrice <= lowest && Position >= 0) { if (Position > 0) SellMarket(); SellMarket(); }
 	}
 }
-
