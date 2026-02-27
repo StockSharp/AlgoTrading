@@ -232,9 +232,10 @@ public class ColorJjrsxTimePlusStrategy : Strategy
 			.Bind(_rsi, ProcessCandle)
 			.Start();
 
+		var priceStep = Security?.PriceStep ?? 0.01m;
 		StartProtection(
-			stopLoss: StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.PriceStep) : null,
-			takeProfit: TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.PriceStep) : null);
+			stopLoss: StopLossPoints > 0 ? new Unit(StopLossPoints * priceStep, UnitTypes.Absolute) : null,
+			takeProfit: TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * priceStep, UnitTypes.Absolute) : null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
@@ -247,9 +248,9 @@ public class ColorJjrsxTimePlusStrategy : Strategy
 
 		HandleTimeExit(candle.CloseTime);
 
-		var smoothValue = _smoother.Process(new DecimalIndicatorValue(_smoother, rsiValue, candle.CloseTime));
+		var smoothValue = _smoother.Process(new DecimalIndicatorValue(_smoother, rsiValue, candle.CloseTime) { IsFinal = true });
 
-		if (!smoothValue.IsFinal || smoothValue is not DecimalIndicatorValue smoothDecimal)
+		if (!_smoother.IsFormed || smoothValue is not DecimalIndicatorValue smoothDecimal)
 			return;
 
 		_smoothedValues.Enqueue(smoothDecimal.Value);

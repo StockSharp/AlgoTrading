@@ -39,14 +39,13 @@ public class JsSistem2Strategy : Strategy
 	private readonly StrategyParam<decimal> _rviMin;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA _emaFast = null!;
-	private EMA _emaMedium = null!;
-	private EMA _emaSlow = null!;
-	private MACD _macd = null!;
+	private ExponentialMovingAverage _emaFast = null!;
+	private ExponentialMovingAverage _emaMedium = null!;
+	private ExponentialMovingAverage _emaSlow = null!;
+	private MovingAverageConvergenceDivergence _macd = null!;
 	private Highest _highest = null!;
 	private Lowest _lowest = null!;
 	private RelativeVigorIndex _rvi = null!;
-	private SimpleMovingAverage _rviSignal = null!;
 
 	private decimal? _stopPrice;
 	private decimal? _takePrice;
@@ -324,37 +323,36 @@ public class JsSistem2Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_emaFast = new EMA { Length = MaFastPeriod };
-		_emaMedium = new EMA { Length = MaMediumPeriod };
-		_emaSlow = new EMA { Length = MaSlowPeriod };
-		_macd = new MACD
+		_emaFast = new ExponentialMovingAverage { Length = MaFastPeriod };
+		_emaMedium = new ExponentialMovingAverage { Length = MaMediumPeriod };
+		_emaSlow = new ExponentialMovingAverage { Length = MaSlowPeriod };
+		_macd = new MovingAverageConvergenceDivergence
 		{
 			ShortMa = { Length = OsmaFastPeriod },
 			LongMa = { Length = OsmaSlowPeriod },
-			SignalPeriod = OsmaSignalPeriod
 		};
 		_highest = new Highest { Length = VolatilityPeriod };
 		_lowest = new Lowest { Length = VolatilityPeriod };
-		_rvi = new RelativeVigorIndex { Length = RviPeriod };
-		_rviSignal = new SMA { Length = RviSignalLength };
+		_rvi = new RelativeVigorIndex();
+		_rvi.Average.Length = RviPeriod;
+		_rvi.Signal.Length = RviSignalLength;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(_emaFast, _emaMedium, _emaSlow, _macd, _highest, _lowest, ProcessCandle)
 			.Start();
 
-		StartProtection(null, null);
+		// StartProtection not used - manual stop/trailing management
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaFast, decimal emaMedium, decimal emaSlow, decimal macdLine, decimal macdSignal, decimal highestValue, decimal lowestValue)
+	private void ProcessCandle(ICandleMessage candle, decimal emaFast, decimal emaMedium, decimal emaSlow, decimal macdLine, decimal highestValue, decimal lowestValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var rviValue = _rvi.Process(candle);
-		var rviSignalValue = _rviSignal.Process(rviValue);
+		var rviResult = (IRelativeVigorIndexValue)_rvi.Process(new CandleIndicatorValue(_rvi, candle));
 
-		if (!rviValue.IsFinal || !rviSignalValue.IsFinal)
+		if (!rviResult.IsFinal)
 			return;
 
 		if (!_emaFast.IsFormed || !_emaMedium.IsFormed || !_emaSlow.IsFormed || !_macd.IsFormed || !_highest.IsFormed || !_lowest.IsFormed)
@@ -376,8 +374,8 @@ public class JsSistem2Strategy : Strategy
 		var minDifference = MinDifferencePips * step;
 		var indent = TrailingIndentPips * step;
 
-		var rvi = rviValue.ToDecimal();
-		var rviSignal = rviSignalValue.ToDecimal();
+		var rvi = rviResult.Average ?? 0m;
+		var rviSignal = rviResult.Signal ?? 0m;
 
 		UpdateTrailingStops(candle, highestValue, lowestValue, indent);
 		HandleStopsAndTargets(candle);

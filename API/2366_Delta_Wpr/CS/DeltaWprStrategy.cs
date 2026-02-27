@@ -132,13 +132,11 @@ public class DeltaWprStrategy : Strategy
 
 				if (signal == 0 && Position <= 0)
 				{
-					// Close short positions and open long
-					BuyMarket(Volume + Math.Abs(Position));
+					BuyMarket();
 				}
 				else if (signal == 2 && Position >= 0)
 				{
-					// Close long positions and open short
-					SellMarket(Volume + Math.Abs(Position));
+					SellMarket();
 				}
 
 				_prevSignal = signal;

@@ -141,20 +141,12 @@ public class RsiSlowdownStrategy : Strategy
 
 		if (isSlowdown)
 		{
-		if (rsiValue >= LevelMax)
+		if (rsiValue >= LevelMax && Position <= 0)
 		{
-		if (Position < 0)
-		BuyMarket(-Position);
-
-		if (Position <= 0)
 		BuyMarket();
 		}
-		else if (rsiValue <= LevelMin)
+		else if (rsiValue <= LevelMin && Position >= 0)
 		{
-		if (Position > 0)
-		SellMarket(Position);
-
-		if (Position >= 0)
 		SellMarket();
 		}
 		}

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,153 +12,72 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Uses Awesome Oscillator filtered by SMA to follow trend direction.
-/// Buys when filtered AO is above zero and trend candle is bullish.
-/// Sells when filtered AO is below zero and trend candle is bearish.
+/// Buys when filtered AO crosses above zero, sells when it crosses below zero.
 /// </summary>
 public class F2aAoStrategy : Strategy
 {
-	private readonly StrategyParam<TimeSpan> _indicatorTimeFrame;
-	private readonly StrategyParam<TimeSpan> _trendTimeFrame;
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _filterLength;
-	
-	private decimal _trend;
-	
-	/// <summary>
-	/// The timeframe used for oscillator calculation.
-	/// </summary>
-	public TimeSpan IndicatorTimeFrame
-	{
-		get => _indicatorTimeFrame.Value;
-		set => _indicatorTimeFrame.Value = value;
-	}
-	
-	/// <summary>
-	/// The timeframe used to detect candle trend direction.
-	/// </summary>
-	public TimeSpan TrendTimeFrame
-	{
-		get => _trendTimeFrame.Value;
-		set => _trendTimeFrame.Value = value;
-	}
-	
-	/// <summary>
-	/// Short period for Awesome Oscillator.
-	/// </summary>
-	public int FastPeriod
-	{
-		get => _fastPeriod.Value;
-		set => _fastPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// Long period for Awesome Oscillator.
-	/// </summary>
-	public int SlowPeriod
-	{
-		get => _slowPeriod.Value;
-		set => _slowPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// SMA length used to filter the oscillator.
-	/// </summary>
-	public int FilterLength
-	{
-		get => _filterLength.Value;
-		set => _filterLength.Value = value;
-	}
-	
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+
+	private decimal _prevFilteredAo;
+	private bool _isFirst = true;
+
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int FilterLength { get => _filterLength.Value; set => _filterLength.Value = value; }
+
 	public F2aAoStrategy()
 	{
-		_indicatorTimeFrame = Param(nameof(IndicatorTimeFrame), TimeSpan.FromHours(12))
-		.SetDisplay("AO TimeFrame", "Time frame for oscillator", "General")
-		;
-		
-		_trendTimeFrame = Param(nameof(TrendTimeFrame), TimeSpan.FromDays(1))
-		.SetDisplay("Trend TimeFrame", "Time frame for trend candle", "General")
-		;
-		
-		_fastPeriod = Param(nameof(FastPeriod), 13)
-		.SetDisplay("AO Fast", "Fast period for Awesome Oscillator", "Awesome Oscillator")
-		;
-		
-		_slowPeriod = Param(nameof(SlowPeriod), 144)
-		.SetDisplay("AO Slow", "Slow period for Awesome Oscillator", "Awesome Oscillator")
-		;
-		
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+
+		_fastPeriod = Param(nameof(FastPeriod), 5)
+			.SetDisplay("AO Fast", "Fast period for Awesome Oscillator", "Awesome Oscillator");
+
+		_slowPeriod = Param(nameof(SlowPeriod), 34)
+			.SetDisplay("AO Slow", "Slow period for Awesome Oscillator", "Awesome Oscillator");
+
 		_filterLength = Param(nameof(FilterLength), 3)
-		.SetDisplay("Filter", "SMA length for AO filter", "Awesome Oscillator")
-		;
+			.SetDisplay("Filter", "SMA length for AO filter", "Awesome Oscillator");
 	}
-	
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, IndicatorTimeFrame.TimeFrame()), (Security, TrendTimeFrame.TimeFrame())];
-	}
-	
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_trend = 0m;
-	}
-	
+
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		StartProtection(null, null);
-		
-		var ao = new AwesomeOscillator
+
+		var ao = new AwesomeOscillator();
+		ao.ShortMa.Length = FastPeriod;
+		ao.LongMa.Length = SlowPeriod;
+
+		var filter = new SimpleMovingAverage { Length = FilterLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ao, filter, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			ShortMa = { Length = FastPeriod },
-			LongMa = { Length = SlowPeriod }
-		};
-		
-		var filter = new SMA { Length = FilterLength };
-		
-		var aoSubscription = SubscribeCandles(IndicatorTimeFrame);
-		aoSubscription.Bind(ao, filter, ProcessOscillator).Start();
-		
-		var trendSubscription = SubscribeCandles(TrendTimeFrame);
-		trendSubscription.Process(ProcessTrend).Start();
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ao);
+			DrawOwnTrades(area);
+		}
 	}
-	
-	private void ProcessTrend(ICandleMessage candle)
+
+	private void ProcessCandle(ICandleMessage candle, decimal aoValue, decimal filteredAo)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
-		
-		_trend = candle.ClosePrice - candle.OpenPrice;
-	}
-	
-	private void ProcessOscillator(ICandleMessage candle, decimal aoValue, decimal filteredAo)
-	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		if (filteredAo > 0)
-		{
-			if (Position < 0)
+			return;
+
+		// AO positive -> buy, AO negative -> sell
+		if (aoValue > 0 && filteredAo > 0 && Position <= 0)
 			BuyMarket();
-			
-			if (_trend > 0 && Position <= 0)
-			BuyMarket();
-		}
-		else if (filteredAo < 0)
-		{
-			if (Position > 0)
+		else if (aoValue < 0 && filteredAo < 0 && Position >= 0)
 			SellMarket();
-			
-			if (_trend < 0 && Position >= 0)
-			SellMarket();
-		}
 	}
 }

@@ -132,7 +132,7 @@ public class BollingerBandsDemaStrategy : Strategy
 
 		var mainSub = SubscribeCandles(CandleType);
 		mainSub
-			.Bind(bollinger, ProcessMain)
+			.BindEx(bollinger, ProcessMain)
 			.Start();
 
 		var area = CreateChartArea();
@@ -144,12 +144,13 @@ public class BollingerBandsDemaStrategy : Strategy
 		}
 	}
 
-	private void ProcessMain(ICandleMessage candle, decimal middle, decimal upper, decimal lower)
+	private void ProcessMain(ICandleMessage candle, IIndicatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var bb = (BollingerBandsValue)value;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal middle)
 			return;
 
 		if (_dema0 is null || _dema1 is null || _dema2 is null)
@@ -164,15 +165,15 @@ public class BollingerBandsDemaStrategy : Strategy
 		var sellClose = candle.ClosePrice > lower && candle.OpenPrice < lower;
 
 		if (buyCondition && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 
 		if (sellCondition && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 
 		if (buyClose && Position > 0)
-			SellMarket(Position);
+			SellMarket();
 
 		if (sellClose && Position < 0)
-			BuyMarket(-Position);
+			BuyMarket();
 	}
 }

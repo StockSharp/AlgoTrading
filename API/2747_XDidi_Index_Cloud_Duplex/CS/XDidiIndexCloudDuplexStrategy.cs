@@ -500,11 +500,11 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 
 		var price = GetAppliedPrice(LongAppliedPrice, candle);
 
-		var fastValue = _longFastMa.Process(new DecimalIndicatorValue(_longFastMa, price, candle.OpenTime));
-		var mediumValue = _longMediumMa.Process(new DecimalIndicatorValue(_longMediumMa, price, candle.OpenTime));
-		var slowValue = _longSlowMa.Process(new DecimalIndicatorValue(_longSlowMa, price, candle.OpenTime));
+		var fastValue = _longFastMa.Process(new DecimalIndicatorValue(_longFastMa, price, candle.OpenTime) { IsFinal = true });
+		var mediumValue = _longMediumMa.Process(new DecimalIndicatorValue(_longMediumMa, price, candle.OpenTime) { IsFinal = true });
+		var slowValue = _longSlowMa.Process(new DecimalIndicatorValue(_longSlowMa, price, candle.OpenTime) { IsFinal = true });
 
-		if (!fastValue.IsFinal || !mediumValue.IsFinal || !slowValue.IsFinal)
+		if (!_longFastMa.IsFormed || !_longMediumMa.IsFormed || !_longSlowMa.IsFormed)
 			return;
 
 		var medium = mediumValue.GetValue<decimal>();
@@ -550,11 +550,11 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 
 		var price = GetAppliedPrice(ShortAppliedPrice, candle);
 
-		var fastValue = _shortFastMa.Process(new DecimalIndicatorValue(_shortFastMa, price, candle.OpenTime));
-		var mediumValue = _shortMediumMa.Process(new DecimalIndicatorValue(_shortMediumMa, price, candle.OpenTime));
-		var slowValue = _shortSlowMa.Process(new DecimalIndicatorValue(_shortSlowMa, price, candle.OpenTime));
+		var fastValue = _shortFastMa.Process(new DecimalIndicatorValue(_shortFastMa, price, candle.OpenTime) { IsFinal = true });
+		var mediumValue = _shortMediumMa.Process(new DecimalIndicatorValue(_shortMediumMa, price, candle.OpenTime) { IsFinal = true });
+		var slowValue = _shortSlowMa.Process(new DecimalIndicatorValue(_shortSlowMa, price, candle.OpenTime) { IsFinal = true });
 
-		if (!fastValue.IsFinal || !mediumValue.IsFinal || !slowValue.IsFinal)
+		if (!_shortFastMa.IsFormed || !_shortMediumMa.IsFormed || !_shortSlowMa.IsFormed)
 			return;
 
 		var medium = mediumValue.GetValue<decimal>();
@@ -595,8 +595,6 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 
 	private void ExecuteLongSignals(bool openSignal, bool closeSignal)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (closeSignal && Position > 0)
 			SellMarket(Position);
@@ -611,8 +609,6 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 
 	private void ExecuteShortSignals(bool openSignal, bool closeSignal)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
 
 		if (closeSignal && Position < 0)
 			BuyMarket(Math.Abs(Position));
@@ -689,13 +685,13 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	{
 		return method switch
 		{
-			SmoothingMethods.Sma => new SMA { Length = length },
-			SmoothingMethods.Ema => new EMA { Length = length },
+			SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
 			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
 			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = length },
 			SmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = length },
 			SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
-			_ => new EMA { Length = length }
+			_ => new ExponentialMovingAverage { Length = length }
 		};
 	}
 

@@ -23,7 +23,7 @@ public class TriggerLineStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private WeightedMovingAverage _wma;
-	private LinearRegression _lsma;
+	private LinearReg _lsma;
 
 	private bool _initialized;
 	private decimal _prevLine;
@@ -37,7 +37,7 @@ public class TriggerLineStrategy : Strategy
 		_lsmaPeriod = Param(nameof(LsmaPeriod), 6)
 			.SetDisplay("LSMA Period", "Period for least squares moving average", "Trigger Line");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for the strategy", "General");
 	}
 
@@ -79,11 +79,11 @@ public class TriggerLineStrategy : Strategy
 		base.OnStarted2(time);
 
 		_wma = new WeightedMovingAverage { Length = WmaPeriod };
-		_lsma = new LinearRegression { Length = LsmaPeriod };
+		_lsma = new LinearReg { Length = LsmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.Bind(_wma, _lsma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -94,34 +94,28 @@ public class TriggerLineStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal wmaValue, decimal lsmaValue)
 	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var line = _wma.Process(new DecimalIndicatorValue(_wma, candle.ClosePrice, candle.ServerTime)).ToDecimal();
-		var signal = _lsma.Process(new DecimalIndicatorValue(_lsma, line, candle.ServerTime)).ToDecimal();
-
 		if (!_initialized)
 		{
-			_prevLine = line;
-			_prevSignal = signal;
+			_prevLine = wmaValue;
+			_prevSignal = lsmaValue;
 			_initialized = true;
 			return;
 		}
 
-		var crossUp = _prevLine <= _prevSignal && line > signal;
-		var crossDown = _prevLine >= _prevSignal && line < signal;
+		var crossUp = _prevLine <= _prevSignal && wmaValue > lsmaValue;
+		var crossDown = _prevLine >= _prevSignal && wmaValue < lsmaValue;
 
 		if (crossUp && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		else if (crossDown && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 
-		_prevLine = line;
-		_prevSignal = signal;
+		_prevLine = wmaValue;
+		_prevSignal = lsmaValue;
 	}
 }

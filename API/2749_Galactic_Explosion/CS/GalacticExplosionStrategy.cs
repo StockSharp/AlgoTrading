@@ -204,7 +204,7 @@ public class GalacticExplosionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_movingAverage = new SMA
+		_movingAverage = new SimpleMovingAverage
 		{
 			Length = MaLength
 		};
@@ -214,7 +214,7 @@ public class GalacticExplosionStrategy : Strategy
 		.Bind(_movingAverage, ProcessCandle)
 		.Start();
 
-		StartProtection(null, null);
+		// no protection needed
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
@@ -228,7 +228,10 @@ public class GalacticExplosionStrategy : Strategy
 		var totalProfit = PnL + GetOpenProfit(candle.ClosePrice);
 		if (MinimalProfit > 0m && totalProfit >= MinimalProfit && Position != 0m)
 		{
-			ClosePosition();
+			if (Position > 0)
+				SellMarket(Position);
+			else if (Position < 0)
+				BuyMarket(-Position);
 			return;
 		}
 
@@ -368,9 +371,6 @@ public class GalacticExplosionStrategy : Strategy
 		base.OnOwnTradeReceived(trade);
 
 		if (trade.Trade == null)
-		return;
-
-		if (trade.Trade.Security != Security)
 		return;
 
 		var price = trade.Trade.Price;

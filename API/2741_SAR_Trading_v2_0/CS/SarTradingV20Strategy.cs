@@ -196,10 +196,10 @@ public class SarTradingV20Strategy : Strategy
 			_pipSize = 0.0001m;
 		}
 
-		_ma = new SMA { Length = MaPeriod };
+		_ma = new SimpleMovingAverage { Length = MaPeriod };
 		_parabolicSar = new ParabolicSar
 		{
-			AccelerationStep = SarStep,
+			Acceleration = SarStep,
 			AccelerationMax = SarMaxStep
 		};
 
@@ -306,7 +306,7 @@ public class SarTradingV20Strategy : Strategy
 		if (_stopPrice == null || candidate > _stopPrice.Value + minIncrease)
 		{
 			_stopPrice = candidate;
-			LogInfo($"Updated long trailing stop to {_stopPrice.Value:0.#####}.");
+			// trailing stop updated
 		}
 	}
 
@@ -329,7 +329,7 @@ public class SarTradingV20Strategy : Strategy
 		if (_stopPrice == null || candidate < _stopPrice.Value - minDecrease)
 		{
 			_stopPrice = candidate;
-			LogInfo($"Updated short trailing stop to {_stopPrice.Value:0.#####}.");
+			// trailing stop updated
 		}
 	}
 
@@ -343,7 +343,7 @@ public class SarTradingV20Strategy : Strategy
 		{
 			SellMarket(position);
 			_exitPending = true;
-			LogInfo($"Exit long via stop at {_stopPrice.Value:0.#####}.");
+			// exit long via stop
 			return;
 		}
 
@@ -351,7 +351,7 @@ public class SarTradingV20Strategy : Strategy
 		{
 			SellMarket(position);
 			_exitPending = true;
-			LogInfo($"Exit long via take profit at {_takeProfitPrice.Value:0.#####}.");
+			// exit long via take profit
 		}
 	}
 
@@ -365,7 +365,7 @@ public class SarTradingV20Strategy : Strategy
 		{
 			BuyMarket(position);
 			_exitPending = true;
-			LogInfo($"Exit short via stop at {_stopPrice.Value:0.#####}.");
+			// exit short via stop
 			return;
 		}
 
@@ -373,7 +373,7 @@ public class SarTradingV20Strategy : Strategy
 		{
 			BuyMarket(position);
 			_exitPending = true;
-			LogInfo($"Exit short via take profit at {_takeProfitPrice.Value:0.#####}.");
+			// exit short via take profit
 		}
 	}
 
@@ -393,7 +393,7 @@ public class SarTradingV20Strategy : Strategy
 				? "Parabolic SAR below SMA"
 				: "Shifted close below SMA";
 
-		LogInfo($"Open long at {price:0.#####}: {reason}.");
+		// open long
 	}
 
 	private void OpenShort(decimal price, bool triggeredBySar, bool triggeredByShiftedClose)
@@ -412,7 +412,7 @@ public class SarTradingV20Strategy : Strategy
 				? "Parabolic SAR above SMA"
 				: "Shifted close above SMA";
 
-		LogInfo($"Open short at {price:0.#####}: {reason}.");
+		// open short
 	}
 
 	private void InitializePositionState(decimal entryPrice, bool isLong)

@@ -67,7 +67,12 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 		Low,
 		Median,
 		Typical,
-		Weighted
+		Weighted,
+		Simple,
+		Quarter,
+		TrendFollow0,
+		TrendFollow1,
+		Demark,
 	}
 
 	private readonly StrategyParam<decimal> _longVolume;
@@ -793,13 +798,13 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 			var slowRaw = ComputeFilter(SatlCoefficients);
 
 			// Smooth both raw filters with the configured moving averages.
-			var fastValue = _fastSmoother.Process(new DecimalIndicatorValue(_fastSmoother, fastRaw, input.Time));
-			var slowValue = _slowSmoother.Process(new DecimalIndicatorValue(_slowSmoother, slowRaw, input.Time));
+			var fastValue = _fastSmoother.Process(new DecimalIndicatorValue(_fastSmoother, fastRaw, input.Time) { IsFinal = input.IsFinal });
+			var slowValue = _slowSmoother.Process(new DecimalIndicatorValue(_slowSmoother, slowRaw, input.Time) { IsFinal = input.IsFinal });
 			var fast = fastValue.ToDecimal();
 			var slow = slowValue.ToDecimal();
 
 			IsFormed = _bufferCount >= SatlCoefficients.Length && fastValue.IsFinal && slowValue.IsFinal;
-			return new XFatlXSatlValue(this, input, fast, slow, fastRaw, slowRaw);
+			return new XFatlXSatlValue(this, input.Time, fast, slow, fastRaw, slowRaw) { IsFinal = input.IsFinal };
 		}
 
 		public override void Reset()
@@ -838,10 +843,10 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 			// Map the MQL smoothing options to the closest available StockSharp moving averages.
 			return method switch
 			{
-				XmaMethods.Sma => new SMA { Length = length },
-				XmaMethods.Ema => new EMA { Length = length },
+				XmaMethods.Sma => new SimpleMovingAverage { Length = length },
+				XmaMethods.Ema => new ExponentialMovingAverage { Length = length },
 				XmaMethods.Smma => new SmoothedMovingAverage { Length = length },
-				XmaMethods.Lwma => new WMA { Length = length },
+				XmaMethods.Lwma => new WeightedMovingAverage { Length = length },
 				XmaMethods.Jurik => new JurikMovingAverage { Length = length },
 				XmaMethods.ZeroLag => new ZeroLagExponentialMovingAverage { Length = length },
 				XmaMethods.Kaufman => new KaufmanAdaptiveMovingAverage { Length = length },
@@ -882,19 +887,20 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 		}
 	}
 
-	private sealed class XFatlXSatlValue : ComplexIndicatorValue
+	private sealed class XFatlXSatlValue : DecimalIndicatorValue
 	{
-		public XFatlXSatlValue(IIndicator indicator, IIndicatorValue input, decimal fast, decimal slow, decimal fastRaw, decimal slowRaw)
-		: base(indicator, input, (nameof(Fast), fast), (nameof(Slow), slow), (nameof(FastRaw), fastRaw), (nameof(SlowRaw), slowRaw))
+		public XFatlXSatlValue(IIndicator indicator, DateTime time, decimal fast, decimal slow, decimal fastRaw, decimal slowRaw)
+			: base(indicator, fast, time)
 		{
+			Fast = fast;
+			Slow = slow;
+			FastRaw = fastRaw;
+			SlowRaw = slowRaw;
 		}
 
-		public decimal Fast => (decimal)GetValue(nameof(Fast));
-
-		public decimal Slow => (decimal)GetValue(nameof(Slow));
-
-		public decimal FastRaw => (decimal)GetValue(nameof(FastRaw));
-
-		public decimal SlowRaw => (decimal)GetValue(nameof(SlowRaw));
+		public decimal Fast { get; }
+		public decimal Slow { get; }
+		public decimal FastRaw { get; }
+		public decimal SlowRaw { get; }
 	}
 }

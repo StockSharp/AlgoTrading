@@ -339,13 +339,13 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 			_entryTime = null;
 		}
 
-		if (buyOpen && Position == 0 && IsFormedAndOnlineAndAllowTrading())
+		if (buyOpen && Position == 0)
 		{
 			BuyMarket(Volume);
 			_entryPrice = candle.ClosePrice;
 			_entryTime = candle.CloseTime;
 		}
-		else if (sellOpen && Position == 0 && IsFormedAndOnlineAndAllowTrading())
+		else if (sellOpen && Position == 0)
 		{
 			SellMarket(Volume);
 			_entryPrice = candle.ClosePrice;
@@ -477,7 +477,7 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 		{
 			var candle = input.GetValue<ICandleMessage>();
 			if (!input.IsFinal)
-				return new ColorJfatlDigitValue(this, input, null, null, false);
+				return new ColorJfatlDigitValue(this, null, null, false, input.Time);
 
 			var price = GetPrice(candle);
 			_buffer[_bufferIndex] = price;
@@ -488,7 +488,7 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 			if (_bufferCount < _buffer.Length)
 			{
 				IsFormed = false;
-				return new ColorJfatlDigitValue(this, input, null, null, false);
+				return new ColorJfatlDigitValue(this, null, null, false, input.Time);
 			}
 
 			decimal fatl = 0m;
@@ -499,11 +499,11 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 				fatl += _coefficients[i] * _buffer[index];
 			}
 
-			var jmaValue = _jma.Process(new DecimalIndicatorValue(_jma, fatl));
+			var jmaValue = _jma.Process(new DecimalIndicatorValue(_jma, fatl, input.Time) { IsFinal = true });
 			if (!_jma.IsFormed)
 			{
 				IsFormed = false;
-				return new ColorJfatlDigitValue(this, input, null, null, false);
+				return new ColorJfatlDigitValue(this, null, null, false, input.Time);
 			}
 
 			var smoothed = Math.Round(jmaValue.ToDecimal(), RoundingDigits, MidpointRounding.AwayFromZero);
@@ -524,7 +524,7 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 			_previousColor = color;
 			IsFormed = true;
 
-			return new ColorJfatlDigitValue(this, input, smoothed, color, true);
+			return new ColorJfatlDigitValue(this, smoothed, color, true, input.Time);
 		}
 
 		public override void Reset()
@@ -571,16 +571,19 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 		}
 	}
 
-	private sealed class ColorJfatlDigitValue : ComplexIndicatorValue
+	private sealed class ColorJfatlDigitValue : DecimalIndicatorValue
 	{
-		public ColorJfatlDigitValue(IIndicator indicator, IIndicatorValue input, decimal? line, int? color, bool isFormed)
-		: base(indicator, input, (nameof(Line), line), (nameof(Color), color))
+		public ColorJfatlDigitValue(IIndicator indicator, decimal? line, int? color, bool isFormed, DateTime time)
+		: base(indicator, line ?? 0m, time)
 		{
+			Line = line;
+			Color = color;
 			IsFormed = isFormed;
+			IsFinal = true;
 		}
 
-		public decimal? Line => (decimal?)GetValue(nameof(Line));
+		public decimal? Line { get; }
 
-		public int? Color => (int?)GetValue(nameof(Color));
+		public int? Color { get; }
 	}
 }

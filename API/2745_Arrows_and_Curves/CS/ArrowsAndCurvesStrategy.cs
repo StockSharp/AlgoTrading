@@ -110,8 +110,6 @@ public class ArrowsAndCurvesStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 	}
@@ -240,7 +238,10 @@ public class ArrowsAndCurvesStrategy : Strategy
 
 	private void CloseAndReset()
 	{
-		ClosePosition();
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(-Position);
 		ResetPositionState();
 	}
 

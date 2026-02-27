@@ -205,10 +205,10 @@ public class X2maJjrsxStrategy : Strategy
 		SellMarket();
 
 		if (Position > 0 && (rsi >= Overbought || _trend < 0))
-		SellMarket(Position);
+		SellMarket();
 
 		if (Position < 0 && (rsi <= Oversold || _trend > 0))
-		BuyMarket(-Position);
+		BuyMarket();
 
 		_prevRsi = rsi;
 	}

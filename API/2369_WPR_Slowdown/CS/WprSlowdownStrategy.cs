@@ -189,9 +189,6 @@ public class WprSlowdownStrategy : Strategy
 		if (!_wpr.IsFormed)
 		return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
 		var slowdown = !_prevWpr.HasValue || Math.Abs(wpr - _prevWpr.Value) < 1m;
 
 		var canBuy = wpr >= LevelMax && (!SeekSlowdown || slowdown);
@@ -199,19 +196,13 @@ public class WprSlowdownStrategy : Strategy
 
 		if (canBuy)
 		{
-			if (SellPosClose && Position < 0)
-			BuyMarket(Math.Abs(Position));
-
-			if (BuyPosOpen && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+			if (Position <= 0)
+				BuyMarket();
 		}
 		else if (canSell)
 		{
-			if (BuyPosClose && Position > 0)
-			SellMarket(Math.Abs(Position));
-
-			if (SellPosOpen && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+			if (Position >= 0)
+				SellMarket();
 		}
 
 		_prevWpr = wpr;

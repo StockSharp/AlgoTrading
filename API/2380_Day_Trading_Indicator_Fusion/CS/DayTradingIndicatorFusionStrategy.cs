@@ -100,19 +100,14 @@ public class DayTradingIndicatorFusionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			ShortMa = { Length = 12 },
-			LongMa = { Length = 26 },
-			SignalMa = { Length = 9 }
-		};
+		var macd = new MovingAverageConvergenceDivergenceSignal();
+		macd.Macd.ShortMa.Length = 12;
+		macd.Macd.LongMa.Length = 26;
+		macd.SignalMa.Length = 9;
 
-		var stochastic = new StochasticOscillator
-		{
-			K = { Length = 5 },
-			D = { Length = 3 },
-			Smooth = 3
-		};
+		var stochastic = new StochasticOscillator();
+		stochastic.K.Length = 5;
+		stochastic.D.Length = 3;
 
 		var parabolicSar = new ParabolicSar
 		{
@@ -167,24 +162,13 @@ public class DayTradingIndicatorFusionStrategy : Strategy
 
 		_prevSar = sar;
 
-		if (Position == 0)
+		if (isBuying && Position <= 0)
 		{
-			if (isBuying)
-			{
-				BuyMarket(TradeVolume);
-			}
-			else if (isSelling)
-			{
-				SellMarket(TradeVolume);
-			}
+			BuyMarket();
 		}
-		else if (Position > 0 && isSelling)
+		else if (isSelling && Position >= 0)
 		{
-			SellMarket(Position);
-		}
-		else if (Position < 0 && isBuying)
-		{
-			BuyMarket(Math.Abs(Position));
+			SellMarket();
 		}
 	}
 }

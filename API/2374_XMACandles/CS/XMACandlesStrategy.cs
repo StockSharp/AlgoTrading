@@ -114,7 +114,7 @@ public class XMACandlesStrategy : Strategy
 			.SetDisplay("Length", "Smoothing length", "Parameters")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
@@ -161,10 +161,11 @@ public class XMACandlesStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var openValue = _openMa.Process(candle.OpenPrice);
-		var closeValue = _closeMa.Process(candle.ClosePrice);
+		var t = candle.ServerTime;
+		var openValue = _openMa.Process(candle.OpenPrice, t, true);
+		var closeValue = _closeMa.Process(candle.ClosePrice, t, true);
 
-		if (!openValue.IsFinal || !closeValue.IsFinal)
+		if (!_openMa.IsFormed || !_closeMa.IsFormed)
 			return;
 
 		var openMa = openValue.GetValue<decimal>();
@@ -175,19 +176,15 @@ public class XMACandlesStrategy : Strategy
 
 		if (currentColor == 2 && _prevColor != 2)
 		{
-			// bullish change: close shorts and open long
-			if (SellPosClose && Position < 0)
-				BuyMarket(Math.Abs(Position));
-			if (BuyPosOpen && Position <= 0)
-				BuyMarket(Volume + Math.Abs(Position));
+			// bullish change
+			if (Position <= 0)
+				BuyMarket();
 		}
 		else if (currentColor == 0 && _prevColor != 0)
 		{
-			// bearish change: close longs and open short
-			if (BuyPosClose && Position > 0)
-				SellMarket(Math.Abs(Position));
-			if (SellPosOpen && Position >= 0)
-				SellMarket(Volume + Math.Abs(Position));
+			// bearish change
+			if (Position >= 0)
+				SellMarket();
 		}
 
 		_prevColor = currentColor;

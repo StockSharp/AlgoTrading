@@ -87,7 +87,7 @@ public class X2MaJfatlStrategy : Strategy
 			
 			.SetOptimize(10, 60, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculation", "General");
 	}
 
@@ -151,21 +151,21 @@ public class X2MaJfatlStrategy : Strategy
 		// Exit if price moves against the filter
 		if (Position > 0 && candle.ClosePrice < filterValue)
 		{
-			SellMarket(Math.Abs(Position));
+			SellMarket();
 		}
 		else if (Position < 0 && candle.ClosePrice > filterValue)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
 		}
 
 		// Crossover entries
 		if (_prevDiff <= 0m && diff > 0m && candle.ClosePrice > filterValue && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		else if (_prevDiff >= 0m && diff < 0m && candle.ClosePrice < filterValue && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 
 		_prevDiff = diff;

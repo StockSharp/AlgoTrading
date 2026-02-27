@@ -263,13 +263,13 @@ public class LimitsRsiMomentumBotStrategy : Strategy
 		if (rsiValue < RsiBuyRestrict && momentumValue < MomentumBuyRestrict && Position <= 0)
 		{
 			var price = candle.OpenPrice - LimitOrderDistance * step;
-			_buyOrder = BuyLimit(Volume + Math.Abs(Position), price);
+			_buyOrder = BuyLimit(price);
 		}
 
 		if (rsiValue > RsiSellRestrict && momentumValue > MomentumSellRestrict && Position >= 0)
 		{
 			var price = candle.OpenPrice + LimitOrderDistance * step;
-			_sellOrder = SellLimit(Volume + Math.Abs(Position), price);
+			_sellOrder = SellLimit(price);
 		}
 	}
 

@@ -76,7 +76,7 @@ public class MartinForSmallDepositsStrategy : Strategy
 			.SetDisplay("Min Profit", "Net profit threshold to close all positions", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signal generation", "General");
 	}
 
@@ -196,8 +196,7 @@ public class MartinForSmallDepositsStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		// No bound indicators - skip formation check
 
 		UpdateCloseHistory(candle.ClosePrice);
 
@@ -518,13 +517,13 @@ public class MartinForSmallDepositsStrategy : Strategy
 		}
 
 		if (step == 0m)
-			return 0m;
+			step = 0.01m;
 
 		var decimalsCount = security.Decimals ?? 0;
 		_pipSize = (decimalsCount == 3 || decimalsCount == 5) ? step * 10m : step;
 
 		if (_pipSize == 0m)
-			_pipSize = step;
+			_pipSize = step > 0m ? step : 0.01m;
 
 		return _pipSize;
 	}

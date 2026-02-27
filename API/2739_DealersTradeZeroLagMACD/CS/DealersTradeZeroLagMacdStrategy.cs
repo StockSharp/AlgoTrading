@@ -441,7 +441,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 		}
 
 		var macd = fast - slow;
-		_signalZlema.Process(new DecimalIndicatorValue(_signalZlema, macd, candle.CloseTime));
+		_signalZlema.Process(new DecimalIndicatorValue(_signalZlema, macd, candle.CloseTime) { IsFinal = true });
 
 		if (!_fastZlema.IsFormed || !_slowZlema.IsFormed || !_signalZlema.IsFormed)
 			{
@@ -463,6 +463,8 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 			direction = 2;
 		else if (macd < _previousMacd && macd != 0m && _previousMacd != 0m)
 			direction = 1;
+
+
 
 		if (ReverseCondition)
 			{

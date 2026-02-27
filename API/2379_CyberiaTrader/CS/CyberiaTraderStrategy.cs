@@ -147,9 +147,9 @@ public class CyberiaTraderStrategy : Strategy
 	}
 	
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
+	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted(time);
+		base.OnStarted2(time);
 		
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -205,8 +205,8 @@ public class CyberiaTraderStrategy : Strategy
 		
 		if (EnableMacd)
 		{
-			var macd = macdTyped.Macd;
-			var signal = macdTyped.Signal;
+			var macd = macdTyped.Macd ?? 0m;
+			var signal = macdTyped.Signal ?? 0m;
 			if (macd > signal)
 			disableSell = true;
 			else if (macd < signal)
@@ -233,21 +233,21 @@ public class CyberiaTraderStrategy : Strategy
 		
 		if (EnableAdx)
 		{
-			var plus = adxTyped.Dx.Plus;
-			var minus = adxTyped.Dx.Minus;
+			var plus = adxTyped.Dx.Plus ?? 0m;
+			var minus = adxTyped.Dx.Minus ?? 0m;
 			if (plus > minus)
 			disableSell = true;
 			else if (minus > plus)
 			disableBuy = true;
 		}
-		
+
 		if (!disableBuy && disableSell && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 		}
 		else if (!disableSell && disableBuy && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 	}
 }

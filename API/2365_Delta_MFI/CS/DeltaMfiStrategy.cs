@@ -130,14 +130,14 @@ public class DeltaMfiStrategy : Strategy
 		// Long signal: slow MFI above level and fast MFI above slow MFI
 		if (slowValue > Level && fastValue > slowValue && Position <= 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			BuyMarket();
 			return;
 		}
 
 		// Short signal: slow MFI below (100 - level) and fast MFI below slow MFI
 		if (slowValue < (100 - Level) && fastValue < slowValue && Position >= 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			SellMarket();
 		}
 	}
 }

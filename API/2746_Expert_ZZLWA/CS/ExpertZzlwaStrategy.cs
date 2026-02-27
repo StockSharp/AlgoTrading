@@ -444,10 +444,10 @@ public class ExpertZzlwaStrategy : Strategy
 		/// <inheritdoc />
 		protected override void OnOwnTradeReceived(MyTrade trade)
 		{
-			if (trade?.Order.Side == null)
+			if (trade?.Order == null)
 			return;
 
-			var side = trade.Order.Side.Value;
+			var side = trade.Order.Side;
 			var volume = trade.Trade.Volume;
 			var price = trade.Trade.Price;
 

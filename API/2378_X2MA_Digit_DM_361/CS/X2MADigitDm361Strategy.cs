@@ -172,16 +172,19 @@ public class X2MADigitDm361Strategy : Strategy
 		var fast = fastMaValue.ToDecimal();
 		var slow = slowMaValue.ToDecimal();
 		var adx = (AverageDirectionalIndexValue)adxValue;
+		var plusDi = adx.Dx.Plus;
+		var minusDi = adx.Dx.Minus;
 
-		if (fast > slow && adx.PlusDi > adx.MinusDi && Position <= 0)
+		if (plusDi is null || minusDi is null)
+			return;
+
+		if (fast > slow && plusDi > minusDi && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket();
 		}
-		else if (fast < slow && adx.MinusDi > adx.PlusDi && Position >= 0)
+		else if (fast < slow && minusDi > plusDi && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket();
 		}
 	}
 }
