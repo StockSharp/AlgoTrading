@@ -1,374 +1,111 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that places buy and sell stop orders around current price and manages trailing stops.
-/// Designed for volatile news releases.
+/// News-style volatility breakout strategy.
+/// Enters on ATR expansion with momentum confirmation via EMA.
 /// </summary>
 public class NewsPendingOrdersStrategy : Strategy
 {
-	private readonly StrategyParam<int> _step;
-	private readonly StrategyParam<int> _stopLoss;
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<int> _trailingStop;
-	private readonly StrategyParam<int> _trailingStart;
-	private readonly StrategyParam<int> _stepTrail;
-	private readonly StrategyParam<bool> _breakEven;
-	private readonly StrategyParam<int> _minProfitBreakEven;
-	private readonly StrategyParam<int> _timeModify;
-	
-	private decimal _tickSize;
-	private Order _buyPending;
-	private Order _sellPending;
-	private Order _stopOrder;
-	private Order _takeOrder;
-	private DateTimeOffset _lastBuyAdjust;
-	private DateTimeOffset _lastSellAdjust;
+	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _atrMult;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal _prevAtr;
 	private decimal _entryPrice;
-	private bool _breakEvenDone;
-	
-	/// <summary>
-	/// Distance in ticks to place pending orders.
-	/// </summary>
-	public int Step
-	{
-		get => _step.Value;
-		set => _step.Value = value;
-	}
-	
-	/// <summary>
-	/// Stop-loss in ticks.
-	/// </summary>
-	public int StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-	
-	/// <summary>
-	/// Take-profit in ticks. 0 disables.
-	/// </summary>
-	public int TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-	
-	/// <summary>
-	/// Trailing stop distance in ticks.
-	/// </summary>
-	public int TrailingStop
-	{
-		get => _trailingStop.Value;
-		set => _trailingStop.Value = value;
-	}
-	
-	/// <summary>
-	/// Profit in ticks before trailing is activated.
-	/// </summary>
-	public int TrailingStart
-	{
-		get => _trailingStart.Value;
-		set => _trailingStart.Value = value;
-	}
-	
-	/// <summary>
-	/// Minimum change in stop price in ticks to send a new stop order.
-	/// </summary>
-	public int StepTrail
-	{
-		get => _stepTrail.Value;
-		set => _stepTrail.Value = value;
-	}
-	
-	/// <summary>
-	/// Move stop to entry price after reaching profit.
-	/// </summary>
-	public bool BreakEven
-	{
-		get => _breakEven.Value;
-		set => _breakEven.Value = value;
-	}
-	
-	/// <summary>
-	/// Profit in ticks required to move stop to break-even.
-	/// </summary>
-	public int MinProfitBreakEven
-	{
-		get => _minProfitBreakEven.Value;
-		set => _minProfitBreakEven.Value = value;
-	}
-	
-	/// <summary>
-	/// Seconds between pending order updates.
-	/// </summary>
-	public int TimeModify
-	{
-		get => _timeModify.Value;
-		set => _timeModify.Value = value;
-	}
-	
-	/// <summary>
-	/// Strategy constructor.
-	/// </summary>
+
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal AtrMult { get => _atrMult.Value; set => _atrMult.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public NewsPendingOrdersStrategy()
 	{
-		_step = Param(nameof(Step), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("Step", "Distance in ticks", "General");
-		
-		_stopLoss = Param(nameof(StopLoss), 10)
-		.SetGreaterThanZero()
-		.SetDisplay("Stop-loss", "Stop-loss in ticks", "Risk");
-		
-		_takeProfit = Param(nameof(TakeProfit), 50)
-		.SetDisplay("Take-profit", "Take-profit in ticks", "Risk");
-		
-		_trailingStop = Param(nameof(TrailingStop), 10)
-		.SetDisplay("Trailing stop", "Trailing stop in ticks", "Risk");
-		
-		_trailingStart = Param(nameof(TrailingStart), 0)
-		.SetDisplay("Trailing start", "Profit before trailing", "Risk");
-		
-		_stepTrail = Param(nameof(StepTrail), 2)
-		.SetDisplay("Step trail", "Minimum stop change", "Risk");
-		
-		_breakEven = Param(nameof(BreakEven), false)
-		.SetDisplay("Break even", "Move stop to entry", "Risk");
-		
-		_minProfitBreakEven = Param(nameof(MinProfitBreakEven), 0)
-		.SetDisplay("Break even profit", "Profit to move stop", "Risk");
-		
-		_timeModify = Param(nameof(TimeModify), 30)
-		.SetGreaterThanZero()
-		.SetDisplay("Reprice secs", "Seconds between repricing", "General");
+		_emaPeriod = Param(nameof(EmaPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "EMA trend period", "Indicators");
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "ATR period", "Indicators");
+		_atrMult = Param(nameof(AtrMult), 1.5m)
+			.SetDisplay("ATR Mult", "ATR expansion multiplier", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
-	
-	/// <inheritdoc />
+
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, DataType.Level1)];
-	}
-	
-	/// <inheritdoc />
+		=> [(Security, CandleType)];
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		
-		_buyPending = null;
-		_sellPending = null;
-		_stopOrder = null;
-		_takeOrder = null;
+		_prevAtr = 0;
 		_entryPrice = 0;
-		_breakEvenDone = false;
 	}
-	
-	/// <inheritdoc />
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		_tickSize = Security?.PriceStep ?? 1m;
-		
-		SubscribeLevel1()
-		.Bind(ProcessLevel1)
-		.Start();
+
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+
+		SubscribeCandles(CandleType).Bind(ema, atr, ProcessCandle).Start();
 	}
-	
-	private void ProcessLevel1(Level1ChangeMessage level1)
+
+	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal atr)
 	{
-		var bid = level1.TryGetDecimal(Level1Fields.BestBidPrice);
-		var ask = level1.TryGetDecimal(Level1Fields.BestAskPrice);
-		if (bid == null || ask == null)
-			return;
-		
-		var now = level1.ServerTime;
-		var stepPrice = Step * _tickSize;
-		var trailStep = StepTrail * _tickSize;
-		
-		if (Position == 0)
-			{
-			// place or reprice buy stop
-			var buyPrice = ask.Value + stepPrice;
-			if (_buyPending == null)
-				{
-				_buyPending = BuyStop(Volume, buyPrice);
-				_lastBuyAdjust = now;
-			}
-			else if ((now - _lastBuyAdjust).TotalSeconds >= TimeModify && Math.Abs(_buyPending.Price - buyPrice) >= trailStep)
-			{
-				CancelOrder(_buyPending);
-				_buyPending = BuyStop(Volume, buyPrice);
-				_lastBuyAdjust = now;
-			}
-			
-			// place or reprice sell stop
-			var sellPrice = bid.Value - stepPrice;
-			if (_sellPending == null)
-				{
-				_sellPending = SellStop(Volume, sellPrice);
-				_lastSellAdjust = now;
-			}
-			else if ((now - _lastSellAdjust).TotalSeconds >= TimeModify && Math.Abs(_sellPending.Price - sellPrice) >= trailStep)
-			{
-				CancelOrder(_sellPending);
-				_sellPending = SellStop(Volume, sellPrice);
-				_lastSellAdjust = now;
-			}
-		}
-		else
+		if (candle.State != CandleStates.Finished) return;
+
+		if (_prevAtr <= 0) { _prevAtr = atr; return; }
+
+		var close = candle.ClosePrice;
+		var bodySize = Math.Abs(candle.ClosePrice - candle.OpenPrice);
+
+		// Volatility expansion: current ATR > previous ATR * mult and big body candle
+		var expansion = atr > _prevAtr * AtrMult && bodySize > atr * 0.5m;
+
+		if (expansion && close > ema && Position <= 0)
 		{
-			// cancel opposite pending orders when in position
-			if (Position > 0 && _sellPending != null)
-				{
-				CancelOrder(_sellPending);
-				_sellPending = null;
-			}
-			if (Position < 0 && _buyPending != null)
-				{
-				CancelOrder(_buyPending);
-				_buyPending = null;
-			}
-			
-			AdjustStop(ask.Value, bid.Value);
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+			_entryPrice = close;
 		}
-	}
-	
-	private void AdjustStop(decimal ask, decimal bid)
-	{
-		if (_stopOrder == null)
-			return;
-		
-		var trailStep = StepTrail * _tickSize;
-		decimal? newPrice = null;
-		
-		if (Position > 0)
+		else if (expansion && close < ema && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+			_entryPrice = close;
+		}
+		// Exit long
+		else if (Position > 0)
+		{
+			if (close < ema || (_entryPrice > 0 && close <= _entryPrice - atr * 2))
 			{
-			var profit = (bid - _entryPrice) / _tickSize;
-			if (BreakEven && !_breakEvenDone && profit >= MinProfitBreakEven)
-				{
-				var be = _entryPrice + MinProfitBreakEven * _tickSize;
-				if (be > _stopOrder.Price)
-					{
-					newPrice = be;
-					_breakEvenDone = true;
-				}
-			}
-			
-			if (TrailingStop > 0 && profit >= TrailingStart)
-				{
-				var trail = bid - TrailingStop * _tickSize;
-				if (trail > _stopOrder.Price + trailStep)
-					newPrice = newPrice == null ? trail : Math.Max(newPrice.Value, trail);
+				SellMarket();
+				_entryPrice = 0;
 			}
 		}
+		// Exit short
 		else if (Position < 0)
 		{
-			var profit = (_entryPrice - ask) / _tickSize;
-			if (BreakEven && !_breakEvenDone && profit >= MinProfitBreakEven)
-				{
-				var be = _entryPrice - MinProfitBreakEven * _tickSize;
-				if (be < _stopOrder.Price)
-					{
-					newPrice = be;
-					_breakEvenDone = true;
-				}
-			}
-			
-			if (TrailingStop > 0 && profit >= TrailingStart)
-				{
-				var trail = ask + TrailingStop * _tickSize;
-				if (trail < _stopOrder.Price - trailStep)
-					newPrice = newPrice == null ? trail : Math.Min(newPrice.Value, trail);
-			}
-		}
-		
-		if (newPrice != null)
+			if (close > ema || (_entryPrice > 0 && close >= _entryPrice + atr * 2))
 			{
-			CancelOrder(_stopOrder);
-			_stopOrder = Position > 0
-			? SellStop(Volume, newPrice.Value)
-			: BuyStop(Volume, newPrice.Value);
-		}
-	}
-	
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-		
-		if (trade.Order == null)
-			return;
-		
-		if (Position != 0)
-			{
-			_entryPrice = trade.Trade.Price;
-			_breakEvenDone = false;
-			
-			if (Position > 0 && _sellPending != null)
-				{
-				CancelOrder(_sellPending);
-				_sellPending = null;
+				BuyMarket();
+				_entryPrice = 0;
 			}
-			if (Position < 0 && _buyPending != null)
-				{
-				CancelOrder(_buyPending);
-				_buyPending = null;
-			}
-			
-			RegisterProtection(Position > 0);
 		}
-	}
-	
-	private void RegisterProtection(bool isLong)
-	{
-		var stopOffset = StopLoss * _tickSize;
-		var takeOffset = TakeProfit * _tickSize;
-		
-		if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
-			CancelOrder(_stopOrder);
-		if (_takeOrder != null && _takeOrder.State == OrderStates.Active)
-			CancelOrder(_takeOrder);
-		
-		_stopOrder = isLong
-		? SellStop(Volume, _entryPrice - stopOffset)
-		: BuyStop(Volume, _entryPrice + stopOffset);
-		
-		_takeOrder = TakeProfit > 0
-		? (isLong ? SellLimit(Volume, _entryPrice + takeOffset) : BuyLimit(Volume, _entryPrice - takeOffset))
-		: null;
-	}
-	
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
-	{
-		base.OnPositionReceived(position);
-		
-		if (Position != 0)
-			return;
-		
-		if (_stopOrder != null && _stopOrder.State == OrderStates.Active)
-			CancelOrder(_stopOrder);
-		if (_takeOrder != null && _takeOrder.State == OrderStates.Active)
-			CancelOrder(_takeOrder);
-		
-		_stopOrder = null;
-		_takeOrder = null;
-		_entryPrice = 0;
-		_breakEvenDone = false;
+
+		_prevAtr = atr;
 	}
 }

@@ -1,199 +1,140 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using System.Globalization;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Manages trailing profit, take profit, stop loss and partial closing.
-/// Opens a long position on the first finished candle and then manages it.
+/// EMA trend following with ATR trailing stop management.
+/// Enters on EMA crossover, exits via trailing stop based on ATR.
 /// </summary>
 public class ManagerTrailingStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _trailProfitOn;
-	private readonly StrategyParam<decimal> _trailStartPercent;
-	private readonly StrategyParam<decimal> _trailStepPercent;
-	private readonly StrategyParam<bool> _takeProfitOn;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
-	private readonly StrategyParam<bool> _stopLossOn;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<bool> _partCloseOn;
-	private readonly StrategyParam<string> _partCloseLevels;
-	private readonly StrategyParam<string> _partClosePercents;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _trailMult;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
-	private decimal _maxProfit;
-	private decimal _trailTrigger;
-	private decimal[] _levels = Array.Empty<decimal>();
-	private decimal[] _percents = Array.Empty<decimal>();
-	private int _partIndex;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
+	private decimal _trailStop;
+	private decimal _highSinceLong;
+	private decimal _lowSinceShort;
 
-	public bool TrailProfitOn { get => _trailProfitOn.Value; set => _trailProfitOn.Value = value; }
-	public decimal TrailStartPercent { get => _trailStartPercent.Value; set => _trailStartPercent.Value = value; }
-	public decimal TrailStepPercent { get => _trailStepPercent.Value; set => _trailStepPercent.Value = value; }
-	public bool TakeProfitOn { get => _takeProfitOn.Value; set => _takeProfitOn.Value = value; }
-	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
-	public bool StopLossOn { get => _stopLossOn.Value; set => _stopLossOn.Value = value; }
-	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
-	public bool PartCloseOn { get => _partCloseOn.Value; set => _partCloseOn.Value = value; }
-	public string PartCloseLevels { get => _partCloseLevels.Value; set => _partCloseLevels.Value = value; }
-	public string PartClosePercents { get => _partClosePercents.Value; set => _partClosePercents.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal TrailMult { get => _trailMult.Value; set => _trailMult.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ManagerTrailingStrategy()
 	{
-		_trailProfitOn = Param(nameof(TrailProfitOn), false)
-			.SetDisplay("Trail Profit", "Enable profit trailing", "General");
-
-		_trailStartPercent = Param(nameof(TrailStartPercent), 10m)
+		_fastPeriod = Param(nameof(FastPeriod), 8)
 			.SetGreaterThanZero()
-			.SetDisplay("Trail Start %", "Start trailing after this profit", "Trailing");
-
-		_trailStepPercent = Param(nameof(TrailStepPercent), 5m)
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 21)
 			.SetGreaterThanZero()
-			.SetDisplay("Trail Step %", "Distance between trail updates", "Trailing");
-
-		_takeProfitOn = Param(nameof(TakeProfitOn), false)
-			.SetDisplay("Take Profit", "Enable take profit", "Risk");
-
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 50m)
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Take Profit %", "Profit % to close position", "Risk");
-
-		_stopLossOn = Param(nameof(StopLossOn), false)
-			.SetDisplay("Stop Loss", "Enable stop loss", "Risk");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 20m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Loss % to close position", "Risk");
-
-		_partCloseOn = Param(nameof(PartCloseOn), true)
-			.SetDisplay("Partial Close", "Enable partial closing", "Risk");
-
-		_partCloseLevels = Param(nameof(PartCloseLevels), "20/50/200")
-			.SetDisplay("Part Levels", "Profit % levels for partial close", "Risk");
-
-		_partClosePercents = Param(nameof(PartClosePercents), "50/25/25")
-			.SetDisplay("Part Percents", "Portions of position to close", "Risk");
-
-
+			.SetDisplay("ATR Period", "ATR period for trailing", "Indicators");
+		_trailMult = Param(nameof(TrailMult), 2.0m)
+			.SetDisplay("Trail Mult", "ATR multiplier for trailing stop", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to analyze", "General");
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
 	{
-		return [(Security, CandleType)];
+		base.OnReseted();
+		_prevFast = 0; _prevSlow = 0; _hasPrev = false;
+		_trailStop = 0; _highSinceLong = 0; _lowSinceShort = decimal.MaxValue;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		ParsePartClose();
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		SubscribeCandles(CandleType)
+			.Bind(fast, slow, atr, ProcessCandle)
+			.Start();
 	}
 
-	private void ParsePartClose()
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atr)
 	{
-		var levelParts = PartCloseLevels.Split('/');
-		_levels = new decimal[levelParts.Length];
-		for (var i = 0; i < levelParts.Length; i++)
-			_levels[i] = decimal.Parse(levelParts[i], CultureInfo.InvariantCulture);
+		if (candle.State != CandleStates.Finished) return;
 
-		var percParts = PartClosePercents.Split('/');
-		_percents = new decimal[percParts.Length];
-		for (var i = 0; i < percParts.Length; i++)
-			_percents[i] = decimal.Parse(percParts[i], CultureInfo.InvariantCulture);
+		if (!_hasPrev) { _prevFast = fast; _prevSlow = slow; _hasPrev = true; return; }
 
-		_partIndex = 0;
-	}
+		var close = candle.ClosePrice;
 
-	private void ProcessCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (Position == 0)
+		// Trail stop management
+		if (Position > 0 && atr > 0)
 		{
-			BuyMarket(Volume);
-			// enter initial long position
-			_entryPrice = candle.ClosePrice;
-			_maxProfit = 0m;
-			_trailTrigger = decimal.MinValue;
-			return;
+			_highSinceLong = Math.Max(_highSinceLong, candle.HighPrice);
+			var newTrail = _highSinceLong - atr * TrailMult;
+			if (newTrail > _trailStop) _trailStop = newTrail;
+
+			if (close <= _trailStop)
+			{
+				SellMarket();
+				_trailStop = 0;
+				_prevFast = fast; _prevSlow = slow;
+				return;
+			}
+		}
+		else if (Position < 0 && atr > 0)
+		{
+			_lowSinceShort = Math.Min(_lowSinceShort, candle.LowPrice);
+			var newTrail = _lowSinceShort + atr * TrailMult;
+			if (newTrail < _trailStop || _trailStop == 0) _trailStop = newTrail;
+
+			if (close >= _trailStop)
+			{
+				BuyMarket();
+				_trailStop = 0;
+				_prevFast = fast; _prevSlow = slow;
+				return;
+			}
 		}
 
-		var profit = Position > 0
-			// calculate current profit in percent based on position direction
-			? (candle.ClosePrice - _entryPrice) / _entryPrice * 100m
-			: (_entryPrice - candle.ClosePrice) / _entryPrice * 100m;
-
-		if (profit > _maxProfit)
-			// update maximum observed profit
-			_maxProfit = profit;
-
-		if (TakeProfitOn && profit >= TakeProfitPercent)
-			// close on take profit
+		// Entry signals: EMA crossover
+		if (_prevFast <= _prevSlow && fast > slow)
 		{
-			ClosePosition();
-			return;
+			if (Position < 0) BuyMarket();
+			if (Position <= 0)
+			{
+				BuyMarket();
+				_highSinceLong = candle.HighPrice;
+				_trailStop = close - atr * TrailMult;
+			}
+		}
+		else if (_prevFast >= _prevSlow && fast < slow)
+		{
+			if (Position > 0) SellMarket();
+			if (Position >= 0)
+			{
+				SellMarket();
+				_lowSinceShort = candle.LowPrice;
+				_trailStop = close + atr * TrailMult;
+			}
 		}
 
-		if (StopLossOn && profit <= -StopLossPercent)
-			// close on stop loss
-		{
-			ClosePosition();
-			return;
-		}
-
-		if (PartCloseOn && _partIndex < _levels.Length && profit >= _levels[_partIndex])
-		{
-			var part = _percents[_partIndex]
-			// volume to close at this level
-			/ 100m * Math.Abs(Position);
-			if (Position > 0)
-				SellMarket(part);
-			else
-				BuyMarket(part);
-			_partIndex++;
-		}
-
-		if (TrailProfitOn && profit >= TrailStartPercent)
-		{
-			var trigger = _maxProfit - TrailStepPercent;
-			// trailing trigger follows max profit
-			if (trigger > _trailTrigger)
-				_trailTrigger = trigger;
-
-			if (profit <= _trailTrigger)
-				ClosePosition();
-		}
-	}
-
-	private void ClosePosition()
-	{
-		if (Position > 0)
-			SellMarket(Position);
-		else if (Position < 0)
-			BuyMarket(-Position);
+		_prevFast = fast; _prevSlow = slow;
 	}
 }

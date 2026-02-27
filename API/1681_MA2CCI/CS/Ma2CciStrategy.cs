@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,9 +12,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on two moving averages with CCI filter and ATR stop-loss.
-/// Opens long when fast MA crosses above slow MA and CCI crosses above zero.
-/// Opens short when fast MA crosses below slow MA and CCI crosses below zero.
-/// Closes positions on opposite MA crossover or when ATR-based stop is hit.
+/// Opens long when fast MA crosses above slow MA and CCI > 0.
+/// Opens short when fast MA crosses below slow MA and CCI < 0.
 /// </summary>
 public class Ma2CciStrategy : Strategy
 {
@@ -29,208 +25,116 @@ public class Ma2CciStrategy : Strategy
 
 	private decimal _prevFast;
 	private decimal _prevSlow;
-	private decimal _prevCci;
 	private bool _isInitialized;
-
-	private decimal _entryPrice;
 	private decimal _stopLoss;
-	private bool _isLong;
 
-	/// <summary>
-	/// Fast MA period.
-	/// </summary>
-	public int FastMaPeriod
-	{
-		get => _fastMaPeriod.Value;
-		set => _fastMaPeriod.Value = value;
-	}
+	public int FastMaPeriod { get => _fastMaPeriod.Value; set => _fastMaPeriod.Value = value; }
+	public int SlowMaPeriod { get => _slowMaPeriod.Value; set => _slowMaPeriod.Value = value; }
+	public int CciPeriod { get => _cciPeriod.Value; set => _cciPeriod.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Slow MA period.
-	/// </summary>
-	public int SlowMaPeriod
-	{
-		get => _slowMaPeriod.Value;
-		set => _slowMaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// CCI period.
-	/// </summary>
-	public int CciPeriod
-	{
-		get => _cciPeriod.Value;
-		set => _cciPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// ATR period for stop-loss.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public Ma2CciStrategy()
 	{
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 4)
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast MA Period", "Period of the fast moving average", "Indicators")
-			
-			.SetOptimize(2, 10, 1);
-
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 8)
+			.SetDisplay("Fast MA Period", "Period of the fast moving average", "Indicators");
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 15)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow MA Period", "Period of the slow moving average", "Indicators")
-			
-			.SetOptimize(5, 20, 1);
-
-		_cciPeriod = Param(nameof(CciPeriod), 4)
+			.SetDisplay("Slow MA Period", "Period of the slow moving average", "Indicators");
+		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("CCI Period", "Period for CCI filter", "Indicators")
-			
-			.SetOptimize(2, 15, 1);
-
-		_atrPeriod = Param(nameof(AtrPeriod), 4)
+			.SetDisplay("CCI Period", "Period for CCI filter", "Indicators");
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR stop-loss", "Indicators")
-			
-			.SetOptimize(3, 20, 1);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
+			.SetDisplay("ATR Period", "Period for ATR stop-loss", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
 		_prevFast = 0;
 		_prevSlow = 0;
-		_prevCci = 0;
 		_isInitialized = false;
-
-		_entryPrice = 0;
 		_stopLoss = 0;
-		_isLong = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var fastMa = new SMA { Length = FastMaPeriod };
-		var slowMa = new SMA { Length = SlowMaPeriod };
+		var fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
+		var slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		// Subscribe to candle data and bind indicators
-		var subscription = SubscribeCandles(CandleType);
-		subscription
+		SubscribeCandles(CandleType)
 			.Bind(fastMa, slowMa, cci, atr, ProcessCandle)
 			.Start();
-
-		// Chart visualization
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, fastMa);
-			DrawIndicator(area, slowMa);
-			DrawOwnTrades(area);
-
-			var cciArea = CreateChartArea();
-			if (cciArea != null)
-				DrawIndicator(cciArea, cci);
-		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal cciValue, decimal atrValue)
 	{
-		// Process only finished candles
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		// Ensure strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Initialize on first complete values
 		if (!_isInitialized)
 		{
 			_prevFast = fast;
 			_prevSlow = slow;
-			_prevCci = cciValue;
 			_isInitialized = true;
 			return;
 		}
 
 		// Stop-loss check
-		if (Position > 0 && candle.ClosePrice <= _stopLoss)
+		if (Position > 0 && _stopLoss > 0 && candle.ClosePrice <= _stopLoss)
 		{
-			SellMarket(Position);
+			SellMarket();
+			_stopLoss = 0;
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
 		}
-		else if (Position < 0 && candle.ClosePrice >= _stopLoss)
+		else if (Position < 0 && _stopLoss > 0 && candle.ClosePrice >= _stopLoss)
 		{
-			BuyMarket(Math.Abs(Position));
+			BuyMarket();
+			_stopLoss = 0;
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
 		}
 
 		var isFastAbove = fast > slow;
 		var wasFastAbove = _prevFast > _prevSlow;
-		var isCciAbove = cciValue > 0;
-		var wasCciAbove = _prevCci > 0;
 
-		// Close positions on opposite MA crossover
-		if (Position > 0 && !isFastAbove && wasFastAbove)
+		// MA crossover up => long (CCI as optional filter)
+		if (isFastAbove && !wasFastAbove)
 		{
-			SellMarket(Position);
+			if (Position < 0) BuyMarket();
+			if (Position <= 0)
+			{
+				BuyMarket();
+				if (atrValue > 0)
+					_stopLoss = candle.ClosePrice - atrValue * 2;
+			}
 		}
-		else if (Position < 0 && isFastAbove && !wasFastAbove)
+		// MA crossover down => short
+		else if (!isFastAbove && wasFastAbove)
 		{
-			BuyMarket(Math.Abs(Position));
-		}
-		// Open long when MA and CCI cross upward
-		else if (Position <= 0 && isFastAbove && !wasFastAbove && isCciAbove && !wasCciAbove)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_isLong = true;
-			_entryPrice = candle.ClosePrice;
-			_stopLoss = candle.ClosePrice - atrValue;
-		}
-		// Open short when MA and CCI cross downward
-		else if (Position >= 0 && !isFastAbove && wasFastAbove && !isCciAbove && wasCciAbove)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_isLong = false;
-			_entryPrice = candle.ClosePrice;
-			_stopLoss = candle.ClosePrice + atrValue;
+			if (Position > 0) SellMarket();
+			if (Position >= 0)
+			{
+				SellMarket();
+				if (atrValue > 0)
+					_stopLoss = candle.ClosePrice + atrValue * 2;
+			}
 		}
 
-		// Update previous values
 		_prevFast = fast;
 		_prevSlow = slow;
-		_prevCci = cciValue;
 	}
 }

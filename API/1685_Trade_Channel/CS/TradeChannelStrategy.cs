@@ -1,11 +1,7 @@
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -16,184 +12,122 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Trade Channel breakout strategy.
-/// Uses Donchian Channel and ATR for stop management.
+/// Uses Highest/Lowest channel and ATR for stop management.
 /// </summary>
 public class TradeChannelStrategy : Strategy
 {
-private readonly StrategyParam<int> _channelPeriod;
-private readonly StrategyParam<int> _atrPeriod;
-private readonly StrategyParam<decimal> _trailing;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _channelPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-private decimal _prevUpper;
-private decimal _prevLower;
-private decimal _stopPrice;
+	private decimal _prevUpper;
+	private decimal _prevLower;
+	private decimal _stopPrice;
+	private bool _hasPrev;
 
-/// <summary>Period for price channel.</summary>
-public int ChannelPeriod { get => _channelPeriod.Value; set => _channelPeriod.Value = value; }
+	public int ChannelPeriod { get => _channelPeriod.Value; set => _channelPeriod.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-/// <summary>ATR period.</summary>
-public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public TradeChannelStrategy()
+	{
+		_channelPeriod = Param(nameof(ChannelPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Channel Period", "Donchian channel period", "Indicators");
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "ATR length for stop calculation", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+	}
 
-/// <summary>Trailing stop value. 0 disables trailing.</summary>
-public decimal Trailing { get => _trailing.Value; set => _trailing.Value = value; }
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
-/// <summary>Type of candles used.</summary>
-public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevUpper = 0;
+		_prevLower = 0;
+		_stopPrice = 0;
+		_hasPrev = false;
+	}
 
-/// <summary>
-/// Initializes strategy parameters.
-/// </summary>
-public TradeChannelStrategy()
-{
-_channelPeriod = Param(nameof(ChannelPeriod), 20)
-.SetDisplay("Channel Period", "Donchian channel period", "Indicators")
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-.SetOptimize(10, 50, 5);
+		var highest = new Highest { Length = ChannelPeriod };
+		var lowest = new Lowest { Length = ChannelPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-_atrPeriod = Param(nameof(AtrPeriod), 4)
-.SetDisplay("ATR Period", "ATR length for stop calculation", "Indicators")
+		SubscribeCandles(CandleType)
+			.Bind(highest, lowest, atr, ProcessCandle)
+			.Start();
+	}
 
-.SetOptimize(2, 14, 1);
+	private void ProcessCandle(ICandleMessage candle, decimal upper, decimal lower, decimal atrVal)
+	{
+		if (candle.State != CandleStates.Finished) return;
 
-_trailing = Param(nameof(Trailing), 0m)
-.SetDisplay("Trailing", "Trailing stop distance in price units", "Risk");
+		if (!_hasPrev)
+		{
+			_prevUpper = upper;
+			_prevLower = lower;
+			_hasPrev = true;
+			return;
+		}
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles for processing", "General");
-}
+		if (atrVal <= 0)
+		{
+			_prevUpper = upper;
+			_prevLower = lower;
+			return;
+		}
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+		var close = candle.ClosePrice;
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_prevUpper = 0m;
-_prevLower = 0m;
-_stopPrice = 0m;
-}
+		// Breakout above channel => long
+		if (close >= _prevUpper && Position <= 0)
+		{
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+			_stopPrice = lower - atrVal;
+		}
+		// Breakout below channel => short
+		else if (close <= _prevLower && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+			_stopPrice = upper + atrVal;
+		}
+		// Manage long
+		else if (Position > 0)
+		{
+			// Trailing stop
+			var newStop = close - atrVal * 2;
+			if (newStop > _stopPrice) _stopPrice = newStop;
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+			if (candle.LowPrice <= _stopPrice)
+			{
+				SellMarket();
+				_stopPrice = 0;
+			}
+		}
+		// Manage short
+		else if (Position < 0)
+		{
+			var newStop = close + atrVal * 2;
+			if (newStop < _stopPrice) _stopPrice = newStop;
 
-var donchian = new DonchianChannels { Length = ChannelPeriod };
-var atr = new ATR { Length = AtrPeriod };
+			if (candle.HighPrice >= _stopPrice)
+			{
+				BuyMarket();
+				_stopPrice = 0;
+			}
+		}
 
-var subscription = SubscribeCandles(CandleType);
-subscription
-.BindEx(donchian, atr, ProcessCandle)
-.Start();
-
-StartProtection(null, null);
-
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, donchian);
-DrawIndicator(area, atr);
-DrawOwnTrades(area);
-}
-}
-
-private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue atrValue)
-{
-if (candle.State != CandleStates.Finished)
-return;
-
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
-
-var dc = (DonchianChannelsValue)donchianValue;
-if (dc.UpperBand is not decimal upper || dc.LowerBand is not decimal lower)
-return;
-
-if (!atrValue.IsFinal)
-return;
-
-var atr = atrValue.GetValue<decimal>();
-
-// Skip first value to get previous bands
-if (_prevUpper == 0m && _prevLower == 0m)
-{
-_prevUpper = upper;
-_prevLower = lower;
-return;
-}
-
-var pivot = (upper + lower + candle.ClosePrice) / 3m;
-
-// Entry logic
-if (Position == 0)
-{
-var hitUpper = candle.HighPrice >= upper && upper == _prevUpper;
-var retraceUpper = candle.ClosePrice < upper && upper == _prevUpper && candle.ClosePrice > pivot;
-
-var hitLower = candle.LowPrice <= lower && lower == _prevLower;
-var retraceLower = candle.ClosePrice > lower && lower == _prevLower && candle.ClosePrice < pivot;
-
-if ((hitUpper || retraceUpper) && Position <= 0)
-{
-var volume = Volume + Math.Abs(Position);
-BuyMarket(volume);
-_stopPrice = lower - atr;
-}
-else if ((hitLower || retraceLower) && Position >= 0)
-{
-var volume = Volume + Math.Abs(Position);
-SellMarket(volume);
-_stopPrice = upper + atr;
-}
-}
-else if (Position > 0)
-{
-var hitUpper = candle.HighPrice >= upper && upper == _prevUpper;
-if (hitUpper)
-{
-SellMarket(Position);
-}
-else
-{
-if (Trailing > 0m)
-{
-var newStop = candle.ClosePrice - Trailing;
-if (newStop > _stopPrice)
-_stopPrice = newStop;
-}
-
-if (candle.LowPrice <= _stopPrice)
-SellMarket(Position);
-}
-}
-else if (Position < 0)
-{
-var hitLower = candle.LowPrice <= lower && lower == _prevLower;
-if (hitLower)
-{
-BuyMarket(Math.Abs(Position));
-}
-else
-{
-if (Trailing > 0m)
-{
-var newStop = candle.ClosePrice + Trailing;
-if (newStop < _stopPrice)
-_stopPrice = newStop;
-}
-
-if (candle.HighPrice >= _stopPrice)
-BuyMarket(Math.Abs(Position));
-}
-}
-
-_prevUpper = upper;
-_prevLower = lower;
-}
+		_prevUpper = upper;
+		_prevLower = lower;
+	}
 }

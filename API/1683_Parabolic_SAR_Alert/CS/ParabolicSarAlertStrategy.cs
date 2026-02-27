@@ -1,17 +1,14 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
-
-
 
 /// <summary>
 /// Parabolic SAR Alert Strategy.
@@ -26,59 +23,23 @@ public class ParabolicSarAlertStrategy : Strategy
 	private decimal? _prevSar;
 	private decimal? _prevClose;
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ParabolicSarAlertStrategy"/>.
-	/// </summary>
+	public decimal InitialAcceleration { get => _initialAcceleration.Value; set => _initialAcceleration.Value = value; }
+	public decimal MaxAcceleration { get => _maxAcceleration.Value; set => _maxAcceleration.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public ParabolicSarAlertStrategy()
 	{
 		_initialAcceleration = Param(nameof(InitialAcceleration), 0.02m)
-			.SetDisplay("Initial Acceleration", "Initial acceleration factor for Parabolic SAR", "SAR Settings")
-			.SetRange(0.01m, 0.1m)
-			;
-
+			.SetDisplay("Initial Acceleration", "Initial acceleration factor for Parabolic SAR", "SAR Settings");
 		_maxAcceleration = Param(nameof(MaxAcceleration), 0.2m)
-			.SetDisplay("Max Acceleration", "Maximum acceleration factor for Parabolic SAR", "SAR Settings")
-			.SetRange(0.1m, 0.5m)
-			;
-
+			.SetDisplay("Max Acceleration", "Maximum acceleration factor for Parabolic SAR", "SAR Settings");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <summary>
-	/// Initial acceleration factor for Parabolic SAR.
-	/// </summary>
-	public decimal InitialAcceleration
-	{
-		get => _initialAcceleration.Value;
-		set => _initialAcceleration.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum acceleration factor for Parabolic SAR.
-	/// </summary>
-	public decimal MaxAcceleration
-	{
-		get => _maxAcceleration.Value;
-		set => _maxAcceleration.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
@@ -86,12 +47,9 @@ public class ParabolicSarAlertStrategy : Strategy
 		_prevClose = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
 
 		var parabolicSar = new ParabolicSar
 		{
@@ -99,33 +57,14 @@ public class ParabolicSarAlertStrategy : Strategy
 			AccelerationMax = MaxAcceleration
 		};
 
-		var subscription = SubscribeCandles(CandleType);
-
-		subscription
+		SubscribeCandles(CandleType)
 			.Bind(parabolicSar, ProcessCandle)
 			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, parabolicSar);
-			DrawOwnTrades(area);
-		}
 	}
 
-	/// <summary>
-	/// Process candle with Parabolic SAR value.
-	/// </summary>
-	/// <param name="candle">Candle.</param>
-	/// <param name="sarValue">Parabolic SAR value.</param>
 	private void ProcessCandle(ICandleMessage candle, decimal sarValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
 		if (_prevSar is not null && _prevClose is not null)
 		{
@@ -134,13 +73,13 @@ public class ParabolicSarAlertStrategy : Strategy
 
 			if (crossUp && Position <= 0)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Parabolic SAR switched below price: SAR {sarValue}, Close {candle.ClosePrice}");
+				if (Position < 0) BuyMarket();
+				BuyMarket();
 			}
 			else if (crossDown && Position >= 0)
 			{
-				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Parabolic SAR switched above price: SAR {sarValue}, Close {candle.ClosePrice}");
+				if (Position > 0) SellMarket();
+				SellMarket();
 			}
 		}
 
