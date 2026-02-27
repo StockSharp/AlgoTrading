@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,115 +11,68 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Displays performance statistics grouped by magic numbers.
+/// Shuriken Lite - fast EMA/RSI scalping strategy.
 /// </summary>
 public class ShurikenLiteStrategy : Strategy
 {
-	private readonly StrategyParam<string> _magicNumbers;
-	private readonly StrategyParam<bool> _showScores;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly int[] _trades = new int[10];
-	private readonly int[] _wins = new int[10];
-	private readonly int[] _losses = new int[10];
-	private readonly decimal[] _pips = new decimal[10];
-	private readonly int[] _magicNums = new int[10];
-
-	public string MagicNumbers { get => _magicNumbers.Value; set => _magicNumbers.Value = value; }
-	public bool ShowScores { get => _showScores.Value; set => _showScores.Value = value; }
+	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ShurikenLiteStrategy()
 	{
-		_magicNumbers = Param(nameof(MagicNumbers), "1,2,3,4,5,6,7,8,9,10")
-			.SetDisplay("Magic Numbers", "Comma separated identifiers", "General");
+		_emaLength = Param(nameof(EmaLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA", "EMA period", "Indicators");
 
-		_showScores = Param(nameof(ShowScores), true)
-			.SetDisplay("Show Scores", "Log statistics", "General");
+		_rsiLength = Param(nameof(RsiLength), 7)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI", "RSI period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		ParseMagicNumbers();
+
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ema, rsi, ProcessCandle)
+			.Start();
 	}
 
-	private void ParseMagicNumbers()
+	private void ProcessCandle(ICandleMessage candle, decimal emaVal, decimal rsi)
 	{
-		var parts = MagicNumbers.Split(',');
-		for (var i = 0; i < _magicNums.Length; i++)
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var close = candle.ClosePrice;
+
+		if (close > emaVal && rsi < 40 && Position <= 0)
 		{
-			if (i < parts.Length && int.TryParse(parts[i].Trim(), out var num))
-				_magicNums[i] = num;
-			else
-				_magicNums[i] = i + 1;
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		if (!ShowScores)
-			return;
-
-		var order = trade.Order;
-		if (order is null)
-			return;
-
-		var comment = order.Comment;
-		if (comment.IsEmpty())
-			return;
-
-		if (!int.TryParse(comment, out var magic))
-			return;
-
-		for (var i = 0; i < _magicNums.Length; i++)
+		else if (close < emaVal && rsi > 60 && Position >= 0)
 		{
-			if (_magicNums[i] != magic)
-				continue;
-
-			_trades[i]++;
-
-			var step = order.Security?.Step ?? 1m;
-			var diff = (trade.Trade.Price - order.Price) / step;
-			if (order.Direction == Sides.Sell)
-				diff = -diff;
-
-			_pips[i] += diff;
-			if (diff >= 0)
-				_wins[i]++;
-			else
-				_losses[i]++;
-			break;
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
-
-		LogInfo(GetSummary());
-	}
-
-	private string GetSummary()
-	{
-		int totalTrades = 0;
-		int totalWins = 0;
-		int totalLosses = 0;
-		decimal totalPips = 0m;
-
-		for (var i = 0; i < _trades.Length; i++)
-		{
-			totalTrades += _trades[i];
-			totalWins += _wins[i];
-			totalLosses += _losses[i];
-			totalPips += _pips[i];
-		}
-
-		decimal winRate = 0m;
-		if (totalTrades > 0)
-			winRate = (decimal)totalWins / totalTrades * 100m;
-
-		decimal profitFactor = 0m;
-		if (totalLosses > 0)
-			profitFactor = (decimal)totalWins / totalLosses;
-
-		return $"Trades:{totalTrades} Wins:{totalWins} Losses:{totalLosses} Win%:{winRate:F1} Pips:{totalPips:F0} PF:{profitFactor:F2}";
+		else if (Position > 0 && rsi > 75)
+			SellMarket();
+		else if (Position < 0 && rsi < 25)
+			BuyMarket();
 	}
 }

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,198 +11,82 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Horizontal line based entry strategy.
-/// Places a market order when price crosses user defined levels.
-/// Supports stop-loss, take-profit and trailing stop in pips.
+/// Line order strategy using SMA as dynamic support/resistance levels.
 /// </summary>
 public class MyLineOrderStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _buyPrice;
-	private readonly StrategyParam<decimal> _sellPrice;
-	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _trailingStopPips;
+	private readonly StrategyParam<int> _smaLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _previousClose;
-	private decimal _entryPrice;
-	private decimal _stopPrice;
-	private decimal _takePrice;
-	private bool _isLong;
+	private decimal _prevClose;
+	private decimal _prevSma;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Price level to trigger long entry. Set zero to disable.
-	/// </summary>
-	public decimal BuyPrice
-	{
-	    get => _buyPrice.Value;
-	    set => _buyPrice.Value = value;
-	}
+	public int SmaLength { get => _smaLength.Value; set => _smaLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Price level to trigger short entry. Set zero to disable.
-	/// </summary>
-	public decimal SellPrice
-	{
-	    get => _sellPrice.Value;
-	    set => _sellPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Take profit distance in pips.
-	/// </summary>
-	public decimal TakeProfitPips
-	{
-	    get => _takeProfitPips.Value;
-	    set => _takeProfitPips.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss distance in pips.
-	/// </summary>
-	public decimal StopLossPips
-	{
-	    get => _stopLossPips.Value;
-	    set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Trailing stop distance in pips. Zero disables trailing.
-	/// </summary>
-	public decimal TrailingStopPips
-	{
-	    get => _trailingStopPips.Value;
-	    set => _trailingStopPips.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-	    get => _candleType.Value;
-	    set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="MyLineOrderStrategy"/>.
-	/// </summary>
 	public MyLineOrderStrategy()
 	{
-	    _buyPrice = Param(nameof(BuyPrice), 0m)
-	        .SetDisplay("Buy Price", "Price level to trigger buy order", "Trading");
+		_smaLength = Param(nameof(SmaLength), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("SMA", "SMA period", "Indicators");
 
-	    _sellPrice = Param(nameof(SellPrice), 0m)
-	        .SetDisplay("Sell Price", "Price level to trigger sell order", "Trading");
-
-	    _takeProfitPips = Param(nameof(TakeProfitPips), 30m)
-	        .SetNotNegative()
-	        .SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
-
-	    _stopLossPips = Param(nameof(StopLossPips), 20m)
-	        .SetNotNegative()
-	        .SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk");
-
-	    _trailingStopPips = Param(nameof(TrailingStopPips), 0m)
-	        .SetNotNegative()
-	        .SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
-
-	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-	        .SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-	    return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-	    base.OnReseted();
-	    _previousClose = 0;
-	    _entryPrice = 0;
-	    _stopPrice = 0;
-	    _takePrice = 0;
-	    _isLong = false;
+		base.OnReseted();
+		_prevClose = 0;
+		_prevSma = 0;
+		_hasPrev = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted2(time);
+		base.OnStarted2(time);
 
-	    var subscription = SubscribeCandles(CandleType);
-	    subscription.Bind(ProcessCandle).Start();
+		var sma = new SimpleMovingAverage { Length = SmaLength };
 
-	    StartProtection(null, null);
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(sma, ProcessCandle)
+			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, decimal sma)
 	{
-	    if (candle.State != CandleStates.Finished)
-	        return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	    var step = Security.PriceStep ?? 1m;
+		var close = candle.ClosePrice;
 
-	    if (Position == 0)
-	    {
-	        if (BuyPrice > 0m && _previousClose < BuyPrice && candle.ClosePrice >= BuyPrice)
-	        {
-	            BuyMarket();
-	            _isLong = true;
-	            _entryPrice = candle.ClosePrice;
-	            _stopPrice = _entryPrice - StopLossPips * step;
-	            _takePrice = _entryPrice + TakeProfitPips * step;
-	        }
-	        else if (SellPrice > 0m && _previousClose > SellPrice && candle.ClosePrice <= SellPrice)
-	        {
-	            SellMarket();
-	            _isLong = false;
-	            _entryPrice = candle.ClosePrice;
-	            _stopPrice = _entryPrice + StopLossPips * step;
-	            _takePrice = _entryPrice - TakeProfitPips * step;
-	        }
-	    }
-	    else
-	    {
-	        if (_isLong)
-	        {
-	            if (candle.LowPrice <= _stopPrice)
-	            {
-	                SellMarket(Math.Abs(Position));
-	            }
-	            else if (candle.HighPrice >= _takePrice)
-	            {
-	                SellMarket(Math.Abs(Position));
-	            }
-	            else if (TrailingStopPips > 0m)
-	            {
-	                var newStop = candle.ClosePrice - TrailingStopPips * step;
-	                if (newStop > _stopPrice && candle.ClosePrice > _entryPrice)
-	                    _stopPrice = newStop;
-	            }
-	        }
-	        else
-	        {
-	            if (candle.HighPrice >= _stopPrice)
-	            {
-	                BuyMarket(Math.Abs(Position));
-	            }
-	            else if (candle.LowPrice <= _takePrice)
-	            {
-	                BuyMarket(Math.Abs(Position));
-	            }
-	            else if (TrailingStopPips > 0m)
-	            {
-	                var newStop = candle.ClosePrice + TrailingStopPips * step;
-	                if (newStop < _stopPrice && candle.ClosePrice < _entryPrice)
-	                    _stopPrice = newStop;
-	            }
-	        }
-	    }
+		if (!_hasPrev)
+		{
+			_prevClose = close;
+			_prevSma = sma;
+			_hasPrev = true;
+			return;
+		}
 
-	    _previousClose = candle.ClosePrice;
+		// Cross above SMA
+		if (_prevClose <= _prevSma && close > sma)
+		{
+			if (Position < 0) BuyMarket();
+			if (Position <= 0) BuyMarket();
+		}
+		// Cross below SMA
+		else if (_prevClose >= _prevSma && close < sma)
+		{
+			if (Position > 0) SellMarket();
+			if (Position >= 0) SellMarket();
+		}
+
+		_prevClose = close;
+		_prevSma = sma;
 	}
 }

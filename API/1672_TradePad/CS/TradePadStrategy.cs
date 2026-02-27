@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,93 +11,89 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Manual trading panel strategy that mirrors the MQL TradePad script.
+/// Simple SMA crossover strategy inspired by trade pad manual trading.
 /// </summary>
 public class TradePadStrategy : Strategy
 {
-	private TradePanel _userPanel;
+	private readonly StrategyParam<int> _fastLength;
+	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="TradePadStrategy"/> class.
-	/// </summary>
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
+
+	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
+	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
 	public TradePadStrategy()
 	{
+		_fastLength = Param(nameof(FastLength), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
+
+		_slowLength = Param(nameof(SlowLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, DataType.Ticks)];
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_userPanel ??= new TradePanel();
+		var fast = new SimpleMovingAverage { Length = FastLength };
+		var slow = new SimpleMovingAverage { Length = SlowLength };
 
-		_userPanel.OnInit(this);
-
-		SubscribeTicks().Bind(_userPanel.OnTick).Start();
-
-		Timer.Start(TimeSpan.FromSeconds(1), _userPanel.OnTimer);
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(fast, slow, ProcessCandle)
+			.Start();
 	}
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
 	{
-		base.OnOwnTradeReceived(trade);
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		_userPanel.OnTrade(trade);
-	}
-
-	/// <inheritdoc />
-	protected override void OnProcessMessage(Message message)
-	{
-		base.OnProcessMessage(message);
-
-		_userPanel.OnChartEvent(message);
-	}
-
-	/// <inheritdoc />
-	protected override void OnStopped()
-	{
-		_userPanel?.Dispose();
-
-		base.OnStopped();
-	}
-
-	private sealed class TradePanel : IDisposable
-	{
-		private Strategy _strategy;
-
-		public void OnInit(Strategy strategy)
+		if (!_hasPrev)
 		{
-			_strategy = strategy;
+			_prevFast = fast;
+			_prevSlow = slow;
+			_hasPrev = true;
+			return;
 		}
 
-		public void OnTick(ITickTradeMessage trade)
+		if (_prevFast <= _prevSlow && fast > slow)
 		{
-			// Handle each trade tick update.
+			if (Position < 0)
+				BuyMarket();
+			if (Position <= 0)
+				BuyMarket();
+		}
+		else if (_prevFast >= _prevSlow && fast < slow)
+		{
+			if (Position > 0)
+				SellMarket();
+			if (Position >= 0)
+				SellMarket();
 		}
 
-		public void OnTimer()
-		{
-			// Handle periodic tasks triggered by timer.
-		}
-
-		public void OnTrade(MyTrade trade)
-		{
-			// Handle trade execution events.
-		}
-
-		public void OnChartEvent(Message message)
-		{
-			// Handle generic chart or message events.
-		}
-
-		public void Dispose()
-		{
-			// Dispose resources if any were allocated.
-		}
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 }
