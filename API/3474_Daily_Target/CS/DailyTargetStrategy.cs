@@ -1,228 +1,65 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Monitors the accumulated profit and loss for the current day and stops trading when the configured
-/// daily target or loss threshold is reached.
+/// Daily Target strategy: TEMA crossover.
+/// Buys when fast TEMA crosses above slow TEMA, sells on cross below.
 /// </summary>
 public class DailyTargetStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _dailyTarget;
-	private readonly StrategyParam<decimal> _dailyMaxLoss;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 
-	private DateTime _currentDate;
-	private decimal _dailyPnLBase;
-	private bool _dailyStopTriggered;
-	private decimal? _bestBid;
-	private decimal? _bestAsk;
-	private decimal? _lastTradePrice;
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="DailyTargetStrategy"/> class with defaults matching the MetaTrader script.
-	/// </summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+
 	public DailyTargetStrategy()
 	{
-		_dailyTarget = Param(nameof(DailyTarget), 10m)
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Daily Target", "Net profit that stops trading for the rest of the day", "Risk Management")
-			;
-
-		_dailyMaxLoss = Param(nameof(DailyMaxLoss), 0m)
-			.SetNotNegative()
-			.SetDisplay("Daily Max Loss", "Maximum drawdown tolerated before trading is halted", "Risk Management")
-			;
-
-		_currentDate = DateTime.MinValue;
-		_dailyPnLBase = 0m;
-		_dailyStopTriggered = false;
-		_bestBid = null;
-		_bestAsk = null;
-		_lastTradePrice = null;
+			.SetDisplay("Fast TEMA", "Fast TEMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow TEMA", "Slow TEMA period", "Indicators");
 	}
 
-	/// <summary>
-	/// Profit target expressed in portfolio currency that blocks further trading once reached.
-	/// </summary>
-	public decimal DailyTarget
-	{
-		get => _dailyTarget.Value;
-		set => _dailyTarget.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum allowed loss (in portfolio currency) before all positions are flattened for the day.
-	/// </summary>
-	public decimal DailyMaxLoss
-	{
-		get => _dailyMaxLoss.Value;
-		set => _dailyMaxLoss.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, DataType.Level1), (Security, DataType.Ticks)];
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_currentDate = DateTime.MinValue;
-		_dailyPnLBase = 0m;
-		_dailyStopTriggered = false;
-		_bestBid = null;
-		_bestAsk = null;
-		_lastTradePrice = null;
-
-		Timer.Stop();
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		ResetDailySnapshot(time);
-
-		// Subscribe to bid/ask updates to evaluate the floating profit without scanning order history.
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
-			.Start();
-
-		// Subscribe to trades to refresh the last dealt price when bid/ask quotes are missing.
-		SubscribeTicks()
-			.Bind(ProcessTrade)
-			.Start();
-
-		// Re-evaluate the daily thresholds periodically to catch date changes when the market is idle.
-		Timer.Start(TimeSpan.FromMinutes(1), EvaluateDailyThresholds);
+		_hasPrev = false;
+		var fast = new TripleExponentialMovingAverage { Length = FastPeriod };
+		var slow = new TripleExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, ProcessCandle).Start();
 	}
 
-	/// <inheritdoc />
-	protected override void OnStopped()
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		base.OnStopped();
-		Timer.Stop();
-	}
+		if (candle.State != CandleStates.Finished) return;
 
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-		// Realized profit changes immediately after each fill.
-		EvaluateDailyThresholds();
-	}
-
-	private void ProcessLevel1(Level1ChangeMessage message)
-	{
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bid) && bid is decimal bidPrice)
-			_bestBid = bidPrice;
-
-		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var ask) && ask is decimal askPrice)
-			_bestAsk = askPrice;
-
-		if (message.Changes.TryGetValue(Level1Fields.LastTradePrice, out var last) && last is decimal lastPrice)
-			_lastTradePrice = lastPrice;
-
-		EvaluateDailyThresholds();
-	}
-
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		var price = trade.Price;
-		_lastTradePrice = price;
-
-		EvaluateDailyThresholds();
-	}
-
-	private void EvaluateDailyThresholds()
-	{
-		var now = CurrentTime;
-		if (_currentDate != now.Date)
-			ResetDailySnapshot(now);
-
-		if (_dailyStopTriggered)
-			return;
-
-		var realizedPnL = PnL - _dailyPnLBase;
-		var floatingPnL = CalculateFloatingPnL();
-		if (floatingPnL is null)
-			return;
-
-		var totalPnL = realizedPnL + floatingPnL.Value;
-
-		if (DailyTarget > 0m && totalPnL >= DailyTarget)
+		if (_hasPrev)
 		{
-			TriggerDailyStop($"Daily profit target reached at {totalPnL:0.##}.");
-			return;
+			if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+				BuyMarket();
+			else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+				SellMarket();
 		}
 
-		if (DailyMaxLoss > 0m && totalPnL <= -DailyMaxLoss)
-			TriggerDailyStop($"Daily loss limit reached at {totalPnL:0.##}.");
-	}
-
-	private void ResetDailySnapshot(DateTimeOffset time)
-	{
-		_currentDate = time.Date;
-		_dailyPnLBase = PnL;
-		_dailyStopTriggered = false;
-	}
-
-	private decimal? CalculateFloatingPnL()
-	{
-		if (Position == 0m)
-			return 0m;
-
-		var averagePrice = Position.AveragePrice;
-		if (averagePrice == 0m)
-			return 0m;
-
-		var referencePrice = GetReferencePrice();
-		if (referencePrice is null)
-			return null;
-
-		return Position * (referencePrice.Value - averagePrice);
-	}
-
-	private decimal? GetReferencePrice()
-	{
-		if (Position > 0m)
-			return _bestBid ?? _lastTradePrice;
-
-		if (Position < 0m)
-			return _bestAsk ?? _lastTradePrice;
-
-		return _lastTradePrice;
-	}
-
-	private void TriggerDailyStop(string reason)
-	{
-		_dailyStopTriggered = true;
-		LogInfo(reason);
-		CancelActiveOrders();
-
-		if (Position > 0m)
-		{
-			// Close any remaining long exposure with a market sell order.
-			SellMarket(Position);
-		}
-		else if (Position < 0m)
-		{
-			// Close any remaining short exposure with a market buy order.
-			BuyMarket(-Position);
-		}
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
+		_hasPrev = true;
 	}
 }
-

@@ -1,270 +1,71 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Risk management helper that closes positions shortly before the protective stop would be hit.
-/// Ported from the Dual StopLoss.mq4 expert by RayanTech.
+/// Dual Stoploss strategy: dual SMA crossover with confirmation.
+/// Buys when fast SMA crosses above mid SMA and mid is above slow, sells on opposite.
 /// </summary>
 public class DualStoplossStrategy : Strategy
 {
-	private static readonly Level1Fields? StopLevelField = TryGetField("StopLevel")
-		?? TryGetField("MinStopPrice")
-		?? TryGetField("StopPrice")
-		?? TryGetField("StopDistance");
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _midPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
 
-	private readonly StrategyParam<decimal> _whenToClosePoints;
+	private decimal _prevFast;
+	private decimal _prevMid;
+	private bool _hasPrev;
 
-	private decimal _pointValue;
-	private decimal? _bestBid;
-	private decimal? _bestAsk;
-	private decimal? _stopLevelDistance;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int MidPeriod { get => _midPeriod.Value; set => _midPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 
-	/// <summary>
-	/// Distance from the stop loss level (in MetaTrader points) that should trigger an early exit.
-	/// </summary>
-	public decimal WhenToClosePoints
-	{
-		get => _whenToClosePoints.Value;
-		set => _whenToClosePoints.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="DualStoplossStrategy"/> class.
-	/// </summary>
 	public DualStoplossStrategy()
 	{
-		_whenToClosePoints = Param(nameof(WhenToClosePoints), 10m)
-			.SetDisplay("Close distance (points)", "Distance from stop loss to trigger early exit (MetaTrader points).", "Risk Management")
-			
-			.SetMinValue(0m);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
+		_midPeriod = Param(nameof(MidPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Mid SMA", "Mid SMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, DataType.Level1);
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_pointValue = 0m;
-		_bestBid = null;
-		_bestAsk = null;
-		_stopLevelDistance = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
-
-		_pointValue = CalculatePointValue();
-
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
-			.Start();
-
-		TryCloseBeforeStop();
+		_hasPrev = false;
+		var fast = new SimpleMovingAverage { Length = FastPeriod };
+		var mid = new SimpleMovingAverage { Length = MidPeriod };
+		var slow = new SimpleMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, mid, slow, ProcessCandle).Start();
 	}
 
-	/// <inheritdoc />
-	protected override void OnPositionReceived(Position position)
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal midValue, decimal slowValue)
 	{
-		base.OnPositionReceived(position);
+		if (candle.State != CandleStates.Finished) return;
 
-		TryCloseBeforeStop();
-	}
-
-	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
-
-		TryCloseBeforeStop();
-	}
-
-	/// <inheritdoc />
-	protected override void OnOrderRegistered(Order order)
-	{
-		base.OnOrderRegistered(order);
-
-		TryCloseBeforeStop();
-	}
-
-	/// <inheritdoc />
-	protected override void OnOrderReceived(Order order)
-	{
-		base.OnOrderReceived(order);
-
-		TryCloseBeforeStop();
-	}
-
-	private void ProcessLevel1(Level1ChangeMessage message)
-	{
-		if (message.TryGetDecimal(Level1Fields.BestBidPrice) is decimal bid)
-			_bestBid = bid;
-
-		if (message.TryGetDecimal(Level1Fields.BestAskPrice) is decimal ask)
-			_bestAsk = ask;
-
-		if (StopLevelField is Level1Fields stopField && message.Changes.TryGetValue(stopField, out var stopValue))
+		if (_hasPrev)
 		{
-			var value = ToDecimal(stopValue);
-			if (value is decimal stop && stop >= 0m)
-				_stopLevelDistance = stop;
+			if (_prevFast <= _prevMid && fastValue > midValue && midValue > slowValue && Position <= 0)
+				BuyMarket();
+			else if (_prevFast >= _prevMid && fastValue < midValue && midValue < slowValue && Position >= 0)
+				SellMarket();
 		}
 
-		TryCloseBeforeStop();
-	}
-
-	private void TryCloseBeforeStop()
-	{
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (Position > 0m)
-		{
-			var stopPrice = GetNearestStopPrice(Sides.Sell);
-			if (stopPrice is null)
-				return;
-
-			if (_bestBid is not decimal bid)
-				return;
-
-			var triggerDistance = GetTriggerDistance();
-			var distance = bid - stopPrice.Value;
-
-			// Close the long position before the protective stop fires.
-			if (distance <= triggerDistance)
-				ClosePosition();
-		}
-		else if (Position < 0m)
-		{
-			var stopPrice = GetNearestStopPrice(Sides.Buy);
-			if (stopPrice is null)
-				return;
-
-			if (_bestAsk is not decimal ask)
-				return;
-
-			var triggerDistance = GetTriggerDistance();
-			var distance = stopPrice.Value - ask;
-
-			// Close the short position before the protective stop fires.
-			if (distance <= triggerDistance)
-				ClosePosition();
-		}
-	}
-
-	private decimal GetTriggerDistance()
-	{
-		var pointDistance = WhenToClosePoints * _pointValue;
-		var stopLevel = Math.Max(_stopLevelDistance ?? 0m, 0m);
-		return pointDistance + stopLevel;
-	}
-
-	private decimal? GetNearestStopPrice(Sides side)
-	{
-		decimal? result = null;
-
-		foreach (var order in Orders)
-		{
-			if (order.Security != Security)
-				continue;
-
-			if (order.State != OrderStates.Active)
-				continue;
-
-			if (order.Side != side)
-				continue;
-
-			if (order.Type != OrderTypes.Stop && order.Type != OrderTypes.StopLimit)
-				continue;
-
-			var price = order.StopPrice ?? order.Price;
-			if (price <= 0m)
-				continue;
-
-			if (result is null)
-			{
-				result = price;
-			}
-			else if (side == Sides.Sell)
-			{
-				if (price > result.Value)
-					result = price;
-			}
-			else if (price < result.Value)
-			{
-				result = price;
-			}
-		}
-
-		return result;
-	}
-
-	private decimal CalculatePointValue()
-	{
-		var security = Security;
-		if (security == null)
-			return 0.0001m;
-
-		var step = security.PriceStep ?? 0m;
-		if (step <= 0m)
-		{
-			var decimals = security.Decimals;
-			if (decimals != null && decimals.Value > 0)
-				step = (decimal)Math.Pow(10, -decimals.Value);
-		}
-
-		if (step <= 0m)
-			step = 0.0001m;
-
-		var multiplier = 1m;
-		var digits = security.Decimals;
-		if (digits != null && (digits.Value == 3 || digits.Value == 5))
-			multiplier = 10m;
-
-		return step * multiplier;
-	}
-
-	private static Level1Fields? TryGetField(string name)
-	{
-		return Enum.TryParse(name, out Level1Fields field) ? field : null;
-	}
-
-	private static decimal? ToDecimal(object value)
-	{
-		return value switch
-		{
-			decimal dec => dec,
-			double dbl => (decimal)dbl,
-			float fl => (decimal)fl,
-			long l => l,
-			int i => i,
-			short s => s,
-			byte b => b,
-			null => null,
-			IConvertible convertible => Convert.ToDecimal(convertible),
-			_ => null,
-		};
+		_prevFast = fastValue;
+		_prevMid = midValue;
+		_hasPrev = true;
 	}
 }
-
