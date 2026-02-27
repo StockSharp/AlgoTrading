@@ -1,119 +1,93 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Hedging strategy that opens both buy and sell orders and manages them using spread levels.
+/// Hedging-style strategy using EMA crossover with ATR-based mean reversion.
 /// </summary>
 public class DisturbedStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _gainMultiplier;
+	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _ordersOpened;
-	private bool _buyActive;
-	private bool _sellActive;
-	private decimal _eqA;
-	private decimal _eqAF;
-	private decimal _eqV;
-	private decimal _eqVF;
+	private decimal _prevEma;
+	private bool _hasPrev;
 
-	public decimal GainMultiplier { get => _gainMultiplier.Value; set => _gainMultiplier.Value = value; }
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public DisturbedStrategy()
 	{
-
-		_gainMultiplier = Param(nameof(GainMultiplier), 2m)
-			.SetDisplay("Gain Multiplier", "Spread multiplier for profit target", "General")
-			;
+		_emaPeriod = Param(nameof(EmaPeriod), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "EMA period", "Indicators");
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "ATR period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevEma = 0; _hasPrev = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		StartProtection(null, null);
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		SubscribeLevel1(Security)
-			.Bind(OnLevel1)
-			.Start();
+		SubscribeCandles(CandleType).Bind(ema, atr, ProcessCandle).Start();
 	}
 
-	private void OnLevel1(Level1ChangeMessage message)
+	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal atr)
 	{
-		var ask = message.TryGetDecimal(Level1Fields.AskPrice);
-		var bid = message.TryGetDecimal(Level1Fields.BidPrice);
+		if (candle.State != CandleStates.Finished) return;
 
-		if (ask is not decimal askPrice || bid is not decimal bidPrice)
-			return;
+		if (!_hasPrev) { _prevEma = ema; _hasPrev = true; return; }
 
-		var spread = askPrice - bidPrice;
+		var close = candle.ClosePrice;
 
-		if (!_ordersOpened)
+		// Price crosses above EMA + ATR => buy
+		if (close > ema + atr && _prevEma > 0 && Position <= 0)
 		{
-			_eqA = askPrice + spread;
-			_eqAF = askPrice + GainMultiplier * spread;
-			_eqV = bidPrice - spread;
-			_eqVF = bidPrice - GainMultiplier * spread;
-
-			BuyMarket(Volume);
-			SellMarket(Volume);
-
-			_ordersOpened = true;
-			_buyActive = true;
-			_sellActive = true;
-			return;
+			if (Position < 0) BuyMarket();
+			BuyMarket();
+		}
+		// Price crosses below EMA - ATR => sell
+		else if (close < ema - atr && _prevEma > 0 && Position >= 0)
+		{
+			if (Position > 0) SellMarket();
+			SellMarket();
+		}
+		// Exit long when price returns to EMA
+		else if (Position > 0 && close <= ema)
+		{
+			SellMarket();
+		}
+		// Exit short when price returns to EMA
+		else if (Position < 0 && close >= ema)
+		{
+			BuyMarket();
 		}
 
-		if (_sellActive && bidPrice >= _eqA)
-		{
-			// Close losing sell position
-			BuyMarket(Volume);
-			_sellActive = false;
-			return;
-		}
-
-		if (_buyActive && bidPrice <= _eqV)
-		{
-			// Close losing buy position
-			SellMarket(Volume);
-			_buyActive = false;
-			return;
-		}
-
-		if (_buyActive && !_sellActive)
-		{
-			if (bidPrice >= _eqAF || bidPrice <= _eqA)
-			{
-				// Remaining buy position hit target or stop
-				SellMarket(Volume);
-				_buyActive = false;
-			}
-		}
-		else if (_sellActive && !_buyActive)
-		{
-			if (askPrice <= _eqVF || askPrice >= _eqV)
-			{
-				// Remaining sell position hit target or stop
-				BuyMarket(Volume);
-				_sellActive = false;
-			}
-		}
-
-		if (!_buyActive && !_sellActive)
-			_ordersOpened = false;
+		_prevEma = ema;
 	}
 }

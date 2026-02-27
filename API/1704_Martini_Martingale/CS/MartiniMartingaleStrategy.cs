@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,158 +11,71 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Martini martingale strategy that hedges losing positions by doubling volume in the opposite direction.
-/// Places initial stop orders on both sides and closes all trades once profit target is reached.
+/// Mean reversion strategy inspired by martingale.
+/// Enters on RSI extremes, exits when price returns to SMA.
 /// </summary>
 public class MartiniMartingaleStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _step;
-	private readonly StrategyParam<decimal> _profitClose;
-	private readonly StrategyParam<decimal> _initialVolume;
+	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<int> _smaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private Order _buyStop;
-	private Order _sellStop;
-	private int _orderCount;
-	private decimal _lastOrderPrice;
-	private decimal _currentOrderVolume;
-	
-	/// <summary>
-	/// Price step in absolute units.
-	/// </summary>
-	public decimal Step { get => _step.Value; set => _step.Value = value; }
-	
-	/// <summary>
-	/// Profit threshold to close all positions.
-	/// </summary>
-	public decimal ProfitClose { get => _profitClose.Value; set => _profitClose.Value = value; }
-	
-	/// <summary>
-	/// Starting trade volume.
-	/// </summary>
-	public decimal InitialVolume { get => _initialVolume.Value; set => _initialVolume.Value = value; }
-	
-	/// <summary>
-	/// Candle type used for price updates.
-	/// </summary>
+
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	
+
 	public MartiniMartingaleStrategy()
 	{
-		_step = Param(nameof(Step), 10m)
-			.SetDisplay("Step", "Price step size", "General")
-			;
-		_profitClose = Param(nameof(ProfitClose), 1m)
-			.SetDisplay("Profit Close", "Close positions when profit reached", "General")
-			;
-		_initialVolume = Param(nameof(InitialVolume), 1m)
-			.SetDisplay("Initial Volume", "Initial trade volume", "General")
-			;
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle", "Candle type", "General");
+		_rsiPeriod = Param(nameof(RsiPeriod), 7)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "RSI period", "Indicators");
+		_smaPeriod = Param(nameof(SmaPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("SMA Period", "SMA for mean reversion target", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
-	
-	/// <inheritdoc />
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		ResetState();
-		
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var sma = new SimpleMovingAverage { Length = SmaPeriod };
+
+		SubscribeCandles(CandleType).Bind(rsi, sma, ProcessCandle).Start();
 	}
-	
-	private void ProcessCandle(ICandleMessage candle)
+
+	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal sma)
 	{
-		if (candle.State != CandleStates.Finished)
-		return;
-		
-		var price = candle.ClosePrice;
-		
-		// Check profit target
-		var profit = CalculateProfit(price);
-		if (Position != 0 && profit >= ProfitClose)
+		if (candle.State != CandleStates.Finished) return;
+
+		var close = candle.ClosePrice;
+
+		// RSI oversold => buy
+		if (rsi < 30 && Position <= 0)
 		{
-			ClosePosition();
-			CancelStops();
-			ResetState();
-			return;
+			if (Position < 0) BuyMarket();
+			BuyMarket();
 		}
-		
-		if (Position == 0)
+		// RSI overbought => sell
+		else if (rsi > 70 && Position >= 0)
 		{
-			// Place initial pending orders when flat
-			if (_buyStop == null && _sellStop == null)
-			{
-				_buyStop = BuyStop(_currentOrderVolume, price + Step);
-				_sellStop = SellStop(_currentOrderVolume, price - Step);
-			}
-			
-			return;
+			if (Position > 0) SellMarket();
+			SellMarket();
 		}
-		
-		// Remove pending orders once a position exists
-		CancelStops();
-		
-		if (_orderCount == 0)
+		// Exit long at SMA
+		else if (Position > 0 && close >= sma && rsi > 50)
 		{
-			// First executed order
-			_orderCount = 1;
-			_lastOrderPrice = price;
-			return;
+			SellMarket();
 		}
-		
-		var direction = Math.Sign(Position);
-		var distance = direction > 0 ? _lastOrderPrice - price : price - _lastOrderPrice;
-		
-		// Open opposite order if price moved against us by the defined step * order count
-		if (distance >= Step * _orderCount)
+		// Exit short at SMA
+		else if (Position < 0 && close <= sma && rsi < 50)
 		{
-			var volume = _currentOrderVolume * 2m;
-			
-			if (direction > 0)
-			SellMarket(volume);
-			else
-			BuyMarket(volume);
-			
-			_currentOrderVolume = volume;
-			_orderCount++;
-			_lastOrderPrice = price;
+			BuyMarket();
 		}
-	}
-	
-	private void CancelStops()
-	{
-		if (_buyStop != null)
-		{
-			CancelOrder(_buyStop);
-			_buyStop = null;
-		}
-		
-		if (_sellStop != null)
-		{
-			CancelOrder(_sellStop);
-			_sellStop = null;
-		}
-	}
-	
-	private decimal CalculateProfit(decimal currentPrice)
-	{
-		if (Position == 0)
-		return 0m;
-		
-		var entry = PositionPrice;
-		var dir = Math.Sign(Position);
-		return dir > 0
-		? (currentPrice - entry) * Math.Abs(Position)
-		: (entry - currentPrice) * Math.Abs(Position);
-	}
-	
-	private void ResetState()
-	{
-		_orderCount = 0;
-		_currentOrderVolume = InitialVolume;
-		_lastOrderPrice = 0m;
 	}
 }

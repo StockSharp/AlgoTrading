@@ -78,7 +78,7 @@ public class RobotDanuStrategy : Strategy
 			
 			.SetOptimize(20, 120, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -161,8 +161,8 @@ public class RobotDanuStrategy : Strategy
 
 		// Trading logic: compare fast and slow pivots
 		if (_lastFast > _lastSlow && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
+			{ if (Position > 0) SellMarket(); SellMarket(); }
 		else if (_lastFast < _lastSlow && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
+		{ if (Position < 0) BuyMarket(); BuyMarket(); }
 	}
 }
