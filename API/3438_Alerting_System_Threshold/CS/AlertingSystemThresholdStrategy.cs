@@ -1,143 +1,67 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Alerting System Strategy - triggers notifications when bid or ask reaches configured levels.
+/// Alerting System Threshold strategy: RSI threshold crossover.
+/// Buys when RSI crosses above oversold level, sells when crosses below overbought level.
 /// </summary>
 public class AlertingSystemThresholdStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _upperPrice;
-	private readonly StrategyParam<decimal> _lowerPrice;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<decimal> _oversold;
+	private readonly StrategyParam<decimal> _overbought;
 
-	private decimal? _bestBid;
-	private decimal? _bestAsk;
-	private bool _upperAlertActive;
-	private bool _lowerAlertActive;
+	private decimal _prevRsi;
+	private bool _hasPrev;
 
-	/// <summary>
-	/// Price level that triggers an alert when the best bid reaches or exceeds it.
-	/// </summary>
-	public decimal UpperPrice
-	{
-		get => _upperPrice.Value;
-		set => _upperPrice.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public decimal Oversold { get => _oversold.Value; set => _oversold.Value = value; }
+	public decimal Overbought { get => _overbought.Value; set => _overbought.Value = value; }
 
-	/// <summary>
-	/// Price level that triggers an alert when the best ask reaches or falls below it.
-	/// </summary>
-	public decimal LowerPrice
-	{
-		get => _lowerPrice.Value;
-		set => _lowerPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
 	public AlertingSystemThresholdStrategy()
 	{
-		_upperPrice = Param(nameof(UpperPrice), 0m)
-			.SetDisplay("Upper Price", "Bid alert activation price", "Alerts");
-
-		_lowerPrice = Param(nameof(LowerPrice), 0m)
-			.SetDisplay("Lower Price", "Ask alert activation price", "Alerts");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "RSI period", "Indicators");
+		_oversold = Param(nameof(Oversold), 30m)
+			.SetDisplay("Oversold", "RSI oversold level", "Signals");
+		_overbought = Param(nameof(Overbought), 70m)
+			.SetDisplay("Overbought", "RSI overbought level", "Signals");
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
-			.Start();
+		_hasPrev = false;
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(rsi, ProcessCandle).Start();
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage message)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidValue))
-		{
-			var bid = (decimal)bidValue;
+		if (candle.State != CandleStates.Finished) return;
 
-			if (bid > 0m)
-				_bestBid = bid;
+		if (_hasPrev)
+		{
+			// Buy on cross above oversold
+			if (_prevRsi < Oversold && rsiValue >= Oversold && Position <= 0)
+				BuyMarket();
+			// Sell on cross below overbought
+			else if (_prevRsi > Overbought && rsiValue <= Overbought && Position >= 0)
+				SellMarket();
 		}
 
-		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askValue))
-		{
-			var ask = (decimal)askValue;
-
-			if (ask > 0m)
-				_bestAsk = ask;
-		}
-
-		CheckUpperAlert();
-		CheckLowerAlert();
-	}
-
-	private void CheckUpperAlert()
-	{
-		var level = UpperPrice;
-		if (level <= 0m)
-		{
-			_upperAlertActive = false;
-			return;
-		}
-
-		if (_bestBid is not decimal bid)
-			return;
-
-		if (bid >= level)
-		{
-			if (!_upperAlertActive)
-			{
-				LogInfo("Upper alert triggered. Best bid={0:F5}, level={1:F5}", bid, level);
-				_upperAlertActive = true;
-			}
-		}
-		else
-		{
-			_upperAlertActive = false;
-		}
-	}
-
-	private void CheckLowerAlert()
-	{
-		var level = LowerPrice;
-		if (level <= 0m)
-		{
-			_lowerAlertActive = false;
-			return;
-		}
-
-		if (_bestAsk is not decimal ask)
-			return;
-
-		if (ask <= level)
-		{
-			if (!_lowerAlertActive)
-			{
-				LogInfo("Lower alert triggered. Best ask={0:F5}, level={1:F5}", ask, level);
-				_lowerAlertActive = true;
-			}
-		}
-		else
-		{
-			_lowerAlertActive = false;
-		}
+		_prevRsi = rsiValue;
+		_hasPrev = true;
 	}
 }
-

@@ -1,263 +1,65 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Strategy that trades hammer and hanging man candlestick patterns confirmed by the Money Flow Index.
+/// Hammer/Hanging Man + MFI strategy.
+/// Buys on hammer with low MFI (oversold), sells on hanging man with high MFI (overbought).
 /// </summary>
 public class AhHmMfiStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _mfiPeriod;
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<decimal> _hammerEntryThreshold;
-	private readonly StrategyParam<decimal> _hangingEntryThreshold;
-	private readonly StrategyParam<decimal> _mfiUpperExitLevel;
-	private readonly StrategyParam<decimal> _mfiLowerExitLevel;
+	private readonly StrategyParam<decimal> _mfiLow;
+	private readonly StrategyParam<decimal> _mfiHigh;
 
-	private decimal? _previousMfi;
-	private decimal? _previousSma;
-	private ICandleMessage _previousCandle;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int MfiPeriod { get => _mfiPeriod.Value; set => _mfiPeriod.Value = value; }
+	public decimal MfiLow { get => _mfiLow.Value; set => _mfiLow.Value = value; }
+	public decimal MfiHigh { get => _mfiHigh.Value; set => _mfiHigh.Value = value; }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="AhHmMfiStrategy"/> class.
-	/// </summary>
 	public AhHmMfiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame used for pattern detection", "General");
-
-		_mfiPeriod = Param(nameof(MfiPeriod), 47)
-			.SetDisplay("MFI Period", "Lookback period for the Money Flow Index", "Indicator")
-			;
-
-		_maPeriod = Param(nameof(MaPeriod), 5)
-			.SetDisplay("MA Period", "Length of the moving average used for trend detection", "Indicator")
-			;
-
-		_hammerEntryThreshold = Param(nameof(HammerEntryThreshold), 40m)
-			.SetDisplay("Hammer MFI Threshold", "Maximum MFI value allowed to buy after a hammer", "Signals")
-			.SetRange(10m, 60m)
-			;
-
-		_hangingEntryThreshold = Param(nameof(HangingEntryThreshold), 60m)
-			.SetDisplay("Hanging Man MFI Threshold", "Minimum MFI value required to sell after a hanging man", "Signals")
-			.SetRange(40m, 90m)
-			;
-
-		_mfiUpperExitLevel = Param(nameof(MfiUpperExitLevel), 70m)
-			.SetDisplay("Upper Exit Level", "MFI level that triggers exits when crossed upward", "Risk")
-			.SetRange(50m, 90m)
-			;
-
-		_mfiLowerExitLevel = Param(nameof(MfiLowerExitLevel), 30m)
-			.SetDisplay("Lower Exit Level", "MFI level that triggers exits when crossed downward", "Risk")
-			.SetRange(10m, 50m)
-			;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_mfiPeriod = Param(nameof(MfiPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("MFI Period", "MFI period", "Indicators");
+		_mfiLow = Param(nameof(MfiLow), 40m)
+			.SetDisplay("MFI Low", "MFI oversold threshold for buy", "Signals");
+		_mfiHigh = Param(nameof(MfiHigh), 60m)
+			.SetDisplay("MFI High", "MFI overbought threshold for sell", "Signals");
 	}
 
-	/// <summary>
-	/// Type of candles to subscribe.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback period for the Money Flow Index indicator.
-	/// </summary>
-	public int MfiPeriod
-	{
-		get => _mfiPeriod.Value;
-		set => _mfiPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Length of the moving average used to approximate the original trend filter.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum MFI value allowed to confirm hammer patterns.
-	/// </summary>
-	public decimal HammerEntryThreshold
-	{
-		get => _hammerEntryThreshold.Value;
-		set => _hammerEntryThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum MFI value required to confirm hanging man patterns.
-	/// </summary>
-	public decimal HangingEntryThreshold
-	{
-		get => _hangingEntryThreshold.Value;
-		set => _hangingEntryThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Upper MFI level that forces the strategy to exit positions.
-	/// </summary>
-	public decimal MfiUpperExitLevel
-	{
-		get => _mfiUpperExitLevel.Value;
-		set => _mfiUpperExitLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Lower MFI level that forces the strategy to exit positions.
-	/// </summary>
-	public decimal MfiLowerExitLevel
-	{
-		get => _mfiLowerExitLevel.Value;
-		set => _mfiLowerExitLevel.Value = value;
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_previousMfi = null;
-		_previousSma = null;
-		_previousCandle = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var mfi = new MoneyFlowIndex
-		{
-			Length = MfiPeriod
-		};
-
-		var average = new SMA
-		{
-			Length = MaPeriod
-		};
-
+		var mfi = new MoneyFlowIndex { Length = MfiPeriod };
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.BindEx(mfi, average, ProcessCandle)
-			.Start();
-
-		StartProtection(null, null);
+		subscription.Bind(mfi, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue mfiValue, IIndicatorValue averageValue)
+	private void ProcessCandle(ICandleMessage candle, decimal mfiValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		if (!mfiValue.IsFinal || !averageValue.IsFinal)
-			return;
+		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
+		var range = candle.HighPrice - candle.LowPrice;
+		if (range <= 0 || body <= 0) return;
 
-		var currentMfi = mfiValue.GetValue<decimal>();
-		var currentSma = averageValue.GetValue<decimal>();
+		var upperShadow = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
+		var lowerShadow = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice;
 
-		if (_previousMfi is decimal previousMfi)
-		{
-			var crossedAboveLower = previousMfi < MfiLowerExitLevel && currentMfi > MfiLowerExitLevel;
-			var crossedAboveUpper = previousMfi < MfiUpperExitLevel && currentMfi > MfiUpperExitLevel;
-			var crossedBelowLower = previousMfi > MfiLowerExitLevel && currentMfi < MfiLowerExitLevel;
+		var isHammer = lowerShadow > body * 2 && upperShadow < body;
+		var isHangingMan = upperShadow > body * 2 && lowerShadow < body;
 
-			if (Position < 0 && (crossedAboveLower || crossedAboveUpper))
-			{
-				ClosePosition();
-			}
-			else if (Position > 0 && (crossedAboveUpper || crossedBelowLower))
-			{
-				ClosePosition();
-			}
-			else if (Position == 0 && _previousCandle is not null && _previousSma is decimal previousSma)
-			{
-				var hammer = IsHammer(candle, _previousCandle, previousSma);
-				var hangingMan = IsHangingMan(candle, _previousCandle, previousSma);
-
-				if (hammer && currentMfi <= HammerEntryThreshold)
-				{
-					BuyMarket();
-				}
-				else if (hangingMan && currentMfi >= HangingEntryThreshold)
-				{
-					SellMarket();
-				}
-			}
-		}
-
-		_previousMfi = currentMfi;
-		_previousSma = currentSma;
-		_previousCandle = candle;
-	}
-
-	private static bool IsHammer(ICandleMessage current, ICandleMessage previous, decimal previousSma)
-	{
-		var range = current.HighPrice - current.LowPrice;
-		if (range <= 0m)
-			return false;
-
-		var bodyTop = Math.Max(current.OpenPrice, current.ClosePrice);
-		var bodyBottom = Math.Min(current.OpenPrice, current.ClosePrice);
-		var body = bodyTop - bodyBottom;
-
-		var bodyInUpperThird = bodyBottom >= current.HighPrice - range / 3m;
-		var lowerShadow = bodyBottom - current.LowPrice;
-		var hasLongLowerShadow = lowerShadow >= body;
-
-		var previousMidPoint = (previous.HighPrice + previous.LowPrice) / 2m;
-		var downTrend = previousMidPoint < previousSma;
-		var gapDown = current.ClosePrice < previous.ClosePrice && current.OpenPrice < previous.OpenPrice;
-		var bullishClose = current.ClosePrice >= current.OpenPrice;
-
-		return downTrend && bodyInUpperThird && hasLongLowerShadow && gapDown && bullishClose;
-	}
-
-	private static bool IsHangingMan(ICandleMessage current, ICandleMessage previous, decimal previousSma)
-	{
-		var range = current.HighPrice - current.LowPrice;
-		if (range <= 0m)
-			return false;
-
-		var bodyTop = Math.Max(current.OpenPrice, current.ClosePrice);
-		var bodyBottom = Math.Min(current.OpenPrice, current.ClosePrice);
-		var body = bodyTop - bodyBottom;
-
-		var bodyInUpperThird = bodyBottom >= current.HighPrice - range / 3m;
-		var lowerShadow = bodyBottom - current.LowPrice;
-		var hasLongLowerShadow = lowerShadow >= body;
-
-		var previousMidPoint = (previous.HighPrice + previous.LowPrice) / 2m;
-		var upTrend = previousMidPoint > previousSma;
-		var gapUp = current.ClosePrice > previous.ClosePrice && current.OpenPrice > previous.OpenPrice;
-		var bearishClose = current.ClosePrice <= current.OpenPrice;
-
-		return upTrend && bodyInUpperThird && hasLongLowerShadow && gapUp && bearishClose;
+		if (isHammer && mfiValue < MfiLow && Position <= 0)
+			BuyMarket();
+		else if (isHangingMan && mfiValue > MfiHigh && Position >= 0)
+			SellMarket();
 	}
 }
-

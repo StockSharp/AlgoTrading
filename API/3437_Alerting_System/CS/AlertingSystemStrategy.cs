@@ -1,168 +1,62 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Strategy that reproduces the MetaTrader alert system by monitoring
-/// best bid/ask quotes and raising journal notifications when
-/// configurable horizontal levels are crossed.
+/// Alerting System strategy: Bollinger Band breakout.
+/// Buys when price crosses above upper band, sells when below lower band.
 /// </summary>
 public class AlertingSystemStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _upperPrice;
-	private readonly StrategyParam<decimal> _lowerPrice;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _bbPeriod;
+	private readonly StrategyParam<decimal> _bbWidth;
 
-	private bool _upperAlertTriggered;
-	private bool _lowerAlertTriggered;
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int BbPeriod { get => _bbPeriod.Value; set => _bbPeriod.Value = value; }
+	public decimal BbWidth { get => _bbWidth.Value; set => _bbWidth.Value = value; }
 
-	/// <summary>
-	/// Upper alert price. Set to zero to disable the check.
-	/// </summary>
-	public decimal UpperPrice
-	{
-		get => _upperPrice.Value;
-		set => _upperPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Lower alert price. Set to zero to disable the check.
-	/// </summary>
-	public decimal LowerPrice
-	{
-		get => _lowerPrice.Value;
-		set => _lowerPrice.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="AlertingSystemStrategy"/>.
-	/// </summary>
 	public AlertingSystemStrategy()
 	{
-		_upperPrice = Param(nameof(UpperPrice), 0m)
-			.SetDisplay("Upper Price", "Upper horizontal level that triggers an alert.", "Alerts");
-
-		_lowerPrice = Param(nameof(LowerPrice), 0m)
-			.SetDisplay("Lower Price", "Lower horizontal level that triggers an alert.", "Alerts");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_bbPeriod = Param(nameof(BbPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Period", "Bollinger Bands period", "Indicators");
+		_bbWidth = Param(nameof(BbWidth), 2m)
+			.SetDisplay("BB Width", "Bollinger Bands width multiplier", "Indicators");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, DataType.Level1)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_upperAlertTriggered = false;
-		_lowerAlertTriggered = false;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		// Subscribe to bid/ask updates to mirror the original OnTick loop.
-		SubscribeLevel1()
-			.Bind(ProcessLevel1)
-			.Start();
-
-		LogConfiguredLevels();
+		var bb = new BollingerBands
+		{
+			Length = BbPeriod,
+			Width = BbWidth
+		};
+		var subscription = SubscribeCandles(CandleType);
+		subscription.BindEx(bb, ProcessCandle).Start();
 	}
 
-	private void ProcessLevel1(Level1ChangeMessage message)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
 	{
-		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidObj))
-		{
-			var bid = (decimal)bidObj;
-			if (bid > 0m)
-				CheckUpperAlert(bid);
-		}
+		if (candle.State != CandleStates.Finished) return;
+		if (!bbValue.IsFinal) return;
 
-		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askObj))
-		{
-			var ask = (decimal)askObj;
-			if (ask > 0m)
-				CheckLowerAlert(ask);
-		}
-	}
+		var typed = (BollingerBandsValue)bbValue;
+		if (typed.UpBand is not decimal upper || typed.LowBand is not decimal lower) return;
 
-	private void CheckUpperAlert(decimal bid)
-	{
-		var level = UpperPrice;
-		if (level <= 0m)
-		{
-			_upperAlertTriggered = false;
-			return;
-		}
+		var close = candle.ClosePrice;
 
-		if (bid >= level)
-		{
-			if (!_upperAlertTriggered)
-			{
-				LogInfo($"Bid {bid:0.#####} crossed the upper alert level {level:0.#####}.");
-				_upperAlertTriggered = true;
-			}
-		}
-		else if (_upperAlertTriggered)
-		{
-			// Reset the flag once the market moves back below the level.
-			_upperAlertTriggered = false;
-		}
-	}
-
-	private void CheckLowerAlert(decimal ask)
-	{
-		var level = LowerPrice;
-		if (level <= 0m)
-		{
-			_lowerAlertTriggered = false;
-			return;
-		}
-
-		if (ask <= level)
-		{
-			if (!_lowerAlertTriggered)
-			{
-				LogInfo($"Ask {ask:0.#####} crossed the lower alert level {level:0.#####}.");
-				_lowerAlertTriggered = true;
-			}
-		}
-		else if (_lowerAlertTriggered)
-		{
-			// Reset the flag once the market moves back above the level.
-			_lowerAlertTriggered = false;
-		}
-	}
-
-	private void LogConfiguredLevels()
-	{
-		var upper = UpperPrice;
-		var lower = LowerPrice;
-
-		if (upper > 0m)
-			LogInfo($"Upper alert level configured at {upper:0.#####}.");
-		else
-			LogInfo("Upper alert level disabled (value is 0).");
-
-		if (lower > 0m)
-			LogInfo($"Lower alert level configured at {lower:0.#####}.");
-		else
-			LogInfo("Lower alert level disabled (value is 0).");
+		// Mean reversion: buy at lower band, sell at upper band
+		if (close < lower && Position <= 0)
+			BuyMarket();
+		else if (close > upper && Position >= 0)
+			SellMarket();
 	}
 }
-

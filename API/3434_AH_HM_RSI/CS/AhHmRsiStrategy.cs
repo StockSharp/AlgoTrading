@@ -1,250 +1,65 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
 /// <summary>
-/// Port of the MetaTrader expert "Expert_AH_HM_RSI".
-/// Identifies hammer or hanging man candles and confirms them with an RSI filter before trading.
+/// Hammer/Hanging Man + RSI strategy.
+/// Buys on hammer with low RSI, sells on hanging man with high RSI.
 /// </summary>
 public class AhHmRsiStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rsiPeriodParam;
-	private readonly StrategyParam<int> _maPeriodParam;
-	private readonly StrategyParam<decimal> _hammerRsiThresholdParam;
-	private readonly StrategyParam<decimal> _hangingManRsiThresholdParam;
-	private readonly StrategyParam<decimal> _lowerExitLevelParam;
-	private readonly StrategyParam<decimal> _upperExitLevelParam;
-	private readonly StrategyParam<DataType> _candleTypeParam;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<decimal> _rsiLow;
+	private readonly StrategyParam<decimal> _rsiHigh;
 
-	private readonly RelativeStrengthIndex _rsi = new();
-	private readonly SimpleMovingAverage _sma = new();
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public decimal RsiLow { get => _rsiLow.Value; set => _rsiLow.Value = value; }
+	public decimal RsiHigh { get => _rsiHigh.Value; set => _rsiHigh.Value = value; }
 
-	private ICandleMessage _previousCandle;
-	private decimal? _previousRsi;
-	private decimal? _previousSma;
-
-	/// <summary>
-	/// Initializes strategy parameters with defaults identical to the original expert.
-	/// </summary>
 	public AhHmRsiStrategy()
 	{
-		_rsiPeriodParam = Param(nameof(RsiPeriod), 33)
-			.SetDisplay("RSI Period", "Length of the RSI confirmation filter", "Indicators")
-			;
-
-		_maPeriodParam = Param(nameof(MaPeriod), 2)
-			.SetDisplay("MA Period", "Length of the smoothing average used to detect the trend", "Indicators")
-			;
-
-		_hammerRsiThresholdParam = Param(nameof(HammerRsiThreshold), 40m)
-			.SetDisplay("Hammer RSI", "RSI level that enables long trades after a hammer", "Filters")
-			;
-
-		_hangingManRsiThresholdParam = Param(nameof(HangingManRsiThreshold), 60m)
-			.SetDisplay("Hanging Man RSI", "RSI level that enables short trades after a hanging man", "Filters")
-			;
-
-		_lowerExitLevelParam = Param(nameof(LowerExitLevel), 30m)
-			.SetDisplay("RSI Lower Exit", "RSI level used for exit cross checks", "Risk")
-			;
-
-		_upperExitLevelParam = Param(nameof(UpperExitLevel), 70m)
-			.SetDisplay("RSI Upper Exit", "RSI level used for exit cross checks", "Risk")
-			;
-
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe used for detecting candle patterns", "Data")
-			;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "RSI period", "Indicators");
+		_rsiLow = Param(nameof(RsiLow), 40m)
+			.SetDisplay("RSI Low", "RSI oversold threshold for buy", "Signals");
+		_rsiHigh = Param(nameof(RsiHigh), 60m)
+			.SetDisplay("RSI High", "RSI overbought threshold for sell", "Signals");
 	}
 
-	/// <summary>
-	/// Length of the RSI confirmation filter.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriodParam.Value;
-		set => _rsiPeriodParam.Value = value;
-	}
-
-	/// <summary>
-	/// Length of the moving average used for the trend filter in candle pattern detection.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriodParam.Value;
-		set => _maPeriodParam.Value = value;
-	}
-
-	/// <summary>
-	/// RSI threshold that must be met to validate a hammer candle.
-	/// </summary>
-	public decimal HammerRsiThreshold
-	{
-		get => _hammerRsiThresholdParam.Value;
-		set => _hammerRsiThresholdParam.Value = value;
-	}
-
-	/// <summary>
-	/// RSI threshold that must be met to validate a hanging man candle.
-	/// </summary>
-	public decimal HangingManRsiThreshold
-	{
-		get => _hangingManRsiThresholdParam.Value;
-		set => _hangingManRsiThresholdParam.Value = value;
-	}
-
-	/// <summary>
-	/// Lower RSI level used to detect exit crosses.
-	/// </summary>
-	public decimal LowerExitLevel
-	{
-		get => _lowerExitLevelParam.Value;
-		set => _lowerExitLevelParam.Value = value;
-	}
-
-	/// <summary>
-	/// Upper RSI level used to detect exit crosses.
-	/// </summary>
-	public decimal UpperExitLevel
-	{
-		get => _upperExitLevelParam.Value;
-		set => _upperExitLevelParam.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type processed by the strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(null, null);
-
-		_rsi.Length = RsiPeriod;
-		_sma.Length = MaPeriod;
-
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_rsi, _sma, ProcessCandle)
-			.Start();
+		subscription.Bind(rsi, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished) return;
 
-		if (!candle.HighPrice.HasValue || !candle.LowPrice.HasValue || !candle.OpenPrice.HasValue || !candle.ClosePrice.HasValue)
-			return;
+		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
+		var range = candle.HighPrice - candle.LowPrice;
+		if (range <= 0 || body <= 0) return;
 
-		var currentRsi = rsiValue;
-		var previousRsi = _previousRsi;
-		var previousSma = _previousSma;
-		var previousCandle = _previousCandle;
+		var upperShadow = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
+		var lowerShadow = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice;
 
-		var hasHammer = previousSma.HasValue && previousCandle != null && IsHammer(candle, previousCandle, previousSma.Value);
-		var hasHangingMan = previousSma.HasValue && previousCandle != null && IsHangingMan(candle, previousCandle, previousSma.Value);
+		var isHammer = lowerShadow > body * 2 && upperShadow < body;
+		var isHangingMan = upperShadow > body * 2 && lowerShadow < body;
 
-		var crossAboveLower = previousRsi.HasValue && currentRsi > LowerExitLevel && previousRsi.Value < LowerExitLevel;
-		var crossBelowLower = previousRsi.HasValue && currentRsi < LowerExitLevel && previousRsi.Value > LowerExitLevel;
-		var crossAboveUpper = previousRsi.HasValue && currentRsi > UpperExitLevel && previousRsi.Value < UpperExitLevel;
-		var crossBelowUpper = previousRsi.HasValue && currentRsi < UpperExitLevel && previousRsi.Value > UpperExitLevel;
-
-		if (hasHammer && currentRsi < HammerRsiThreshold && Position <= 0)
-		{
-			LogInfo($"Hammer confirmed by RSI {currentRsi:F2}. Going long.");
-			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (hasHangingMan && currentRsi > HangingManRsiThreshold && Position >= 0)
-		{
-			LogInfo($"Hanging man confirmed by RSI {currentRsi:F2}. Going short.");
-			SellMarket(Volume + Math.Abs(Position));
-		}
-
-		if (Position > 0 && (crossBelowUpper || crossBelowLower))
-		{
-			LogInfo($"RSI exit cross detected at {currentRsi:F2}. Closing long position.");
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0 && (crossAboveLower || crossAboveUpper))
-		{
-			LogInfo($"RSI exit cross detected at {currentRsi:F2}. Closing short position.");
-			BuyMarket(Math.Abs(Position));
-		}
-
-		_previousRsi = currentRsi;
-		_previousSma = smaValue;
-		_previousCandle = candle;
-	}
-
-	private static bool IsHammer(ICandleMessage current, ICandleMessage previous, decimal trendAverage)
-	{
-		if (!previous.HighPrice.HasValue || !previous.LowPrice.HasValue || !previous.OpenPrice.HasValue || !previous.ClosePrice.HasValue)
-			return false;
-
-		var high = current.HighPrice.Value;
-		var low = current.LowPrice.Value;
-		var open = current.OpenPrice.Value;
-		var close = current.ClosePrice.Value;
-
-		var range = high - low;
-		if (range <= 0)
-			return false;
-
-		var midpoint = (high + low) / 2m;
-		if (midpoint >= trendAverage)
-			return false;
-
-		var upperThird = high - range / 3m;
-		var minOpenClose = Math.Min(open, close);
-		if (minOpenClose <= upperThird)
-			return false;
-
-		return close < previous.ClosePrice.Value && open < previous.OpenPrice.Value;
-	}
-
-	private static bool IsHangingMan(ICandleMessage current, ICandleMessage previous, decimal trendAverage)
-	{
-		if (!previous.HighPrice.HasValue || !previous.LowPrice.HasValue || !previous.OpenPrice.HasValue || !previous.ClosePrice.HasValue)
-			return false;
-
-		var high = current.HighPrice.Value;
-		var low = current.LowPrice.Value;
-		var open = current.OpenPrice.Value;
-		var close = current.ClosePrice.Value;
-
-		var range = high - low;
-		if (range <= 0)
-			return false;
-
-		var midpoint = (high + low) / 2m;
-		if (midpoint <= trendAverage)
-			return false;
-
-		var upperThird = high - range / 3m;
-		var minOpenClose = Math.Min(open, close);
-		if (minOpenClose <= upperThird)
-			return false;
-
-		return close > previous.ClosePrice.Value && open > previous.OpenPrice.Value;
+		if (isHammer && rsiValue < RsiLow && Position <= 0)
+			BuyMarket();
+		else if (isHangingMan && rsiValue > RsiHigh && Position >= 0)
+			SellMarket();
 	}
 }
-
